@@ -23,7 +23,8 @@ if [ -z "$CARD_NUM" ]; then
     PLAY_DEV="default"
 else
     echo "[資訊] 偵測到音訊卡號: card $CARD_NUM"
-    PLAY_DEV="hw:$CARD_NUM,0"
+#    PLAY_DEV="hw:$CARD_NUM,0"
+    PLAY_DEV="plughw:$CARD_NUM,0"
 fi
 
 # 4. 執行音效測試
