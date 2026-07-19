@@ -100,22 +100,25 @@ card 0: sndrpi_googlevoicehat [snd_rpi_googlevoicehat_soundcard], device 0: Goog
 
 ## 🧪 獨立硬體測試腳本
 
-我們在 `hw/audio/` 目錄下提供了兩個現成的 Bash 測試腳本，可以一鍵測試喇叭與麥克風。
+我們在 `hw/audio/test/` 目錄下提供了兩個現成的 Bash 測試腳本，可以用來一鍵測試實際的喇叭播放與麥克風錄音。
 
 ### 🔊 測試喇叭播放 (Output Test)
 執行以下指令，系統會自動尋找 `voicehat` 或 `MAX98357A` 裝置，並播放測試語音：
 ```bash
-chmod +x hw/audio/test_speaker.sh
-./hw/audio/test_speaker.sh
+chmod +x hw/audio/test/test_speaker.sh
+./hw/audio/test/test_speaker.sh
 ```
-*如果你聽到喇叭發出「Front Left」、「Front Right」的測試語音，代表喇叭運作完美！*
+*如果你聽到喇叭發出「Front Left」、「Front Right」的測試語音，代表喇叭硬體與接線運作完美！*
 
 ### 🎙️ 測試麥克風錄音 (Input Test)
-執行以下指令，系統會錄製 5 秒鐘的音訊，並詢問你是否要立即播放：
+執行以下指令，系統會錄製 5 秒鐘的音訊，並詢問你是否要立即播放。此腳本在錄音後會自動調用 Python 腳本 `amplify.py` 進行音訊的數位放大：
 ```bash
-chmod +x hw/audio/test_mic.sh
-./hw/audio/test_mic.sh
+chmod +x hw/audio/test/test_mic.sh
+./hw/audio/test/test_mic.sh [放大倍率]
 ```
+> 💡 **範例**：若想將錄製音訊放大 1.5 倍，可執行 `./hw/audio/test/test_mic.sh 1.5`。若不指定倍率，預設為不放大（1.0 倍）。  
+> ⚠️ **前置準備**：由於放大功能使用 NumPy 進行矩陣運算，執行前請確保系統已安裝 `numpy` 套件（`pip install numpy`）。
+
 *如果錄音與重播的聲音清晰、沒有雜音，代表麥克風與喇叭的接線、設定皆正確。*
 
 ---
