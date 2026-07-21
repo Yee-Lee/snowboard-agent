@@ -15,7 +15,8 @@
 │   ├── read/               # 讀取文字 Payload
 │   └── look/               # 啟動相機抽幀
 │
-├── brain/                      
+├── brain/
+│   ├── orchestrator.py     # 接收感知，組合 Prompt，解析 LLM 意圖並派發任務
 │   ├── llm_engine.py       
 │   ├── prompt_builder.py   
 │   └── memory.py           
@@ -56,9 +57,8 @@ perception/ (感知層 / 翻譯官)
 
 被核心喚醒後才吃資源的情報收集區。 將物理世界的混沌訊號轉為數位文字。包含 listen (耗能的串流 STT)、look (鏡頭抽幀辨識) 與 read (讀取純文字)。收集完畢後，把文字與視覺標籤丟給大腦。
 
-brain/ (思考層 / 決策中樞)
-
-算力消耗最大的模組。載入 LLM 與記憶（Memory），接收感知層封裝的 Prompt 進行推論。它不動手，只產出意圖（如「說話」、「呼叫工具」）並發佈到總線。
+brain/ — 認知與決策層 (Cognitive Level)
+orchestrator.py： 認知層的指揮官。它訂閱 Perception 收集來的碎塊，從 memory 提取上下文，組裝成完美的 Prompt 交給 LLM；並在 LLM 吐出結果後進行解析，決定下一步是該講話（轉發給 speak）還是執行任務（轉發給 tools）。llm_engine.py： 純粹的推論引擎（如 llama.cpp）。
 
 action/ (行動層 / 執行手腳)
 
