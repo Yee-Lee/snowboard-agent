@@ -186,8 +186,9 @@ UBYTE DEV_ModuleInit(void)
 
     #if USE_SPI
         printf("USE_SPI\r\n"); 
-        SPI_Handle = lgSpiOpen(0, 0, 10000000, 0);
+        //SPI_Handle = lgSpiOpen(0, 0, 10000000, 0);
 
+        SPI_Handle = lgSpiOpen(0, 0, 40000000, 0);
     #elif USE_IIC   
         printf("USE_IIC\r\n");		
         OLED_DC_0;

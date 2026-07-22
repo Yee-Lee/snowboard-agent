@@ -181,7 +181,6 @@ function:   Update all memory to OLED
 ********************************************************************************/
 void OLED_1in5_rgb_Display(UBYTE *Image)
 {
-    UWORD i, j, temp;
 
     OLED_WriteReg(0x15);
     OLED_WriteData(0);
@@ -191,12 +190,24 @@ void OLED_1in5_rgb_Display(UBYTE *Image)
     OLED_WriteData(127);
     // fill!
     OLED_WriteReg(0x5C);   
-     
-    for(i=0; i<OLED_1in5_RGB_HEIGHT; i++)
-        for(j=0; j<OLED_1in5_RGB_WIDTH*2; j++)
-        {
-            temp = Image[j + i*256];
-            OLED_WriteData(temp);
-        }
+  
+    // 3. 將資料控制腳位 (DC) 設為高電位 (Data)
+    OLED_DC_1; 
+
+    // 4. 解決 Linux SPI 限制：每次最大傳輸 4096 Bytes
+    uint32_t total_size = OLED_1in5_RGB_WIDTH * OLED_1in5_RGB_HEIGHT * 2;
+    uint32_t chunk_size = 4096;
+    
+    for(uint32_t i = 0; i < total_size; i += chunk_size) {
+        // 傳遞每個 chunk 的起始記憶體位址與長度
+        DEV_SPI_Write_nByte(&Image[i], chunk_size);
+    }
+
+//    for(i=0; i<OLED_1in5_RGB_HEIGHT; i++)
+//        for(j=0; j<OLED_1in5_RGB_WIDTH*2; j++)
+//        {
+//            temp = Image[j + i*256];
+//            OLED_WriteData(temp);
+//        }
 }
 
