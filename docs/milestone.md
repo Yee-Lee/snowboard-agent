@@ -1,346 +1,219 @@
-# 軟體工程開發策略：Skeleton First，Mock 測試驅動
+# Snowboard 實作里程碑
 
-以軟體工程的最佳實踐來說，我們應該採用「**骨架優先（Skeleton
-First），Mock 測試驅動**」的策略。
+依 `arch.md` 的架構分階段推進，採用 **Skeleton First、Mock 測試驅動** 策略——先讓系統在沒有硬體、沒有 AI 的情況下跑通，再逐步替換底層實作。
 
-建議將開發分為四個明確的階段，從系統的「神經」開始搭建。
+---
 
-------------------------------------------------------------------------
+## 開發原則
 
-## 第一階段：打造神經中樞與介面契約
+1. **降低同時卡關風險**：不同時打硬體、驅動、模型、系統邏輯
+2. **介面先於實作**：`base.py` 與事件型別穩定後，各實作可獨立替換
+3. **每階段有明確驗收**：跑得起來 ≠ 完成，需符合該階段的可觀察行為
+4. **常駐骨架不動**：從 M1 到 M4，`core/event_bus` 與 `core/state_manager` 只增加事件與轉移規則，不重構
 
-> **The Backbone & Interfaces**
+---
 
-這是整個專案成敗的關鍵。在此階段，我們完全不碰任何硬體，也不載入任何 AI
-模型。
+## M1：神經中樞與介面契約
 
-### 1. 定義通訊協定：`event_bus/`
+> **The Backbone & Interfaces**——完全不碰硬體、不載入 AI 模型
 
-實作基於 `asyncio.Queue` 的 Event Bus。
+### 範圍
 
-在 `topics.py` 或 `events.py` 中，使用 `dataclass`
-精準定義出架構文件中列出的所有事件 Payload，例如：
+**1. Event Bus**（`core/event_bus/`）
+- 基於 `asyncio.Queue` 或 dict-based pub/sub 的最小實作
+- `subscribe(event_type, handler)`、`publish(event)`
+- 已知型別但無 subscriber → log warning
+- 錯誤隔離：一個 handler 拋錯不影響其他 handler
 
--   `WakeDetected`
--   `StateChanged`
--   `StartListening`
+**2. 事件型別**（`core/event_bus/events.py`）
+- 用 `@dataclass(frozen=True)` 定義 arch.md §10.2 全部事件
+- 分三類：事實通報、命令、狀態變化
 
-### 2. 定義抽象契約：`base.py`
+**3. 抽象契約**（各層 `base.py`）
+- `wake/base.py`：`WakeTrigger`（start / stop）
+- `perception/base.py`：`Perception`（perceive）
+- `action/base.py`：`Action`（execute）
+- `adaptor/base.py`：`Adaptor`（start / stop）
+- `core/audio/base.py`：`AudioInput`、`AudioOutput`
+- 全部用 `Protocol`；不含實作邏輯；不 import 第三方 lib
 
-寫出以下模組中的 `Protocol` 介面：
+**4. StateManager (SM)**（`core/state_manager/`）
+- 訂閱事實通報、發布命令與 `StateChanged`
+- 完整實作 arch.md §11.2 狀態轉移表
+- Guard 擋非法時序（log warning + 忽略）
 
--   `wake/base.py`
--   `perception/base.py`
--   `action/base.py`
+**5. 骨架程式**
+- `main.py` 完成組裝：讀 config → 建 bus → 建 SM → 掛 subscriber → `asyncio.run()`
+- `core/config/`、`core/logger.py` 最小可用版本
 
-確定所有核心方法的介面與簽章，例如：
+### 驗收條件
 
--   `start()`
--   `stop()`
--   `execute()`
+- 跑 `py -3.11 -m sbd.main`（RPi 上為 `python3.11 -m sbd.main`），能啟動 event loop 且不 crash
+- 用 `py -3.11 -m pytest` 測 SM 的所有轉移：合法轉移走通、非法轉移被 guard 擋掉並 log
+- 測 event bus：多 subscriber、handler 錯誤隔離
+- **不需要**任何實作能真的動作——所有實作類都不存在
 
-### 3. 實作狀態機：`state_manager/`
+### 不做
 
-完成 `StateManager` 的核心邏輯，包括：
+- 任何硬體 I/O、任何 AI 模型、任何 mock 實作
+- Adaptor 具體實作（display/leds/external_broker）
 
--   訂閱事件
--   狀態切換
--   Guard 防呆邏輯
+---
 
-例如，系統狀態可以按照以下流程流轉：
+## M2：Mock Pipeline 走通全流程
 
-``` text
-IDLE → WAKE → PERCEPTION → BRAIN → ACTION → IDLE
-```
+> **The Dummy Pipeline**——驗證事件流與狀態機在完整生命週期下正確運作
 
-同時需要處理非預期事件，例如：
+### 範圍
 
-> 在 `ACTION` 狀態下收到 `Interrupt` 時，應該如何處理？
+為每一層寫一個極簡 mock，讓 `py -3.11 -m sbd.main` 能跑一次完整的 IDLE → WAKE → PERCEPTION → THINK → ACTION → IDLE。
 
-### 第一階段目標
+**Mock 實作**
+- `wake/manual/`：讀 stdin，使用者按 Enter → publish `WakeDetected(source="manual")`
+- `perception/mock/`：收到 `StartPerception` 後 `asyncio.sleep(1)`，publish `PerceptionResult(text="今天天氣如何")`
+- `brain/reasoner.py`：先寫死邏輯（不接 LLM），收到 `PerceptionResult` → `asyncio.sleep(2)` → publish `SpeakRequested(text="這是一段測試回應")`
+- `action/speak/mock/`：收到 `SpeakRequested` → print `[SPEAK] ...` → publish `SpeechFinished`
+- `action/tool/`：註冊表骨架 + 一個 `time_tool` 供未來測試 tool_call 流程
 
-完成系統的「神經中樞」與所有介面契約，使後續的 Mock、硬體與 AI
-模組都能透過穩定的介面接入。
+**Adaptor 骨架**
+- `adaptor/display/mock/`：訂閱 `StateChanged`，print `[DISPLAY] state=...`
+- `adaptor/leds/mock/`：同上，print `[LED] state=...`
 
-------------------------------------------------------------------------
+### 驗收條件
 
-## 第二階段：建立假人測試管線
+- 手動觸發 wake，log 顯示完整事件流與六狀態轉移
+- 中斷測試：ACTION 狀態下再觸發 wake → guard 擋掉 + log warning
+- 錯誤測試：mock 內主動 `raise` → SM 進 ERROR → 超時回 IDLE
+- 一次跑完不 crash、記憶體不漲
 
-> **The Dummy Pipeline**
+### 不做
 
-有了神經與介面之後，我們需要驗證各個元件是否能夠順暢運作。
+- 真實 ASR / LLM / TTS
+- 真實麥克風 / 喇叭 / OLED / GPIO
+- Tool calling 完整流程（M4 才做）
 
-請為每個層級寫一個極度簡陋的 Mock 實作。
+---
 
-### Mock Wake
+## M3：接上硬體 HAL
 
-每隔 10 秒自動發佈一次 `WakeDetected`。
+> **Hardware HAL**——mock 逐步換成真硬體，AI 仍為 mock
 
-或者，也可以提供一個簡單的 CLI 輸入介面，讓開發者手動觸發事件。
+### 範圍
 
-### Mock Perception
+**1. 音訊 I/O**（`core/audio/`）
+- I2S mic 讀 PCM 串流實作
+- I2S speaker 播 PCM 串流實作
+- 獨立測試腳本：`scripts/record_sample.py`、`scripts/play_sample.py`
+- 驗證無底噪、無 buffer underrun
 
-收到啟動命令後：
+**2. Wake 硬體實作**
+- `wake/button/`：GPIO 按鈕短按 → `WakeDetected(source="button")`
+- 保留 `wake/manual/` 作為開發用備選
 
-1.  `await asyncio.sleep(1)`
-2.  發佈一組寫死的文字：
+**3. OLED**（`core/display/` + `adaptor/display/`）
+- `core/display/`：SPI OLED 低階原語
+- `adaptor/display/`：訂閱 `StateChanged` → 繪製對應圖示
 
-``` python
-PerceptionResult(text="今天天氣如何")
-```
+**4. LED**（`core/gpio/` + `adaptor/leds/`）
+- `core/gpio/`：GPIO 存取封裝（避免 pin 衝突）
+- `adaptor/leds/`：訂閱 `StateChanged` → 燈號變化
 
-### Mock Brain
+**5. Perception 半實作**
+- `perception/listen/`：從 core/audio 拉 PCM，但 ASR 仍為 mock（回傳寫死文字或音檔長度）
+- VAD 演算法可先接上（判斷段落結束）
 
-收到感知結果後：
+### 驗收條件
 
-1.  等待 2 秒
-2.  發佈：
+- 按按鈕 → OLED 切 listening 圖示 → 錄音 → 播放 mock 回應 → 回 idle → OLED 切 idle 圖示
+- 音訊測試腳本能獨立跑通，PCM 品質可接受
+- GPIO 資源集中管理，button/led 無衝突
+- SM 邏輯與事件型別**零改動**
 
-``` python
-SpeakRequested(text="今天天氣很好")
-```
+### 不做
 
-### Mock Action
+- 真實 ASR / LLM / TTS 推論
+- MQTT / 外部整合（`adaptor/external_broker/` 保留骨架）
+- CSI 相機（`core/camera/`、`perception/look/` M4 後）
 
-收到說話命令後：
+---
 
-1.  在 Console 印出：
+## M4：注入 AI 模型
 
-``` text
-[Playing Audio]: 今天天氣很好
-```
+> **AI Models Integration**——mock 換成真實推論引擎
 
-2.  等待 2 秒
-3.  發佈：
+### 範圍
 
-``` text
-SpeechFinished
-```
+依相依關係與感知延遲影響順序推進：
 
-### 階段里程碑
+**1. ASR**（`perception/listen/` 完整版）
+- 接入 ASR 引擎（暫不指定型號）
+- `core/audio` 麥克風串流 → VAD 切段 → ASR → publish `PerceptionResult`
+- Benchmark：RTF、WER（`scripts/benchmark_asr.py`）
 
-執行：
+**2. TTS**（`action/speak/` 完整版）
+- 接入 TTS 引擎
+- 串流輸出：邊生成邊播（降低感知延遲）
+- 常用短語預生成快取（如「好的」「請稍等」）
 
-``` bash
-python main.py
-```
+**3. LLM + Tool Calling**（`brain/reasoner.py` 完整版）
+- 接入 LiteRT-LM + Gemma3:e2b
+- `prompt_builder.py`：system prompt、tool schema 格式化
+- `llm_engine.py`：async chat 介面（內部 `to_thread` 跑推論）
+- Tool calling 完整迴圈：LLM → `ExecuteTool` → `ToolExecuted` → 再次 LLM
+- Benchmark：TTFT、tokens/sec（`scripts/benchmark_llm.py`）
 
-應該能在終端機看到乾淨的 Log，顯示：
+**4. 內建工具**（`action/tool/builtin/`）
+- 至少一個實用工具（如 `time_tool`）
+- Tool 註冊表 + schema 自動生成
 
--   事件在 Event Bus 上流動
--   狀態機在六個狀態間正常流轉
--   非預期事件能被 Guard 正確攔截
--   Mock Pipeline 能完成完整的一次互動流程
+### 驗收條件
 
-理想的狀態流程：
+- 按按鈕 → 說「現在幾點」→ 助理語音回答當前時間
+- 端到端延遲拆解記錄於 `docs/evaluation/end_to_end.md`
+- 三個 benchmark 腳本可重複跑，結果穩定
+- Tool calling 流程正確：LLM 決策、dispatcher 執行、結果餵回
 
-``` text
-IDLE
-  ↓
-WAKE
-  ↓
-PERCEPTION
-  ↓
-BRAIN
-  ↓
-ACTION
-  ↓
-IDLE
-```
+### 不做（延後至 M5+）
 
-------------------------------------------------------------------------
+- Wake word 引擎（`wake/voice/`）
+- CSI 相機與視覺（`core/camera/`、`perception/look/`）
+- MQTT 整合（`adaptor/external_broker/`、`wake/event/`）
+- 多輪對話 memory
+- systemd 上線部署（`deploy/`）
 
-## 第三階段：打通硬體抽象層
+---
 
-> **Hardware HAL**
+## M5+：擴充功能
 
-當系統邏輯已經透過 Mock Pipeline 跑通後，再開始對接實體世界。
+以下按需求優先權排序，各自獨立可插拔：
 
-這個階段的重點是建立 `core/` 底下的硬體驅動與抽象層。
+| 項目 | 主要工作 | 依賴 |
+|---|---|---|
+| Wake word 引擎 | `wake/voice/` 實作、常駐低耗監聽 | M4 完成 |
+| 相機與 YOLO | `core/camera/`、`perception/look/`、`action/tool/builtin/vision_tool` | M4 完成 |
+| MQTT 整合 | `adaptor/external_broker/`、`wake/event/`、共享 MQTT client | M4 完成 |
+| 多輪對話 | `brain/` 引入 memory / session | M4 完成 |
+| 上線部署 | `deploy/snowboard.service` + install script | M4 穩定後 |
+| 延遲優化 | 量化、模型 prewarm、串流優化 | M4 完成 |
 
-### 1. 音訊管線：`core/audio/`
+---
 
-這是最容易卡關的部分。
+## 階段對照表
 
-需要實作：
+| 階段 | 目標 | 硬體 | AI |
+|---|---|---|---|
+| M1 | Event Bus + Protocol + StateManager | ❌ | ❌ |
+| M2 | Mock Pipeline 走通六狀態 | ❌ | ❌ |
+| M3 | 硬體 HAL 上線 | ✅ | ❌ |
+| M4 | 真實 AI 模型接入 | ✅ | ✅ |
+| M5+ | 擴充功能 | ✅ | ✅ |
 
--   I2S 麥克風驅動
--   I2S 喇叭驅動
--   PCM 串流讀取
--   PCM 音訊播放
+---
 
-建議寫一支獨立的硬體測試腳本，確認：
+## 貫穿全期的紀律
 
--   能正確讀取 PCM 串流
--   能將 PCM 資料推送至喇叭播放
--   沒有明顯底噪
--   沒有 `Buffer Underrun` 問題
-
-例如：
-
-``` text
-Microphone → PCM Stream → Audio Processing
-                              ↓
-Speaker ← PCM Stream ← Audio Output
-```
-
-### 2. 視覺與燈號：`core/display/`、`core/gpio/`
-
-實作：
-
--   OLED 的繪製原語
--   LED 閃爍邏輯
--   GPIO 控制
-
-### 3. 掛上 Adapter
-
-將以下 Adapter 接入 Event Bus：
-
--   `adaptor/display`
--   `adaptor/leds`
-
-讓實體螢幕與 LED 燈號能隨著 Dummy Pipeline 的狀態切換而變化。
-
-例如：
-
-``` text
-StateManager
-     │
-     ▼
- Event Bus
-  ┌──┴──┐
-  ▼     ▼
-Display LEDs
-```
-
-------------------------------------------------------------------------
-
-## 第四階段：注入靈魂
-
-> **AI Models Integration**
-
-最後一步，才是把 Mock 掉的假人換成真正的 AI 引擎。
-
-因為前面的介面（`Protocol`）已經定義完成，這個抽換過程應該會非常順利。
-
-------------------------------------------------------------------------
-
-### 1. Wake & Listen
-
-掛上真正的：
-
--   Wake Word 模型
--   ASR 引擎
-
-例如：
-
--   Whisper.cpp
--   Sherpa-onnx
-
-用真正的 Perception 實作取代 `Mock Perception`。
-
-------------------------------------------------------------------------
-
-### 2. Action：TTS
-
-掛上：
-
--   Matcha-TTS
--   RVC
-
-確保生成的音訊能順利交給：
-
-``` text
-TTS / Voice Conversion
-          ↓
-      PCM Audio
-          ↓
-      core/audio
-          ↓
-       Speaker
-```
-
-------------------------------------------------------------------------
-
-### 3. Brain：LLM
-
-最後掛上：
-
--   LiteRT-LM
--   Gemma 3
-
-完成：
-
--   Prompt 封裝
--   LLM 推論
--   Tool Calling 邏輯
--   對話上下文管理
-
-------------------------------------------------------------------------
-
-## 最終整體架構
-
-``` text
-┌─────────────────────────────────────────────────────────┐
-│                    AI Application Layer                 │
-│                                                         │
-│  Wake Word → Perception → Brain / LLM → Action / TTS   │
-│                                                         │
-└───────────────────────┬─────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│                     Event Bus                            │
-│                                                         │
-│        asyncio.Queue + Typed Event Payloads             │
-│                                                         │
-└───────────────────────┬─────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│                    State Manager                        │
-│                                                         │
-│   IDLE → WAKE → PERCEPTION → BRAIN → ACTION → IDLE     │
-│                                                         │
-│                    + Guard Logic                        │
-└───────────────────────┬─────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Hardware HAL                         │
-│                                                         │
-│   Audio / I2S   Display / OLED   GPIO / LEDs            │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-------------------------------------------------------------------------
-
-## 開發順序總結
-
-  階段       核心目標                                      是否使用真實硬體   是否使用真實 AI
-  ---------- ------------------------------------------- ------------------ -----------------
-  第一階段   建立 Event Bus、Protocol 與 State Machine                   ❌                ❌
-  第二階段   使用 Mock 驗證完整 Pipeline                                 ❌                ❌
-  第三階段   對接 Hardware HAL                                           ✅                ❌
-  第四階段   注入真正 AI Models                                          ✅                ✅
-
-------------------------------------------------------------------------
-
-## 核心原則
-
-> **先讓系統在沒有硬體、沒有 AI 的情況下跑通，再逐步替換底層實作。**
-
-這樣做的好處是：
-
-1.  **降低開發風險**：不會同時被硬體、驅動、模型與系統邏輯卡住。
-2.  **快速驗證架構**：可以先確認 Event Bus、State Machine
-    與各層介面是否合理。
-3.  **容易測試**：所有核心邏輯都可以在沒有實體硬體的環境下測試。
-4.  **容易替換實作**：只要遵守既定的 `Protocol`，Mock、真實硬體與 AI
-    模組都可以互相替換。
-5.  **降低整合成本**：當 AI
-    模型最後加入時，系統骨架已經穩定，不需要重新設計整個架構。
-
-**最重要的原則：不要一開始就追求「能聽、能看、能說」；先確保系統的神經、骨架與介面能夠穩定運作。**
-
+- **不跳階段**：M2 未跑通不進 M3；M3 未跑通不接 AI
+- **介面不動**：M1 定下的 `base.py` 與事件型別，除非有本質理解錯誤，否則不改
+- **每階段留一段回歸時間**：換實作後重跑上一階段的驗收
+- **測試同步累積**：M1 起 `tests/` 就開始長；每加一個實作，補一組 mock-based 測試
+- **文件同步更新**：`docs/decisions.md` 記錄關鍵取捨；`docs/evaluation/` 記錄 benchmark 結果

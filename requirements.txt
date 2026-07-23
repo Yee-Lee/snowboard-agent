@@ -1,0 +1,25 @@
+# Runtime deps for RPi5 (pin exact versions when POC stabilises)
+
+# Audio I/O
+sounddevice
+numpy
+
+# ASR / TTS (choose one implementation per module)
+# faster-whisper        # ASR
+# openai-whisper        # ASR alternative
+# piper-tts             # TTS
+
+# On-device LLM
+# litert-lm             # add once available on PyPI / build from source
+
+# Display / camera / IO
+luma.oled
+picamera2
+spidev
+RPi.GPIO
+
+# Messaging
+paho-mqtt
+
+# Dev
+pytest

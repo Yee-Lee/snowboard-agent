@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Runtime artifacts
+captures/
+*.wav
+*.log
+
+# Model weights (large binaries — fetch via scripts)
+models/**
+!models/.gitkeep
+
+# Local overrides
+config.local.yaml
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Test cache
+.pytest_cache/
+*.diff
