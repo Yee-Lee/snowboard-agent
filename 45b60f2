@@ -1,0 +1,1323 @@
+From 45b60f277413a50cc2a6c24d131bd0d154613f44 Mon Sep 17 00:00:00 2001
+From: mtk24064 <yee.lee@mediatek.com>
+Date: Fri, 24 Jul 2026 10:29:53 +0800
+Subject: [PATCH] arch: M1: org documents
+
+organize documents for M1 stage.
+---
+ README.md                      | 121 ++++++++++-------
+ docs/implement.md              | 219 +++++++++++++++++++++++++++++++
+ docs/milestone.md              | 219 +------------------------------
+ src/sbd/core/audio/README.md   | 173 +++++++++++++++++++++++++
+ src/sbd/core/display/README.md | 228 ++++++++++++++++++++++++++++-----
+ tests/README.md                | 189 +--------------------------
+ 6 files changed, 671 insertions(+), 478 deletions(-)
+ create mode 100644 docs/implement.md
+ create mode 100644 src/sbd/core/audio/README.md
+
+diff --git a/README.md b/README.md
+index 836659c..e0c84cc 100644
+--- a/README.md
++++ b/README.md
+@@ -1,68 +1,97 @@
+ # Snowboard Agent
+ 
+-?Ｙ? AI 隤?拍?嚗銵 Raspberry Pi 5 (Pi OS)??
++Snowboard Agent is an offline AI voice assistant for Raspberry Pi 5 and Raspberry Pi OS.
++It is designed to run speech recognition, language-model inference, and speech synthesis
++locally, while integrating audio, camera, OLED, GPIO, tool calling, and MQTT through an
++event-driven architecture.
+ 
+-> **???*嚗OC ?銝准瑽底閬?[`docs/arch.md`](docs/arch.md)?祕雿?畾菔? [`docs/milestone.md`](docs/milestone.md)??
++The target runtime is Linux. Windows is supported only for POC development and tests that
++do not require Raspberry Pi hardware.
+ 
+----
++## Requirements
+ 
+-## 蝟餌絞璁?
++- Raspberry Pi 5 with Raspberry Pi OS for deployment
++- Python 3.11 or later
++- Git
++- Optional hardware: I2S microphone and speaker, SPI OLED, CSI camera, and GPIO devices
+ 
+-- **蝡臬??**嚗SR / LLM / TTS ?典?砍?瑁?
+-- **鈭辣撽?**嚗芋蝯?銝霅??券? event bus ??state manager 皞?
+-- **??望??惜**嚗wake ??perception ??brain ??action` + `adaptor` ?函?閮 + `core` ??蝖祇? HAL ?蝷身??
++## Clone the repository
+ 
+-## 蝖祇?
++```bash
++git clone https://github.com/Yee-Lee/snowboard-agent.git
++cd snowboard-agent
++```
++
++To work on a specific branch, fetch it and switch after cloning:
++
++```bash
++git fetch origin
++git switch <branch-name>
++```
+ 
+-- I2S 暻亙?憸具2S ?
+-- SPI OLED
+-- 8MP CSI ?豢?
+-- GPIO嚗??ED?振?餅?塚?
++## Set up the Python environment
+ 
+-## ?桅?蝯?
++Create an isolated virtual environment and install the project with development dependencies:
+ 
++```bash
++python -m venv .venv
++source .venv/bin/activate
++python -m pip install --upgrade pip
++python -m pip install -e ".[dev]"
+ ```
+-snowboard-agent/
+-??? src/sbd/
+-??  ??? core/           ?箇?閮剜 + 蝖祇? HAL嚗vent_bus?tate_manager?onfig?udio?isplay?amera?pio嚗?
+-??  ??? wake/           閫貊撅歹?voice / button / event嚗?
+-??  ??? perception/     ?撅歹?listen / read / look嚗?
+-??  ??? brain/          隤撅歹?reasoner + LLM + prompt_builder嚗?
+-??  ??? action/         銵?撅歹?speak / tool嚗?
+-??  ??? adaptor/        憭撌亙 / ???曉?嚗isplay / leds / external_broker嚗?
+-??  ??? main.py         蝯?????
+-??? tests/              蝝?頛臬?葫閰?
+-??? scripts/            鈭箸????極??
+-??? models/             璅∪?甈?嚗itignored嚗?
+-??? docs/
+-    ??? arch.md         ?嗆??辣嚗?憡?
+-    ??? milestone.md    撖虫?閮嚗1?5+嚗?
+-    ??? arch_obsoleted.md
++
++Run the automated checks:
++
++```bash
++python -m pytest -v
+ ```
+ 
+-## 敹恍???
++Start the application:
+ 
+-?閬?Python 3.11+嚗indows 銝 `py -3.11`嚗Pi5 ??`python3.11`嚗?
++```bash
++python -m sbd.main
++```
++
++The current backbone waits in the `IDLE` state. Press `Ctrl+C` to stop it.
++
++## Raspberry Pi setup
++
++On a fresh Raspberry Pi OS installation, review and run the setup script from the repository
++root:
+ 
+ ```bash
+-# 摰?嚗??潭芋撘?+ 皜祈岫?訾?嚗?
+-py -3.11 -m pip install -e ".[dev]"
++chmod +x scripts/setup_rpi.sh
++./scripts/setup_rpi.sh
++source .venv/bin/activate
++```
++
++The script enables required hardware interfaces, installs system packages, and creates the
++Python environment. Confirm that its SPI, I2S, camera, and package settings match your board
++and connected hardware before running it.
+ 
+-# 頝葫閰?
+-py -3.11 -m pytest -v
++## Windows POC development
+ 
+-# ?? backbone嚗1嚗?
+-py -3.11 -m sbd.main
++Windows may be used for pure Python logic and mock-based tests. Hardware integration must
++still be verified on Linux/Raspberry Pi OS.
++
++```powershell
++python -m venv .venv
++.\.venv\Scripts\Activate.ps1
++python -m pip install -e ".[dev]"
++python -m pytest -v
+ ```
+ 
+-## ??挾
++All documentation uses `python` consistently; it refers to the interpreter from the active
++virtual environment.
++
++## Documentation
+ 
+-| ?挾 | ?格? | 蝖祇? | AI |
+-|---|---|---|---|
+-| M1 | Event Bus + Protocol + StateManager | ??| ??|
+-| M2 | Mock Pipeline 韏圈???| ??| ??|
+-| M3 | 蝖祇? HAL 銝? | ??| ??|
+-| M4 | ?祕 AI 璅∪??亙 | ??| ??|
+-| M5+ | ?游??嚗ake word?OLO?QTT??頛芥蝵莎? | ??| ??|
++- [Architecture](docs/arch.md) ??system boundaries, module responsibilities, event model,
++  state machine, execution model, and configuration design
++- [Implementation status](docs/implement.md) ??completed work, test baseline, roadmap, and
++  milestone acceptance criteria
++- [Audio HAL](src/sbd/core/audio/README.md) ??audio I/O design and backend strategy
++- [Display HAL](src/sbd/core/display/README.md) ??display driver and native-library strategy
+ 
+-?桀?摰? M1嚗底閬?[`docs/milestone.md`](docs/milestone.md)??
++Architecture details are intentionally maintained in `docs/arch.md` instead of being
++duplicated here.
+diff --git a/docs/implement.md b/docs/implement.md
+new file mode 100644
+index 0000000..cc870e7
+--- /dev/null
++++ b/docs/implement.md
+@@ -0,0 +1,219 @@
++# Snowboard 撖虫?????頝舐?
++
++?祆?隞園?銝剛???Snowboard ??祕雿葫閰血皞?蝥極雿? M1?5+ ??蝣?
++蝟餌絞閮剛??芋蝯?蝝誑 [`arch.md`](arch.md) ?箸?嚗?辣??????啣鋆～?
++?銝?憒?撽??
++
++> ?敺?堆?2026-07-24  
++> ?桀??挾嚗1 撌脣???銝??挾??M2 Mock Pipeline
++
++## ?蝑
++
++?∠ Skeleton First?ock 皜祈岫撽???摨??瘝?蝖祇???AI 璅∪???瘜?
++韏圈頂蝯梧??郊?踵??箇′擃?HAL ??撖行隢???
++
++- 隞?撖虫?嚗?隞嗅??亥? `base.py` Protocol ?帘摰?
++- ??畾菟?雿◢?迎?蝟餌絞?摩?′擃?璅∪?銝???挾??撠
++- 瘥?畾菟閬??航?撖?撽蝯?
++- Event Bus ??StateManager ?臬虜擏爸?塚?敺?隞交?銝?
++- ?啣??賢??敞蝛葫閰佗?銝虫???葫閰阡?
++- 撖虫??身閮霈??郊?湔 `arch.md` ??辣
++
++## ?桀?撖虫?
++
++M1 撌脣????摰對?
++
++- `src/sbd/core/event_bus/`
++  - 靘?隞嗅??亥??梯??澆?
++  - 憭?subscriber
++  - handler ?航炊?
++  - ??subscriber warning
++- `src/sbd/core/state_manager/`
++  - `IDLE`?WAKE`?PERCEPTION`?THINK`?ACTION`?ERROR` ?剔???
++  - ??頧宏??瘜?摨?guard?rror recovery ??shutdown
++  - 靘?wake source/payload ?豢? perception 憿?
++- `src/sbd/core/config/`
++  - dataclass defaults
++  - optional local YAML overlay
++  - `SBD_LOG_LEVEL` ?啣?霈閬神
++- `src/sbd/core/logger.py`
++  - 蝯曹? logging setup
++- ?質情憟?
++  - `wake/base.py`
++  - `perception/base.py`
++  - `action/base.py`
++  - `adaptor/base.py`
++  - `core/audio/base.py`
++- `src/sbd/main.py`
++  - 蝯? config?ogger?vent Bus ??StateManager
++  - ??敺?? `IDLE`嚗?敺?shutdown
++
++?桀?撠撖虫?隞颱??祕蝖祇? I/O?ock pipeline?SR?LM ??TTS??
++
++## 皜祈岫?箸?
++
++?典??刻??祉憓??瑁?嚗?
++
++```bash
++python -m pytest -v
++```
++
++?桀??箸???19 ?葫閰佗?
++
++| 皜祈岫瑼?| ?賊? | 閬?蝭? |
++|---|---:|---|
++| `tests/test_event_bus.py` | 5 | ?澆???閮????晷?隤日??Ｕ?瘨??梯? warning |
++| `tests/test_state_manager.py` | 14 | ???蝘颯erception ?詨??ool/text response?nterrupt?uard?rror ??shutdown |
++
++皜祈岫銝?閬?Raspberry Pi 蝖祇???AI 璅∪??憓??賣??????飛?箸?嚗蒂??
++mock pipeline?ool registry?rompt builder?onfig ??VAD 蝑??摩鋆葫閰艾?
++
++撣貊皜祈岫?賭誘嚗?
++
++```bash
++# ?券皜祈岫
++python -m pytest -v
++
++# ??皜祈岫瑼?
++python -m pytest tests/test_event_bus.py -v
++python -m pytest tests/test_state_manager.py -v
++
++# 靘?蝔梁祟??
++python -m pytest -v -k wake
++python -m pytest -v -k guard
++
++# 摰 traceback
++python -m pytest -v --tb=long
++```
++
++## 撌脩敺齒??蝝釣????
++
++?脣 M2 ??隞亦??M1 憟??箏皞雁????隞嗆?嚗?
++
++```text
++StateManager -> StartReasoning -> reasoner -> LLMResponse
++StateManager -> SpeakRequested -> speech action -> SpeechFinished
++```
++
++??踹? reasoner ?湔?澆? `SpeakRequested` ????StateManager??
++
++?嗡?撌脩敺齒嚗?
++
++- `perception_timeout_seconds` 撌脫?閮剖?嚗? timeout 銵撠撖虫?
++- Event Bus ?桀??芾???handler exception嚗orker ?亥?霈頂蝯梢脣 `ERROR`嚗??Ⅱ?澆?
++  `ErrorOccurred`
++- `.env` 頛隞??隞
++- `config.example.yaml` ??`.env.example` 撠撱箇?
++
++## M1嚗?蝬葉璅?隞憟?
++
++???摰???
++
++### 蝭?
++
++- Event Bus ???港?隞?dataclass
++- ???賡望?撅斤? Protocol
++- StateManager ????蝘?guard
++- config?ogging?ain entry point
++- Event Bus ??StateManager ?桀?皜祈岫
++
++### 撽
++
++- `python -m pytest`嚗?9 passed
++- `python -m sbd.main`嚗??銝血?? `IDLE`
++- 銝?蝖祇???AI 璅∪?
++
++## M2嚗ock Pipeline
++
++???銝??挾??
++
++### 蝭?
++
++- `wake/manual/`嚗tdin 閫貊 `WakeDetected(source="manual")`
++- `perception/mock/`嚗??`StartPerception` 敺撣摰?`PerceptionResult`
++- `brain/reasoner.py`嚗??`StartReasoning` 敺誑?箏??摩?澆? `LLMResponse`
++- `action/speak/mock/`嚗??`SpeakRequested` 敺撓?箸?摮蒂?澆? `SpeechFinished`
++- `action/tool/`嚗ool registry 撉冽??`time_tool`
++- `adaptor/display/mock/`?adaptor/leds/mock/`嚗???`StateChanged` 銝西撓?箇???
++- mock pipeline ????游?皜祈岫
++
++### 撽
++
++- ??閫貊敺粥摰?`IDLE ??WAKE ??PERCEPTION ??THINK ??ACTION ??IDLE`
++- ?????◤ guard ??銝西???warning
++- mock worker ?航炊?航???`ErrorOccurred`嚗頂蝯梯粥 `ERROR ??IDLE`
++- 銝甈∪??湔?蝔? crash嚗?銴銵???憓? task ???園?
++
++### 銝???
++
++- ?祕 ASR?LM?TS
++- ?祕暻亙?憸具??准LED ??GPIO
++- 摰 LLM tool-calling loop
++
++## M3嚗′擃?HAL
++
++???敺?M2 摰?敺?憪?
++
++### 蝭?
++
++- I2S mic/speaker ??ALSA audio backend
++- ?函????暹葫閰血極??
++- GPIO button wake trigger
++- SPI OLED display HAL ??state adaptor
++- GPIO LED adaptor ??pin ownership 蝞∠?
++- 敺?撖?PCM 霈?? ASR 隞 mock ??perception pipeline
++- 閬?瘙???VAD
++
++### 撽
++
++- ???????＊蝷箝??唾? mock ???剜?臬 Raspberry Pi 5 銝粥??
++- PCM ?釭?舀??瘝??? buffer underrun
++- GPIO pin ?∟?蝒?
++- M1/M2 ?飛皜祈岫靽???
++
++### 銝???
++
++- ?祕 ASR?LM?TS
++- MQTT?SI camera ??閬箸芋??
++
++## M4嚗I 璅∪??游?
++
++???敺?M3 摰?敺?憪?
++
++### 蝭?
++
++- ASR嚗CM?AD???唾儘霅? benchmark
++- TTS嚗??喳??葡瘚?曇?撣貊?剛?敹怠?
++- LLM嚗iteRT-LM?emma?rompt builder ??async inference wrapper
++- Tool calling嚗LM ??`ExecuteTool` ??`ToolExecuted` ???活?刻?
++- ?批遣 tool registry ?撠???典極??
++- ASR RTF/WER?LM TTFT/tokens-per-second ?垢?啁垢撱園蝝??
++
++### 撽
++
++- 雿輻?岷?????嚗??? tool calling ????銝西??喳?蝑?
++- benchmark ?舫?銴銵?蝯?閮???`docs/evaluation/`
++- M1?3 ?飛皜祈岫靽???
++
++## M5+嚗???函蔡
++
++???閬?銝准?
++
++| ? | 銝餉?撌乩? | ?蔭璇辣 |
++|---|---|---|
++| Wake word | `wake/voice/` 撣賊?雿??| M4 |
++| Camera / vision | camera HAL?isual perception?OLO/tool integration | M4 |
++| MQTT | external broker adaptor?vent wake?鈭?MQTT client | M4 |
++| 憭憚撠店 | brain memory/session | M4 |
++| ?函蔡 | systemd service ??install/uninstall scripts | M4 蝛拙? |
++| ??芸? | 璅∪????rewarm?葡瘚?撱園?孵? | M4 |
++
++## 摰?摰儔
++
++瘥??挾?芣??其誑銝?隞嗅???蝡????箏???
++
++- 閰脤?畾菟??嗆?憓???瑁?
++- ?啣????摩撌脫??芸?皜祈岫
++- ?Ｘ?皜祈岫?券??
++- Linux/Raspberry Pi 撠惇?撌脣?格?撟喳撽?
++- `arch.md`??辣?蝙?冽撘?????
+diff --git a/docs/milestone.md b/docs/milestone.md
+index b1607ea..5fb7b90 100644
+--- a/docs/milestone.md
++++ b/docs/milestone.md
+@@ -1,219 +1,6 @@
+ # Snowboard 撖虫???蝣?
+ 
+-靘?`arch.md` ?瑽??挾?券莎??∠ **Skeleton First?ock 皜祈岫撽?** 蝑??霈頂蝯勗瘝?蝖祇?????AI ??瘜?頝??郊?踵?摨惜撖虫???
++撖虫???葫閰血皞? M1?5+ 頝舐??歇蝯曹?蝘餉
++[`implement.md`](implement.md)??
+ 
+----
+-
+-## ???
+-
+-1. **?????⊿?憸券**嚗????′擃??芋?頂蝯梢?頛?
+-2. **隞?撖虫?**嚗base.py` ??隞嗅??亦帘摰?嚗?撖虫??舐蝡??
+-3. **瘥?畾菜??Ⅱ撽**嚗?敺絲靘???摰?嚗?蝚血?閰脤?畾萇??航?撖???
+-4. **撣賊?撉冽銝?**嚗? M1 ??M4嚗core/event_bus` ??`core/state_manager` ?芸???隞嗉?頧宏閬?嚗???
+-
+----
+-
+-## M1嚗?蝬葉璅?隞憟?
+-
+-> **The Backbone & Interfaces**???其?蝣啁′擃?頛 AI 璅∪?
+-
+-### 蝭?
+-
+-**1. Event Bus**嚗core/event_bus/`嚗?
+-- ?箸 `asyncio.Queue` ??dict-based pub/sub ??撠祕雿?
+-- `subscribe(event_type, handler)`?publish(event)`
+-- 撌脩?雿 subscriber ??log warning
+-- ?航炊?嚗???handler ?銝蔣?踹隞?handler
+-
+-**2. 鈭辣?**嚗core/event_bus/events.py`嚗?
+-- ??`@dataclass(frozen=True)` 摰儔 arch.md 禮10.2 ?券鈭辣
+-- ??憿?鈭祕??隞扎?????
+-
+-**3. ?質情憟?**嚗?撅?`base.py`嚗?
+-- `wake/base.py`嚗WakeTrigger`嚗tart / stop嚗?
+-- `perception/base.py`嚗Perception`嚗erceive嚗?
+-- `action/base.py`嚗Action`嚗xecute嚗?
+-- `adaptor/base.py`嚗Adaptor`嚗tart / stop嚗?
+-- `core/audio/base.py`嚗AudioInput`?AudioOutput`
+-- ?券??`Protocol`嚗??怠祕雿?頛荔?銝?import 蝚砌???lib
+-
+-**4. StateManager (SM)**嚗core/state_manager/`嚗?
+-- 閮鈭祕??撣隞方? `StateChanged`
+-- 摰撖虫? arch.md 禮11.2 ???蝘餉”
+-- Guard ??瘜?摨?log warning + 敹賜嚗?
+-
+-**5. 撉冽蝔?**
+-- `main.py` 摰?蝯?嚗? config ??撱?bus ??撱?SM ????subscriber ??`asyncio.run()`
+-- `core/config/`?core/logger.py` ?撠?函???
+-
+-### 撽璇辣
+-
+-- 頝?`py -3.11 -m sbd.main`嚗Pi 銝 `python3.11 -m sbd.main`嚗??賢???event loop 銝? crash
+-- ??`py -3.11 -m pytest` 皜?SM ????蝘鳴???頧宏韏圈?瘜?蝘餉◤ guard ??銝?log
+-- 皜?event bus嚗? subscriber?andler ?航炊?
+-- **銝?閬?*隞颱?撖虫??賜???雿??祕雿??賭?摮
+-
+-### 銝?
+-
+-- 隞颱?蝖祇? I/O?遙雿?AI 璅∪??遙雿?mock 撖虫?
+-- Adaptor ?琿?撖虫?嚗isplay/leds/external_broker嚗?
+-
+----
+-
+-## M2嚗ock Pipeline 韏圈瘚?
+-
+-> **The Dummy Pipeline**??霅?隞嗆??????典??渡??賡望?銝迤蝣粹?雿?
+-
+-### 蝭?
+-
+-?箸?銝撅文神銝?扔蝪?mock嚗? `py -3.11 -m sbd.main` ?質?銝甈∪??渡? IDLE ??WAKE ??PERCEPTION ??THINK ??ACTION ??IDLE??
+-
+-**Mock 撖虫?**
+-- `wake/manual/`嚗? stdin嚗蝙?刻? Enter ??publish `WakeDetected(source="manual")`
+-- `perception/mock/`嚗??`StartPerception` 敺?`asyncio.sleep(1)`嚗ublish `PerceptionResult(text="隞予憭拇除憒?")`
+-- `brain/reasoner.py`嚗?撖急香?摩嚗???LLM嚗??嗅 `PerceptionResult` ??`asyncio.sleep(2)` ??publish `SpeakRequested(text="?銝畾菜葫閰血???)`
+-- `action/speak/mock/`嚗??`SpeakRequested` ??print `[SPEAK] ...` ??publish `SpeechFinished`
+-- `action/tool/`嚗酉?”撉冽 + 銝??`time_tool` 靘靘葫閰?tool_call 瘚?
+-
+-**Adaptor 撉冽**
+-- `adaptor/display/mock/`嚗???`StateChanged`嚗rint `[DISPLAY] state=...`
+-- `adaptor/leds/mock/`嚗?銝?print `[LED] state=...`
+-
+-### 撽璇辣
+-
+-- ??閫貊 wake嚗og 憿舐內摰鈭辣瘚??剔???蝘?
+-- 銝剜皜祈岫嚗CTION ????孛??wake ??guard ?? + log warning
+-- ?航炊皜祈岫嚗ock ?找蜓??`raise` ??SM ??ERROR ??頞???IDLE
+-- 銝甈∟?摰? crash???園?銝撞
+-
+-### 銝?
+-
+-- ?祕 ASR / LLM / TTS
+-- ?祕暻亙?憸?/ ? / OLED / GPIO
+-- Tool calling 摰瘚?嚗4 ??嚗?
+-
+----
+-
+-## M3嚗銝′擃?HAL
+-
+-> **Hardware HAL**?ock ?郊???′擃?AI 隞 mock
+-
+-### 蝭?
+-
+-**1. ?唾? I/O**嚗core/audio/`嚗?
+-- I2S mic 霈 PCM 銝脫?撖虫?
+-- I2S speaker ??PCM 銝脫?撖虫?
+-- ?函?皜祈岫?單嚗scripts/record_sample.py`?scripts/play_sample.py`
+-- 撽??∪??芥 buffer underrun
+-
+-**2. Wake 蝖祇?撖虫?**
+-- `wake/button/`嚗PIO ???剜? ??`WakeDetected(source="button")`
+-- 靽? `wake/manual/` 雿??典???
+-
+-**3. OLED**嚗core/display/` + `adaptor/display/`嚗?
+-- `core/display/`嚗PI OLED 雿???
+-- `adaptor/display/`嚗???`StateChanged` ??蝜芾ˊ撠??內
+-
+-**4. LED**嚗core/gpio/` + `adaptor/leds/`嚗?
+-- `core/gpio/`嚗PIO 摮?撠?嚗??pin 銵?嚗?
+-- `adaptor/leds/`嚗???`StateChanged` ????霈?
+-
+-**5. Perception ?祕雿?*
+-- `perception/listen/`嚗? core/audio ??PCM嚗? ASR 隞 mock嚗??喳神甇餅?摮??單??瑕漲嚗?
+-- VAD 瞍?瘜?銝??斗畾菔蝯?嚗?
+-
+-### 撽璇辣
+-
+-- ??????OLED ??listening ?內 ??? ???剜 mock ?? ????idle ??OLED ??idle ?內
+-- ?唾?皜祈岫?單?賜蝡???PCM ?釭?舀??
+-- GPIO 鞈??葉蝞∠?嚗utton/led ?∟?蝒?
+-- SM ?摩??隞嗅???*?嗆??*
+-
+-### 銝?
+-
+-- ?祕 ASR / LLM / TTS ?刻?
+-- MQTT / 憭?游?嚗adaptor/external_broker/` 靽?撉冽嚗?
+-- CSI ?豢?嚗core/camera/`?perception/look/` M4 敺?
+-
+----
+-
+-## M4嚗釣??AI 璅∪?
+-
+-> **AI Models Integration**?ock ???祕?刻?撘?
+-
+-### 蝭?
+-
+-靘靘?靽??撱園敶梢???券莎?
+-
+-**1. ASR**嚗perception/listen/` 摰??
+-- ?亙 ASR 撘?嚗銝?摰???
+-- `core/audio` 暻亙?憸其葡瘚???VAD ?挾 ??ASR ??publish `PerceptionResult`
+-- Benchmark嚗TF?ER嚗scripts/benchmark_asr.py`嚗?
+-
+-**2. TTS**嚗action/speak/` 摰??
+-- ?亙 TTS 撘?
+-- 銝脫?頛詨嚗????嚗?雿??亙辣?莎?
+-- 撣貊?剛????翰??憒末??蝔???
+-
+-**3. LLM + Tool Calling**嚗brain/reasoner.py` 摰??
+-- ?亙 LiteRT-LM + Gemma3:e2b
+-- `prompt_builder.py`嚗ystem prompt?ool schema ?澆???
+-- `llm_engine.py`嚗sync chat 隞嚗??`to_thread` 頝隢?
+-- Tool calling 摰餈游?嚗LM ??`ExecuteTool` ??`ToolExecuted` ???活 LLM
+-- Benchmark嚗TFT?okens/sec嚗scripts/benchmark_llm.py`嚗?
+-
+-**4. ?批遣撌亙**嚗action/tool/builtin/`嚗?
+-- ?喳?銝?祕?典極?瘀?憒?`time_tool`嚗?
+-- Tool 閮餃?銵?+ schema ?芸???
+-
+-### 撽璇辣
+-
+-- ??????隤芥?典嗾暺? ?拍?隤???嗅???
+-- 蝡臬蝡臬辣?脫?閫??? `docs/evaluation/end_to_end.md`
+-- 銝?benchmark ?單?舫?銴?嚗??帘摰?
+-- Tool calling 瘚?甇?Ⅱ嚗LM 瘙箇??ispatcher ?瑁????今??
+-
+-### 銝?嚗辣敺 M5+嚗?
+-
+-- Wake word 撘?嚗wake/voice/`嚗?
+-- CSI ?豢???閬綽?`core/camera/`?perception/look/`嚗?
+-- MQTT ?游?嚗adaptor/external_broker/`?wake/event/`嚗?
+-- 憭憚撠店 memory
+-- systemd 銝??函蔡嚗deploy/`嚗?
+-
+----
+-
+-## M5+嚗????
+-
+-隞乩???瘙????嚗??芰蝡??嚗?
+-
+-| ? | 銝餉?撌乩? | 靘陷 |
+-|---|---|---|
+-| Wake word 撘? | `wake/voice/` 撖虫??虜擏????| M4 摰? |
+-| ?豢???YOLO | `core/camera/`?perception/look/`?action/tool/builtin/vision_tool` | M4 摰? |
+-| MQTT ?游? | `adaptor/external_broker/`?wake/event/`?鈭?MQTT client | M4 摰? |
+-| 憭憚撠店 | `brain/` 撘 memory / session | M4 摰? |
+-| 銝??函蔡 | `deploy/snowboard.service` + install script | M4 蝛拙?敺?|
+-| 撱園?芸? | ???芋??prewarm?葡瘚??| M4 摰? |
+-
+----
+-
+-## ?挾撠銵?
+-
+-| ?挾 | ?格? | 蝖祇? | AI |
+-|---|---|---|---|
+-| M1 | Event Bus + Protocol + StateManager | ??| ??|
+-| M2 | Mock Pipeline 韏圈???| ??| ??|
+-| M3 | 蝖祇? HAL 銝? | ??| ??|
+-| M4 | ?祕 AI 璅∪??亙 | ??| ??|
+-| M5+ | ?游?? | ??| ??|
+-
+----
+-
+-## 鞎怎忽?冽???敺?
+-
+-- **銝歲?挾**嚗2 ?芾?????M3嚗3 ?芾?????AI
+-- **隞銝?**嚗1 摰???`base.py` ??隞嗅??伐??日??鞈芰?閫?隤歹??血?銝
+-- **瘥?畾萇?銝畾萄?甇豢???*嚗?撖虫?敺?頝?銝?挾????
+-- **皜祈岫?郊蝝舐?**嚗1 韏?`tests/` 撠梢?憪嚗????祕雿?鋆?蝯?mock-based 皜祈岫
+-- **?辣?郊?湔**嚗docs/decisions.md` 閮???嚗docs/evaluation/` 閮? benchmark 蝯?
++靽??祆?獢?箔??詨捆?Ｘ????嚗?蝥??芣??`implement.md`??
+diff --git a/src/sbd/core/audio/README.md b/src/sbd/core/audio/README.md
+new file mode 100644
+index 0000000..7af528b
+--- /dev/null
++++ b/src/sbd/core/audio/README.md
+@@ -0,0 +1,173 @@
++# core/audio/
++
++?唾? I/O ?′擃鞊∪惜?迨璅∠??芣?靘?*蝝?PCM ?脣**嚗?
++- **AudioInput**嚗?暻亙?憸函??PCM frame
++- **AudioOutput**嚗? PCM frame ??
++
++VAD?挾?賢??脯撘???頠?瞍?瘜?*銝惇?潭迨**??? `perception/listen/` ??`wake/voice/` ?????
++
++---
++
++## ?箔?暻?audio ??display 蝯?銝?
++
++憿舐內?Ｗ?瘝? kernel 蝝鞊﹦PI OLED 瘥振?誘???????撖?C driver ?雓店??
++
++**?唾?銝?璅?*嚗inux 撌脣 kernel 撅日? ALSA ?質情憟?I2S 撌桃?閬?`dtoverlay` 閮剖?嚗遙雿?I2S mic/speaker ?賣??箇??`/dev/snd/` ??`arecord -l`???典惜???舐絞銝??PCM stream嚗?蝞⊥? INMP441 ? SPH0645??
++
++**蝯?**嚗???audio driver **銝?閬撌勗神 C**?粥 ALSA + Python 蝬?嚗sounddevice`嚗停憟賬′擃榆?圈? `config.local.yaml` ??ALSA 鋆蔭?迂嚗? `hw:0,0`嚗圾瘙箝?
++
++---
++
++## 閮剛???
++
++1. **韏?ALSA ?質情**嚗? `sounddevice`嚗ortAudio 蝬?嚗??閮?銝撖?C driver??
++2. **蝯曹? Protocol**嚗base.py` 摰儔 `AudioInput` / `AudioOutput` Protocol嚗ackend 撖虫?摰?
++3. **蝖祇?撌桃??config**嚗???I2S mic/speaker ?芣 ALSA card/device 銝?嚗??冽蝔?蝣潦?
++4. **Lazy import**嚗__init__.py` ??factory ?芸鋡恍銝剜???import 撠? backend??
++5. **靽? native/ 蝛箔?**嚗????圈?閬???ALSA ??憓?璆萎?撱園?SP ?湧???SDK 蝬香嚗??OC ?其??啜?
++
++---
++
++## ?桅?蝯?
++
++```
++core/audio/
++??? README.md                     ???祆?
++??? __init__.py                   ??factory嚗ake_audio_input/output(cfg)
++??? base.py                       ??AudioInput / AudioOutput Protocol
++??
++??? alsa/                         ??銝餉? backend嚗? sounddevice / PortAudio嚗?
++??  ??? __init__.py
++??  ??? input.py                  ??暻亙?憸其葡瘚?
++??  ??? output.py                 ????剜
++??
++??? mock/                         ???璈
++??  ??? __init__.py
++??  ??? input.py                  ??敺?WAV 瑼? PCM
++??  ??? output.py                 ??撖?WAV ??print
++??
++??? native/                       ????嚗OC 銝
++    ??? README.md                 ???芸神?靘?閬???ALSA ???具?
++```
++
++---
++
++## ?質情憟?嚗base.py`嚗?
++
++```python
++from typing import AsyncIterator, Protocol
++
++
++class AudioInput(Protocol):
++    async def frames(self) -> AsyncIterator[bytes]:
++        """Yield PCM frames from the microphone until stopped."""
++        ...
++
++    async def close(self) -> None: ...
++
++
++class AudioOutput(Protocol):
++    async def play(self, pcm: AsyncIterator[bytes]) -> None:
++        """Consume PCM frames and play to the speaker."""
++        ...
++
++    async def close(self) -> None: ...
++```
++
++`bytes` ??raw PCM嚗撘?sample rate?it depth?hannels嚗 config 摰儔嚗ackend 靘?config ??撠?閬??蝵柴?
++
++---
++
++## ?′擃獐颲?
++
++### ?? A嚗?銝??I2S mic ??speaker嚗?璈?????
++
++?芣 `config.local.yaml`嚗?
++
++```yaml
++audio:
++  driver: alsa
++  input_device: "hw:0,0"      # ????arecord -l ??card/device 蝺刻?
++  output_device: "hw:0,0"     # ????aplay -l
++  sample_rate: 16000
++  channels: 1
++  bit_depth: 16
++```
++
++**銝?嫣遙雿?code????rebuild**??
++
++### ?? B嚗璅?敺?RPi ??亦? Linux SBC
++
++憭?隞粥 ALSA嚗onfig 銝璅?鋆蔭蝺刻??喳?? macOS / Windows嚗sounddevice` 銋頝典像?堆?PortAudio ?質情嚗?雿璅?銝??撟喳嚗?瘛勗??
++
++### ?? C嚗?閬???ALSA嚗扔撠?嚗?
++
++靘?撱????臬??SPI ??折漸?◢??閬? <5 ms 撱園?其?鈭?ALSA?迨????`native/` ???桅?嚗芋隞?`display/` ??瘜撖?C driver?OC 銝???
++
++---
++
++## Factory嚗__init__.py`嚗?
++
++```python
++from sbd.core.audio.base import AudioInput, AudioOutput
++
++
++def make_audio_input(cfg) -> AudioInput:
++    if cfg.driver == "mock":
++        from sbd.core.audio.mock.input import MockAudioInput
++        return MockAudioInput(cfg.mock_wav_path)
++
++    if cfg.driver == "alsa":
++        from sbd.core.audio.alsa.input import AlsaAudioInput
++        return AlsaAudioInput(
++            device=cfg.input_device,
++            sample_rate=cfg.sample_rate,
++            channels=cfg.channels,
++        )
++
++    raise ValueError(f"unknown audio driver: {cfg.driver}")
++
++
++def make_audio_output(cfg) -> AudioOutput:
++    if cfg.driver == "mock":
++        from sbd.core.audio.mock.output import MockAudioOutput
++        return MockAudioOutput()
++
++    if cfg.driver == "alsa":
++        from sbd.core.audio.alsa.output import AlsaAudioOutput
++        return AlsaAudioOutput(
++            device=cfg.output_device,
++            sample_rate=cfg.sample_rate,
++            channels=cfg.channels,
++        )
++
++    raise ValueError(f"unknown audio driver: {cfg.driver}")
++```
++
++**Lazy import** 蝣箔??璈??典?鋆?`sounddevice` / PortAudio 銋頝?韏?mock嚗?
++
++---
++
++## 靘陷
++
++- **runtime**嚗sounddevice`嚗ortAudio 蝬?嚗??桐? wheel 頝?Linux/macOS/Windows
++- **蝟餌絞憟辣**嚗Pi嚗?`libportaudio2`?scripts/setup_rpi.sh` 撌脣???
++- **?璈?mock backend**嚗憭靘陷嚗wave` ??Python ?批遣
++
++---
++
++## ???
++
++- **ALSA + PortAudio + Python 蝬?**???餈辣?莎?**5??0 ms**嚗? buffer 憭批?嚗?
++- Snowboard 撠店撱園銝餃扇????ASR/LLM ?刻?嚗嗾??ms ?啣嗾蝘?嚗LSA ?挾摰?臬蕭??
++- ?亦??１??buffer underrun / 摨蝑?憿??虜??*閮剖?閮剖?**???嗆?????`arecord -D <device> -f S16_LE -r 16000 -c 1 test.wav` ?賭??賣迤撣賊?
++- ?交?憭拍???閬?<5 ms 撱園嚗?憒?hardware audio effect嚗??韏?`native/`
++
++---
++
++## 銝???
++
++- **銝撖?I2S C driver**?ernel + ALSA 撌脰??末
++- **銝? VAD / 畾菔?**???`perception/listen/` ?痊隞?
++- **銝??單???**嚗??芥Q????AGC嚗OC ?仿?閬?? ALSA plugin 撅斗? perception 銝虜
++- **銝?憭楝瘛琿**?銝 input?銝 output 撌脰雲憭?POC
+diff --git a/src/sbd/core/display/README.md b/src/sbd/core/display/README.md
+index 2eb1217..84b551e 100644
+--- a/src/sbd/core/display/README.md
++++ b/src/sbd/core/display/README.md
+@@ -6,11 +6,12 @@
+ 
+ ## 閮剛???
+ 
+-1. **瘥＊蝷箏????蝡??桅?**嚗隞交?唳蝖祇?撠梢?銝??岫嚗宏?支?瘝??穿??蝺刻陌銝蔣?踹隞???
+-2. **蝯曹? Protocol**嚗???driver 撖虫? `base.py` 摰儔??`DisplayDevice` Protocol??
+-3. **C driver ?**嚗aveshare/撱?摰 C code ?芸閰脣????箇嚗?憭援??
+-4. **Python 蝡臬??ctypes**嚗?撖?CPython ?游?嚗???driver 銝??wrapper 瑼???`.so`??
+-5. **Lazy import**嚗__init__.py` ??factory ?芸鋡恍銝剜???import 閰?driver嚗隞?`.so` 瘝?build 銋?敶梢??
++1. **瘥?嗆???蝡??桅?**嚗?? = chip嚗? `ssd1306/`?ssd1351/`?st7789/`嚗?銝璅∠???憒?.5" RGB OLED???? chip 銝?閫??摨衣??Ｘ**?梁 driver**??
++2. **?Ｘ撌桃????*嚗?銝憿?chip ?舀 128?64 / 128?32 蝑?擃?嚗?閫??摨血??constructor ??config嚗?*銝??啁???楊 .so**??
++3. **蝯曹? Protocol**嚗???driver 撖虫? `base.py` 摰儔??`DisplayDevice` Protocol??
++4. **C driver ?**嚗aveshare/撱?摰 C code ?芸閰?chip ?桅??批?橘?銝?瘣押?
++5. **Python 蝡臬??ctypes**嚗?撖?CPython ?游?嚗???driver 銝??wrapper 瑼???`.so`??
++6. **Lazy import**嚗__init__.py` ??factory ?芸鋡恍銝剜???import 閰?driver嚗隞?`.so` 瘝?build 銋?敶梢??
+ 
+ ---
+ 
+@@ -26,9 +27,9 @@ core/display/
+ ??  ??? __init__.py
+ ??  ??? driver.py
+ ??
+-??? ssd1306/                      ???? A嚗SD1306 ?株 OLED
++??? ssd1306/                      ??chip嚗?28?64/128?32/96?16 ?株 OLED ?梁
+ ??  ??? __init__.py
+-??  ??? driver.py                 ??ctypes wrapper
++??  ??? driver.py                 ??ctypes wrapper嚗??width/height ?
+ ??  ??? native/
+ ??  ??  ??? include/
+ ??  ??  ??  ??? DEV_Config.h
+@@ -38,19 +39,25 @@ core/display/
+ ??  ??  ??  ??? ssd1306.c
+ ??  ??  ??? Makefile
+ ??  ??  ??? build/libssd1306.so   ??gitignored
+-??  ??? README.md                 ??閰脣????亦??PI/pin ?蔭
++??  ??? README.md                 ??chip datasheet??渲圾?漲?”
+ ??
+-??? oled_1in5_rgb/                ???? B嚗?.5" RGB OLED嚗???祈?鋆踝?
++??? ssd1351/                      ??chip嚗SD1351嚗?憒?1.5" RGB OLED 128?128嚗?
+ ??  ??? __init__.py
+ ??  ??? driver.py
+ ??  ??? native/{include,src,Makefile}
+ ??  ??? README.md
+ ??
+-??? lcd_2in0_ips/                 ???? C嚗?.0" IPS LCD
++??? st7789/                       ??chip嚗T7789嚗?蝔?240?* TFT ?Ｘ嚗?
+     ??? ...
+ ```
+ 
+-**瘥???????*嚗???`DEV_Config.c` ?湔?曉閰脣??? `native/src/`嚗??梁???晦?撱? `DEV_Config.c` ?航?凝撠榆?堆??喃??PI mode?eset ??嚗?靽??函??舫?鈭萱?瑯?
++**瘥?chip ?桅??芣?銝??*嚗???`DEV_Config.c` ?湔?曉閰?chip ??`native/src/`嚗??梁???晦?撱? `DEV_Config.c` ?航?凝撠榆?堆??喃??PI mode?eset ??嚗?靽??函??舫?鈭萱?瑯?
++
++### ?桅?????暻?
++
++**閬?**嚗atasheet 銝神??嗆????`SSD1306`?SSD1351`?ST7789`?ILI9341`?SH1106`嚗?
++
++**銝?**嚗??芋蝯?蝔梧???.5 inch RGB OLED??.0" IPS LCD???銵??????摮?銝?賣? chip?眺?唳?? datasheet 蝣箄? chip嚗?瘙箏?閬?脣???
+ 
+ ---
+ 
+@@ -71,19 +78,157 @@ class DisplayDevice(Protocol):
+ 
+ ---
+ 
+-## ?啣?銝?＊蝷箏???甇仿?
++## ?拍車霈???
++
++### ?? A嚗? chip ?圾?漲嚗?璅∠?
++
++靘?????SSD1306 敺?128?64 ?? 128?32嚗?????璅?SSD1306 雿蝺???璅∠?嚗?
+ 
+-?身雿???唬????`oled_new_model` 璅∠?嚗?
++- **銝?蝺刻陌隞颱??梯正**
++- ?芣 `config.local.yaml`嚗width` / `height` / `dc_gpio` / `rst_gpio`
++- driver code 摰銝?
+ 
+-1. **銴ˊ撉冽**嚗cp -r ssd1306 oled_new_model`
+-2. **?踵? C 瑼?*嚗?撱?摰 `.c/.h` ?暸?`oled_new_model/native/src/` ??`include/`
+-3. **隤踵 Makefile**嚗 target ?迂??`liboled_new_model.so`嚗Ⅱ隤?include path
++### ?? B嚗?銝憿 chip
++
++靘??啁′擃???ST7789嚗????仿?嚗?
++
++1. **撱箇??桅?**嚗cp -r ssd1306 st7789`
++2. **?踵? C 瑼?*嚗?閰?chip 撱?摰 `.c/.h` ?暸?`st7789/native/src/` ??`include/`
++3. **隤踵 Makefile**嚗 target ?迂??`libst7789.so`
+ 4. **??driver.py**嚗??ctypes 蝬??撘?蝔梯?蝪賢?
+-5. **蝺刻陌皜祈岫**嚗make -C src/sbd/core/display/oled_new_model/native`
+-6. **??factory**嚗__init__.py` ????`elif driver == "oled_new_model": ...` ?
+-7. **閮剖? config**嚗config.local.yaml` ?貊閰脣???
++5. **蝺刻陌皜祈岫**嚗make -C src/sbd/core/display/st7789/native`
++6. **??factory**嚗__init__.py` ????`elif driver == "st7789": ...` ?
++7. **閮剖? config**嚗config.local.yaml` ?貊 `driver: st7789`
++
++**蝘駁?芷? `rm -rf` 閰脩??*嚗隞?chip 摰銝?敶梢??
++
++---
++
++## 摰 lib ?孵神??chip ? driver
++
++撱?摰 sample嚗aveshare / Adafruit / Solomon ??嚗虜?芷?撠?*?桐??Ｘ撠箏站**撖急香嚗??賜?亦 driver ?具誑銝?孵神??隞?code 閬?閰?chip ???擃?璅?瘚???
++
++### ?箔?暻潸??孵神
++
++摰 sample ??**霅??嗥??賢?**嚗??舀?靘極蝔??質情?虜閬???嚗?
++
++- ??`#define WIDTH 128` / `#define HEIGHT 64` 撖急香撠箏站
++- init sequence ?抒′蝺冽摮?潘?`0x3F`?0x12`嚗?隤芣??砍?
++- `static uint8_t buffer[1024]` ?典? buffer嚗?撠箏站撠?overflow
++- ?典????`static int spi_fd`嚗??⊥??????拍???chip ?Ｘ
++- ?航炊????`printf`嚗? return code?ython 蝡舐敺??亙仃??
++
++?孵神?璅?**靽?摰撽??????摮?摩嚗???輯??潦????*??
++
++### ?孵神甇仿?
+ 
+-**蝘駁?芷? `rm -rf` 閰脩??*嚗隞????其??蔣?踴?
++#### 1. 撱箇? context struct嚗?隞????static ?典?
++
++```c
++// 摰??閬??
++static int spi_fd;
++static uint8_t buffer[1024];
++
++// ?孵神敺?
++typedef struct {
++    int spi_fd;
++    int dc_gpio;
++    int rst_gpio;
++    int width;
++    int height;
++    uint8_t *buffer;
++    size_t buffer_size;
++} ssd1306_ctx_t;
++```
++
++???API 蝚砌????豢??`ssd1306_ctx_t *`嚗?憭祕靘蒂摮???賬?
++
++#### 2. 撠 datasheet嚗?撖急香?虜?豢??撘?
++
++隞?SSD1306 ?箔?嚗atasheet section 10.1?ommand Table???箸??摮?蝢押撖急??亙??扯”嚗?
++
++| 摰撖急香?虜??| ?箄? | ?孵神敺?|
++|---|---|---|
++| `WriteReg(0xA8); WriteReg(0x3F);` | Set Multiplex Ratio | `cmd(0xA8); cmd(height - 1);` |
++| `WriteReg(0xDA); WriteReg(0x12);` | Set COM Pins Config | `cmd(0xDA); cmd(height >= 64 ? 0x12 : 0x02);` |
++| `WriteReg(0xD3); WriteReg(0x00);` | Set Display Offset | ?虜?箏? 0嚗???|
++| `static uint8_t buf[1024]` | GDDRAM size | `malloc(width * height / 8)` |
++| `for (page = 0; page < 8; page++)` | Page count | `for (page = 0; page < height / 8; page++)` |
++
++**?斗皞?**嚗???datasheet 隤芥迨??= ?Ｘ row ??- 1??撠望?砍?嚗???datasheet 隤芥遣霅啗身??0x14??撠望?箏??潘?靽??喳??
++
++#### 3. 靽?摰撽????典?嚗?閬?撖?
++
++**銝???*嚗?
++- SPI ?唾撓 helper嚗DEV_SPI_WriteByte` 銋?嚗?
++- Reset ??嚗ST ??憭???擃? delay 憭?嚗撱?撖行葫??
++- DC pin ????頛荔?cmd ??low?ata ??high嚗?
++- 蝜芸?餈游??擃?瑽???column address嚗???page data嚗?
++
++**?芸?鋆?*嚗????賢?敺?典?霈??? ctx ???
++
++#### 4. ??open / close ?? API entry point
++
++```c
++ssd1306_ctx_t *ssd1306_open(
++    const char *spi_dev, int dc_gpio, int rst_gpio,
++    int width, int height
++) {
++    ssd1306_ctx_t *ctx = calloc(1, sizeof(*ctx));
++    if (!ctx) return NULL;
++
++    ctx->width = width;
++    ctx->height = height;
++    ctx->buffer_size = width * height / 8;
++    ctx->buffer = calloc(1, ctx->buffer_size);
++    if (!ctx->buffer) { free(ctx); return NULL; }
++
++    ctx->dc_gpio = dc_gpio;
++    ctx->rst_gpio = rst_gpio;
++    ctx->spi_fd = open(spi_dev, O_RDWR);
++    if (ctx->spi_fd < 0) { free(ctx->buffer); free(ctx); return NULL; }
++
++    // 隞乩? setup / reset / init sequence ?湔?砍??寧?
++    // ?芣??WriteReg(0x3F) ?車撖急香?潭??撘?
++    ssd1306_reset(ctx);
++    ssd1306_init_sequence(ctx);
++    return ctx;
++}
++
++void ssd1306_close(ssd1306_ctx_t *ctx) {
++    if (!ctx) return;
++    if (ctx->spi_fd >= 0) close(ctx->spi_fd);
++    free(ctx->buffer);
++    free(ctx);
++}
++```
++
++#### 5. ???API 蝯曹? return `int`嚗? = OK嚗? 0 = error嚗?
++
++摰?撣詨虜 `void` return嚗撖急??券?寞?? int嚗ython 蝡舀???raise exception嚗?
++
++```c
++int ssd1306_clear(ssd1306_ctx_t *ctx);
++int ssd1306_write_pixels(ssd1306_ctx_t *ctx, const uint8_t *buf, int len);
++int ssd1306_show(ssd1306_ctx_t *ctx);
++```
++
++`write_pixels` ?折?? `len == ctx->buffer_size`嚗?蝚血停 return -1嚗??Python ?喲撠箏站 buffer 撠 chip ?嗅?渡?鞈???
++
++### 撽?瘚?
++
++?孵神摰?**??挾皜?*嚗?
++
++1. **?摰撖急香?偕撖?*嚗? SSD1306 128?64嚗??Ⅱ隤?瘝憯??寥?頛?
++2. **??銝?偕撖?*嚗? 128?32嚗??Ⅱ隤撘迤蝣箝uffer 憭批?甇?Ⅱ
++
++?亦洵 1 甇仿?雿洵 2 甇亙?嚗?? init sequence 鋆⊿??神甇餅??賢靘?撣豢嚗 datasheet ??撠 command table ?曉靘?
++
++### 撣貉??琿
++
++- **COM pins config (0xDA)**嚗?鈭?128?64 ?Ｘ撱?擳蝖祇?雿?嚗?閬?`0x02` ?? `0x12`?車??????optional ??`com_pins_override` ?嚗?閬甇斗?瑼?
++- **buffer format**嚗SD1306 ??page-based嚗? byte 隞?” 8 ??vertical pixels嚗?SSD1351/ST7789 ??line-based嚗GB565 ??pixel嚗撖急??亦??銝憿?chip ??buffer ?摩????chip
++- **reset delay**嚗atasheet ?芾牧?撠?3 弮s??雿祕皜祆?鈭芋蝯? 10 ms ?帘?????寧? delay ?潘?銝??芸楛蝮桃
+ 
+ ---
+ 
+@@ -116,7 +261,7 @@ clean:
+ 
+ ---
+ 
+-## ctypes wrapper 蝭嚗<model>/driver.py`嚗?
++## ctypes wrapper 蝭嚗<chip>/driver.py`嚗?
+ 
+ ```python
+ from __future__ import annotations
+@@ -128,19 +273,30 @@ _LIB = Path(__file__).parent / "native" / "build" / "libssd1306.so"
+ 
+ 
+ class SSD1306:
+-    def __init__(self, spi_dev: str, dc_gpio: int, rst_gpio: int) -> None:
++    def __init__(
++        self,
++        spi_dev: str,
++        dc_gpio: int,
++        rst_gpio: int,
++        width: int = 128,     # ?Ｘ閬??config ?喳
++        height: int = 64,     # 128?64 / 128?32 / 96?16 ?梁????driver
++    ) -> None:
+         if not _LIB.exists():
+             raise RuntimeError(
+                 f"libssd1306.so not found. Run `make` under {_LIB.parent.parent}"
+             )
+         self._lib = ctypes.CDLL(str(_LIB))
+         self._bind()
+-        self._ctx = self._lib.ssd1306_open(spi_dev.encode(), dc_gpio, rst_gpio)
++        self._ctx = self._lib.ssd1306_open(
++            spi_dev.encode(), dc_gpio, rst_gpio, width, height
++        )
+         if not self._ctx:
+             raise RuntimeError("ssd1306_open returned NULL")
+ 
+     def _bind(self) -> None:
+-        self._lib.ssd1306_open.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_int]
++        self._lib.ssd1306_open.argtypes = [
++            ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int
++        ]
+         self._lib.ssd1306_open.restype = ctypes.c_void_p
+         self._lib.ssd1306_close.argtypes = [ctypes.c_void_p]
+         self._lib.ssd1306_clear.argtypes = [ctypes.c_void_p]
+@@ -185,16 +341,22 @@ def make_display(cfg) -> DisplayDevice:
+ 
+     if driver == "ssd1306":
+         from sbd.core.display.ssd1306.driver import SSD1306
+-        return SSD1306(cfg.spi_dev, cfg.dc_gpio, cfg.rst_gpio)
+-
+-    if driver == "oled_1in5_rgb":
+-        from sbd.core.display.oled_1in5_rgb.driver import OLED_1in5_RGB
+-        return OLED_1in5_RGB(cfg.spi_dev, cfg.dc_gpio, cfg.rst_gpio)
++        return SSD1306(
++            cfg.spi_dev, cfg.dc_gpio, cfg.rst_gpio,
++            width=cfg.width, height=cfg.height,
++        )
++
++    if driver == "ssd1351":
++        from sbd.core.display.ssd1351.driver import SSD1351
++        return SSD1351(
++            cfg.spi_dev, cfg.dc_gpio, cfg.rst_gpio,
++            width=cfg.width, height=cfg.height,
++        )
+ 
+     raise ValueError(f"unknown display driver: {driver}")
+ ```
+ 
+-**Lazy import** ?舫??蛛?銝閰脣??停銝?import嚗府 `.so` 瘝?build 銋?敶梢?嗡? driver ????
++**Lazy import** ?舫??蛛?銝閰?chip 撠曹? import嚗府 `.so` 瘝?build 銋?敶梢?嗡? driver ????
+ 
+ ---
+ 
+@@ -204,10 +366,10 @@ def make_display(cfg) -> DisplayDevice:
+ 
+ **RPi5**嚗?甈⊿蝵莎?嚗?
+ ```bash
+-# 蝺刻陌?閬????
++# 蝺刻陌?閬??chip
+ make -C src/sbd/core/display/ssd1306/native
+ 
+-# ??典???甈?
++# ???chip 銝甈?
+ for d in src/sbd/core/display/*/native/Makefile; do
+     make -C "$(dirname "$d")"
+ done
+@@ -232,5 +394,5 @@ done
+ 
+ - **銝? CPython ?游?**嚗.pyd` / `.so` extension modules嚗types 撌脰雲憭?
+ - **銝? `pyproject.toml` build**????Makefile ?游?扼ebug ?游捆??
+-- **銝?頝典??? C ?質情撅?*嚗?憒絞銝??`dev_config.c`嚗????函?嚗???code 蝬香敶潭迨
++- **銝?頝?chip ??C ?質情撅?*嚗?憒絞銝??`dev_config.c`嚗? chip ?函?嚗???code 蝬香敶潭迨
+ - **銝神 pixel-level 擃?蝜芸?**?撅祆 `adaptor/display/renderer.py`
+diff --git a/tests/README.md b/tests/README.md
+index 6197264..2890e08 100644
+--- a/tests/README.md
++++ b/tests/README.md
+@@ -1,190 +1,13 @@
+ # tests/ 皜祈岫隤芣?
+ 
+-M1 ?挾???摩?桀?皜祈岫???葫閰虫??蝖祇???? AI 璅∪?嚗撽? event bus ??state manager ???箝?
++?桀?皜祈岫?箸??葫閰行?靘?憿?撣貊?賭誘撌脩絞銝閮???
++[`../docs/implement.md`](../docs/implement.md#皜祈岫?箸?)??
+ 
+----
+-
+-## ??望?
+-
+-**??皜祈岫???蒂??蝝舐?**嚗?
+-
+-- `test_event_bus.py` ??`test_state_manager.py` 皜祉???milestone.md 摰儔??*撣賊?撉冽**嚗1?4 銝?瑽???蝥?畾萄??隞嗉?頧宏閬?嚗?皜祈岫????
+-- M2 銋??憓葫閰佗?mock pipeline?ool registry?rompt builder 蝑?嚗?*銝??誨**?暹?皜祈岫
+-- ?日?憟??祈澈?餅?霈?嚗?憒?鈭辣?嚗??血?皜祈岫?偶?頝?
+-- ?亙甈⊥???葫閰血仃??隞?”**backbone 憟?鋡急?憭憯?*?迤?臬????孵?
+-
+----
+-
+-## ?瑁??孵?
+-
+-?閬?Python 3.11+ ??`pytest`?pytest-asyncio`??
++敹恍銵?冽葫閰佗?
+ 
+ ```bash
+-cd snowboard-agent
+-
+-# ?券頝?甈?
+-python3.11 -m pytest -v
+-
+-# ?芾???
+-python3.11 -m pytest tests/test_event_bus.py -v
+-python3.11 -m pytest tests/test_state_manager.py -v
+-
+-# ?芾????恍??萄??葫閰?
+-python3.11 -m pytest -v -k wake
+-python3.11 -m pytest -v -k guard
+-
+-# 憿舐內 print / log 閮
+-python3.11 -m pytest -v -s
+-
+-# 憭望???摰 traceback
+-python3.11 -m pytest -v --tb=long
+-
+-# ?芾??桐?皜祈岫
+-python3.11 -m pytest tests/test_state_manager.py::test_idle_wake_transitions_to_perception -v
++python -m pytest -v
+ ```
+ 
+-> Windows ?璈? `python3.11` ?? `py -3.11`??
+-
+-**??蝯?**嚗?9 passed
+-
+----
+-
+-## 瑼?蝮質汗
+-
+-| 瑼? | 皜祈岫??| ?瑁痊 |
+-|---|---|---|
+-| `conftest.py` | ??| ?梁 fixture嚗bus`?sm_settings`?sm` |
+-| `test_event_bus.py` | 5 | 撽? `core/event_bus/bus.py` ??pub/sub 銵 |
+-| `test_state_manager.py` | 14 | 撽? `core/state_manager/manager.py` ????嚗???`docs/arch.md` 禮11.2嚗?|
+-
+----
+-
+-## `conftest.py` ??fixture
+-
+-- **`bus`**嚗?啁? `EventBus` 撖虫?
+-- **`sm_settings`**嚗StateManagerSettings(error_recovery_seconds=0.0, perception_timeout_seconds=1.0)`?葫閰衣?嗅辣??
+-- **`sm`**嚗歇蝬? `bus` ??`StateManager` 撖虫?
+-
+-瘥葫閰行??芸??踹?冽??bus + sm嚗????詨僕?整?
+-
+----
+-
+-## `test_event_bus.py` ??Event Bus 銵嚗? tests嚗?
+-
+-| 皜祈岫 | 撽?隞暻?|
+-|---|---|
+-| `test_publish_delivers_to_all_subscribers` | ??鈭辣?????handler ?賣?鋡怠??|
+-| `test_subscribers_are_keyed_by_type` | 閮靘?隞嗅??亙?瘣橘?銝??敶潭迨? |
+-| `test_handler_error_does_not_block_other_handlers` | ??handler ?銝蔣?踹?銝鈭辣?隞?handler嚗隤斗?鋡?log |
+-| `test_unsubscribed_event_type_warns` | 瘝? subscriber ??隞嗉◤ publish ??log ??warning嚗? crash嚗?|
+-| `test_unsubscribe_removes_handler` | `unsubscribe` 敺府 handler 銝??嗅鈭辣 |
+-
+-**?勗??瘜?*嚗葫閰西撱?`Foo` / `Bar` ?拙?dataclass 鈭辣?嚗??函???其?隞塚?嚗???bus 璈?祈澈??
+-
+----
+-
+-## `test_state_manager.py` ??StateManager ?剔???嚗?4 tests嚗?
+-
+-靘?`docs/arch.md` 禮11.2 ???蝘餉”??皜祈岫???拚? `Recorder` 閮???SM ??publish ??隞塚?`StartPerception`?StateChanged`?SpeakRequested`...嚗?靘?皜祈岫瑼Ｘ??
+-
+-### IDLE 韏琿?嚗? tests嚗?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_idle_wake_transitions_to_perception` | ?嗅 `WakeDetected(source="button")` | ???IDLE?AKE?ERCEPTION嚗ublish `StartPerception(kind="listen")` |
+-| `test_wake_with_text_payload_uses_read_perception` | `WakeDetected(source="event", payload={"text": ...})` | SM ??`read` perception ?? `listen` |
+-| `test_idle_ignores_unrelated_events` | IDLE ????嗅 `SpeechFinished` | ???霈?log warning |
+-
+-### PERCEPTION嚗? test嚗?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_perception_result_transitions_to_think` | 韏啣 PERCEPTION 敺??`PerceptionResult` | 頧?THINK嚗ublish `StartReasoning(input=result)` |
+-
+-### THINK嚗? tests嚗?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_llm_response_with_tool_calls_stays_in_think` | `LLMResponse(tool_calls=[...])` | ? THINK嚗ublish `ExecuteTool` |
+-| `test_tool_executed_keeps_state_in_think` | ?嗅 `ToolExecuted` | ? THINK 蝑?銝甈?LLMResponse |
+-| `test_llm_response_with_text_transitions_to_action` | `LLMResponse(text="answer")` ??tool_calls | 頧?ACTION嚗ublish `SpeakRequested` |
+-| `test_empty_llm_response_returns_to_idle` | `LLMResponse(text="", tool_calls=[])` | ?湔??IDLE |
+-
+-### ACTION嚗? tests嚗?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_speech_finished_returns_to_idle_and_publishes_turn_completed` | `SpeechFinished` | ??IDLE嚗ublish `TurnCompleted` |
+-| `test_interrupt_during_action_stops_speaking_and_idles` | `InterruptRequested` | publish `StopSpeaking`嚗? IDLE |
+-
+-### Guard嚗? tests嚗?
+-
+-撽?????銝? crash嚗 log warning 銝血蕭?乓?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_wake_ignored_when_not_idle` | 撌脣 PERCEPTION ???`WakeDetected` | 敹賜嚗og `WakeDetected ignored` |
+-| `test_interrupt_ignored_when_idle` | IDLE 銝??`InterruptRequested` | 敹賜嚗???霈?|
+-
+-### ?航炊?撠橘?2 tests嚗?
+-
+-| 皜祈岫 | ?湔 | ?? |
+-|---|---|---|
+-| `test_error_transitions_through_error_state_back_to_idle` | 隞餅?????`ErrorOccurred` | ??ERROR ???`error_recovery_seconds` 敺? IDLE |
+-| `test_shutdown_sets_shutdown_flag` | ?嗅 `ShutdownRequested` | `sm.wait_until_shutdown()` 蝡餈? |
+-
+----
+-
+-## ??撽嚗???pytest 蝭?嚗?
+-
+-?支??芸??葫閰佗??隞交???撖?backbone ??嚗?
+-
+-```bash
+-python3.11 -m sbd.main
+-```
+-
+-??頛詨嚗?
+-```
+-2026-07-23 ... INFO sbd.main: Snowboard M1 backbone ready; state=IDLE
+-```
+-?嗅?? IDLE嚗???wake 撖虫?嚗? **Ctrl+C** 蝯???
+-
+-?單??鈭辣閫撖???嚗 REPL嚗?
+-
+-```python
+-import asyncio
+-from sbd.core.event_bus import EventBus, events as ev
+-from sbd.core.state_manager import StateManager
+-from sbd.core.config import StateManagerSettings
+-import logging
+-logging.basicConfig(level=logging.INFO, format='%(levelname)s %(name)s: %(message)s')
+-
+-async def demo():
+-    bus = EventBus()
+-    sm = StateManager(bus, StateManagerSettings(error_recovery_seconds=0.5))
+-    await bus.publish(ev.WakeDetected(source="test"))
+-    await bus.publish(ev.PerceptionResult(kind="listen", text="hi"))
+-    await bus.publish(ev.LLMResponse(text="hello"))
+-    await bus.publish(ev.SpeechFinished())
+-    print("final state:", sm.state)
+-
+-asyncio.run(demo())
+-```
+-
+-???啣???摨?頧? log??
+-
+-> Windows Git-Bash 銝 REPL import 憭望?嚗??瑁? `export PYTHONPATH=src` ???`py -3.11 -m pytest` 閫撖??蝔?
+-
+----
+-
+-## ?葫閰衣???
+-
+-?唳葫閰阡脖??摰?
+-
+-1. **銝?葫閰血撽?隞嗡?**????賭??潛??箸???
+-2. **??fixture ?踹?刻?皞?*嚗bus`?sm`嚗?銝撌?new
+-3. **撽?甇?????*嚗uard 皜祈岫?見??
+-4. **caplog 瑼Ｘ log 閮**??瑁??摮?銝?撠??游?銝莎??踹??澆?霈?撠望?嚗?
+-5. **皜祉??摩嚗?皜祉′擃?*嚗遙雿?閬?mic?LED?PIO?芋???梯正嚗? mock ?犖撌仿?霅?
+-
+-M2 銋????游?皜祈岫嚗ock pipeline?easoner?ool registry 蝑?嚗瑼???甇交??
++靽??祆?獢?箔?霈? `tests/` ?桅??脣???潸敹恍?唳?憡?隞塚?敺?隢?
++?芸 `docs/implement.md` 蝬剛風皜祈岫???
+-- 
+2.53.0.windows.1
+
