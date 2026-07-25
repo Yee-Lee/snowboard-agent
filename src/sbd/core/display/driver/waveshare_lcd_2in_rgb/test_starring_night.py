@@ -1,13 +1,16 @@
 import ctypes
 import time
 import random
+import os
 from PIL import Image, ImageDraw
 
 # 1. 載入動態連結庫
-oled_lib = ctypes.CDLL('./libdisplay.so')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+so_path = os.path.join(dir_path, 'libdisplay.so')
+oled_lib = ctypes.CDLL(so_path)
 oled_lib.init_display()
 
-WIDTH, HEIGHT = 128, 128
+WIDTH, HEIGHT = 240, 320
 img = Image.new('RGB', (WIDTH, HEIGHT), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 
