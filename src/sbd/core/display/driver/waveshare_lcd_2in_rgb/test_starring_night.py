@@ -10,7 +10,7 @@ so_path = os.path.join(dir_path, 'libdisplay.so')
 oled_lib = ctypes.CDLL(so_path)
 oled_lib.init_display()
 
-WIDTH, HEIGHT = 240, 320
+WIDTH, HEIGHT = 320, 240
 img = Image.new('RGB', (WIDTH, HEIGHT), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 

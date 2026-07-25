@@ -100,7 +100,6 @@ void DEV_Delay_ms(UDOUBLE xms)
 
 static void DEV_GPIO_Init(void)
 {
-    DEV_GPIO_Mode(LCD_CS, 1);
     DEV_GPIO_Mode(LCD_RST, 1);
     DEV_GPIO_Mode(LCD_DC, 1);
     DEV_GPIO_Mode(LCD_BL, 1);
@@ -114,7 +113,6 @@ static void DEV_GPIO_Init(void)
     DEV_GPIO_Mode(KEY2_PIN, 0);
     DEV_GPIO_Mode(KEY3_PIN, 0);
 
-    LCD_CS_1;
     LCD_BL_1; // 初始化時拉高背光
 }
 
@@ -189,8 +187,8 @@ UBYTE DEV_ModuleInit(void)
 
     DEV_GPIO_Init();
     
-    // 開啟 SPI0 晶片通道 0，設定頻率為 40MHz (40000000)
-    SPI_Handle = lgSpiOpen(0, 0, 40000000, 0);
+    // 開啟 SPI0 晶片通道 0，設定頻率為 20MHz (20000000)
+    SPI_Handle = lgSpiOpen(0, 0, 20000000, 0);
     if (SPI_Handle < 0) {
         printf("lgSpiOpen Failed\n");
         return -1;

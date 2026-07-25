@@ -9,7 +9,7 @@ so_path = os.path.join(dir_path, 'libdisplay.so')
 oled_lib = ctypes.CDLL(so_path)
 oled_lib.init_display()
 
-WIDTH, HEIGHT = 240, 320
+WIDTH, HEIGHT = 320, 240
 
 # 2. 載入繁體中文字體 (字體縮小至 12)
 try:
@@ -66,8 +66,8 @@ def wrap_text(script, font, max_width):
             wrapped_lines.append((current_line, True, speaker))
     return wrapped_lines
 
-# 左右各預留 10 像素邊距 (配合 240 像素寬度的螢幕)
-messages = wrap_text(raw_script, font, 220)
+# 左右各預留 10 像素邊距 (配合 320 像素寬度的橫向螢幕)
+messages = wrap_text(raw_script, font, 300)
 
 print("啟動雙語劇本與平滑捲動測試... (按 Ctrl+C 結束)")
 

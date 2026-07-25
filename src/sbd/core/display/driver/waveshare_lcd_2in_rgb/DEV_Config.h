@@ -23,8 +23,6 @@
     #include <lgpio.h>
     #define LFLAGS 0
     #define NUM_MAXBUF  256
-    #define LG_SET_INPUT 0
-    #define LG_SET_OUTPUT 1
 #endif
 #include <unistd.h>
 

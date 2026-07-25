@@ -9,7 +9,7 @@ so_path = os.path.join(dir_path, 'libdisplay.so')
 oled_lib = ctypes.CDLL(so_path)
 oled_lib.init_display()
 
-WIDTH, HEIGHT = 240, 320
+WIDTH, HEIGHT = 320, 240
 
 # 2. 準備兩張畫布：一張純黑，一張目標照片
 black_img = Image.new('RGB', (WIDTH, HEIGHT), color=(0, 0, 0))
@@ -19,7 +19,7 @@ PHOTO_PATH = 'photo.jpg'
 if os.path.exists(PHOTO_PATH):
     print(f"找到照片 {PHOTO_PATH}，正在裁切調整大小...")
     target_img = Image.open(PHOTO_PATH).convert('RGB')
-    # 使用 LANCZOS 高品質縮放，並置中裁切成 240x320
+    # 使用 LANCZOS 高品質縮放，並置中裁切成 320x240
     from PIL import ImageOps
     target_img = ImageOps.fit(target_img, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
 else:
@@ -32,8 +32,8 @@ else:
             r = int((x / WIDTH) * 255)
             b = int((y / HEIGHT) * 255)
             draw.point((x, y), fill=(r, 50, b))
-    # 正中央加一個極亮的光球 (在 240x320 螢幕上居中)
-    draw.ellipse([60, 100, 180, 220], fill=(255, 200, 50))
+    # 正中央加一個極亮的光球 (在 320x240 橫向螢幕上居中)
+    draw.ellipse([100, 60, 220, 180], fill=(255, 200, 50))
 
 print("啟動漸顯漸隱測試... (按 Ctrl+C 結束)")
 

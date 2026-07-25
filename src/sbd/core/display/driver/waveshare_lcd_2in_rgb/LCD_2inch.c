@@ -36,7 +36,6 @@ function:
 *******************************************************************************/
 static void LCD_2IN_Reset(void)
 {
-	DEV_Digital_Write(LCD_CS, 1);
 	DEV_Delay_ms(100);
 	DEV_Digital_Write(LCD_RST, 0);
 	DEV_Delay_ms(100);
@@ -50,26 +49,21 @@ function:
 *******************************************************************************/
 static void LCD_2IN_Write_Command(UBYTE data)	 
 {	
-	DEV_Digital_Write(LCD_CS, 0);
 	DEV_Digital_Write(LCD_DC, 0);
 	DEV_SPI_WriteByte(data);
 }
 
 static void LCD_2IN_WriteData_Byte(UBYTE data) 
 {	
-	DEV_Digital_Write(LCD_CS, 0);
 	DEV_Digital_Write(LCD_DC, 1);
 	DEV_SPI_WriteByte(data);  
-	DEV_Digital_Write(LCD_CS,1);
 }  
 
 void LCD_2IN_WriteData_Word(UWORD data)
 {
-	DEV_Digital_Write(LCD_CS, 0);
 	DEV_Digital_Write(LCD_DC, 1);
 	DEV_SPI_WriteByte((data>>8) & 0xff);
 	DEV_SPI_WriteByte(data);
-	DEV_Digital_Write(LCD_CS, 1);
 }	  
 
 
@@ -82,7 +76,7 @@ void LCD_2IN_Init(void)
 	LCD_2IN_Reset();
 
 	LCD_2IN_Write_Command(0x36);
-	LCD_2IN_WriteData_Byte(0x00); 
+	LCD_2IN_WriteData_Byte(0x70); 
 
 	LCD_2IN_Write_Command(0x3A); 
 	LCD_2IN_WriteData_Byte(0x05);
