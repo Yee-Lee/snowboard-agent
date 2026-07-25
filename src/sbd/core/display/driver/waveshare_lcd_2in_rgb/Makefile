@@ -1,33 +1,25 @@
-# ==========================================
-# Compiler Settings
-# ==========================================
-CC = gcc
-CFLAGS = -fPIC -O3 -Wall -I./ -DUSE_DEV_LIB
-# 把 -shared 移到下方編譯指令，這裡保留需要連結的庫
-LIBS = -llgpio -lm
+# Makefile for Waveshare 2-inch LCD Driver
 
-# ==========================================
-# Files and Targets
-# ==========================================
-TARGET = libdisplay.so
-SRCS = display_driver.c LCD_2inch.c DEV_Config.c
+# Compiler and flags
+CC = gcc
+CFLAGS = -Wall -Wextra -fPIC -I.
+LDFLAGS = -shared
+LIBS = -llgpio
+
+# Source files
+SRCS = LCD_2inch.c DEV_Config.c display_driver.c
 OBJS = $(SRCS:.c=.o)
 
-# ==========================================
-# Build Rules
-# ==========================================
+# Target shared library
+TARGET = libdisplay.so
+
 all: $(TARGET)
 
-# 注意這裡：$^ (代表所有的 .o 檔) 必須放在 $(LIBS) 前面
 $(TARGET): $(OBJS)
-	$(CC) -shared -o $@ $^ $(LIBS)
-	@echo "編譯完成！已產生 $(TARGET)"
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-%.o: %.c
+.c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS) $(TARGET)
-	@echo "清理完成！"
-
-.PHONY: all clean

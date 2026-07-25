@@ -187,8 +187,8 @@ UBYTE DEV_ModuleInit(void)
 
     DEV_GPIO_Init();
     
-    // 開啟 SPI0 晶片通道 0，設定頻率為 20MHz (20000000)
-    SPI_Handle = lgSpiOpen(0, 0, 20000000, 0);
+    // 開啟 SPI0 晶片通道 0，設定頻率為 60MHz (60000000)
+    SPI_Handle = lgSpiOpen(0, 0, 60000000, 0);
     if (SPI_Handle < 0) {
         printf("lgSpiOpen Failed\n");
         return -1;

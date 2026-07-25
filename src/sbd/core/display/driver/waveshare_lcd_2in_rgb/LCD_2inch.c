@@ -261,11 +261,16 @@ parameter	:
 ******************************************************************************/
 void LCD_2IN_Display(UBYTE *image)
 {
-	UWORD i;
 	LCD_2IN_SetWindow(0, 0, LCD_2IN_WIDTH, LCD_2IN_HEIGHT);
 	DEV_Digital_Write(LCD_DC, 1);
-	for(i = 0; i < LCD_2IN_HEIGHT; i++){
-		DEV_SPI_Write_nByte((UBYTE *)image+LCD_2IN_WIDTH*2*i,LCD_2IN_WIDTH*2);
+	
+	uint32_t total_len = (uint32_t)LCD_2IN_WIDTH * LCD_2IN_HEIGHT * 2;
+	uint32_t sent = 0;
+	while (sent < total_len) {
+		uint32_t chunk = total_len - sent;
+		if (chunk > 4096) chunk = 4096;
+		DEV_SPI_Write_nByte(image + sent, chunk);
+		sent += chunk;
 	}
 }
 
