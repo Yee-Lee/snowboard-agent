@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "LCD_2inch.h"
 #include "DEV_Config.h" // 引入硬體控制標頭檔
 
@@ -7,12 +8,26 @@
 #define LOGICAL_WIDTH   128
 #define LOGICAL_HEIGHT  128
 
-// 將 128x128 置中於 320x240 的 LCD 螢幕上
-#define OFFSET_X ((LCD_2IN_WIDTH - LOGICAL_WIDTH) / 2)
-#define OFFSET_Y ((LCD_2IN_HEIGHT - LOGICAL_HEIGHT) / 2)
+// 為了讓實體尺寸與 1.5 吋 OLED 相近，我們將 128x128 放大
+// 1.5 吋 OLED (128x128) 的像素密度約為 120 PPI，2 吋 LCD (320x240) 約為 200 PPI
+// 128 * (200 / 120) = 213.3，我們取 212 方便置中
+#define SCALED_WIDTH    212
+#define SCALED_HEIGHT   212
+
+// 實際螢幕大小
+#define FULL_WIDTH   LCD_2IN_WIDTH
+#define FULL_HEIGHT  LCD_2IN_HEIGHT
+
+// 將 SCALED_WIDTH x SCALED_HEIGHT 置中於 320x240 的 LCD 螢幕上
+#define OFFSET_X ((FULL_WIDTH - SCALED_WIDTH) / 2)
+#define OFFSET_Y ((FULL_HEIGHT - SCALED_HEIGHT) / 2)
 
 #define PY_BUFFER_SIZE (LOGICAL_WIDTH * LOGICAL_HEIGHT * 3) // RGB888
-#define HW_BUFFER_SIZE (LOGICAL_WIDTH * LOGICAL_HEIGHT * 2) // RGB565
+#define FULL_HW_BUFFER_SIZE (FULL_WIDTH * FULL_HEIGHT * 2) // RGB565
+
+// 宣告一個全域緩衝區以存放 320x240 的完整畫面
+static uint8_t full_hw_buffer[FULL_HW_BUFFER_SIZE];
+static int frame_count = 0;
 
 // 1. 初始化顯示器
 void init_display(void) {
@@ -24,43 +39,45 @@ void init_display(void) {
 
     // 修正：使用 2 吋 LCD 驅動 API
     LCD_2IN_Init();
-    LCD_2IN_Clear(0x0000); // 或是 0x0000 (BLACK) / 0xFFFF (WHITE)
+    LCD_2IN_Clear(0x0000); // 清屏 (黑)
+    
+    // 將內部緩衝區初始化為黑色 (0x0000)
+    memset(full_hw_buffer, 0, FULL_HW_BUFFER_SIZE);
 }
 
 // 2. 接收 Python 的 RGB888 (24-bit) 圖片，轉換為 RGB565 (16-bit) 並輸出
 void push_frame(const uint8_t* py_buffer, int length) {
+    frame_count++;
+
     if (length != PY_BUFFER_SIZE) {
         printf("Error: Buffer length must be %d bytes (got %d)\n", PY_BUFFER_SIZE, length);
         return;
     }
 
-    uint8_t hw_buffer[HW_BUFFER_SIZE];
+    // 使用最近鄰插值 (Nearest Neighbor) 將 128x128 放大到 212x212
+    // 並填入 320x240 緩衝區的正中央
+    for (int y = 0; y < SCALED_HEIGHT; y++) {
+        int src_y = y * LOGICAL_HEIGHT / SCALED_HEIGHT;
+        int full_y = OFFSET_Y + y;
+        
+        for (int x = 0; x < SCALED_WIDTH; x++) {
+            int src_x = x * LOGICAL_WIDTH / SCALED_WIDTH;
+            int py_idx = (src_y * LOGICAL_WIDTH + src_x) * 3;
+            
+            uint8_t r = py_buffer[py_idx];
+            uint8_t g = py_buffer[py_idx+1];
+            uint8_t b = py_buffer[py_idx+2];
 
-    // RGB888 -> RGB565 轉碼 (Big-Endian 輸出)
-    for(int i = 0, j = 0; i < PY_BUFFER_SIZE; i += 3, j += 2) {
-        uint8_t r = py_buffer[i];
-        uint8_t g = py_buffer[i+1];
-        uint8_t b = py_buffer[i+2];
+            uint16_t color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 
-        uint16_t color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-
-        hw_buffer[j]     = (color >> 8) & 0xFF; // MSB
-        hw_buffer[j + 1] = color & 0xFF;        // LSB
+            int hw_idx = (full_y * FULL_WIDTH + OFFSET_X + x) * 2;
+            full_hw_buffer[hw_idx] = (color >> 8) & 0xFF; // MSB
+            full_hw_buffer[hw_idx+1] = color & 0xFF;      // LSB
+        }
     }
 
-    // 設置 128x128 的寫入範圍（置中）
-    LCD_2IN_SetWindow(OFFSET_X, OFFSET_Y, OFFSET_X + LOGICAL_WIDTH, OFFSET_Y + LOGICAL_HEIGHT);
-    DEV_Digital_Write(LCD_DC, 1);
-    
-    // 批次寫入硬體緩衝區
-    uint32_t total_len = HW_BUFFER_SIZE;
-    uint32_t sent = 0;
-    while (sent < total_len) {
-        uint32_t chunk = total_len - sent;
-        if (chunk > 4096) chunk = 4096;
-        DEV_SPI_Write_nByte(hw_buffer + sent, chunk);
-        sent += chunk;
-    }
+    // 使用原廠函式進行全螢幕刷新，確保控制器行為正確
+    LCD_2IN_Display(full_hw_buffer);
 }
 
 // 3. 關閉顯示器並釋放資源

@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -fPIC -I.
+CFLAGS = -Wall -Wextra -fPIC -I. -DUSE_DEV_LIB=1
 LDFLAGS = -shared
 LIBS = -llgpio
 
