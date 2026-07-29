@@ -87,38 +87,38 @@ static void OLED_InitReg(void)
     OLED_WriteData(0x7f);     //row address end 63    
 
     OLED_WriteReg(0xB3);
-    OLED_WriteData(0xF1);
+    OLED_WriteData(0xF0);  // 最高晶體振盪頻率
 
     OLED_WriteReg(0xCA);  
-    OLED_WriteData(0x7F);
+    OLED_WriteData(0x7F);  // 1/128 MUX
 
-    OLED_WriteReg(0xa0);  //set re-map & data format
-    OLED_WriteData(0x74);     //Horizontal address increment
+    OLED_WriteReg(0xa0);  // set re-map & data format
+    OLED_WriteData(0x74);  // 65k color, 16bit RGB565
 
-    OLED_WriteReg(0xa1);  //set display start line
-    OLED_WriteData(0x00);     //start 00 line
+    OLED_WriteReg(0xa1);  // set display start line
+    OLED_WriteData(0x00);
 
-    OLED_WriteReg(0xa2);  //set display offset
+    OLED_WriteReg(0xa2);  // set display offset
     OLED_WriteData(0x00);
 
     OLED_WriteReg(0xAB);  
-    OLED_WriteReg(0x01);  
+    OLED_WriteData(0x01);  // 正確寫入 Data: Enable internal VDD regulator (1.8V)// Enable internal VDD regulator
 
     OLED_WriteReg(0xB4);  
     OLED_WriteData(0xA0);   
     OLED_WriteData(0xB5);  
-    OLED_WriteData(0x55);    
+    OLED_WriteData(0x55);  
 
-    OLED_WriteReg(0xC1);  
-    OLED_WriteData(0xC8); 
-    OLED_WriteData(0x80);
-    OLED_WriteData(0xC0);
+    OLED_WriteReg(0xC1);  // Contrast current for Color A,B,C
+    OLED_WriteData(0x8A); 
+    OLED_WriteData(0x70);
+    OLED_WriteData(0x8A);
 
-    OLED_WriteReg(0xC7);  
-    OLED_WriteData(0x0F);
+    OLED_WriteReg(0xC7);  // Master Contrast Current Control
+    OLED_WriteData(0x0A);  // 從 0x0F 降至 0x0A，降低電流峰值以消除 PWM 電源水波紋
 
     OLED_WriteReg(0xB1);  
-    OLED_WriteData(0x32);
+    OLED_WriteData(0x32);  // Phase 1 (2 DCLKs), Phase 2 (3 DCLKs) 配合高頻率 PWM
 
     OLED_WriteReg(0xB2);  
     OLED_WriteData(0xA4);
@@ -126,13 +126,13 @@ static void OLED_InitReg(void)
     OLED_WriteData(0x00);
 
     OLED_WriteReg(0xBB);  
-    OLED_WriteData(0x17);
+    OLED_WriteData(0x17);  // Pre-charge voltage = 0.5 * VCC
 
     OLED_WriteReg(0xB6);
-    OLED_WriteData(0x01);
+    OLED_WriteData(0x01);  // Second precharge period = 1 DCLK
 
     OLED_WriteReg(0xBE);
-    OLED_WriteData(0x05);
+    OLED_WriteData(0x05);  // VCOMH = 0.82 * VCC
 
     OLED_WriteReg(0xA6);
 }
