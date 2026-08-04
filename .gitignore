@@ -1,0 +1,38 @@
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python Cache & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python Environments & Build Artifacts
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Native C/C++ Driver Build Outputs (ch02a)
+*.so
+*.o
+*.a
+*.dylib
+*.dll
+native/**/build/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment & Logs
+.env
+!.env.example
+*.log
