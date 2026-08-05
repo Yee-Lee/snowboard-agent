@@ -1,0 +1,2 @@
+past POC commit : 6e85ecce2738a7041c3ba7dc1d5f0944ecf1fc6c
+co-I2S mic+speaker test
