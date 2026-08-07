@@ -37,6 +37,7 @@ class Worker:
         action_kind: str = "rest",
         next_perceptions: tuple[str, ...] = (),
         publish_fact: bool = True,
+        action_payload: dict | None = None,
     ):
         self.bus, self.kind, self.phase = bus, kind, phase
         self.hold_after_fact, self.invalid_response = hold_after_fact, invalid_response
@@ -44,6 +45,7 @@ class Worker:
         self.next_perceptions = next_perceptions
         self.publish_fact = publish_fact
         self.started, self.fact_sent, self.release = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        self.action_payload = {"value": 1} if action_payload is None else action_payload
 
     async def start(self) -> None: pass
     async def stop(self) -> None: pass
@@ -63,14 +65,14 @@ class Worker:
     async def reason(self, session_id: str, turn_id: int, correlation_id: int, results: tuple, pending: tuple) -> None:
         self.started.set()
         kind = "bogus" if self.invalid_response else self.action_kind
-        await self.bus.publish(LLMResponse(kind, {"value": 1}, self.next_perceptions, session_id=session_id, turn_id=turn_id, correlation_id=correlation_id))  # type: ignore[arg-type]
+        await self.bus.publish(LLMResponse(kind, self.action_payload, self.next_perceptions, session_id=session_id, turn_id=turn_id, correlation_id=correlation_id))  # type: ignore[arg-type]
         self.fact_sent.set()
         if self.hold_after_fact:
             await self.release.wait()
 
     async def execute(self, session_id: str, turn_id: int, correlation_id: int, payload: dict) -> None:
         self.started.set()
-        await self.bus.publish(ActionCompleted(self.kind, "ok", session_id=session_id, turn_id=turn_id, correlation_id=correlation_id))
+        await self.bus.publish(ActionCompleted(self.kind, getattr(self, "action_status", "ok"), session_id=session_id, turn_id=turn_id, correlation_id=correlation_id))
         self.fact_sent.set()
         if self.hold_after_fact:
             await self.release.wait()
@@ -91,24 +93,27 @@ class ExternalControl:
         self.pending.append(message_id)
     async def mark_pending(self, message_id: str, session_id: str) -> None:
         self.pending.append(message_id)
-    async def begin_read(self, session_id: str, turn_id: int) -> None:
+    async def begin_read(self, session_id: str, turn_id: int) -> tuple[str, ...]:
         self.read_started.set()
+        return ()
     async def close_read(self, session_id: str, turn_id: int) -> None:
         self.closed.append((session_id, turn_id))
     async def pending_ids(self, session_id: str) -> tuple[str, ...]:
         return tuple(self.pending)
     async def flush_to_wake(self) -> None: self.flushed += 1
-    async def discard_pending(self) -> None: self.discarded += 1
+    async def discard(self) -> None: self.discarded += 1
 
 
 def make_sm(
     *,
+    hold_action: bool = False,
     hold_perception: bool = False,
     hold_reasoner: bool = False,
     invalid_response: bool = False,
     action_kind: str = "rest",
     next_perceptions: tuple[str, ...] = (),
     converger=None,
+    action_payload: dict | None = None,
     action_validator=None,
     recovery=None,
 ):
@@ -123,8 +128,9 @@ def make_sm(
         invalid_response=invalid_response,
         action_kind=action_kind,
         next_perceptions=next_perceptions,
+        action_payload=action_payload,
     )
-    rest = Worker(bus, "rest", "action")
+    rest = Worker(bus, "rest", "action", hold_after_fact=hold_action)
     speak = Worker(bus, "speak", "action", hold_after_fact=True)
     catalog = WorkerCatalog()
     catalog.register_perception("listen", listen)
@@ -132,6 +138,8 @@ def make_sm(
     catalog.set_reasoner(reasoner)
     catalog.register_action("rest", rest)
     catalog.register_action("speak", speak)
+    tool = Worker(bus, "tool", "action", hold_after_fact=True)
+    catalog.register_action("tool", tool)
     catalog.seal()
     sm = StateManager(
         bus=bus,
@@ -335,7 +343,7 @@ def test_m1_sm_005_validator_rejection_is_nonfatal_error_without_bus_error() -> 
         calls: list[tuple[str, dict]] = []
 
         class RejectingValidator:
-            async def validate(self, kind: str, payload: dict) -> None:
+            def validate(self, kind: str, payload: dict) -> None:
                 calls.append((kind, payload))
                 raise ValueError("rejected")
 

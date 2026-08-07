@@ -25,17 +25,17 @@
 
 | 工作包 | SP | 範圍與主要交付 | 主要 Test ID | 相依 | 狀態 |
 | :--- | ---: | :--- | :--- | :--- | :--- |
-| **WP-M2-01** 測試骨架 | 3 | M2 entrypoint；mock HAL/worker/message/app fixtures；barrier/call-log；Pi-only import guard；Test ID 追溯骨架 | M2-REG-001（部分） | M1 PASS | 待開工 |
-| **WP-M2-02** Payload 與 ToolRegistry | 5 | JSON-compatible validator；三種 exact schema；sealed registry；defensive schemas；side-effect-free validate 與 exactly-once dispatch | M2-PAY-001、M2-PAY-002 | WP-M2-01 | 待開工 |
-| **WP-M2-03** External message | 8 | source/store/control/consumer；overflow；ownership；begin/consume/close race；flush/discard/stop | M2-MSG-001、M2-MSG-002、M2-MSG-004、M2-MSG-005 | WP-M2-01 | 待開工 |
-| **WP-M2-04** Mock/null HAL | 8 | Audio/Display/Camera/GPIO Protocol；null/mock backend；lazy factory；格式、iterator、debounce 契約 | M2-HAL-001、M2-HAL-002、M2-HAL-004 | WP-M2-01 | 待開工 |
-| **WP-M2-05** Worker execution/adapters | 6 | 單次 active call；Fact cardinality；cleanup-before-Fact；abort/force-abort；deterministic ASR/Vision/LLM/TTS | M2-WRK-001 | WP-M2-01 | 待開工 |
-| **WP-M2-06** Perception workers | 6 | Listen/Read/Look；timeout/P5/exception/cancel；read arrival-order/at-most-once | M2-WRK-002 | WP-M2-03、04、05 | 待開工 |
-| **WP-M2-07** PromptBuilder/Reasoner | 5 | 固定 prompt 排序；opaque pending metadata；capability 過濾；LLM 正規化與 clean-failure fallback | M2-WRK-003 | WP-M2-02、03、05 | 待開工 |
-| **WP-M2-08** Action workers | 4 | Speak 完整播放；Tool 單次 dispatch；Rest no-op Fact；P5/cancel cleanup | M2-WRK-004 | WP-M2-02、04、05 | 待開工 |
-| **WP-M2-09** Composition/InputSource | 5 | Button/Wake mock source；M2 RM graph；control late-fill；catalog/capability coherence；default mock composition | M2-FLOW-008（部分） | WP-M2-02、03、04、06、07、08 | 待開工 |
-| **WP-M2-10** SM/RM 垂直整合 | 5 | 同步 validator 對齊；next-perception 過濾/去重；P5/exception/self-check；notice barrier；flush/discard 順序 | M2-FLOW-003、M2-FLOW-004、M2-FLOW-005、M2-FLOW-006 | WP-M2-03、06、07、08、09 | 待開工 |
-| **WP-M2-11** Flows/Process/Regression | 5 | wake 多 turn；external-message action；SIGINT exit 0；21 Test ID 證據；M1/M2/full regression；Python 3.11 復驗 | M2-FLOW-001、M2-FLOW-002、M2-FLOW-008；M2-REG-001 | WP-M2-01～10 | 待開工 |
+| **WP-M2-01** 測試骨架 | 3 | M2 entrypoint；mock HAL/worker/message/app fixtures；barrier/call-log；Pi-only import guard；Test ID 追溯骨架 | M2-REG-001（部分） | M1 PASS | 完成（2026-08-07） |
+| **WP-M2-02** Payload 與 ToolRegistry | 5 | JSON-compatible validator；三種 exact schema；sealed registry；defensive schemas；side-effect-free validate 與 exactly-once dispatch | M2-PAY-001、M2-PAY-002 | WP-M2-01 | 完成（2026-08-07） |
+| **WP-M2-03** External message | 8 | source/store/control/consumer；overflow；ownership；begin/consume/close race；flush/discard/stop | M2-MSG-001、M2-MSG-002、M2-MSG-004、M2-MSG-005 | WP-M2-01 | 完成（2026-08-07） |
+| **WP-M2-04** Mock/null HAL | 8 | Audio/Display/Camera/GPIO Protocol；null/mock backend；lazy factory；格式、iterator、debounce 契約 | M2-HAL-001、M2-HAL-002、M2-HAL-004 | WP-M2-01 | 完成（2026-08-07） |
+| **WP-M2-05** Worker execution/adapters | 6 | 單次 active call；Fact cardinality；cleanup-before-Fact；abort/force-abort；deterministic ASR/Vision/LLM/TTS | M2-WRK-001 | WP-M2-01 | 完成（2026-08-07） |
+| **WP-M2-06** Perception workers | 6 | Listen/Read/Look；timeout/P5/exception/cancel；read arrival-order/at-most-once | M2-WRK-002 | WP-M2-03、04、05 | 完成（2026-08-07） |
+| **WP-M2-07** PromptBuilder/Reasoner | 5 | 固定 prompt 排序；opaque pending metadata；capability 過濾；LLM 正規化與 clean-failure fallback | M2-WRK-003 | WP-M2-02、03、05 | 完成（2026-08-07） |
+| **WP-M2-08** Action workers | 4 | Speak 完整播放；Tool 單次 dispatch；Rest no-op Fact；P5/cancel cleanup | M2-WRK-004 | WP-M2-02、04、05 | 完成（2026-08-07） |
+| **WP-M2-09** Composition/InputSource | 5 | Button/Wake mock source；M2 RM graph；control late-fill；catalog/capability coherence；default mock composition | M2-FLOW-008（部分） | WP-M2-02、03、04、06、07、08 | 完成（2026-08-07） |
+| **WP-M2-10** SM/RM 垂直整合 | 5 | 同步 validator 對齊；next-perception 過濾/去重；P5/exception/self-check；notice barrier；flush/discard 順序 | M2-FLOW-003、M2-FLOW-004、M2-FLOW-005、M2-FLOW-006 | WP-M2-03、06、07、08、09 | 完成（2026-08-07） |
+| **WP-M2-11** Flows/Process/Regression | 5 | wake 多 turn；external-message action；SIGINT exit 0；21 Test ID 證據；M1/M2/full regression；Python 3.11 復驗 | M2-FLOW-001、M2-FLOW-002、M2-FLOW-008；M2-REG-001 | WP-M2-01～10 | 完成（2026-08-07） |
 | **合計** | **60** | | **21 個 M2 Test ID 全覆蓋** | | |
 
 ---
@@ -137,6 +137,86 @@
 | M2-FLOW-008 | WP-M2-09 | WP-M2-11 |
 | M2-REG-001 | WP-M2-01 | WP-M2-11 |
 
+### 開發紀錄
+
+#### 2026-08-07：WP-M2-01 完成
+
+- 建立明確檔案清單式 M2 milestone entrypoint 與 21 個 Test ID 追溯 manifest；未映射 Test ID 會使正式 M2 gate 明確失敗，不會假綠燈。
+- 建立 `FX-BARRIER-WORKER`、call-log、`FX-MOCK-HAL`、`FX-MOCK-WORKER`、`FX-MESSAGE`、`FX-MOCK-APP` deterministic fixtures；race 控時只使用 `asyncio.Event`。
+- 新增 `M2-REG-001` 部分證據：fixture barrier/call ordering、fixture 有效性與 default package Pi-only import guard，共 3 個真實 assert test。
+- 驗證環境：workspace `.venv` Python 3.12；移除 host ROS `PYTHONPATH` 並設定 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`，避免外部 `launch_testing` plugin 污染。
+- `python -m pytest --collect-only -q tests/milestones/test_m2_mock_pipeline.py`：1 collected，PASS。
+- `python -m pytest -q tests/test_m2_reg_001.py`：3 passed。
+- `python -m pytest -q tests/milestones/test_m1_foundation.py`：1 passed（entrypoint 內執行既有 M1 suite）。
+- 正式 M2 entrypoint 目前預期為 RED：HAL/WRK/PAY/MSG/FLOW 共 20 個 Test ID 尚未映射，`M2-REG-001` 只有部分證據；這是後續 WP-M2-02～11 的開發 gate，不視為 defect 或 M2 PASS。
+
+#### 2026-08-07：WP-M2-02 完成
+
+- 新增同步 `ActionPayloadValidator`：plain JSON value、最大深度 32、finite float、speak/tool/rest exact schema、輸入不 mutation 與 sanitized path/reason error。
+- 新增 sealed `ToolRegistry`：registration validation、duplicate/seal、sorted defensive schemas、side-effect-free synchronous validate、unknown-before-handler 與 exactly-once async dispatch。
+- 將 M1 StateManager 的 validator port/call seam 對齊 Ch 9 已簽核同步 API；M1 rejecting fake 同步更新，驗收門檻未放寬。
+- `python -m pytest -q tests/test_m2_pay_001_002.py tests/test_state_manager.py`：20 passed。
+- Test ID 證據：`M2-PAY-001` 2 nodes、`M2-PAY-002` 2 nodes；均已加入 M2 manifest。
+
+
+#### 2026-08-07：WP-M2-03 完成
+
+- 新增 `ExternalMessageSource`、canonical model、single-lock/Condition buffer、SM control 與 narrow read consumer；store-before-publish、UUIDv4/sequence、arrival order 與 payload-free Signal 均固定。
+- ownership/read-window 覆蓋 queued→session/pending→turn→consumed、consume/close/late-assign 線性化、notify-before-wait、timeout/cancel/discard/stop waiter 收斂。
+- overflow 在接受後才分配 ID/sequence；drop-oldest 不淘汰 turn-owned，drop-newest/reject 不發 Signal；flush 於 lock 外按原 ID/arrival 重發。
+- 將 M1 `ExternalMessageControl` seam 對齊 Ch 7 `begin_read() -> tuple` 與 `discard()` 正式 API。
+- `python -m pytest -q tests/test_m2_msg_001_002_004_005.py tests/test_state_manager.py`：24 passed；目前全部 M2 component tests：15 passed；M1 milestone：PASS。
+- Test ID 證據：`M2-MSG-001/002/004/005` 共 8 nodes，已加入 M2 manifest。
+
+#### 2026-08-07：WP-M2-04 完成
+
+- 新增 Audio/Display/Camera/GPIO Protocol 與 mock/null backend；四組 factory 僅 lazy import 所選 backend，GPIO 明確不提供 NullGPIO。
+- AudioInput 同 process 單一 active iterator、`aclose()`/stop 釋放與 reopen；AudioOutput 完整消費；Display back-buffer/show 與 pixel length validation。
+- Camera 產合法 RGB/I420 YUV，並以純 Python baseline encoder 產任意合法尺寸 JPEG；系統 `file` 獨立辨識為 JFIF baseline 13x9。
+- MockGPIO 覆蓋一 pin 一 owner、edge/debounce、callback task isolation、冪等 unregister 與 configure-before-set output。
+- `python -m pytest -q tests/test_m2_hal_001_002_004.py`：4 passed；M1 milestone：PASS；import guard 未載入 sounddevice/picamera2/gpiod/native display。
+- Test ID 證據：`M2-HAL-001/002/004` 共 4 nodes，已加入 M2 manifest。
+
+#### 2026-08-07：WP-M2-05、06、08 完成
+
+- 新增 private single-call worker runtime：reentry rejection、inner operation ownership、cooperative abort、pure-async force-abort 與 outer-task done proof；未取消 outer task冒充完成。
+- 新增 deterministic ASR/Vision/LLM/TTS adapters，可控 normal、P5、unexpected exception、block/cancel；adapter 不 publish Event。
+- Listen/Read/Look 覆蓋 cleanup-before-Fact、timeout/error、message arrival-order/at-most-once、cancel 無 normal Fact；unexpected exception 恰一 sanitized `ErrorOccurred` 後逸出。
+- Speak 完整播放所有 PCM 後發 Fact；Tool 只在 dispatch 執行 handler 一次；Rest 只發 no-op Fact；P5 轉 `ActionCompleted(error)`。
+- active abort/force-abort 均等待 outer task done、回空 `ForceAbortReport` 且無殘留 operation task。
+- `python -m pytest -q tests/test_m2_wrk_001_002_004.py`：6 passed；目前全部 M2 component tests：25 passed；M1 milestone：PASS。
+- Test ID 證據：`M2-WRK-001/002/004` 共 6 nodes，已加入 manifest；`M2-WRK-003` 於 IR Revised 後完成。
+
+#### 2026-08-07：WP-M2-07 完成
+
+- Designer 將 `IR_dev_M2_I` 標為 Revised；Ch 2 新增 Reasoner `action_validator` 參數，Ch 5 明定與 SM 共用同一 instance，依裁定解除阻塞。
+- 新增 deterministic PromptBuilder 與 Reasoner normalizer：固定 perception 排序、opaque pending IDs、無 hidden history、capability 過濾、同步 payload 驗證。
+- timeout/reject/empty/bad JSON 走 apology speak 或 rest fallback；raw output 不進 Event/log；cancel 與 unexpected exception 分支互斥。
+- `python -m pytest -q tests/test_m2_wrk_003.py tests/test_contracts.py tests/test_resource_manager.py`：40 passed；`M2-WRK-003` 共 3 nodes。
+
+#### 2026-08-07：WP-M2-09 完成
+
+- 新增 Button/WakeWord mock InputSource 與 external source late-fill/arm 接線；producer 只在 catalog seal/capability freeze 後可用。
+- 新增 default M2 graph：mock HAL、adapters、perception/action workers、Reasoner、registry/validator 與 input producers；保留 explicit M1 composition fixture。
+- main 在 SM 前建立 validator，default composition 將同一 instance 注入 Reasoner；M1/custom 路徑以 lazy import 維持 M1 concrete-module boundary。
+- default subprocess 無 Pi/network/model/credential 即進 `state=IDLE`，SIGINT/SIGTERM exit 0。
+
+#### 2026-08-07：WP-M2-10 完成
+
+- SM THINK Exit 使用同步 validator，unknown next kind WARNING 過濾、duplicate stable dedupe、rest 忽略 next，missing target/invalid payload 直接 self-check ERROR。
+- production/focused flows 覆蓋 perception/LLM/action P5、worker ErrorOccurred→ERROR 與 self-check 無 ErrorOccurred 的分流。
+- completion notice 前不離開 ACTION/PERCEPTION；rest 固定 IDLE→flush，error/interrupt/shutdown 固定 discard，結束無 in-flight/read window。
+- `python -m pytest -q tests/test_m2_sm_flows.py tests/test_state_manager.py`：20 passed；`M2-FLOW-003/004/005/006` 完成。
+
+#### 2026-08-07：WP-M2-11 與 M2 DoD 完成
+
+- production M2 graph 完成 button 兩 turn speak→rest 與 external read-once→action→rest；另完成 bad-LLM fallback session。
+- default `python -m sbd.main` 由 subprocess 證明 IDLE、SIGINT exit 0、無 startup/runtime fatal；process smoke 不取代 session asserts。
+- 21 個 Test ID 全部映射到唯一 pytest node；manifest 無 empty/partial、無 skip/xfail。
+- `python -m pytest -v tests/milestones/test_m2_mock_pipeline.py`：1 passed（內層 manifest 全綠）。
+- `python -m pytest -v tests/milestones/test_m1_foundation.py`：1 passed（內層 166 passed）。
+- `python -m pytest -q`：204 passed。
+- workspace `.venv` 為 Python 3.12.3，符合 DEV-PY311「Python 3.11 以上」；本機未提供獨立 `python3.11` binary。
 ---
 
 ### 主要風險與重估點條件

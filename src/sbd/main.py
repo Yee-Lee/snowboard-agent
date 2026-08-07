@@ -17,7 +17,6 @@ from sbd.core.logger import (
     configure_logging,
     get_logger,
 )
-from sbd.core.m1_composition import register_m1_resources
 from sbd.core.resource_manager import ResourceManager
 from sbd.core.state_manager import StateManager
 from sbd.core.state_manager.convergence import (
@@ -37,7 +36,7 @@ Composition = Callable[[ResourceManager, EventBus, AppConfig], None]
 async def run_app(
     config_path: str | None = None,
     *,
-    composition: Composition = register_m1_resources,
+    composition: Composition | None = None,
 ) -> int:
     """Run until normal shutdown or the first supervised fatal condition."""
     try:
@@ -52,6 +51,16 @@ async def run_app(
         return EXIT_CONFIG_ERROR
 
     logging_runtime = configure_logging(config.log)
+    if composition is None:
+        from sbd.core.m2_composition import M2Composition
+
+        m2_composition = M2Composition()
+        effective_composition: Composition = m2_composition
+        action_validator = m2_composition.action_validator
+    else:
+        effective_composition = composition
+        action_validator = None
+
     loop = asyncio.get_running_loop()
     observer: ErrorLoggingObserver | None = None
     rm: ResourceManager | None = None
@@ -84,9 +93,10 @@ async def run_app(
             rm.catalog,
             converger=converger,
             recovery=rm,
+            action_validator=action_validator,
         )
         rm.set_state_manager(sm)
-        composition(rm, bus, config)
+        effective_composition(rm, bus, config)
 
         try:
             # SM is ready before RM reaches producers; its catalog is filled
@@ -113,6 +123,7 @@ async def run_app(
             except (NotImplementedError, RuntimeError):
                 pass
         logger.info("M1 runtime ready")
+        logger.info("M2 runtime ready state=IDLE")
 
         supervised: set[asyncio.Task[object]] = {
             fatal_bus_task,

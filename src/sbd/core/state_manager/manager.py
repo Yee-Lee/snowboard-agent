@@ -455,21 +455,34 @@ class StateManager:
             raise ReasonerContractViolation("unknown action kind")
         if self._action_validator is not None:
             try:
-                await self._action_validator.validate(
+                self._action_validator.validate(
                     response.action_kind, response.action_payload
                 )
             except Exception as exc:
                 raise ReasonerContractViolation("action payload rejected") from exc
-        if response.action_kind == "rest":
-            return
+        if response.action_kind not in self._workers.action_kinds:
+            raise ReasonerContractViolation("action target is not registered")
         assert self._session is not None
-        normalized = tuple(dict.fromkeys(
-            kind for kind in response.next_perceptions
-            if kind in self._workers.perception_kinds
-        ))
+        if response.action_kind == "rest":
+            self._session.next_perceptions = ()
+            return
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for kind in response.next_perceptions:
+            if kind not in self._workers.perception_kinds:
+                logger.warning(
+                    "Ignoring unregistered next perception kind=%s",
+                    kind,
+                )
+                continue
+            if kind in seen:
+                logger.debug("Ignoring duplicate next perception kind=%s", kind)
+                continue
+            seen.add(kind)
+            normalized.append(kind)
         if not normalized:
             raise ReasonerContractViolation("no usable next perceptions")
-        self._session.next_perceptions = normalized
+        self._session.next_perceptions = tuple(normalized)
 
     async def _close_read(self) -> None:
         if self._read_open is None:
@@ -556,7 +569,7 @@ class StateManager:
             return
         await self._close_read()
         if pending.buffer_exit_policy == "discard" and self._external_control is not None:
-            await self._external_control.discard_pending()
+            await self._external_control.discard()
         self._pending = None
         await self._transition("IDLE")
         if pending.buffer_exit_policy == "flush_to_wake" and self._external_control is not None:
@@ -568,7 +581,7 @@ class StateManager:
         self._shutting_down = True
         self._cancel_wake_timer()
         if self._external_control is not None:
-            await self._external_control.discard_pending()
+            await self._external_control.discard()
         if self._recovery is not None:
             await self._recovery.prepare_shutdown()
         await self._begin_convergence("shutdown")
