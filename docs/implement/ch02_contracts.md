@@ -311,10 +311,11 @@ Cognition 現況為單一 reasoner，依 arch.md §2.1 不建立 `base.py` Proto
 class Reasoner:
     def __init__(
         self,
-        llm: LLMEngineAdapter,       # Ch 2b LiteRT-LM adapter
+        llm: LLMEngineAdapter,               # Ch 2b LiteRT-LM adapter
         prompt_builder: PromptBuilder,
         bus: EventBus,
         capability_of: Callable[[str], bool],
+        action_validator: ActionPayloadValidator,  # Ch 9 §7；與 SM 共用同一 instance
     ) -> None: ...
 
     async def start(self) -> None:
@@ -383,6 +384,7 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 - **`prompt_builder: PromptBuilder`**：本 turn 上下文組 prompt；於 Ch 2b 定義
 - **`bus: EventBus`**：Fact publish 通道
 - **`capability_of`**：RM 提供的窄查詢函式，只允許 perception / action kind
+- **`action_validator: ActionPayloadValidator`**：Ch 9 §7 定義的 payload 驗證器；由 `main.py` 以同一個 `ToolRegistry` 建立後同時注入 SM（A 類依賴）與 Reasoner；validator 無 mutable call state，同一 instance 在兩處使用結果一致。此參數解決 Reasoner normalizer（P5 路徑）與 SM THINK Exit 共用驗證器的組裝缺口（IR_dev_M2_I）。
 
 與 IR-I-01 對齊：reasoner 採用 Perception / Action 相同的分支模型——正常 / P5 路徑一個 terminal Fact，不可翻譯路徑一個 `ErrorOccurred`，cancel 路徑不發布正常 Fact；方法本身回傳 `None`。
 

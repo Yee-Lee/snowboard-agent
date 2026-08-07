@@ -216,19 +216,6 @@ class WorkerCatalog:
 
 seal 驗證的必要 instance 集合，由下列三者聯集推導，而非硬編 `listen` / `read`：
 
-```python
-required_kinds =
-    {"reasoner", "rest"}            # 固定 session 骨架
-    | {first_turn_worker(src) for src in enabled_after_gate} # 見 §4.6 gate 後的 sources
-    | set(default_perceptions)     # action-error 續 turn 用
-```
-
-- `first_turn_worker` 採 Ch 4 §6.3 固定 wake mapping：`button` / `wake_word` → `listen`；`external_message` → `read`。
-- `enabled_after_gate` 是 §4.5 startup coherence gate 裁定後仍啟用的 InputSources；gate 已把「first-turn worker 不存在」的 optional source 降級為不啟用，故此處聯集不會要求缺席的 worker。
-- `listen` / `speak` 依 Ch 10 §7 固定 required，start 失敗即 startup fatal，因此其 instance 在 seal 時必然存在；`read` / `look` / `tool` 為 optional，可能因 start failure 缺席。
-- seal 對推導出的必要集合逐一檢查 catalog 是否有對應 instance；缺任一即 startup fatal（代表 required worker 缺席或 gate 未正確降級對應 source，屬 composition bug）。
-- optional 且不在必要集合的 kind（例：`read` disabled、或所有引用它的 source 都已被 gate 降級）缺席不使 seal 失敗，保留 `required=false` 的真實降級語意。
-
 ### 3.5 StateManager early-start 依賴與 late-fill
 
 StateManager 於 STATE_MANAGER phase（最早）start。其 Ch 4 §2 constructor 只收四個 early 依賴：`workerCatalog`、`SessionConverger`、`RecoveryControl`、`ActionPayloadValidator`。晚於 SM 的 producer control——`ExternalMessageControl` 與 `WakeListenerControl | None`——不進 constructor，改由 Ch 4 §2 的 one-shot setter `set_external_message_control()` / `set_wake_listener()` late-fill（見下方 B 類）。SM 對這兩者的內部初值為 `None`。這樣拆分後，所有依賴的來源分兩類，兩類都不違反 §3.3 scoped resolver「只取已 READY managed instance」規則：
@@ -244,7 +231,8 @@ A. 早於 SM 即可建立、且不 publish 事件的 control / registry（constr
 | `ActionPayloadValidator` | `main.py` 以 `ToolRegistry` 建構（Ch 9 §7）；registry 於 BACKEND / WORKER phase register、Reasoner start 前 seal | validator instance 建構即 ready；其驗證正確性取決於 registry 已 seal，seal 在 Reasoner start 前完成，早於任何 THINK |
 | `WorkerCatalog`（空殼） | `main.py` bootstrap step 5 建立空 catalog | 建構即 ready；內容於 WORKER phase late-fill、producer start 前 seal |
 
-`RecoveryControl` / `SessionConverger` / `ActionPayloadValidator` / `WorkerCatalog` 均由 `main.py` 在 `ResourceManager` 建構參數或 SM 建構參數中直接傳入；它們不是 managed records，故 SM 早注入它們不構成「consumer 依賴較晚 phase managed instance」。RM 對其中屬 managed 節點的 backend（例：ToolRegistry 內各 tool 的 handler / execution control）仍走正常 phase / DAG start。
+`RecoveryControl` / `SessionConverger` / `ActionPayloadValidator` / `WorkerCatalog` 均由 `main.py` 在 `ResourceManager` 建構參數或 SM 建構參數中直接傳入；它們不是 managed records，故 SM 早注入它們不構成「consumer 依賴較晚 phase managed instance」。同一個 `ActionPayloadValidator` instance 在組裝時亦直接傳入 Reasoner constructor（Ch 2 §2.8 `action_validator` 參數），確保 Reasoner normalizer 與 SM THINK Exit 呼叫同一 instance 以符合 ch9-Q7 契約；此 instance 無 mutable call state，不構成 ownership 問題（解決 IR_dev_M2_I）。RM 對其中屬 managed 節點的 backend（例：ToolRegistry 內各 tool 的 handler / execution control）仍走正常 phase / DAG start。
+
 
 B. 會 publish 事件、lifecycle 晚於 SM 的 producer control（late-fill setter 注入）
 
