@@ -80,6 +80,7 @@ class M2Composition:
             bus=bus,
             max_items=config.external_message.buffer_max,
             overflow_policy=config.external_message.overflow_policy,
+            allowed_channels=frozenset(config.external_message.allowed_channels),
         )
         self.external_message = external
         self.button = MockButtonInputSource(bus=bus)

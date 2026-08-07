@@ -27,6 +27,7 @@ class ExternalMessageSource:
         self,
         *,
         bus: EventBus,
+        allowed_channels: frozenset[str],
         max_items: int = 32,
         overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_oldest",
         logger: logging.Logger | None = None,
@@ -34,6 +35,7 @@ class ExternalMessageSource:
         id_factory: Callable[[], str] = new_message_id,
     ) -> None:
         self._bus = bus
+        self._allowed_channels = frozenset(allowed_channels)
         self._logger = logger or logging.getLogger(__name__)
         self._clock = clock
         self._id_factory = id_factory
@@ -86,6 +88,8 @@ class ExternalMessageSource:
         async with self._lifecycle_lock:
             if not self.is_available():
                 raise ExternalMessageUnavailable("external source is unavailable")
+            if channel not in self._allowed_channels:
+                raise ExternalMessageValidationError(f"unknown channel: {channel}")
             normalized = self._validate(channel=channel, text=text, metadata=metadata)
             value = await self._buffer.store(
                 channel=channel,

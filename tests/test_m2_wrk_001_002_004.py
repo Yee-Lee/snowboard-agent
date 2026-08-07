@@ -117,7 +117,7 @@ def test_m2_wrk_002_listen_read_look_success_and_at_most_once() -> None:
             vision=MockVisionAdapter((VisionResult("seen", {"objects": 1}),)),
             bus=bus,
         )
-        source = ExternalMessageSource(bus=bus)
+        source = ExternalMessageSource(bus=bus, allowed_channels=frozenset({"fixture"}))
         await source.start()
         first = await source.ingest(channel="fixture", text="one")
         second = await source.ingest(channel="fixture", text="two")

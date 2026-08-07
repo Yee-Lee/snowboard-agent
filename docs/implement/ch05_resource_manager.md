@@ -215,6 +215,11 @@ class WorkerCatalog:
 必要 kind 推導（解 optional worker 與固定首 turn / seal 的政策衝突）
 
 seal 驗證的必要 instance 集合，由下列三者聯集推導，而非硬編 `listen` / `read`：
+1. `reasoner` 與 `rest`（此兩者固定需要）。
+2. startup coherence gate（§4.5）執行後仍為 enabled 的 InputSources，其 first-turn workers。
+3. `config.perception.default_perceptions` 中列出的 kinds。
+
+不在此聯集內的 optional worker（例如 read disabled 且非 default_perceptions），其缺席不會導致 seal 失敗。
 
 ### 3.5 StateManager early-start 依賴與 late-fill
 

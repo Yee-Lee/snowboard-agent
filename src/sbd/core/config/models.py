@@ -131,6 +131,7 @@ class ShutdownConfig:
 class ExternalMessageConfig:
     buffer_max: int = 32
     overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_oldest"
+    allowed_channels: tuple[str, ...] = ("fixture",)
 
 @dataclass(frozen=True, slots=True)
 class VoiceWakeConfig:

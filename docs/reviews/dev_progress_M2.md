@@ -217,6 +217,12 @@
 - `python -m pytest -v tests/milestones/test_m1_foundation.py`：1 passed（內層 166 passed）。
 - `python -m pytest -q`：204 passed。
 - workspace `.venv` 為 Python 3.12.3，符合 DEV-PY311「Python 3.11 以上」；本機未提供獨立 `python3.11` binary。
+
+#### 2026-08-07：PM Feedback 修正 (OUT-M2-2026-003)
+
+- **根因說明**：重建 history 時，初始 snapshot 係透過 `git add src tests docs` 等手動拉取，未包含 repository root 的 `pyproject.toml`，導致 clean env 無法安裝套件與取得 test metadata。
+- **確認方式**：比對 accepted M1 tree 與重建後的 initial commit tree，確認僅遺漏 `pyproject.toml` 等非目錄檔案。
+- **防止再發措施**：已重新加入可安裝的 `pyproject.toml`。後續若需重建 history 或 snapshot，將使用 `git archive` 匯出再匯入，確保根目錄設定檔一併包含。
 ---
 
 ### 主要風險與重估點條件

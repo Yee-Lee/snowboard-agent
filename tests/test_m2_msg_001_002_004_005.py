@@ -38,6 +38,7 @@ def _source(
         kwargs["id_factory"] = lambda: ids.append(str(uuid.uuid4())) or ids[-1]
     source = ExternalMessageSource(
         bus=bus,
+        allowed_channels=frozenset({"fixture"}),
         max_items=max_items,
         overflow_policy=policy,
         **kwargs,
@@ -49,7 +50,7 @@ def test_m2_msg_001_store_precedes_signal_and_preserves_arrival_order() -> None:
     async def run() -> None:
         bus = EventBus()
         observed: list[str] = []
-        source = ExternalMessageSource(bus=bus)
+        source = ExternalMessageSource(bus=bus, allowed_channels=frozenset({"fixture"}))
 
         async def assign_on_signal(event: ExternalMessageArrived) -> None:
             await source.control.assign_to_session(event.message_id, "session-a")
@@ -96,6 +97,7 @@ def test_m2_msg_001_invalid_input_allocates_no_id_or_signal() -> None:
             {"channel": "fixture", "text": " "},
             {"channel": "", "text": "message"},
             {"channel": "fixture", "text": "message", "metadata": {"bad": b"x"}},
+            {"channel": "unknown", "text": "message"},
         )
         for payload in invalid:
             with pytest.raises(ExternalMessageValidationError):
