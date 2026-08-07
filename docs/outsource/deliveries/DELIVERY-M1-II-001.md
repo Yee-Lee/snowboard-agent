@@ -2,7 +2,7 @@
 
 - **Handoff ID**: `PM-OUT-2026-001-R1`
 - **Related Feedback**: `CR-M1-II`
-- **Reviewed Commit SHA**: `a723b4e0542de8eae0071a91a192104c686152bd`
+- **Reviewed Commit SHA**: `af890249d8634df11b1a30a27aaee1720f5a8b67`
 - **Status**: `Ready for PM delivery` (Tester Approved)
 - **Tester**: AI Agent (Tester Role)
 
@@ -28,12 +28,12 @@
 
 ## 驗收實測紀錄與證據 (Evidence)
 
-以下測試皆於基線 `a723b4e0542de8eae0071a91a192104c686152bd` 執行，相關日誌均存檔於 `docs/reviews/outsource/evidence/DELIVERY-M1-II-001/`。
+以下測試皆於基線 `af890249d8634df11b1a30a27aaee1720f5a8b67` 執行，相關日誌均存檔於 `docs/outsource/evidence/DELIVERY-M1-II-001/`。
 
 ### 1. M1 Entrypoint 實測
 - **命令**: 
   ```bash
-  PYTHONPATH=src python3 -m pytest -v tests/milestones/test_m1_foundation.py > docs/reviews/outsource/evidence/DELIVERY-M1-II-001/entrypoint.log
+  PYTHONPATH=src python3 -m pytest -v tests/milestones/test_m1_foundation.py > docs/outsource/evidence/DELIVERY-M1-II-001/entrypoint.log
   ```
 - **結果**: 1 passed (含 166 個子測試的 Milestone Suite 通過)
 - **判定**: **PASS**
@@ -41,7 +41,7 @@
 ### 2. 高風險模組實測 (Config & Bootstrap)
 - **命令**: 
   ```bash
-  PYTHONPATH=src python3 -m pytest -v tests/test_config.py tests/test_bootstrap.py > docs/reviews/outsource/evidence/DELIVERY-M1-II-001/high_risk.log
+  PYTHONPATH=src python3 -m pytest -v tests/test_config.py tests/test_bootstrap.py > docs/outsource/evidence/DELIVERY-M1-II-001/high_risk.log
   ```
 - **結果**: 通過 (涵蓋修改過的高風險代碼)
 - **判定**: **PASS**
@@ -49,7 +49,7 @@
 ### 3. Full Suite Regression 實測
 - **命令**: 
   ```bash
-  PYTHONPATH=src python3 -m pytest -v > docs/reviews/outsource/evidence/DELIVERY-M1-II-001/full_suite.log
+  PYTHONPATH=src python3 -m pytest -v > docs/outsource/evidence/DELIVERY-M1-II-001/full_suite.log
   ```
 - **結果**: 167 passed
 - **判定**: **PASS** (0 Fail / 0 Blocked / 0 Skip)
