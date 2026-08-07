@@ -357,6 +357,8 @@ class VoiceWakeConfig:
 class ButtonInputConfig:
     policy: ComponentPolicy = ComponentPolicy(True, False)
     conversation_pin: str = "conversation"
+    short_press_min_ms: int = 50    # 短按最小持續時間 (ms)；必須 ≥ debounce_ms
+    long_press_min_ms: int = 1500   # 長按門檻 (ms)；必須 > short_press_min_ms
 
 @dataclass(frozen=True, slots=True)
 class ExternalInputConfig:

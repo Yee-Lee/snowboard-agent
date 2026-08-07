@@ -122,7 +122,7 @@ class InputSource(Protocol):
 
 | 實作 | 發布事件 | 事件產出時機 |
 | :--- | :--- | :--- |
-| `input_events/button/` | `ButtonPressed(button_id, duration_ms)` / `InterruptRequested()` | GPIO 訂閱者依按法判定（arch.md §5.4） |
+| `input_events/button/` | `ButtonPressed(button_id, duration_ms)`（短按）/ `ShutdownRequested()`（長按） | GPIO 訂閱者依按法和 config 門檻判定（arch.md §5.4）；短按 ≥ `short_press_min_ms` 且 < `long_press_min_ms`；長按 ≥ `long_press_min_ms` |
 | `input_events/external_message/` | `ExternalMessageArrived(channel, arrived_at, message_id)` | 訊息入 buffer 時（arch.md §5.1） |
 | `input_events/voice_wake/` | `WakeWordDetected(phrase, confidence)` | Wake daemon 透過 IPC 通知 |
 

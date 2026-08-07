@@ -374,7 +374,7 @@ class GPIO(Protocol):
 設計要點
 - 一 pin 一訂閱者：於 `register_input` 明確 raise，符合 `arch.md` §5.4 ；「一 pin 多訂閱者」屬 `arch.md` §8.1 未定案
 - async callback : `Callable[[GPIOEvent], Awaitable[None]]`
-  - GPIO 訂閱者本身在 async 世界（ `input_events/button` 需 await `asyncio.sleep()` 判斷長按、需 publish 到 event bus ）
+  - GPIO 訂閱者本身在 async 世界（ `input_events/button` 需 await `asyncio.sleep()` 判斷長按門檻、需 publish 到 event bus ）
   - 若用同步 callback，訂閱者必須 `asyncio.create_task()` 包裝——強迫每個訂閱者寫同一段模板，集中在 core/gpio 處理更乾淨
   - `libgpiod` 2.x 常用 pattern：line event fd 透過 `loop.add_reader()` 掛到 asyncio event loop，事件到達時 spawn task 呼叫 callback
 - Debounce 位置：由 core/gpio 統一處理；訂閱者不必自己實作

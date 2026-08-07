@@ -301,11 +301,11 @@ observer = adaptor / log / metrics
 
 **Signals**
 
-* `ButtonPressed(button_id, duration_ms)`
+* `ButtonPressed(button_id, duration_ms)` — 短按（`duration_ms` ≥ 短按門檻且 < 長按門檻）產生；由 `input_events/button` 依按法分類後發出，語意為「使用者觸發對話意圖或中止當前 session」；SM 依當前狀態決定行為（§4.4、§4.5、§4.7）
 * `ExternalMessageArrived(channel, arrived_at, message_id)` — 僅 metadata, payload 由 external_message 持有 ; `message_id` 為 opaque 識別符, 由 external_message 產生、與 buffer 內單則訊息 1:1 對應 ; SM 只轉發不解讀 ; 雙重角色見 §5.1
 * `WakeWordDetected(phrase, confidence)`
 * `InterruptRequested()`
-* `ShutdownRequested()`
+* `ShutdownRequested()` — 長按（`duration_ms` ≥ 長按門檻）產生；由 `input_events/button` 直接發出，不經 SM 狀態判斷
 
 **Schema 與版本化原則**
 
@@ -400,7 +400,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 | Wake source | Perception 組合 | 理由 |
 | :--- | :--- | :--- |
-| `ButtonPressed` | `[listen]` | 使用者在裝置前按鈕，預期後續語音對話 |
+| `ButtonPressed`（IDLE 下） | `[listen]` | 使用者在裝置前短按按鈕，預期後續語音對話 |
 | `WakeWordDetected` | `[listen]` | 使用者剛講話喚醒，接續錄音承接語句 |
 | `ExternalMessageArrived` | `[read]` | 訊息 `payload` 已於外部通道到達，由 `read` 消費 ( §5.1 ) |
 
@@ -416,7 +416,11 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 **wake 類 Signal 的雙態行為**
 
-* `ButtonPressed` / `WakeWordDetected` : 僅 `IDLE` 接受並觸發狀態轉移；其餘狀態拒絕 ( 過期 `wake` Signal )
+* `ButtonPressed`（IDLE）：觸發狀態轉移至 WAKE（首 turn perception 為 `[listen]`）
+* `ButtonPressed`（WAKE / PERCEPTION / THINK / ACTION / REST）：一律觸發 `InterruptRequested` 行為（終止當前 session，乾淨返回 IDLE）；SM 收到即執行收斂，語意等同直接收到 `InterruptRequested`
+* `ButtonPressed`（ERROR，recovery **進行中**）：忽略（log warning）；recovery 未完成時不允許使用者主動重試
+* `ButtonPressed`（ERROR，recovery **已完成**或無 recovery）：清除 error 狀態，直接進 WAKE（使用者主動重試，省略中間 IDLE）；首 turn perception 同 `button` wake 映射
+* `WakeWordDetected` : 僅 `IDLE` 接受並觸發狀態轉移；其餘狀態拒絕 ( 過期 wake Signal )
 * `ExternalMessageArrived` : `IDLE` 接受並觸發狀態轉移；其餘狀態亦接受但不觸發狀態轉移，SM 依 §5.1 對 `external_message` 發調度指令
 
 **主流流程狀態轉移**
@@ -505,6 +509,8 @@ SM 內建的 wake source -> perception 組合對應關係：
 * `ErrorOccurred` 疊加：自然吸收（§3.4 handler 異常隔離規則）
 * `InterruptRequested` ：忽略（已在收斂中）
 * `ShutdownRequested` ：升級為 shutdown 收斂
+* `ButtonPressed`（recovery 進行中）：忽略（log warning）
+* `ButtonPressed`（recovery 已完成或無 recovery）：清 session 追蹤欄位 → 直接進 WAKE（使用者主動重試）
 
 ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( 無額外接受事件 ) —— ERROR 為短暫收斂狀態，且 Exit 時將對 `external_message` 發 `discard` 指令，此期間新訊息無留存意義。
 
@@ -600,8 +606,10 @@ Protocol 方法簽名細節屬 `implement.md`。`Adjuster / Overlay` 短暫覆�
 
 `core/gpio` 依 `pin` 註冊映射把事件送到唯一訂閱者，一 `pin` 一訂閱者——不同物理按鈕依用途註冊給 `input_events` 或 `adjustments`。單一訂閱者內部可依按法（短按 / 長按 / 雙擊）產出不同輸出：
 
-* 例：對話按鈕 `pin` 註冊給 `input_events/button`，短按 -> `ButtonPressed` Signal、長按 -> `InterruptRequested` Signal
+* 例：對話按鈕 `pin` 註冊給 `input_events/button`，短按（`duration_ms` ≥ `short_press_min_ms`，預設 50 ms，且 < `long_press_min_ms`）→ `ButtonPressed` Signal；長按（`duration_ms` ≥ `long_press_min_ms`，預設 1500 ms）→ `ShutdownRequested` Signal
 * 例：音量鍵 `pin` 註冊給 `adjustments/volume`，短按 / 長按皆直控 `core/audio`
+
+按法分類由 `input_events/button` 負責；GPIO HAL 只提供 pin / edge / `duration_ms` 的低階原語，不解讀語意。短按 / 長按門檻（`short_press_min_ms` / `long_press_min_ms`）固定於 config（Ch 10），預設值 50 ms / 1500 ms；產品層可覆寫，架構語意不變。App 未執行時的長按啟動由外部 launcher 處理，不屬 Snowboard App 本輪開發範圍。本產品不控制 Raspberry Pi OS shutdown 或實體電源。
 
 — `pin` 多訂閱者屬進階分流場景，尚未定案（見 §8）。
 

@@ -346,11 +346,14 @@ Guard 固定三步 :
 | PERCEPTION | `PerceptionResult` ` `ExternalMessageArrived` | Shutdown / Error / Interrupt |
 | THINK | `LLMResponse` ` `ExternalMessageArrived` | Shutdown / Error / Interrupt |
 | ACTION | `ActionCompleted` ` `ExternalMessageArrived` | Shutdown / Error / Interrupt |
-| ERROR | 無 | Shutdown / Error / Interrupt |
+| ERROR | `ButtonPressed` | Shutdown / Error / Interrupt |
 
 - ERROR 中追加 `ErrorOccurred` : 記錄後吸收；若原 buffer policy 是 rest 的 flush，升級為 discard ( discard 優先於 flush )。
 - ERROR 中 `InterruptRequested` : warning/debug 後忽略。
-- 非 IDLE 的 button / wake-word : 過期 Signal，warning 後 drop。
+- ERROR 中 `ButtonPressed`（recovery **進行中**）: warning 後忽略。
+- ERROR 中 `ButtonPressed`（recovery **已完成**或無 recovery）: 清 session 追蹤欄位 → 直接進 WAKE（使用者主動重試）。
+- 非 IDLE 且非 ERROR 的 `ButtonPressed` : 觸發 `InterruptRequested` 行為，SM 直接執行收斂，語意等同直接收到 `InterruptRequested`。
+- 非 IDLE 的 wake-word : 過期 Signal，warning 後 drop。
 - ERROR 中 external message : 拒絕；buffer 由既定 exit policy 收斂。
 
 ### 5.2 Private notice guard
