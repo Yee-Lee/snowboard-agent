@@ -42,3 +42,4 @@ htmlcov/
 # outside version control. Publish only reviewed, sanitized summaries.
 poc_audio/ssh/*.conf
 poc_audio/evidence/m0/[0-9]*/
+poc_audio/evidence/m1/[0-9]*/

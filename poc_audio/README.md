@@ -88,3 +88,23 @@ location. The `PI_POC_REPO` value selects exactly which POC is tested when a Pi
 hosts multiple POCs; it is intentionally not stored in Git. The authoritative
 branch, Draft PR, full-SHA checkout, immutable-tag, and artifact-transfer rules
 are in [the workflow](../docs/audio_poc_workflow.md).
+
+## M1 native audio capability
+
+After a passing environment pre-test and an exact clean Pi checkout, run the
+Pi-local M1 capability packet from the repository root:
+
+```sh
+bash poc_audio/tools/m1_native_audio_capability.sh
+```
+
+The packet uses direct ALSA `hw:` devices. Capture data is discarded to
+`/dev/null`, and output probes play digital silence from `/dev/zero`; it does
+not retain raw audio. It records only hardware/audio facts, the repository
+SHA, PCM probe results, lifecycle/concurrent results, and cleanup state.
+
+Raw run directories under `poc_audio/evidence/m1/<timestamp>-native/` are
+Git-ignored. Review them locally and publish only a sanitized M1 evidence
+summary. Optional `M1_CAPTURE_DEVICE` and `M1_PLAYBACK_DEVICE` overrides must
+remain operator-managed; do not commit device paths together with connection
+or account information.
