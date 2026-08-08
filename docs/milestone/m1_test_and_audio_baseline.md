@@ -5,7 +5,7 @@
 Frozen-gate decision record：[M1 Frozen-Gate Draft](m1_frozen_gates_draft.md)
 （狀態為 `DRAFT / NOT FROZEN`；真實 candidate run 尚未獲准。）
 
-Core-team handoff：[Audio M3 Contract Handoff Draft](../pm_handoff/audio_m3_contract_handoff_draft.md)
+Core-team handoff：[Audio M3 Contract Handoff Draft](../../poc_audio/deliveries/audio_m3_contract_handoff_draft.md)
 （核心 M3 的設計輸入；不是 POC M3 integration baseline。）
 
 ## 目標
