@@ -1,6 +1,6 @@
 # CR-AUDIO-M3-PCM-001 — Explicit AudioInput Format Adaptation
 
-狀態：`PROPOSED / AWAITING DESIGNER DECISION`
+狀態：`USER APPROVED OPTION A / AWAITING CORE TEAM DECISION`
 日期：2026-08-08
 提出方：Audio POC Tester
 決策方：User/Designer and Core Team Designer
@@ -65,6 +65,6 @@ verification is complete.
 
 | Decision | Owner | Status |
 | --- | --- | --- |
-| Select A, B, C, or reject all | User / Designer | `PENDING` |
+| Select A, B, C, or reject all | User / Designer | `APPROVED OPTION A` |
 | Accept matching Core M3 change | Core Team Designer | `PENDING` |
 | Update contract delivery and cross-validation tests | Audio POC / Core Team | `PENDING` |

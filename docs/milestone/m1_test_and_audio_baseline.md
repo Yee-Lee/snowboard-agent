@@ -11,6 +11,9 @@ Core-team handoff：[Audio M3 Contract v1](../../poc_audio/deliveries/audio_m3_c
 Current hardware finding：[M1 Native Audio Evidence](../../poc_audio/evidence/m1/M1-NATIVE-AUDIO-001.md)
 — P1 `FAIL`, P2 `PASS`; proposed resolution：[CR-AUDIO-M3-PCM-001](../../poc_audio/deliveries/CR-AUDIO-M3-PCM-001.md)。
 
+Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
+（User/Designer 已批准 Option A，等待 Core Team 回覆。）
+
 ## 目標
 
 在執行真實候選前凍結比較方法與 gate，並把既有 co-I2S 實驗轉為可重現的硬體 capability 基線。M1 結束後，候選比較不能因偏好某候選而改變規則。
@@ -48,6 +51,23 @@ Current hardware finding：[M1 Native Audio Evidence](../../poc_audio/evidence/m
 - co-I2S capability matrix、格式轉換位置、shared-clock 限制與 lifecycle evidence 完成。
 - M2 可在相同固定 WAV/text 和量測方法下公平執行。
 - M3 所需的 M3 HAL SHA/交付來源已有 owner 與取得路徑；若尚未交付，明確列為依賴風險。
+
+## 目前 Blocking 與非 Blocking 依賴
+
+Blocking M1 / real candidate entry：
+
+- Core Team 接受或有界修訂 `CR-AUDIO-M3-PCM-001`，確認明確的 AudioInput
+  conversion boundary。
+- 完成 lockfile、harness、result/candidate schema 與 deterministic fake，並由
+  Tester 重現 success/failure/timeout/cancel/cleanup。
+- 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
+  review，使 frozen gate 可標為 `FROZEN`。
+
+目前不阻擋 M1、但會阻擋後續階段：
+
+- Core M3 real backend 的完整 accepted SHA：阻擋 POC M3 entry，不阻擋 M1/M2。
+- P3 TTS output PCM format：由 M2 winner 產生，阻擋最終 AudioOutput
+  cross-validation，不阻擋目前 M1。
 
 ## 必要 Evidence
 
