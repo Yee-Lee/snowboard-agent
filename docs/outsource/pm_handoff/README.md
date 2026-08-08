@@ -8,9 +8,10 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | `Ready for PM` (待回覆) | `docs/outsource/responses/OUT-FB-2026-002-R1.md` |
-| [`PM-OUT-260806-004-m3-target-device-test-ack`](PM-OUT-260806-004-m3-target-device-test-ack/brief.md) | M3 目標裝置測試方式確認 | `OUT-M3-TEST-2026-001` | M3 | `Ready for PM` (待 ACK) | `docs/outsource/responses/OUT-M3-TEST-2026-001.md` |
-| [`PM-OUT-260806-005-gpio-button-semantics`](PM-OUT-260806-005-gpio-button-semantics/brief.md) | M3 單一 GPIO Button 開發前設計 Gate | `OUT-M3-DESIGN-2026-001` | M3 | `Ready for PM` (待 Design Gate) | `docs/outsource/responses/OUT-M3-DESIGN-2026-001.md` |
+| [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | **Blocked** (已收 Audio，等 Display / LLM POC) | `docs/outsource/responses/OUT-FB-2026-002-R1.md` (尚未產出) |
+| [`PM-OUT-260806-004-m3-target-device-test-ack`](PM-OUT-260806-004-m3-target-device-test-ack/brief.md) | M3 目標裝置測試方式確認 | `OUT-M3-TEST-2026-001` | M3 | **Resolved** (已回覆 ACK) | `docs/outsource/responses/OUT-M3-TEST-2026-001.md` |
+| [`PM-OUT-260806-005-gpio-button-semantics`](PM-OUT-260806-005-gpio-button-semantics/brief.md) | M3 單一 GPIO Button 開發前設計 Gate | `OUT-M3-DESIGN-2026-001` | M3 | **Resolved** (設計已定稿) | `docs/outsource/responses/OUT-M3-DESIGN-2026-001.md` |
+| [`PM-OUT-260807-006-m2-tester-verification`](PM-OUT-260807-006-m2-tester-verification/brief.md) | M2 Tester 驗證與修復 | 無 | M2 | **Resolved** (003/004/005 已修復) | 無要求書面回覆 |
 
 ---
 
