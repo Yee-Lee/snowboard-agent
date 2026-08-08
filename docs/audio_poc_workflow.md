@@ -131,6 +131,49 @@ cleanup_check
 
 同一人可兼任多個角色，但 gate 所需的決策與證據責任不得省略。
 
+## 7.1 Git、Draft PR 與 Pi worktree 流程
+
+POC repo 是程式碼、測試 harness、lockfile、schema、fixture catalog 與
+sanitized evidence index 的唯一來源。Pi checkout 是受控的
+deployment/test worktree，不是第二個開發來源；不得在 Pi 上留下未提交的
+程式修正後直接進行 benchmark。
+
+日常迭代使用 feature branch 與 Draft PR。`wip:` commit 可用於尚未完成的
+小範圍修改，但每一輪真實硬體測試都必須指向該輪唯一、完整的 commit SHA。
+Assistant 先在工作站修改並完成適用的 local/fake/smoke tests，再建立 commit；
+Pi 僅取得該 commit 後執行 environment pre-test 與已核准的 hardware test。
+
+```text
+workstation edit/test -> commit -> push feature branch / Draft PR
+                                      |
+                                      v
+Pi: git fetch -> checkout exact full SHA -> clean check -> pre-test -> test
+                                      |
+                                      v
+sanitized evidence review <- controlled evidence return <- raw evidence
+```
+
+Pi 更新預設使用 `git fetch` 後 checkout 完整 SHA（或已核准的 tag），不得以
+未驗證的 `git pull`、branch HEAD 或零散 SCP 覆蓋作為正式測試 baseline。
+checkout 後 `git status --porcelain` 必須無輸出；該 SHA 必須記入 test packet
+與 evidence index。
+
+Candidate/正式 gate 的 source SHA 必須由不可變 tag 或保留中的 POC branch
+固定。即使 PR 採 squash merge，原始測試 SHA 也不得失去可重建路徑。M4
+delivery manifest 仍以完整 SHA 為準。
+
+SCP/rsync 只可用於不進 Git 的模型、受控 fixture 或 raw evidence，並須有
+checksum 與受控路徑；它們不得取代 source-code deployment。模型、大型結果、
+私有語音、敏感 transcript、SSH config、帳號、host/key 資訊與 secret 均不得
+進入 repo。operator-specific connection config 與 raw M0 evidence 必須由
+`.gitignore` 排除。
+
+新工作站或新硬體 session 在開始前必須執行
+`poc_audio/tools/environment_pre_test.sh`。需要建立新的 M0 command-control
+evidence bundle 時，再執行 `poc_audio/tools/m0_remote_readiness.sh`；兩者都
+使用工作站外部提供的 operator-managed SSH config，且不得在正式 latency、
+resource 或 offline 量測期間執行。
+
 ## 8. 最終交付追蹤矩陣
 
 | 最終交付領域 | 建立階段 | 最終關閉階段 |

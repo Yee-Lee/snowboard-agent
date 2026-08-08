@@ -36,3 +36,9 @@ htmlcov/
 .env
 !.env.example
 *.log
+
+# Operator-specific remote access and raw hardware-test evidence
+# Keep connection endpoints, account/key selection, and unsanitized run output
+# outside version control. Publish only reviewed, sanitized summaries.
+poc_audio/ssh/*.conf
+poc_audio/evidence/m0/[0-9]*/

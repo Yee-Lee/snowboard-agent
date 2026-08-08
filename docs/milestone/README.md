@@ -4,12 +4,12 @@
 
 ## Current Status
 
-最後更新：2026-08-07  
-最終交付可達性：`AT_RISK` — 尚未完成 M0 遠端環境驗證、frozen gates 與 M3 HAL baseline 確認。這是初始未知風險，不代表已判定不可行。
+最後更新：2026-08-08
+最終交付可達性：`AT_RISK` — M0 的 SSH、Pi/audio inventory、timeout/cancel/cleanup 與 checksum transfer 已取得 evidence，正進行 gate review；frozen gates 與 M3 HAL baseline 尚未完成。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
-| M0 | `PLANNED / NEXT` | 遠端 Pi 操作與可信 evidence chain | [M0](m0_remote_environment.md) |
+| M0 | `GATE_REVIEW` | 唯讀 environment pre-test、SSH、Pi/audio inventory、timeout/cancel/cleanup 與 checksum transfer 已具 evidence；待 review 確認 M1 entry | [M0](m0_remote_environment.md) |
 | M1 | `NOT_STARTED` | 共同測試基線與 co-I2S capability | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `NOT_STARTED` | VAD/ASR/TTS 隔離候選比較 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5 真實 M3 Audio HAL 整合 | [M3](m3_real_hardware_integration.md) |
