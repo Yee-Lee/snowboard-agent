@@ -2,6 +2,26 @@
 
 - **Git 操作與版控原則**：禁止任何 AI 角色直接修改、建立或寫入 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制與異動操作必須一律透過標準 CLI `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。
 
+- **Git Commit Message 規範**：
+
+  **標題格式**：`[work_type][milestone]: [title]`
+
+  | work_type | 用途 |
+  |---|---|
+  | `feat` | 新功能、新模組 |
+  | `fix` | Bug 修正 |
+  | `docs` | 文件新增或修改 |
+  | `test` | 測試新增或修改 |
+  | `refactor` | 重構（不改行為） |
+  | `chore` | 建置、工具、設定類 |
+
+  範例：`feat[M3]: add GPIO button InputSource with debounce`、`docs[M2]: restore §3.4 required_kinds derivation`
+
+  **內容（Body）規範**：
+  - 使用英文條列式（`-`）描述修改內容或緣由。
+  - 全文 60 words 以內。
+  - 引用相關 Handoff ID / Finding ID（如 `OUT-M2-2026-005`）或 Review 單號。
+
 1. 目錄與權責映射
 
 
