@@ -9,9 +9,6 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | **Blocked** (已收 Audio，等 Display / LLM POC) | `docs/outsource/responses/OUT-FB-2026-002-R1.md` (尚未產出) |
-| [`PM-OUT-260806-004-m3-target-device-test-ack`](PM-OUT-260806-004-m3-target-device-test-ack/brief.md) | M3 目標裝置測試方式確認 | `OUT-M3-TEST-2026-001` | M3 | **Resolved** (已回覆 ACK) | `docs/outsource/responses/OUT-M3-TEST-2026-001.md` |
-| [`PM-OUT-260806-005-gpio-button-semantics`](PM-OUT-260806-005-gpio-button-semantics/brief.md) | M3 單一 GPIO Button 開發前設計 Gate | `OUT-M3-DESIGN-2026-001` | M3 | **Resolved** (設計已定稿) | `docs/outsource/responses/OUT-M3-DESIGN-2026-001.md` |
-| [`PM-OUT-260807-006-m2-tester-verification`](PM-OUT-260807-006-m2-tester-verification/brief.md) | M2 Tester 驗證與修復 | 無 | M2 | **Resolved** (003/004/005 已修復) | 無要求書面回覆 |
 
 ---
 
@@ -23,6 +20,9 @@
 | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260805-001-m1-carryover-feedback`](history/PM-OUT-260805-001-m1-carryover-feedback/brief.md) | M1 完成後 Carry-over Feedback | `PM-OUT-2026-001-R1` | **Superseded**（由 003 取代） | 被 `PM-OUT-260806-003` 取代並收斂 |
 | [`PM-OUT-260806-003-m1-test-platform-scope`](history/PM-OUT-260806-003-m1-test-platform-scope/brief.md) | M1 測試平台矩陣與交付證據澄清 | `PM-OUT-2026-001-R2` | **Resolved**（全數驗收 PASS） | Response: [`CR-M1-II.md`](../responses/CR-M1-II.md) |
+| [`PM-OUT-260806-004-m3-target-device-test-ack`](history/PM-OUT-260806-004-m3-target-device-test-ack/brief.md) | M3 目標裝置測試方式確認 | 無 | **Resolved**（已回覆 ACK） | Response: [`OUT-M3-TEST-2026-001.md`](../responses/OUT-M3-TEST-2026-001.md) |
+| [`PM-OUT-260806-005-gpio-button-semantics`](history/PM-OUT-260806-005-gpio-button-semantics/brief.md) | M3 單一 GPIO Button 開發前設計 Gate | 無 | **Resolved**（設計已定稿） | Response: [`OUT-M3-DESIGN-2026-001.md`](../responses/OUT-M3-DESIGN-2026-001.md) |
+| [`PM-OUT-260807-006-m2-tester-verification`](history/PM-OUT-260807-006-m2-tester-verification/brief.md) | M2 Tester 驗證與修復 | 無 | **Resolved**（003/004/005 已修復） | 無要求書面回覆 |
 
 ---
 
@@ -33,8 +33,9 @@ docs/outsource/pm_handoff/
 ├── README.md                                  # 本管理總覽表
 ├── history/                                   # 已結案 / 已取代 Hand-offs 歸檔目錄
 │   ├── PM-OUT-260805-001-m1-carryover-feedback/
-│   └── PM-OUT-260806-003-m1-test-platform-scope/
-├── PM-OUT-260805-002-m3-m4-poc-planning/       # [Active] M3/M4 POC 規劃
-├── PM-OUT-260806-004-m3-target-device-test-ack/# [Active] M3 實體裝置測試 ACK
-└── PM-OUT-260806-005-gpio-button-semantics/   # [Active] M3 GPIO Button 語音設計 Gate
+│   ├── PM-OUT-260806-003-m1-test-platform-scope/
+│   ├── PM-OUT-260806-004-m3-target-device-test-ack/
+│   ├── PM-OUT-260806-005-gpio-button-semantics/
+│   └── PM-OUT-260807-006-m2-tester-verification/
+└── PM-OUT-260805-002-m3-m4-poc-planning/       # [Active] M3/M4 POC 規劃
 ```
