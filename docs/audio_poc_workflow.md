@@ -180,6 +180,27 @@ Candidate/正式 gate 的 source SHA 必須由不可變 tag 或保留中的 POC 
 固定。即使 PR 採 squash merge，原始測試 SHA 也不得失去可重建路徑。M4
 delivery manifest 仍以完整 SHA 為準。
 
+### Commit message convention
+
+Every POC commit uses this subject format:
+
+```text
+[work_type][milestone]: concise title
+```
+
+Use a lowercase `work_type` such as `feat`, `fix`, `test`, `docs`, `refactor`,
+or `chore`, and an active milestone such as `M0` through `M4`. The optional
+body is English bullet points only, explains the work or the reason for a fix,
+and contains no more than 60 words. Do not include secrets, endpoints,
+credentials, raw evidence, or private audio/transcript data.
+
+```text
+[fix][M1]: stop orphaned benchmark child
+
+- Terminate the named child before timeout returns.
+- Add cleanup proof for the failure path.
+```
+
 SCP/rsync 只可用於不進 Git 的模型、受控 fixture 或 raw evidence，並須有
 checksum 與受控路徑；它們不得取代 source-code deployment。模型、大型結果、
 私有語音、敏感 transcript、SSH config、帳號、host/key 資訊與 secret 均不得
