@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "language": "zh-TW",
+  "normalization": "draft-v1",
+  "references": [
+    {"fixture_id": "asr-zh-001", "category": "taiwan_mandarin", "text": "今天的天氣很舒服"},
+    {"fixture_id": "asr-zh-002", "category": "taiwan_mandarin", "text": "請把音量調小一點"},
+    {"fixture_id": "asr-mix-001", "category": "code_switch", "text": "請開始 audio test"},
+    {"fixture_id": "asr-mix-002", "category": "code_switch", "text": "請檢查 Wi-Fi 狀態"},
+    {"fixture_id": "asr-number-001", "category": "number", "text": "設定十五分鐘的計時器"},
+    {"fixture_id": "asr-number-002", "category": "number", "text": "目前音量是百分之六十"},
+    {"fixture_id": "asr-date-001", "category": "date", "text": "提醒我八月十五日開會"},
+    {"fixture_id": "asr-date-002", "category": "date", "text": "明天下午三點開始測試"},
+    {"fixture_id": "asr-product-001", "category": "product_term", "text": "啟動音訊基線測試"},
+    {"fixture_id": "asr-product-002", "category": "product_term", "text": "檢查樹莓派音訊裝置"}
+  ],
+  "audio_status": "pending licensed recordings"
+}

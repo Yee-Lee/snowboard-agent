@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:audio-poc:candidate-manifest:1.0",
+  "title": "Audio POC Candidate Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "candidate_id", "kind", "engine", "engine_version",
+    "artifact", "artifact_sha256", "license", "offline", "entrypoint",
+    "parameters"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["fake", "vad", "asr", "tts"]},
+    "engine": {"type": "string", "minLength": 1},
+    "engine_version": {"type": "string", "minLength": 1},
+    "artifact": {"type": "string", "minLength": 1},
+    "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "license": {"type": "string", "minLength": 1},
+    "offline": {"type": "boolean"},
+    "entrypoint": {"type": "string", "minLength": 1},
+    "parameters": {"type": "object"}
+  }
+}

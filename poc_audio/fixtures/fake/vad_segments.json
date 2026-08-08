@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "segments": [
+    {"fixture_id": "vad-clear-speech", "class": "clear_speech", "speech_intervals_ms": [[200, 1200]]},
+    {"fixture_id": "vad-natural-pause", "class": "pause", "speech_intervals_ms": [[100, 700], [1050, 1700]]},
+    {"fixture_id": "vad-silence", "class": "silence", "speech_intervals_ms": []},
+    {"fixture_id": "vad-noise", "class": "noise", "speech_intervals_ms": []}
+  ]
+}

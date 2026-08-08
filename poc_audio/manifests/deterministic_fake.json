@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "deterministic-fake-v1",
+  "kind": "fake",
+  "engine": "audio-poc-stdlib-child",
+  "engine_version": "1.0",
+  "artifact": "poc_audio/src/audio_poc/fake_worker.py",
+  "artifact_sha256": "dda9d09f3e4fbf1f3e830efce2be84625dc56cf1cbc6a170216e511f8939773b",
+  "license": "INTERNAL-POC-ONLY",
+  "offline": true,
+  "entrypoint": "bash poc_audio/tools/run_m1_fake_baseline.sh",
+  "parameters": {
+    "ready_timeout_seconds": 1.0,
+    "terminate_grace_seconds": 0.15,
+    "protocol": 1
+  }
+}

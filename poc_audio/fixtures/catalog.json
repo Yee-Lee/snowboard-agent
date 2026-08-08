@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "fixtures": [
+    {
+      "fixture_id": "fake-vad-labels-v1",
+      "kind": "fake_vad_labels",
+      "path": "poc_audio/fixtures/fake/vad_segments.json",
+      "sha256": "fb31852809759a3bb70e5b0f911513c080b0123d867af6d397dfc19de30b1abe",
+      "source": "project-authored deterministic fake data",
+      "license": "PROJECT-INTERNAL-TEST-DATA",
+      "sensitivity": "non_sensitive"
+    },
+    {
+      "fixture_id": "fake-asr-references-v1",
+      "kind": "fake_asr_references",
+      "path": "poc_audio/fixtures/fake/asr_references.json",
+      "sha256": "2f5ecf00d1446f1b54eb7a94a2fdbba0f0c59ea1b1e44f416838c4f5589d28b2",
+      "source": "project-authored deterministic fake data",
+      "license": "PROJECT-INTERNAL-TEST-DATA",
+      "sensitivity": "non_sensitive"
+    },
+    {
+      "fixture_id": "fake-tts-prompts-v1",
+      "kind": "fake_tts_prompts",
+      "path": "poc_audio/fixtures/fake/tts_prompts.json",
+      "sha256": "1f9699344394e718fa0d30fb24df3219407680268340418e564c70cc13007739",
+      "source": "project-authored deterministic fake data",
+      "license": "PROJECT-INTERNAL-TEST-DATA",
+      "sensitivity": "non_sensitive"
+    }
+  ]
+}

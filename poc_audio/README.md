@@ -108,3 +108,30 @@ Git-ignored. Review them locally and publish only a sanitized M1 evidence
 summary. Optional `M1_CAPTURE_DEVICE` and `M1_PLAYBACK_DEVICE` overrides must
 remain operator-managed; do not commit device paths together with connection
 or account information.
+
+## M1 deterministic fake baseline
+
+The M1 harness uses Python 3.11 or newer and the standard library only. The
+tracked `requirements.lock` intentionally has no third-party packages. Run the
+local unit tests first:
+
+```sh
+PYTHONPATH=poc_audio/src \
+  python3 -m unittest discover -s poc_audio/tests -v
+```
+
+After committing the implementation so the worktree is clean and has a full
+test SHA, run the formal fake baseline:
+
+```sh
+bash poc_audio/tools/run_m1_fake_baseline.sh
+```
+
+It starts deterministic child processes and proves success, declared error,
+timeout, task cancellation, forced abort, and zero-child cleanup. Raw JSON
+results are written to a Git-ignored timestamp directory under
+`poc_audio/evidence/m1/`. Publish only the reviewed sanitized summary.
+
+The tracked fixture catalog currently covers deterministic fake inputs only.
+It validates harness plumbing but does not authorize real candidate runs; the
+licensed VAD/ASR audio catalog and its labels/checksums remain an M1 gate.
