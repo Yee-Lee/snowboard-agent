@@ -43,3 +43,7 @@ htmlcov/
 poc_audio/ssh/*.conf
 poc_audio/evidence/m0/[0-9]*/
 poc_audio/evidence/m1/[0-9]*/
+
+# Controlled fixture audio stays local. Track only project-authored prompts,
+# metadata/checksum indexes, authorization records, and sanitized summaries.
+poc_audio/fixtures/artifacts/

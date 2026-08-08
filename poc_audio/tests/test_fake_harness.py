@@ -96,6 +96,38 @@ class TrackedDocumentTests(unittest.TestCase):
                 document = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(document["$schema"], "https://json-schema.org/draft/2020-12/schema")
 
+    def test_authorized_recording_plan_is_complete_but_pending(self) -> None:
+        plan = json.loads(
+            (
+                REPO_ROOT
+                / "poc_audio/fixtures/authorized/recording_plan_v1.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(plan["authorization_status"], "pending_user_authorization")
+        self.assertFalse(plan["audio_git_tracked"])
+        self.assertFalse(plan["candidate_ready"])
+
+        set_counts = {item["class"]: item["count"] for item in plan["sets"]}
+        self.assertEqual(
+            set_counts,
+            {"clear_speech": 25, "pause": 25, "silence": 25, "noise": 25},
+        )
+        non_speech_seconds = sum(
+            item["count"] * item["duration_seconds_each"]
+            for item in plan["sets"]
+            if item["class"] in {"silence", "noise"}
+        )
+        self.assertGreaterEqual(non_speech_seconds, 600)
+
+        utterances = plan["utterances"]
+        self.assertEqual(len(utterances), 50)
+        self.assertEqual(len({item["fixture_id"] for item in utterances}), 50)
+        self.assertEqual(
+            sum(item["vad_class"] == "clear_speech" for item in utterances), 25
+        )
+        self.assertEqual(sum(item["vad_class"] == "pause" for item in utterances), 25)
+        self.assertTrue(all(item["reference_text"] for item in utterances))
+
 
 if __name__ == "__main__":
     unittest.main()
