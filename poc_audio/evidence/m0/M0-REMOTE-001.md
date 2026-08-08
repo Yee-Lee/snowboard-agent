@@ -16,7 +16,7 @@
 
 | Run | Result | Evidence |
 | --- | --- | --- |
-| 2026-08-08 | `PASS` | Protected operator evidence bundle (not stored in Git) |
+| 2026-08-08 | `PASS` | Protected operator evidence bundle (not stored in Git); source SHA `5a3983c3af483c2c89742e9c30aa1978934b52ee` |
 
 The passed run recorded remote exit code `37`, a remote timeout exit code `124`,
 an explicit probe PID with
@@ -44,6 +44,9 @@ standard streams, record its PID, explicitly cancel it, and verify absence.
   deliberately excluded from this repository.
 - Audio capture/playback lifecycle, I2S format verification, and all M3 HAL
   behaviour remain out of scope until M1/M3 respectively.
+- One transient local-network name-resolution failure was observed and recovered
+  on retry. Run the pre-test before each hardware session; escalate to a
+  local-only stable mapping if it recurs.
 
 ## Runbook
 

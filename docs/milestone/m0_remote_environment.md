@@ -1,6 +1,6 @@
 # M0：遠端環境與 Evidence Chain Readiness
 
-狀態：`PLANNED / NEXT`  
+狀態：`COMPLETE`
 性質：前置 readiness gate，不是模型或產品 milestone。
 
 ## 目標
@@ -63,3 +63,24 @@
 ## Gate Review 問題
 
 M0 結束時必須回答：現有遠端工作方式是否足以支撐 M1–M4 的原始 evidence、長時間 benchmark、failure injection 與 cleanup 認證？若否，先提出工作方式調整請求。
+
+## Gate Review Result
+
+結果：`PASS`（2026-08-08）
+
+- Pi POC worktree 與本機 source SHA 一致且兩端 clean；多 POC 環境以
+  operator-managed `PI_POC_REPO` 指定目標 checkout。
+- Read-only environment pre-test 確認 Pi 5/aarch64、audio device availability、
+  no device owner、required tools、disk、temperature 與 throttling。
+- Remote exit-code、remote timeout、explicit cancel/cleanup、orphan check、
+  two-way SHA-256 transfer 與 temporary-file cleanup 均為 `PASS`。
+- M1 所需的 non-interactive privilege 可用；POC commands 仍預設以一般帳號
+  執行，只有明確需要時才使用最小必要 privilege。
+
+已觀察一次短暫的 local-network name-resolution failure，重試後恢復且未造成
+evidence 遺失。此為後續 session 的 operational risk；每次硬體 session 必須先
+run environment pre-test。若重複發生，改用 operator-managed 的穩定 alias 或
+local mapping，並保持 connection data 在 Git 之外。
+
+M0 completion 不代表 M1 已開始。M1 仍須依其 entry conditions 重新確認 frozen
+gates、M3 dependency path 與 delivery assessment。
