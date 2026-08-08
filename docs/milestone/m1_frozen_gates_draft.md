@@ -2,7 +2,7 @@
 
 狀態：`DRAFT / NOT FROZEN`  
 最後更新：2026-08-08  
-決策者（Designer）：`PENDING`  
+決策者（Designer）：User
 驗證者（Tester）：`PENDING`
 
 本文件推進 final delivery checklist 的「可重現程式」、「功能與品質證據」、
@@ -21,9 +21,10 @@
 
 ## 2. 目標硬體假設與待確認事項
 
-目前的暫定拓撲是「INMP441 mic + MAX98357A speaker amplifier，共用 I2S
-BCLK/LRCK，使用 `googlevoicehat-soundcard` overlay」。這是 `demo_audio` 分支
-`hw/audio/` 的接線與診斷腳本所描述的配置，而不是硬體 capability 的通過證據。
+目標拓撲已由 User/Designer 確認為「INMP441 mic + MAX98357A speaker amplifier，
+共用 I2S BCLK/LRCK，使用 `googlevoicehat-soundcard` overlay」。這是
+`demo_audio` 分支 `hw/audio/` 的接線與診斷腳本所描述的配置，而不是硬體
+capability 的通過證據。
 
 M1 entry 前，User/Tester 必須在 test packet 記錄且確認：
 
@@ -58,8 +59,8 @@ wrapper 隱式 resample。
 | 領域 | Proposed advance gate | 測量集合與理由 |
 | --- | --- | --- |
 | VAD | speech-start recall >= 95%、speech-end recall >= 90%、start boundary p95 <= 300 ms、end boundary p95 <= 700 ms、silence/noise false start <= 1 per 10 min。 | 100 個已標注片段：clear speech、pause、silence、noise 各至少 25。保留首尾音節與 endpoint 風險。 |
-| ASR | 台灣華語 core-set CER <= 20%，整句正確率 >= 70%；數字/日期與中英混說另外逐項報告，不以 core CER 掩蓋。 | 至少 50 個授權、去識別化 utterances；normalization 規則與 reference text 在 run 前固定。 |
-| TTS | 指定 User/Designer 在 20 個固定 prompts 的可懂度中位數 >= 4/5，且無未記錄的關鍵誤讀；first PCM chunk hot p95 <= 1.5 s、generation RTF p95 <= 1.0。 | prompts 必含數字、日期、產品詞彙與中英混說；評分規則先記錄，TTS text 不含敏感內容。 |
+| ASR | 台灣華語 core-set CER <= 20%，整句正確率 >= 70%；數字/日期與中英混說另外逐項報告，不以 core CER 掩蓋。 | 測試範圍已確認為台灣華語、中英混說、數字與日期。至少 50 個授權、去識別化 utterances；normalization 規則與 reference text 在 run 前固定。 |
+| TTS | User/Designer 在 20 個固定 prompts 的可懂度中位數 >= 4/5，且無未記錄的關鍵誤讀；first PCM chunk hot p95 <= 1.5 s、generation RTF p95 <= 1.0。 | User/Designer 是指定品質核准者。prompts 必含數字、日期、產品詞彙與中英混說；評分規則先記錄，TTS text 不含敏感內容。 |
 | 資源與熱 | 各 candidate 連續 20 hot runs 不得 thermal throttle、crash 或資源遞增；peak RSS 建議上限：VAD 250 MiB、ASR 1,250 MiB、TTS 1,000 MiB。 | Pi 5 上記錄 RSS、CPU、disk、temperature、throttle 與 run-to-run delta。此項為第一輪篩選，M4 仍須量測三者同時常駐。 |
 
 若指定產品語言、產品詞彙、Pi RAM 或 UX latency expectation 與上述初值不同，
@@ -100,9 +101,9 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | 欄位 | 目前值 |
 | --- | --- |
 | Core product repository | this repository (`snowboard-agent`); product Audio HAL source is under `src/sbd/core/audio/` |
-| Responsible owner (person or team) | `PENDING` |
+| Responsible owner (person or team) | Core Team Designer |
 | Development branch / PR / tracking issue | `dev_agent_m2`; observed tracking SHA `a557413ecb74af2f0799e6d1649abd05a12ac7b2` (not an M3 delivery baseline) |
-| Expected delivery date or milestone | `PENDING` |
+| Expected delivery date or milestone | Not scheduled |
 | Required final artifact | source, tests, authoritative docs and full 40-character commit SHA |
 | Known API / hardware risks | 16 kHz input contract vs actual I2S capability; ownership and lifecycle contract pending |
 
@@ -110,7 +111,7 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 
 | Decision | Approver | Date | Evidence / commit SHA |
 | --- | --- | --- | --- |
-| Target hardware topology is correct | `PENDING` | `PENDING` | `PENDING` |
+| Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
 | Numeric advance gates are frozen | `PENDING` | `PENDING` | `PENDING` |
 | Tester reproduced harness and cleanup checks | `PENDING` | `PENDING` | `PENDING` |
