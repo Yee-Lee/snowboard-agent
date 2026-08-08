@@ -99,9 +99,9 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 
 | 欄位 | 目前值 |
 | --- | --- |
-| Core product repository | `PENDING` |
+| Core product repository | this repository (`snowboard-agent`); product Audio HAL source is under `src/sbd/core/audio/` |
 | Responsible owner (person or team) | `PENDING` |
-| Development branch / PR / tracking issue | `PENDING` |
+| Development branch / PR / tracking issue | `dev_agent_m2`; observed tracking SHA `a557413ecb74af2f0799e6d1649abd05a12ac7b2` (not an M3 delivery baseline) |
 | Expected delivery date or milestone | `PENDING` |
 | Required final artifact | source, tests, authoritative docs and full 40-character commit SHA |
 | Known API / hardware risks | 16 kHz input contract vs actual I2S capability; ownership and lifecycle contract pending |
