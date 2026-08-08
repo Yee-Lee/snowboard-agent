@@ -85,7 +85,7 @@ fi
   printf 'playback_devices_begin\n'; aplay -l 2>&1; printf 'playback_devices_end\n'
 } >"$environment_file"
 
-printf 'direction\trate_hz\tchannels\tformat\texit_code\txrun_text\tresult\n' >"$matrix_file"
+printf 'direction\trequested_rate_hz\tactual_rate_hz\tchannels\tformat\texit_code\trate_mismatch\txrun_text\tresult\n' >"$matrix_file"
 : >"$details_file"
 : >"$lifecycle_file"
 
@@ -102,17 +102,25 @@ record_probe() {
   local format=$4
   local exit_code=$5
   local output=$6
+  local actual_rate=$rate
+  local rate_mismatch=none
   local xrun_text=none
   local result=FAIL
 
+  if printf '%s\n' "$output" | grep -Fqi 'rate is not accurate'; then
+    rate_mismatch=present
+    actual_rate=$(printf '%s\n' "$output" | sed -nE 's/.*got = ([0-9]+)Hz.*/\1/p' | sed -n '1p')
+    [[ -n "$actual_rate" ]] || actual_rate=unknown
+  fi
   if printf '%s\n' "$output" | grep -Eqi '(^|[^a-z])(xrun|overrun|underrun)([^a-z]|$)'; then
     xrun_text=present
   fi
-  if [[ "$exit_code" == 0 && "$xrun_text" == none ]]; then
+  if [[ "$exit_code" == 0 && "$rate_mismatch" == none && "$xrun_text" == none ]]; then
     result=PASS
   fi
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$direction" "$rate" "$channels" "$format" "$exit_code" "$xrun_text" "$result" >>"$matrix_file"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$direction" "$rate" "$actual_rate" "$channels" "$format" "$exit_code" \
+    "$rate_mismatch" "$xrun_text" "$result" >>"$matrix_file"
   {
     printf '[%s rate=%s channels=%s format=%s exit=%s]\n' "$direction" "$rate" "$channels" "$format" "$exit_code"
     printf '%s\n' "$output"
