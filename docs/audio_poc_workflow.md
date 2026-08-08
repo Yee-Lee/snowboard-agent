@@ -156,8 +156,9 @@ sanitized evidence index 的唯一來源。Pi checkout 是受控的
 deployment/test worktree，不是第二個開發來源；不得在 Pi 上留下未提交的
 程式修正後直接進行 benchmark。
 
-日常迭代使用 feature branch 與 Draft PR。`wip:` commit 可用於尚未完成的
-小範圍修改，但每一輪真實硬體測試都必須指向該輪唯一、完整的 commit SHA。
+日常迭代使用 feature branch 與 Draft PR。若交接或復原確有需要，可建立符合
+commit subject convention 的 scoped WIP commit；每一輪真實硬體測試都必須指向
+該輪唯一、完整的 commit SHA。
 Assistant 先在工作站修改並完成適用的 local/fake/smoke tests，再建立 commit；
 Pi 僅取得該 commit 後執行 environment pre-test 與已核准的 hardware test。
 
@@ -200,6 +201,17 @@ credentials, raw evidence, or private audio/transcript data.
 - Terminate the named child before timeout returns.
 - Add cleanup proof for the failure path.
 ```
+
+### Commit cadence
+
+Create one commit for one complete, reviewable work segment: for example a
+frozen-gate decision, a completed hardware evidence bundle, a formal handoff,
+or a milestone gate outcome. Do not commit each intermediate documentation
+edit, investigation, or small correction. Keep transient agent working notes
+outside tracked source; use a scoped WIP commit that still follows the subject
+convention only when a handoff or recovery requires a durable checkpoint. A
+real hardware test still requires an exact
+full SHA, even when its preceding development work is batched.
 
 SCP/rsync 只可用於不進 Git 的模型、受控 fixture 或 raw evidence，並須有
 checksum 與受控路徑；它們不得取代 source-code deployment。模型、大型結果、

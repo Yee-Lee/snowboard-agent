@@ -1,6 +1,6 @@
 # M1 Frozen-Gate Decision Record — Draft
 
-狀態：`DRAFT / NOT FROZEN`  
+狀態：`DESIGNER_APPROVED / NOT FROZEN`
 最後更新：2026-08-08  
 決策者（Designer）：User
 驗證者（Tester）：`PENDING`
@@ -102,7 +102,7 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | --- | --- |
 | Core product repository | this repository (`snowboard-agent`); product Audio HAL source is under `src/sbd/core/audio/` |
 | Responsible owner (person or team) | Core Team Designer |
-| Development branch / PR / tracking issue | `dev_agent_m2`; observed tracking SHA `a557413ecb74af2f0799e6d1649abd05a12ac7b2` (not an M3 delivery baseline) |
+| Development branch / PR / tracking issue | `dev_agent_m3` reported by `DELIVERY-AUDIO-POC-M3-ACK-001`; full delivery SHA is `PENDING` |
 | Expected delivery date or milestone | Not scheduled |
 | Required final artifact | source, tests, authoritative docs and full 40-character commit SHA |
 | Known API / hardware risks | 16 kHz input contract vs actual I2S capability; ownership and lifecycle contract pending |
@@ -113,7 +113,7 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | --- | --- | --- | --- |
 | Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
-| Numeric advance gates are frozen | `PENDING` | `PENDING` | `PENDING` |
+| Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4; Tester verification remains pending |
 | Tester reproduced harness and cleanup checks | `PENDING` | `PENDING` | `PENDING` |
 
 完成四項核准、M1 entry conditions 與 deterministic fake baseline 後，才可把本
