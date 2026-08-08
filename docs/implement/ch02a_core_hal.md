@@ -159,7 +159,27 @@ src/sbd/core/audio/
 - `NullAudioInput.frames()` : 以 config 定義的 frame 大小產出全 `\x00` bytes、 `asyncio.sleep(frame_duration)` 模擬即時串流； `aclose()` 立即結束
 - `NullAudioOutput.play(pcm)` : `async for _ in pcm: pass` ——消費完 iterator 立即 return，模擬即時播放
 
+### M3 Real Backend 目標硬體（Pi 5 ALSA）
+
+來源：`DELIVERY-AUDIO-POC-M3-ACK-001`（Audio POC Contract v0.1 Accepted）
+
+| 項目 | 規格 |
+|---|---|
+| 目標裝置 | Raspberry Pi 5 |
+| 麥克風 | INMP441（I2S 數位麥克風） |
+| 喇叭擴大器 | MAX98357A（I2S Class D Amplifier） |
+| 匯流排 | I2S，BCLK / LRCK 共用 |
+| Overlay | `googlevoicehat-soundcard`（`/boot/config.txt` 啟用） |
+| Input PCM target | 16 kHz、mono、16-bit little-endian、20 ms frame |
+| Output PCM format | configurable（sample rate 待 M4b TTS winner 確定後 cross-validate） |
+| Backend driver | `alsa/` 目錄（透過 `sounddevice` / PortAudio） |
+
+**待 POC Audio 團隊確認後才能鎖定**：
+- P1：Pi 5 + I2S native PCM capability matrix（確認 16 kHz target 可行性）
+- P2：實體 ALSA card/device identifier 與接線圖（供 Pi test config 使用，不進 generic source）
+
 外部依賴： `sounddevice` ( PortAudio 綁定)；RPi 系統套件 `libportaudio2` 。開發機不安裝時 factory 選 mock / null 即可運行。
+
 
 ---
 

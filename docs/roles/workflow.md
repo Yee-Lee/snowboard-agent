@@ -43,6 +43,8 @@ docs/reviews/ : 跨角色審查單 (結案移至 history/)
 
 docs/outsource/pm_handoff/ : [Product Team] PM 提供的產品規劃方向、需求反饋與建議
 
+docs/outsource/references/ : [All Roles] 外部團隊（POC / 硬體廠商等）主動交付給 Core Team 的技術參考文件（contract、spec draft、capability matrix 等）；按團隊分子目錄（poc_audio/ poc_display/ poc_llm/）存放。Core Team 採用決定記錄於 deliveries/ ACK 文件，不在此修改原始內容。
+
 docs/outsource/deliveries/ : [All Roles] 開發團隊完成後交付給產品團隊的產出物
 
 docs/outsource/responses/ : [All Roles] 開發團隊針對 PM 需求的回應
