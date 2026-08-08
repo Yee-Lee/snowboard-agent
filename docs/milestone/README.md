@@ -5,12 +5,12 @@
 ## Current Status
 
 最後更新：2026-08-08
-最終交付可達性：`AT_RISK` — M0 readiness gate 已完成；frozen gates 與 M3 HAL baseline 尚未完成，仍是後續交付風險。
+最終交付可達性：`AT_RISK` — M0 readiness gate 已完成；M1 證明 native audio format 與 M3 contract 衝突，`CR-AUDIO-M3-PCM-001` 尚待決策，frozen gates 的 Tester verification 與 M3 HAL baseline 亦未完成。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
-| M1 | `IN_PROGRESS` | Frozen gates 已獲 Designer 採用；Core M3 contract 已有條件接受，等待 fake/fixture 與 co-I2S native capability evidence | [M1](m1_test_and_audio_baseline.md) |
+| M1 | `CHANGE_REQUESTED` | Native hardware 僅支援 48 kHz stereo S32_LE；P1 `FAIL`、P2 `PASS`，等待 explicit AudioInput adaptation 決策 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `NOT_STARTED` | VAD/ASR/TTS 隔離候選比較 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5 真實 M3 Audio HAL 整合 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 組合認證與正式交付 | [M4](m4_combined_validation_and_delivery.md) |

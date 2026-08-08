@@ -35,8 +35,8 @@ accepted full 40-character SHA and the POC has M2 finalists.
 
 | ID | Required POC delivery | Status | Consequence if unresolved |
 | --- | --- | --- | --- |
-| P1 | Native `hw:` PCM matrix for rate/channel/sample format, 16 kHz feasibility, xrun behaviour, and lifecycle evidence. | `IN_PROGRESS` | Core M3 Pi acceptance is blocked; contract conflict requires a joint change request. |
-| P2 | ALSA card/device identifier, driver config hash, wiring and power confirmation, supplied through local config/evidence rather than generic source. | `IN_PROGRESS` | Reproducible Core Pi test command is blocked. |
+| P1 | Native `hw:` PCM matrix for rate/channel/sample format, 16 kHz feasibility, xrun behaviour, and lifecycle evidence. | `FAIL / CR-AUDIO-M3-PCM-001` | Native device is fixed at 48 kHz, stereo, S32_LE; Core M3 Pi acceptance requires a joint change decision. |
+| P2 | ALSA card/device identifier, driver config hash, wiring and power confirmation, supplied through local config/evidence rather than generic source. | `PASS` | Closed by `M1-NATIVE-AUDIO-001` and `M1-HW-SMOKE-001`. |
 | P3 | TTS winner PCM rate/channels/bit depth/chunk behaviour and controlled fixture. | `PENDING M2` | POC M3 playback-winner evidence is blocked; Core Output API remains configurable. |
 
 ## 4. Core Team return delivery required for POC M3
@@ -52,7 +52,7 @@ test only that exact SHA.
 | Decision | Owner | Status |
 | --- | --- | --- |
 | Core accepted v1.0 as M3 design input | Core Team Designer | `ACCEPTED WITH CONDITIONS` |
-| POC publishes P1 native capability matrix | Audio POC Tester | `IN_PROGRESS` |
-| POC publishes P2 device/config evidence | Audio POC Tester / User | `IN_PROGRESS` |
+| POC publishes P1 native capability matrix | Audio POC Tester | `FAIL / CHANGE REQUESTED` |
+| POC publishes P2 device/config evidence | Audio POC Tester / User | `PASS` |
 | Core supplies accepted M3 SHA | Core Team Designer | `PENDING` |
 | POC accepts SHA for POC M3 integration | Audio POC Tester / User | `PENDING` |

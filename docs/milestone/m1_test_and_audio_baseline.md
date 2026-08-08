@@ -1,12 +1,15 @@
 # M1：共同測試基線與 co-I2S Capability
 
-狀態：`IN_PROGRESS`
+狀態：`CHANGE_REQUESTED`
 
 Frozen-gate decision record：[M1 Frozen-Gate Draft](m1_frozen_gates_draft.md)
 （狀態為 `DESIGNER_APPROVED / NOT FROZEN`；真實 candidate run 尚未獲准。）
 
 Core-team handoff：[Audio M3 Contract v1](../../poc_audio/deliveries/audio_m3_contract_v1.0.md)
 （核心 M3 的設計輸入；不是 POC M3 integration baseline。）
+
+Current hardware finding：[M1 Native Audio Evidence](../../poc_audio/evidence/m1/M1-NATIVE-AUDIO-001.md)
+— P1 `FAIL`, P2 `PASS`; proposed resolution：[CR-AUDIO-M3-PCM-001](../../poc_audio/deliveries/CR-AUDIO-M3-PCM-001.md)。
 
 ## 目標
 
