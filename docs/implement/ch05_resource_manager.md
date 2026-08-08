@@ -221,6 +221,31 @@ seal 驗證的必要 instance 集合，由下列三者聯集推導，而非硬�
 
 不在此聯集內的 optional worker（例如 read disabled 且非 default_perceptions），其缺席不會導致 seal 失敗。
 
+對應實作（`ResourceManager._required_catalog_kinds()`）：
+
+```python
+def _required_catalog_kinds(self) -> set[str]:
+    # 1. 固定需要 reasoner / rest；加入 default_perceptions
+    required = {"reasoner", "rest", *self._config.perception.default_perceptions}
+    # 2. 三個 wake source 與其 first-turn worker kind 的對應表
+    sources = (
+        ("input.button",           self._config.input_sources.button.policy,           "listen"),
+        ("input.voice_wake",       self._config.input_sources.voice_wake.policy,       "listen"),
+        ("input.external_message", self._config.input_sources.external_message.policy, "read"),
+    )
+    # 3. policy.enabled 且未被 gate 停用（key 不在 _disabled_sources）才納入
+    required.update(
+        worker_kind
+        for key, policy, worker_kind in sources
+        if policy.enabled and key not in self._disabled_sources
+    )
+    return required
+```
+
+- `_disabled_sources` 是 §4.5 startup coherence gate 的輸出：gate 停用某 optional source 後，其 key 加入此集合；`_required_catalog_kinds()` 在 gate 之後被呼叫，故推導結果已反映 gate 決策。
+- seal 呼叫在 freeze capability map 之後、任何 producer start 之前（見 §4.2 step 6），確保推導使用 gate 後的最終 `enabled` 狀態。
+- `policy.enabled=False`（config 層面明確關閉）與「gate 停用」（optional source 的 first-turn worker 缺席）都會使對應 worker kind 從必要集合中排除，兩者語意不同但路徑皆安全：前者不 arm receiver 也不計入 required；後者由 gate 先排除 source 再由此函式排除 kind。
+
 ### 3.5 StateManager early-start 依賴與 late-fill
 
 StateManager 於 STATE_MANAGER phase（最早）start。其 Ch 4 §2 constructor 只收四個 early 依賴：`workerCatalog`、`SessionConverger`、`RecoveryControl`、`ActionPayloadValidator`。晚於 SM 的 producer control——`ExternalMessageControl` 與 `WakeListenerControl | None`——不進 constructor，改由 Ch 4 §2 的 one-shot setter `set_external_message_control()` / `set_wake_listener()` late-fill（見下方 B 類）。SM 對這兩者的內部初值為 `None`。這樣拆分後，所有依賴的來源分兩類，兩類都不違反 §3.3 scoped resolver「只取已 READY managed instance」規則：
