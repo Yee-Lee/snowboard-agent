@@ -1,5 +1,13 @@
 # M4a Audio POC Plan
 
+> Status: `REFERENCE / NON-AUTHORITATIVE`
+>
+> This is a detailed historical POC planning reference. It does not set the
+> active milestone, frozen gate, or delivery status. Use
+> `docs/milestone/README.md`, the active milestone document,
+> `docs/audio_poc_workflow.md`, and the delivery checklist for current work.
+> Read this file only when its candidate or harness background is needed.
+
 本計畫定義 M4a 開始前必須完成的 VAD、ASR、TTS 隔離 POC。目標是在 Raspberry Pi 5 上可重複驗證固定 M4a model baseline，並讓獲選 backend 的核心 wrapper 可以升格為產品實作。
 
 LiteRT-LM 不在本計畫範圍內；其 POC 與 M4b gate 見 `../poc_llm/m4b_llm_poc_plan.md` 。

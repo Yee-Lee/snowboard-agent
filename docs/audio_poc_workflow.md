@@ -123,15 +123,33 @@ cleanup_check
 
 | 角色 | 責任與決策權 |
 | --- | --- |
-| Assistant | 規劃工作、撰寫/審查程式與 test packet、操作獲准的遠端環境、審查 evidence、標記技術 pass/fail、追蹤風險、提出 change request 與 winner/no-go 建議 |
+| Technical Lead（Assistant） | 規劃工作、定義 test packet、審查 evidence、標記技術 pass/fail、追蹤風險、提出 change request 與 winner/no-go 建議 |
+| Developer（agent） | 只在工作站修改 POC source、tests、lockfile 與文件；先完成 local/fake/smoke tests，交付完整 SHA、變更說明與可執行 test request。不得把 Pi observation 自行判為 hardware pass，也不得在測試 run 中改動 Pi worktree。 |
+| Tester / Test Controller（agent） | 只對已指定 SHA 執行 Pi checkout、environment pre-test、test packet、evidence 收集與 cleanup check；保存 raw evidence 至受控位置並回傳 sanitized index。不得在同一個 test run 中修改 source、調整 gate 或把 INCONCLUSIVE 改寫為 PASS。 |
 | User | 提供目標硬體與存取、執行實體操作、核准有外部影響的動作、決定商用/license 取捨、確認 TTS 主觀品質、核准產品層 winner/no-go |
 | Designer | 凍結契約、品質/資源 gate，核准 baseline 或 no-go；不得在看到結果後偏向候選調門檻 |
-| Tester | 定義/確認量測可重現性、failure/cleanup 證據與正式 Test ID，關閉測試 findings |
 | Reviewer | 審查 wrapper 邊界、lifecycle/cancel、產品升格介面及 blocking findings |
 
-同一人可兼任多個角色，但 gate 所需的決策與證據責任不得省略。
+一個 agent session 可依序兼任 Developer 與 Tester，但必須在 commit SHA、
+test packet 與 evidence review 三個交接點明確切換角色；不得在相同證據 run
+中同時修改實作與判定結果。gate 所需的決策與證據責任不得省略。
 
-## 7.1 Git、Draft PR 與 Pi worktree 流程
+### Agent reasoning budget
+
+以較低 reasoning effort 執行已固定、可重跑的步驟，將較高 effort 留給跨層
+判斷：
+
+| 角色/工作 | 預設 effort | 升級條件 |
+| --- | --- | --- |
+| Developer：小型 POC 修改、local test、文件 | medium | native lifecycle、跨模組設計、反覆失敗或契約衝突時使用 high |
+| Tester：pre-test、固定 test packet、checksum、evidence 收集 | low | log/evidence 不一致、cleanup failure 或需要重寫 test packet 時使用 medium |
+| Technical Lead：milestone entry/gate review、candidate advance/reject、change request | high | 不降低；這些決策必須保留完整推理與證據鏈 |
+
+這是執行成本的預設值，不是驗收標準的縮減。Codex 的 model 與
+`model_reasoning_effort` 可由 user/profile/project config 設定；實際可用模型
+仍以 workspace policy 為準。
+
+## 7.2 Git、Draft PR 與 Pi worktree 流程
 
 POC repo 是程式碼、測試 harness、lockfile、schema、fixture catalog 與
 sanitized evidence index 的唯一來源。Pi checkout 是受控的

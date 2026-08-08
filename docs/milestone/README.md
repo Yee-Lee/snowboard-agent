@@ -40,4 +40,8 @@
 - [POC 開發指引](../pm_handoff/audio_poc_development_guide.md)
 - [最終繳交清單](../pm_handoff/audio_poc_delivery_checklist.md)
 - [M3 Audio 要求](../pm_handoff/core_audio_m3_requirements.md)
-- [完整 M4a POC 計畫](../poc/poc_audio_m4_audio_poc_plan.md)
+
+## Reference Material (Non-authoritative)
+
+- [M3 Audio 設計修訂提案](../poc/poc_audio_m3_design_changes.md)
+- [M4a Audio POC 計畫](../poc/poc_audio_m4_audio_poc_plan.md)

@@ -3,17 +3,29 @@
 This repository is an isolated Raspberry Pi 5 audio POC. Every agent must work
 backward from the final delivery gate rather than optimizing for a one-off demo.
 
-## Read First
+## Read by task and milestone
 
-Read these files before planning, changing code, or running hardware tests:
+Do this at the beginning of a new work session, after a context reset, or when
+the milestone state changes:
 
-1. `docs/audio_poc_workflow.md` — authoritative working process, scope, roles,
-   evidence rules, and final-delivery traceability.
-2. `docs/milestone/README.md` — current milestone status and the active
-   milestone document.
-3. `docs/pm_handoff/audio_poc_development_guide.md` — POC requirements.
-4. `docs/pm_handoff/audio_poc_delivery_checklist.md` — final delivery gate.
-5. `docs/pm_handoff/core_audio_m3_requirements.md` — M3 Audio HAL dependency.
+1. `docs/milestone/README.md` — current status and active milestone.
+2. The active `docs/milestone/m*.md` file — entry/exit gate and scope.
+3. `docs/audio_poc_workflow.md` — authority for scope, evidence, roles and
+   Git/Pi workflow.
+
+Read these only when the task needs them:
+
+- `docs/pm_handoff/audio_poc_delivery_checklist.md` — milestone entry, gate
+  review, delivery-manifest work, or a task that claims to close a final item.
+- `docs/pm_handoff/audio_poc_development_guide.md` — POC code, wrappers,
+  fixtures, candidate comparison, or combined-pipeline work.
+- `docs/pm_handoff/core_audio_m3_requirements.md` — M3 work or any change that
+  touches the Audio HAL contract.
+- `poc_audio/README.md` — workstation/Pi checkout preparation or remote test
+  execution.
+
+Do not reread unchanged documents during the same task merely by habit. Follow
+links from the active milestone only when the current task needs that detail.
 
 ## Required Working Behavior
 

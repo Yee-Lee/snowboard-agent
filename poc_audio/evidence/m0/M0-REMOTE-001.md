@@ -45,21 +45,8 @@ standard streams, record its PID, explicitly cancel it, and verify absence.
 - Audio capture/playback lifecycle, I2S format verification, and all M3 HAL
   behaviour remain out of scope until M1/M3 respectively.
 
-## Workstation handoff
+## Runbook
 
-A fresh workstation can continue from this repository revision without
-recreating the M0 tooling. Before development or a hardware test, the operator
-must provision its own approved SSH credential and trusted host entry outside
-the repository, then run:
-
-```sh
-M0_SSH_CONFIG=/protected/path/config \
-  bash poc_audio/tools/environment_pre_test.sh <operator-alias>
-```
-
-The command is read-only on the Pi. It validates local dependencies,
-non-interactive connectivity, Pi 5/aarch64 identity, remote test tools, audio
-device availability/ownership, disk, temperature, and throttling. Its raw
-output is intentionally Git-ignored. Run `m0_remote_readiness.sh` for the
-separate timeout/cancel/transfer control proof when starting a new M0 evidence
-bundle.
+For a fresh workstation, Pi checkout selection, pre-test, and Git/Pi sync, use
+[`poc_audio/README.md`](../../README.md). This packet records only the M0 test
+contract, result, retained finding, and M0-specific risk.

@@ -1,5 +1,13 @@
 # M3 Audio Design Changes
 
+> Status: `REFERENCE / NON-AUTHORITATIVE`
+>
+> This is a historical Designer change proposal for the product M3 Audio HAL.
+> It does not set the active POC milestone, gate, or implementation contract.
+> Use `docs/milestone/README.md`, the active milestone document, and the
+> authoritative M3 requirements for current work. Read this file only when a
+> M3/Audio HAL design decision needs its background context.
+
 本文檔整理 M3 開始前必須完成的 Audio 設計修訂。它是 Designer 的修訂清單，不是新的權威契約；正式決策必須同步回 `snowboard-agent/docs/implement/` 、 `snowboard-agent/docs/model_spec.md` 、 `snowboard-agent/docs/milestone.md` 與對應 progress 文件，並依既有 Implement Review 流程確認。
 
 ## 1. 目的與邊界
