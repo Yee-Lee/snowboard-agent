@@ -11,6 +11,10 @@ Core-team handoff：[Audio M3 Contract v1](../../poc_audio/deliveries/audio_m3_c
 Current hardware finding：[M1 Native Audio Evidence](../../poc_audio/evidence/m1/M1-NATIVE-AUDIO-001.md)
 — P1 `FAIL`, P2 `PASS`; proposed resolution：[CR-AUDIO-M3-PCM-001](../../poc_audio/deliveries/CR-AUDIO-M3-PCM-001.md)。
 
+Current harness finding：[M1 Deterministic Fake Evidence](../../poc_audio/evidence/m1/M1-FAKE-001.md)
+— exact-SHA workstation and Pi reproduction `PASS`; all five lifecycle paths
+returned zero cleanup counters.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A，等待 Core Team 回覆。）
 
@@ -58,10 +62,14 @@ Blocking M1 / real candidate entry：
 
 - Core Team 接受或有界修訂 `CR-AUDIO-M3-PCM-001`，確認明確的 AudioInput
   conversion boundary。
-- 完成 lockfile、harness、result/candidate schema 與 deterministic fake，並由
-  Tester 重現 success/failure/timeout/cancel/cleanup。
 - 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
   review，使 frozen gate 可標為 `FROZEN`。
+
+已關閉的 M1 baseline 項目：
+
+- lockfile、harness、result/candidate/fixture schema 與 deterministic fake 已完成；
+  Tester 已在相同完整 SHA 重現 success、error、timeout、cancel、force-abort，且
+  cleanup counters 全為 0（`M1-FAKE-001`）。
 
 目前不阻擋 M1、但會阻擋後續階段：
 

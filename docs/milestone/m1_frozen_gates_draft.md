@@ -3,7 +3,7 @@
 狀態：`DESIGNER_APPROVED / NOT FROZEN`
 最後更新：2026-08-08  
 決策者（Designer）：User
-驗證者（Tester）：`PENDING`
+驗證者（Tester）：Assistant / Test Controller
 
 本文件推進 final delivery checklist 的「可重現程式」、「功能與品質證據」、
 「Pi 5 與 M3 HAL 驗證」三項。它是 M1 的 gate 草案，不是候選測試結果，
@@ -113,8 +113,8 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | --- | --- | --- | --- |
 | Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
-| Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4; Tester verification remains pending |
-| Tester reproduced harness and cleanup checks | `PENDING` | `PENDING` | `PENDING` |
+| Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4 |
+| Tester reproduced harness and cleanup checks | Assistant / Test Controller | 2026-08-08 | `334825330d8a5a66bddf1a2c64ae80c737aa552a`; [M1-FAKE-001](../../poc_audio/evidence/m1/M1-FAKE-001.md) `PASS` |
 
 完成四項核准、M1 entry conditions 與 deterministic fake baseline 後，才可把本
 文件改為 `FROZEN`，並由 milestone index 明確將 M1 改為 `IN_PROGRESS`。
