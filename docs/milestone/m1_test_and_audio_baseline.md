@@ -8,6 +8,10 @@ Frozen-gate decision record：[M1 Frozen-Gate Draft](m1_frozen_gates_draft.md)
 Developer progress：[Audio POC Developer Progress — M1](../reviews/dev_progress_M1.md)
 （P4、Formal 60-item fixture 與 M1 gate review 的工作拆包及執行順序。）
 
+受控例外：[CR-M1-PILOT-PREFLIGHT-001](../../poc_audio/deliveries/CR-M1-PILOT-PREFLIGHT-001.md)
+允許以已完成的 40-item Pilot 進行 ASR input/runtime `OBSERVATION` preflight；
+它不是 candidate comparison，且不改變 M1/M2 gate。
+
 Core-team handoff：[Audio M3 Contract v1](../../poc_audio/deliveries/audio_m3_contract_v1.0.md)
 （核心 M3 的設計輸入；不是 POC M3 integration baseline。）
 
@@ -105,6 +109,12 @@ Blocking M1 / real candidate entry：
   review，使 frozen gate 可標為 `FROZEN`。
 - 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個
   reviewable exact SHA，由 PM 回覆 POC intake SHA；不另為行政收件建立高頻 commit。
+
+已核准的受控開發例外：
+
+- 40-item Pilot 可依 `CR-M1-PILOT-PREFLIGHT-001` 用於診斷性的 ASR preflight，
+  驗證 native-to-ASR preparation 與 candidate runtime 是否可行。結果僅為
+  `OBSERVATION`，不得改寫上述 blocking、宣告 candidate 結果或展開 M2。
 
 已關閉的 M1 baseline 項目：
 

@@ -16,6 +16,10 @@
 - 核准後的規則只可透過 change request 變更；不得因某候選結果不佳而放寬。
 - 凍結前只允許 deterministic fake、harness 與硬體 capability 測試。這些結果
   不得用來宣告任何 candidate winner 或 reject。
+- 唯一的受控例外是已獲 User/Designer 核准的
+  [`CR-M1-PILOT-PREFLIGHT-001`](../../poc_audio/deliveries/CR-M1-PILOT-PREFLIGHT-001.md)：
+  完整 40-item Pilot 可用於 ASR input/runtime 的 `OBSERVATION` preflight。它
+  不得產生 advance、reject、winner、M2 狀態變更或 frozen quality result。
 - Tester 必須先以指定 commit SHA 重跑一次，確認命令、schema 與 cleanup proof
   可執行，才可標記為 `FROZEN`。
 
@@ -114,6 +118,7 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Controlled fixture recording authorization | User / Designer | 2026-08-09 | Internal POC evaluation only; no public release, redistribution, or Git storage of raw audio |
 | Fixture operational Pilot | User / Designer + Assistant / Test Controller | 2026-08-09 | [M1-FIXTURE-PILOT-001](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-001.md) `PASS`; formal fixture acceptance remains pending |
+| Pilot ASR observation-only preflight | User / Designer | 2026-08-09 | [CR-M1-PILOT-PREFLIGHT-001](../../poc_audio/deliveries/CR-M1-PILOT-PREFLIGHT-001.md); no candidate decision is permitted |
 | Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
 | Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4 |
 | Tester reproduced harness and cleanup checks | Assistant / Test Controller | 2026-08-08 | `334825330d8a5a66bddf1a2c64ae80c737aa552a`; [M1-FAKE-001](../../poc_audio/evidence/m1/M1-FAKE-001.md) `PASS` |

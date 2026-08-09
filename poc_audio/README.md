@@ -199,3 +199,11 @@ bash poc_audio/tools/run_option_a_valid_bits.sh \
 
 The raw-analysis result must be reviewed together with wiring attestation and
 the prior human check of known fixture labels before P4-A02 can pass.
+
+## M1 Pilot ASR preflight
+
+The complete 40-item Pilot may be used only for the approved observation-only
+ASR input/runtime preflight. It does not freeze the fixture set or permit an
+ASR advance/reject decision. Read
+[`fixtures/authorized/pilot_asr_preflight.md`](fixtures/authorized/pilot_asr_preflight.md)
+before preparing local derived WAVs.

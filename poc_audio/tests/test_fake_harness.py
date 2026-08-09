@@ -24,6 +24,10 @@ from audio_poc.fixture_recorder import (  # noqa: E402
     verify_records,
 )
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
+from audio_poc.fixture_preflight import (  # noqa: E402
+    MANIFEST_NAME as PREFLIGHT_MANIFEST_NAME,
+    prepare_pilot,
+)
 from audio_poc.models import TerminalStatus  # noqa: E402
 from audio_poc.option_a_fixtures import generate_fixtures  # noqa: E402
 from audio_poc.option_a_conversion import (  # noqa: E402
@@ -499,6 +503,68 @@ class TrackedDocumentTests(unittest.TestCase):
                 manifest["superseded_records"][0]["reason"],
                 "operator_requested_replace",
             )
+
+    def test_pilot_preflight_creates_complete_16k_mono_revision(self) -> None:
+        import tempfile
+
+        plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
+        plan = load_plan(plan_path)
+        for capture_set in plan["sets"]:
+            capture_set["duration_seconds_each"] = 1
+        plan["_path"] = str(plan_path)
+        pilot_items = select_stage_items(plan, build_capture_items(plan), "pilot")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            native_dir = root / "native"
+            native_dir.mkdir()
+            records = {}
+            for item in pilot_items:
+                wav_path = native_dir / f"{item.fixture_id}.wav"
+                with wave.open(str(wav_path), "wb") as generated:
+                    generated.setnchannels(2)
+                    generated.setsampwidth(4)
+                    generated.setframerate(48000)
+                    generated.writeframes(
+                        (100_000_000).to_bytes(4, "little", signed=True)
+                        + (0).to_bytes(4, "little", signed=True)
+                    )
+                    generated.writeframes(b"\x00" * (47999 * 2 * 4))
+                records[item.fixture_id] = {
+                    "fixture_id": item.fixture_id,
+                    "vad_class": item.vad_class,
+                    "category": item.category,
+                    "file": wav_path.name,
+                    "sha256": sha256_file(wav_path),
+                    "metadata": validate_wav(wav_path, plan["native_capture"]),
+                }
+            (native_dir / "fixture_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0",
+                        "plan_id": plan["plan_id"],
+                        "plan_sha256": sha256_file(plan_path),
+                        "authorization_confirmed": True,
+                        "native_capture": plan["native_capture"],
+                        "source_sha": "0" * 40,
+                        "records": records,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            output_dir = root / "preflight"
+            result = prepare_pilot(
+                plan, plan_path, native_dir, output_dir, REPO_ROOT, replace=False
+            )
+            self.assertEqual(result["result"], "PASS")
+            self.assertEqual(result["valid_files"], 40)
+            document = json.loads(
+                (output_dir / PREFLIGHT_MANIFEST_NAME).read_text(encoding="utf-8")
+            )
+            self.assertEqual(document["gate_effect"], "observation_only_no_advance_reject_or_winner")
+            self.assertEqual(len(document["records"]), 40)
+            with wave.open(str(output_dir / "asr-clear-001.wav"), "rb") as derived:
+                self.assertEqual((derived.getframerate(), derived.getnchannels(), derived.getsampwidth()), (16000, 1, 2))
+                self.assertEqual(derived.getnframes(), 16000)
 
 
 if __name__ == "__main__":
