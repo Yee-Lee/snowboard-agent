@@ -1,110 +1,124 @@
-"""
-ctypes-based display backend.
-
-Loads libdisplay.so and calls the stable C ABI:
-
-    display_open(config: DisplayConfig*) -> handle (int)
-    display_get_info(handle) -> DisplayInfo
-    display_present_rgb565(handle, buffer, length)
-    display_present_rect_rgb565(handle, x, y, width, height, buffer, length)
-    display_clear(handle)
-    display_close(handle)
-
-Pin mapping is passed to display_open() via a ctypes struct that mirrors
-the C-side DisplayConfig (pin_config.h).  No pin is hardcoded in Python.
-
-All calls are made from a single dedicated I/O thread enforced by the
-DisplayService — never directly from any other thread.
-"""
+"""Thin Python adapter for the versioned native display ABI."""
 
 from __future__ import annotations
 
-import asyncio
 import ctypes
 import logging
 from pathlib import Path
-from typing import Optional
 
-from .protocol import DisplayDevice, DisplayInfo, Rect, Rgb565Frame
-from .profiles import DisplayPinConfig, PinConfig, SpiConfig, GpiochipConfig
+from .profiles import DisplayPinConfig
+from .protocol import DisplayInfo
 
 logger = logging.getLogger(__name__)
 
+DISPLAY_ABI_VERSION = 1
+DISPLAY_CONFIG_VERSION = 1
+DISPLAY_PIXEL_FORMAT_RGB565 = 1
+DISPLAY_BYTE_ORDER_MSB_FIRST = 1
+
+DISPLAY_OK = 0
+DISPLAY_E_INVALID_ARGUMENT = -1
+DISPLAY_E_ABI_MISMATCH = -2
+DISPLAY_E_BAD_CONFIG = -3
+DISPLAY_E_ALREADY_OPEN = -4
+DISPLAY_E_NOT_OPEN = -5
+DISPLAY_E_INVALID_HANDLE = -6
+DISPLAY_E_BUFFER_SIZE = -7
+DISPLAY_E_WRONG_THREAD = -8
+
+
+class DisplayNativeError(RuntimeError):
+    """Native GPIO, SPI, panel, or internal operation failed."""
+
+
+class DisplayAbiError(DisplayNativeError):
+    """The loaded artifact does not implement the required ABI."""
+
 
 class _CDisplayInfo(ctypes.Structure):
-    """Must match the C-side DisplayInfo layout in display.h."""
     _fields_ = [
-        ("width",  ctypes.c_int),
-        ("height", ctypes.c_int),
-        ("name",   ctypes.c_char * 64),
+        ("abi_version", ctypes.c_uint32),
+        ("struct_size", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("pixel_format", ctypes.c_uint32),
+        ("byte_order", ctypes.c_uint32),
+        ("buffer_bytes", ctypes.c_uint32),
+        ("name", ctypes.c_char * 64),
     ]
 
 
 class _CSpiConfig(ctypes.Structure):
-    """Mirrors SpiConfig in pin_config.h."""
     _fields_ = [
-        ("bus",      ctypes.c_int),
-        ("chip",     ctypes.c_int),
-        ("speed_hz", ctypes.c_int),
-        ("mode",     ctypes.c_int),
+        ("bus", ctypes.c_int32),
+        ("chip", ctypes.c_int32),
+        ("speed_hz", ctypes.c_uint32),
+        ("mode", ctypes.c_uint32),
     ]
 
 
 class _CGpiochipConfig(ctypes.Structure):
-    """Mirrors GpiochipConfig in pin_config.h."""
-    _fields_ = [
-        ("chip_index", ctypes.c_int),
-    ]
+    _fields_ = [("chip_index", ctypes.c_int32)]
 
 
 class _CDisplayPinConfig(ctypes.Structure):
-    """Mirrors DisplayPinConfig in pin_config.h."""
     _fields_ = [
-        ("rst", ctypes.c_int),
-        ("dc",  ctypes.c_int),
-        ("cs",  ctypes.c_int),
-        ("bl",  ctypes.c_int),
+        ("rst", ctypes.c_int32),
+        ("dc", ctypes.c_int32),
+        ("cs", ctypes.c_int32),
+        ("bl", ctypes.c_int32),
     ]
 
 
 class _CDisplayConfig(ctypes.Structure):
-    """Mirrors DisplayConfig in pin_config.h — passed to display_open()."""
     _fields_ = [
-        ("pins",      _CDisplayPinConfig),
-        ("spi",       _CSpiConfig),
+        ("abi_version", ctypes.c_uint32),
+        ("struct_size", ctypes.c_uint32),
+        ("pins", _CDisplayPinConfig),
+        ("spi", _CSpiConfig),
         ("gpio_chip", _CGpiochipConfig),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("rotation_degrees", ctypes.c_uint32),
+        ("pixel_format", ctypes.c_uint32),
+        ("byte_order", ctypes.c_uint32),
+        ("buffer_bytes", ctypes.c_uint32),
     ]
 
 
-def _build_c_config(cfg: DisplayPinConfig) -> _CDisplayConfig:
-    """Convert a Python DisplayPinConfig to the ctypes C struct."""
-    c = _CDisplayConfig()
-    c.pins.rst = cfg.pins.rst
-    c.pins.dc  = cfg.pins.dc
-    c.pins.cs  = cfg.pins.cs
-    c.pins.bl  = cfg.pins.bl
-    c.spi.bus      = cfg.spi.bus
-    c.spi.chip     = cfg.spi.chip
-    c.spi.speed_hz = cfg.spi.speed_hz
-    c.spi.mode     = cfg.spi.mode
-    c.gpio_chip.chip_index = cfg.gpio_chip.chip_index
-    return c
+def _build_c_config(
+    cfg: DisplayPinConfig,
+    width: int,
+    height: int,
+) -> _CDisplayConfig:
+    if cfg.gpio_chip.chip_index < 0:
+        raise ValueError("gpio_chip.chip_index must be resolved before start()")
+    if cfg.spi.speed_hz <= 0:
+        raise ValueError("spi.speed_hz must be positive")
+
+    config = _CDisplayConfig()
+    config.abi_version = DISPLAY_CONFIG_VERSION
+    config.struct_size = ctypes.sizeof(_CDisplayConfig)
+    config.pins.rst = cfg.pins.rst
+    config.pins.dc = cfg.pins.dc
+    config.pins.cs = cfg.pins.cs
+    config.pins.bl = cfg.pins.bl
+    config.spi.bus = cfg.spi.bus
+    config.spi.chip = cfg.spi.chip
+    config.spi.speed_hz = cfg.spi.speed_hz
+    config.spi.mode = cfg.spi.mode
+    config.gpio_chip.chip_index = cfg.gpio_chip.chip_index
+    config.width = width
+    config.height = height
+    config.rotation_degrees = 0
+    config.pixel_format = DISPLAY_PIXEL_FORMAT_RGB565
+    config.byte_order = DISPLAY_BYTE_ORDER_MSB_FIRST
+    config.buffer_bytes = width * height * 2
+    return config
 
 
 class CtypesDisplayDevice:
-    """
-    Hardware backend that forwards calls to a compiled libdisplay.so.
-
-    The .so is expected to expose the stable C ABI defined in
-    native/include/display.h.  The Python side never touches GPIO/SPI
-    directly — all that lives inside the native driver.
-
-    Pin mapping is provided via *pin_config* (a DisplayPinConfig).
-    If None, the driver's built-in defaults (from pin_config.h) are used.
-
-    Note: open/present/clear/close MUST be called from the same OS
-    thread (the native I/O thread managed by DisplayService).
-    """
+    """Adapter with async lifecycle and synchronous single-thread rendering."""
 
     def __init__(
         self,
@@ -112,21 +126,19 @@ class CtypesDisplayDevice:
         logical_width: int,
         logical_height: int,
         *,
-        pin_config: Optional[DisplayPinConfig] = None,
+        pin_config: DisplayPinConfig,
         scale_to_native: bool = False,
         native_width: int = 0,
         native_height: int = 0,
     ) -> None:
         self._so_path = Path(so_path)
-        self._logical_width = logical_width
-        self._logical_height = logical_height
-        self._pin_config = pin_config     # None → pass NULL → driver defaults
+        self._pin_config = pin_config
         self._scale = scale_to_native
         self._native_width = native_width or logical_width
         self._native_height = native_height or logical_height
-
-        self._lib: Optional[ctypes.CDLL] = None
-        self._handle: int = 0
+        self._lib: ctypes.CDLL | None = None
+        self._handle = 0
+        self._back_buffer: bytearray | None = None
         self.info = DisplayInfo(
             width=self._native_width,
             height=self._native_height,
@@ -134,126 +146,167 @@ class CtypesDisplayDevice:
             logical_height=logical_height,
         )
 
-    # ------------------------------------------------------------------
-    # DisplayDevice protocol
-    # ------------------------------------------------------------------
+    async def start(self) -> None:
+        if self._lib is not None or self._handle != 0:
+            raise RuntimeError("CtypesDisplayDevice already started")
+        self._open_sync()
+        self._back_buffer = bytearray(self._native_width * self._native_height * 2)
 
-    async def open(self) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._open_sync)
+    async def stop(self) -> None:
+        if self._lib is None and self._handle == 0:
+            self._back_buffer = None
+            return
+        try:
+            self._close_sync()
+        finally:
+            self._back_buffer = None
 
-    async def present(self, frame: Rgb565Frame) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._present_sync, bytes(frame))
+    def clear(self) -> None:
+        buffer = self._require_buffer("clear")
+        buffer[:] = b"\x00" * len(buffer)
 
-    async def present_rect(self, rect: Rect, frame: Rgb565Frame) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._present_rect_sync, rect, bytes(frame))
+    def write_pixels(self, frame: bytes) -> None:
+        if not isinstance(frame, bytes):
+            raise TypeError("write_pixels() requires bytes")
+        buffer = self._require_buffer("write_pixels")
+        expected = self._native_width * self._native_height * 2
+        if len(frame) != expected:
+            raise ValueError(f"Expected {expected} bytes, got {len(frame)}")
+        buffer[:] = frame
 
-    async def clear(self) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._clear_sync)
+    def show(self) -> None:
+        buffer = self._require_buffer("show")
+        self._present_sync(bytes(buffer))
 
-    async def close(self) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._close_sync)
+    def size(self) -> tuple[int, int]:
+        return (self._native_width, self._native_height)
 
-    # ------------------------------------------------------------------
-    # Synchronous helpers (called from executor / I/O thread)
-    # ------------------------------------------------------------------
+    def _require_buffer(self, operation: str) -> bytearray:
+        if self._back_buffer is None or self._lib is None or self._handle == 0:
+            raise RuntimeError(f"{operation} called before start()")
+        return self._back_buffer
 
     def _open_sync(self) -> None:
-        logger.info("[CtypesDisplay] Loading %s", self._so_path)
-        self._lib = ctypes.CDLL(str(self._so_path))
-        self._setup_signatures()
+        logger.info("[CtypesDisplay] loading %s", self._so_path)
+        lib = ctypes.CDLL(str(self._so_path))
+        self._lib = lib
+        try:
+            self._setup_signatures()
+            artifact_abi = int(lib.display_abi_version())
+            if artifact_abi != DISPLAY_ABI_VERSION:
+                raise DisplayAbiError(
+                    f"display ABI mismatch: expected {DISPLAY_ABI_VERSION}, "
+                    f"artifact reports {artifact_abi}"
+                )
 
-        if self._pin_config is not None:
-            c_cfg = _build_c_config(self._pin_config)
-            self._handle = self._lib.display_open(ctypes.byref(c_cfg))
-            logger.info(
-                "[CtypesDisplay] open with pins CS=%d DC=%d RST=%d BL=%d SPI%d.%d@%dHz",
-                self._pin_config.pins.cs,
-                self._pin_config.pins.dc,
-                self._pin_config.pins.rst,
-                self._pin_config.pins.bl,
-                self._pin_config.spi.bus,
-                self._pin_config.spi.chip,
-                self._pin_config.spi.speed_hz,
+            config = _build_c_config(
+                self._pin_config,
+                self._native_width,
+                self._native_height,
             )
-        else:
-            self._handle = self._lib.display_open(None)
-            logger.info("[CtypesDisplay] open with driver built-in pin defaults")
+            handle = ctypes.c_int32(0)
+            status = int(lib.display_open(ctypes.byref(config), ctypes.byref(handle)))
+            self._raise_status("display_open", status)
+            if handle.value == 0:
+                raise DisplayNativeError("display_open returned an invalid handle")
+            self._handle = handle.value
+            self._verify_info()
+        except Exception:
+            self._handle = 0
+            self._lib = None
+            raise
 
-        if self._handle == 0:
-            raise RuntimeError(f"display_open() returned 0 (failed) for {self._so_path}")
-        logger.info("[CtypesDisplay] open OK, handle=%d", self._handle)
+    def _verify_info(self) -> None:
+        assert self._lib is not None
+        info = _CDisplayInfo()
+        status = int(self._lib.display_get_info(self._handle, ctypes.byref(info)))
+        self._raise_status("display_get_info", status)
+        expected_bytes = self._native_width * self._native_height * 2
+        if (
+            info.abi_version != DISPLAY_ABI_VERSION
+            or info.struct_size != ctypes.sizeof(_CDisplayInfo)
+            or info.width != self._native_width
+            or info.height != self._native_height
+            or info.pixel_format != DISPLAY_PIXEL_FORMAT_RGB565
+            or info.byte_order != DISPLAY_BYTE_ORDER_MSB_FIRST
+            or info.buffer_bytes != expected_bytes
+        ):
+            try:
+                self._lib.display_close(self._handle)
+            finally:
+                self._handle = 0
+            raise DisplayAbiError("native display info does not match requested config")
 
     def _present_sync(self, frame: bytes) -> None:
-        if self._lib is None:
-            raise RuntimeError("CtypesDisplayDevice not open")
-        rc = self._lib.display_present_rgb565(
-            self._handle,
-            ctypes.c_char_p(frame),
-            ctypes.c_int(len(frame)),
+        if self._lib is None or self._handle == 0:
+            raise RuntimeError("CtypesDisplayDevice not started")
+        c_buffer = (ctypes.c_uint8 * len(frame)).from_buffer_copy(frame)
+        status = int(
+            self._lib.display_present_rgb565(
+                self._handle,
+                ctypes.cast(c_buffer, ctypes.POINTER(ctypes.c_uint8)),
+                len(frame),
+            )
         )
-        if rc != 0:
-            logger.error("[CtypesDisplay] display_present_rgb565 returned %d", rc)
-
-    def _present_rect_sync(self, rect: Rect, frame: bytes) -> None:
-        if self._lib is None:
-            raise RuntimeError("CtypesDisplayDevice not open")
-        rc = self._lib.display_present_rect_rgb565(
-            self._handle,
-            ctypes.c_int(rect.x),
-            ctypes.c_int(rect.y),
-            ctypes.c_int(rect.width),
-            ctypes.c_int(rect.height),
-            ctypes.c_char_p(frame),
-            ctypes.c_int(len(frame)),
-        )
-        if rc != 0:
-            logger.error("[CtypesDisplay] display_present_rect_rgb565 returned %d", rc)
-
-    def _clear_sync(self) -> None:
-        if self._lib is None:
-            return
-        self._lib.display_clear(self._handle)
+        self._raise_status("display_present_rgb565", status)
 
     def _close_sync(self) -> None:
-        if self._lib is None:
+        lib = self._lib
+        handle = self._handle
+        if lib is None or handle == 0:
+            self._lib = None
+            self._handle = 0
             return
-        self._lib.display_close(self._handle)
+        status = int(lib.display_close(handle))
+        self._raise_status("display_close", status)
         self._handle = 0
-        logger.info("[CtypesDisplay] closed")
+        self._lib = None
 
     def _setup_signatures(self) -> None:
-        """Configure ctypes argument / return types for the C ABI."""
         lib = self._lib
         assert lib is not None
-
-        # display_open(config: DisplayConfig*) -> int handle
-        # We use c_void_p here so we can pass either byref(c_cfg) or None.
-        lib.display_open.restype = ctypes.c_int
-        lib.display_open.argtypes = [ctypes.c_void_p]
-
-        # display_present_rgb565(handle, buf, length) -> int error_code
-        lib.display_present_rgb565.restype = ctypes.c_int
+        lib.display_abi_version.restype = ctypes.c_uint32
+        lib.display_abi_version.argtypes = []
+        lib.display_open.restype = ctypes.c_int32
+        lib.display_open.argtypes = [
+            ctypes.POINTER(_CDisplayConfig),
+            ctypes.POINTER(ctypes.c_int32),
+        ]
+        lib.display_get_info.restype = ctypes.c_int32
+        lib.display_get_info.argtypes = [
+            ctypes.c_int32,
+            ctypes.POINTER(_CDisplayInfo),
+        ]
+        lib.display_present_rgb565.restype = ctypes.c_int32
         lib.display_present_rgb565.argtypes = [
-            ctypes.c_int, ctypes.c_char_p, ctypes.c_int
+            ctypes.c_int32,
+            ctypes.POINTER(ctypes.c_uint8),
+            ctypes.c_uint32,
         ]
+        lib.display_close.restype = ctypes.c_int32
+        lib.display_close.argtypes = [ctypes.c_int32]
 
-        # display_present_rect_rgb565(handle, x, y, w, h, buf, len) -> int
-        lib.display_present_rect_rgb565.restype = ctypes.c_int
-        lib.display_present_rect_rgb565.argtypes = [
-            ctypes.c_int, ctypes.c_int, ctypes.c_int,
-            ctypes.c_int, ctypes.c_int,
-            ctypes.c_char_p, ctypes.c_int,
-        ]
+    @staticmethod
+    def _raise_status(operation: str, status: int) -> None:
+        if status == DISPLAY_OK:
+            return
+        message = f"{operation} failed with native status {status}"
+        if status == DISPLAY_E_ABI_MISMATCH:
+            raise DisplayAbiError(message)
+        if status in {
+            DISPLAY_E_INVALID_ARGUMENT,
+            DISPLAY_E_BAD_CONFIG,
+            DISPLAY_E_BUFFER_SIZE,
+        }:
+            raise ValueError(message)
+        if status in {
+            DISPLAY_E_ALREADY_OPEN,
+            DISPLAY_E_NOT_OPEN,
+            DISPLAY_E_INVALID_HANDLE,
+            DISPLAY_E_WRONG_THREAD,
+        }:
+            raise RuntimeError(message)
+        raise DisplayNativeError(message)
 
-        # display_clear(handle) -> void
-        lib.display_clear.restype = None
-        lib.display_clear.argtypes = [ctypes.c_int]
 
-        # display_close(handle) -> void
-        lib.display_close.restype = None
-        lib.display_close.argtypes = [ctypes.c_int]
+__all__ = ["CtypesDisplayDevice", "DisplayAbiError", "DisplayNativeError"]

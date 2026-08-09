@@ -9,7 +9,7 @@ at the panel's native frame rate.
 Design notes
 ------------
 - Frame decoding is decoupled from frame display; the Service decides
-  when to call HAL.present().
+  when to issue a HAL write_pixels()/show() intent.
 - The decoder never touches the HAL directly.
 - If the consumer is slower than the source, the queue fills and the
   decoder applies back-pressure (blocks on queue.put).

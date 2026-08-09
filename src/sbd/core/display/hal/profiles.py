@@ -1,22 +1,20 @@
 """
 HAL display device profiles.
 
-Each profile describes the physical panel characteristics, the
-rendering/scaling strategy, AND the default GPIO/SPI pin mapping.
+Each profile describes physical panel characteristics and logical layout.
+Real fixture GPIO/SPI values are loaded from a recorded JSON config.
 
 The waveshare_lcd_2in_rgb_128 "virtual driver" lives here as a profile
 rather than as a separate native driver.
 
-Pin 設定可在三個層級覆寫（優先順序由低到高）：
-  1. Profile 內建預設值 (下方 default_pin_config)
-  2. 環境變數 (DISPLAY_PIN_CS, DISPLAY_PIN_DC, …)
-  3. 呼叫端直接傳入 PinConfig dataclass
+Profile pin values are descriptive only and are never deployment defaults.
 """
 
 from __future__ import annotations
 
-import os
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 
@@ -29,14 +27,14 @@ class SpiConfig:
     """SPI bus configuration."""
     bus: int = 0           # SPI bus index
     chip: int = 0          # SPI CE (chip enable) index
-    speed_hz: int = 60_000_000  # 60 MHz
+    speed_hz: int = 4_000_000
     mode: int = 0
 
 
 @dataclass
 class GpiochipConfig:
-    """lgpio gpiochip selection.  chip_index=-1 → auto-detect."""
-    chip_index: int = -1   # -1 = auto (RPi5 → 4, others → 0)
+    """Resolved lgpio gpiochip selection."""
+    chip_index: int = -1
 
 
 @dataclass
@@ -63,58 +61,6 @@ class DisplayPinConfig:
 
 
 # ---------------------------------------------------------------------------
-# Environment variable override helper
-# ---------------------------------------------------------------------------
-
-def _env_int(key: str, default: int) -> int:
-    """Read an integer from an env var, fall back to *default*."""
-    val = os.environ.get(key)
-    if val is None:
-        return default
-    try:
-        return int(val)
-    except ValueError:
-        return default
-
-
-def load_pin_config_from_env(base: PinConfig) -> PinConfig:
-    """
-    Override *base* PinConfig with values from environment variables.
-
-    Variables (all optional):
-        DISPLAY_PIN_CS      GPIO BCM number for Chip Select
-        DISPLAY_PIN_DC      GPIO BCM number for Data/Command
-        DISPLAY_PIN_RST     GPIO BCM number for Reset
-        DISPLAY_PIN_BL      GPIO BCM number for Backlight (-1 = none)
-        DISPLAY_SPI_BUS     SPI bus index (default 0)
-        DISPLAY_SPI_CHIP    SPI CE index  (default 0)
-        DISPLAY_SPI_SPEED   SPI speed in Hz (default 60000000)
-        DISPLAY_GPIO_CHIP   gpiochip index (-1 = auto)
-    """
-    return PinConfig(
-        cs=_env_int("DISPLAY_PIN_CS",  base.cs),
-        dc=_env_int("DISPLAY_PIN_DC",  base.dc),
-        rst=_env_int("DISPLAY_PIN_RST", base.rst),
-        bl=_env_int("DISPLAY_PIN_BL",  base.bl),
-    )
-
-
-def load_spi_config_from_env(base: SpiConfig) -> SpiConfig:
-    return SpiConfig(
-        bus=_env_int("DISPLAY_SPI_BUS",   base.bus),
-        chip=_env_int("DISPLAY_SPI_CHIP", base.chip),
-        speed_hz=_env_int("DISPLAY_SPI_SPEED", base.speed_hz),
-        mode=base.mode,
-    )
-
-
-def load_gpio_chip_from_env(base: GpiochipConfig) -> GpiochipConfig:
-    return GpiochipConfig(
-        chip_index=_env_int("DISPLAY_GPIO_CHIP", base.chip_index),
-    )
-
-
-# ---------------------------------------------------------------------------
 # Panel profiles
 # ---------------------------------------------------------------------------
 
@@ -137,7 +83,7 @@ class PanelProfile:
     default_pins: PinConfig = field(compare=False)
 
     # Frames-per-second ceiling the panel can handle
-    max_fps: int = 60
+    max_fps: Optional[int] = None
 
 
 # ------------------------------------------------------------------
@@ -146,18 +92,18 @@ class PanelProfile:
 #
 # Default pin mapping (matches README.md接線表):
 #   CS  → GPIO 8   (SPI0 CE0, Pin 24)
-#   DC  → GPIO 24  (Pin 18)
-#   RST → GPIO 25  (Pin 22)
+#   DC  → GPIO 25  (Pin 22)
+#   RST → GPIO 27  (Pin 13)
 #   BL  → GPIO 18  (Pin 12, LCD only)
 #
 # These are the connector pin numbers for the Raspberry Pi 5 setup
 # described in the project README.
 #
-# ⚠️  If your wiring differs, override via environment variables or
-#     pass a custom PinConfig to create_device().
+# Real runs must load and record a local JSON config even when it matches these
+# descriptive values.
 
-_DEFAULT_OLED_PINS = PinConfig(cs=8, dc=24, rst=25, bl=-1)
-_DEFAULT_LCD_PINS  = PinConfig(cs=8, dc=24, rst=25, bl=18)
+_DEFAULT_OLED_PINS = PinConfig(cs=8, dc=25, rst=27, bl=-1)
+_DEFAULT_LCD_PINS  = PinConfig(cs=8, dc=25, rst=27, bl=18)
 
 PROFILES: dict[str, PanelProfile] = {
     # 1.5-inch OLED (SSD1351), 128×128
@@ -168,7 +114,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=128,
         logical_height=128,
         default_pins=_DEFAULT_OLED_PINS,
-        max_fps=120,
+        max_fps=None,
     ),
     # 2-inch LCD (ST7789), 320×240, full native resolution
     "waveshare_lcd_2in_rgb": PanelProfile(
@@ -178,7 +124,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=320,
         logical_height=240,
         default_pins=_DEFAULT_LCD_PINS,
-        max_fps=60,
+        max_fps=None,
     ),
     # 2-inch LCD used as a 128×128 canvas (scaled + centred layout)
     "waveshare_lcd_2in_rgb_128": PanelProfile(
@@ -188,7 +134,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=128,
         logical_height=128,
         default_pins=_DEFAULT_LCD_PINS,
-        max_fps=60,
+        max_fps=None,
     ),
     # Mock / headless (CI / PC)
     "mock": PanelProfile(
@@ -211,34 +157,55 @@ def get_profile(name: str) -> PanelProfile:
     return PROFILES[name]
 
 
-def resolve_pin_config(
-    profile: PanelProfile,
-    override: Optional[PinConfig] = None,
-    *,
-    apply_env: bool = True,
-) -> DisplayPinConfig:
-    """
-    Build a final DisplayPinConfig for *profile*.
-
-    Priority (high → low):
-        1. *override* (caller-supplied)
-        2. Environment variables (DISPLAY_PIN_CS, …)
-        3. *profile.default_pins*
-    """
-    base_pins = profile.default_pins
-    base_spi  = SpiConfig()
-    base_gpio = GpiochipConfig()
-
-    if apply_env:
-        base_pins = load_pin_config_from_env(base_pins)
-        base_spi  = load_spi_config_from_env(base_spi)
-        base_gpio = load_gpio_chip_from_env(base_gpio)
-
-    if override is not None:
-        base_pins = override
-
+def load_display_config(path: str | Path) -> DisplayPinConfig:
+    """Load a recorded local fixture config; deployment values are not defaulted."""
+    config_path = Path(path)
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    if data.get("schema_version") != 1:
+        raise ValueError("unsupported display config schema_version")
+    spi = data["spi"]
+    gpio = data["gpio"]
+    frame = data["frame"]
+    panel = data["panel"]
+    power = data["power"]
+    if panel.get("controller") != "SSD1351" or panel.get("interface") != "4-wire SPI":
+        raise ValueError("reference adapter config must identify SSD1351 4-wire SPI")
+    if power.get("vcc_volts") != 3.3 or power.get("logic_volts") != 3.3:
+        raise ValueError("reference fixture requires 3.3 V supply and logic")
+    if gpio.get("numbering") != "BCM":
+        raise ValueError("display GPIO numbering must be BCM")
+    if not isinstance(gpio.get("chip"), int):
+        raise ValueError("gpio.chip must be resolved to an integer for a real run")
+    if frame.get("pixel_format") != "RGB565" or frame.get("byte_order") != "MSB_FIRST":
+        raise ValueError("only RGB565_MSB_FIRST is supported")
+    if frame.get("rotation_degrees") != 0:
+        raise ValueError("reference adapter currently supports rotation_degrees=0 only")
+    if (
+        frame.get("physical_width") != 128
+        or frame.get("physical_height") != 128
+        or frame.get("logical_width") != 128
+        or frame.get("logical_height") != 128
+        or frame.get("buffer_bytes") != 32768
+    ):
+        raise ValueError("reference SSD1351 fixture requires a 128x128 full frame")
+    bus = int(spi["bus"])
+    chip_select = int(spi["chip_select"])
+    if spi.get("device") != f"/dev/spidev{bus}.{chip_select}":
+        raise ValueError("spi.device must match spi.bus and spi.chip_select")
+    if chip_select not in {0, 1}:
+        raise ValueError("only CE0/CE1 chip select values are supported")
     return DisplayPinConfig(
-        pins=base_pins,
-        spi=base_spi,
-        gpio_chip=base_gpio,
+        pins=PinConfig(
+            cs={0: 8, 1: 7}[chip_select],
+            dc=int(gpio["dc"]),
+            rst=int(gpio["rst"]),
+            bl=-1 if gpio.get("bl") is None else int(gpio["bl"]),
+        ),
+        spi=SpiConfig(
+            bus=bus,
+            chip=chip_select,
+            speed_hz=int(spi["requested_speed_hz"]),
+            mode=int(spi["mode"]),
+        ),
+        gpio_chip=GpiochipConfig(chip_index=int(gpio["chip"])),
     )

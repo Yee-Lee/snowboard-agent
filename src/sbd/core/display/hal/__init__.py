@@ -8,7 +8,7 @@ from .profiles import (
     DisplayPinConfig,
     PanelProfile,
     get_profile,
-    resolve_pin_config,
+    load_display_config,
     PROFILES,
 )
 from .factory import create_device
@@ -29,7 +29,7 @@ __all__ = [
     "PanelProfile",
     "PROFILES",
     "get_profile",
-    "resolve_pin_config",
+    "load_display_config",
     # Factory
     "create_device",
     # Backends

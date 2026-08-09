@@ -7,7 +7,7 @@ Responsibilities
 - Maintains the Scene (layers, priorities, lifecycle).
 - Decides scheduling policy via PolicyEngine.
 - Runs the render loop via RenderScheduler.
-- Is the ONLY component allowed to call HAL.present().
+- Is the historical POC component that creates display intents.
 
 Thread / task model (single process)
 -------------------------------------
@@ -17,9 +17,8 @@ Thread / task model (single process)
                                                           │
                                            RenderScheduler._consume_loop ──► HAL
 
-All HAL calls happen from within the service's event-loop; the
-CtypesDisplayDevice dispatches them to a thread-pool executor so the
-event loop is never blocked.
+All HAL calls happen from within the service's event-loop. Render primitives
+are synchronous so native thread ownership remains stable.
 
 Usage::
 
@@ -161,7 +160,7 @@ class DisplayService:
 
     async def start(self) -> None:
         """Open the hardware device and start the render loop."""
-        await self._device.open()
+        await self._device.start()
         self._start_time = time.monotonic()
         self._running = True
 
@@ -186,8 +185,9 @@ class DisplayService:
         for task in self._tasks:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
-        await self._device.clear()
-        await self._device.close()
+        self._device.clear()
+        self._device.show()
+        await self._device.stop()
         logger.info("[DisplayService] stopped")
 
     # ------------------------------------------------------------------
@@ -385,7 +385,8 @@ class DisplayService:
         """
         Convert the composited canvas to RGB565 and send to the HAL.
 
-        This is the ONLY place HAL.present() is called.
+        This is the only product-side full-frame flush boundary.
         """
         frame = canvas_to_rgb565(canvas)
-        await self._device.present(frame)
+        self._device.write_pixels(frame)
+        self._device.show()

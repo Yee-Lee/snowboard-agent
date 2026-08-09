@@ -48,8 +48,8 @@ void DEV_ModuleExit(void);
 /*  GPIO 操作                                                          */
 /* ------------------------------------------------------------------ */
 
-void  DEV_GPIO_Mode(int pin, int mode);   /* mode: 1=output, 0=input */
-void  DEV_Digital_Write(int pin, int value);
+int   DEV_GPIO_Mode(int pin, int mode);   /* mode: 1=output, 0=input */
+int   DEV_Digital_Write(int pin, int value);
 int   DEV_Digital_Read(int pin);
 void  DEV_Delay_ms(unsigned int ms);
 
@@ -57,14 +57,20 @@ void  DEV_Delay_ms(unsigned int ms);
 /*  SPI 操作                                                           */
 /* ------------------------------------------------------------------ */
 
-void DEV_SPI_WriteByte(uint8_t value);
-void DEV_SPI_Write_nByte(const uint8_t *data, uint32_t len);
+int DEV_SPI_WriteByte(uint8_t value);
+int DEV_SPI_Write_nByte(const uint8_t *data, uint32_t len);
 
 /* ------------------------------------------------------------------ */
 /*  背光 (僅 LCD；OLED bl=-1 時為 no-op)                              */
 /* ------------------------------------------------------------------ */
 
-void DEV_SetBacklight(int value);   /* value: 0=off, 1=on */
+int DEV_SetBacklight(int value);   /* value: 0=off, 1=on */
+
+int DEV_LastError(void);
+void DEV_ClearError(void);
+int DEV_ResetPin(void);
+int DEV_DataCommandPin(void);
+int DEV_BacklightPin(void);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowboard.local/schemas/display-config-v1.json",
+  "title": "Display fixture config v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "panel",
+    "power",
+    "spi",
+    "gpio",
+    "frame"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "fixture_id": { "type": "string", "minLength": 1 },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vendor", "module", "controller", "interface", "revision"],
+      "properties": {
+        "vendor": { "type": "string", "minLength": 1 },
+        "module": { "type": "string", "minLength": 1 },
+        "controller": { "const": "SSD1351" },
+        "interface": { "const": "4-wire SPI" },
+        "revision": { "type": ["string", "null"] }
+      }
+    },
+    "power": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vcc_volts", "logic_volts"],
+      "properties": {
+        "vcc_volts": { "const": 3.3 },
+        "logic_volts": { "const": 3.3 }
+      }
+    },
+    "spi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device", "bus", "chip_select", "mode", "requested_speed_hz"],
+      "properties": {
+        "device": { "type": "string", "pattern": "^/dev/spidev[0-9]+\\.[0-9]+$" },
+        "bus": { "type": "integer", "minimum": 0 },
+        "chip_select": { "type": "integer", "minimum": 0 },
+        "mode": { "const": 0 },
+        "requested_speed_hz": { "type": "integer", "minimum": 1, "maximum": 4545454 }
+      }
+    },
+    "gpio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numbering", "chip", "dc", "rst", "bl"],
+      "properties": {
+        "numbering": { "const": "BCM" },
+        "chip": { "oneOf": [{ "const": "auto" }, { "type": "integer", "minimum": 0 }] },
+        "dc": { "const": 25 },
+        "rst": { "const": 27 },
+        "bl": { "type": "null" }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["physical_width", "physical_height", "logical_width", "logical_height", "rotation_degrees", "pixel_format", "byte_order", "buffer_bytes"],
+      "properties": {
+        "physical_width": { "const": 128 },
+        "physical_height": { "const": 128 },
+        "logical_width": { "const": 128 },
+        "logical_height": { "const": 128 },
+        "rotation_degrees": { "enum": [0, 90, 180, 270] },
+        "pixel_format": { "const": "RGB565" },
+        "byte_order": { "const": "MSB_FIRST" },
+        "buffer_bytes": { "const": 32768 }
+      }
+    }
+  }
+}

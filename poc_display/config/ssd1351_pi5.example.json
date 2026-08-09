@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "fixture_id": "pi5-waveshare-ssd1351-primary",
+  "panel": {
+    "vendor": "Waveshare",
+    "module": "1.5-inch RGB OLED Module",
+    "controller": "SSD1351",
+    "interface": "4-wire SPI",
+    "revision": null
+  },
+  "power": {
+    "vcc_volts": 3.3,
+    "logic_volts": 3.3
+  },
+  "spi": {
+    "device": "/dev/spidev0.0",
+    "bus": 0,
+    "chip_select": 0,
+    "mode": 0,
+    "requested_speed_hz": 4000000
+  },
+  "gpio": {
+    "numbering": "BCM",
+    "chip": "auto",
+    "dc": 25,
+    "rst": 27,
+    "bl": null
+  },
+  "frame": {
+    "physical_width": 128,
+    "physical_height": 128,
+    "logical_width": 128,
+    "logical_height": 128,
+    "rotation_degrees": 0,
+    "pixel_format": "RGB565",
+    "byte_order": "MSB_FIRST",
+    "buffer_bytes": 32768
+  }
+}

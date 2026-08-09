@@ -16,6 +16,7 @@ Requires libdisplay.so to be compiled in native/waveshare_ssd1351/.
 from __future__ import annotations
 
 import asyncio
+import asyncio
 import pytest
 
 from sbd.core.display.hal.factory import create_device
@@ -23,36 +24,43 @@ from sbd.core.display.hal.protocol import Rect
 
 
 @pytest.fixture
-async def device():
-    dev = create_device("waveshare_oled_1in5_rgb")
-    await dev.open()
+def device(display_config_path):
+    dev = create_device(
+        "waveshare_oled_1in5_rgb",
+        config_path=display_config_path,
+    )
+    asyncio.run(dev.start())
     yield dev
-    await dev.close()
+    asyncio.run(dev.stop())
+    asyncio.run(dev.stop())
 
 
-@pytest.mark.asyncio
-async def test_present_black_frame(device):
+@pytest.mark.pi_only
+def test_present_black_frame(device):
     """Push a black frame to the OLED."""
     w, h = device.info.width, device.info.height
     black = bytes(w * h * 2)
-    await device.present(black)
+    device.write_pixels(black)
+    device.show()
 
 
-@pytest.mark.asyncio
-async def test_present_white_frame(device):
+@pytest.mark.pi_only
+def test_present_white_frame(device):
     """Push a white (0xFFFF) frame to the OLED."""
     w, h = device.info.width, device.info.height
     white = b"\xFF\xFF" * (w * h)
-    await device.present(white)
+    device.write_pixels(white)
+    device.show()
 
 
-@pytest.mark.asyncio
-async def test_clear(device):
-    await device.clear()
+@pytest.mark.pi_only
+def test_clear(device):
+    device.clear()
+    device.show()
 
 
-@pytest.mark.asyncio
-async def test_present_gradient(device):
+@pytest.mark.pi_only
+def test_present_gradient(device):
     """Push a simple blue gradient frame."""
     from PIL import Image
     from sbd.core.display.rendering.renderer import canvas_to_rgb565
@@ -63,4 +71,5 @@ async def test_present_gradient(device):
         for x in range(w):
             img.putpixel((x, y), (0, 0, int(255 * x / w)))
 
-    await device.present(canvas_to_rgb565(img))
+    device.write_pixels(canvas_to_rgb565(img))
+    device.show()

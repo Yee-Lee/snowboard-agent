@@ -1,14 +1,9 @@
 """
 HAL device factory.
 
-Creates the appropriate DisplayDevice based on a profile name and
-optional override arguments.  Callers never need to import concrete
-backend classes directly.
-
-Pin configuration priority (high → low):
-  1. *pin_config* argument (explicit caller override)
-  2. Environment variables (DISPLAY_PIN_CS, DISPLAY_PIN_DC, …)
-  3. Profile built-in defaults (hal/profiles.py)
+Creates the appropriate DisplayDevice based on a profile name. Real hardware
+requires an explicit, recorded local JSON config; deployment values never come
+from environment variables or source defaults.
 """
 
 from __future__ import annotations
@@ -18,11 +13,9 @@ from typing import Optional
 
 from .mock import MockDisplayDevice
 from .profiles import (
-    PanelProfile,
-    PinConfig,
     DisplayPinConfig,
     get_profile,
-    resolve_pin_config,
+    load_display_config,
 )
 from .protocol import DisplayDevice
 
@@ -33,7 +26,7 @@ def create_device(
     so_path: Optional[str | Path] = None,
     mock: bool = False,
     save_frames_to: Optional[Path] = None,
-    pin_config: Optional[PinConfig] = None,
+    config_path: Optional[str | Path] = None,
 ) -> DisplayDevice:
     """
     Instantiate a DisplayDevice for the given *profile_name*.
@@ -52,25 +45,8 @@ def create_device(
     save_frames_to:
         When using the mock backend, save each frame as a PNG to this
         directory.
-    pin_config:
-        Optional explicit GPIO pin mapping.  When provided, overrides
-        both the profile defaults and environment variables.
-        Use ``hal.profiles.PinConfig`` to build one:
-
-            pin_config=PinConfig(cs=8, dc=24, rst=25, bl=-1)
-
-    Example — use env vars to override default pins::
-
-        # Before running:
-        #   export DISPLAY_PIN_DC=23
-        device = create_device("waveshare_oled_1in5_rgb")
-
-    Example — explicit override::
-
-        device = create_device(
-            "waveshare_oled_1in5_rgb",
-            pin_config=PinConfig(cs=8, dc=23, rst=25, bl=-1),
-        )
+    config_path:
+        Recorded local fixture JSON. Required for every real backend.
     """
     profile = get_profile(profile_name)
 
@@ -82,10 +58,15 @@ def create_device(
             save_dir=save_frames_to,
         )
 
-    # Resolve the final pin/SPI/gpiochip config
-    resolved_cfg: DisplayPinConfig = resolve_pin_config(
-        profile, override=pin_config, apply_env=True
-    )
+    if config_path is None:
+        raise ValueError(
+            "real display requires config_path pointing to a recorded local config"
+        )
+    if profile_name != "waveshare_oled_1in5_rgb":
+        raise ValueError(
+            "only the primary SSD1351 fixture has a strict v0.3 config contract"
+        )
+    resolved_cfg: DisplayPinConfig = load_display_config(config_path)
 
     # Resolve libdisplay.so path
     if so_path is None:

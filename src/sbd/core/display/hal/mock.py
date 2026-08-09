@@ -7,13 +7,12 @@ Useful for unit tests and headless CI pipelines.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import struct
 from pathlib import Path
 from typing import Optional
 
-from .protocol import DisplayDevice, DisplayInfo, Rect, Rgb565Frame
+from .protocol import DisplayInfo, Rgb565Frame
 
 logger = logging.getLogger(__name__)
 
@@ -43,34 +42,46 @@ class MockDisplayDevice:
     # DisplayDevice protocol
     # ------------------------------------------------------------------
 
-    async def open(self) -> None:
+    async def start(self) -> None:
+        if self._is_open:
+            raise RuntimeError("MockDisplayDevice already started")
         self._is_open = True
-        logger.info("[MockDisplay] open  (%dx%d)", self.info.width, self.info.height)
+        self._back_buffer = bytearray(self.info.width * self.info.height * 2)
+        logger.info("[MockDisplay] start (%dx%d)", self.info.width, self.info.height)
 
-    async def present(self, frame: Rgb565Frame) -> None:
+    async def stop(self) -> None:
         if not self._is_open:
-            raise RuntimeError("MockDisplayDevice.present called before open()")
-
-        self._last_frame = bytes(frame)
-        self._frame_count += 1
-        logger.debug("[MockDisplay] frame #%d (%d bytes)", self._frame_count, len(frame))
-
-        if self._save_dir:
-            self._save_png(frame)
-
-    async def present_rect(self, rect: Rect, frame: Rgb565Frame) -> None:
-        logger.debug(
-            "[MockDisplay] present_rect x=%d y=%d w=%d h=%d",
-            rect.x, rect.y, rect.width, rect.height,
-        )
-
-    async def clear(self) -> None:
-        logger.debug("[MockDisplay] clear")
-        self._last_frame = bytes(self.info.width * self.info.height * 2)
-
-    async def close(self) -> None:
+            return
         self._is_open = False
-        logger.info("[MockDisplay] close (total frames: %d)", self._frame_count)
+        if hasattr(self, "_back_buffer"):
+            del self._back_buffer
+        logger.info("[MockDisplay] stop (total frames: %d)", self._frame_count)
+
+    def clear(self) -> None:
+        if not self._is_open:
+            raise RuntimeError("MockDisplayDevice.clear called before start()")
+        logger.debug("[MockDisplay] clear")
+        self._back_buffer = bytearray(self.info.width * self.info.height * 2)
+
+    def write_pixels(self, frame: bytes) -> None:
+        if not self._is_open:
+            raise RuntimeError("MockDisplayDevice.write_pixels called before start()")
+        expected = self.info.width * self.info.height * 2
+        if len(frame) != expected:
+            raise ValueError(f"Expected {expected} bytes, got {len(frame)}")
+        self._back_buffer[:] = bytes(frame)
+
+    def show(self) -> None:
+        if not self._is_open:
+            raise RuntimeError("MockDisplayDevice.show called before start()")
+        self._last_frame = bytes(self._back_buffer)
+        self._frame_count += 1
+        logger.debug("[MockDisplay] show frame #%d", self._frame_count)
+        if self._save_dir:
+            self._save_png(self._last_frame)
+
+    def size(self) -> tuple[int, int]:
+        return (self.info.width, self.info.height)
 
     # ------------------------------------------------------------------
     # Helpers

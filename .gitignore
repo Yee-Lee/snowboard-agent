@@ -1,6 +1,11 @@
 *.o
 *.so
 
+# Raw target-device display evidence stays operator-managed. Commit only
+# sanitized summary packets directly under poc_display/evidence/m3/.
+poc_display/evidence/m3/*/
+!poc_display/evidence/m3/.gitkeep
+
 # Python
 __pycache__/
 *.py[cod]

@@ -24,7 +24,7 @@ def create_service(
     target_fps: int = 30,
     so_path: Optional[str] = None,
     mock: bool = False,
-    pin_config: Optional["PinConfig"] = None,
+    config_path: Optional[str] = None,
 ) -> DisplayService:
     """
     Convenience factory: create a ready-to-start DisplayService.
@@ -39,12 +39,8 @@ def create_service(
         Override path to libdisplay.so.
     mock:
         Force-use MockDisplayDevice (headless).
-    pin_config:
-        Optional explicit GPIO pin mapping, e.g.::
-
-            PinConfig(cs=8, dc=24, rst=25, bl=-1)
-
-        When None, uses profile defaults + env var overrides.
+    config_path:
+        Path to a recorded local fixture JSON. Required for real hardware.
 
     Example::
 
@@ -53,15 +49,15 @@ def create_service(
         client = DisplayClient(service)
         client.set_status("starry_night")
 
-    Example with custom pins::
+    Example with a recorded fixture::
 
-        from sbd.core.display import create_service, PinConfig
+        from sbd.core.display import create_service
         service = create_service(
             "waveshare_oled_1in5_rgb",
-            pin_config=PinConfig(cs=8, dc=23, rst=25),
+            config_path="poc_display/evidence/DSP-DELIVERY-001/run-001/config.json",
         )
     """
-    device = create_device(profile, so_path=so_path, mock=mock, pin_config=pin_config)
+    device = create_device(profile, so_path=so_path, mock=mock, config_path=config_path)
     return DisplayService(device, target_fps=target_fps)
 
 

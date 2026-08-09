@@ -1,5 +1,10 @@
 # Display Architecture
 
+> **Non-normative POC history.** This document describes an earlier product
+> architecture exploration and is not part of the v0.3 HAL delivery contract.
+> Renderer, Arbiter, service/process ownership and milestone behaviour are owned
+> by Core Team documents. Only the native-driver capability notes remain useful.
+
 ## 目的
 
 Display 子系統提供一個穩定的展示服務，讓 AI worker、state machine、測試程式等外部來源可以顯示文字、狀態動畫與影片，而不需要知道面板型號、SPI、`ctypes` 或 `libdisplay.so`。
@@ -56,7 +61,7 @@ API 不應暴露 SPI、Pillow、面板解析度、`.so` 檔案路徑，或 `push
 - 維護目前的 scene、layer、owner、優先權與生命週期。
 - 決定內容是更新狀態、成為 overlay、立即取代畫面，或排入媒體序列。
 - 執行 render scheduling、限幀與 frame dropping。
-- 是唯一允許呼叫 `HAL.present()` 的元件。
+- 是此歷史 POC 中唯一送出 display intent 的元件。
 
 Service 決定「現在該畫哪個 scene、何時送出下一幀」，但不負責星星位置、文字排版等畫面細節。
 
@@ -90,13 +95,12 @@ HAL 將 renderer 產生的 frame 交給目前選定的裝置實作。它處理�
 
 ```python
 class DisplayDevice(Protocol):
-    info: DisplayInfo
-
-    async def open(self) -> None: ...
-    async def present(self, frame: Rgb565Frame) -> None: ...
-    async def present_rect(self, rect: Rect, frame: Rgb565Frame) -> None: ...
-    async def clear(self) -> None: ...
-    async def close(self) -> None: ...
+    async def start(self) -> None: ...
+    async def stop(self) -> None: ...
+    def clear(self) -> None: ...
+    def write_pixels(self, buf: bytes) -> None: ...
+    def show(self) -> None: ...
+    def size(self) -> tuple[int, int]: ...
 ```
 
 初期實作：
@@ -113,12 +117,11 @@ Native 層是每個實體面板控制器的 C driver，負責 GPIO、SPI、初�
 建議穩定且版本化的 C ABI：
 
 ```text
-display_open(config) -> handle
-display_get_info(handle) -> DisplayInfo
-display_present_rgb565(handle, buffer, length)
-display_present_rect_rgb565(handle, x, y, width, height, buffer, length)
-display_clear(handle)
-display_close(handle)
+display_abi_version() -> uint32_t
+display_open(config, out_handle) -> DisplayStatus
+display_get_info(handle, out_info) -> DisplayStatus
+display_present_rgb565(handle, buffer, length) -> DisplayStatus
+display_close(handle) -> DisplayStatus
 ```
 
 應以回傳碼與可讀取錯誤取代只 `printf` 後繼續執行的行為。

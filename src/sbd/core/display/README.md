@@ -19,8 +19,8 @@
 | **SPI** | D0 / SCL | - | - | D0 / SCL / SCK | **Pin 23** | **GPIO 11** | SPI0 SCLK (時脈線) |
 | **SPI** | D1 / SDA | - | - | D1 / SDA / MOSI | **Pin 19** | **GPIO 10** | SPI0 MOSI (資料發送線) |
 | **SPI** | CS / SS | - | - | CS / SS | **Pin 24** | **GPIO 8** | SPI0 CE0 (晶片選擇) |
-| **GPIO** | DC / D/C | - | - | DC / D/C | **Pin 18** | **GPIO 24** | 資料 / 指令切換 (Data/Command) |
-| **GPIO** | RES / RST | - | - | RES / RST | **Pin 22** | **GPIO 25** | 螢幕重置 (Reset) |
+| **GPIO** | DC / D/C | - | - | DC / D/C | **Pin 22** | **GPIO 25** | 資料 / 指令切換 (Data/Command) |
+| **GPIO** | RES / RST | - | - | RES / RST | **Pin 13** | **GPIO 27** | 螢幕重置 (Reset) |
 
 ---
 
@@ -54,8 +54,8 @@ from luma.oled.device import ssd1306  # 若使用 SH1106 請替換為 sh1106
 from luma.core.render import canvas
 
 # 初始化 SPI 介面 (port=0, device=0 對應 GPIO 8 / CE0)
-# gpio_DC=24 對應 GPIO 24 (Pin 18), gpio_RST=25 對應 GPIO 25 (Pin 22)
-serial = spi(port=0, device=0, gpio_DC=24, gpio_RST=25)
+# gpio_DC=25 對應 GPIO 25 (Pin 22), gpio_RST=27 對應 GPIO 27 (Pin 13)
+serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=27)
 
 # 初始化 128x64 OLED 顯示器
 device = ssd1306(serial, width=128, height=64)
@@ -137,10 +137,15 @@ PYTHONPATH=src python3 -m pytest src/sbd/core/display/tests/test_starry_night.py
 當畫面異常時，可用於直接對 HAL/Native 層灌入測試幀（紅、黑、漸層色），繞過 Service 大腦：
 ```bash
 # OLED 實機診斷
-PYTHONPATH=src python3 -m pytest src/sbd/core/display/tests/integration/test_ssd1351_present.py -v
+PYTHONPATH=src python3 -m pytest \
+  src/sbd/core/display/tests/integration/test_ssd1351_present.py \
+  --display-config poc_display/evidence/<delivery-id>/<run-id>/config.json \
+  -m pi_only -v
 
 # LCD 實機診斷
-PYTHONPATH=src python3 -m pytest src/sbd/core/display/tests/integration/test_st7789_present.py -v
+PYTHONPATH=src python3 -m pytest \
+  src/sbd/core/display/tests/integration/test_st7789_present.py \
+  --display-config <recorded-st7789-config.json> -m pi_only -v
 ```
 
 ---
@@ -148,23 +153,15 @@ PYTHONPATH=src python3 -m pytest src/sbd/core/display/tests/integration/test_st7
 ### 3. 配置與除錯 (Configuration & Debugging)
 
 #### 執行時 Pin 腳位配置 (Runtime Pin Mapping)
-子系統移除了所有底層 C 代碼中的 Hardcoded 腳位編號，改用三層覆寫機制配置：
-1. **呼叫端明確指定** (最高優先)：在 Python 初始化 Service 時傳入 `PinConfig` 物件。
-2. **環境變數覆寫**：在執行命令前設定以下環境變數：
-   - `DISPLAY_PIN_CS`: SPI 片選引腳 (BCM 號碼，預設 `8`)
-   - `DISPLAY_PIN_DC`: 資料/指令引腳 (BCM 號碼，預設 `24`)
-   - `DISPLAY_PIN_RST`: 重置引腳 (BCM 號碼，預設 `25`)
-   - `DISPLAY_PIN_BL`: 背光引腳 (BCM 號碼，預設 `18`，OLED 為 `-1`)
-   - `DISPLAY_SPI_BUS`: SPI Bus (預設 `0`)
-   - `DISPLAY_SPI_CHIP`: SPI Chip Select Channel (預設 `0`)
-   - `DISPLAY_SPI_SPEED`: SPI 傳輸頻率 (預設 `60000000`)
-   - `DISPLAY_GPIO_CHIP`: lgpio chip 索引 (RPi5 預設為 `4` 自動偵測，舊版為 `0`)
-3. **Profile 預設值** (最低優先)：在 `hal/profiles.py` 內定義的硬體預設值。
+實體 fixture 必須從一份已保存並計算 SHA-256 的 local JSON config 載入，不使用環境變數或 source defaults 注入 deployment pins。Schema 與 sanitized example 位於 `poc_display/config/`。執行前需把 example 複製到 evidence run 目錄，填入 panel revision 與解析後的整數 `gpio.chip`。
 
 ##### 💡 實用除錯命令範例
-變更 DC 腳位至 GPIO 23，並調降 SPI 速率至 40MHz 進行訊號除錯：
+使用記錄過的 config 執行診斷：
 ```bash
-DISPLAY_PIN_DC=23 DISPLAY_SPI_SPEED=40000000 PYTHONPATH=src python3 -m pytest src/sbd/core/display/tests/test_starry_night.py -v --hardware=waveshare_oled_1in5_rgb
+PYTHONPATH=src python3 -m pytest \
+  src/sbd/core/display/tests/integration/test_ssd1351_present.py \
+  --display-config poc_display/evidence/<delivery-id>/<run-id>/config.json \
+  -m pi_only -v -s
 ```
 
 #### 影格延遲與丟幀除錯 (Frame-Drop Debugging)
