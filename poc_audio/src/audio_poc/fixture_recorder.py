@@ -91,6 +91,30 @@ def build_capture_items(plan: dict[str, Any]) -> list[CaptureItem]:
     return items
 
 
+def select_stage_items(
+    plan: dict[str, Any], items: list[CaptureItem], stage_id: str | None
+) -> list[CaptureItem]:
+    if stage_id is None:
+        return items
+    stages = {stage["stage_id"]: stage for stage in plan["collection_stages"]}
+    if stage_id not in stages:
+        raise ValueError(f"unknown collection stage: {stage_id}")
+    pilot = stages["pilot"]
+    pilot_ids = set(pilot["speech_fixture_ids"])
+    for fixture_range in pilot["generated_fixture_ranges"]:
+        for number in range(int(fixture_range["start"]), int(fixture_range["end"]) + 1):
+            pilot_ids.add(f"vad-{fixture_range['class']}-{number:03d}")
+    if len(pilot_ids) != int(pilot["expected_count"]):
+        raise ValueError("pilot selection count disagrees with the recording plan")
+
+    selected = [item for item in items if item.fixture_id in pilot_ids]
+    if len(selected) != len(pilot_ids):
+        raise ValueError("pilot selection references an unknown fixture ID")
+    if stage_id == "pilot":
+        return selected
+    return [item for item in items if item.fixture_id not in pilot_ids]
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -211,11 +235,19 @@ def record_item(item: CaptureItem, output_dir: Path, device: str, native_capture
     }
 
 
-def verify_records(plan: dict[str, Any], output_dir: Path) -> dict[str, Any]:
+def verify_records(
+    plan: dict[str, Any],
+    output_dir: Path,
+    expected_items: list[CaptureItem] | None = None,
+    stage_id: str | None = None,
+) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = output_dir / MANIFEST_NAME
     manifest = read_manifest(manifest_path, plan)
-    expected = {item.fixture_id: item for item in build_capture_items(plan)}
+    expected = {
+        item.fixture_id: item
+        for item in (expected_items if expected_items is not None else build_capture_items(plan))
+    }
     records = manifest.get("records", {})
     valid = 0
     issues: list[str] = []
@@ -248,6 +280,7 @@ def verify_records(plan: dict[str, Any], output_dir: Path) -> dict[str, Any]:
     summary = {
         "schema_version": "1.0",
         "plan_id": plan["plan_id"],
+        "stage_id": stage_id,
         "expected_files": len(expected),
         "valid_files": valid,
         "counts_by_vad_class": counts,
@@ -290,6 +323,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--verify", action="store_true", help="validate local WAV files and write a local summary")
     parser.add_argument("--record", metavar="FIXTURE_ID", help="record one fixture")
     parser.add_argument("--record-all", action="store_true", help="interactively record remaining fixtures")
+    parser.add_argument("--stage", choices=("pilot", "formal"), help="limit list/record operations to a collection stage")
     parser.add_argument("--replace", action="store_true", help="allow a completed fixture to be recorded again")
     parser.add_argument("--confirm-authorization", action="store_true", help="confirm the plan's internal-only recording authorization")
     return parser.parse_args(argv)
@@ -305,13 +339,16 @@ def main(argv: list[str] | None = None) -> int:
     plan["_path"] = str(plan_path)
     items = build_capture_items(plan)
     items_by_id = {item.fixture_id: item for item in items}
+    stage_items = select_stage_items(plan, items, arguments.stage)
+    stage_ids = {item.fixture_id for item in stage_items}
 
     if arguments.list:
-        for item in items:
+        for item in stage_items:
             print(f"{item.fixture_id}\t{item.vad_class}\t{item.duration_seconds}s\t{item.category}")
         return 0
     if arguments.verify:
-        outcome = verify_records(plan, arguments.output_dir)
+        expected_items = stage_items if arguments.stage == "pilot" else items
+        outcome = verify_records(plan, arguments.output_dir, expected_items, arguments.stage)
         print(json.dumps(outcome["summary"], ensure_ascii=False, sort_keys=True))
         return 0 if not outcome["issues"] else 1
 
@@ -330,7 +367,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if arguments.record and arguments.record not in items_by_id:
         raise SystemExit(f"unknown fixture ID: {arguments.record}")
-    requested = [items_by_id[arguments.record]] if arguments.record else items
+    if arguments.record and arguments.stage and arguments.record not in stage_ids:
+        raise SystemExit(f"fixture ID is not in the selected stage: {arguments.record}")
+    requested = [items_by_id[arguments.record]] if arguments.record else stage_items
 
     for item in requested:
         if item.fixture_id in records and not arguments.replace:
@@ -350,7 +389,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"recording failed for {item.fixture_id}: {error}", file=sys.stderr)
             return 1
 
-    outcome = verify_records(plan, output_dir)
+    expected_items = stage_items if arguments.stage == "pilot" else items
+    outcome = verify_records(plan, output_dir, expected_items, arguments.stage)
     print(json.dumps(outcome["summary"], ensure_ascii=False, sort_keys=True))
     return 0
 

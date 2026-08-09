@@ -24,6 +24,10 @@ The tracked [recording plan](recording_plan_v1.json) defines:
 
 The existing tracked TTS set already contains 20 non-sensitive prompts.
 
+Collection is deliberately split into a 40-item operational Pilot and a
+60-item Formal completion. The formal gate remains 100 items; see the
+[two-stage collection plan](two_stage_collection_plan.md) before recording.
+
 ## Data boundary
 
 Raw/native and transformed WAV files must stay under
@@ -61,14 +65,14 @@ bash poc_audio/tools/m1_fixture_record.sh --list
 bash poc_audio/tools/m1_fixture_record.sh \
   --record asr-clear-001 --confirm-authorization
 
-# Resume the complete interactive set. Completed IDs are skipped by default.
+# Resume the 40-item Pilot. Completed IDs are skipped by default.
 bash poc_audio/tools/m1_fixture_record.sh \
-  --record-all --confirm-authorization
+  --record-all --stage pilot --confirm-authorization
 
 # Re-record a known item, then validate every completed WAV and checksum.
 bash poc_audio/tools/m1_fixture_record.sh \
   --record asr-clear-001 --replace --confirm-authorization
-bash poc_audio/tools/m1_fixture_record.sh --verify
+bash poc_audio/tools/m1_fixture_record.sh --verify --stage pilot
 ```
 
 The recorder auto-detects the VoiceHAT capture card and opens it through a

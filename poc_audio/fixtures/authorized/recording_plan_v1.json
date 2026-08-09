@@ -20,6 +20,43 @@
     {"class": "silence", "count": 25, "duration_seconds_each": 12},
     {"class": "noise", "count": 25, "duration_seconds_each": 12}
   ],
+  "collection_stages": [
+    {
+      "stage_id": "pilot",
+      "expected_count": 40,
+      "purpose": "validate microphone placement, native PCM capture, checksum workflow, and non-sensitive recording operation",
+      "speech_fixture_ids": [
+        "asr-clear-001", "asr-clear-002", "asr-clear-003", "asr-clear-004", "asr-clear-005",
+        "asr-clear-011", "asr-clear-016", "asr-clear-020", "asr-clear-023", "asr-clear-024",
+        "asr-pause-026", "asr-pause-027", "asr-pause-028", "asr-pause-029", "asr-pause-030",
+        "asr-pause-036", "asr-pause-041", "asr-pause-045", "asr-pause-048", "asr-pause-049"
+      ],
+      "generated_fixture_ranges": [
+        {"class": "silence", "start": 1, "end": 10},
+        {"class": "noise", "start": 1, "end": 10}
+      ],
+      "pass_conditions": [
+        "40 expected WAV files pass native PCM metadata and SHA-256 validation",
+        "operator reviews representative speech, silence, and noise clips without recording private content",
+        "no capture configuration or microphone placement change is required"
+      ],
+      "gate_effect": "pilot results do not advance, reject, or score VAD or ASR candidates"
+    },
+    {
+      "stage_id": "formal",
+      "expected_count": 100,
+      "remaining_after_pilot": 60,
+      "purpose": "complete the fixed VAD/ASR fixture set for the approved M1 numeric gates",
+      "precondition": "pilot configuration remains unchanged; otherwise start a new collection revision and do not combine pilot audio",
+      "pass_conditions": [
+        "25 fixtures exist for each of clear_speech, pause, silence, and noise",
+        "50 authorized ASR references have matching audio, checksum, duration, and label metadata",
+        "combined valid silence and noise duration is at least 600 seconds",
+        "Tester reviews the sanitized fixture summary and raw audio remains outside Git"
+      ],
+      "gate_effect": "enables fixture-set and metric-definition review only; real candidate entry also requires the Core AudioInput change decision"
+    }
+  ],
   "utterances": [
     {"fixture_id": "asr-clear-001", "vad_class": "clear_speech", "category": "taiwan_mandarin", "display_text": "今天外面的天氣很舒服", "reference_text": "今天外面的天氣很舒服"},
     {"fixture_id": "asr-clear-002", "vad_class": "clear_speech", "category": "taiwan_mandarin", "display_text": "請把房間的音量調小一點", "reference_text": "請把房間的音量調小一點"},

@@ -16,6 +16,7 @@ from audio_poc.harness import FakeProcessHarness, Scenario  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
     build_capture_items,
     load_plan,
+    select_stage_items,
     sha256_file,
     validate_wav,
     verify_records,
@@ -135,6 +136,18 @@ class TrackedDocumentTests(unittest.TestCase):
         )
         self.assertEqual(sum(item["vad_class"] == "pause" for item in utterances), 25)
         self.assertTrue(all(item["reference_text"] for item in utterances))
+
+        pilot, formal = plan["collection_stages"]
+        self.assertEqual(pilot["stage_id"], "pilot")
+        self.assertEqual(pilot["expected_count"], 40)
+        self.assertEqual(len(pilot["speech_fixture_ids"]), 20)
+        self.assertEqual(len(set(pilot["speech_fixture_ids"])), 20)
+        self.assertEqual(formal["stage_id"], "formal")
+        self.assertEqual(formal["expected_count"], 100)
+        self.assertEqual(formal["remaining_after_pilot"], 60)
+        items = build_capture_items(plan)
+        self.assertEqual(len(select_stage_items(plan, items, "pilot")), 40)
+        self.assertEqual(len(select_stage_items(plan, items, "formal")), 60)
 
     def test_fixture_recorder_validates_a_complete_local_manifest(self) -> None:
         plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
