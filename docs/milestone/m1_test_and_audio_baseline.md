@@ -15,6 +15,10 @@ Current harness finding：[M1 Deterministic Fake Evidence](../../poc_audio/evide
 — exact-SHA workstation and Pi reproduction `PASS`; all five lifecycle paths
 returned zero cleanup counters.
 
+Current fixture-recorder finding：[M1 Fixture Recorder Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-RECORDER-001.md)
+— exact-SHA Pi dry run `PASS`; explicit authorization guard, 100-item plan,
+and no-WAV safety boundary verified. No fixture audio has been recorded.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A，等待 Core Team 回覆。）
 
