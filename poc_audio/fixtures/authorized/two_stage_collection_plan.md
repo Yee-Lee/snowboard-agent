@@ -75,3 +75,20 @@ bash poc_audio/tools/m1_fixture_record.sh --verify --stage formal
 To re-record a specific selected fixture, add `--record <fixture-id> --replace`
 and the same `--stage` value. Do not use an unqualified `--record-all` before
 the formal completion decision.
+
+## Pre-Pilot monitoring diagnostic
+
+`M1-FIXTURE-PILOT-000` showed that the direct native recording has signal on
+the expected left channel, while the operator found raw replay too quiet. Before
+resuming Pilot recording, compare the original local source with a temporary
+unity-gain dual-mono monitoring copy:
+
+```sh
+bash poc_audio/tools/m1_fixture_monitor.sh asr-clear-001 --play
+```
+
+The command creates a new Git-ignored file under `artifacts/.../monitor/` and
+does not edit the source WAV. If the derived playback is clear, record this as
+a monitoring-route finding only; ASR fixture conversion remains governed by
+the pinned Core AudioInput boundary. If it is still quiet, stop and inspect the
+speaker output route/gain before recording more Pilot clips.

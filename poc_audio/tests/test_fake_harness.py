@@ -21,6 +21,7 @@ from audio_poc.fixture_recorder import (  # noqa: E402
     validate_wav,
     verify_records,
 )
+from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
 from audio_poc.models import TerminalStatus  # noqa: E402
 from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
@@ -197,6 +198,26 @@ class TrackedDocumentTests(unittest.TestCase):
                 self.assertEqual(outcome["summary"]["result"], "PASS")
                 self.assertEqual(outcome["summary"]["valid_files"], 100)
                 self.assertEqual(outcome["summary"]["non_speech_seconds"], 50)
+
+    def test_monitor_duplicates_the_requested_channel_without_gain(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.wav"
+            destination = root / "monitor.wav"
+            with wave.open(str(source), "wb") as generated:
+                generated.setnchannels(2)
+                generated.setsampwidth(4)
+                generated.setframerate(48000)
+                generated.writeframes((123456).to_bytes(4, "little", signed=True))
+                generated.writeframes((-654321).to_bytes(4, "little", signed=True))
+            duplicate_channel_to_stereo(source, destination, 0)
+            with wave.open(str(destination), "rb") as monitored:
+                payload = monitored.readframes(1)
+            left = int.from_bytes(payload[:4], "little", signed=True)
+            right = int.from_bytes(payload[4:], "little", signed=True)
+            self.assertEqual((left, right), (123456, 123456))
 
 
 if __name__ == "__main__":
