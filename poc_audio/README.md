@@ -135,3 +135,19 @@ results are written to a Git-ignored timestamp directory under
 The tracked fixture catalog currently covers deterministic fake inputs only.
 It validates harness plumbing but does not authorize real candidate runs; the
 licensed VAD/ASR audio catalog and its labels/checksums remain an M1 gate.
+
+## M1 authorized fixture recording
+
+The controlled VAD/ASR recording plan and authorization boundary are in
+[`fixtures/authorized/`](fixtures/authorized/README.md). The interactive
+recorder captures only direct native PCM into a Git-ignored local directory;
+it requires `--confirm-authorization` before it can start `arecord`.
+
+```sh
+bash poc_audio/tools/m1_fixture_record.sh --list
+```
+
+Do not run the recording command until the User/Designer has confirmed the
+internal-only recording authorization. A completed recording set still needs
+checksum/metadata review and the pinned conversion boundary before it becomes a
+candidate fixture.

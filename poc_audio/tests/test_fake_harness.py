@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+import wave
 from pathlib import Path
 
 
@@ -12,6 +13,13 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from audio_poc.harness import FakeProcessHarness, Scenario  # noqa: E402
+from audio_poc.fixture_recorder import (  # noqa: E402
+    build_capture_items,
+    load_plan,
+    sha256_file,
+    validate_wav,
+    verify_records,
+)
 from audio_poc.models import TerminalStatus  # noqa: E402
 from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
@@ -127,6 +135,55 @@ class TrackedDocumentTests(unittest.TestCase):
         )
         self.assertEqual(sum(item["vad_class"] == "pause" for item in utterances), 25)
         self.assertTrue(all(item["reference_text"] for item in utterances))
+
+    def test_fixture_recorder_validates_a_complete_local_manifest(self) -> None:
+        plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
+        plan = load_plan(plan_path)
+        for capture_set in plan["sets"]:
+            capture_set["duration_seconds_each"] = 1
+        plan["_path"] = str(plan_path)
+        items = build_capture_items(plan)
+        self.assertEqual(len(items), 100)
+
+        with self.subTest("native wav metadata"):
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                records = {}
+                for item in items:
+                    wav_path = root / f"{item.fixture_id}.wav"
+                    with wave.open(str(wav_path), "wb") as generated:
+                        generated.setnchannels(2)
+                        generated.setsampwidth(4)
+                        generated.setframerate(48000)
+                        generated.writeframes(b"\x00" * (48000 * 2 * 4))
+                    metadata = validate_wav(wav_path, plan["native_capture"])
+                    records[item.fixture_id] = {
+                        "fixture_id": item.fixture_id,
+                        "vad_class": item.vad_class,
+                        "category": item.category,
+                        "file": wav_path.name,
+                        "sha256": sha256_file(wav_path),
+                        "metadata": metadata,
+                    }
+                (root / "fixture_manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "1.0",
+                            "plan_id": plan["plan_id"],
+                            "plan_sha256": sha256_file(plan_path),
+                            "authorization_confirmed": True,
+                            "native_capture": plan["native_capture"],
+                            "records": records,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                outcome = verify_records(plan, root)
+                self.assertEqual(outcome["summary"]["result"], "PASS")
+                self.assertEqual(outcome["summary"]["valid_files"], 100)
+                self.assertEqual(outcome["summary"]["non_speech_seconds"], 50)
 
 
 if __name__ == "__main__":

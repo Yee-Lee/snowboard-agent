@@ -47,6 +47,36 @@ After confirmation, change `authorization_status` in the plan through a
 reviewable decision record. Until then, do not collect audio and do not mark
 the fixture gate accepted.
 
+## Operator commands
+
+Run these commands locally on the Pi checkout after it has been updated to the
+approved full source SHA. They never use SSH settings and store WAV files only
+in the Git-ignored artifact directory.
+
+```sh
+# Inspect the planned 100 fixture IDs; this does not record audio.
+bash poc_audio/tools/m1_fixture_record.sh --list
+
+# Record one item after giving the required authorization confirmation.
+bash poc_audio/tools/m1_fixture_record.sh \
+  --record asr-clear-001 --confirm-authorization
+
+# Resume the complete interactive set. Completed IDs are skipped by default.
+bash poc_audio/tools/m1_fixture_record.sh \
+  --record-all --confirm-authorization
+
+# Re-record a known item, then validate every completed WAV and checksum.
+bash poc_audio/tools/m1_fixture_record.sh \
+  --record asr-clear-001 --replace --confirm-authorization
+bash poc_audio/tools/m1_fixture_record.sh --verify
+```
+
+The recorder auto-detects the VoiceHAT capture card and opens it through a
+direct `hw:` device. If the card ordering is intentionally different, pass a
+direct device only for that local run, for example `--device hw:1,0`. The local
+manifest records the capture device for raw-evidence review; the tracked
+sanitized summary must not include it.
+
 ## Capture and conversion boundary
 
 Capture the source in the device's reviewed native format: 48 kHz, stereo,
