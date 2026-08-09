@@ -19,6 +19,10 @@ Current fixture-recorder finding：[M1 Fixture Recorder Evidence](../../poc_audi
 — exact-SHA Pi dry run `PASS`; explicit authorization guard, 100-item plan,
 and no-WAV safety boundary verified. No fixture audio has been recorded.
 
+Current two-stage finding：[M1 Fixture Stage Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-STAGE-001.md)
+— exact-SHA Pi dry run `PASS`; Pilot selects 40 items and Formal selects the
+remaining 60 without lowering the 100-item formal gate.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A，等待 Core Team 回覆。）
 
