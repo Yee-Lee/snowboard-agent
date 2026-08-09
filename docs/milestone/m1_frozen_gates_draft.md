@@ -113,6 +113,7 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | --- | --- | --- | --- |
 | Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Controlled fixture recording authorization | User / Designer | 2026-08-09 | Internal POC evaluation only; no public release, redistribution, or Git storage of raw audio |
+| Fixture operational Pilot | User / Designer + Assistant / Test Controller | 2026-08-09 | [M1-FIXTURE-PILOT-001](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-001.md) `PASS`; formal fixture acceptance remains pending |
 | Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
 | Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4 |
 | Tester reproduced harness and cleanup checks | Assistant / Test Controller | 2026-08-08 | `334825330d8a5a66bddf1a2c64ae80c737aa552a`; [M1-FAKE-001](../../poc_audio/evidence/m1/M1-FAKE-001.md) `PASS` |

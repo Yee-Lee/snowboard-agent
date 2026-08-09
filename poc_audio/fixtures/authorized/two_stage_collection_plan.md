@@ -1,6 +1,6 @@
 # M1 Two-Stage Fixture Collection Plan
 
-Status: `PROPOSED / NOT FROZEN`  
+Status: `PILOT COMPLETE / FORMAL PENDING / NOT FROZEN`
 Decision owner: User / Designer
 
 The formal M1 fixture gate remains 100 clips and 50 ASR utterances. This plan
@@ -35,8 +35,8 @@ representative clear speech, pause, silence, and noise samples. Review asks:
 3. Does any physical placement, gain, native PCM setting, or room condition
    need to change?
 
-`PASS` permits only the next collection stage. It never advances or rejects an
-ASR/VAD candidate.
+Pilot completed `PASS` on 2026-08-09; it permits only the next collection
+stage. It never advances or rejects an ASR/VAD candidate.
 
 If any capture condition changes after Pilot, preserve its raw files locally as
 rejected observations and start a new collection revision. Do not mix them

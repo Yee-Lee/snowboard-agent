@@ -33,6 +33,10 @@ Current monitoring finding：[M1 Fixture Monitoring Evidence](../../poc_audio/ev
 resume with immutable raw capture. Background noise and playback-stop transient
 remain recorded observations for Formal fixture and M3 AudioOutput review.
 
+Current Pilot collection finding：[M1 Fixture Pilot Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-001.md)
+— 40 / 40 native files, labels, checksum/metadata, representative human review,
+and cleanup `PASS`. Formal completion remains required before freezing.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A，等待 Core Team 回覆。）
 
