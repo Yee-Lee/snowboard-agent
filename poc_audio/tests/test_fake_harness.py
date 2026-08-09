@@ -14,6 +14,8 @@ if str(SRC_ROOT) not in sys.path:
 
 from audio_poc.harness import FakeProcessHarness, Scenario  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
+    CaptureItem,
+    archive_existing_record,
     build_capture_items,
     load_plan,
     select_stage_items,
@@ -237,6 +239,25 @@ class TrackedDocumentTests(unittest.TestCase):
             with wave.open(str(destination), "rb") as monitored:
                 payload = monitored.readframes(1)
             self.assertEqual(int.from_bytes(payload[:4], "little", signed=True), 2147483647)
+
+    def test_replacement_archives_the_previous_raw_recording(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "vad-silence-001.wav"
+            source.write_bytes(b"prior raw audio")
+            item = CaptureItem("vad-silence-001", "silence", "silence", 12)
+            manifest = {"records": {item.fixture_id: {"file": source.name}}}
+            archived_file = archive_existing_record(item, root, manifest)
+            self.assertIsNotNone(archived_file)
+            self.assertFalse(source.exists())
+            self.assertTrue((root / str(archived_file)).is_file())
+            self.assertNotIn(item.fixture_id, manifest["records"])
+            self.assertEqual(
+                manifest["superseded_records"][0]["reason"],
+                "operator_requested_replace",
+            )
 
 
 if __name__ == "__main__":

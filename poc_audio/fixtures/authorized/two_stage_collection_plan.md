@@ -73,8 +73,9 @@ bash poc_audio/tools/m1_fixture_record.sh --verify --stage formal
 ```
 
 To re-record a specific selected fixture, add `--record <fixture-id> --replace`
-and the same `--stage` value. Do not use an unqualified `--record-all` before
-the formal completion decision.
+and the same `--stage` value. The recorder archives the prior local raw WAV and
+manifest record under `superseded/` before replacing it. Do not use an
+unqualified `--record-all` before the formal completion decision.
 
 ## Pre-Pilot monitoring diagnostic
 

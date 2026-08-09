@@ -195,6 +195,34 @@ def write_json_atomically(path: Path, document: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+def archive_existing_record(
+    item: CaptureItem, output_dir: Path, manifest: dict[str, Any]
+) -> str | None:
+    """Move a replaced raw WAV to controlled local history before re-recording."""
+    records = manifest.setdefault("records", {})
+    previous = records.pop(item.fixture_id, None)
+    source = output_dir / f"{item.fixture_id}.wav"
+    archived_file: str | None = None
+    if source.is_file():
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+        archive_dir = output_dir / "superseded" / stamp
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        destination = archive_dir / source.name
+        source.replace(destination)
+        archived_file = str(destination.relative_to(output_dir))
+    if previous is not None or archived_file is not None:
+        manifest.setdefault("superseded_records", []).append(
+            {
+                "fixture_id": item.fixture_id,
+                "reason": "operator_requested_replace",
+                "archived_at_utc": datetime.now(UTC).isoformat(),
+                "archived_file": archived_file,
+                "previous_record": previous,
+            }
+        )
+    return archived_file
+
+
 def record_item(item: CaptureItem, output_dir: Path, device: str, native_capture: dict[str, Any]) -> dict[str, Any]:
     output_path = output_dir / f"{item.fixture_id}.wav"
     temporary = output_path.with_suffix(".wav.partial")
@@ -375,6 +403,11 @@ def main(argv: list[str] | None = None) -> int:
         if item.fixture_id in records and not arguments.replace:
             print(f"skip completed: {item.fixture_id}")
             continue
+        if item.fixture_id in records and arguments.replace:
+            archived_file = archive_existing_record(item, output_dir, manifest)
+            write_json_atomically(manifest_path, manifest)
+            if archived_file:
+                print(f"archived prior recording: {archived_file}")
         print(f"\n[{item.fixture_id}] {prompt_for_item(item)}")
         answer = input("Enter=record, s=skip, q=quit: ").strip().lower()
         if answer == "q":

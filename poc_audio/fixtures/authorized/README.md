@@ -69,7 +69,8 @@ bash poc_audio/tools/m1_fixture_record.sh \
 bash poc_audio/tools/m1_fixture_record.sh \
   --record-all --stage pilot --confirm-authorization
 
-# Re-record a known item, then validate every completed WAV and checksum.
+# Re-record a known item. The old raw WAV and manifest record are moved to
+# Git-ignored `superseded/` history before the replacement is captured.
 bash poc_audio/tools/m1_fixture_record.sh \
   --record asr-clear-001 --replace --confirm-authorization
 bash poc_audio/tools/m1_fixture_record.sh --verify --stage pilot
