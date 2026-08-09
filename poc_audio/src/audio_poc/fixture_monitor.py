@@ -14,8 +14,12 @@ from pathlib import Path
 from .fixture_recorder import discover_voicehat_device, sha256_file, validate_wav
 
 
-def duplicate_channel_to_stereo(source: Path, destination: Path, channel: int) -> dict[str, int | float]:
-    """Write a unity-gain dual-mono copy of one S32_LE source channel."""
+def duplicate_channel_to_stereo(
+    source: Path, destination: Path, channel: int, gain_db: float = 0.0
+) -> dict[str, int | float]:
+    """Write a clipped-safe dual-mono copy of one S32_LE source channel."""
+    if not -24.0 <= gain_db <= 24.0:
+        raise ValueError("gain_db must be between -24 and 24")
     with wave.open(str(source), "rb") as input_wav:
         channels = input_wav.getnchannels()
         width = input_wav.getsampwidth()
@@ -32,8 +36,16 @@ def duplicate_channel_to_stereo(source: Path, destination: Path, channel: int) -
     if sys.byteorder != "little":
         values.byteswap()
     dual_mono = array.array("i")
+    gain = 10 ** (gain_db / 20)
+    clipped_source_samples = 0
     for offset in range(channel, len(values), channels):
-        sample = values[offset]
+        sample = round(values[offset] * gain)
+        if sample > 2147483647:
+            sample = 2147483647
+            clipped_source_samples += 1
+        elif sample < -2147483648:
+            sample = -2147483648
+            clipped_source_samples += 1
         dual_mono.extend((sample, sample))
     if sys.byteorder != "little":
         dual_mono.byteswap()
@@ -52,10 +64,13 @@ def duplicate_channel_to_stereo(source: Path, destination: Path, channel: int) -
         if temporary.exists():
             temporary.unlink()
         raise
-    return validate_wav(
+    metadata = validate_wav(
         destination,
         {"sample_rate_hz": 48000, "channels": 2, "sample_format": "S32_LE", "access": "direct_hw"},
     )
+    metadata["gain_db"] = gain_db
+    metadata["clipped_source_samples"] = clipped_source_samples
+    return metadata
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -67,6 +82,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("poc_audio/fixtures/artifacts/m1-authorized-zh-tw-v1"),
     )
     parser.add_argument("--source-channel", type=int, default=0)
+    parser.add_argument("--gain-db", type=float, default=0.0, help="temporary monitoring gain, limited to -24 through +24 dB")
     parser.add_argument("--replace", action="store_true", help="replace an existing derived monitor WAV")
     parser.add_argument("--play", action="store_true", help="play the derived monitor WAV through the detected VoiceHAT output")
     parser.add_argument("--playback-device", help="direct ALSA output device; defaults to detected VoiceHAT card")
@@ -82,15 +98,20 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("authorized source WAV is unavailable")
     monitor_dir = arguments.artifact_dir / "monitor"
     monitor_dir.mkdir(parents=True, exist_ok=True)
-    destination = monitor_dir / f"{arguments.fixture_id}-ch{arguments.source_channel}-dual.wav"
+    gain_suffix = "" if arguments.gain_db == 0 else f"-gain{arguments.gain_db:+g}dB"
+    destination = monitor_dir / f"{arguments.fixture_id}-ch{arguments.source_channel}-dual{gain_suffix}.wav"
     if destination.exists() and not arguments.replace:
         raise SystemExit("derived monitor WAV already exists; pass --replace to recreate it")
 
-    metadata = duplicate_channel_to_stereo(source, destination, arguments.source_channel)
+    metadata = duplicate_channel_to_stereo(
+        source, destination, arguments.source_channel, arguments.gain_db
+    )
     summary = {
         "fixture_id": arguments.fixture_id,
         "source_channel": arguments.source_channel,
-        "transform": "unity_gain_dual_mono",
+        "transform": "dual_mono_with_saturating_gain",
+        "gain_db": arguments.gain_db,
+        "clipped_source_samples": metadata["clipped_source_samples"],
         "derived_sha256": sha256_file(destination),
         "metadata": metadata,
         "played": arguments.play,

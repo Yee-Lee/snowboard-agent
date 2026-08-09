@@ -79,16 +79,18 @@ the formal completion decision.
 ## Pre-Pilot monitoring diagnostic
 
 `M1-FIXTURE-PILOT-000` showed that the direct native recording has signal on
-the expected left channel, while the operator found raw replay too quiet. Before
-resuming Pilot recording, compare the original local source with a temporary
-unity-gain dual-mono monitoring copy:
+the expected left channel, while the operator found raw replay too quiet. The
+unity-gain dual-mono copy also remained quiet. Before resuming Pilot recording,
+perform a temporary +12 dB dual-mono monitoring comparison:
 
 ```sh
-bash poc_audio/tools/m1_fixture_monitor.sh asr-clear-001 --play
+bash poc_audio/tools/m1_fixture_monitor.sh \
+  asr-clear-001 --gain-db 12 --play
 ```
 
 The command creates a new Git-ignored file under `artifacts/.../monitor/` and
-does not edit the source WAV. If the derived playback is clear, record this as
-a monitoring-route finding only; ASR fixture conversion remains governed by
-the pinned Core AudioInput boundary. If it is still quiet, stop and inspect the
-speaker output route/gain before recording more Pilot clips.
+does not edit the source WAV. It uses saturation protection and reports a
+clipping count. If the derived playback is clear with zero clipping, record
+this as an input-monitoring-gain finding only; ASR fixture conversion remains
+governed by the pinned Core AudioInput boundary. If it is still quiet, stop and
+inspect the MAX98357A output hardware before recording more Pilot clips.

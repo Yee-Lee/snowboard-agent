@@ -219,6 +219,25 @@ class TrackedDocumentTests(unittest.TestCase):
             right = int.from_bytes(payload[4:], "little", signed=True)
             self.assertEqual((left, right), (123456, 123456))
 
+    def test_monitor_reports_saturation_when_gain_would_clip(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.wav"
+            destination = root / "monitor.wav"
+            with wave.open(str(source), "wb") as generated:
+                generated.setnchannels(2)
+                generated.setsampwidth(4)
+                generated.setframerate(48000)
+                generated.writeframes((2_000_000_000).to_bytes(4, "little", signed=True))
+                generated.writeframes((0).to_bytes(4, "little", signed=True))
+            metadata = duplicate_channel_to_stereo(source, destination, 0, 12.0)
+            self.assertEqual(metadata["clipped_source_samples"], 1)
+            with wave.open(str(destination), "rb") as monitored:
+                payload = monitored.readframes(1)
+            self.assertEqual(int.from_bytes(payload[:4], "little", signed=True), 2147483647)
+
 
 if __name__ == "__main__":
     unittest.main()
