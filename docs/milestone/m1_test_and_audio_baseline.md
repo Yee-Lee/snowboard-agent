@@ -23,6 +23,11 @@ Current two-stage finding：[M1 Fixture Stage Evidence](../../poc_audio/evidence
 — exact-SHA Pi dry run `PASS`; Pilot selects 40 items and Formal selects the
 remaining 60 without lowering the 100-item formal gate.
 
+Current Pilot pre-recording finding：[M1 Pilot Pre-recording Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-000.md)
+— native capture channel 0 is usable and channel 1 silence is expected from
+the L/R wiring; raw replay audibility is `INCONCLUSIVE`, so Pilot collection is
+paused pending a controlled monitoring diagnostic.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A，等待 Core Team 回覆。）
 
