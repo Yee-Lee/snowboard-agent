@@ -1,5 +1,8 @@
 # M4：組合認證與正式交付
 
+> Historical Audio POC record. This is not the active LLM M4; its status and
+> result must not be used as the current LLM milestone state.
+
 狀態：`NOT_STARTED`
 
 ## 目標

@@ -1,5 +1,8 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
+> Historical Audio POC record. This is not the active LLM M3; its status and
+> result must not be used as the current LLM milestone state.
+
 狀態：`NOT_STARTED`
 
 ## 目標

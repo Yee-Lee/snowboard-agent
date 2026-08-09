@@ -1,5 +1,8 @@
 # M2：VAD、ASR、TTS 隔離候選比較
 
+> Historical Audio POC record. This is not the active LLM M2; its status and
+> result must not be used as the current LLM milestone state.
+
 狀態：`NOT_STARTED`
 
 ## 目標

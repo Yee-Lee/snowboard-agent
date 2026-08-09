@@ -1,5 +1,8 @@
 # M0：遠端環境與 Evidence Chain Readiness
 
+> Historical Audio POC record. This is not the active LLM M0; its status and
+> result must not be used as the current LLM milestone state.
+
 狀態：`COMPLETE`
 性質：前置 readiness gate，不是模型或產品 milestone。
 

@@ -1,7 +1,11 @@
 # M1 Frozen-Gate Decision Record — Draft
 
+> Historical Audio POC record. This is not an LLM runtime/model gate and is
+> non-authoritative for the current LLM POC.
+
 狀態：`DESIGNER_APPROVED / NOT FROZEN`
-最後更新：2026-08-08  
+最後更新：2026-08-08
+
 決策者（Designer）：User
 驗證者（Tester）：`PENDING`
 
