@@ -1,6 +1,6 @@
 # M1 Authorized Fixture Acquisition
 
-Status: `PENDING USER AUTHORIZATION AND RECORDING`
+Status: `AUTHORIZED / PRE-RECORDING`
 
 This packet prepares the fixed VAD/ASR fixture required by the M1 gate. It
 advances the final delivery checklist's fixture catalog, quality evidence, and
@@ -47,9 +47,9 @@ The User/Designer must confirm both statements:
 2. The resulting audio is controlled project test data and will not be
    redistributed or committed to Git.
 
-After confirmation, change `authorization_status` in the plan through a
-reviewable decision record. Until then, do not collect audio and do not mark
-the fixture gate accepted.
+The User/Designer authorized the plan on 2026-08-09 for controlled internal
+POC recording only. This authorization does not mark the fixture gate accepted:
+the Pilot, Formal collection, and fixture review remain required.
 
 ## Operator commands
 

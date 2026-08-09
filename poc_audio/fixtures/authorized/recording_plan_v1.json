@@ -1,8 +1,10 @@
 {
   "schema_version": "1.0",
   "plan_id": "m1-authorized-zh-tw-v1",
-  "authorization_status": "pending_user_authorization",
+  "authorization_status": "authorized_by_user_designer",
   "authorization_scope": "internal_audio_poc_evaluation_only",
+  "authorization_decision_date": "2026-08-09",
+  "authorization_record": "User/Designer authorized controlled internal POC recording; no public release, redistribution, or Git storage of raw audio.",
   "sensitivity": "controlled",
   "redistribution": "prohibited",
   "audio_git_tracked": false,

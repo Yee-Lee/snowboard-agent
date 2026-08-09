@@ -105,14 +105,14 @@ class TrackedDocumentTests(unittest.TestCase):
                 document = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(document["$schema"], "https://json-schema.org/draft/2020-12/schema")
 
-    def test_authorized_recording_plan_is_complete_but_pending(self) -> None:
+    def test_authorized_recording_plan_is_complete_but_not_candidate_ready(self) -> None:
         plan = json.loads(
             (
                 REPO_ROOT
                 / "poc_audio/fixtures/authorized/recording_plan_v1.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertEqual(plan["authorization_status"], "pending_user_authorization")
+        self.assertEqual(plan["authorization_status"], "authorized_by_user_designer")
         self.assertFalse(plan["audio_git_tracked"])
         self.assertFalse(plan["candidate_ready"])
 
