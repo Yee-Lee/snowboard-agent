@@ -3,6 +3,8 @@
 
 #include "../include/dev_config_runtime.h"
 
+#define USE_SPI 1
+
 // Define macros that the driver uses, pointing to g_cfg
 #define OLED_CS_0       DEV_Digital_Write(g_cfg.pins.cs, 0)
 #define OLED_CS_1       DEV_Digital_Write(g_cfg.pins.cs, 1)
