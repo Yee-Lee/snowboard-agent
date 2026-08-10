@@ -104,7 +104,7 @@ void display_close(int handle)
 {
     if (!handle || !g_is_open) return;
     OLED_1in5_rgb_Clear();
-    OLED_1in5_rgb_Sleep();
+    // OLED_1in5_rgb_Sleep(); // This can cause a white flash before DEV_ModuleExit floats the pins
     DEV_ModuleExit();
     g_is_open = 0;
 }
