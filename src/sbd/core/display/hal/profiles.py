@@ -176,7 +176,7 @@ PROFILES: dict[str, PanelProfile] = {
         default_pins=_DEFAULT_OLED_PINS,
         native_driver="waveshare_ssd1351",
         max_fps=120,
-        default_spi_speed=40_000_000,
+        default_spi_speed=20_000_000,
     ),
     # 2-inch LCD (ST7789), 320×240, full native resolution
     "waveshare_lcd_2in_rgb": PanelProfile(
