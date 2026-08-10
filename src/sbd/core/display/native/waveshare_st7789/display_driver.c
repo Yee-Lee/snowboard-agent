@@ -31,14 +31,12 @@ static int g_is_open = 0;
 /* ------------------------------------------------------------------ */
 int display_open(const DisplayConfig *config)
 {
-    (void)config;
-
     if (g_is_open) {
         fprintf(stderr, "[st7789] Already open\n");
         return 1;
     }
 
-    if (DEV_ModuleInit() != 0) {
+    if (DEV_ModuleInit_WithConfig(config) != 0) {
         fprintf(stderr, "[st7789] GPIO/SPI init failed\n");
         return 0;
     }

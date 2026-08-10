@@ -25,6 +25,8 @@ typedef uint8_t  UBYTE;
 typedef uint16_t UWORD;
 typedef uint32_t UDOUBLE;
 
+extern DisplayConfig g_cfg;
+
 /* ------------------------------------------------------------------ */
 /*  Module 初始化 (傳入 config)                                        */
 /* ------------------------------------------------------------------ */

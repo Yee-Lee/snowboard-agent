@@ -33,14 +33,12 @@ static int g_is_open = 0;
 /* ------------------------------------------------------------------ */
 int display_open(const DisplayConfig *config)
 {
-    (void)config;
-
     if (g_is_open) {
         fprintf(stderr, "[ssd1351] Already open\n");
         return 1;  /* return existing handle */
     }
 
-    if (DEV_ModuleInit() != 0) {
+    if (DEV_ModuleInit_WithConfig(config) != 0) {
         fprintf(stderr, "[ssd1351] GPIO/SPI init failed\n");
         return 0;  /* 0 == failure */
     }

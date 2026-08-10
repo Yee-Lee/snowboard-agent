@@ -5,7 +5,7 @@ CC      := gcc
 CFLAGS  := -O2 -Wall -fPIC -I../include
 LDFLAGS := -shared -llgpio
 
-SRCS := display_driver.c DEV_Config.c LCD_2inch.c
+SRCS := display_driver.c ../dev_config_runtime.c LCD_2inch.c
 OBJS := $(SRCS:.c=.o)
 TARGET := libdisplay.so
 

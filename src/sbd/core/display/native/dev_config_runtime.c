@@ -22,7 +22,7 @@
 
 static int            g_gpio_handle = -1;
 static int            g_spi_handle  = -1;
-static DisplayConfig  g_cfg;          /* 完整設定的副本 */
+DisplayConfig  g_cfg;          /* 完整設定的副本 */
 
 /* ------------------------------------------------------------------ */
 /*  內部：自動偵測 gpiochip index                                      */

@@ -1,71 +1,19 @@
 #ifndef _DEV_CONFIG_H_
 #define _DEV_CONFIG_H_
-/***********************************************************************************************************************
-			------------------------------------------------------------------------
-			|\\\																///|
-			|\\\					Hardware interface							///|
-			------------------------------------------------------------------------
-***********************************************************************************************************************/
-#include "Debug.h"
-#ifdef USE_BCM2835_LIB
-    #include <bcm2835.h>
-#elif USE_WIRINGPI_LIB
-    #include <wiringPi.h>
-    #include <wiringPiSPI.h>
-	#include <wiringPiI2C.h>
-#elif USE_DEV_LIB
-    #include <lgpio.h>
-    #define LFLAGS 0
-    #define NUM_MAXBUF  4
-#endif
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
+#include "../include/dev_config_runtime.h"
 
-#define USE_SPI 1
-#define USE_IIC 0
+// Define macros that the driver uses, pointing to g_cfg
+#define OLED_CS_0       DEV_Digital_Write(g_cfg.pins.cs, 0)
+#define OLED_CS_1       DEV_Digital_Write(g_cfg.pins.cs, 1)
 
-#define IIC_CMD        0X00
-#define IIC_RAM        0X40
+#define OLED_RST_0      DEV_Digital_Write(g_cfg.pins.rst, 0)
+#define OLED_RST_1      DEV_Digital_Write(g_cfg.pins.rst, 1)
 
+#define OLED_DC_0       DEV_Digital_Write(g_cfg.pins.dc, 0)
+#define OLED_DC_1       DEV_Digital_Write(g_cfg.pins.dc, 1)
 
-/**
- * data
-**/
-#define UBYTE   uint8_t
-#define UWORD   uint16_t
-#define UDOUBLE uint32_t
+// Used for delay
+#define DEV_Delay_ms(x) DEV_Delay_ms(x)
 
-//OLED Define
-#define OLED_CS         8		
-#define OLED_RST        25	
-#define OLED_DC         24	
-
-
-#define OLED_CS_0      DEV_Digital_Write(OLED_CS,0)
-#define OLED_CS_1      DEV_Digital_Write(OLED_CS,1)
-
-#define OLED_RST_0      DEV_Digital_Write(OLED_RST,0)
-#define OLED_RST_1      DEV_Digital_Write(OLED_RST,1)
-
-#define OLED_DC_0       DEV_Digital_Write(OLED_DC,0)
-#define OLED_DC_1       DEV_Digital_Write(OLED_DC,1)
-
-/*------------------------------------------------------------------------------------------------------*/
-
-UBYTE DEV_ModuleInit(void);
-void  DEV_ModuleExit(void);
-
-void DEV_GPIO_Mode(UWORD Pin, UWORD Mode);
-void DEV_Digital_Write(UWORD Pin, UBYTE Value);
-UBYTE DEV_Digital_Read(UWORD Pin);
-void DEV_Delay_ms(UDOUBLE xms);
-
-void I2C_Write_Byte(uint8_t value, uint8_t Cmd);
-void DEV_SPI_WriteByte(UBYTE Value);
-void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len);
-
-#endif
+#endif // _DEV_CONFIG_H_
