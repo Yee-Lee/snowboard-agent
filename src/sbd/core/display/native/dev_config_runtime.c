@@ -68,27 +68,12 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
         return -2;
     }
 
-    /* 3. 設定 output pin 方向 */
     DEV_GPIO_Mode(cfg->pins.rst, 1);
     DEV_GPIO_Mode(cfg->pins.dc,  1);
-    
-    /* 
-     * CRITICAL HACK: Linux spidev toggles CS high between every single byte in an ioctl.
-     * This breaks the display controller (SSD1351/ST7789) which expects CS to 
-     * stay low across the entire command+args sequence.
-     * By claiming the CS pin as a GPIO output here (which defaults to 0/LOW), 
-     * we hijack the pin mux away from the SPI hardware. The pin stays permanently
-     * low (selected), and the byte-by-byte spidev toggling is physically ignored.
-     */
-    if (cfg->pins.cs >= 0) {
-        DEV_GPIO_Mode(cfg->pins.cs, 1);
-        DEV_Digital_Write(cfg->pins.cs, 0); /* Force LOW (always selected) */
-    }
-    
-    if (cfg->pins.bl >= 0)  DEV_GPIO_Mode(cfg->pins.bl, 1);
 
     /* 背光預設開啟 */
     if (cfg->pins.bl >= 0) {
+        DEV_GPIO_Mode(cfg->pins.bl, 1);
         DEV_Digital_Write(cfg->pins.bl, 1);
     }
 

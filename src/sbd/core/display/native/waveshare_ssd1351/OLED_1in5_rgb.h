@@ -43,6 +43,7 @@ function:
 
 
 void OLED_1in5_rgb_Init(void);
+void OLED_1in5_rgb_Sleep(void);
 void OLED_1in5_rgb_Clear(void);
 void OLED_1in5_rgb_Display(UBYTE *Image);
 

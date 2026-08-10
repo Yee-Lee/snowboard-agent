@@ -154,6 +154,11 @@ void OLED_1in5_rgb_Init(void)
     OLED_WriteReg(0xAF);
 }
 
+void OLED_1in5_rgb_Sleep(void)
+{
+    OLED_WriteReg(0xAE);
+}
+
 /********************************************************************************
 function:
             Clear screen

@@ -104,6 +104,7 @@ void display_close(int handle)
 {
     if (!handle || !g_is_open) return;
     OLED_1in5_rgb_Clear();
+    OLED_1in5_rgb_Sleep();
     DEV_ModuleExit();
     g_is_open = 0;
 }
