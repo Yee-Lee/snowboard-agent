@@ -13,6 +13,12 @@
 #define _DEV_CONFIG_H_
 
 #include "../include/dev_config_runtime.h"
+#include <stdio.h>
+
+#define LCD_CS   g_cfg.pins.cs
+#define LCD_RST  g_cfg.pins.rst
+#define LCD_DC   g_cfg.pins.dc
+#define LCD_BL   g_cfg.pins.bl
 
 #define LCD_CS_0		DEV_Digital_Write(g_cfg.pins.cs, 0)
 #define LCD_CS_1		DEV_Digital_Write(g_cfg.pins.cs, 1)
