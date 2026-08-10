@@ -136,6 +136,9 @@ class PanelProfile:
     # Default pin mapping for this panel
     default_pins: PinConfig = field(compare=False)
 
+    # Native C driver folder name in native/
+    native_driver: str = ""
+
     # Frames-per-second ceiling the panel can handle
     max_fps: int = 60
 
@@ -168,6 +171,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=128,
         logical_height=128,
         default_pins=_DEFAULT_OLED_PINS,
+        native_driver="waveshare_ssd1351",
         max_fps=120,
     ),
     # 2-inch LCD (ST7789), 320×240, full native resolution
@@ -178,6 +182,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=320,
         logical_height=240,
         default_pins=_DEFAULT_LCD_PINS,
+        native_driver="waveshare_st7789",
         max_fps=60,
     ),
     # 2-inch LCD used as a 128×128 canvas (scaled + centred layout)
@@ -188,6 +193,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=128,
         logical_height=128,
         default_pins=_DEFAULT_LCD_PINS,
+        native_driver="waveshare_st7789",
         max_fps=60,
     ),
     # Mock / headless (CI / PC)
@@ -198,6 +204,7 @@ PROFILES: dict[str, PanelProfile] = {
         logical_width=128,
         logical_height=128,
         default_pins=PinConfig(cs=-1, dc=-1, rst=-1, bl=-1),
+        native_driver="mock",
         max_fps=120,
     ),
 }
