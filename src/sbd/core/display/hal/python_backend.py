@@ -68,16 +68,24 @@ class PythonDisplayDevice:
         if not self._is_open or not self._disp:
             return
             
-        # The python driver expects a list of bytes
-        # It's very slow to convert python lists, but let's do our best
-        if isinstance(frame, memoryview):
-            buf = frame.tolist()
-        elif isinstance(frame, bytearray) or isinstance(frame, bytes):
-            buf = list(frame)
-        else:
-            buf = list(frame)
-            
-        self._disp.ShowImage(buf)
+        # Set window address
+        self._disp.command(0x15)
+        self._disp.data(0x00)
+        self._disp.data(0x7f)
+        self._disp.command(0x75)
+        self._disp.data(0x00)
+        self._disp.data(0x7f)
+        self._disp.command(0x5C)
+        
+        # DC high for data
+        self._disp.digital_write(self._disp.DC_PIN, True)
+        
+        # Fast chunked write to SPI
+        chunk_size = 4096
+        buf = memoryview(frame)
+        for i in range(0, len(buf), chunk_size):
+            chunk = buf[i:i+chunk_size].tolist()
+            self._disp.spi.writebytes(chunk)
 
     async def present_rect(self, rect: Rect, frame: Rgb565Frame) -> None:
         await self.present(frame)
