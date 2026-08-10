@@ -12,7 +12,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <lgpio.h>
-
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
 #include "dev_config_runtime.h"
 #include "pin_config.h"
 
@@ -78,19 +81,21 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
     }
 
     /* 4. 開啟 SPI */
-    g_spi_handle = lgSpiOpen(
-        cfg->spi.bus,
-        cfg->spi.chip,
-        cfg->spi.speed_hz,
-        cfg->spi.mode
-    );
+    char dev_path[32];
+    snprintf(dev_path, sizeof(dev_path), "/dev/spidev%d.%d", cfg->spi.bus, cfg->spi.chip);
+    g_spi_handle = open(dev_path, O_RDWR);
     if (g_spi_handle < 0) {
-        fprintf(stderr, "[DEV] lgSpiOpen(bus=%d chip=%d freq=%d) failed: %d\n",
-                cfg->spi.bus, cfg->spi.chip, cfg->spi.speed_hz, g_spi_handle);
+        fprintf(stderr, "[DEV] Failed to open %s\n", dev_path);
         lgGpiochipClose(g_gpio_handle);
         g_gpio_handle = -1;
         return -3;
     }
+    uint8_t mode = cfg->spi.mode;
+    uint8_t bits = 8;
+    uint32_t speed = cfg->spi.speed_hz;
+    ioctl(g_spi_handle, SPI_IOC_WR_MODE, &mode);
+    ioctl(g_spi_handle, SPI_IOC_WR_BITS_PER_WORD, &bits);
+    ioctl(g_spi_handle, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
 
     fprintf(stderr, "[DEV] Init OK — GPIO chip%d, SPI%d.%d @ %d Hz\n",
             chip_idx, cfg->spi.bus, cfg->spi.chip, cfg->spi.speed_hz);
@@ -102,7 +107,7 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
 void DEV_ModuleExit(void)
 {
     if (g_spi_handle >= 0) {
-        lgSpiClose(g_spi_handle);
+        close(g_spi_handle);
         g_spi_handle = -1;
     }
     if (g_gpio_handle >= 0) {
@@ -149,13 +154,13 @@ void DEV_Delay_ms(unsigned int ms)
 void DEV_SPI_WriteByte(uint8_t value)
 {
     if (g_spi_handle < 0) return;
-    lgSpiWrite(g_spi_handle, (const char *)&value, 1);
+    write(g_spi_handle, &value, 1);
 }
 
 void DEV_SPI_Write_nByte(const uint8_t *data, uint32_t len)
 {
     if (g_spi_handle < 0 || !data || len == 0) return;
-    lgSpiWrite(g_spi_handle, (const char *)data, (int)len);
+    write(g_spi_handle, data, len);
 }
 
 /* ------------------------------------------------------------------ */
