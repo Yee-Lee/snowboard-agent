@@ -32,7 +32,7 @@ def fast_show_image(disp, pBuf):
 def main():
     print("Initializing OLED...")
     disp = OLED_1in5_rgb.OLED_1in5_rgb()
-    if disp.Init() != 0:
+    if disp.Init() == -1:
         print("Init failed!")
         return
     disp.clear()
