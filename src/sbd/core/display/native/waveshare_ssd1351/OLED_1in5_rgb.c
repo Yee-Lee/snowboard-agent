@@ -165,8 +165,6 @@ function:
 ********************************************************************************/
 void OLED_1in5_rgb_Clear(void)
 {
-    UWORD i;
-
     OLED_WriteReg(0x15);
     OLED_WriteData(0);
     OLED_WriteData(127);
@@ -176,8 +174,11 @@ void OLED_1in5_rgb_Clear(void)
     // fill!
     OLED_WriteReg(0x5C);
 
-    for(i=0; i<OLED_1in5_RGB_WIDTH*OLED_1in5_RGB_HEIGHT*2; i++){
-        OLED_WriteData(0x00);
+    OLED_DC_1;
+    uint8_t zeros[4096] = {0};
+    uint32_t total_size = OLED_1in5_RGB_WIDTH * OLED_1in5_RGB_HEIGHT * 2;
+    for(uint32_t i = 0; i < total_size; i += 4096){
+        DEV_SPI_Write_nByte(zeros, 4096);
     }
 }
 
