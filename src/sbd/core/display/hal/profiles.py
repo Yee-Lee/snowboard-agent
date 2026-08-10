@@ -144,6 +144,9 @@ class PanelProfile:
     
     # Preferred SPI speed for this panel
     default_spi_speed: int = 60_000_000
+    
+    # Preferred SPI mode (0-3)
+    default_spi_mode: int = 0
 
 
 # ------------------------------------------------------------------
@@ -238,7 +241,7 @@ def resolve_pin_config(
         3. *profile.default_pins*
     """
     base_pins = profile.default_pins
-    base_spi  = SpiConfig(speed_hz=profile.default_spi_speed)
+    base_spi  = SpiConfig(speed_hz=profile.default_spi_speed, mode=profile.default_spi_mode)
     base_gpio = GpiochipConfig()
 
     if apply_env:
