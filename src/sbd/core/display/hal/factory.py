@@ -98,6 +98,16 @@ def create_device(
         )
         so_path = base
 
+    import os
+    if os.environ.get("USE_PYTHON_BACKEND") == "1" or profile_name == "waveshare_oled_1in5_rgb":
+        from .python_backend import PythonDisplayDevice
+        return PythonDisplayDevice(
+            profile_name=profile_name,
+            width=profile.logical_width,
+            height=profile.logical_height,
+            pin_config=resolved_cfg
+        )
+
     so_path = Path(so_path)
     if not so_path.exists():
         driver_dir = profile.native_driver or profile_name
