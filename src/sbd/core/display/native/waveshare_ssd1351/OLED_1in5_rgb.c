@@ -102,7 +102,7 @@ static void OLED_InitReg(void)
     OLED_WriteData(0x00);
 
     OLED_WriteReg(0xAB);  
-    OLED_WriteReg(0x01);  
+    OLED_WriteData(0x01); // Fix official bug: param should be Data
 
     OLED_WriteReg(0xB4);  
     OLED_WriteData(0xA0);   
