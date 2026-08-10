@@ -19,7 +19,7 @@
 #include <string.h>
 #include "LCD_2inch.h"
 #include "DEV_Config.h"
-#include "../../include/display.h"
+#include "../include/display.h"
 
 #define LCD_WIDTH   LCD_2IN_WIDTH    /* 320 */
 #define LCD_HEIGHT  LCD_2IN_HEIGHT   /* 240 */
@@ -29,7 +29,7 @@
 static int g_is_open = 0;
 
 /* ------------------------------------------------------------------ */
-int display_open(void *config)
+int display_open(const DisplayConfig *config)
 {
     (void)config;
 

@@ -20,7 +20,7 @@
 #include <string.h>
 #include "OLED_1in5_rgb.h"
 #include "DEV_Config.h"
-#include "../../include/display.h"
+#include "../include/display.h"
 
 #define OLED_WIDTH  128
 #define OLED_HEIGHT 128
@@ -31,7 +31,7 @@
 static int g_is_open = 0;
 
 /* ------------------------------------------------------------------ */
-int display_open(void *config)
+int display_open(const DisplayConfig *config)
 {
     (void)config;
 

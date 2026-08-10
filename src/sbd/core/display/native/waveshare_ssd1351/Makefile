@@ -2,7 +2,7 @@
 # Produces libdisplay.so implementing the stable C ABI in native/include/display.h
 
 CC      := gcc
-CFLAGS  := -O2 -Wall -fPIC -I../../include
+CFLAGS  := -O2 -Wall -fPIC -I../include
 LDFLAGS := -shared -llgpio
 
 SRCS := display_driver.c DEV_Config.c OLED_1in5_rgb.c
