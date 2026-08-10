@@ -92,10 +92,14 @@ int display_present_rect_rgb565(int handle,
 
     LCD_2IN_SetWindow(x, y, x + width - 1, y + height - 1);
 
-    /* Write pixels directly; LCD_2IN_Display always resets the window,
-     * so we use the lower-level approach here. */
-    for (int i = 0; i < length; i += 2) {
-        LCD_2IN_WriteData_Word((buffer[i] << 8) | buffer[i + 1]);
+    /* Write pixels directly in chunks to avoid syscall overhead */
+    DEV_Digital_Write(LCD_DC, 1);
+    int sent = 0;
+    while (sent < length) {
+        int chunk = length - sent;
+        if (chunk > 4096) chunk = 4096;
+        DEV_SPI_Write_nByte(buffer + sent, chunk);
+        sent += chunk;
     }
     return 0;
 }
