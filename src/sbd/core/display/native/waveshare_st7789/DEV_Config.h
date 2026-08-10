@@ -39,8 +39,8 @@
 #define UDOUBLE uint32_t
 
 #define LCD_CS   8
-#define LCD_RST  27
-#define LCD_DC   25
+#define LCD_RST  25
+#define LCD_DC   24
 #define LCD_BL   18
 
 //LCD

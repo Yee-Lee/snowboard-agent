@@ -41,8 +41,8 @@
 
 //OLED Define
 #define OLED_CS         8		
-#define OLED_RST        27	
-#define OLED_DC         25	
+#define OLED_RST        25	
+#define OLED_DC         24	
 
 
 #define OLED_CS_0      DEV_Digital_Write(OLED_CS,0)
