@@ -141,6 +141,9 @@ class PanelProfile:
 
     # Frames-per-second ceiling the panel can handle
     max_fps: int = 60
+    
+    # Preferred SPI speed for this panel
+    default_spi_speed: int = 60_000_000
 
 
 # ------------------------------------------------------------------
@@ -173,6 +176,7 @@ PROFILES: dict[str, PanelProfile] = {
         default_pins=_DEFAULT_OLED_PINS,
         native_driver="waveshare_ssd1351",
         max_fps=120,
+        default_spi_speed=20_000_000,
     ),
     # 2-inch LCD (ST7789), 320×240, full native resolution
     "waveshare_lcd_2in_rgb": PanelProfile(
@@ -233,7 +237,7 @@ def resolve_pin_config(
         3. *profile.default_pins*
     """
     base_pins = profile.default_pins
-    base_spi  = SpiConfig()
+    base_spi  = SpiConfig(speed_hz=profile.default_spi_speed)
     base_gpio = GpiochipConfig()
 
     if apply_env:

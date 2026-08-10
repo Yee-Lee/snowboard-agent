@@ -71,7 +71,7 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
     /* 3. 設定 output pin 方向 */
     DEV_GPIO_Mode(cfg->pins.rst, 1);
     DEV_GPIO_Mode(cfg->pins.dc,  1);
-    if (cfg->pins.cs >= 0)  DEV_GPIO_Mode(cfg->pins.cs, 1);
+    // DO NOT claim CS pin as standard GPIO output if it's handled by SPI driver!
     if (cfg->pins.bl >= 0)  DEV_GPIO_Mode(cfg->pins.bl, 1);
 
     /* 背光預設開啟 */
