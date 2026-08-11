@@ -1,9 +1,15 @@
 # Display POC → Core M3 Milestone Plan
 
-> 更新日期：2026-08-09
-> 目前狀態：**工作準備完成；Core M3 尚未正式解鎖**
+> 更新日期：2026-08-11
+> 目前狀態：**工作準備完成；需先修復 D1-D5 缺失，再推進 P1 凍結版本**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
+
+## 開發與分支策略 (Branch Workflow)
+
+- **以 OLED (SSD1351) 為優先主線**：使用 `dev_display_m{x}` 分支推進 P1~P4。不等待 LCD，取得 P4 ACK 後即可解鎖 Core M3。
+- **LCD (ST7789) 為備案**：需要時從 OLED Accepted SHA 建立 `dev_display_lcd_m1`。LCD 須獨立 config/pin map；修改共用 HAL 需附 OLED regression 結果。
+- **認證以 SHA 為準**：分支名稱僅為工作線，最終交付仍認完整的 40-character SHA。
 
 ## 三個狀態的定義
 
@@ -28,6 +34,24 @@
 - [x] 實機測試方法採用同一 clean SHA、前後 owner 檢查、明確 PID cleanup、raw/sanitized evidence 分離。
 
 **P0 不代表解鎖**：目前尚未執行實機連線驗證、尚未凍結 immutable delivery SHA，也尚未取得 Core ACK。
+
+---
+
+## Milestone P0.5 — D1-D5 Contract Remediation (v0.3)
+
+**目的：解決 Core Team 針對 v0.2 提出的 Blocking Issues，以便順利凍結版本。**
+
+完成條件 (Coding & Config)：
+- [ ] **D1 (Python HAL)**：修正 Protocol，`start/stop` 改為 `async`，`clear/write_pixels/show/size` 為同步。不自建 UI 狀態機。
+- [ ] **D2 (C ABI)**：定義明確的 C struct (config)、錯誤碼 (error enum) 與 Python 例外映射。`clear/write` 只改 back-buffer，`show` 才 flush。
+- [ ] **D3 (Hardware Gate)**：接線以 SSD1351 OLED 為唯一基準，修正 BCM 腳位設定，清理 config 確保能以 config hash 追溯。
+- [ ] **D4 (Performance Claim)**：移除無根據的 `60 fps` 與 `<20ms` 效能承諾，等待實機測試真實 P50/P95。
+- [ ] **D5 (Delivery Fix)**：修正 Makefile 依賴 (移除未追蹤檔案) 確保可 Clean Build，並準備在 P4 提供完整 SHA 與 checksum 的 manifest。
+
+交付與 ACK 原則 (依據 DELIVERY-004 規定)：
+- [ ] **維持 Draft 狀態**：提交 v0.3 時，必須保持合約為 Draft，**絕不自行標記為 Accepted**。
+- [ ] **提供 finding disposition 表**：每項 D1-D5 缺失需標記 `Resolved` 並附上對應的 code/test 定位。
+- [ ] **等待 Core Team ACK**：由我們提交上述包裹後，必須由 Core Team 審查通過，並由他們給出 `Accepted as M3 design input` 的 ACK，才算真正解鎖 M3。
 
 ---
 
