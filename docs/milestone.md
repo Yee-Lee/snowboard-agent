@@ -21,6 +21,7 @@
 2. Tester 依 `arch.md` 、 `implement/` 、適用的 `display_spec.md` / `model_spec.md` 與本文件產出 `docs/test_spec.md` ，且至少完成該階段的需求──測試對照。
 3. 該階段引用的上游契約不存在未解矛盾或無法實作 / 驗證的缺口。
 4. Developer 已提供必要估點；估點只影響排程，不改變契約或驗收門檻。
+5. 若階段依賴外部 POC，所有會影響開發介面、硬體 fixture 或 artifact provenance 的輸入，必須已有 Core Team 採用紀錄；開發阻擋條件與只阻擋最終驗收的 pending condition 必須分級記入 `reviews/milestone_progress.md`。Developer 工作包須引用已採用的 contract 版本、ACK / Delivery ID、artifact SHA/checksum/license 與已知限制，不得以 POC branch HEAD、自驗結果或未核准 draft 作為 baseline。
 
 各條件的當前完成狀態只記於 `reviews/milestone_progress.md` 。條件未完成前，不得以「已有 milestone 規劃」推定 Developer 已獲准開始該階段。
 
@@ -67,7 +68,7 @@ M1 純軟體核心
 | :--- | :--- | :--- | :--- |
 | **M1** | 基礎契約、事件、Bus、SM、RM、三級收斂、config、logging 的純軟體核心 | 開發機 | `Ch 1 / 2 / 3 / 4 / 5 / 6 / 10 / 11` |
 | **M2** | 使用 mock / null 完成可啟動、可對話、可收斂的垂直切片 | 開發機 | `Ch 2a / 2b / 7 / 9` |
-| **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 Display Baseline | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display spec Baseline` |
+| **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 Display Baseline | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display spec Baseline`、Core 已採用的 Audio / Display POC contract |
 | **M4** | 真實 ASR / TTS / LiteRT-LM child process 的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、`model spec M4 baseline` |
 | **M5** | MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
