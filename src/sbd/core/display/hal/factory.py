@@ -89,19 +89,21 @@ def create_device(
 
     # Resolve libdisplay.so path
     if so_path is None:
+        driver_dir = profile.native_driver or profile_name
         base = (
             Path(__file__).parent.parent
             / "native"
-            / profile_name
+            / driver_dir
             / "libdisplay.so"
         )
         so_path = base
 
     so_path = Path(so_path)
     if not so_path.exists():
+        driver_dir = profile.native_driver or profile_name
         raise FileNotFoundError(
             f"libdisplay.so not found at {so_path}. "
-            f"Run 'make' inside native/{profile_name}/ first, or pass mock=True."
+            f"Run 'make' inside native/{driver_dir}/ first, or pass mock=True."
         )
 
     from .ctypes_backend import CtypesDisplayDevice  # lazy import

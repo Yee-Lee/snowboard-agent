@@ -2,10 +2,11 @@
 # Produces libdisplay.so implementing the stable C ABI in native/include/display.h
 
 CC      := gcc
-CFLAGS  := -O2 -Wall -fPIC -I../../include
-LDFLAGS := -shared -llgpio
+CFLAGS  := -O2 -Wall -fPIC -I../include
+LDFLAGS := -shared
+LDLIBS  := -llgpio
 
-SRCS := display_driver.c DEV_Config.c LCD_2inch.c
+SRCS := display_driver.c ../dev_config_runtime.c LCD_2inch.c
 OBJS := $(SRCS:.c=.o)
 TARGET := libdisplay.so
 
@@ -14,7 +15,7 @@ TARGET := libdisplay.so
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

@@ -147,7 +147,7 @@ class StarryNightAnimator:
                 x0=rng.uniform(-1.0, 1.0),
                 y0=rng.uniform(-1.0, 1.0),
                 z0=rng.uniform(0.1, 2.0),
-                speed=rng.uniform(0.01, 0.03),
+                speed=rng.uniform(0.1, 0.3),
             ))
         return stars
 

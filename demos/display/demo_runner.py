@@ -26,7 +26,7 @@ async def main():
         "-s", "--scenario",
         type=str,
         default="starring",
-        choices=["starring", "fade", "chat", "video"],
+        choices=["starring", "fade", "chat", "video", "mow"],
         help="The demo scenario to run."
     )
     parser.add_argument(
@@ -63,44 +63,53 @@ async def main():
     # 3. Create API Client
     client = DisplayClient(service)
 
+    import signal
+    shutdown_event = asyncio.Event()
+    
+    def _signal_handler():
+        logger.info("Interrupt received, shutting down gracefully...")
+        shutdown_event.set()
+
+    loop = asyncio.get_running_loop()
+    try:
+        loop.add_signal_handler(signal.SIGINT, _signal_handler)
+    except NotImplementedError:
+        pass # Windows doesn't support add_signal_handler
+
     try:
         # 4. Execute Scenario
         if args.scenario == "starring":
             logger.info("Running Starring (Starry Night) Demo...")
             client.set_status("starry_night")
-            # Run for 15 seconds
-            await asyncio.sleep(15)
+            await asyncio.wait([asyncio.create_task(shutdown_event.wait())], timeout=15)
             
         elif args.scenario == "fade":
             logger.info("Running Fade Transition Demo...")
             client.set_status("fade_demo")
-            # Run for 15 seconds (about 4 fade cycles)
-            await asyncio.sleep(15)
+            await asyncio.wait([asyncio.create_task(shutdown_event.wait())], timeout=15)
             
         elif args.scenario == "chat":
             logger.info("Running Chat Demo...")
-            # We use play_media so it acts as an overlay/exclusive layer, or just set_status
             client.set_status("chat_demo")
-            # Wait enough time for chat to type out
-            await asyncio.sleep(15)
+            await asyncio.wait([asyncio.create_task(shutdown_event.wait())], timeout=15)
             
         elif args.scenario == "video":
             logger.info("Running Video Playback Demo...")
-            # Use play_media so it's a media layer
             handle = await client.play_media("video_demo")
-            # Wait for some time since video animators loop indefinitely for this demo
-            await asyncio.sleep(15)
+            await asyncio.wait([asyncio.create_task(shutdown_event.wait())], timeout=15)
             
-        logger.info("Demo finished successfully.")
-        
-    except KeyboardInterrupt:
-        logger.info("Demo interrupted by user.")
+        elif args.scenario == "mow":
+            logger.info("Running Mow Video Playback Demo...")
+            handle = await client.play_media("mow_video_demo")
+            await asyncio.wait([asyncio.create_task(shutdown_event.wait())], timeout=15)
+            
+        if not shutdown_event.is_set():
+            logger.info("Demo finished successfully.")
+            
     finally:
         # 5. Stop Service gracefully
+        # By not being in a Cancelled state, these awaits will execute fully!
         await service.stop()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    asyncio.run(main())

@@ -148,3 +148,9 @@ class VideoAnimator:
 
     def render(self, elapsed_time: float) -> Image.Image:
         return self.latest_frame
+
+@register("mow_video_demo")
+class MowVideoAnimator(VideoAnimator):
+    """Plays mow.mp4."""
+    def __init__(self, width: int, height: int):
+        super().__init__(width, height, path="demos/display/assets/mow.mp4")

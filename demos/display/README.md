@@ -5,8 +5,8 @@
 ## 依賴需求
 
 - 必須在專案根目錄下，將 `src` 加入 `PYTHONPATH` 才能執行此腳本。
-- 若要執行影片測試 (`video`)，系統需要安裝 `ffmpeg`。
-- 若使用硬體實測，請確認 `libdisplay.so` 已經在對應的 `native/` 目錄中編譯完成。
+- 若要執行影片測試 (`video` 或 `mow`)，系統需要安裝 `ffmpeg`。
+- **硬體接線與底層驅動編譯**：若使用硬體實測，請先參考 [主系統的硬體接線與編譯指南](../../src/sbd/core/display/README.md) 來接線並編譯 `libdisplay.so`。
 
 ## 執行方式
 
@@ -35,6 +35,7 @@ PYTHONPATH=src python3 demos/display/demo_runner.py -p <平台代號> -s <情境
 | `fade` | 淡入淡出轉場，測試背景圖片讀取與透明度 (Alpha) 計算。 |
 | `chat` | 雙語劇本對話，測試字型 (Pillow Text) 與排版推擠效果。 |
 | `video` | 影片播放，測試非同步 ffmpeg 解碼 (`countdown.mp4`)。 |
+| `mow` | 影片播放，測試 `mow.mp4` 動畫影片。 |
 
 ---
 
@@ -69,6 +70,8 @@ DISPLAY_SPI_SPEED=30000000 PYTHONPATH=src python3 demos/display/demo_runner.py -
 ```bash
 DISPLAY_PIN_CS=8 DISPLAY_PIN_DC=24 PYTHONPATH=src python3 demos/display/demo_runner.py -p oled_1.5 -s chat
 ```
+
+> 💡 **詳細的硬體腳位配置與對應表，請參考：[硬體接線與編譯指南](../../src/sbd/core/display/README.md)**
 
 ## 開發者筆記：如何修改字體與動畫細節
 

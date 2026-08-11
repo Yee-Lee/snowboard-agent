@@ -19,7 +19,7 @@
 #include <string.h>
 #include "LCD_2inch.h"
 #include "DEV_Config.h"
-#include "../../include/display.h"
+#include "../include/display.h"
 
 #define LCD_WIDTH   LCD_2IN_WIDTH    /* 320 */
 #define LCD_HEIGHT  LCD_2IN_HEIGHT   /* 240 */
@@ -29,16 +29,14 @@
 static int g_is_open = 0;
 
 /* ------------------------------------------------------------------ */
-int display_open(void *config)
+int display_open(const DisplayConfig *config)
 {
-    (void)config;
-
     if (g_is_open) {
         fprintf(stderr, "[st7789] Already open\n");
         return 1;
     }
 
-    if (DEV_ModuleInit() != 0) {
+    if (DEV_ModuleInit_WithConfig(config) != 0) {
         fprintf(stderr, "[st7789] GPIO/SPI init failed\n");
         return 0;
     }
@@ -94,10 +92,14 @@ int display_present_rect_rgb565(int handle,
 
     LCD_2IN_SetWindow(x, y, x + width - 1, y + height - 1);
 
-    /* Write pixels directly; LCD_2IN_Display always resets the window,
-     * so we use the lower-level approach here. */
-    for (int i = 0; i < length; i += 2) {
-        LCD_2IN_WriteData_Word((buffer[i] << 8) | buffer[i + 1]);
+    /* Write pixels directly in chunks to avoid syscall overhead */
+    DEV_Digital_Write(LCD_DC, 1);
+    int sent = 0;
+    while (sent < length) {
+        int chunk = length - sent;
+        if (chunk > 4096) chunk = 4096;
+        DEV_SPI_Write_nByte(buffer + sent, chunk);
+        sent += chunk;
     }
     return 0;
 }

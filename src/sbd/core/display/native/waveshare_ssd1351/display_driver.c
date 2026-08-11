@@ -20,7 +20,7 @@
 #include <string.h>
 #include "OLED_1in5_rgb.h"
 #include "DEV_Config.h"
-#include "../../include/display.h"
+#include "../include/display.h"
 
 #define OLED_WIDTH  128
 #define OLED_HEIGHT 128
@@ -31,16 +31,14 @@
 static int g_is_open = 0;
 
 /* ------------------------------------------------------------------ */
-int display_open(void *config)
+int display_open(const DisplayConfig *config)
 {
-    (void)config;
-
     if (g_is_open) {
         fprintf(stderr, "[ssd1351] Already open\n");
         return 1;  /* return existing handle */
     }
 
-    if (DEV_ModuleInit() != 0) {
+    if (DEV_ModuleInit_WithConfig(config) != 0) {
         fprintf(stderr, "[ssd1351] GPIO/SPI init failed\n");
         return 0;  /* 0 == failure */
     }
@@ -106,6 +104,7 @@ void display_close(int handle)
 {
     if (!handle || !g_is_open) return;
     OLED_1in5_rgb_Clear();
+    // OLED_1in5_rgb_Sleep(); // This can cause a white flash before DEV_ModuleExit floats the pins
     DEV_ModuleExit();
     g_is_open = 0;
 }

@@ -30,25 +30,7 @@ from sbd.core.display.hal.factory import create_device
 from sbd.core.display.service.service import DisplayService
 
 
-# ---------------------------------------------------------------------------
-# Pytest option for hardware selection
-# ---------------------------------------------------------------------------
 
-def pytest_addoption(parser):
-    parser.addoption(
-        "--hardware",
-        default=None,
-        help="Panel profile to use for hardware tests (e.g. waveshare_oled_1in5_rgb)",
-    )
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def profile(request) -> str:
-    return request.config.getoption("--hardware") or "mock"
 
 
 @pytest.fixture

@@ -360,8 +360,11 @@ class DisplayService:
 
             if layer.animation_name:
                 try:
+                    # layer.start_time is the absolute time.monotonic() when the layer was created.
+                    # We want the time since it was created.
+                    layer_elapsed = time.monotonic() - layer.start_time
                     canvas = self._anim_renderer.render(
-                        layer.animation_name, elapsed_time - (time.monotonic() - layer.start_time)
+                        layer.animation_name, layer_elapsed
                     )
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.warning("[Service] render error for %s: %s", layer.animation_name, exc)
