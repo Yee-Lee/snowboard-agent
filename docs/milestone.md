@@ -54,7 +54,7 @@ M1 純軟體核心
 
 以下兩份文件由 Designer 產出，不在 implement/ 章節範圍內，但為後期里程碑的進場 gate 所需：
 
-* `docs/display_spec.md`：最晚於 **M2 驗收期間**完成。M3 進場 gate 要求 Baseline profile 已納入 Tester 的 test spec 與 Developer 工作包（§5.2）。M1 / M2 不依賴本文件。
+* `docs/display_spec.md`：最晚於 **M2 驗收期間**完成。M3 進場 gate 要求 selected profile 已納入 Tester 的 test spec 與 Developer 工作包（§5.2）。M1 / M2 不依賴本文件。
 
 * `docs/model_spec.md`：最晚於 **M3 驗收期間**完成。M4 進場 gate 要求 ASR / TTS / LiteRT-LM 的 M4 baseline 已固定（§6.2）；M6 進場 gate 同樣依賴 M6 baseline（§8.2）。M1 / M2 / M3 不依賴本文件。
 
@@ -68,11 +68,11 @@ M1 純軟體核心
 | :--- | :--- | :--- | :--- |
 | **M1** | 基礎契約、事件、Bus、SM、RM、三級收斂、config、logging 的純軟體核心 | 開發機 | `Ch 1 / 2 / 3 / 4 / 5 / 6 / 10 / 11` |
 | **M2** | 使用 mock / null 完成可啟動、可對話、可收斂的垂直切片 | 開發機 | `Ch 2a / 2b / 7 / 9` |
-| **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 Display Baseline | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display spec Baseline`、Core 已採用的 Audio / Display POC contract |
-| **M4** | 真實 ASR / TTS / LiteRT-LM child process 的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、`model spec M4 baseline` |
-| **M5** | MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
+| **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 selected Display profile | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display_spec.md` selected profile、Core 已採用的 Audio / Display POC contract |
+| **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、`model spec M4 baseline` |
+| **M5** | 依 Accepted M4 exact SHA 擴充 MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
-| **M7** | 正式 Display 版面、資產、動畫與視覺 UX 完整化 | Raspberry Pi 5 | `Ch 8`、`display spec Complete` |
+| **M7** | 正式 Display 版面、資產、動畫與視覺 UX 完整化 | Raspberry Pi 5 | `Ch 8`、M7 開發前核准的 `display_spec.md` revision |
 
 ---
 

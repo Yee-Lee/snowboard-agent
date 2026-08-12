@@ -299,9 +299,10 @@ class AudioConfig:
 class DisplayConfig:
     driver: str = "mock"
     width: int = 128
-    height: int = 64
-    pixel_format: Literal["mono1", "rgb565", "rgb888"] = "mono1"
+    height: int = 128
+    pixel_format: Literal["mono1", "rgb565", "rgb888"] = "rgb565"
     spi_device: str | None = None
+    show_session_content: bool = True
 
 @dataclass(frozen=True, slots=True)
 class CameraConfig:
@@ -337,7 +338,8 @@ Cross validation :
 
 - `frame bytes = sample_rate * frame_duration_ms / 1000 * channels * bit_depth/8` 必須是整數；
 - AudioInput / TTS output format必須一致，不做runtime resample；
-- width / height正整數，camera quality 1..100；
+- width / height正整數，camera quality 1..100；selected `DSP-PROFILE-OLED-128` 必須使用 `128×128` 與 `rgb565`，不得以 mock / real driver 差異放寬；未來 profile 必須另定 profile-specific validation；
+- `show_session_content` 實作 `DSP-REQ-004`，只控制 `display_spec.md` 的 Perception / Tool / Speak 內容；State、Error、Blank 與 lifecycle 不受影響，且此設定為 startup-static、不支援 runtime reload；
 - mono1 width需可被8整除；
 - GPIO logical name與pin都不可重複，一pin一訂閱者；
 - real driver需要的device/path欄位不可為 `None` 。
@@ -524,7 +526,12 @@ action:
 
 core:
   audio: {driver: mock}
-  display: {driver: mock}
+  display:
+    driver: mock
+    width: 128
+    height: 128
+    pixel_format: rgb565
+    show_session_content: true
   camera: {driver: mock}
   gpio: {driver: mock, pins: {}}
 ```

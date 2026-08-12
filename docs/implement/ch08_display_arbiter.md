@@ -107,11 +107,12 @@ class DisplayRenderer(Protocol):
 | `status.text` | `data={"text": str}` |
 | `status.state` | `data={"state": IDLE\|WAKE\|PERCEPTION\|THINK\|ACTION\|ERROR}` |
 | `main.text` | `data={"text": str}` |
-| `main.progress` | `data={"label": str, "value": float 0..1}` |
+| `main.error` | `data={"category": str, "summary": str}` |
+| `main.progress` | `data={"label": str, "value": float 0..1}`；技術預留，現行 `display_spec.md` 不允許產品 owner 提交 |
 | `fullscreen.text` | `data={"title": str, "body?": str}` |
 | `fullscreen.blank` | `data={}` |
 
-沒有實際使用者的 template 不預先加入。
+`main.error` 的字串必須在 caller boundary 完成 sanitization；Renderer 只負責依 `display_spec.md` 套用 Error style，不接收 exception、stack trace 或 raw payload。沒有實際使用者的其他 template 不預先加入。
 
 ## 5. Arbiter public API
 
@@ -167,13 +168,15 @@ class DisplayArbiter:
 | slot_id | owner | 資料來源 | template | 更新時機 |
 | :--- | :--- | :--- | :--- | :--- |
 | `clock` | StatusBar clock task | local wall clock | `status.text` | 分鐘變更 |
-| `state` | StatusBar state observer | `StateChanged.new` | `status.state` | 每次狀態轉移 |
+| `state` | StatusBar state observer | Ch 4 initial `IDLE`；其後 `StateChanged.new` | `status.state` | owner start 時 seed 一次 `IDLE`；其後每次狀態轉移 |
 | `volume` | volume adjustment | Audio 設定值 | `status.text` | 音量變更 |
 | `connection` | adaptor status observer | `is_connected()` | `status.text` | 連線變更 |
 | `capability` | startup capability presenter | startup snapshot | `status.text` | startup 完成一次 |
 | `error` | logging/error observer | sanitized 摘要 | `status.text` | error 顯示政策觸發 |
 
 `capability` 是 startup snapshot，不代表 capability map runtime 改變。Recovery 成功 / 失敗不更新 map，也不改此 slot。
+
+Ch 4 明定 State Manager 初始為 `IDLE` 且不發布虛構的 `None -> IDLE`；state owner 的 startup seed 是已核准 initial-state contract 的投影，不新增 Event。
 
 Slot 清單是 code-declared registry，不進 config。是否啟用某 slot 由對應 owner 是否建立決定；未建立的 slot 維持空白。
 
@@ -255,6 +258,7 @@ async def stop(self) -> None:
 12. renderer / HAL 第一次 runtime failure 後 latch disabled，後續不重試、不發 `ErrorOccurred`。
 13. stop 清畫面且不重複停止底層 device。
 14. native thread 直接呼叫被 thread-affinity guard 拒絕。
+15. State owner start 時 seed `IDLE`，其後以 `StateChanged.new` 更新；不得發布虛構初始 Event。
 
 Mock renderer 保存 `RenderModel`；MockDisplay 保存 clear / write / show call order 與 buffer，測試不依賴實體 OLED。
 

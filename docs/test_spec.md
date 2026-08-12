@@ -156,8 +156,8 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 
 | 階段 | 不提前要求的證據 |
 | :--- | :--- |
-| **M3** | 真實 audio/display/camera/GPIO 品質、電氣行為、Pi dependency 與 Display Baseline；M2 只驗 mock/null 公開契約 |
+| **M3** | 真實 audio/display/camera/GPIO 品質、電氣行為、Pi dependency 與 selected Display profile；M2 只驗 mock/null 公開契約 |
 | **M4** | LiteRT-LM child READY、terminate/kill/waitpid、固定 baseline 的真實 ASR/TTS/LLM、Display runtime 接線與 native destructive cleanup |
 | **M5** | MQTT broker、公開 wire schema、真實 Tool handler 與 reconnect |
 | **M6** | 固定 baseline 的 wake/Vision、wake daemon IPC、跨 process mic release proof 與長時間 session soak |
-| **M7** | Display Complete profile 的正式資產、動畫、轉場、可讀性與重複 lifecycle 收斂 |
+| **M7** | Display 未來 spec revision 的正式資產、動畫、轉場、可讀性與重複 lifecycle 收斂 |

@@ -9,15 +9,16 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | **Blocked（整體 handoff）**：M3 等 Display v0.3 收斂；Audio 已 Accepted with Conditions；LLM 不阻擋 M3，改列 M4b entry blocker | `docs/outsource/responses/OUT-FB-2026-002-R1.md` (尚未產出) |
+| [`PM-OUT-260811-008-m3-display-spec-design`](PM-OUT-260811-008-m3-display-spec-design/brief.md) | M3 Display Spec 與 Design Ready | `OUT-M3-DISPLAY-SPEC-2026-001` | M3 / M4c / M7 | **Core design reviewed**：spec、mock、font asset、Ch 8 / Ch 10 與 M3–M7 規劃均已通過 review；待 design commit SHA、PM response 與 Display POC v0.3 Accepted | `docs/outsource/responses/OUT-M3-DISPLAY-SPEC-2026-001.md`（design commit SHA 後建立） |
 
 ---
 
-### Milestone gate 判讀（Core Team，2026-08-09）
+### Milestone gate 判讀（Core Team，2026-08-12）
 
 | Gate | 目前狀態 | 外部 contract 影響 |
 | :--- | :--- | :--- |
 | **M3 POC contract readiness** | **Blocked by Display only** | Audio contract 已可作 M3 設計／開發輸入；Display v0.2 經 `DELIVERY-004-poc_display-m3-v0.2-review` 判定 `Needs Revision`，須先完成 D1–D5；LLM 不在 M3 scope。 |
-| **M3 開發進場** | **Not Ready** | 採單一整合 gate，不先開 Audio-only 或其他部分實作。Display contract 收斂後，Core 仍須完成 `display_spec.md` Baseline、M3 Design Ready、test spec 簽核與 Developer 工作包，才正式開始 M3；此順序不依賴 LLM contract。 |
+| **M3 開發進場** | **Not Ready** | Core Display spec / mock / font 已通過 design review；仍須 Display v0.3 Accepted、M3 Design Ready conclusion、test spec 簽核與 Developer 工作包，才正式開始 M3。此順序不依賴 LLM contract。 |
 | **M3 最終 delivery / acceptance** | **Pending** | Audio contract 的 P1/P2 條件及 Display hardware/evidence contract 必須在 M3 delivery SHA 前完成；LLM 仍非此 gate。 |
 | **M4 / M4b 開發進場** | **Blocked by LLM/model gate** | 必須先有 `model_spec.md` 的 M4 baseline（含 LiteRT-LM artifact、版本、checksum、license、Pi benchmark）及已 review 的 `docs/protocol.md`；目前尚未收到 LLM POC contract。 |
 | **本 PM handoff 結案** | **Blocked** | 本 handoff 同時涵蓋 M3 與 M4，須完成 Display 收斂、LLM POC intake、requirement mapping 與 `OUT-FB-2026-002-R1` response；其整體 Blocked 不代表 M3 必須等待 LLM。 |
@@ -51,5 +52,6 @@ docs/outsource/pm_handoff/
 │   ├── PM-OUT-260806-004-m3-target-device-test-ack/
 │   ├── PM-OUT-260806-005-gpio-button-semantics/
 │   └── PM-OUT-260807-006-m2-tester-verification/
-└── PM-OUT-260805-002-m3-m4-poc-planning/       # [Active] M3/M4 POC 規劃
+├── PM-OUT-260805-002-m3-m4-poc-planning/       # [Active] M3/M4 POC 規劃
+└── PM-OUT-260811-008-m3-display-spec-design/    # [Active] Display Spec / Design Ready
 ```

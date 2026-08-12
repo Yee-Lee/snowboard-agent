@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="700" viewBox="0 0 920 700" role="img" aria-labelledby="title desc">
+  <title id="title">Snowboard OLED 128×128 Display Mock Contact Sheet VP-01</title>
+  <desc id="desc">Six proposed display states: idle, short and long perception text, tool action, spoken response, and error.</desc>
+  <rect width="920" height="700" fill="#f4f5f7"/>
+  <text x="40" y="45" font-family="sans-serif" font-size="24" font-weight="700" fill="#20242a">Snowboard Display Mock · VP-01</text>
+  <text x="40" y="72" font-family="sans-serif" font-size="14" fill="#626b75">128×128 OLED · 2× preview · 20 px StatusBar / 14 px Main · Noto Sans TC</text>
+
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#111827" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      @font-face { font-family: "Snowboard Noto Sans TC"; src: url("../src/sbd/core/display/assets/fonts/NotoSansTC-Regular.otf"); font-weight: 400; }
+      @font-face { font-family: "Snowboard Noto Sans TC"; src: url("../src/sbd/core/display/assets/fonts/NotoSansTC-Medium.otf"); font-weight: 500; }
+      .label { font: 600 16px sans-serif; fill: #343b44; }
+      .panel { fill: #000; stroke: #262b33; stroke-width: 2; rx: 10; filter: url(#shadow); }
+      .divider { stroke: #30343a; stroke-width: 1; }
+      .state { font: 500 24px 'Snowboard Noto Sans TC', sans-serif; fill: #fff; }
+      .main { font: 400 28px 'Snowboard Noto Sans TC', sans-serif; fill: #fff; }
+      .error { font: 500 28px 'Snowboard Noto Sans TC', sans-serif; fill: #ffb000; }
+    </style>
+  </defs>
+
+  <!-- IDLE -->
+  <text class="label" x="40" y="116">State · IDLE</text>
+  <rect class="panel" x="40" y="130" width="256" height="256"/>
+  <line class="divider" x1="40" y1="170" x2="296" y2="170"/>
+  <text class="state" x="48" y="159">待命</text>
+
+  <!-- PERCEPTION SHORT -->
+  <text class="label" x="332" y="116">Perception · Short</text>
+  <rect class="panel" x="332" y="130" width="256" height="256"/>
+  <line class="divider" x1="332" y1="170" x2="588" y2="170"/>
+  <text class="state" x="340" y="159">接收中</text>
+  <text class="main" x="340" y="214">
+    <tspan x="340" dy="0">今天下午三點</tspan>
+    <tspan x="340" dy="40">提醒我開會</tspan>
+  </text>
+
+  <!-- PERCEPTION LONG -->
+  <text class="label" x="624" y="116">Perception · Long</text>
+  <rect class="panel" x="624" y="130" width="256" height="256"/>
+  <line class="divider" x1="624" y1="170" x2="880" y2="170"/>
+  <text class="state" x="632" y="159">接收中</text>
+  <text class="main" x="632" y="207">
+    <tspan x="632" dy="0">明天下午先去</tspan>
+    <tspan x="632" dy="38">超市買牛奶，</tspan>
+    <tspan x="632" dy="38">再提醒我回家</tspan>
+    <tspan x="632" dy="38">前領取包裹…</tspan>
+  </text>
+
+  <!-- TOOL -->
+  <text class="label" x="40" y="444">Action · Tool</text>
+  <rect class="panel" x="40" y="458" width="256" height="256"/>
+  <line class="divider" x1="40" y1="498" x2="296" y2="498"/>
+  <text class="state" x="48" y="487">回應中</text>
+  <text class="main" x="48" y="542">
+    <tspan x="48" dy="0">正在設定</tspan>
+    <tspan x="48" dy="40">客廳燈光</tspan>
+  </text>
+
+  <!-- SPEAK -->
+  <text class="label" x="332" y="444">Action · Speak</text>
+  <rect class="panel" x="332" y="458" width="256" height="256"/>
+  <line class="divider" x1="332" y1="498" x2="588" y2="498"/>
+  <text class="state" x="340" y="487">回應中</text>
+  <text class="main" x="340" y="542">
+    <tspan x="340" dy="0">好的，已為你</tspan>
+    <tspan x="340" dy="40">設定提醒。</tspan>
+  </text>
+
+  <!-- ERROR -->
+  <text class="label" x="624" y="444">Error</text>
+  <rect class="panel" x="624" y="458" width="256" height="256"/>
+  <line class="divider" x1="624" y1="498" x2="880" y2="498"/>
+  <text class="error" x="632" y="487" font-size="24">錯誤</text>
+  <text class="error" x="632" y="542">
+    <tspan x="632" dy="0">錯誤</tspan>
+    <tspan x="632" dy="40">暫時無法完成</tspan>
+    <tspan x="632" dy="40">請稍後再試</tspan>
+  </text>
+</svg>
