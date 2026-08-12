@@ -125,7 +125,7 @@ bash poc_display/tools/m3_ssd1351_capability.sh \
   /protected/path/to/config.actual.json
 ```
 
-Pi result/evidence index：`PENDING_PI_RUN`。
+Pi result/evidence index：`PASS`；`poc_display/evidence/m3/M3-HW-SUMMARY-2026-08-12.md`。
 
 ## Vendor provenance and license
 
@@ -135,9 +135,9 @@ Pi result/evidence index：`PENDING_PI_RUN`。
 
 ## Known limits
 
-- No 60 fps or `<20 ms` guarantee; Pi P50/P95/max remain `IN_PROGRESS`.
+- No 60 fps or `<20 ms` guarantee; Pi P50/P95/max are recorded in the sanitized P3 summary.
 - SSD1351 baseline requested clock is 4 MHz; effective throughput remains unmeasured.
 - Reference adapter supports full-frame RGB565 MSB-first and rotation 0 only.
 - Native implementation supports one open handle per loaded artifact.
-- Primary fixture/revision operator attestation and resolved gpiochip remain pending.
+- Primary fixture/revision operator attestation and gpiochip0 resolution are PASS; Core design-input ACK remains pending.
 - Core Tester acceptance and POC fixture verification are separate gates.
