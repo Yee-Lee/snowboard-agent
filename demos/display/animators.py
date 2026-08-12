@@ -69,12 +69,21 @@ class ChatAnimator:
         
         self.line_height = 14
         self.chars_per_sec = 25.0
-        
+
+        # Pre-compute total chars so we can loop
+        self._total_chars = sum(
+            len(f"{s}: {t}") if s != "System" else len(t)
+            for s, t in self.script
+        )
+
     def render(self, elapsed_time: float) -> Image.Image:
         canvas = Image.new("RGB", (self.width, self.height), (0, 0, 0))
         draw = ImageDraw.Draw(canvas)
-        
-        total_chars_allowed = int(elapsed_time * self.chars_per_sec)
+
+        # Loop: restart after all chars are displayed (add 1s pause at end)
+        total_duration = self._total_chars / self.chars_per_sec + 1.0
+        loop_time = elapsed_time % total_duration
+        total_chars_allowed = int(loop_time * self.chars_per_sec)
         
         # Calculate how many lines we have and auto-scroll if needed
         # (For simplicity, we just type them out. If it overflows, it scrolls up)
@@ -99,13 +108,14 @@ class ChatAnimator:
                 break
                 
         # Scroll up if there are more lines than fit on screen
-        max_lines = self.height // self.line_height
+        pad = 3
+        max_lines = (self.height - pad * 2) // self.line_height
         if len(drawn_lines) > max_lines:
             drawn_lines = drawn_lines[-max_lines:]
-            
-        y_pos = 5
+
+        y_pos = pad
         for text, color in drawn_lines:
-            draw.text((5, y_pos), text, font=self.font, fill=color)
+            draw.text((pad, y_pos), text, font=self.font, fill=color)
             y_pos += self.line_height
             
         return canvas
