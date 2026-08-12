@@ -17,7 +17,7 @@ Copy `poc_display/config/ssd1351_pi5.example.json` to an operator-managed run co
 - the resolved integer `gpio.chip` visible on this Pi;
 - any fixture-specific value that differs from the example.
 
-Do not edit source defaults or pass deployment pins through environment variables. Photograph the module/revision label and wiring without including credentials, endpoints, screens, or unrelated private surroundings.
+Do not edit source defaults or pass deployment pins through environment variables. The operator confirms the module/revision and wiring as `PASS`; photos are not required.
 
 ## Workstation/Pi pre-test
 
