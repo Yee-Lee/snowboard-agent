@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
 > 更新日期：2026-08-12
-> 目前狀態：**P1–P3 completed；P4 independent stage-exit review APPROVE，待 Core Team 正式 `Accepted as M3 design input` ACK**
+> 目前狀態：**P1–P4 completed；Core Team 已以 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 M3 design input，Core M3 development 已解鎖**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -125,9 +125,9 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 - [x] D1–D5 disposition 全部標為 `Resolved`，且每一項可追到 code/test/evidence。
 - [x] Independent stage-exit reviewer 審核 source `5c2b6ba532a2661d5db79e27736e79890931515f` 與 delivery `055517a905bd2c8f8531c05acfa658854e25491f` 後 `APPROVE`；沒有 blocking/high finding。
 
-- [ ] Delivery 使用 immutable full SHA；Core Team review 的也是同一 SHA。
-- [ ] Core Team 檢查 D1–D5 與 regression，沒有新的 blocking finding。
-- [ ] Core Team 明確 ACK：`Accepted as M3 design input`。
+- [x] Delivery 使用 immutable source SHA `5c2b6ba532a2661d5db79e27736e79890931515f`；Core Team ACK 同時記錄 stage-exit commit `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40`。
+- [x] Core Team 檢查 D1–D5 與 regression，沒有新的 blocking/high finding。
+- [x] Core Team 於 2026-08-12 以 `docs/pm_handoff/DELIVERY-005-poc_display-m3-v0.3-ack.md` 明確 ACK：`Accepted as M3 design input`。
 
 **達成 P4 後，才算正式 unblocking Core M3 development。**
 
@@ -167,5 +167,5 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 | P1 immutable candidate | 完成：`5c2b6ba532a2661d5db79e27736e79890931515f` | 否 |
 | P2 fixture/preflight | 完成：co-I2S candidate preflight PASS | 否 |
 | P3 Pi capability/evidence | 完成：capability packet PASS、operator visual PASS | 否 |
-| P4 Core re-review ACK | Independent review APPROVE；待 Core Team 正式 ACK | **是** |
+| P4 Core re-review ACK | 完成：`DELIVERY-005-poc_display-m3-v0.3-ack`，Accepted as M3 design input | **是** |
 | C1 Core integration acceptance | 解鎖後由 Core 執行 | 非 unblock 前置條件 |
