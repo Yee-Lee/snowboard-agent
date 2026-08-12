@@ -32,7 +32,7 @@
 
 | Check | Result | Sanitized observation |
 |---|---|---|
-| Fixture revision/photo hash | `PENDING` | |
+| Fixture/wiring and revision attestation | `PENDING` | Photos are not required. |
 | Black/white/RGB/gradient color order | `PENDING` | |
 | Rotation/orientation | `PENDING` | |
 | Readability/flicker | `PENDING` | |

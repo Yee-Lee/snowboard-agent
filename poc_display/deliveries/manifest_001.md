@@ -9,17 +9,17 @@ Status：`CANDIDATE_SOURCE_FROZEN / Pi verification pending / not Accepted`
 | Repository | `snowboard-agent` |
 | Branch | `dev_display_p1` |
 | Comparison base | `412172ae58c8053bd697caebe133a718206c2f55` |
-| Candidate source SHA | `3120c08c2b15b19c2b2b16a35577e456ad394937` |
+| Candidate source SHA | 本 manifest 所在的 freeze commit full SHA（交接時以 `git rev-parse HEAD` 回報） |
 | Included scope | contract、public C header、SSD1351 native source、Python adapter、tests、config/evidence schema |
 
-Candidate source identity 只認上述完整 SHA；後續 metadata commit 不得改變 Pi checkout 與 evidence 使用的 source SHA。
+Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 metadata commit 不得改變 Pi checkout 與 evidence 使用的 source SHA。
 
 ## Submission unit
 
 | Field | Value |
 |---|---|
 | Type | Git commit；整個 tracked repository snapshot 視為單一提交包 |
-| Identity | `3120c08c2b15b19c2b2b16a35577e456ad394937` |
+| Identity | 本 manifest 所在的 freeze commit full SHA |
 | Scope | 該 commit 可達的完整 Git tree 與 blobs |
 | Normal transport | Core Team 直接取得 repository 並 checkout 完整 SHA |
 | Per-file checksum | 不要求；Git commit 已識別全部 tracked content |
@@ -33,7 +33,6 @@ Candidate source identity 只認上述完整 SHA；後續 metadata commit 不得
 | Pi-built `libdisplay.so` | `PENDING_PI_BUILD` | 若未納入提交包，記錄 artifact checksum 與保管位置 |
 | Actual Pi local config | `PENDING_PI_RUN` | 不上傳敏感／機器限定內容；記錄 config hash 與 sanitized copy |
 | Raw logs/evidence | `PENDING_PI_RUN` | 保存在受控位置，記錄整包 checksum／custody reference |
-| Fixture photos | `PENDING_FIXTURE_PHOTO` | 提交 sanitized 版本；原始內容另行保管 |
 
 只有無法納入正常 Git 提交包的內容才使用上述例外流程。
 
@@ -115,10 +114,10 @@ Pi fixture packet（after clean immutable commit and passing pre-test）：
 
 ```bash
 M3_PANEL_REVISION='<module revision>' \
+M3_FIXTURE_RESULT=PASS \
 M3_COLOR_RESULT=PASS \
 M3_ORIENTATION_RESULT=PASS \
 M3_FLICKER_RESULT=PASS \
-M3_FIXTURE_PHOTO=/protected/path/to/sanitized-photo.jpg \
 bash poc_display/tools/m3_ssd1351_capability.sh \
   /protected/path/to/config.actual.json
 ```
@@ -137,5 +136,5 @@ Pi result/evidence index：`PENDING_PI_RUN`。
 - SSD1351 baseline requested clock is 4 MHz; effective throughput remains unmeasured.
 - Reference adapter supports full-frame RGB565 MSB-first and rotation 0 only.
 - Native implementation supports one open handle per loaded artifact.
-- Primary fixture revision/photo and resolved gpiochip remain pending.
+- Primary fixture/revision operator attestation and resolved gpiochip remain pending.
 - Core Tester acceptance and POC fixture verification are separate gates.

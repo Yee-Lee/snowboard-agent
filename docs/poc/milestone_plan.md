@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
 > 更新日期：2026-08-12
-> 目前狀態：**P1 immutable candidate 已完成；P2 Pi 網路／read-only preflight 待恢復**
+> 目前狀態：**P1 replacement candidate 以本次 freeze commit 的 full SHA 凍結；P2 待 Pi checkout 同一 SHA 並重跑 preflight**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -65,8 +65,9 @@ P0.5 交付原則 (依據 DELIVERY-004 規定)：
 完成條件：
 
 - [x] Host test suite 全部通過並記錄結果：2026-08-12 全套 display tests 為 26 passed、8 skipped；Python compile、service/mock、C11 header 與 stub-linked native ABI smoke 均 PASS。
-- [x] 獨立 process reviewer 在 `reviews/P1_REVIEW_FEEDBACK.md` 給出 `APPROVE`，且沒有未解決的 blocking/high finding。
-- [x] Candidate source 已凍結為 `3120c08c2b15b19c2b2b16a35577e456ad394937`；建立後 worktree clean。
+- [x] 原始 host gate 已由獨立 process reviewer `APPROVE`；review baseline 為 `3120c08c2b15b19c2b2b16a35577e456ad394937`。
+- [x] Owner 於 2026-08-12 直接 `APPROVE` 照片 gate → operator attestation 小幅變更，並明確免除第二次獨立 review；不將此決策誤記為 reviewer 結論。
+- [x] Replacement candidate 為包含本紀錄的 freeze commit，交接時以 `git rev-parse HEAD` 取得其 full SHA；`3120c08c2b15b19c2b2b16a35577e456ad394937` 只作 reviewed baseline，不作最終 P3 target。
 - [x] 整個 tracked repository snapshot 以 candidate full Git SHA 作為單一提交包，不要求逐檔 checksum。
 
 P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的 Pi artifact、local config 或 raw evidence，才在產生時另記 checksum 與保管位置；不阻擋 P1 freeze。
@@ -79,11 +80,13 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 完成條件：
 
-- [ ] 記錄 SSD1351 模組實際 revision，保留清楚的正反面與接線照片。
-- [ ] 接線符合已選定 fixture/vendor pinout，且 runtime config 全部來自 local config。
-- [ ] 將 logical GPIO 解析為實際 `gpiochip`，記錄 config hash。
+- [x] Operator 確認 SSD1351 模組、revision（無標示可記 `unmarked`）、fixture 與接線均符合選定設定；不要求照片。
+- [x] 接線符合已選定 fixture/vendor pinout，且 runtime config 全部來自 local config。
+- [x] 將 logical GPIO 解析為 `gpiochip0`；config hash 為 `d4780a37497906dddbddee3074d72fd2f6acec8877b118b769f9254df25d2475`。
 - [ ] Pi checkout 為 P1 的 clean SHA。
 - [ ] Read-only preflight PASS：SPI node、GPIO、依賴、權限、既有 owner/process 均無衝突。
+
+2026-08-12 已在原 candidate 完成 read-only preflight PASS；因 capability gate 變更會產生 replacement candidate，SHA checkout 與 preflight 必須在新 SHA 重跑後才勾選。
 
 ---
 
@@ -96,7 +99,7 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 - [ ] Pi-local clean build 成功，記錄 compiler/toolchain、license、target 與 `.so` checksum。
 - [ ] Lifecycle/negative-path PASS：`start → write_pixels → show → stop`、reopen、repeated stop、wrong buffer length、missing device/config、fallback/exception mapping。
 - [ ] 確認每次 frame intent 僅產生一次 native `present`，`clear/write` 不會隱含 flush。
-- [ ] 顏色、gradient、orientation 與邊界行為經人工/照片確認。
+- [ ] 顏色、gradient、orientation 與邊界行為由 operator attestation 確認為 PASS。
 - [ ] Performance evidence 包含 warm-up、sample count、P50/P95/max、解析度、pixel format、config hash、CPU/OS/driver。
 - [ ] 分開記錄 datasheet limit、requested SPI speed 與 effective speed；不以 60 FPS 或超頻作 baseline。
 - [ ] 測試前後皆證明沒有殘留 SPI/GPIO owner 或測試 process。
@@ -109,7 +112,7 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 完成條件：
 
-- [ ] Sanitized summary、照片索引、raw evidence checksums、config hash 與完整 manifest 齊全。
+- [ ] Sanitized summary、raw evidence custody/checksum、config hash 與完整 manifest 齊全。
 - [ ] D1–D5 disposition 全部標為 `Resolved`，且每一項可追到 code/test/evidence。
 - [ ] Delivery 使用 immutable full SHA；Core Team review 的也是同一 SHA。
 - [ ] Core Team 檢查 D1–D5 與 regression，沒有新的 blocking finding。
@@ -150,8 +153,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 |---|---|---|
 | P0 工作準備 | 完成 | 否 |
 | P0.5 D1–D5 coding/config remediation | 已放行 | 否 |
-| P1 immutable candidate | 完成：`3120c08c2b15b19c2b2b16a35577e456ad394937` | 否 |
-| P2 fixture/preflight | 網路待恢復；read-only preflight pending | 否 |
+| P1 immutable candidate | 完成：本次 freeze commit full SHA | 否 |
+| P2 fixture/preflight | 網路已恢復；舊 SHA preflight PASS，待 replacement SHA 重跑 | 否 |
 | P3 Pi capability/evidence | 待實機 | 否 |
 | P4 Core re-review ACK | 待 P1–P3 | **是** |
 | C1 Core integration acceptance | 解鎖後由 Core 執行 | 非 unblock 前置條件 |

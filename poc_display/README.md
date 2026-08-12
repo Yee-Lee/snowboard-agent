@@ -38,10 +38,10 @@ After the pre-test passes, run from the clean Pi checkout. Operator visual field
 
 ```sh
 M3_PANEL_REVISION='<revision printed on the module>' \
+M3_FIXTURE_RESULT=PASS \
 M3_COLOR_RESULT=PASS \
 M3_ORIENTATION_RESULT=PASS \
 M3_FLICKER_RESULT=PASS \
-M3_FIXTURE_PHOTO=/protected/path/to/sanitized-fixture-photo.jpg \
 bash poc_display/tools/m3_ssd1351_capability.sh \
   /protected/path/to/config.actual.json
 ```
@@ -55,7 +55,7 @@ The packet performs:
 - idempotent stop and three reopen cycles;
 - 10 warm-ups plus at least 100 full-frame latency samples;
 - post-run SPI/gpiochip owner cleanup;
-- revision, photo, color order, orientation and flicker gates.
+- operator-attested fixture/wiring, revision, color order, orientation and flicker gates; photos are not required.
 
 Missing tools/hardware/operator evidence produce `INCONCLUSIVE` (exit 2). A failed asserted behaviour produces `FAIL` (exit 1). Only all gates passing produces `PASS` (exit 0).
 

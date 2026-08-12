@@ -19,7 +19,6 @@ artifacts.sha256
 diagnostics.log
 lifecycle.txt
 visual-checklist.txt
-fixture-photo.bin
 runner/
   config.json
   config.sha256
@@ -37,6 +36,6 @@ runner/
 - wrong length 與 missing SPI device 在邊界失敗；
 - stop 冪等、3/3 reopen；
 - 10 warm-ups、至少 100 samples、P50/P95/max；
-- panel revision 與 config 一致；fixture photo hash、RGB565 color、orientation、flicker 人工 gate 全數 PASS。
+- panel revision 與 config 一致；fixture/wiring、RGB565 color、orientation、flicker operator attestation 全數 PASS；不要求照片。
 
-Raw evidence 只留在核准的 evidence custody。Review 後使用 `poc_display/evidence/m3/M3-HW-SUMMARY-TEMPLATE.md` 建立 sanitized summary；不得提交 endpoint、account、key path、private absolute path、完整私人終端輸出或未審查照片。
+Raw evidence 只留在核准的 evidence custody。Review 後使用 `poc_display/evidence/m3/M3-HW-SUMMARY-TEMPLATE.md` 建立 sanitized summary；不得提交 endpoint、account、key path、private absolute path 或完整私人終端輸出。

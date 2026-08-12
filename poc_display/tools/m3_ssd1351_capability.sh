@@ -133,10 +133,6 @@ fi
 [[ -f "$so_path" ]] || fail 'native build did not produce libdisplay.so'
 sha256sum \
   "$so_path" \
-  "$repo_root/src/sbd/core/display/native/include/display.h" \
-  "$repo_root/src/sbd/core/display/native/include/pin_config.h" \
-  "$repo_root/src/sbd/core/display/hal/ctypes_backend.py" \
-  "$repo_root/src/sbd/core/display/base.py" \
   "$config_path" >"$artifacts_file"
 
 runner_dir="$evidence_dir/runner"
@@ -190,27 +186,22 @@ printf 'display_device_owners_after=%s\n' "$cleanup_result" >>"$lifecycle_file"
 
 panel_revision=${M3_PANEL_REVISION:-}
 color_result=${M3_COLOR_RESULT:-INCONCLUSIVE}
+fixture_result=${M3_FIXTURE_RESULT:-INCONCLUSIVE}
 orientation_result=${M3_ORIENTATION_RESULT:-INCONCLUSIVE}
 flicker_result=${M3_FLICKER_RESULT:-INCONCLUSIVE}
-fixture_photo=${M3_FIXTURE_PHOTO:-}
-photo_sha=unavailable
-if [[ -n "$fixture_photo" && -r "$fixture_photo" ]]; then
-  photo_sha=$(sha256sum "$fixture_photo" | awk '{print $1}')
-  cp "$fixture_photo" "$evidence_dir/fixture-photo.bin"
-fi
 {
   printf 'panel_revision=%s\n' "${panel_revision:-unavailable}"
   printf 'config_panel_revision=%s\n' "${config_panel_revision:-unavailable}"
+  printf 'fixture_and_wiring=%s\n' "$fixture_result"
   printf 'color_order=%s\n' "$color_result"
   printf 'orientation=%s\n' "$orientation_result"
   printf 'flicker=%s\n' "$flicker_result"
-  printf 'fixture_photo_sha256=%s\n' "$photo_sha"
 } >"$visual_file"
 
 if [[ -z "$panel_revision" || "$panel_revision" != "$config_panel_revision" ||
-      "$color_result" != PASS || "$orientation_result" != PASS ||
-      "$flicker_result" != PASS || "$photo_sha" == unavailable ]]; then
-  inconclusive 'automated gates passed; operator visual/revision/photo evidence is incomplete'
+      "$fixture_result" != PASS || "$color_result" != PASS ||
+      "$orientation_result" != PASS || "$flicker_result" != PASS ]]; then
+  inconclusive 'automated gates passed; operator fixture/revision/visual attestation is incomplete'
 fi
 
 write_result 'PASS' 'clean build, strict config, lifecycle, negative paths, latency, cleanup, and operator visual gates passed'

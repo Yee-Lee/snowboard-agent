@@ -100,7 +100,7 @@ DisplayStatus display_close(DisplayHandle handle);
 | 欄位 | 固定值／狀態 |
 |---|---|
 | Host | Raspberry Pi 5；實際 board revision 待 evidence 記錄 |
-| Module | Waveshare 1.5-inch RGB OLED Module；實際 module revision 待照片／manifest 確認 |
+| Module | Waveshare 1.5-inch RGB OLED Module；實際 module/revision 由 config 與 operator attestation 確認，不要求照片 |
 | Controller | SSD1351 |
 | Interface | 4-wire SPI |
 | Physical / logical size | 128 × 128 / 128 × 128 |
