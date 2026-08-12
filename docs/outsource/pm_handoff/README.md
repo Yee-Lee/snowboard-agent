@@ -9,7 +9,7 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | **Blocked（整體 handoff）**：M3 等 Display v0.3 收斂；Audio 已 Accepted with Conditions；LLM 不阻擋 M3，改列 M4b entry blocker | `docs/outsource/responses/OUT-FB-2026-002-R1.md` (尚未產出) |
-| [`PM-OUT-260811-008-m3-display-spec-design`](PM-OUT-260811-008-m3-display-spec-design/brief.md) | M3 Display Spec 與 Design Ready | `OUT-M3-DISPLAY-SPEC-2026-001` | M3 / M4c / M7 | **Core design reviewed**：spec、mock、font asset、Ch 8 / Ch 10 與 M3–M7 規劃均已通過 review；待 design commit SHA、PM response 與 Display POC v0.3 Accepted | `docs/outsource/responses/OUT-M3-DISPLAY-SPEC-2026-001.md`（design commit SHA 後建立） |
+| [`PM-OUT-260811-008-m3-display-spec-design`](PM-OUT-260811-008-m3-display-spec-design/brief.md) | M3 Display Spec 與 Design Ready | `OUT-M3-DISPLAY-SPEC-2026-001` | M3 / M4c / M7 | **Core design reviewed**：spec、mock、font asset、Ch 8 / Ch 10 與 M3–M7 規劃已 commit 並通過 review；Display POC v0.3 Accepted 仍待完成 | [`OUT-M3-DISPLAY-SPEC-2026-001.md`](../responses/OUT-M3-DISPLAY-SPEC-2026-001.md) |
 
 ---
 

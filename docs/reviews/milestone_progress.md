@@ -27,7 +27,7 @@ Core Display 設計與 M3–M7 規劃已通過 `IR_review_III`、`MR_review_II`�
 | Font asset / provenance | `READY` | Noto Sans TC Regular + Medium 2.004、OFL 1.1；Spec 記錄 paths / SHA-256 | 納入 Design Ready delivery；不得改用 OS font |
 | Ch 8 / Ch 10 alignment | `REVIEWED` | `main.error`、Progress 排除、initial IDLE seed、`show_session_content`；`IR_review_III` Resolved | implementation 留待 Developer gate 後 |
 | M3 / M4 / M5 / M7 planning alignment | `REVIEWED` | M4a / M4b / M4c、M5 exact-SHA dependency、M7 spec-first 規則；`MR_review_II` Resolved | 建立本輪 design commit |
-| M3 Design Ready | `BLOCKED BY DISPLAY POC` | Core design / review 已完成；Display POC D1–D5 與 Accepted design input 尚缺 | POC Accepted 後，Designer 將本 design commit SHA 與 Accepted POC SHA 彙整為單一 M3 Design Ready conclusion |
+| M3 Design Ready | `BLOCKED BY DISPLAY POC` | Core design / review commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1` 已完成；Display POC D1–D5 與 Accepted design input 尚缺 | POC Accepted 後，Designer 將本 design commit SHA 與 Accepted POC SHA 彙整為單一 M3 Design Ready conclusion |
 | M3 test spec / coverage sign-off | `PENDING` | Design Ready 後才可撰寫 `docs/test_spec/test_spec_M3.md` | Tester 撰寫；Designer 以 `TR_spec_M3` 確認 100% 覆蓋 |
 | `dev_progress_M3.md` / 工作包 | `NOT CREATED` | Developer-owned；不得早於 test spec 簽核 | Developer 在 gate 放行後估點拆包 |
 | M3 target-device acceptance | `PENDING` | `docs/milestones/M3.md`；`OUT-M3-TEST-2026-001` | Tester 對 delivery exact SHA 獨立驗收；POC 自驗只作外部 evidence layer |
