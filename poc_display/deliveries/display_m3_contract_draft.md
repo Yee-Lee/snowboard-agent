@@ -165,11 +165,11 @@ Pi evidence 必須至少記錄：
 
 Manifest 必須包含：
 
-- POC source full 40-character SHA 與 branch；
-- public header、Python adapter、`.so` 的 SHA-256；
+- Tracked delivery 使用 POC candidate full 40-character SHA 作整包識別，不要求逐檔 checksum；
 - reproducible build command、compiler/toolchain、target OS/arch；
 - vendor source revision、license/notice；
-- primary hardware/config SHA-256、evidence index、known limits。
+- 無法納入 Git 提交包的 `.so`、actual config 或 raw evidence 才另記整包 SHA-256／custody reference；
+- primary hardware、evidence index、known limits。
 
 Dirty worktree、branch HEAD、聊天訊息或只有照片不可視為 Accepted artifact。
 

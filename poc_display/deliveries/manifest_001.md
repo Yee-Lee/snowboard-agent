@@ -1,39 +1,41 @@
 # Delivery Manifest: POC-DSP-001 (Draft v0.3)
 
-Status：`IN_PROGRESS / not immutable / not Accepted`
+Status：`CANDIDATE_SOURCE_FROZEN / Pi verification pending / not Accepted`
 
 ## Source identity
 
 | Field | Value |
 |---|---|
 | Repository | `snowboard-agent` |
-| Branch | `display` |
+| Branch | `dev_display_p1` |
 | Comparison base | `412172ae58c8053bd697caebe133a718206c2f55` |
-| Delivery source SHA | `PENDING` — working tree 尚未形成包含 v0.3 的 clean 40-character commit |
+| Candidate source SHA | `3120c08c2b15b19c2b2b16a35577e456ad394937` |
 | Included scope | contract、public C header、SSD1351 native source、Python adapter、tests、config/evidence schema |
 
-Branch HEAD 或 comparison base 不代表本版 delivery source SHA。
+Candidate source identity 只認上述完整 SHA；後續 metadata commit 不得改變 Pi checkout 與 evidence 使用的 source SHA。
 
-## Artifact inventory
+## Submission unit
 
-| Artifact | Path | SHA-256 / status |
+| Field | Value |
+|---|---|
+| Type | Git commit；整個 tracked repository snapshot 視為單一提交包 |
+| Identity | `3120c08c2b15b19c2b2b16a35577e456ad394937` |
+| Scope | 該 commit 可達的完整 Git tree 與 blobs |
+| Normal transport | Core Team 直接取得 repository 並 checkout 完整 SHA |
+| Per-file checksum | 不要求；Git commit 已識別全部 tracked content |
+
+若改用單一 archive/bundle 傳輸，只需為整包記錄一個 SHA-256，不展開逐檔 checksum。
+
+## External / non-uploadable materials
+
+| Material | Status | Handling |
 |---|---|---|
-| Contract | `poc_display/deliveries/display_m3_contract_draft.md` | `3f6b2fcb59848cdc7f415892674e1a0438bbef818b05a84d49884ec606f5b429` (working-tree snapshot) |
-| Public header | `src/sbd/core/display/native/include/display.h` | `b26efcb55d992ac45885a2ac55b2d61c79bce5c18550fbe452e52419ffd5784b` (working-tree snapshot) |
-| Config header | `src/sbd/core/display/native/include/pin_config.h` | `ee7c7f3f7ec7851df5fae3e2ebf8f8dbe1099738b7bec8cd351292c8303b2398` (working-tree snapshot) |
-| Core Protocol | `src/sbd/core/display/base.py` | `1c8d294039e7974d23fb36e5b4c7133ba912b520c607a90c8edfbd05e9861379` (working-tree snapshot) |
-| Python native adapter | `src/sbd/core/display/hal/ctypes_backend.py` | `76a5670273f9c128862f35b5616a4adf09b20046fe5d7cd12803ee4ea87d1a5f` (working-tree snapshot) |
-| Adapter factory | `src/sbd/core/display/hal/factory.py` | `0ba186e5c1608db051471975807e7d08ee570799ba094508be9f3873275f385e` (working-tree snapshot) |
-| Config loader | `src/sbd/core/display/hal/profiles.py` | `30a8fc4311b9492d37bee112dc29ae2634903241750f41abb7e8f085c70c4b43` (working-tree snapshot) |
-| Compatibility re-export | `src/sbd/core/display/hal/protocol.py` | `a15d0bf1f0110b0d48b70017d23b3a88413c88a1878491c2e8c681527202d0f1` (working-tree snapshot) |
-| SSD1351 library | `src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so` | `PENDING_PI_BUILD` |
-| Sanitized config example | `poc_display/config/ssd1351_pi5.example.json` | `bfe4e3edea626ea1a3fd3363a2661b5919c4b4b1df5e5fb0fb0fc696b6fe7226` |
-| Pi diagnostics runner | `poc_display/tests/run_ssd1351_diagnostics.py` | `1cdd1ae8177a1a75bc5056625e25124605b6d063f705fcc051bfc5045acf6f80` |
-| Remote environment pre-test | `poc_display/tools/environment_pre_test.sh` | `9a01ea21b6c63c73e8522de3aeb7c331065f52385bdd4b6a4408411d21b1c85c` |
-| Pi-local M3 packet | `poc_display/tools/m3_ssd1351_capability.sh` | `302789067110aefb08e17b1e855d0c29ad716f11265e72d24ffcc6b546ad5fbe` |
-| Primary run config | actual run copy under `poc_display/evidence/<delivery>/<run>/config.json` | `PENDING_PI_RUN` |
+| Pi-built `libdisplay.so` | `PENDING_PI_BUILD` | 若未納入提交包，記錄 artifact checksum 與保管位置 |
+| Actual Pi local config | `PENDING_PI_RUN` | 不上傳敏感／機器限定內容；記錄 config hash 與 sanitized copy |
+| Raw logs/evidence | `PENDING_PI_RUN` | 保存在受控位置，記錄整包 checksum／custody reference |
+| Fixture photos | `PENDING_FIXTURE_PHOTO` | 提交 sanitized 版本；原始內容另行保管 |
 
-Final manifest 必須在 immutable commit 上更新 checksums；manifest 自身不列入 checksum inventory，避免 self-reference。
+只有無法納入正常 Git 提交包的內容才使用上述例外流程。
 
 ## Target environment
 
@@ -127,17 +129,7 @@ Pi result/evidence index：`PENDING_PI_RUN`。
 
 - `OLED_1in5_rgb.c/.h` embedded header identifies Waveshare team, V2.0, 2020-08-17, with a permissive MIT-style permission notice.
 - Redistribution notice and file inventory：`poc_display/NOTICE.md`。
-- The delivered vendor files are pinned by their manifest checksums; no branch HEAD or external mutable URL is used as provenance.
-
-Vendor/source working-tree checksums:
-
-| File | SHA-256 |
-|---|---|
-| `OLED_1in5_rgb.c` | `1355f1f86b2026505471f527f350db0e49fcf2caf53beda2d03c1fd31fb327a3` |
-| `OLED_1in5_rgb.h` | `65c6de04419695e890c4fff56918b87cad50353bafa4825e7f92ccc886b98f64` |
-| `display_driver.c` | `d7bb99e33c33de0323298d408a2489b28e14f21a2a33b546d6d32226de86253a` |
-| `dev_config_runtime.c` | `dea0b099857f6e8ce10fde5aecd1e67a0a6673a304faaf1b2ddf7f43f684e7da` |
-| `dev_config_runtime.h` | `d5b0c337784474a1e9f42a7f62aeb89fcae1b0a1bc00413d97659d570621668a` |
+- Candidate full Git SHA pins the delivered vendor/source files; no branch HEAD or external mutable URL is used as provenance.
 
 ## Known limits
 

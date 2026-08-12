@@ -48,7 +48,7 @@ bash poc_display/tools/m3_ssd1351_capability.sh \
 
 The packet performs:
 
-- clean native build and artifact checksums;
+- clean native build and checksum/custody only for artifacts not included in the Git submission unit;
 - ABI/config validation;
 - black, white, red, green, blue and gradient frames;
 - wrong-length and missing-SPI-device rejection;

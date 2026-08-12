@@ -32,7 +32,7 @@ runner/
 - Pi 5 / aarch64、clean full SHA，且 local/Pi SHA 一致；
 - strict config hash、resolved gpiochip、SPI device 與 boot SPI inventory；
 - packet 前後均無 SPI/gpiochip owner；
-- clean native build、`.so`/header/adapter checksums；
+- clean native build 與未納入 Git 提交包的 `.so` checksum；tracked source/header/adapter 由 candidate full Git SHA 識別；
 - black/white/red/green/blue/gradient、clear/show；
 - wrong length 與 missing SPI device 在邊界失敗；
 - stop 冪等、3/3 reopen；

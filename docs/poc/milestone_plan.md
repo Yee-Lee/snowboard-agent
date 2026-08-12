@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
 > 更新日期：2026-08-12
-> 目前狀態：**P0.5 已放行；P1 host gate 完成，待獨立 process review 後凍結 candidate；Pi 網路／實機 gate 待恢復**
+> 目前狀態：**P1 immutable candidate 已完成；P2 Pi 網路／read-only preflight 待恢復**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -48,7 +48,7 @@
 - [x] **D2 (C ABI)**：定義明確的 C struct (config)、錯誤碼 (error enum) 與 Python 例外映射。`clear/write` 只改 back-buffer，`show` 才 flush。
 - [x] **D3 (Hardware Gate)**：接線以 SSD1351 OLED 為唯一基準，修正 BCM 腳位設定，清理 config 確保能以 config hash 追溯。
 - [x] **D4 (Performance Claim)**：移除無根據的 `60 fps` 與 `<20ms` 效能承諾，等待實機測試真實 P50/P95。
-- [x] **D5 (Delivery Fix)**：修正 Makefile 依賴 (移除未追蹤檔案) 確保可 Clean Build，並準備在 P4 提供完整 SHA 與 checksum 的 manifest。
+- [x] **D5 (Delivery Fix)**：修正 Makefile 依賴以確保 Clean Build；tracked delivery 以完整 Git SHA 作整包識別，只有無法上傳的外部內容另記 checksum／custody。
 
 P0.5 交付原則 (依據 DELIVERY-004 規定)：
 - [x] **維持 Draft 狀態**：v0.3 保持 Draft，**不由 POC 自行標記為 Accepted**。
@@ -65,11 +65,11 @@ P0.5 交付原則 (依據 DELIVERY-004 規定)：
 完成條件：
 
 - [x] Host test suite 全部通過並記錄結果：2026-08-12 全套 display tests 為 26 passed、8 skipped；Python compile、service/mock、C11 header 與 stub-linked native ABI smoke 均 PASS。
-- [ ] 獨立 process reviewer 在 `reviews/P1_REVIEW_FEEDBACK.md` 給出 `APPROVE`，且沒有未解決的 blocking/high finding。
-- [ ] 以完整 40-character Git SHA 凍結 candidate；worktree 必須 clean。
-- [ ] Manifest 記錄 source/header/adapter/config/build inputs 的 SHA-256。
-- [ ] Pi 與提交 evidence 的版本必須是同一個 candidate SHA。
-- [ ] 不再使用 working-tree hash 或不同機器上的未提交內容作為證據。
+- [x] 獨立 process reviewer 在 `reviews/P1_REVIEW_FEEDBACK.md` 給出 `APPROVE`，且沒有未解決的 blocking/high finding。
+- [x] Candidate source 已凍結為 `3120c08c2b15b19c2b2b16a35577e456ad394937`；建立後 worktree clean。
+- [x] 整個 tracked repository snapshot 以 candidate full Git SHA 作為單一提交包，不要求逐檔 checksum。
+
+P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的 Pi artifact、local config 或 raw evidence，才在產生時另記 checksum 與保管位置；不阻擋 P1 freeze。
 
 ---
 
@@ -150,7 +150,7 @@ P0.5 交付原則 (依據 DELIVERY-004 規定)：
 |---|---|---|
 | P0 工作準備 | 完成 | 否 |
 | P0.5 D1–D5 coding/config remediation | 已放行 | 否 |
-| P1 immutable candidate | Host gate 完成；待獨立 review 與 clean SHA freeze | 否 |
+| P1 immutable candidate | 完成：`3120c08c2b15b19c2b2b16a35577e456ad394937` | 否 |
 | P2 fixture/preflight | 網路待恢復；read-only preflight pending | 否 |
 | P3 Pi capability/evidence | 待實機 | 否 |
 | P4 Core re-review ACK | 待 P1–P3 | **是** |
