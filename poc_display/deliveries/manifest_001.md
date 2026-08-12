@@ -70,9 +70,12 @@ cd src/sbd/core/display/native/waveshare_ssd1351
 make clean
 make
 sha256sum libdisplay.so
+ldd -r libdisplay.so
 ```
 
-Target clean build result、compiler output 與 `.so` checksum：`PENDING_PI_BUILD`。
+以上命令必須由 Core Team operator／登入使用者在 exact clean candidate SHA 的 target Pi 上執行。`make` exit 0 不足以通過；`ldd -r` 若出現任何 `undefined symbol` 即為 FAIL，且 workstation/stub build 不得替代此 gate。
+
+Target clean build result、compiler output、`ldd -r` output 與 `.so` checksum：`PENDING_PI_BUILD`。
 
 Public header standalone syntax check：
 

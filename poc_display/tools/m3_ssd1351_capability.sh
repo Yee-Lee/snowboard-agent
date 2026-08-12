@@ -48,7 +48,7 @@ on_exit() {
 }
 trap on_exit EXIT
 
-for command_name in awk cc fuser git grep make python3 sed sha256sum timeout tr; do
+for command_name in awk cc fuser git grep ldd make python3 sed sha256sum timeout tr; do
   command -v "$command_name" >/dev/null 2>&1 || inconclusive "required command unavailable: $command_name"
 done
 
@@ -131,6 +131,11 @@ fi
 } >"$build_file" 2>&1 || fail 'clean native build failed'
 
 [[ -f "$so_path" ]] || fail 'native build did not produce libdisplay.so'
+
+{
+  printf '[ldd -r]\n'
+  ldd -r "$so_path"
+} >>"$build_file" 2>&1 || fail 'native library has unresolved runtime symbols'
 sha256sum \
   "$so_path" \
   "$config_path" >"$artifacts_file"

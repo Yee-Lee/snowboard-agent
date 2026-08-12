@@ -3,7 +3,8 @@
 
 CC      := gcc
 CFLAGS  := -O2 -Wall -Wextra -fPIC -I../include -pthread
-LDFLAGS := -shared -llgpio -pthread
+LDFLAGS := -shared -Wl,-z,defs
+LDLIBS  := -llgpio -pthread
 
 SRCS := display_driver.c ../dev_config_runtime.c OLED_1in5_rgb.c
 OBJS := $(SRCS:.c=.o)
@@ -14,7 +15,7 @@ TARGET := libdisplay.so
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

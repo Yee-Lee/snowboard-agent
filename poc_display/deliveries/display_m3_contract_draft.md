@@ -153,6 +153,7 @@ Pi evidence 必須至少記錄：
 - resolution、pixel format、config SHA-256；
 - requested speed 與可取得時的 effective speed；
 - Pi model/revision、CPU、OS/kernel、Python、compiler、lgpio、driver/source SHA；
+- target Pi 上由登入使用者執行的 clean build、`ldd -r libdisplay.so` 完整輸出；`make` 成功但有任何 `undefined symbol` 仍為 FAIL；
 - color、orientation、readability 與 flicker 的人工觀察。
 
 完成實機測試前，performance disposition 為 `IN_PROGRESS`，不得推導 M7 fps 或排除 partial update／更換硬體。
@@ -166,7 +167,7 @@ Pi evidence 必須至少記錄：
 Manifest 必須包含：
 
 - Tracked delivery 使用 POC candidate full 40-character SHA 作整包識別，不要求逐檔 checksum；
-- reproducible build command、compiler/toolchain、target OS/arch；
+- target-Pi user reproducible build command、compiler/toolchain、target OS/arch，以及無 unresolved runtime symbol 的 `ldd -r` 證據；
 - vendor source revision、license/notice；
 - 無法納入 Git 提交包的 `.so`、actual config 或 raw evidence 才另記整包 SHA-256／custody reference；
 - primary hardware、evidence index、known limits。

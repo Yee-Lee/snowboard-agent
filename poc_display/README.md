@@ -32,6 +32,21 @@ bash poc_display/tools/environment_pre_test.sh <operator-alias>
 
 The pre-test is read-only. It gates Pi 5/aarch64 identity, exact clean SHA, required tools, config hash, SPI/gpiochip device presence, boot SPI configuration, temperature/throttling inventory, and absence of current SPI/GPIO owners.
 
+## Pi-user native build gate
+
+The Core Team operator must perform the clean native build as the logged-in user on the target Pi with the exact candidate SHA. A successful `make` alone is insufficient: the resulting shared library must also pass runtime relocation checking.
+
+```sh
+cd /protected/path/to/pi-worktree
+test -z "$(git status --porcelain)"
+git rev-parse HEAD
+make -C src/sbd/core/display/native/waveshare_ssd1351 clean
+make -C src/sbd/core/display/native/waveshare_ssd1351
+ldd -r src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so
+```
+
+The reported SHA must equal the candidate full SHA. Any `undefined symbol` output is `FAIL`, even when `make` returned success. Do not substitute a workstation/stub build for this target-Pi gate. Record the compiler output, `ldd -r` output and resulting `.so` SHA-256.
+
 ## Pi-local M3 capability packet
 
 After the pre-test passes, run from the clean Pi checkout. Operator visual fields are explicit evidence, not assumptions:
@@ -48,7 +63,7 @@ bash poc_display/tools/m3_ssd1351_capability.sh \
 
 The packet performs:
 
-- clean native build and checksum/custody only for artifacts not included in the Git submission unit;
+- clean native build, `ldd -r` runtime-symbol verification, and checksum/custody only for artifacts not included in the Git submission unit;
 - ABI/config validation;
 - black, white, red, green, blue and gradient frames;
 - wrong-length and missing-SPI-device rejection;

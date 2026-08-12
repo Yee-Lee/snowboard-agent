@@ -8,6 +8,8 @@
 - `P1_REVIEW_FEEDBACK.md`：由獨立 reviewer process 填寫 findings、測試與 gate 結論。
 - `P1_OPERATOR_ATTESTATION_REVIEW_REQUEST.md`：照片 gate 改為人工 attestation 後原先準備的審核範圍；本次由 Owner 直接核准並關閉。
 - `P1_OPERATOR_ATTESTATION_REVIEW_FEEDBACK.md`：保留 Owner approval／review waiver 決策；不得誤稱為獨立 reviewer 結論。
+- `P1_LINKER_FIX_REVIEW_REQUEST.md`：P3 發現 native link-order bug 後的修正審核範圍。
+- `P1_LINKER_FIX_REVIEW_FEEDBACK.md`：由獨立 reviewer process 填寫 linker/runtime-symbol gate findings 與結論。
 
 ## Reviewer 工作邊界
 
@@ -25,8 +27,10 @@ Reviewer 必須選擇其中之一：
 - `BLOCK`：存在必須在 candidate commit 前解決的 finding。
 - `PENDING`：審核尚未完成。
 
-Implementation process 只依 feedback 實作修正，不自行覆寫 reviewer 的判斷。若發生修正，須由獨立 reviewer process 複審並更新 feedback，才能進入 candidate commit。
+Review request 只在 milestone stage 達到 exit gate 時提出一次；stage 內發現與修正的 findings 累積到該次 review，不得因每個小修正反覆停下。
 
-Owner 可針對明確、有限的變更直接核准並免除一次 review；必須記錄 authority、scope 與 waiver，且不得冒充 reviewer approval。
+若 stage-exit review 回報 finding，implementation process 依 feedback 修正，並在同一 stage exit 完成必要複審；不得自行覆寫 reviewer 判斷。
+
+Owner 可直接核准或免除 review；必須記錄 authority、scope 與 waiver，且不得冒充 reviewer approval。
 
 Pi P2/P3 evidence 與 Core Team P4 ACK 不屬於此 host-side P1 review 的可替代項目；缺少它們時必須維持 pending。

@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
 > 更新日期：2026-08-12
-> 目前狀態：**P1 candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 已凍結，P2 read-only preflight PASS；下一步為 P3 Pi capability/evidence run**
+> 目前狀態：**Native linker fix 已由 Owner APPROVE；P1 replacement 以本次 freeze commit full SHA 為準，P2/P3 待 operator 在新 SHA 重跑**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -67,7 +67,9 @@ P0.5 交付原則 (依據 DELIVERY-004 規定)：
 - [x] Host test suite 全部通過並記錄結果：2026-08-12 全套 display tests 為 26 passed、8 skipped；Python compile、service/mock、C11 header 與 stub-linked native ABI smoke 均 PASS。
 - [x] 原始 host gate 已由獨立 process reviewer `APPROVE`；review baseline 為 `3120c08c2b15b19c2b2b16a35577e456ad394937`。
 - [x] Owner 於 2026-08-12 直接 `APPROVE` 照片 gate → operator attestation 小幅變更，並明確免除第二次獨立 review；不將此決策誤記為 reviewer 結論。
-- [x] Replacement candidate 已凍結為 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27`；`3120c08c2b15b19c2b2b16a35577e456ad394937` 只作 reviewed baseline，不作最終 P3 target。
+- [x] Candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 曾凍結並完成 P2，但 P3 證明其 `.so` 有 unresolved `lgpio` symbol，因此不得作最終 P3 target。
+- [x] Owner 於 2026-08-12 直接 `APPROVE` native link-order 與 runtime-symbol gate 修正，並指示只在 stage exit 請求 review。
+- [x] 修正後 replacement candidate 為包含本紀錄的 freeze commit；交接時回報其 full SHA。
 - [x] 整個 tracked repository snapshot 以 candidate full Git SHA 作為單一提交包，不要求逐檔 checksum。
 
 P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的 Pi artifact、local config 或 raw evidence，才在產生時另記 checksum 與保管位置；不阻擋 P1 freeze。
@@ -83,20 +85,24 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 - [x] Operator 確認 SSD1351 模組、revision（無標示可記 `unmarked`）、fixture 與接線均符合選定設定；不要求照片。
 - [x] 接線符合已選定 fixture/vendor pinout，且 runtime config 全部來自 local config。
 - [x] 將 logical GPIO 解析為 `gpiochip0`；config hash 為 `d4780a37497906dddbddee3074d72fd2f6acec8877b118b769f9254df25d2475`。
-- [x] Pi clean detached checkout 為 P1 SHA `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27`。
-- [x] Read-only preflight PASS：SPI node、GPIO、依賴、權限、既有 owner/process 均無衝突。
+- [x] 歷史 candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 曾 clean detached checkout。
+- [x] 歷史 candidate read-only preflight PASS：SPI node、GPIO、依賴、權限、既有 owner/process 均無衝突。
+- [ ] Pi checkout 為 linker 修正後的新 P1 clean SHA。
+- [ ] 新 P1 SHA read-only preflight PASS。
 
-2026-08-12T14:26:24Z 已在 replacement candidate 完成 preflight PASS；本機與 Pi SHA 相同、Pi worktree clean、SPI/GPIO device present、owner none。Raw evidence：`poc_display/evidence/m3/20260812T142620Z-pretest/`（gitignored custody）。
+2026-08-12T14:26:24Z 已在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 完成 preflight PASS；因該 SHA 在 P3 發現 linker bug，新 candidate 必須重跑。Raw evidence：`poc_display/evidence/m3/20260812T142620Z-pretest/`（gitignored custody）。
 
 ---
 
 ## Milestone P3 — Raspberry Pi Capability and Evidence Run
 
 **目的：在實體 SSD1351 上完成 D2–D4 所需證據。**
+2026-08-12 首次 packet 在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` clean build 後載入 `.so` 失敗：`undefined symbol: lgGpiochipClose`。原因是 `-llgpio` 位於 objects 前被 linker `--as-needed` 丟棄；raw evidence：Pi `poc_display/evidence/m3/20260812T142812Z-ssd1351/`。SPI/GPIO owner cleanup PASS。
+
 
 完成條件：
 
-- [ ] Pi-local clean build 成功，記錄 compiler/toolchain、license、target 與 `.so` checksum。
+- [ ] 由 target Pi 登入使用者在 exact clean candidate SHA 執行 clean build，記錄 compiler/toolchain、license、target、`.so` checksum 與 `ldd -r`；`make` 成功但有任何 `undefined symbol` 仍為 FAIL。
 - [ ] Lifecycle/negative-path PASS：`start → write_pixels → show → stop`、reopen、repeated stop、wrong buffer length、missing device/config、fallback/exception mapping。
 - [ ] 確認每次 frame intent 僅產生一次 native `present`，`clear/write` 不會隱含 flush。
 - [ ] 顏色、gradient、orientation 與邊界行為由 operator attestation 確認為 PASS。
@@ -153,8 +159,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 |---|---|---|
 | P0 工作準備 | 完成 | 否 |
 | P0.5 D1–D5 coding/config remediation | 已放行 | 否 |
-| P1 immutable candidate | 完成：`b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` | 否 |
-| P2 fixture/preflight | 完成：replacement SHA read-only preflight PASS | 否 |
-| P3 Pi capability/evidence | 待實機 | 否 |
+| P1 immutable candidate | 完成：linker-fix freeze commit full SHA | 否 |
+| P2 fixture/preflight | 舊 SHA PASS；待新 SHA 重跑 | 否 |
+| P3 Pi capability/evidence | 首跑 FAIL：unresolved `lgpio` symbol；待修正後重跑 | 否 |
 | P4 Core re-review ACK | 待 P1–P3 | **是** |
 | C1 Core integration acceptance | 解鎖後由 Core 執行 | 非 unblock 前置條件 |
