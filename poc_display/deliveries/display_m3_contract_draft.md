@@ -119,8 +119,8 @@ Primary pin map：
 | DIN / MOSI | 10 | 19 | SPI0 MOSI |
 | CLK / SCLK | 11 | 23 | SPI0 SCLK |
 | CS | 8 | 24 | SPI0 CE0 |
-| DC / D/C | 25 | 22 | 官方 Raspberry Pi 範例 |
-| RST / RES | 27 | 13 | 官方 Raspberry Pi 範例 |
+| DC / D/C | 24 | 18 | 專案 co-I2S fixture |
+| RST / RES | 25 | 22 | 專案 co-I2S fixture |
 | BL | 不適用 | 不適用 | OLED 無 backlight pin |
 
 SSD1351 Rev 1.5 的 4-wire serial clock minimum cycle 為 220 ns（約 4.55 MHz 上限）。本契約選擇 4 MHz 作為未超規的 requested baseline；仍須由實機記錄 effective speed 與 latency。

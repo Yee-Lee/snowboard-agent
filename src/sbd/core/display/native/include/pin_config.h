@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
     int32_t rst;
     int32_t dc;
-    int32_t cs;
+    int32_t cs; /* reserved; SPI CE is managed by SpiConfig.chip */
     int32_t bl; /* -1 when absent */
 } DisplayPinConfig;
 

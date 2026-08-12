@@ -34,6 +34,8 @@ The pre-test is read-only. It gates Pi 5/aarch64 identity, exact clean SHA, requ
 
 ## Pi-user native build gate
 
+Do not run a native driver `make` on the workstation; `lgpio` is a target-Pi dependency. Workstation verification is limited to Python/mock/stub tests.
+
 The Core Team operator must perform the clean native build as the logged-in user on the target Pi with the exact candidate SHA. A successful `make` alone is insufficient: the resulting shared library must also pass runtime relocation checking.
 
 ```sh

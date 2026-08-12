@@ -22,8 +22,8 @@
   "gpio": {
     "numbering": "BCM",
     "chip": "auto",
-    "dc": 25,
-    "rst": 27,
+    "dc": 24,
+    "rst": 25,
     "bl": null
   },
   "frame": {

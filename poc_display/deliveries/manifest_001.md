@@ -56,7 +56,7 @@ Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 me
 | Module revision | `PENDING_FIXTURE_PHOTO` |
 | Interface | 4-wire SPI0 mode 0 CE0 |
 | Resolution / format | 128×128 / RGB565 MSB first / 32768 bytes |
-| Pins | DC=BCM25/Board22; RST=BCM27/Board13; CS=BCM8/Board24; MOSI=BCM10/Board19; SCLK=BCM11/Board23; BL absent |
+| Pins | DC=BCM24/Board18; RST=BCM25/Board22; CS=BCM8/Board24 (SPI CE0 kernel-managed); MOSI=BCM10/Board19; SCLK=BCM11/Board23; BL absent |
 | Requested speed | 4,000,000 Hz |
 | Rotation | 0° pending fixture confirmation |
 | Local config | copy `poc_display/config/ssd1351_pi5.example.json`, replace `revision` and `gpio.chip`, then record SHA-256 |

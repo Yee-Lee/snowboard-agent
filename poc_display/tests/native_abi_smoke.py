@@ -44,7 +44,7 @@ def configure(lib: ctypes.CDLL) -> None:
 def config(speed_hz: int = 4_000_000) -> _CDisplayConfig:
     return _build_c_config(
         DisplayPinConfig(
-            pins=PinConfig(rst=27, dc=25, cs=8, bl=-1),
+            pins=PinConfig(rst=27, dc=25, cs=-1, bl=-1),
             spi=SpiConfig(bus=0, chip=0, speed_hz=speed_hz, mode=0),
             gpio_chip=GpiochipConfig(chip_index=4),
         ),

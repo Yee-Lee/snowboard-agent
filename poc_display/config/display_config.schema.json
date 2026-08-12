@@ -56,8 +56,8 @@
       "properties": {
         "numbering": { "const": "BCM" },
         "chip": { "oneOf": [{ "const": "auto" }, { "type": "integer", "minimum": 0 }] },
-        "dc": { "const": 25 },
-        "rst": { "const": 27 },
+        "dc": { "const": 24 },
+        "rst": { "const": 25 },
         "bl": { "type": "null" }
       }
     },

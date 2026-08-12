@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
 > 更新日期：2026-08-12
-> 目前狀態：**Native linker fix 已由 Owner APPROVE；P1 replacement 以本次 freeze commit full SHA 為準，P2/P3 待 operator 在新 SHA 重跑**
+> 目前狀態：**P3 已定位 co-I2S fixture/config 與 SPI CE ownership mismatch；修正後 candidate 待 Pi checkout、preflight 與 capability 重跑**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -69,7 +69,8 @@ P0.5 交付原則 (依據 DELIVERY-004 規定)：
 - [x] Owner 於 2026-08-12 直接 `APPROVE` 照片 gate → operator attestation 小幅變更，並明確免除第二次獨立 review；不將此決策誤記為 reviewer 結論。
 - [x] Candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 曾凍結並完成 P2，但 P3 證明其 `.so` 有 unresolved `lgpio` symbol，因此不得作最終 P3 target。
 - [x] Owner 於 2026-08-12 直接 `APPROVE` native link-order 與 runtime-symbol gate 修正，並指示只在 stage exit 請求 review。
-- [x] 修正後 replacement candidate 為包含本紀錄的 freeze commit；交接時回報其 full SHA。
+- [x] Linker-fix candidate `7c3d355b3850d01ebd967186f1ee578a97108aa3` 在 Pi build/`ldd -r` PASS，但 P3 發現其 fixture config 使用錯誤的官方 DC/RST mapping，且 runtime 重複 claim SPI CE0；不得作最終 P3 target。
+- [x] Co-I2S/DC-RST/CE ownership 修正後 replacement candidate 為包含本紀錄的 freeze commit；交接時回報其 full SHA。
 - [x] 整個 tracked repository snapshot 以 candidate full Git SHA 作為單一提交包，不要求逐檔 checksum。
 
 P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的 Pi artifact、local config 或 raw evidence，才在產生時另記 checksum 與保管位置；不阻擋 P1 freeze。
@@ -84,13 +85,13 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 - [x] Operator 確認 SSD1351 模組、revision（無標示可記 `unmarked`）、fixture 與接線均符合選定設定；不要求照片。
 - [x] 接線符合已選定 fixture/vendor pinout，且 runtime config 全部來自 local config。
-- [x] 將 logical GPIO 解析為 `gpiochip0`；config hash 為 `d4780a37497906dddbddee3074d72fd2f6acec8877b118b769f9254df25d2475`。
+- [x] Co-I2S fixture 為 DC=BCM24/Board18、RST=BCM25/Board22；logical GPIO 解析為 `gpiochip0`；更新後 actual config hash 為 `973229d06ae7c2734e96ce350365e61d64e2074b47166497a09976e38246d679`。
 - [x] 歷史 candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 曾 clean detached checkout。
 - [x] 歷史 candidate read-only preflight PASS：SPI node、GPIO、依賴、權限、既有 owner/process 均無衝突。
 - [ ] Pi checkout 為 linker 修正後的新 P1 clean SHA。
 - [ ] 新 P1 SHA read-only preflight PASS。
 
-2026-08-12T14:26:24Z 已在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 完成 preflight PASS；因該 SHA 在 P3 發現 linker bug，新 candidate 必須重跑。Raw evidence：`poc_display/evidence/m3/20260812T142620Z-pretest/`（gitignored custody）。
+2026-08-12T14:26:24Z 已在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 完成 preflight PASS；`7c3d355b3850d01ebd967186f1ee578a97108aa3` 也曾 preflight PASS，但兩者不符合最終 co-I2S/CE ownership 修正，新的 candidate 必須重跑。Raw evidence：`poc_display/evidence/m3/20260812T142620Z-pretest/`、`20260812T144113Z-pretest/`（gitignored custody）。
 
 ---
 
@@ -98,6 +99,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 **目的：在實體 SSD1351 上完成 D2–D4 所需證據。**
 2026-08-12 首次 packet 在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` clean build 後載入 `.so` 失敗：`undefined symbol: lgGpiochipClose`。原因是 `-llgpio` 位於 objects 前被 linker `--as-needed` 丟棄；raw evidence：Pi `poc_display/evidence/m3/20260812T142812Z-ssd1351/`。SPI/GPIO owner cleanup PASS。
+2026-08-12 第二次 packet 在 `7c3d355b3850d01ebd967186f1ee578a97108aa3` 的 Pi build/`ldd -r` PASS 後，`display_open` 回 `DISPLAY_E_GPIO (-9)`。診斷確認 CE0=BCM8 已由 kernel `spi0 CS0` 擁有，且 actual config 錯用官方 DC=25/RST=27；owner 已確認 co-I2S 為 DC=24/RST=25。修正後 native 只 claim DC/RST，SPI CE 由 device handle 管理。
+
 
 
 完成條件：

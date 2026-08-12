@@ -92,8 +92,8 @@ class PanelProfile:
 #
 # Default pin mapping (matches README.md接線表):
 #   CS  → GPIO 8   (SPI0 CE0, Pin 24)
-#   DC  → GPIO 25  (Pin 22)
-#   RST → GPIO 27  (Pin 13)
+#   DC  → GPIO 24  (Pin 18, co-I2S fixture)
+#   RST → GPIO 25  (Pin 22, co-I2S fixture)
 #   BL  → GPIO 18  (Pin 12, LCD only)
 #
 # These are the connector pin numbers for the Raspberry Pi 5 setup
@@ -102,8 +102,8 @@ class PanelProfile:
 # Real runs must load and record a local JSON config even when it matches these
 # descriptive values.
 
-_DEFAULT_OLED_PINS = PinConfig(cs=8, dc=25, rst=27, bl=-1)
-_DEFAULT_LCD_PINS  = PinConfig(cs=8, dc=25, rst=27, bl=18)
+_DEFAULT_OLED_PINS = PinConfig(cs=8, dc=24, rst=25, bl=-1)
+_DEFAULT_LCD_PINS  = PinConfig(cs=8, dc=24, rst=25, bl=18)
 
 PROFILES: dict[str, PanelProfile] = {
     # 1.5-inch OLED (SSD1351), 128×128
@@ -196,7 +196,10 @@ def load_display_config(path: str | Path) -> DisplayPinConfig:
         raise ValueError("only CE0/CE1 chip select values are supported")
     return DisplayPinConfig(
         pins=PinConfig(
-            cs={0: 8, 1: 7}[chip_select],
+            # CE0/CE1 is owned by the SPI device selected above. It must not
+            # be claimed through lgpio as a normal GPIO line: on Pi 5 the
+            # kernel already owns it for spi0 CS0/CS1.
+            cs=-1,
             dc=int(gpio["dc"]),
             rst=int(gpio["rst"]),
             bl=-1 if gpio.get("bl") is None else int(gpio["bl"]),

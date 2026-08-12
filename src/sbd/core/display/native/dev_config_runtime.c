@@ -61,7 +61,6 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
     /* 3. 設定 output pin 方向 */
     if (DEV_GPIO_Mode(cfg->pins.rst, 1) < 0 ||
         DEV_GPIO_Mode(cfg->pins.dc, 1) < 0 ||
-        (cfg->pins.cs >= 0 && DEV_GPIO_Mode(cfg->pins.cs, 1) < 0) ||
         (cfg->pins.bl >= 0 && DEV_GPIO_Mode(cfg->pins.bl, 1) < 0)) {
         DEV_ModuleExit();
         return -2;
@@ -92,8 +91,8 @@ int DEV_ModuleInit_WithConfig(const DisplayConfig *cfg)
 
     fprintf(stderr, "[DEV] Init OK — GPIO chip%d, SPI%d.%d @ %d Hz\n",
             chip_idx, cfg->spi.bus, cfg->spi.chip, cfg->spi.speed_hz);
-    fprintf(stderr, "[DEV] Pins — CS=%d DC=%d RST=%d BL=%d\n",
-            cfg->pins.cs, cfg->pins.dc, cfg->pins.rst, cfg->pins.bl);
+    fprintf(stderr, "[DEV] Pins — SPI CS=%d (kernel-managed) DC=%d RST=%d BL=%d\n",
+            cfg->spi.chip, cfg->pins.dc, cfg->pins.rst, cfg->pins.bl);
     return 0;
 }
 
