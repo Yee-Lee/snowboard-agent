@@ -46,4 +46,3 @@ Do not modify delivery files or create commits. Write findings, commands and exa
 - `APPROVE` — Core Team may issue `Accepted as M3 design input`.
 - `BLOCK` — required remediation before ACK.
 - `PENDING` — review not yet complete.
-
