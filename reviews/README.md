@@ -10,6 +10,8 @@
 - `P1_OPERATOR_ATTESTATION_REVIEW_FEEDBACK.md`：保留 Owner approval／review waiver 決策；不得誤稱為獨立 reviewer 結論。
 - `P1_LINKER_FIX_REVIEW_REQUEST.md`：P3 發現 native link-order bug 後的修正審核範圍。
 - `P1_LINKER_FIX_REVIEW_FEEDBACK.md`：由獨立 reviewer process 填寫 linker/runtime-symbol gate findings 與結論。
+- `P4_STAGE_EXIT_REVIEW_REQUEST.md`：P1–P3 完成後一次提出的 Core/獨立 stage-exit review 範圍。
+- `P4_STAGE_EXIT_REVIEW_FEEDBACK.md`：由 Core Team 或獨立 reviewer 填寫 D1–D5 與 ACK gate 結論。
 
 ## Reviewer 工作邊界
 
