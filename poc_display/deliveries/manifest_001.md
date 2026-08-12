@@ -98,7 +98,14 @@ Host verification completed on 2026-08-09:
 - ctypes adapter → stub-linked native ABI start/clear/write/show/stop/repeated-stop: PASS.
 - Native invalid 60 MHz config, wrong length, wrong thread and repeated close statuses: PASS via `poc_display/tests/native_abi_smoke.py`.
 - Audio-derived packet runner missing-device rejection and reopen 3/3 against host lgpio stub: PASS.
-- `pytest` suite: NOT RUN in this environment because neither system Python nor `.venv` contains pytest. This does not substitute for target Pi tests.
+- `pytest` suite: NOT RUN in that environment because neither system Python nor `.venv` contained pytest.
+
+Host verification rerun on 2026-08-12:
+
+- Full display `pytest` suite: PASS (`26 passed, 8 skipped`; skipped tests require the Pi/optional fixture).
+- Python `compileall` and compatibility service lifecycle: PASS.
+- C public-header C11 syntax check: PASS.
+- SSD1351 stub-linked native build and ABI negative-path smoke: PASS.
 
 The stub-linked `/tmp/.../libdisplay.so` is test-only and is not a deliverable artifact or hardware evidence.
 

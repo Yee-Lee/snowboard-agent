@@ -2,6 +2,11 @@ import pytest
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--hardware",
+        default=None,
+        help="Panel profile to use for hardware tests (e.g. waveshare_oled_1in5_rgb)",
+    )
+    parser.addoption(
         "--display-config",
         action="store",
         default=None,
@@ -14,6 +19,10 @@ def display_config_path(request):
     if path is None:
         pytest.skip("real display test requires --display-config")
     return path
+
+@pytest.fixture
+def profile(request) -> str:
+    return request.config.getoption("--hardware") or "mock"
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "pi_only: mark test to run only on Raspberry Pi")

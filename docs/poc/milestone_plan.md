@@ -1,7 +1,7 @@
 # Display POC → Core M3 Milestone Plan
 
-> 更新日期：2026-08-11
-> 目前狀態：**工作準備完成；需先修復 D1-D5 缺失，再推進 P1 凍結版本**
+> 更新日期：2026-08-12
+> 目前狀態：**P0.5 已放行；P1 host gate 完成，待獨立 process review 後凍結 candidate；Pi 網路／實機 gate 待恢復**
 
 本文件以 Core Team 對 contract v0.2 的 D1–D5 review gate 為準，也是本專案判斷 Display POC 進度與下一步的唯一清單。
 
@@ -41,17 +41,20 @@
 
 **目的：解決 Core Team 針對 v0.2 提出的 Blocking Issues，以便順利凍結版本。**
 
+**狀態：已放行；硬體證據與 Core ACK 分別由 P2–P4 收斂。**
 完成條件 (Coding & Config)：
-- [ ] **D1 (Python HAL)**：修正 Protocol，`start/stop` 改為 `async`，`clear/write_pixels/show/size` 為同步。不自建 UI 狀態機。
-- [ ] **D2 (C ABI)**：定義明確的 C struct (config)、錯誤碼 (error enum) 與 Python 例外映射。`clear/write` 只改 back-buffer，`show` 才 flush。
-- [ ] **D3 (Hardware Gate)**：接線以 SSD1351 OLED 為唯一基準，修正 BCM 腳位設定，清理 config 確保能以 config hash 追溯。
-- [ ] **D4 (Performance Claim)**：移除無根據的 `60 fps` 與 `<20ms` 效能承諾，等待實機測試真實 P50/P95。
-- [ ] **D5 (Delivery Fix)**：修正 Makefile 依賴 (移除未追蹤檔案) 確保可 Clean Build，並準備在 P4 提供完整 SHA 與 checksum 的 manifest。
 
-交付與 ACK 原則 (依據 DELIVERY-004 規定)：
-- [ ] **維持 Draft 狀態**：提交 v0.3 時，必須保持合約為 Draft，**絕不自行標記為 Accepted**。
-- [ ] **提供 finding disposition 表**：每項 D1-D5 缺失需標記 `Resolved` 並附上對應的 code/test 定位。
-- [ ] **等待 Core Team ACK**：由我們提交上述包裹後，必須由 Core Team 審查通過，並由他們給出 `Accepted as M3 design input` 的 ACK，才算真正解鎖 M3。
+- [x] **D1 (Python HAL)**：修正 Protocol，`start/stop` 改為 `async`，`clear/write_pixels/show/size` 為同步。不自建 UI 狀態機。
+- [x] **D2 (C ABI)**：定義明確的 C struct (config)、錯誤碼 (error enum) 與 Python 例外映射。`clear/write` 只改 back-buffer，`show` 才 flush。
+- [x] **D3 (Hardware Gate)**：接線以 SSD1351 OLED 為唯一基準，修正 BCM 腳位設定，清理 config 確保能以 config hash 追溯。
+- [x] **D4 (Performance Claim)**：移除無根據的 `60 fps` 與 `<20ms` 效能承諾，等待實機測試真實 P50/P95。
+- [x] **D5 (Delivery Fix)**：修正 Makefile 依賴 (移除未追蹤檔案) 確保可 Clean Build，並準備在 P4 提供完整 SHA 與 checksum 的 manifest。
+
+P0.5 交付原則 (依據 DELIVERY-004 規定)：
+- [x] **維持 Draft 狀態**：v0.3 保持 Draft，**不由 POC 自行標記為 Accepted**。
+- [x] **提供 finding disposition 表**：D1–D5 已附 code/test 定位與剩餘 Pi evidence。
+
+**P4 exit gate**：D1–D5 disposition 全部成為 `Resolved`，且 Core Team 發出 `Accepted as M3 design input`；兩者不屬於 P0.5 前置條件。
 
 ---
 
@@ -61,7 +64,8 @@
 
 完成條件：
 
-- [ ] Host test suite 全部通過，並記錄執行結果。目前 M3 mock smoke 為 1 passed；全套 display tests 為 22 passed、8 deselected、4 setup errors，需先把 legacy `--hardware` option 從 `test_starry_night.py` 移至 `conftest.py`。
+- [x] Host test suite 全部通過並記錄結果：2026-08-12 全套 display tests 為 26 passed、8 skipped；Python compile、service/mock、C11 header 與 stub-linked native ABI smoke 均 PASS。
+- [ ] 獨立 process reviewer 在 `reviews/P1_REVIEW_FEEDBACK.md` 給出 `APPROVE`，且沒有未解決的 blocking/high finding。
 - [ ] 以完整 40-character Git SHA 凍結 candidate；worktree 必須 clean。
 - [ ] Manifest 記錄 source/header/adapter/config/build inputs 的 SHA-256。
 - [ ] Pi 與提交 evidence 的版本必須是同一個 candidate SHA。
@@ -145,8 +149,9 @@
 | Gate | 本輪狀態 | 是否足以解鎖 Core M3 |
 |---|---|---|
 | P0 工作準備 | 完成 | 否 |
-| P1 immutable candidate | 待執行 | 否 |
-| P2 fixture/preflight | 待實機 | 否 |
+| P0.5 D1–D5 coding/config remediation | 已放行 | 否 |
+| P1 immutable candidate | Host gate 完成；待獨立 review 與 clean SHA freeze | 否 |
+| P2 fixture/preflight | 網路待恢復；read-only preflight pending | 否 |
 | P3 Pi capability/evidence | 待實機 | 否 |
 | P4 Core re-review ACK | 待 P1–P3 | **是** |
 | C1 Core integration acceptance | 解鎖後由 Core 執行 | 非 unblock 前置條件 |
