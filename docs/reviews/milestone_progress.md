@@ -3,7 +3,7 @@
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M3
-* **M3 gate status**: `Not Ready`
+* **M3 gate status**: `Design Ready`
 * **Last updated**: 2026-08-12
 * **Owner**: Designer
 
@@ -13,7 +13,7 @@
 
 ### 結論
 
-Core Display 設計與 M3–M7 規劃已通過 `IR_review_III`、`MR_review_II`，且 visual proposal 已由 User 確認。這些設計輸出可建立單一 design commit，但不等於 M3 開發放行：Display v0.3 的 D1–D5 尚未回交，real-backend contract 仍不可作 baseline；Display input Accepted、M3 test spec 與 Designer coverage sign-off 完成前，Developer 不得拆包或開始任何 M3 產品實作。
+Core Display 設計與 M3–M7 規劃已通過 `IR_review_III`、`MR_review_II`，且 visual proposal 已由 User 確認。Display POC v0.3 D1–D5 全數 Resolved（`DELIVERY-005-poc_display-m3-v0.3-ack`），Display contract 已 Accepted as M3 design input。M3 Design Ready gate 現已解除阻擋；Tester 可開始撰寫 `test_spec_M3.md`。Designer coverage sign-off 完成前，Developer 不得拆包或開始任何 M3 產品實作。
 
 ### Gate matrix
 
@@ -21,13 +21,13 @@ Core Display 設計與 M3–M7 規劃已通過 `IR_review_III`、`MR_review_II`�
 | :--- | :--- | :--- | :--- |
 | M2 acceptance | `PASS` | PM handoff `PM-OUT-260807-006-m2-tester-verification` 已 Resolved | Core Team；無動作 |
 | Audio POC design input | `ACCEPTED WITH CONDITIONS` | `docs/outsource/references/poc_audio/audio_m3_contract_v1.0.md`；`DELIVERY-AUDIO-POC-M3-ACK-001` | 可供整合設計；Audio P1/P2 在 M3 delivery SHA 前完成，P3 TTS winner 延至 M4a |
-| Display POC design input | `BLOCKED` | v0.2；`DELIVERY-004-poc_display-m3-v0.2-review` D1–D5 | POC Display 回交 v0.3 disposition、contract/header/fixture/evidence；Designer 僅複審原 findings、直接影響與 regression |
+| Display POC design input | `ACCEPTED` | v0.3；`DELIVERY-005-poc_display-m3-v0.3-ack`；source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | D1–D5 全數 Resolved；Pi build+evidence PASS；無 blocking finding |
 | LLM POC input | `N/A FOR M3` | `docs/milestones/M3.md` 排除真實 LLM | 不等待 LLM；轉列 M4b entry blocker |
 | Core Display Spec | `REVIEWED` | `docs/display_spec.md`；`docs/display_mock_contact_sheet.svg`；User 於 2026-08-12 確認 mock；`IR_review_III` Resolved | 建立本輪 design commit；POC input 未 Accepted 前不得實作 real backend |
 | Font asset / provenance | `READY` | Noto Sans TC Regular + Medium 2.004、OFL 1.1；Spec 記錄 paths / SHA-256 | 納入 Design Ready delivery；不得改用 OS font |
 | Ch 8 / Ch 10 alignment | `REVIEWED` | `main.error`、Progress 排除、initial IDLE seed、`show_session_content`；`IR_review_III` Resolved | implementation 留待 Developer gate 後 |
 | M3 / M4 / M5 / M7 planning alignment | `REVIEWED` | M4a / M4b / M4c、M5 exact-SHA dependency、M7 spec-first 規則；`MR_review_II` Resolved | 建立本輪 design commit |
-| M3 Design Ready | `BLOCKED BY DISPLAY POC` | Core design / review commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1` 已完成；Display POC D1–D5 與 Accepted design input 尚缺 | POC Accepted 後，Designer 將本 design commit SHA 與 Accepted POC SHA 彙整為單一 M3 Design Ready conclusion |
+| M3 Design Ready | `READY` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display POC ACK `DELIVERY-005-poc_display-m3-v0.3-ack`（source `5c2b6ba...`）；Audio ACK `DELIVERY-AUDIO-POC-M3-ACK-001` | **Gate 解除**；Tester 即可開始 `test_spec_M3.md` |
 | M3 test spec / coverage sign-off | `PENDING` | Design Ready 後才可撰寫 `docs/test_spec/test_spec_M3.md` | Tester 撰寫；Designer 以 `TR_spec_M3` 確認 100% 覆蓋 |
 | `dev_progress_M3.md` / 工作包 | `NOT CREATED` | Developer-owned；不得早於 test spec 簽核 | Developer 在 gate 放行後估點拆包 |
 | M3 target-device acceptance | `PENDING` | `docs/milestones/M3.md`；`OUT-M3-TEST-2026-001` | Tester 對 delivery exact SHA 獨立驗收；POC 自驗只作外部 evidence layer |
@@ -96,10 +96,10 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 ## 下一動作順序
 
-1. Reviewer 複審 `IR_review_III` 與 `MR_review_II`；Designer 已回覆全部 Blocking 與 Advisory，仍由 Reviewer 裁定是否 Resolved。
-2. POC Display 依 `DELIVERY-004-poc_display-m3-v0.2-review` 回交 v0.3，處理 D1–D5；此工作可與第 1 項並行。
-3. Designer 複審 Display v0.3；通過後記錄 Accepted design input 與 adoption ACK。
-4. Designer 以單一 design SHA 彙整 M3 Design Ready conclusion，完成 PM-008 response / delivery 定位。
-5. Tester 產出 `test_spec_M3.md`；Designer 以 `TR_spec_M3` 簽核覆蓋。
+1. ~~Reviewer 複審 `IR_review_III` 與 `MR_review_II`~~ — **Done**（`IR_review_III`、`MR_review_II` 已 Resolved）
+2. ~~POC Display 回交 v0.3，處理 D1–D5~~ — **Done**（stage-exit `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40`）
+3. ~~Designer 複審 Display v0.3 → Accepted~~ — **Done**（`DELIVERY-005-poc_display-m3-v0.3-ack`）
+4. ~~Designer 彙整 M3 Design Ready conclusion~~ — **Done**（本 commit；gate 解除）
+5. **Tester 產出 `test_spec_M3.md`**；Designer 以 `TR_spec_M3` 簽核確認 100% 覆蓋。
 6. Developer 建立 `dev_progress_M3.md`，依已採用 Audio / Display baseline 估點拆包後才開始實作。
 7. M3 delivery 前收齊 Audio P1/P2 與 Display artifact / fixture / performance evidence，再由 Tester 對 exact SHA 驗收。
