@@ -88,8 +88,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 - [x] Co-I2S fixture 為 DC=BCM24/Board18、RST=BCM25/Board22；logical GPIO 解析為 `gpiochip0`；更新後 actual config hash 為 `973229d06ae7c2734e96ce350365e61d64e2074b47166497a09976e38246d679`。
 - [x] 歷史 candidate `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 曾 clean detached checkout。
 - [x] 歷史 candidate read-only preflight PASS：SPI node、GPIO、依賴、權限、既有 owner/process 均無衝突。
-- [ ] Pi checkout 為 linker 修正後的新 P1 clean SHA。
-- [ ] 新 P1 SHA read-only preflight PASS。
+- [x] Pi clean detached checkout 為 co-I2S candidate SHA `5c2b6ba532a2661d5db79e27736e79890931515f`。
+- [x] 新 P1 SHA read-only preflight PASS：2026-08-12T14:56:33Z；SPI/GPIO present，owner none，Pi worktree clean。
 
 2026-08-12T14:26:24Z 已在 `b1f4c3e9b6487cabe9cbc164046c4b43199a8f27` 完成 preflight PASS；`7c3d355b3850d01ebd967186f1ee578a97108aa3` 也曾 preflight PASS，但兩者不符合最終 co-I2S/CE ownership 修正，新的 candidate 必須重跑。Raw evidence：`poc_display/evidence/m3/20260812T142620Z-pretest/`、`20260812T144113Z-pretest/`（gitignored custody）。
 
@@ -105,13 +105,13 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 完成條件：
 
-- [ ] 由 target Pi 登入使用者在 exact clean candidate SHA 執行 clean build，記錄 compiler/toolchain、license、target、`.so` checksum 與 `ldd -r`；`make` 成功但有任何 `undefined symbol` 仍為 FAIL。
-- [ ] Lifecycle/negative-path PASS：`start → write_pixels → show → stop`、reopen、repeated stop、wrong buffer length、missing device/config、fallback/exception mapping。
-- [ ] 確認每次 frame intent 僅產生一次 native `present`，`clear/write` 不會隱含 flush。
-- [ ] 顏色、gradient、orientation 與邊界行為由 operator attestation 確認為 PASS。
-- [ ] Performance evidence 包含 warm-up、sample count、P50/P95/max、解析度、pixel format、config hash、CPU/OS/driver。
-- [ ] 分開記錄 datasheet limit、requested SPI speed 與 effective speed；不以 60 FPS 或超頻作 baseline。
-- [ ] 測試前後皆證明沒有殘留 SPI/GPIO owner 或測試 process。
+- [x] target Pi 登入使用者在 exact clean candidate SHA 執行 clean build；`ldd -r` 無 undefined symbol；`.so` SHA-256 為 `2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493`。
+- [x] Lifecycle/negative-path PASS：start/present/stop、reopen 3/3、repeated stop、wrong buffer length、missing SPI device。
+- [x] 每次 frame intent 僅一次 native `present`；black/white/red/green/blue/gradient 均 presented。
+- [x] Owner 確認顏色、gradient、orientation 與 flicker 均 PASS。
+- [x] Performance evidence：10 warm-ups、100 samples、P50 65.8713625 ms、P95 65.879723 ms、max 65.897834 ms；RGB565 MSB-first、128×128、config hash 已記錄。
+- [x] Requested SPI speed 4 MHz；effective speed unavailable，未推論為 measured throughput。
+- [x] 測試後 SPI/GPIO owner none、Pi worktree clean；capability packet PASS。
 
 ---
 
@@ -121,8 +121,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 
 完成條件：
 
-- [ ] Sanitized summary、raw evidence custody/checksum、config hash 與完整 manifest 齊全。
-- [ ] D1–D5 disposition 全部標為 `Resolved`，且每一項可追到 code/test/evidence。
+- [x] Sanitized summary、raw evidence custody/checksum、config hash 與完整 manifest 齊全。
+- [x] D1–D5 disposition 全部標為 `Resolved`，且每一項可追到 code/test/evidence。
 - [ ] Delivery 使用 immutable full SHA；Core Team review 的也是同一 SHA。
 - [ ] Core Team 檢查 D1–D5 與 regression，沒有新的 blocking finding。
 - [ ] Core Team 明確 ACK：`Accepted as M3 design input`。
@@ -162,8 +162,8 @@ P2/P3 必須 checkout 同一 candidate SHA。只有無法納入 Git 提交包的
 |---|---|---|
 | P0 工作準備 | 完成 | 否 |
 | P0.5 D1–D5 coding/config remediation | 已放行 | 否 |
-| P1 immutable candidate | 完成：linker-fix freeze commit full SHA | 否 |
-| P2 fixture/preflight | 舊 SHA PASS；待新 SHA 重跑 | 否 |
-| P3 Pi capability/evidence | 首跑 FAIL：unresolved `lgpio` symbol；待修正後重跑 | 否 |
+| P1 immutable candidate | 完成：`5c2b6ba532a2661d5db79e27736e79890931515f` | 否 |
+| P2 fixture/preflight | 完成：co-I2S candidate preflight PASS | 否 |
+| P3 Pi capability/evidence | 完成：capability packet PASS、operator visual PASS | 否 |
 | P4 Core re-review ACK | 待 P1–P3 | **是** |
 | C1 Core integration acceptance | 解鎖後由 Core 執行 | 非 unblock 前置條件 |

@@ -1,6 +1,6 @@
 # POC Display evidence workflow
 
-狀態：`IN_PROGRESS`；尚未宣稱 Pi fixture 已通過。
+狀態：`P3_PASS / Core re-review pending`；sanitized summary 為 `m3/M3-HW-SUMMARY-2026-08-12.md`。
 
 流程沿用 Audio POC 經驗：先跑 read-only remote pre-test，再於 exact clean SHA 的 Pi checkout 跑 capability packet。環境不足回報 `INCONCLUSIVE`，契約行為失敗才回報 `FAIL`；不能把「畫面看得到」或 SSH command 結束當作 cleanup 證據。
 

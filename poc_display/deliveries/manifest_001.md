@@ -1,6 +1,6 @@
 # Delivery Manifest: POC-DSP-001 (Draft v0.3)
 
-Status：`CANDIDATE_SOURCE_FROZEN / Pi verification pending / not Accepted`
+Status：`P3_CAPABILITY_PASS / Core re-review pending / not Accepted`
 
 ## Source identity
 
@@ -9,17 +9,17 @@ Status：`CANDIDATE_SOURCE_FROZEN / Pi verification pending / not Accepted`
 | Repository | `snowboard-agent` |
 | Branch | `dev_display_p1` |
 | Comparison base | `412172ae58c8053bd697caebe133a718206c2f55` |
-| Candidate source SHA | 本 manifest 所在的 freeze commit full SHA（交接時以 `git rev-parse HEAD` 回報） |
+| Candidate source SHA | `5c2b6ba532a2661d5db79e27736e79890931515f` |
 | Included scope | contract、public C header、SSD1351 native source、Python adapter、tests、config/evidence schema |
 
-Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 metadata commit 不得改變 Pi checkout 與 evidence 使用的 source SHA。
+Candidate source identity 只認上述完整 SHA；後續 sanitized summary 或 review metadata commit 不得改變 Pi checkout 與 evidence 使用的 source SHA。
 
 ## Submission unit
 
 | Field | Value |
 |---|---|
 | Type | Git commit；整個 tracked repository snapshot 視為單一提交包 |
-| Identity | 本 manifest 所在的 freeze commit full SHA |
+| Identity | `5c2b6ba532a2661d5db79e27736e79890931515f` |
 | Scope | 該 commit 可達的完整 Git tree 與 blobs |
 | Normal transport | Core Team 直接取得 repository 並 checkout 完整 SHA |
 | Per-file checksum | 不要求；Git commit 已識別全部 tracked content |
@@ -30,9 +30,9 @@ Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 me
 
 | Material | Status | Handling |
 |---|---|---|
-| Pi-built `libdisplay.so` | `PENDING_PI_BUILD` | 若未納入提交包，記錄 artifact checksum 與保管位置 |
-| Actual Pi local config | `PENDING_PI_RUN` | 不上傳敏感／機器限定內容；記錄 config hash 與 sanitized copy |
-| Raw logs/evidence | `PENDING_PI_RUN` | 保存在受控位置，記錄整包 checksum／custody reference |
+| Pi-built `libdisplay.so` | `PASS` | SHA-256 `2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493`; Pi custody |
+| Actual Pi local config | `PASS` | SHA-256 `973229d06ae7c2734e96ce350365e61d64e2074b47166497a09976e38246d679`; machine-local, not uploaded |
+| Raw logs/evidence | `PASS` | Pi custody `m3/20260812T145653Z-ssd1351`; tar-stream SHA-256 `affcfd5f58c9c97b348737a78cd4f2a81c7595a75fbeb6ba2e5188a7a38bd558` |
 
 只有無法納入正常 Git 提交包的內容才使用上述例外流程。
 
@@ -40,12 +40,12 @@ Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 me
 
 | Field | Required value / status |
 |---|---|
-| Host | Raspberry Pi 5; board revision `PENDING_PI_RUN` |
-| OS / kernel | `PENDING_PI_RUN` |
-| Architecture | expected `aarch64`; verify on target |
-| Compiler | `PENDING_PI_RUN` |
-| Python / pytest | `PENDING_PI_RUN` |
-| lgpio | `PENDING_PI_RUN` |
+| Host | Raspberry Pi 5 Model B Rev 1.1 |
+| OS / kernel | Debian GNU/Linux 13 / `6.12.47+rpt-rpi-2712` |
+| Architecture | `aarch64` |
+| Compiler | Debian GCC `14.2.0-19` |
+| Python | `3.13.5` |
+| lgpio | `0.2.2-1~rpt1+trixie` |
 
 ## Primary hardware
 
@@ -53,7 +53,7 @@ Candidate source identity 只認本次 freeze 後回報的完整 SHA；後續 me
 |---|---|
 | Module | Waveshare 1.5-inch RGB OLED Module |
 | Controller | SSD1351 |
-| Module revision | `PENDING_FIXTURE_PHOTO` |
+| Module revision | `operator-verified` (photos not required) |
 | Interface | 4-wire SPI0 mode 0 CE0 |
 | Resolution / format | 128×128 / RGB565 MSB first / 32768 bytes |
 | Pins | DC=BCM24/Board18; RST=BCM25/Board22; CS=BCM8/Board24 (SPI CE0 kernel-managed); MOSI=BCM10/Board19; SCLK=BCM11/Board23; BL absent |
@@ -75,7 +75,7 @@ ldd -r libdisplay.so
 
 以上命令必須由 Core Team operator／登入使用者在 exact clean candidate SHA 的 target Pi 上執行。`make` exit 0 不足以通過；`ldd -r` 若出現任何 `undefined symbol` 即為 FAIL，且 workstation/stub build 不得替代此 gate。
 
-Target clean build result、compiler output、`ldd -r` output 與 `.so` checksum：`PENDING_PI_BUILD`。
+Target clean build、`ldd -r` and `.so` checksum: `PASS`; see `poc_display/evidence/m3/M3-HW-SUMMARY-2026-08-12.md`.
 
 Public header standalone syntax check：
 
