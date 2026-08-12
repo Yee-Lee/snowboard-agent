@@ -66,6 +66,9 @@ class RenderScheduler:
         self._running = False
         self._pending_frame: Optional[Image.Image] = None
         self._io_busy = False
+        # FPS tracking
+        self._fps_frame_count: int = 0
+        self._fps_window_start: float = 0.0
 
     # ------------------------------------------------------------------
     # Control
@@ -93,6 +96,8 @@ class RenderScheduler:
 
     async def _produce_loop(self) -> None:
         """Generate frames at target_fps and store the latest one."""
+        self._fps_window_start = time.monotonic()
+        self._fps_frame_count = 0
         while self._running:
             tick_start = time.monotonic()
             elapsed = tick_start - self._start_time
@@ -101,6 +106,16 @@ class RenderScheduler:
             if frame is not None:
                 # Latest-frame-wins: overwrite any un-consumed pending frame
                 self._pending_frame = frame
+                self._fps_frame_count += 1
+
+            # Print actual FPS to terminal once per second
+            now = time.monotonic()
+            window = now - self._fps_window_start
+            if window >= 1.0:
+                actual_fps = self._fps_frame_count / window
+                print(f"\r[FPS] {actual_fps:.1f} / {self._target_fps} target", end="", flush=True)
+                self._fps_frame_count = 0
+                self._fps_window_start = now
 
             work = time.monotonic() - tick_start
             sleep = self._frame_time - work
