@@ -1,18 +1,20 @@
 # docs/outsource/references/
 
-此目錄存放**外部團隊提供給 Core Team 的技術參考文件**，包含 POC 團隊的 contract、spec draft 與設計輸入。
+此目錄存放外部技術輸入的**可重現定位資訊**。POC source、tests、harness、evidence snapshot與binary留在各自repository，不複製進Core Git。
 
 ## 目錄說明
 
 | 目錄 | 內容 |
 |---|---|
-| `poc_audio/` | Audio POC 團隊提供的 contract、capability matrix、fixture spec |
-| `poc_display/` | Display POC 團隊提供的 contract、display spec draft |
-| `poc_llm/` | LLM POC 團隊提供的 contract、model spec draft |
+| `poc_audio/` | Audio POC repository URL、exact SHA、authority path與取得指令 |
+| `poc_display/` | Display POC repository URL、exact SHA、authority path與取得指令 |
+| `poc_llm/` | LLM POC repository URL、exact SHA、authority path與取得指令 |
 
 ## 使用原則
 
-- 此目錄只放**外部團隊主動交付給 Core Team 的文件**，不放 PM handoff（見 `pm_handoff/`）。
-- 文件版本以**檔名或文件內 header 標明版本號**（如 `v0.1 DRAFT`、`v1.0 Accepted`）。
-- 當外部團隊更新正式版時，直接在對應目錄**新增或覆蓋**版本檔案，並在 commit message 標明來源與版本。
-- Core Team 採用決定記錄於 `deliveries/` 的 ACK 文件；不在本目錄內修改外部提供的原始內容。
+- 不放PM handoff（見`pm_handoff/`），也不vendor外部repository的tracked tree。
+- 每筆定位資訊至少包含canonical Git URL、完整40-character SHA、authority path、版本／狀態與取得後的SHA驗證方式；branch HEAD、tag或口頭版本不能作為baseline。
+- Developer需要參考時，以`mktemp -d`在OS temporary directory clone，detached checkout exact SHA；不得clone至Core tree、不得複製POC source / test / binary回Core reference。
+- Private repository access是Developer執行環境的read-only prerequisite；Core不保存credential、token、SSH config或持久local clone。
+- `.so`、wheel及target build output不進Git；只在ACK / manifest記錄source SHA、artifact checksum、license、build command與target runtime identity。
+- Core採用決定記錄於`deliveries/` ACK；外部內容更新時只更新locator與ACK，不在Core修改或重新發布原文。

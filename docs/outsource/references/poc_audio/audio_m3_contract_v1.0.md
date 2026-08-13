@@ -1,58 +1,35 @@
-# Audio POC → Core M3 Audio HAL Contract v1.0
+# Audio POC M3 v1.0 — External Source Locator
 
-Delivery ID：`DELIVERY-AUDIO-POC-M3-CONTRACT-001`
-狀態：`ACCEPTED WITH CONDITIONS`
-版本：`1.0`
-日期：2026-08-08
-提供方：Audio POC / User as Designer
-接收方：Core Team Designer
+本檔只定位已採用的外部技術輸入，不保存Audio POC repository副本。
 
-## 1. Authority and acceptance
+| Item | Authority |
+| :--- | :--- |
+| Repository | `git@github.com:Yee-Lee/poc_audio.git` |
+| Accepted delivery SHA | `87ff000559ded8c0d7499d621af7dfcccb81858c` |
+| Native-capability evidence source SHA | `0edeb7d9f8ff3811d1480ab4b464db2842978233` |
+| Contract | `poc_audio/deliveries/audio_m3_contract_v1.0.md` at accepted delivery SHA |
+| Option A change request | `poc_audio/deliveries/CR-AUDIO-M3-PCM-001.md` at accepted delivery SHA |
+| Design correction | `poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md` at accepted delivery SHA |
+| Native evidence | `poc_audio/evidence/m1/M1-NATIVE-AUDIO-001.md` at evidence source SHA |
+| Core decisions | `DELIVERY-AUDIO-POC-M3-ACK-001/002`、`DELIVERY-AUDIO-POC-M3-VALIDATION-001` |
 
-This delivery supersedes the v0.1 draft as the POC-to-Core M3 design input.
-Core Team accepted the contract with the conditions in
-`docs/pm_handoff/DELIVERY-AUDIO-POC-M3-ACK-001.md`. The acknowledged Core
-development branch is `dev_agent_m3`; its final integration SHA is not yet
-available and must not be inferred from the branch name.
+## Temporary checkout
 
-This document lets Core Team start M3 design and implementation. It is not a
-POC M3 integration baseline. POC M3 starts only after Core Team supplies an
-accepted full 40-character SHA and the POC has M2 finalists.
+Developer只在需要查閱時執行；目標路徑必須位於`mktemp`建立的temporary directory，不得位於Core repository或一般workspace：
 
-## 2. Accepted contract
+```bash
+poc_checkout_dir="$(mktemp -d -t snowboard-audio-poc.XXXXXXXXXX)"
+git clone --filter=blob:none --no-checkout \
+  git@github.com:Yee-Lee/poc_audio.git \
+  "$poc_checkout_dir/poc_audio"
+git -C "$poc_checkout_dir/poc_audio" cat-file -e \
+  '87ff000559ded8c0d7499d621af7dfcccb81858c^{commit}'
+git -C "$poc_checkout_dir/poc_audio" switch --detach \
+  87ff000559ded8c0d7499d621af7dfcccb81858c
+test "$(git -C "$poc_checkout_dir/poc_audio" rev-parse HEAD)" = \
+  87ff000559ded8c0d7499d621af7dfcccb81858c
+```
 
-| Area | Contract |
-| --- | --- |
-| Target hardware | Raspberry Pi 5; INMP441 mic and MAX98357A speaker amplifier sharing I2S BCLK/LRCK; `googlevoicehat-soundcard` overlay. |
-| Input API | `start()`, `stop()`, and `frames() -> AsyncIterator[bytes]`; one active iterator per instance. |
-| Output API | `start()`, `stop()`, and `play(pcm: AsyncIterator[bytes])`; consume every legal PCM chunk. |
-| Input PCM target | 16 kHz, mono, 16-bit little-endian, 20 ms frame; format is fixed in config. |
-| Output PCM | Configurable independently from input; final rate/shape follows the POC TTS winner. Speak must not implicitly resample. |
-| Lifecycle and errors | Input/output independently start, stop, and reopen. Stop leaves no stream, task, or device owner. Invalid device exposes error/fallback/capability. |
-| Boundaries | HAL owns PCM I/O, device lifecycle, capability, and error only. VAD, endpointing, ASR, TTS candidate logic, AEC, barge-in, wake word, and cross-process mic handoff are excluded. |
+若private repository無read權限，工作包保持`Blocked`並由USER / POC提供access；不得改用搜尋結果、fork、branch HEAD或手動複製檔案。使用完畢即刪除整個`poc_checkout_dir`；不得把clone、raw evidence、wheel或`.so`加入Core Git。
 
-## 3. Conditions and POC dependencies
-
-| ID | Required POC delivery | Status | Consequence if unresolved |
-| --- | --- | --- | --- |
-| P1 | Native `hw:` PCM matrix for rate/channel/sample format, 16 kHz feasibility, xrun behaviour, and lifecycle evidence. | `IN_PROGRESS` | Core M3 Pi acceptance is blocked; contract conflict requires a joint change request. |
-| P2 | ALSA card/device identifier, driver config hash, wiring and power confirmation, supplied through local config/evidence rather than generic source. | `IN_PROGRESS` | Reproducible Core Pi test command is blocked. |
-| P3 | TTS winner PCM rate/channels/bit depth/chunk behaviour and controlled fixture. | `PENDING M2` | POC M3 playback-winner evidence is blocked; Core Output API remains configurable. |
-
-## 4. Core Team return delivery required for POC M3
-
-Core Team must provide an accepted full 40-character SHA containing source,
-tests, and authoritative documentation, plus Pi setup/configuration, automated
-input/output/lifecycle/fallback/cleanup evidence, and known buffering,
-sample-rate, shared-clock, xrun, and ownership limits. The POC Tester will
-test only that exact SHA.
-
-## 5. Acceptance record
-
-| Decision | Owner | Status |
-| --- | --- | --- |
-| Core accepted v1.0 as M3 design input | Core Team Designer | `ACCEPTED WITH CONDITIONS` |
-| POC publishes P1 native capability matrix | Audio POC Tester | `IN_PROGRESS` |
-| POC publishes P2 device/config evidence | Audio POC Tester / User | `IN_PROGRESS` |
-| Core supplies accepted M3 SHA | Core Team Designer | `PENDING` |
-| POC accepts SHA for POC M3 integration | Audio POC Tester / User | `PENDING` |
+Audio Option A implementation仍受`DELIVERY-AUDIO-POC-M3-VALIDATION-001`的P4 gate約束；本locator不解除該gate。

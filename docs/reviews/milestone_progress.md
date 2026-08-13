@@ -3,7 +3,7 @@
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M3
-* **M3 gate status**: `Development Ready — target-device acceptance Pending`
+* **M3 gate status**: `Development Ready — Audio real backend blocked by POC P4`
 * **Last updated**: 2026-08-13
 * **Owner**: Designer
 
@@ -13,23 +13,23 @@
 
 ### 結論
 
-Core Display 設計、strict SSD1351 mapping 與 M3–M7 規劃已收斂；Display POC v0.3 是 Accepted design input。Tester 的 M3 test spec 經 PM-009 修訂後由 Designer 以 `TR_spec_M3_I` 確認 100% 覆蓋，內部 Development Ready gate 已批准。Developer 可建立 `dev_progress_M3.md` 後拆包實作；本結論不是 M3 acceptance，RPI-NATIVE cards 與外部 PM exact-SHA intake仍為 Pending。
+Core Display設計、strict SSD1351 mapping與M3–M7規劃已收斂；Display POC v0.3是Accepted design input。Audio P1 native failure / P2 PASS已接受Option A的產品方向，但binding、valid-bit alignment、resampler、buffer與async I/O尚無target-Pi可行性證據，因此已發出`DELIVERY-AUDIO-POC-M3-VALIDATION-001`。Developer可開始非Audio-real工作包；Audio real backend與production dependency lock維持Blocked。本結論不是M3 acceptance，RPI-NATIVE cards與外部PM exact-SHA intake仍為Pending。
 
 ### Gate matrix
 
 | Gate | 狀態 | 證據 / 依據 | Owner / 下一動作 |
 | :--- | :--- | :--- | :--- |
 | M2 acceptance | `PASS` | PM handoff `PM-OUT-260807-006-m2-tester-verification` 已 Resolved | Core Team；無動作 |
-| Audio POC design input | `ACCEPTED WITH CONDITIONS` | `docs/outsource/references/poc_audio/audio_m3_contract_v1.0.md`；`DELIVERY-AUDIO-POC-M3-ACK-001` | 可供整合設計；Audio P1/P2 在 M3 delivery SHA 前完成，P3 TTS winner 延至 M4a |
+| Audio POC design input | `OPTION A DIRECTION ACCEPTED / P4 PENDING` | Audio v1.0；`DELIVERY-AUDIO-POC-M3-ACK-001/002`；`DELIVERY-AUDIO-POC-M3-VALIDATION-001`；POC evidence `0edeb7d9f8ff3811d1480ab4b464db2842978233` | P1 native matrix`FAIL`、P2`PASS`；POC驗證Option A implementation並回交full SHA；P3延至M4a |
 | Display POC design input | `ACCEPTED` | v0.3；`DELIVERY-005-poc_display-m3-v0.3-ack`；source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | D1–D5 全數 Resolved；Pi build+evidence PASS；無 blocking finding |
 | LLM POC input | `N/A FOR M3` | `docs/milestones/M3.md` 排除真實 LLM | 不等待 LLM；轉列 M4b entry blocker |
 | Core Display Spec | `REVIEWED` | `docs/display_spec.md`；`docs/display_mock_contact_sheet.svg`；`IR_review_III`；PM-009 `OUT-M3-DSP-2026-005` Resolved | M7 stable IDs / trace / Error mock 已收斂 |
 | Font asset / provenance | `READY` | Noto Sans TC Regular + Medium 2.004、OFL 1.1；Spec 記錄 paths / SHA-256 | 納入 Design Ready delivery；不得改用 OS font |
-| Ch 8 / Ch 10 alignment | `READY` | strict SSD1351 artifact / ABI / SPI / GPIO / rotation / byte-order / buffer mapping；PM-009 `OUT-M3-DISPLAY-2026-002` Resolved | Developer 依已簽核 config / factory boundary 實作 |
+| Ch 2a / Ch 8 / Ch 10 alignment | `PARTIAL READY` | Audio native / stream語意已固定但implementation selection待P4；strict SSD1351 artifact / ABI / SPI / GPIO / rotation / byte-order / buffer mapping已固定 | Developer依package split實作；不得自行選Audio binding / resampler / buffering |
 | M3 / M4 / M5 / M7 planning alignment | `REVIEWED` | M4a / M4b / M4c、M5 exact-SHA dependency、M7 spec-first 規則；`MR_review_II` Resolved | 建立本輪 design commit |
-| M3 Design Ready | `READY` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display POC ACK `DELIVERY-005-poc_display-m3-v0.3-ack`（source `5c2b6ba...`）；Audio ACK `DELIVERY-AUDIO-POC-M3-ACK-001` | **Gate 解除**；Tester 即可開始 `test_spec_M3.md` |
-| M3 test spec / coverage sign-off | `APPROVED` | `docs/test_spec/test_spec_M3.md`；`TR_spec_M3_I` Resolved；PM-009 test finding Resolved | 100% coverage sign-off 完成 |
-| `dev_progress_M3.md` / 工作包 | `AUTHORIZED / NOT CREATED` | Developer-owned；test spec 已簽核 | Developer 現可估點拆包後開始實作 |
+| M3 Design Ready | `READY WITH PACKAGE GATE` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display ACK；Audio ACK-001/002 | M3整體可開工；Audio real package等待P4 final selection ACK |
+| M3 test spec / coverage sign-off | `APPROVED + P4 CONDITIONAL` | `docs/test_spec/test_spec_M3.md`；`TR_spec_M3_I` Resolved；ACK-002 amendment | Audio implementation-specific case在P4後綁定核准選型；不提前宣稱PASS |
+| `dev_progress_M3.md` / 工作包 | `AUTHORIZED / DEVELOPER-OWNED` | test spec已簽核；working tree已有Developer檔案但不由Designer修改 | Developer立即拆分Ready / Blocked package，Audio real backend標`Blocked by Audio P4` |
 | M3 target-device acceptance | `PENDING` | `docs/milestones/M3.md`；`OUT-M3-TEST-2026-001` | Tester 對 delivery exact SHA 獨立驗收；POC 自驗只作外部 evidence layer |
 
 ### Reviewer handoff scope（pre-commit working tree）
@@ -78,7 +78,7 @@ Developer 拆包時必須加入 `POC Input Baseline` 表，至少包含：
 | Open conditions | owner、期限，以及 `blocks package start` / `blocks M3 acceptance` 分級 |
 | Evidence index | automated logs、P50/P95、人工 checklist、照片/影片 metadata 的可定位索引 |
 
-任何工作包若依賴尚未 Accepted 的 Display contract、未定位的 binary、未知 license、branch HEAD 或只有「畫面可見／不 crash」的 POC 自驗，狀態必須保持 `Blocked`；Developer 不得自行補寫 HAL / ABI / fixture 語意。
+任何工作包若依賴尚未Accepted的contract、未定位binary、未知license、branch HEAD或只有「可執行／不crash」的POC自驗，狀態必須保持`Blocked`；Developer不得自行補寫HAL / ABI / fixture語意。Audio real backend另須有POC P4完整source SHA與Core final selection ACK，不能以本ACK-002或候選套件資訊解除。
 
 ---
 
@@ -102,5 +102,6 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 4. ~~Designer 彙整 M3 Design Ready conclusion~~ — **Done**（本 commit；gate 解除）
 5. ~~Tester 產出 `test_spec_M3.md`；Designer coverage sign-off~~ — **Done**（`TR_spec_M3_I` Resolved；Development Ready approved）
 6. 取得 USER commit 同意後建立 PM-009 單一候選 commit，回傳完整 40-character HEAD 完成 external exact-SHA intake。
-7. Developer 建立 `dev_progress_M3.md`，依已採用 Audio / Display baseline 估點拆包後開始實作。
-8. M3 delivery 前收齊 Audio P1/P2 與 Display artifact / fixture / performance evidence，再由 Tester 對 exact implementation SHA 驗收。
+7. Developer建立／更新`dev_progress_M3.md`：Display、Camera、GPIO、Audio Protocol / mock/null / schema / fake seam列Ready；Audio real backend與dependency lock列`Blocked by Audio P4`。
+8. Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`回交完整source SHA與evidence；Core Designer審核並另發final selection ACK後，Developer才開始Audio real package。
+9. M3 delivery前由Core完成Audio Option A implementation / Pi evidence與Display artifact / fixture / performance evidence，再由Tester對exact implementation SHA驗收。

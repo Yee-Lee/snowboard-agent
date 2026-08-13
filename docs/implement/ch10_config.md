@@ -286,14 +286,33 @@ ASR / Vision config已在§5成為 `ListenConfig.adapter` 與 `LookConfig.adapte
 
 ```python
 @dataclass(frozen=True, slots=True)
-class AudioConfig:
-    driver: str = "mock"
+class AudioFormatConfig:
     sample_rate: int = 16_000
     channels: int = 1
-    bit_depth: Literal[16] = 16
+    sample_format: Literal["s16_le", "s32_le"] = "s16_le"
+
+@dataclass(frozen=True, slots=True)
+class AudioInputConfig:
+    stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
     frame_duration_ms: int = 20
-    input_device: str | None = None
-    output_device: str | None = None
+    device: str | None = None
+    native_format: AudioFormatConfig | None = None
+    channel_index: Literal[0, 1] | None = None
+    valid_bits: int | None = None
+    valid_bits_alignment: str | None = None
+    resampler: str | None = None
+
+@dataclass(frozen=True, slots=True)
+class AudioOutputConfig:
+    stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
+    device: str | None = None
+    native_format: AudioFormatConfig | None = None
+
+@dataclass(frozen=True, slots=True)
+class AudioConfig:
+    driver: str = "mock"
+    input: AudioInputConfig = field(default_factory=AudioInputConfig)
+    output: AudioOutputConfig = field(default_factory=AudioOutputConfig)
 
 @dataclass(frozen=True, slots=True)
 class DisplayConfig:
@@ -351,12 +370,33 @@ Driver name由composition root的factory registry驗證；config不能import arb
 
 Cross validation :
 
-- `frame bytes = sample_rate * frame_duration_ms / 1000 * channels * bit_depth/8` 必須是整數；
-- AudioInput / TTS output format必須一致，不做runtime resample；
+- `sample_format` 的 container bytes 為 `s16_le=2`、`s32_le=4`；`frame bytes = sample_rate * frame_duration_ms / 1000 * channels * container_bytes` 必須是整數；
+- AudioInput stream format與AudioOutput stream format獨立。Listen / ASR必須匹配 `audio.input.stream_format`；TTS / Speak必須匹配 `audio.output.stream_format`。Listen、ASR、TTS與Speak不得隱式resample；只有本節明列的M3 real AudioInput adaptation可在HAL內轉換native→stream；
 - width / height正整數，camera quality 1..100；selected `DSP-PROFILE-OLED-128` 對所有 driver 都固定 `128×128`、`rgb565`、rotation `0`、RGB565 MSB-first 與 `128 * 128 * 2 = 32768` bytes 完整 frame。任何矛盾值都在 factory / native code 之前以 `ConfigValueError` 拒絕；未來 profile 必須另定 profile-specific validation；
 - `show_session_content` 實作 `DSP-REQ-004`，只控制 `display_spec.md` 的 Perception / Tool / Speak 內容；State、Error、Blank 與 lifecycle 不受影響，且此設定為 startup-static、不支援 runtime reload；
 - GPIO logical name與pin都不可重複，一pin一訂閱者；
 - real driver需要的device/path欄位不可為 `None` 。
+
+`driver="alsa"` 的M3 Option A語意依`DELIVERY-AUDIO-POC-M3-ACK-002`固定；下列mapping除resampler implementation identifier外可先實作strict validation。Audio real factory與production dependency lock須等`DELIVERY-AUDIO-POC-M3-VALIDATION-001`通過後才放行：
+
+| 欄位 | 合法值 / 規則 | 原因 |
+| :--- | :--- | :--- |
+| `input.device` | 必填 direct `hw:` identifier；不得為 `plughw:`；POC P2 baseline為 `hw:0,0` | 禁止 ALSA 隱式 format conversion；實際值由 Pi local config提供 |
+| `input.native_format` | 48000 Hz / 2 channels / `s32_le` | POC direct native capability matrix |
+| `input.stream_format` | 16000 Hz / 1 channel / `s16_le` | 對 Listen / VAD / ASR 的既有產品契約 |
+| `input.frame_duration_ms` | `20` | 320 samples / 640 bytes exact frame |
+| `input.channel_index` | 必填 `0` 或 `1` | 由 INMP441 L/R 接線與 operator attestation決定，不猜測 |
+| `input.valid_bits` / `valid_bits_alignment` | POC驗證後固定；目前候選為`24` / `msb` | I2S資料語意與ALSA S32 container表示必須由target fixture交叉驗證，不以datasheet推論取代實測 |
+| `input.resampler` | POC通過後必填Core核准的implementation identifier | stateful streaming anti-alias converter，ratio 1/3；候選名稱不得先成為production allowlist |
+| `output.device` | 必填 direct `hw:` identifier；不得為 `plughw:`；POC P2 baseline為 `hw:0,0` | M3 direct playback evidence |
+| `output.native_format` | 48000 Hz / 2 channels / `s32_le` | POC direct native capability matrix |
+| `output.stream_format` | M3 必須等於 `output.native_format` | P3 TTS winner前不核准output adaptation |
+
+Loader必須在Audio factory / Pi-only import前拒絕unknown key、缺real欄位、非selected native / stream format、非法channel、未宣告mismatch、`plughw:`或非Core核准resampler。POC gate未通過時不存在核准resampler，`driver="alsa"`不得成為可發布的production config。`input.native_format != input.stream_format`只在完整Option A mapping成立時合法；其他mismatch一律`ConfigValueError`。`mock` / `null`只使用input / output stream format，若攜帶`device`、`native_format`、channel / valid-bits / resampler任一real-only值即拒絕。
+
+Startup必須再以backend實際開啟結果核對direct device與native format；config parse成功不等於硬體capability PASS。Runtime不允許format renegotiation。Config的repr / log可列sanitized `hw:` identifier與format，但不得記raw PCM、endpoint、account或private path。
+
+Audio POC須回交候選binding / resampler比較、exact版本與source hash、transitive dependency、license / notice、system package、target build命令及runtime library identity。Core核准後才把選定值寫入schema allowlist與deployment lock；binding由target Pi build / install，產生的wheel / shared object不進Git。Pi evidence記錄實際package與native library版本。
 
 `driver="ssd1351"` 是 M3 唯一 selected real backend，另套用下列 strict cross-field validation：
 

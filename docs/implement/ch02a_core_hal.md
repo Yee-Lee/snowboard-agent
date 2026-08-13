@@ -1,6 +1,6 @@
 # Ch 2a. core HAL Protocol
 
-屬於 `implement.md` 索引 | 對應 `arch.md` §2.3 | 狀態：定稿（IR-final 已通過（2026-08-01））
+屬於 `implement.md` 索引 | 對應 `arch.md` §2.3 | 狀態：定稿（IR-final 已通過（2026-08-01）；M3 Audio Option A 語意已接受，實體技術選型待 POC 驗證）
 
 本章定義 `arch.md` §2.3「硬體 HAL」的具體 Protocol 契約—— `core/audio`、`core/display` 底層、`core/camera`、`core/gpio`。所有 HAL 遵守 §2a.1 統一契約；各 HAL 的工作方法（ `frames()` / `capture()` / `register_input()` 等）於各自節次定義。
 
@@ -119,15 +119,13 @@ class AudioOutput(Protocol):
 
 注意： `frames()` 本身是同步方法、return `AsyncIterator[bytes]` ——呼叫者以 `async for frame in audio_input.frames():` 消費。這使得 worker 可以在 `abort` 時透過 `AsyncIterator.aclose()` 主動中斷串流，符合 `arch.md` §6.5 收斂契約。
 
-### PCM 格式
+### PCM 格式與轉換邊界
 
-格式參數屬 config ( Ch 10 )：
-- `sample_rate` : int，預設 `16000` Hz
-- `channels` : int，預設 `1` (單聲道)
-- `bit_depth` : int，預設 `16` bits
-- `frame_duration_ms` : int，預設 `20` ms (每 frame 樣本數 = `sample_rate * frame_duration_ms / 1000` )
+Ch 10 分開描述硬體 `native_format` 與 HAL 對上層承諾的 `stream_format`。`AudioInput.frames()` 只輸出 `stream_format`；native metadata 不隨 frame 傳遞。M3 selected input 的 delivered contract 固定為 16 kHz、mono、S16_LE、20 ms，因此每 frame 為 320 samples / 640 bytes。
 
-`bytes` 內容為 raw PCM，little-endian、interleaved（多聲道時）。format metadata 不隨 frame 傳遞——同一 `AudioInput` instance 的所有 frame 格式一致，由 `start()` 完成後就固定。
+兩種格式不同時，只允許由 real `core/audio` backend 依已驗證 config 做顯式 adaptation；`perception/listen`、VAD 與 ASR 不得再 resample、downmix 或改 sample format。Config、startup log、capability 與 test evidence 必須同時列出 native / stream format、channel policy、resampler 與 frame accumulator。`mock` / `null` 直接產生 stream format，不模擬硬體 native format。
+
+`bytes` 內容為 raw PCM、little-endian、interleaved（多聲道時）。同一 `AudioInput` instance 的 stream format 由 `start()` 固定，運作中不得 renegotiate。任何 native format 不符、未宣告的轉換、`plughw:` 或其他隱式 ALSA conversion 都是 startup failure。
 
 ### 麥克風獨佔切換的實作面
 
@@ -154,8 +152,8 @@ src/sbd/core/audio/
 │   └── output.py        # 寫 WAV 或 no-op
 └── alsa/
     ├── __init__.py
-    ├── input.py         # 透過 sounddevice / PortAudio
-    └── output.py
+    ├── input.py         # direct ALSA capture + input adaptation；binding 待 POC gate
+    └── output.py        # direct ALSA playback；binding 待 POC gate
 ```
 
 ### Null 實作行為
@@ -165,7 +163,7 @@ src/sbd/core/audio/
 
 ### M3 Real Backend 目標硬體（Pi 5 ALSA）
 
-來源：`DELIVERY-AUDIO-POC-M3-ACK-001`（Audio POC Contract v0.1 Accepted）
+來源：`DELIVERY-AUDIO-POC-M3-ACK-001`、`DELIVERY-AUDIO-POC-M3-ACK-002`、`DELIVERY-AUDIO-POC-M3-VALIDATION-001`、`CR-AUDIO-M3-PCM-001` 與 `M1-NATIVE-AUDIO-001`。ACK-002 接受 Option A 的產品契約與責任邊界，但不把尚未在 Pi 驗證的 binding、resampler、buffering 或 async I/O 模式視為已核准實作。
 
 | 項目 | 規格 |
 |---|---|
@@ -174,15 +172,36 @@ src/sbd/core/audio/
 | 喇叭擴大器 | MAX98357A（I2S Class D Amplifier） |
 | 匯流排 | I2S，BCLK / LRCK 共用 |
 | Overlay | `googlevoicehat-soundcard`（`/boot/config.txt` 啟用） |
-| Input PCM target | 16 kHz、mono、16-bit little-endian、20 ms frame |
-| Output PCM format | configurable（sample rate 待 M4b TTS winner 確定後 cross-validate） |
-| Backend driver | `alsa/` 目錄（透過 `sounddevice` / PortAudio） |
+| Direct ALSA device | Pi local config；POC P2 baseline 為 `hw:0,0`，禁止 `plughw:` |
+| Input native format | 48 kHz、stereo、S32_LE container；有效位元數 / alignment與channel index須由POC P4 target evidence確認後寫入local config |
+| Input stream format | 16 kHz、mono、S16_LE、20 ms；320 samples / 640 bytes |
+| Input adaptation | HAL-owned channel select → S32/24-bit normalization → anti-alias 3:1 resample → saturating S16 → exact-frame accumulator |
+| Output native format | 48 kHz、stereo、S32_LE |
+| Output stream format | M3 fixture 與 native format 相同；P3 TTS winner 前不做 output adaptation |
+| Backend driver | `alsa/` 目錄；direct ALSA binding、resampler 與 I/O 模式待 POC validation gate |
 
-**待 POC Audio 團隊確認後才能鎖定**：
-- P1：Pi 5 + I2S native PCM capability matrix（確認 16 kHz target 可行性）
-- P2：實體 ALSA card/device identifier 與接線圖（供 Pi test config 使用，不進 generic source）
+#### Option A 必要語意
 
-外部依賴： `sounddevice` ( PortAudio 綁定)；RPi 系統套件 `libportaudio2` 。開發機不安裝時 factory 選 mock / null 即可運行。
+1. Backend 以 direct ALSA `hw:` device開啟48 kHz / 2-channel / S32_LE capture / playback，並核對requested與realized device / rate / channels / format。Actual不完全相同時`start()`失敗，不得接受coercion。
+2. 對每個interleaved frame取local config指定的channel `0`或`1`。S32_LE container的有效mic bits數、alignment與scale須由target evidence確認後固定；另一channel不得混入，除非未來另立change request。
+3. 48→16 kHz轉換必須為具anti-alias filter的stateful streaming resampler。禁止naive sample dropping、每chunk重建resampler或以整段離線轉換取代串流行為。
+4. Resampler可輸出不等長chunk；backend以私有accumulator組成精確320-sample frame，再做round + saturating S16_LE。不得以padding、截斷或timing sleep隱藏錯長度。
+5. `frames()` iterator `aclose()`、cancel、read failure、`stop()` 與 reopen 都必須關閉 ALSA stream，丟棄 partial frame，重置 resampler / clip counter / accumulator。新 session 不得帶入舊 filter state。
+6. Startup INFO log 與 capability record只列 sanitized device identifier、native / stream formats、channel index、resampler implementation/version；不得記錄 raw PCM。Unsupported format 或 dependency 缺失走既有 RM real→null fallback。
+
+#### POC validation gate
+
+`pyalsaaudio`、`samplerate/libsamplerate`及其他候選方案目前都只是探索候選，不是Core dependency decision。Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`在目標Pi交付reproducible harness與比較證據，至少涵蓋direct native open、有效位元解析、streaming anti-alias品質、exact framing、buffering、event-loop responsiveness、cancel / reopen、xrun、CPU / RSS / latency及license / build可重現性。
+
+Core Designer在收到POC完整40-character SHA後才核准binding、resampler、版本、hash、system dependency、buffer參數與async I/O模式。Developer在此之前可以實作Protocol、mock/null、native / stream config schema與fake-source conversion seam；不得開始Audio real backend、加入production dependency lock，或把任一候選套件寫成M3 selected baseline。POC產生的wheel / `.so`不得搬入Core Git；最終採用後仍由target Pi依核准lock build / install。
+
+#### Acceptance boundary
+
+- P1 native 16 kHz capability已由 `M1-NATIVE-AUDIO-001` 判定 FAIL；Option A是已核准的product direction，不得把P1改寫成native PASS。
+- P2 direct device / overlay config / wiring evidence已 PASS；實際 device、channel、config copy與 hash 仍由 Core Pi local deployment提供。
+- P4 Option A implementation feasibility為`POC VALIDATION PENDING`；它阻擋Audio real backend package start與M3 Audio acceptance，但不阻擋其他M3 HAL、Audio mock/null或schema工作。
+- P3 TTS winner format仍 Pending M4a；它不阻擋 M3 AudioInput，但在完成前禁止替 AudioOutput 新增隱式 resample。
+- POC gate PASS後，Core M3 Pi驗收仍須對exact implementation SHA記錄direct native probe、每幀640 bytes、alias rejection、CPU / RSS / latency、xrun、cancel / stop / reopen與owner cleanup；POC evidence不能取代Core Tester驗收。
 
 
 ---

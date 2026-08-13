@@ -21,15 +21,17 @@
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M3-HAL-001** | Ch 2a §2a.1 Factory 模式；`milestones/M3.md` §5.1 | factory top-level import 引入 Pi-only 套件，使開發機無法啟動 | `FX-MOCK-HAL`；分別以 `driver=null`、`driver=mock` config 呼叫各 HAL factory；監看 sys.modules diff | `sounddevice`、`picamera2`、`gpiod` 及 native display `.so` 均不出現在 sys.modules；factory 只 lazy import 被選中的 backend；null/mock 建立成功 | `DEV-PY311` / `EV-AUTO` / M3 startup |
+| **M3-HAL-001** | Ch 2a §2a.1 Factory 模式；`milestones/M3.md` §5.1 | factory top-level import 引入 Pi-only 套件，使開發機無法啟動 | `FX-MOCK-HAL`；分別以 `driver=null`、`driver=mock` config 呼叫各 HAL factory；監看 sys.modules diff與POC核准後的deployment lock | Audio real backend的全部Pi-only modules、legacy `sounddevice`、`picamera2`、`gpiod`及native display `.so`均不出現在sys.modules；factory只lazy import被選中的backend；null/mock建立成功 | `DEV-PY311` / `EV-AUTO` / M3 startup |
 | **M3-HAL-002** | Ch 2a §2a.1 Null Object 契約、Factory 失敗與 RM Fallback | real backend start 失敗時 RM 自動換注 null；null start 仍失敗則 fatal | 以 `FX-RM-GRAPH` 模擬 real audio/display/camera start raise → null start OK；另模擬 null start 亦 raise | audio/display/camera real→null 各自 fallback；`capability_map["audio"]` / `"display"` / `"camera"` = `False`；log WARNING；null start 失敗 → fatal log + 啟動中止；GPIO start 失敗不建立 NullGPIO，`capability_of("gpio")=False` | `DEV-PY311` / `EV-AUTO`、`call log` / RM graph |
 
 ### 2.2 Audio HAL — Null / Mock 契約
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M3-AUD-001** | Ch 2a §2a.2 Null 實作行為；`milestone` §5.4 | null frame 格式錯誤，或 iterator 獨佔未正確拒絕第二次呼叫 | `FX-MOCK-HAL`；`NullAudioInput` start→frames → 消費數幀 → aclose；再 frames（重開）；同 instance active 時再 frames | frame bytes 長度 = `sample_rate * frame_duration_ms // 1000 * channels * (bit_depth // 8)`；每幀全 `\x00`；stop 冪等；aclose 後重開成功且無殘留 task；active 時第二個 frames 回 `RuntimeError("AudioInput already streaming")` | `DEV-PY311` / `EV-AUTO`、`EV-RACE` / Listen cancel |
+| **M3-AUD-001** | Ch 2a §2a.2 Null 實作行為；`milestone` §5.4 | null frame 格式錯誤，或 iterator 獨佔未正確拒絕第二次呼叫 | `FX-MOCK-HAL`；`NullAudioInput` start→frames → 消費數幀 → aclose；再 frames（重開）；同 instance active 時再 frames | frame bytes長度 = `sample_rate * frame_duration_ms // 1000 * channels * container_bytes(sample_format)`；每幀全`\x00`；stop冪等；aclose後重開成功且無殘留task；active時第二個frames回`RuntimeError("AudioInput already streaming")` | `DEV-PY311` / `EV-AUTO`、`EV-RACE` / Listen cancel |
 | **M3-AUD-002** | Ch 2a §2a.2 Null 實作行為 | NullAudioOutput play 未完整消費 iterator，或 stop 非冪等 | `NullAudioOutput` start→play(固定 5 幀 mock pcm iterator) → stop → stop | play 完整消費所有幀後 return；stop 冪等不 raise | `DEV-PY311` / `EV-AUTO` / Speak worker |
+| **M3-AUD-003** | Ch 2a §2a.2 Option A input adaptation；Ch 10 §7；`DELIVERY-AUDIO-POC-M3-ACK-002` | channel / valid-bit alignment / resample / saturation錯誤，或以drop sample造成alias假通過 | POC P4與final selection ACK後，以fake raw source依非整齊chunk餵入48 kHz stereo S32_LE：左右channel不同tone、silence、impulse、full-scale clipping、1 kHz與12 kHz同振幅sine；分別選channel 0/1 | 僅selected channel進入output；核准的valid-bit sign/scale與saturating S16正確；核准的stateful streaming converter保持state；每個yield恰640 bytes；1 kHz pass-band在fixture tolerance內，12 kHz output RMS至少比1 kHz低40 dB；output sample count符合1:3 ratio與documented filter delay | `DEV-PY311` / `EV-AUTO` / AudioInput conversion |
+| **M3-AUD-004** | Ch 2a §2a.2 lifecycle / adaptation reset | aclose、cancel、read failure或reopen沿用partial frame / filter state，造成跨session污染或owner洩漏 | fake raw source在partial frame與non-zero resampler state時分別aclose、cancel、raise；stop→stop→start後餵固定impulse；記錄close/reset call log | 每條路徑只close一次source、丟棄partial frame並重建/reset resampler與accumulator；stop冪等；reopen首個fixture output與fresh instance相同；無task / buffer / owner殘留 | `DEV-PY311` / `EV-AUTO`、`EV-RACE` / AudioInput reopen |
 
 ### 2.3 Display HAL — Null / Mock 契約
 
@@ -93,9 +95,10 @@
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M3-AUDI-001** | `milestones/M3.md` §5.4 Pi 驗收 item 1；Ch 2a §2a.2 PCM 格式；DELIVERY-AUDIO-POC-M3-ACK-001 | real ALSA backend frame 格式或 timeout 不符，或 output 未完整消費 | Pi ALSA config（I2S INMP441、googlevoicehat-soundcard）；AudioInput start → frames timeout N 幀 → aclose；AudioOutput start → play(固定 PCM fixture) | AudioInput：在 timeout 內產出幀數 ≥ N；每幀 bytes 長度 = `16000 * 20 // 1000 * 1 * 2`（16kHz mono 16-bit 20ms）；AudioOutput：完整消費所有幀，無 PCM 截斷 | `RPI-NATIVE` / `EV-PROC` / audio pipeline |
+| **M3-AUDI-001** | `milestones/M3.md` §5.4；Ch 2a §2a.2；`DELIVERY-AUDIO-POC-M3-ACK-002` | backend使用`plughw:`或native negotiation而假稱16 kHz capability；delivered frame錯誤 | Pi local config + hash（INMP441 / MAX98357A / googlevoicehat；direct P2 baseline `hw:0,0`）；啟動AudioInput並讀N幀；另以匹配native format fixture執行AudioOutput | startup evidence同時記錄requested / actual native 48000 Hz、2ch、S32_LE且完全相同；device為direct `hw:`；AudioInput每幀恰640 bytes（16 kHz mono S16_LE 20 ms）且N幀於timeout內；AudioOutput以48 kHz stereo S32_LE完整消費，無截斷或隱式轉換 | `RPI-NATIVE` / `EV-RPI`、`EV-PROC` / audio pipeline |
 | **M3-AUDI-002** | Ch 2a §2a.1 real→null fallback；`milestones/M3.md` §5.4 fallback | 不存在的 ALSA device 未觸發 null fallback | 以不存在的 ALSA card 名稱啟動 | real start raise → null fallback 啟動；`capability_of("audio")=False`；log WARNING 含 device name；App 繼續執行（不 fatal） | `RPI-NATIVE` / `EV-PROC`、`EV-LOG` / fallback |
 | **M3-AUDI-003** | `milestones/M3.md` §5.4 item 1 & §5.4 §3（喇叭可聽）；PM-OUT-260813-009 `OUT-M3-TEST-2026-002` | AudioOutput 驅動喇叭無聲或聲音異常（爆音、雜訊）；不可用自動化替代人工聽覺驗證 | Pi 接線（googlevoicehat-soundcard）；AudioOutput play(固定正弦波 / 語音 PCM fixture)；人工聽覺確認 | 喇叭輸出可聽、無明顯爆音 / 雜訊；人工 checklist 記錄：硬體型號、config hash、fixture SHA、測試時間、pass/fail；自動化測試已驗 buffer 呼叫正確，本卡為人工感知補充 | `RPI-NATIVE` / `EV-MANUAL` / audio output audible |
+| **M3-AUDI-004** | Ch 2a §2a.2 Acceptance boundary；`milestones/M3.md` §5.4；`M1-NATIVE-AUDIO-001` | Pi轉換品質或資源不可接受、xrun、cancel/reopen後owner或filter state殘留 | POC P4與final selection ACK；exact implementation SHA；固定channel / tone fixture；10次warm-up後至少100個delivered frames；涵蓋aclose、cancel、read failure與3次reopen；前後查device owner | deterministic quality結果與M3-AUD-003一致；100幀皆640 bytes且無xrun；記錄capture-to-yield latency raw samples / P50 / P95 / max、CPU、RSS、temperature、throttling、核准binding / resampler / native library version；每次cleanup後無ALSA owner，reopen 3/3且first output不含前session state | `RPI-NATIVE` / `EV-RPI`、`EV-RACE` / adaptation performance cleanup |
 
 ### 2.11 Camera Real Backend（Pi 硬體）
 
@@ -128,6 +131,7 @@
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M3-CFG-001** | Ch 10 §7；`milestones/M3.md` §5.2.2；PM-009 `OUT-M3-DISPLAY-2026-002` | strict config 接受未知、矛盾、超規或錯 artifact，或 invalid config 已碰觸 native / hardware | `FX-CONFIG` table-driven：以 temp artifact + 正確 SHA 建立合法 `driver=ssd1351` local YAML（profile、128×128、RGB565、rotation 0、MSB-first、32768 bytes、ABI v1、`/dev/spidev0.0`、4 MHz、mode 0、CE0、DC24、RST25）；逐一 mutation unknown key、缺 real 欄位、checksum / ABI / size / format / rotation / byte order / buffer / speed / SPI / GPIO 錯值，以及 mock/null 攜帶 real-only 欄位 | 合法 selected profile strict parse；每個 mutation 在 factory 前 raise path-aware `ConfigValueError`，且 native module 未 import、無 `dlopen` / GPIO / SPI call；generic `config.example.yaml` 不含 artifact path 或 Pi fixture pin 且通過同一 loader；secret repr / str 不洩漏 | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / strict config |
+| **M3-CFG-002** | Ch 10 §7 Audio strict mapping；`DELIVERY-AUDIO-POC-M3-ACK-002` | config仍以單一format隱藏conversion，接受`plughw:`、錯native format / channel / resampler，或mock觸及Pi dependency | POC P4與final selection ACK後，`FX-CONFIG` table-driven：合法`driver=alsa` local config含direct `hw:`、input native 48k/2/S32_LE、stream 16k/1/S16_LE/20ms、channel 0或1、核准valid-bit alignment與resampler ID，output native=stream 48k/2/S32_LE；逐一mutation與mock/null real-only欄位 | 合法mapping strict parse；unknown / missing / `plughw:` / format、frame、channel、valid-bit、alignment、resampler或output mismatch在factory前以path-aware `ConfigValueError`拒絕；未import任何核准的Audio Pi-only module且未開device；generic example不含Pi device/channel；repr / log不含raw PCM或private data | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / Audio config boundary |
 
 ### 2.15 Regression 與共同完成條件
 
@@ -146,7 +150,7 @@
 | Test ID / status | Test ID；`Pending` / `Pass` / `Fail` / `Blocked`；未執行不得標 Pass |
 | Product revision | branch + 完整 40-character implementation SHA；design/test-spec only 不得冒充 implementation |
 | Hardware / wiring | Pi / peripheral 型號與 revision、BCM + physical pin 接線、kernel-managed bus ownership |
-| Artifact | native `.so` / header / adapter path、各自 SHA-256、ABI、license / notice |
+| Artifact | native `.so` / system library / Python adapter（依HAL適用項目）的path或package identity、SHA-256 / version、ABI、license / notice；binary不提交Git |
 | Config | sanitized local config path + SHA-256；不得記 credential |
 | Fixture | PCM / image / display-pattern path + SHA-256；人工項目另列 checklist version |
 | Reproduction | 完整命令、環境 / Python 版本、操作步驟、預期結果 |
@@ -176,5 +180,5 @@ Pi 驗收證據寫入正式 delivery 對應的 `docs/outsource/evidence/<deliver
 M3 Pass 需同時滿足：
 1. 開發機 `python -m pytest -v` 全通過（含 M1 / M2 regression）。
 2. Pi 上 `python -m pytest -v -m rpi tests/milestones/test_m3_rpi_hal.py` 全通過。
-3. Pi 人工 checklist 完成（SCN-BOOT / SCN-SHUTDOWN Blank、SCN-STATE 可讀）。
+3. Pi 人工 checklist 完成（M3-AUDI-003喇叭；SCN-BOOT / SCN-SHUTDOWN Blank、SCN-STATE 可讀）。
 4. 不得刪除、skip 或 xfail 先前 M1 / M2 驗收。
