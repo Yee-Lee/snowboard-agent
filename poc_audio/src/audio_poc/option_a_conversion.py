@@ -108,6 +108,7 @@ class OptionAStreamConverter:
         self._flushed = False
         self.total_input_samples = 0
         self.total_resampled_samples = 0
+        self.drain_input_samples = 0
         self.frames_yielded = 0
 
     def feed(self, payload: bytes) -> tuple[bytes, ...]:
@@ -135,12 +136,27 @@ class OptionAStreamConverter:
             raise RuntimeError("flush is not idempotent; reset starts a new session")
         if self._raw_remainder:
             raise ValueError("incomplete interleaved container remains at flush")
+        expected_output = (
+            self.total_input_samples * self.output_rate_hz // self.input_rate_hz
+        )
+        deficit = expected_output - self.total_resampled_samples
+        if deficit < 0:
+            raise RuntimeError("resampler exceeded the exact rational output length")
+        # python-samplerate's streaming API retains its filter tail. Supplying
+        # exactly three zero-valued drain inputs per missing 16 kHz sample
+        # recovers that tail. Drain inputs are tracked separately and never
+        # counted as source audio or emitted beyond the exact 48:16 ratio.
+        self.drain_input_samples = deficit * 3
         tail = self._resampler.process(
-            self._np.empty(0, dtype=self._np.float32),
+            self._np.zeros(self.drain_input_samples, dtype=self._np.float32),
             self.ratio,
             end_of_input=True,
         )
         frames = self._accumulate(tail)
+        if self.total_resampled_samples != expected_output:
+            raise RuntimeError(
+                "filter drain did not recover the exact rational output length"
+            )
         partial_pcm = float_to_s16le(self._output, self._np)
         self._output = self._np.empty(0, dtype=self._np.float32)
         self._flushed = True

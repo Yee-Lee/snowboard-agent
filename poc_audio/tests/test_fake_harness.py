@@ -225,12 +225,43 @@ class TrackedDocumentTests(unittest.TestCase):
         self.assertEqual(len(frames), 1)
         self.assertEqual(len(frames[0]), 640)
         self.assertEqual(flushed.partial_pcm, b"")
+        self.assertEqual(converter.drain_input_samples, 0)
 
         converter.reset()
         self.assertEqual(converter.total_input_samples, 0)
         self.assertEqual(converter.feed(b"\x00"), ())
         with self.assertRaisesRegex(ValueError, "incomplete interleaved container"):
             converter.flush()
+
+    def test_option_a_flush_drains_filter_to_exact_ratio(self) -> None:
+        import numpy
+
+        class DelayedThirdRateResampler:
+            def __init__(self) -> None:
+                self.first = True
+
+            def process(self, values, ratio, end_of_input=False):
+                if self.first:
+                    self.first = False
+                    self.assert_input = values.size
+                    return numpy.zeros((values.size // 3) - 2, dtype=numpy.float32)
+                self.assert_drain = values.size
+                self.assert_final = end_of_input
+                return numpy.zeros(values.size // 3, dtype=numpy.float32)
+
+        raw = numpy.zeros((960, 2), dtype="<i4").tobytes()
+        converter = OptionAStreamConverter(
+            ValidBitMapping(channel_index=0, valid_bits=24, alignment="left"),
+            numpy_module=numpy,
+            resampler_factory=DelayedThirdRateResampler,
+        )
+        frames = list(converter.feed(raw))
+        flushed = converter.flush()
+        frames.extend(flushed.frames)
+        self.assertEqual(converter.drain_input_samples, 6)
+        self.assertEqual(converter.total_resampled_samples, 320)
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(flushed.partial_pcm, b"")
 
     def test_option_a_pass_requires_zero_cleanup_counters(self) -> None:
         config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"

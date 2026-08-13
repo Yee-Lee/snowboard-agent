@@ -173,3 +173,14 @@ Phase 2 exit：
   index，只使用已hash的dependency wheels與external sources，offline install/import
   通過。Core dependency selection仍未獲准。
 - P4-A02至A09維持`Pending`；下一步為P4-03 conversion與A02 known-signal mapping。
+
+### 2026-08-13 — P4 A03–A05 initial target run
+
+- SHA `1410bfb81947c19d62395d91d8cff4d067ed832d`通過Pi pre-test與21項
+  regression；1 kHz pass-band、12 kHz alias及S16 saturation gate通過。
+- A05標為`FAIL`：streaming API只輸出15,857 / 16,000 samples並留下177-sample
+  partial；結果保留，未以output padding或truncation放行。
+- Library probe確認143-output-sample filter deficit需429個zero-valued drain inputs；
+  drain不計入source length，且輸出仍由48:16 exact ratio唯一決定。
+- 實作已加入exact-ratio drain assertion及local regression（22項通過）；等待新
+  exact-SHA Pi rerun後才能更新A03–A05 disposition。

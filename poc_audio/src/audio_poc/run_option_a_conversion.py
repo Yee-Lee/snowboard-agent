@@ -72,6 +72,7 @@ def run(output_dir: Path) -> dict[str, Any]:
             "fixture_id": fixture["fixture_id"],
             "input_samples": converter.total_input_samples,
             "resampled_samples": converter.total_resampled_samples,
+            "filter_drain_input_samples": converter.drain_input_samples,
             "full_frame_count": len(frames),
             "frame_bytes_all_640": all(len(frame) == 640 for frame in frames),
             "partial_output_samples": len(flushed.partial_pcm) // 2,
@@ -100,6 +101,10 @@ def run(output_dir: Path) -> dict[str, Any]:
             failures.append(f"{record['fixture_id']}: input sample loss")
         if not record["frame_bytes_all_640"]:
             failures.append(f"{record['fixture_id']}: non-640-byte full frame")
+        if record["output_samples"] != 16_000:
+            failures.append(f"{record['fixture_id']}: output ratio mismatch")
+        if record["full_frame_count"] != 50 or record["partial_output_samples"] != 0:
+            failures.append(f"{record['fixture_id']}: incomplete final framing")
     if by_id["sine-12khz"]["relative_db"] > -40.0:
         failures.append("sine-12khz: alias attenuation below 40 dB")
     if saturation != [-32768, -32768, 0, 32767, 32767]:
