@@ -32,9 +32,9 @@
 | --- | ---: | --- | --- | --- | --- | --- |
 | **WP-M1-P4-01** Validation skeleton | 3 | runner/fixture/evidence 目錄、manifest schema、P4 test packet、sanitized config、reproduction command | A01–A10 | Active handoff | Developer | `LOCAL COMPLETE` |
 | **WP-M1-P4-02** Candidate provenance/build | 4 | source hash、license、dependencies、clean build/install、runtime identity及可重現 failure | A10 | P4-01 | Developer + Tester | `TARGET PASS` |
-| **WP-M1-P4-03** Streaming conversion | 6 | channel policy、valid-bit seam、stateful anti-alias 48→16 kHz、saturating S16、不規則 chunk state/flush | A03–A05 | P4-01、02 | Developer | `IN PROGRESS / NEXT` |
-| **WP-M1-P4-04** Async/lifecycle runner | 5 | heartbeat、bounded ownership、aclose/cancel/failure/idempotent stop、10次reopen及cleanup proof | A06–A07 | P4-03 | Developer | `PLANNED` |
-| **WP-M1-P4-05** Target native/valid bits | 4 | Pi direct open、realized format、wiring attestation、known-signal/raw analysis、channel與有效位元mapping | A01–A02 | P4-01、02、clean SHA | Tester + User | `PLANNED` |
+| **WP-M1-P4-03** Streaming conversion | 6 | channel policy、valid-bit seam、stateful anti-alias 48→16 kHz、saturating S16、不規則 chunk state/flush | A03–A05 | P4-01、02 | Developer | `TARGET PASS` |
+| **WP-M1-P4-04** Async/lifecycle runner | 5 | heartbeat、bounded ownership、aclose/cancel/failure/idempotent stop、10次reopen及cleanup proof | A06–A07 | P4-03 | Developer | `IN PROGRESS / NEXT` |
+| **WP-M1-P4-05** Target native/valid bits | 4 | Pi direct open、realized format、wiring attestation、known-signal/raw analysis、channel與有效位元mapping | A01–A02 | P4-01、02、clean SHA | Tester + User | `TARGET PASS` |
 | **WP-M1-P4-06** Buffer/xrun/resources | 5 | period/buffer、5分鐘shared-clock run、xrun、10次warm-up、latency、CPU/RSS/temp/throttling | A08–A09 | P4-03～05、clean SHA | Tester | `PLANNED` |
 | **WP-M1-P4-07** Return delivery | 3 | A01–A10 disposition、evidence index、七項technical recommendation、完整SHA | P4 return | P4-01～06 | Developer + Tester | `PLANNED` |
 | **WP-M1-FIX-01** Formal acquisition | 2 | exact-SHA Pi錄製剩餘60 clips、immutable native WAV、local manifest及verify | 100-item gate | Pilot PASS、hardware slot | Tester + User | `PLANNED` |
@@ -184,3 +184,15 @@ Phase 2 exit：
   drain不計入source length，且輸出仍由48:16 exact ratio唯一決定。
 - 實作已加入exact-ratio drain assertion及local regression（22項通過）；等待新
   exact-SHA Pi rerun後才能更新A03–A05 disposition。
+
+### 2026-08-13 — P4 A02–A05 target pass
+
+- A03–A05在SHA `f93d836598ab91f56517112f1d06601686d7e454`重跑通過；
+  六組fixtures皆為48,000→16,000 samples、50個640-byte frames、partial 0。
+- A02在SHA `39efc2424b38d41192a5e2a456ffa7bd82f33f5d`分析40個授權
+  Pilot WAV；wiring、known labels與raw statistics共同支持channel 0、signed
+  24-bit left-aligned mapping。
+- 觀察到18個near-full-scale source samples，列入A08與Formal fixture review風險；
+  不影響mapping disposition。
+- 每次run後candidate process/thread/fd與ALSA owner均為0；下一步為P4-04
+  async responsiveness與10次reopen lifecycle。
