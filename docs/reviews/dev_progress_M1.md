@@ -30,8 +30,8 @@
 
 | 工作包 | SP | 主要交付 | 對應 | 相依 | Owner | 狀態 |
 | --- | ---: | --- | --- | --- | --- | --- |
-| **WP-M1-P4-01** Validation skeleton | 3 | runner/fixture/evidence 目錄、manifest schema、P4 test packet、sanitized config、reproduction command | A01–A10 | Active handoff | Developer | `PLANNED / NEXT` |
-| **WP-M1-P4-02** Candidate provenance/build | 4 | source hash、license、dependencies、clean build/install、runtime identity及可重現 failure | A10 | P4-01 | Developer + Tester | `PLANNED` |
+| **WP-M1-P4-01** Validation skeleton | 3 | runner/fixture/evidence 目錄、manifest schema、P4 test packet、sanitized config、reproduction command | A01–A10 | Active handoff | Developer | `LOCAL COMPLETE` |
+| **WP-M1-P4-02** Candidate provenance/build | 4 | source hash、license、dependencies、clean build/install、runtime identity及可重現 failure | A10 | P4-01 | Developer + Tester | `PLANNED / NEXT` |
 | **WP-M1-P4-03** Streaming conversion | 6 | channel policy、valid-bit seam、stateful anti-alias 48→16 kHz、saturating S16、不規則 chunk state/flush | A03–A05 | P4-01、02 | Developer | `PLANNED` |
 | **WP-M1-P4-04** Async/lifecycle runner | 5 | heartbeat、bounded ownership、aclose/cancel/failure/idempotent stop、10次reopen及cleanup proof | A06–A07 | P4-03 | Developer | `PLANNED` |
 | **WP-M1-P4-05** Target native/valid bits | 4 | Pi direct open、realized format、wiring attestation、known-signal/raw analysis、channel與有效位元mapping | A01–A02 | P4-01、02、clean SHA | Tester + User | `PLANNED` |
@@ -151,3 +151,14 @@ Phase 2 exit：
 - 40-item Pilot維持`PASS`；Formal剩餘60 clips與catalog/labels/metrics review未完成。
 - 本次只完成工作拆包；尚未開始P4 implementation或新的Pi evidence run。
 - Handoff/status整理尚未形成新commit；不得以目前working tree作正式硬體baseline。
+
+### 2026-08-13 — P4 validation skeleton local completion
+
+- 新增dependency-free P4 packet runner、sanitized config、manifest schema、fixture
+  identity與Git-ignored raw evidence邊界。
+- A01至A10固定以`Pending`建立；validator拒絕缺項、artifact checksum不符，且
+  `PASS`必須附全零cleanup counters，避免local skeleton被誤判為hardware pass。
+- 完整M1 regression共18項通過；prepare/validate與deterministic fixture CLI
+  smoke通過。
+- 尚未建立clean exact-SHA Pi packet，A01至A10均未取得新hardware disposition；
+  下一個Developer工作為P4-02 provenance/build，再銜接P4-03 conversion。

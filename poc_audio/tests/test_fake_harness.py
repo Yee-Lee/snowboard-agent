@@ -25,6 +25,12 @@ from audio_poc.fixture_recorder import (  # noqa: E402
 )
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
 from audio_poc.models import TerminalStatus  # noqa: E402
+from audio_poc.option_a_fixtures import generate_fixtures  # noqa: E402
+from audio_poc.option_a_validation import (  # noqa: E402
+    P4_TEST_IDS,
+    create_manifest,
+    validate_manifest,
+)
 from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
     validate_fixture_catalog,
@@ -107,6 +113,89 @@ class TrackedDocumentTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 document = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(document["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
+    def test_option_a_packet_starts_with_all_hardware_results_pending(self) -> None:
+        config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
+        manifest = create_manifest(
+            REPO_ROOT,
+            "0" * 40,
+            "M1-P4-TEST",
+            config_path,
+        )
+        validate_manifest(manifest, REPO_ROOT)
+        self.assertEqual(
+            [item["test_id"] for item in manifest["tests"]],
+            list(P4_TEST_IDS),
+        )
+        self.assertTrue(all(item["status"] == "Pending" for item in manifest["tests"]))
+        self.assertTrue(all(item["cleanup"]["clean"] is None for item in manifest["tests"]))
+        self.assertEqual(
+            {item["source_sha256"] for item in manifest["candidates"]},
+            {
+                "a78a9dca33524b2c9064b34e21f5ab874272313cf324a9a77592f396a5e0fddc",
+                "c44dcb6fe680246f8f36588ba1f0fc7a0c5fbce710ad5e9b3812d88e8c39ac7d",
+            },
+        )
+
+    def test_option_a_fixture_generation_is_deterministic(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = generate_fixtures(root / "first")
+            second = generate_fixtures(root / "second")
+        self.assertEqual(len(first["fixtures"]), 6)
+        self.assertEqual(
+            [item["sha256"] for item in first["fixtures"]],
+            [item["sha256"] for item in second["fixtures"]],
+        )
+        self.assertTrue(all(item["sample_count"] == 48000 for item in first["fixtures"]))
+
+    def test_option_a_pass_requires_zero_cleanup_counters(self) -> None:
+        config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
+        manifest = create_manifest(REPO_ROOT, "0" * 40, "M1-P4-TEST", config_path)
+        manifest["tests"][0]["status"] = "PASS"
+        manifest["tests"][0]["command"] = "test-command"
+        manifest["tests"][0]["raw_artifact_paths"] = ["raw/a01.json"]
+        with self.assertRaisesRegex(ValueError, "PASS requires clean cleanup proof"):
+            validate_manifest(manifest, REPO_ROOT)
+
+        manifest["tests"][0]["cleanup"] = {
+            "tasks": 0,
+            "threads": 0,
+            "file_descriptors": 0,
+            "alsa_owners": 0,
+            "clean": True,
+        }
+        validate_manifest(manifest, REPO_ROOT)
+
+    def test_option_a_pass_requires_command_and_raw_evidence(self) -> None:
+        config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
+        manifest = create_manifest(REPO_ROOT, "0" * 40, "M1-P4-TEST", config_path)
+        manifest["tests"][0]["status"] = "PASS"
+        manifest["tests"][0]["cleanup"] = {
+            "tasks": 0,
+            "threads": 0,
+            "file_descriptors": 0,
+            "alsa_owners": 0,
+            "clean": True,
+        }
+        with self.assertRaisesRegex(ValueError, "PASS requires command and raw evidence"):
+            validate_manifest(manifest, REPO_ROOT)
+
+    def test_option_a_manifest_rejects_artifact_path_escape(self) -> None:
+        config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
+        manifest = create_manifest(REPO_ROOT, "0" * 40, "M1-P4-TEST", config_path)
+        manifest["runner"]["path"] = "../outside"
+        with self.assertRaisesRegex(ValueError, "artifact path escapes repository"):
+            validate_manifest(manifest, REPO_ROOT)
+
+    def test_option_a_manifest_detects_tracked_artifact_changes(self) -> None:
+        config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
+        manifest = create_manifest(REPO_ROOT, "0" * 40, "M1-P4-TEST", config_path)
+        manifest["runner"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "artifact checksum mismatch: runner"):
+            validate_manifest(manifest, REPO_ROOT)
 
     def test_authorized_recording_plan_is_complete_but_not_candidate_ready(self) -> None:
         plan = json.loads(

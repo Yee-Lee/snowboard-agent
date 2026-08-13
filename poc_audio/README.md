@@ -151,3 +151,27 @@ Do not run the recording command until the User/Designer has confirmed the
 internal-only recording authorization. A completed recording set still needs
 checksum/metadata review and the pinned conversion boundary before it becomes a
 candidate fixture.
+
+## M1 P4 Option A validation packet
+
+Prepare the P4-A01 through P4-A10 evidence structure only after local tests
+pass. A formal packet requires a clean worktree and records the exact full Git
+SHA plus checksums for the runner, deterministic fixture definitions, and
+sanitized config:
+
+```sh
+bash poc_audio/tools/run_option_a_validation.sh prepare
+```
+
+The command creates a timestamped, Git-ignored directory under
+`poc_audio/evidence/m3_option_a/`. It does not open an audio device or execute a
+hardware test. All ten results begin as `Pending`. Validate a packet after any
+controlled evidence update with:
+
+```sh
+bash poc_audio/tools/run_option_a_validation.sh validate \
+  poc_audio/evidence/m3_option_a/<timestamp>/manifest.json
+```
+
+Do not use `--allow-dirty` for evidence submitted to Core; that switch exists
+only for local runner development and tests.
