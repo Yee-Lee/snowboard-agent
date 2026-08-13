@@ -109,6 +109,7 @@ core:
     spi_speed_hz: null
     spi_mode: null
     spi_chip_select: null
+    gpio_chip_index: null
     dc_bcm: null
     reset_bcm: null
   camera:

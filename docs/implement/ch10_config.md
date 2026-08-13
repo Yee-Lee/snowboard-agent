@@ -335,6 +335,7 @@ class DisplayConfig:
     spi_speed_hz: int | None = None
     spi_mode: int | None = None
     spi_chip_select: int | None = None
+    gpio_chip_index: int | None = None
     dc_bcm: int | None = None
     reset_bcm: int | None = None
 
@@ -409,12 +410,13 @@ Audio POC須回交候選binding / resampler比較、exact版本與source hash、
 | `spi_speed_hz` | `4000000` | accepted M3 baseline；不得把未驗證的 requested speed 當 effective throughput |
 | `spi_mode` | `0` | selected SSD1351 fixture |
 | `spi_chip_select` | `0` | CE0，對應 BCM8 / physical pin 24；native config 的 software-CS 必須保持 disabled (`cs=-1`) |
+| `gpio_chip_index` | 必填 `0..2147483647` 整數；target baseline 由 operator 將實際 gpiochip resolve 為 index，M3 fixture 為 `0` | 對齊 ABI v1 `int32_t`；唯一 authoritative strict loader 驗證後，adapter 原樣映射至 `_CDisplayConfig.gpio_chip.chip_index`，不得由環境、global probe 或 `GPIOConfig.chip` 推測 |
 | `dc_bcm` | `24` | co-I2S fixture；physical pin 18 |
 | `reset_bcm` | `25` | co-I2S fixture；physical pin 22 |
 
 `dc_bcm`、`reset_bcm` 必須互異，且不得等於 kernel-owned CE0 BCM8、SPI0 MOSI BCM10 或 SCLK BCM11。上述 native / SPI / GPIO 欄位只允許在 `driver="ssd1351"` 時出現；`mock` / `null` 若攜帶任一 real-only 值即為矛盾 config，必須以 `ConfigValueError` 拒絕。Loader 先完成 unknown-key、型別、path / checksum 與所有 cross-field validation，composition root 才可呼叫 Display factory；因此 invalid config 不得觸及 GPIO、SPI 或 native library。
 
-Factory 只在 `driver="ssd1351"` 分支 lazy import `sbd.core.display.ssd1351.driver`，並把已驗證的 `DisplayConfig` 原樣交給 adapter。`null` / `mock` 分支不得 import、`dlopen`、hash 或 probe native artifact。SSD1351 adapter 必須在建立硬體 handle 前驗證 ABI v1 / struct size，將 artifact / ABI 不符視為 startup failure；RM 依 Ch 2a 的 real→null 規則降級。共用 Renderer、Arbiter 與 Resource Manager 不得 import SSD1351 module 或判斷其 pin / SPI 欄位。
+Factory 只在 `driver="ssd1351"` 分支 lazy import `sbd.core.display.ssd1351.driver`，並把已驗證的 `DisplayConfig` 原樣交給 adapter。Adapter 必須直接把 `DisplayConfig.gpio_chip_index` 寫入 ABI v1 `_CDisplayConfig.gpio_chip.chip_index`；不得讀取 `GPIOConfig.chip`、環境變數、hidden global、硬編碼 target index，或另行解析設定。`null` / `mock` 分支不得攜帶 `gpio_chip_index`，亦不得 import、`dlopen`、hash 或 probe native artifact。SSD1351 adapter 必須在建立硬體 handle 前驗證 ABI v1 / struct size，將 artifact / ABI 不符視為 startup failure；RM 依 Ch 2a 的 real→null 規則降級。共用 Renderer、Arbiter 與 Resource Manager 不得 import SSD1351 module 或判斷其 pin / SPI 欄位。
 
 8. InputSource、Adaptor 與 external buffer
 

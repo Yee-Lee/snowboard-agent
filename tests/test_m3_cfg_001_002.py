@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import hashlib
 from pathlib import Path
 
@@ -23,13 +24,14 @@ core:
     spi_speed_hz: 4000000
     spi_mode: 0
     spi_chip_select: 0
+    gpio_chip_index: 0
     dc_bcm: 24
     reset_bcm: 25
 {override}
 """
 
 
-def test_m3_cfg_001(tmp_path: Path) -> None:
+def test_m3_cfg_001(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     artifact = tmp_path / "libdisplay.so"
     artifact.write_bytes(b"fixture artifact")
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
@@ -40,6 +42,7 @@ def test_m3_cfg_001(tmp_path: Path) -> None:
     assert config.core.display.driver == "ssd1351"
     assert config.core.display.frame_buffer_bytes == 32768
     assert config.core.display.native_library_sha256 == digest
+    assert config.core.display.gpio_chip_index == 0
 
     invalid = {
         "checksum": _ssd_yaml(artifact, "0" * 64),
@@ -47,11 +50,27 @@ def test_m3_cfg_001(tmp_path: Path) -> None:
         "speed": _ssd_yaml(artifact, digest).replace("spi_speed_hz: 4000000", "spi_speed_hz: 8000000"),
         "rotation": _ssd_yaml(artifact, digest, "    rotation: 90"),
         "mock-real": "core:\n  display:\n    driver: mock\n    spi_device: /dev/spidev0.0\n",
+        "mock-gpio-chip": "core:\n  display:\n    driver: mock\n    gpio_chip_index: 0\n",
     }
     for name, yaml_text in invalid.items():
         candidate = tmp_path / f"{name}.yaml"
         candidate.write_text(yaml_text)
         with pytest.raises(ConfigError):
+            load_config(local_path=candidate, environ={})
+
+    def unexpected_cdll(*args, **kwargs):
+        pytest.fail(f"invalid config reached ctypes.CDLL: {args!r} {kwargs!r}")
+
+    monkeypatch.setattr(ctypes, "CDLL", unexpected_cdll)
+    gpio_invalid = {
+        "gpio-chip-missing": _ssd_yaml(artifact, digest).replace("    gpio_chip_index: 0\n", ""),
+        "gpio-chip-negative": _ssd_yaml(artifact, digest).replace("gpio_chip_index: 0", "gpio_chip_index: -1"),
+        "gpio-chip-overflow": _ssd_yaml(artifact, digest).replace("gpio_chip_index: 0", "gpio_chip_index: 2147483648"),
+    }
+    for name, yaml_text in gpio_invalid.items():
+        candidate = tmp_path / f"{name}.yaml"
+        candidate.write_text(yaml_text)
+        with pytest.raises(ConfigValueError, match=r"core\.display\.gpio_chip_index"):
             load_config(local_path=candidate, environ={})
 
     unknown = tmp_path / "unknown.yaml"
@@ -63,6 +82,7 @@ def test_m3_cfg_001(tmp_path: Path) -> None:
     generic_config = load_config(local_path=generic, environ={})
     assert generic_config.core.display.driver == "mock"
     assert generic_config.core.display.native_library_path is None
+    assert generic_config.core.display.gpio_chip_index is None
     assert generic_config.core.display.dc_bcm is None
 
     blocked = tmp_path / "audio.yaml"

@@ -196,7 +196,8 @@ def validate_config(config: 'AppConfig'):
     display_real_fields = (
         display.native_library_path, display.native_library_sha256,
         display.native_abi_version, display.spi_device, display.spi_speed_hz,
-        display.spi_mode, display.spi_chip_select, display.dc_bcm, display.reset_bcm,
+        display.spi_mode, display.spi_chip_select, display.gpio_chip_index,
+        display.dc_bcm, display.reset_bcm,
     )
     if display.driver in {"mock", "null"} and any(value is not None for value in display_real_fields):
         raise ConfigValueError("core.display mock/null cannot contain real-only fields")
@@ -241,6 +242,7 @@ def _validate_ssd1351(display) -> None:
         "spi_speed_hz": display.spi_speed_hz,
         "spi_mode": display.spi_mode,
         "spi_chip_select": display.spi_chip_select,
+        "gpio_chip_index": display.gpio_chip_index,
         "dc_bcm": display.dc_bcm,
         "reset_bcm": display.reset_bcm,
     }
@@ -267,5 +269,12 @@ def _validate_ssd1351(display) -> None:
     for field, expected in exact.items():
         if getattr(display, field) != expected:
             raise ConfigValueError(f"core.display.{field} must be {expected!r}")
+    if (
+        type(display.gpio_chip_index) is not int
+        or not 0 <= display.gpio_chip_index <= 2_147_483_647
+    ):
+        raise ConfigValueError(
+            "core.display.gpio_chip_index must be an integer in 0..2147483647"
+        )
     if display.dc_bcm == display.reset_bcm or {display.dc_bcm, display.reset_bcm} & {8, 10, 11}:
         raise ConfigValueError("core.display DC/reset pins conflict with selected SPI fixture")

@@ -225,6 +225,7 @@ class DisplayConfig:
     spi_speed_hz: int | None = None
     spi_mode: int | None = None
     spi_chip_select: int | None = None
+    gpio_chip_index: int | None = None
     dc_bcm: int | None = None
     reset_bcm: int | None = None
 

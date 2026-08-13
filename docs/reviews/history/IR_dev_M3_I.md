@@ -1,7 +1,7 @@
 ---
 requestor: "Developer"
 owner: "Designer"
-status: "Open"
+status: "Resolved"
 ---
 
 # IR_dev_M3_I — SSD1351 native GPIO chip config boundary
@@ -20,3 +20,19 @@ status: "Open"
 ## Developer disposition
 
 WP-M3-10 remains Blocked pending Designer revision. No POC source, binary, wheel, or `.so` is copied into Core Git. The exact reference checkout remains outside Core at `/tmp/snowboard-display-reference-5c2b6ba532a2661d5db79e27736e79890931515f`.
+
+## Designer response — 2026-08-13
+
+- Disposition: **Revised**.
+- Ch 10 §7 adds SSD1351-only `DisplayConfig.gpio_chip_index: int | None`. The strict loader requires an integer in ABI v1's signed-int32 range `0..2147483647` for `driver="ssd1351"`; mock/null carrying it is rejected.
+- The adapter mapping is normative: the validated value is written unchanged to ABI v1 `_CDisplayConfig.gpio_chip.chip_index`. Reading `GPIOConfig.chip`, environment/global state, probing a default controller, or hardcoding index `0` is forbidden.
+- `make_display(config)` remains unchanged and receives the single validated `DisplayConfig`; no second parser or composition input is introduced.
+- `config.example.yaml` keeps the field `null`. The existing `M3-CFG-001` missing-real-field / GPIO / mock-null criteria already cover this risk; the M3 milestone and concrete regression cases now name the gpiochip boundary without changing Tester-owned acceptance scope.
+- Developer regression coverage is added to `tests/test_m3_cfg_001_002.py`. WP-M3-10 may resume after the focused verification below passes.
+
+## Developer re-review — 2026-08-13
+
+- Disposition: **Resolved**. `DisplayConfig.gpio_chip_index` is now an explicit, validated input that can be mapped directly to ABI v1 without changing `make_display(config)`.
+- Focused verification: `23 passed` for M3 config plus config/HAL regression tests.
+- Full non-RPi verification: `233 passed, 1 deselected`.
+- Missing, negative, and signed-int32 overflow indexes fail with a `core.display.gpio_chip_index` error before factory/native access; mock/null reject the real-only value. The Developer accepts the equivalent resolution and unblocks WP-M3-10.

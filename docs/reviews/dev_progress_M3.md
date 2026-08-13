@@ -31,6 +31,7 @@
 | 2026-08-13 | WP-M3-01 | **Completed** | 建立 47-ID manifest、M3 portable / RPi acceptance雙 gate、RPi deselection hook 與未預填 Pass 的 evidence card template；Blocked ID不會被計為Pass。 |
 | 2026-08-13 | WP-M3-01~06、08、09、11 | **Developer complete except approved blockers** | 24 個可執行 DEV Test ID 全綠；完成 nested Audio schema、OLED-128 strict config、Null/Mock HAL、Renderer、Arbiter、Boot/Shutdown owners、picamera2/gpiod/Button host seams與M3 portable composition。M3-AUD-003/004、M3-CFG-002等待Audio P4。 |
 | 2026-08-13 | WP-M3-10 | **Blocked — IR_dev_M3_I** | USER reference已驗 exact SHA `5c2b6ba532a2661d5db79e27736e79890931515f`並移至Core外 `/tmp`。ABI v1要求resolved `gpio_chip.chip_index`，Core Ch 10 DisplayConfig / factory輸入無對應欄位；已開 `M3-DISPLAY-CONFIG-001`，禁止硬編碼gpiochip0。 |
+| 2026-08-13 | WP-M3-10 | **Unblocked — IR_dev_M3_I Resolved** | Designer新增strict `DisplayConfig.gpio_chip_index`與ABI v1直接mapping契約；missing / negative / mock-null carry regression通過。focused 23 passed；完整non-RPi 233 passed、1 deselected。 |
 | 2026-08-13 | Regression | **PASS (non-RPi)** | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -m 'not rpi'`：233 passed、1 deselected。`-m rpi` acceptance gate持續明確列出23個Blocked IDs，不宣稱M3 Accepted。 |
 
 ### 開工與 Blocking 結論
@@ -39,18 +40,18 @@
 | :--- | :--- | :--- |
 | **Developer complete** | portable 工作已完成且 non-RPi regression 全綠 | WP-M3-01~06、08、09、11；guardrail、portable config / HAL、Renderer、Arbiter、Audio schema / fake seam、Camera、GPIO / Button與composition |
 | **Blocked — Audio P4** | 不得實作／merge selected real backend，不得加入 production dependency lock | WP-M3-07；等待 POC 完整 40-character SHA、P4-A01~A10 evidence及 Core Designer final selection ACK |
-| **Blocked — Display config contract** | accepted source已定位並驗證，但Core config無法提供ABI v1必填gpiochip index | WP-M3-10；等待Designer解決 `IR_dev_M3_I / M3-DISPLAY-CONFIG-001`；禁止hardcode `gpiochip0` |
+| **Resolved — Display config contract** | `DisplayConfig.gpio_chip_index`由strict loader驗證並直接映射ABI v1；禁止hardcode或global/environment probe | `IR_dev_M3_I / M3-DISPLAY-CONFIG-001`已Resolved；WP-M3-10可繼續 |
 | **Blocked — target device** | 不阻擋portable code；阻擋20張Pi card與M3 acceptance | WP-M3-12~13；前置real package解除後，等待USER確認Pi / peripherals、local config及安全操作時段 |
 | **Not M3 blocker** | 不列入本階段 gate | LLM POC、Audio P3 TTS winner、Display ACK advisory |
 
-accepted Display ABI v1已證明無法由核准的Core `DisplayConfig` / `make_display(config)`輸入取得必填gpiochip index，因此已開立 `docs/reviews/IR_dev_M3_I.md`；在Designer修訂契約前，WP-M3-10維持Blocked。
+accepted Display ABI v1的gpiochip boundary已由 `IR_dev_M3_I` 收斂：Core `DisplayConfig.gpio_chip_index`是唯一strict input，adapter直接映射到ABI v1；WP-M3-10已解除設計阻擋。
 
 ### POC Input Baseline
 
 | POC domain | Accepted contract | Core adoption record | Source / artifact identity | License / target | Fixture / config | Open conditions | Evidence index |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Audio** | v1.0 locator：`docs/outsource/references/poc_audio/audio_m3_contract_v1.0.md` | `DELIVERY-AUDIO-POC-M3-ACK-001/002`；Option A direction accepted；`DELIVERY-AUDIO-POC-M3-VALIDATION-001` action required | Accepted delivery `87ff000559ded8c0d7499d621af7dfcccb81858c`；native evidence `0edeb7d9f8ff3811d1480ab4b464db2842978233`；候選 binding / resampler 尚未 selected，POC binary 不進 Core Git | Pi 5 target OS / arch、binding / resampler version、source hash、transitive dependency、license / notice與build identity皆由P4回交後核准 | INMP441 + MAX98357A、shared I2S、`googlevoicehat-soundcard`；P1 native FAIL、P2 direct `hw:0,0` PASS；實際channel、valid-bit alignment、sanitized local config / hash待P4與USER readiness | **Blocks Audio selected real package start**：P4 full SHA + required evidence + Core final selection ACK；P3延至M4a，不阻擋M3 | `DELIVERY-AUDIO-POC-M3-VALIDATION-001`定義P4-A01~A10；Core正式位置為`docs/outsource/evidence/<delivery-id>/audio/` |
-| **Display** | v0.3 locator：`docs/outsource/references/poc_display/display_m3_contract_draft.md` | `DELIVERY-005-poc_display-m3-v0.3-ack`；Accepted as M3 design input，D1~D5 Resolved | Source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；已驗證checkout位於`/tmp/snowboard-display-reference-5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit evidence `055517a905bd2c8f8531c05acfa658854e25491f`；review `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | Pi 5 / target OS arch；ABI v1、artifact license / notice與runtime identity由accepted manifest及target build重驗 | Waveshare 1.5-inch SSD1351；SPI0 CE0、4 MHz、DC24、RST25；實際artifact / config full hash由target build / readiness card記錄 | **Blocks native package start**：ABI v1必填`gpio_chip.chip_index`無法由核准Core config提供；等待`IR_dev_M3_I`解決 | POC D1~D5只作輸入；Core正式位置為`docs/outsource/evidence/<delivery-id>/display/` |
+| **Display** | v0.3 locator：`docs/outsource/references/poc_display/display_m3_contract_draft.md` | `DELIVERY-005-poc_display-m3-v0.3-ack`；Accepted as M3 design input，D1~D5 Resolved | Source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；已驗證checkout位於`/tmp/snowboard-display-reference-5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit evidence `055517a905bd2c8f8531c05acfa658854e25491f`；review `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | Pi 5 / target OS arch；ABI v1、artifact license / notice與runtime identity由accepted manifest及target build重驗 | Waveshare 1.5-inch SSD1351；SPI0 CE0、4 MHz、operator-resolved gpiochip index、DC24、RST25；實際artifact / config full hash由target build / readiness card記錄 | Config boundary已由`IR_dev_M3_I`解決；WP-M3-10可開始native adapter，並直接映射validated index至ABI v1 | POC D1~D5只作輸入；Core正式位置為`docs/outsource/evidence/<delivery-id>/display/` |
 
 > Baseline 表只引用已採用紀錄，不以 branch HEAD、縮寫 checksum、候選套件或 POC「可見／不 crash」自驗冒充 Core integration baseline。所有external reference repo均由USER在相關package開工前指派位置，Developer手動clone到Core repo外並鎖定exact SHA；clone及產物不進Core Git。
 
@@ -69,7 +70,7 @@ accepted Display ABI v1已證明無法由核准的Core `DisplayConfig` / `make_d
 | **WP-M3-07** Audio Option A selected real package | 11 | direct ALSA、核准conversion、exact framing、selected allowlist / dependency lock、async lifecycle、fallback與Pi setup | M3-AUD-003~004、M3-CFG-002、M3-AUDI-001~004 | WP-M3-02、03、06；P4 final ACK | **Blocked by Audio P4** |
 | **WP-M3-08** picamera2 real backend | 6 | JPEG / RGB / I420、stride / plane conversion、lifecycle、missing CSI fallback與setup | M3-CAMI-001~003 | WP-M3-02、03 | **Developer complete；Pi evidence Blocked** |
 | **WP-M3-09** gpiod + Button InputSource | 10 | libgpiod 2.x fd readiness、debounce、GPIO output、five button semantics、graceful shutdown | M3-GPIOI-001~002、M3-BTN-001~005 | WP-M3-02、03 | **Developer complete；Pi evidence Blocked** |
-| **WP-M3-10** SSD1351 native adapter | 13 | accepted ABI v1 adapter、source build、artifact validation、buffer / byte order、lifecycle、cleanup與setup | M3-DSPI-001~006 | WP-M3-02~05；resolved config→ABI gpiochip boundary | **Blocked — IR_dev_M3_I** |
+| **WP-M3-10** SSD1351 native adapter | 13 | accepted ABI v1 adapter、source build、artifact validation、buffer / byte order、lifecycle、cleanup與setup | M3-DSPI-001~006 | WP-M3-02~05；resolved config→ABI gpiochip boundary | **Ready — IR_dev_M3_I Resolved** |
 | **WP-M3-11** Portable composition / fallback | 6 | M3 graph、null / mock factories、capability freeze、Display observer chain、Boot / Shutdown與blocked-real seam | M3-HAL-002、M3-SCN-001、M3-REG-001（部分） | WP-M3-02~05、08、09 | **Completed** |
 | **WP-M3-12** Real composition + Pi diagnostics | 10 | selected real wiring、20 RPI nodes、fixed fixtures、latency / cleanup probes、USER checklist與cards | 全部20個RPI-NATIVE IDs | WP-M3-07~11；USER readiness | **Blocked by 07 / 10 / target device** |
 | **WP-M3-13** Regression / exact-SHA delivery | 7 | 27 DEV IDs、20 Pi cards、M1/M2/full regression、clean Python 3.11+、evidence index與handoff | M3-REG-001；全體47 IDs | WP-M3-01~12 | **Portable regression complete；acceptance Blocked** |
@@ -211,7 +212,7 @@ accepted Display ABI v1已證明無法由核准的Core `DisplayConfig` / `make_d
 | **W5 Target-device integration** | WP-M3-12 | USER readiness完成；20 RPI nodes及manual observations對candidate SHA完成 |
 | **W6 Acceptance / delivery** | WP-M3-13 | 27 DEV + 20 RPI、M1/M2/full regression、Tester PASS、Designer無Blocking |
 
-W0~W3的可執行範圍已完成。W4的Audio gate等待P4 final ACK；Display reference已在Core repo外驗證，但config→ABI gpiochip boundary等待`IR_dev_M3_I`解決。external reference repo與build outputs不進Git。
+W0~W3的可執行範圍已完成。W4的Audio gate等待P4 final ACK；Display reference已在Core repo外驗證，config→ABI gpiochip boundary已由`IR_dev_M3_I`解決。external reference repo與build outputs不進Git。
 
 ---
 
