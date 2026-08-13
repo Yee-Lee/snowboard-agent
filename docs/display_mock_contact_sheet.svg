@@ -73,10 +73,9 @@
   <text class="label" x="624" y="444">Error</text>
   <rect class="panel" x="624" y="458" width="256" height="256"/>
   <line class="divider" x1="624" y1="498" x2="880" y2="498"/>
-  <text class="error" x="632" y="487" font-size="24">錯誤</text>
+  <text class="state" x="632" y="487" font-size="24">錯誤</text>
   <text class="error" x="632" y="542">
-    <tspan x="632" dy="0">錯誤</tspan>
-    <tspan x="632" dy="40">暫時無法完成</tspan>
+    <tspan x="632" dy="0">暫時無法完成</tspan>
     <tspan x="632" dy="40">請稍後再試</tspan>
   </text>
 </svg>

@@ -298,11 +298,26 @@ class AudioConfig:
 @dataclass(frozen=True, slots=True)
 class DisplayConfig:
     driver: str = "mock"
+    profile: Literal["DSP-PROFILE-OLED-128"] = "DSP-PROFILE-OLED-128"
     width: int = 128
     height: int = 128
-    pixel_format: Literal["mono1", "rgb565", "rgb888"] = "rgb565"
-    spi_device: str | None = None
+    pixel_format: Literal["rgb565"] = "rgb565"
+    rotation: Literal[0] = 0
+    byte_order: Literal["msb_first"] = "msb_first"
+    frame_buffer_bytes: Literal[32768] = 32768
     show_session_content: bool = True
+
+    # SSD1351 real-backend deployment fields. Generic mock/null defaults must
+    # not contain a native artifact location or Pi fixture wiring.
+    native_library_path: Path | None = None
+    native_library_sha256: str | None = None
+    native_abi_version: int | None = None
+    spi_device: str | None = None
+    spi_speed_hz: int | None = None
+    spi_mode: int | None = None
+    spi_chip_select: int | None = None
+    dc_bcm: int | None = None
+    reset_bcm: int | None = None
 
 @dataclass(frozen=True, slots=True)
 class CameraConfig:
@@ -338,11 +353,28 @@ Cross validation :
 
 - `frame bytes = sample_rate * frame_duration_ms / 1000 * channels * bit_depth/8` 必須是整數；
 - AudioInput / TTS output format必須一致，不做runtime resample；
-- width / height正整數，camera quality 1..100；selected `DSP-PROFILE-OLED-128` 必須使用 `128×128` 與 `rgb565`，不得以 mock / real driver 差異放寬；未來 profile 必須另定 profile-specific validation；
+- width / height正整數，camera quality 1..100；selected `DSP-PROFILE-OLED-128` 對所有 driver 都固定 `128×128`、`rgb565`、rotation `0`、RGB565 MSB-first 與 `128 * 128 * 2 = 32768` bytes 完整 frame。任何矛盾值都在 factory / native code 之前以 `ConfigValueError` 拒絕；未來 profile 必須另定 profile-specific validation；
 - `show_session_content` 實作 `DSP-REQ-004`，只控制 `display_spec.md` 的 Perception / Tool / Speak 內容；State、Error、Blank 與 lifecycle 不受影響，且此設定為 startup-static、不支援 runtime reload；
-- mono1 width需可被8整除；
 - GPIO logical name與pin都不可重複，一pin一訂閱者；
 - real driver需要的device/path欄位不可為 `None` 。
+
+`driver="ssd1351"` 是 M3 唯一 selected real backend，另套用下列 strict cross-field validation：
+
+| 欄位 | 合法值 / 規則 | 原因 |
+| :--- | :--- | :--- |
+| `native_library_path` | 必填、存在的 regular file | artifact 位置由 Pi local deployment config 提供；不得放入 generic defaults |
+| `native_library_sha256` | 必填、64 個小寫 hex，且與檔案 SHA-256 相同 | 只載入已核准的 exact artifact |
+| `native_abi_version` | `1` | 對應 accepted Display ABI v1；adapter 在 `dlopen` 後、`display_open` 前再驗 exported ABI / struct size |
+| `spi_device` | `/dev/spidev0.0` | SPI0 CE0；CE0 由 kernel 管理，不得另由 GPIO library claim |
+| `spi_speed_hz` | `4000000` | accepted M3 baseline；不得把未驗證的 requested speed 當 effective throughput |
+| `spi_mode` | `0` | selected SSD1351 fixture |
+| `spi_chip_select` | `0` | CE0，對應 BCM8 / physical pin 24；native config 的 software-CS 必須保持 disabled (`cs=-1`) |
+| `dc_bcm` | `24` | co-I2S fixture；physical pin 18 |
+| `reset_bcm` | `25` | co-I2S fixture；physical pin 22 |
+
+`dc_bcm`、`reset_bcm` 必須互異，且不得等於 kernel-owned CE0 BCM8、SPI0 MOSI BCM10 或 SCLK BCM11。上述 native / SPI / GPIO 欄位只允許在 `driver="ssd1351"` 時出現；`mock` / `null` 若攜帶任一 real-only 值即為矛盾 config，必須以 `ConfigValueError` 拒絕。Loader 先完成 unknown-key、型別、path / checksum 與所有 cross-field validation，composition root 才可呼叫 Display factory；因此 invalid config 不得觸及 GPIO、SPI 或 native library。
+
+Factory 只在 `driver="ssd1351"` 分支 lazy import `sbd.core.display.ssd1351.driver`，並把已驗證的 `DisplayConfig` 原樣交給 adapter。`null` / `mock` 分支不得 import、`dlopen`、hash 或 probe native artifact。SSD1351 adapter 必須在建立硬體 handle 前驗證 ABI v1 / struct size，將 artifact / ABI 不符視為 startup failure；RM 依 Ch 2a 的 real→null 規則降級。共用 Renderer、Arbiter 與 Resource Manager 不得 import SSD1351 module 或判斷其 pin / SPI 欄位。
 
 8. InputSource、Adaptor 與 external buffer
 

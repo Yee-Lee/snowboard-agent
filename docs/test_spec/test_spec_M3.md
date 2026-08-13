@@ -58,7 +58,7 @@
 | **M3-ARB-001** | Ch 8 §5.1–§5.2；§7 atomic flush | status/main 每次更新只呼叫一組 clear/write/show；fullscreen active 期間 status/main 更新不 render | `MockDisplay` 紀錄 call order；write_status_slot("state") + write_main("text")；再 request_fullscreen("owner_a") 後 write_main("during_full") | 每次常規更新恰好一組 clear→write→show；fullscreen active 時 write_main 不觸發 show；DisplayDevice.write_pixels 只在 show 前才呼叫 | `DEV-PY311` / `EV-AUTO`、`EV-RACE` / display pipeline |
 | **M3-ARB-002** | Ch 8 §5.3–§5.4；§10 tests 2–8 | 不同 owner 搶 fullscreen 未被拒、非 owner release 清除 fullscreen | owner_a request → owner_b request → owner_a release；owner_b 再 request；同 owner 重複 request | owner_b 搶佔時 return False；owner_a release 後 model 回常規且一次 render；owner_b 重新 request 回 True；同 owner 重複 request 更新 hint 並回 True | `DEV-PY311` / `EV-AUTO` / display pipeline |
 | **M3-ARB-003** | Ch 8 §7；§10 test 9 | NullDisplay size (0,0) 時 arbiter 仍執行 renderer，或 ownership 規則失效 | `NullDisplay` 注入 arbiter；write_status_slot / request_fullscreen / release_fullscreen 操作 | size (0,0) 時 renderer 不被呼叫（arbiter 直接 return）；ownership 規則仍成立（release 非 owner 為 no-op、相同 owner 重複 request 回 True） | `DEV-PY311` / `EV-AUTO` / null device |
-| **M3-ARB-004** | Ch 8 §8 runtime degradation；§10 tests 12–13 | renderer 或 HAL runtime failure 後繼續 render 或 publish ErrorOccurred | `MockDisplay.show()` 第一次 raise；後續 write_main | 第一次 raise 後 `_rendering_enabled=False` latch；後續 write_main 更新 backing model 但 show 不再呼叫；不 publish `ErrorOccurred`；不進 SM ERROR | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / error policy |
+| **M3-ARB-004** | Ch 8 §8 runtime degradation；§10 tests 12–13 | renderer 或 HAL runtime failure 後繼續 render 或 publish ErrorOccurred | `MockDisplay.show()` 第一次 raise；後續 write_main | 第一次 raise 後 arbiter 進入 degraded 狀態，後續 write_main 更新 backing model 但 `MockDisplay.show()` 不再被呼叫（以 call count 驗證）；不 publish `ErrorOccurred`；不進 SM ERROR；僅驗公開可觀察呼叫行為，不檢查 private 欄位 | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / error policy |
 | **M3-ARB-005** | Ch 8 §9 lifecycle；§10 test 13 | stop 後 observer 仍 write 觸發 fatal；或 stop 呼叫 device.stop() 造成雙重停止 | arbiter start→write 正常→stop→stop；stop 後 write_main（delayed observer） | stop 後 write 為 no-op + DEBUG；stop 不呼叫 device.stop()；重複 stop 冪等不 raise | `DEV-PY311` / `EV-AUTO` / reverse stop |
 | **M3-ARB-006** | Ch 8 §6 slot registry；§5.1；display_spec.md §3.3 state slot | unknown slot raise UnknownDisplaySlot；State owner startup seed IDLE 不發布虛構事件 | write_status_slot("nonexistent_slot") → 期望 raise；arbiter start 後 state slot 值確認 | `UnknownDisplaySlot` raise；state slot 初始值為 IDLE mapping ("待命")；StatusBar start 不 publish 任何 Event | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / display profile |
 | **M3-ARB-007** | Ch 8 §10 test 14；ch8-Q9 | native thread 直接呼叫 arbiter 未被 thread-affinity guard 拒絕 | 從非 event-loop thread 直接呼叫 write_status_slot | thread-affinity guard 拒絕並 raise（`RuntimeError` 或等效錯誤） | `DEV-PY311` / `EV-AUTO` / threading |
@@ -67,9 +67,9 @@
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M3-REND-001** | Ch 8 §4 renderer 契約；display_spec.md §2–§3；`milestones/M3.md` §5.1 | renderer 回錯誤 buffer 長度或未知 template | 以各 required template（`status.text`、`status.state`、`main.text`、`main.error`、`fullscreen.blank`）呼叫 render；另以 unknown template 呼叫 validate | render 回 bytes 長度 = panel buffer size（128×128 for SSD1351 profile）；validate 未知 template/欄位 → `DisplayHintError`；size (0,0) 時 arbiter 不呼叫 renderer | `DEV-PY311` / `EV-AUTO` / display pipeline |
-| **M3-REND-002** | display_spec.md §2.2 typography；§3.3 state 文案 | 狀態文案錯誤、字型未離線隨附、或 missing glyph 使整個 render 失敗 | 以 `status.state` template 依序注入六種 state；以含不支援字元的 main.text 呼叫 render | IDLE→"待命" / WAKE→"準備中" / PERCEPTION→"接收中" / THINK→"思考中" / ACTION→"回應中" / ERROR→"錯誤"；不支援字元逐一替換為 `□`，render 不 raise；Noto Sans TC 字型從 assets/ 離線載入，不依賴系統字型 | `DEV-PY311` / `EV-AUTO`、`EV-REVIEW` / display spec |
-| **M3-REND-003** | display_spec.md §2.1 layout tokens；§3.2 CMP-BLANK；§4.1 SCN-BOOT / SCN-SHUTDOWN | Fullscreen Blank 非全黑、startup/shutdown 未使用 Blank | render `fullscreen.blank` hint；bitmap 檢查 | render 產出全黑 frame（128×128 全零或 RGB565 等效）；`main.progress` template 存在於 registry 但 renderer 接受後不產生非空產品可見內容（技術預留） | `DEV-PY311` / `EV-AUTO` / SCN-BOOT / SCN-SHUTDOWN |
+| **M3-REND-001** | Ch 8 §4 renderer 契約；display_spec.md §2–§3；`milestones/M3.md` §5.1 | M3 required renderer 回錯誤 buffer 長度或未知 template | 以 M3 required template（`status.state`、固定 fixture 用 `main.text`、`fullscreen.blank`）呼叫 render；另以 unknown template 呼叫 validate | render 回 bytes 長度 = 32768（128×128×2）；validate 未知 template/欄位 → `DisplayHintError`；size (0,0) 時 arbiter 不呼叫 renderer；`main.error`、session-content owner 與 animation 不列入 M3 gate | `DEV-PY311` / `EV-AUTO` / display pipeline |
+| **M3-REND-002** | display_spec.md §2.2 typography；§3.3 state 文案 | 狀態文案錯誤、字型未離線隨附、或 missing glyph 使整個 render 失敗 | 以 `status.state` template 依序注入六種 state；以含不支援字元的 main.text fixture 呼叫 render | IDLE→"待命" / WAKE→"準備中" / PERCEPTION→"接收中" / THINK→"思考中" / ACTION→"回應中" / ERROR→"錯誤"；ERROR 只驗 Status state mapping，不接 `SCN-ERROR` / `main.error`；不支援字元逐一替換為 `□`，render 不 raise；Noto Sans TC 字型從 assets/ 離線載入，不依賴系統字型 | `DEV-PY311` / `EV-AUTO`、`EV-REVIEW` / display baseline |
+| **M3-REND-003** | display_spec.md §2.1 layout tokens；§3.2 CMP-BLANK；§4.1 SCN-BOOT / SCN-SHUTDOWN | Fullscreen Blank 非全黑、startup/shutdown 未使用 Blank | render `fullscreen.blank` hint；bitmap 檢查 | render 產出全黑 frame（128×128 全零或 RGB565 等效）；SCN-BOOT 與 SCN-SHUTDOWN 皆以 Fullscreen Blank owner 管理 | `DEV-PY311` / `EV-AUTO` / SCN-BOOT / SCN-SHUTDOWN |
 | **M3-REND-004** | display_spec.md §2.2 text wrap / overflow | 超長文字 overflow 未截斷、省略符號使用錯誤字型 | 超出 Main 5 行上限的長文字注入 `main.text`；空白 / sanitization 後空字串 | 超出高度 deterministic 截斷，最後一行保留足夠寬度顯示 `…`（FONT-UI-REGULAR）；空字串 / 全空白 → clear Main（不保留上一筆、不顯示 placeholder） | `DEV-PY311` / `EV-AUTO` / content policy |
 | **M3-REND-005** | display_spec.md §2.3 asset inventory；font SHA-256 | 字型檔 SHA 不符，或使用未授權版本 | 讀取 `NotoSansTC-Regular.otf` 與 `NotoSansTC-Medium.otf` 並計算 SHA-256 | Regular SHA-256 = `5bab0cb3c1cf89dde07c4a95a4054b195afbcfe784d69d75c340780712237537`；Medium SHA-256 = `bf206dca0975779bac71cb49a037a364156ca98a0c431b1b7d6b29fb8952ac7e` | `DEV-PY311` / `EV-AUTO` / asset |
 
@@ -78,8 +78,6 @@
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M3-SCN-001** | display_spec.md §4.1 SCN-BOOT / SCN-SHUTDOWN；§4.2 fullscreen model rule 4 | Boot / Shutdown Fullscreen owner 未在 finally release，阻塞後續 Display 操作 | `FX-MOCK-APP`；模擬 app lifecycle boot owner request_fullscreen(blank)→建立 Normal model 後 release；另模擬 shutdown request → process stop 期間維持；NullDisplay 情況下 boot 仍 release | Boot owner release 後 arbiter 渲染最新 Normal model；Shutdown owner 維持至 Display stop；NullDisplay / failure 情況下 release 仍必須被呼叫（finally）；`capability_of("display")=False` 不改變主流程 exit code | `DEV-PY311` / `EV-AUTO`、`EV-RACE` / lifecycle |
-| **M3-SCN-002** | display_spec.md §4.1 SCN-STATE / SCN-PERCEPTION / SCN-INTERRUPT | SCN-PERCEPTION new turn 未先 clear 舊 Main；SCN-INTERRUPT 未在回 IDLE 後 clear | `FX-MOCK-APP`；StateChanged PERCEPTION 觸發；第二 turn StateChanged PERCEPTION 前先確認 clear 呼叫；後觸發 InterruptRequested → verify Main 顯示「已中止」→ 回 IDLE 後確認 clear | 每次 `StateChanged.new=PERCEPTION` 先 `write_main(None)` 清除上一輪；interrupt 期間 Main="已中止"；真正回 IDLE 後 write_main(None) clear | `DEV-PY311` / `EV-AUTO` / SCN matrix |
-| **M3-SCN-003** | display_spec.md §5.2 SET-SHOW-SESSION-CONTENT；§5.1 content policy | session content setting 影響 State/Error/Blank，或支援 runtime reload | 以 `SET-SHOW-SESSION-CONTENT=False` 啟動；觸發 PERCEPTION / ACTION-SPEAK；另觸發 SCN-ERROR | Perception / Speak 內容不寫入 Main；State / Error / Blank 不受 setting 影響；setting 在 process 啟動時生效，runtime 修改不生效；session / audio / exit code 不受影響 | `DEV-PY311` / `EV-AUTO` / content setting |
 
 ### 2.9 GPIO Button 語意（Pi 硬體）
 
@@ -89,6 +87,7 @@
 | **M3-BTN-002** | `milestones/M3.md` §5.4 Button 語意 | 短按進行中 session 未觸發 InterruptRequested | PERCEPTION / THINK / ACTION 進行中時短按 | `InterruptRequested` 行為觸發；session 收斂後回 IDLE | `RPI-NATIVE` / `EV-RACE` / interrupt |
 | **M3-BTN-003** | `milestones/M3.md` §5.4 Button 語意 | 長按未觸發 graceful shutdown，或 exit code 非 0 | 任意狀態下長按（`duration_ms` ≥ `long_press_min_ms`）| `ShutdownRequested` Signal；App graceful shutdown；exit code 0 | `RPI-NATIVE` / `EV-PROC` / shutdown |
 | **M3-BTN-004** | `milestones/M3.md` §5.4 Button 語意 | ERROR 狀態短按未直接進 WAKE | recovery 完成（或無 recovery）後的 ERROR 狀態短按 | 短按後直接 WAKE，開始新 session（不需先回 IDLE） | `RPI-NATIVE` / `EV-PROC` / SM ERROR |
+| **M3-BTN-005** | `milestones/M3.md` §5.4 Button 語意；PM-OUT-260813-009 `OUT-M3-TEST-2026-002` | recovery 進行中短按未被忽略 | ERROR 進入 recovery 期間（recovery worker 尚未完成）短按 | 短按被忽略（不產生 `ButtonPressed` / `InterruptRequested`）；recovery 繼續執行至完成後回 ERROR；recovery 完成後再短按才有效（同 M3-BTN-004） | `RPI-NATIVE` / `EV-PROC`、`EV-RACE` / SM ERROR recovery |
 
 ### 2.10 Audio Real Backend（Pi 硬體）
 
@@ -96,6 +95,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M3-AUDI-001** | `milestones/M3.md` §5.4 Pi 驗收 item 1；Ch 2a §2a.2 PCM 格式；DELIVERY-AUDIO-POC-M3-ACK-001 | real ALSA backend frame 格式或 timeout 不符，或 output 未完整消費 | Pi ALSA config（I2S INMP441、googlevoicehat-soundcard）；AudioInput start → frames timeout N 幀 → aclose；AudioOutput start → play(固定 PCM fixture) | AudioInput：在 timeout 內產出幀數 ≥ N；每幀 bytes 長度 = `16000 * 20 // 1000 * 1 * 2`（16kHz mono 16-bit 20ms）；AudioOutput：完整消費所有幀，無 PCM 截斷 | `RPI-NATIVE` / `EV-PROC` / audio pipeline |
 | **M3-AUDI-002** | Ch 2a §2a.1 real→null fallback；`milestones/M3.md` §5.4 fallback | 不存在的 ALSA device 未觸發 null fallback | 以不存在的 ALSA card 名稱啟動 | real start raise → null fallback 啟動；`capability_of("audio")=False`；log WARNING 含 device name；App 繼續執行（不 fatal） | `RPI-NATIVE` / `EV-PROC`、`EV-LOG` / fallback |
+| **M3-AUDI-003** | `milestones/M3.md` §5.4 item 1 & §5.4 §3（喇叭可聽）；PM-OUT-260813-009 `OUT-M3-TEST-2026-002` | AudioOutput 驅動喇叭無聲或聲音異常（爆音、雜訊）；不可用自動化替代人工聽覺驗證 | Pi 接線（googlevoicehat-soundcard）；AudioOutput play(固定正弦波 / 語音 PCM fixture)；人工聽覺確認 | 喇叭輸出可聽、無明顯爆音 / 雜訊；人工 checklist 記錄：硬體型號、config hash、fixture SHA、測試時間、pass/fail；自動化測試已驗 buffer 呼叫正確，本卡為人工感知補充 | `RPI-NATIVE` / `EV-MANUAL` / audio output audible |
 
 ### 2.11 Camera Real Backend（Pi 硬體）
 
@@ -103,14 +103,18 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M3-CAMI-001** | `milestones/M3.md` §5.4 Pi 驗收 item 3；Ch 2a §2a.4 | picamera2 backend capture 格式/尺寸不符 | Pi CSI camera；以 config `format=JPEG`、`width=640`、`height=480` 呼叫 capture() | 回合法 JPEG bytes（可 decode）；不 raise；尺寸符合 config | `RPI-NATIVE` / `EV-PROC` / camera |
 | **M3-CAMI-002** | Ch 2a §2a.1 null fallback；`milestones/M3.md` §5.4 | CSI 未接線時未 fallback null，Look worker 爆 | 不存在 CSI camera 時啟動 | camera real→null fallback；`capability_of("camera")=False`；log WARNING；App 繼續 | `RPI-NATIVE` / `EV-PROC`、`EV-LOG` / fallback |
+| **M3-CAMI-003** | `milestones/M3.md` §5.4 item 2（Camera 依 config 產出合法 RGB / YUV bytes）；PM-OUT-260813-009 `OUT-M3-TEST-2026-002` | picamera2 RGB / YUV capture 格式或尺寸不符（僅 JPEG 被驗） | Pi CSI camera；以 `format=RGB`、`width=640`、`height=480` 呼叫 capture()；再以 `format=YUV`（I420）同尺寸呼叫 | RGB：length = `640*480*3`；YUV I420：length = `640*480*3//2`；兩者均不 raise；bytes 為真實 sensor 資料（非全零，可目視首幀非純黑） | `RPI-NATIVE` / `EV-PROC` / camera RGB YUV |
 
 ### 2.12 Display Real Backend（Pi 硬體，含 selected profile）
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M3-DSPI-001** | `milestones/M3.md` §5.4 Pi 驗收 item 4–5；Ch 8 §7 atomic flush；display_spec.md §1.2 SSD1351 | real SSD1351 driver 一次 intent 觸發多組 clear/write/show | Pi SSD1351 display；一次 write_main intent | call log：恰好一組 clear→write_pixels→show；無多餘 flush | `RPI-NATIVE` / `EV-PROC` / display atomic |
-| **M3-DSPI-002** | display_spec.md §4.1 SCN-BOOT SCN-SHUTDOWN；`milestones/M3.md` §5.4 | startup/shutdown Fullscreen Blank 未執行或未 release | Pi 啟動→進入 IDLE→shutdown | Boot：OLED 顯示全黑（人工確認）；SCN-STATE IDLE "待命" 文案可讀（人工確認）；Shutdown：全黑維持至 Display stop；hardware 型號、config hash、測試時間、pass/fail 記錄於 `docs/outsource/evidence/` | `RPI-NATIVE` / `EV-PROC`、人工 checklist / lifecycle |
+| **M3-DSPI-002** | display_spec.md §4.1 SCN-BOOT SCN-SHUTDOWN；`milestones/M3.md` §5.4 | startup/shutdown Fullscreen Blank 未執行 | Pi 啟動→進入 IDLE→shutdown；人工觀察 + call log | Boot：OLED 全黑；SCN-STATE IDLE "待命" 可讀；Shutdown：全黑維持至 Display stop；自動 call log 已驗無多餘 flush（M3-DSPI-001） | `RPI-NATIVE` / `EV-MANUAL` / lifecycle |
 | **M3-DSPI-003** | Ch 2a §2a.3；`milestones/M3.md` §5.4 fallback；display_spec.md §5.3 | display device 不存在時 fatal 或 session 中斷 | SPI/driver 不存在或 .so 未編譯時啟動 | real→null fallback；`capability_of("display")=False`；主流程繼續；exit code 不因 display failure 改變 | `RPI-NATIVE` / `EV-PROC`、`EV-LOG` / fallback |
+| **M3-DSPI-004** | Ch 2a §2a.3；Ch 8 §9 lifecycle；PM-OUT-260813-009 `OUT-M3-TEST-2026-002` | Display stop 後重開（reopen）殘留資源、或 cleanup 不完整導致下次 start 失敗 | Pi SSD1351；Display start → write_main → stop → start 再次 write_main → stop | 第二次 start 成功且正常 render；每次 stop 後 native handle 已 close、GPIO DC/RST claim 與 SPI fd 已釋放、無殘留背景 thread；重複 stop 冪等 | `RPI-NATIVE` / `EV-RPI`、`EV-LOG` / lifecycle reopen |
+| **M3-DSPI-005** | `milestones/M3.md` §5.2.2 / §5.4；display_spec.md §1.2；PM-009 `OUT-M3-TEST-2026-002` | rotation 或 RGB565 byte order 錯誤，導致畫面倒置、鏡像或紅藍互換 | Pi SSD1351；render 固定方向標記（四角編號 / 上箭頭）與 RGB primary color bars，再 render State / Main fixture；人工對照 fixture checksum | 方向為 rotation 0、無鏡像；red / green / blue 與預期一致（RGB565 MSB-first）；文字正向可讀、無明顯 flicker；每項逐一 pass/fail | `RPI-NATIVE` / `EV-MANUAL` / orientation color flicker |
+| **M3-DSPI-006** | `milestones/M3.md` §5.4 full-frame latency；Display POC accepted baseline | full-frame present latency 未量測，或以 requested SPI speed 假裝 effective throughput | Pi SSD1351；10 次 warm-up 後對固定 32768-byte frame 執行 100 次 write_pixels→show，以 monotonic clock 計時 | 100 次皆完成且單次 <1 s correctness timeout；記錄 raw samples、P50 / P95 / max 與環境；不宣稱 FPS，不以 requested 4 MHz 推論 effective speed，M3 不另設 performance target | `RPI-NATIVE` / `EV-RPI` / latency |
 
 ### 2.13 GPIO Real Backend（Pi 硬體）
 
@@ -123,7 +127,7 @@
 
 | Test ID | 權威來源 | 風險 | 前置條件 / 刺激 | 可觀察結果 | 平台 / 證據 / 回歸 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M3-CFG-001** | Ch 10；`milestones/M3.md` §5.2 Pi local config 範例 | Pi config 範例含 real pin / ALSA / credential，或 merge 後啟動失敗 | `FX-CONFIG`；載入含 display.driver=`ssd1351`、audio.driver=`alsa`、gpio.driver=`gpiod` 的 local YAML（pin / ALSA card 使用 placeholder）；strict merge 後建構 AppConfig | strict merge 成功，unknown key → `ConfigValueError`；`SecretValue` repr / str 不洩漏原值；Pi-only backend 名稱可被 config schema 接受；`config.example.yaml` 通過 validation | `DEV-PY311` / `EV-AUTO` / config |
+| **M3-CFG-001** | Ch 10 §7；`milestones/M3.md` §5.2.2；PM-009 `OUT-M3-DISPLAY-2026-002` | strict config 接受未知、矛盾、超規或錯 artifact，或 invalid config 已碰觸 native / hardware | `FX-CONFIG` table-driven：以 temp artifact + 正確 SHA 建立合法 `driver=ssd1351` local YAML（profile、128×128、RGB565、rotation 0、MSB-first、32768 bytes、ABI v1、`/dev/spidev0.0`、4 MHz、mode 0、CE0、DC24、RST25）；逐一 mutation unknown key、缺 real 欄位、checksum / ABI / size / format / rotation / byte order / buffer / speed / SPI / GPIO 錯值，以及 mock/null 攜帶 real-only 欄位 | 合法 selected profile strict parse；每個 mutation 在 factory 前 raise path-aware `ConfigValueError`，且 native module 未 import、無 `dlopen` / GPIO / SPI call；generic `config.example.yaml` 不含 artifact path 或 Pi fixture pin 且通過同一 loader；secret repr / str 不洩漏 | `DEV-PY311` / `EV-AUTO`、`EV-LOG` / strict config |
 
 ### 2.15 Regression 與共同完成條件
 
@@ -133,20 +137,41 @@
 
 ---
 
-## 3. 驗收命令
+## 3. RPI-NATIVE test card 與目前狀態
+
+本文件所有 `RPI-NATIVE` Test ID 都必須產出獨立 test card；表格最後欄若仍寫 `EV-PROC` / `EV-LOG`，代表該類證據須**附加**於 `EV-RPI`，不會取代下列共同欄位：
+
+| Card field | 必填內容 |
+| :--- | :--- |
+| Test ID / status | Test ID；`Pending` / `Pass` / `Fail` / `Blocked`；未執行不得標 Pass |
+| Product revision | branch + 完整 40-character implementation SHA；design/test-spec only 不得冒充 implementation |
+| Hardware / wiring | Pi / peripheral 型號與 revision、BCM + physical pin 接線、kernel-managed bus ownership |
+| Artifact | native `.so` / header / adapter path、各自 SHA-256、ABI、license / notice |
+| Config | sanitized local config path + SHA-256；不得記 credential |
+| Fixture | PCM / image / display-pattern path + SHA-256；人工項目另列 checklist version |
+| Reproduction | 完整命令、環境 / Python 版本、操作步驟、預期結果 |
+| Result / artifacts | 實際結果、開始 / 結束時間、log / call-log / raw latency / photo-video metadata 的 repository-relative path |
+
+目前本規格尚無產品 implementation delivery，因此 `M3-BTN-*`、`M3-AUDI-*`、`M3-CAMI-*`、`M3-DSPI-*`、`M3-GPIOI-*` 的執行狀態全部為 **Pending**。這是 test-spec coverage sign-off，不是硬體驗收 PASS 或 M3 Accepted。
+
+Portable collection 規則：RPI 測項必須加 `rpi` marker；DEV-PY311 預設 collection 與未明確傳入 `-m rpi` 的環境由 collection hook deselect 並列出數量。Pi 驗收命令明確選取 `-m rpi`；缺硬體時結果為 Blocked，不得改成 skip / xfail 或 Pass。
+
+---
+
+## 4. 驗收命令
 
 ```bash
 # 開發機：純軟體 + M1/M2 regression
 python -m pytest -v tests/milestones/test_m1_foundation.py
 python -m pytest -v tests/milestones/test_m2_mock_pipeline.py
-python -m pytest -v tests/milestones/test_m3_rpi_hal.py -k "not rpi"
-python -m pytest -v
+python -m pytest -v -m "not rpi" tests/milestones/test_m3_rpi_hal.py
+python -m pytest -v -m "not rpi"
 
 # Raspberry Pi 5：硬體整合（需已確認 pin 接線、ALSA device、CSI camera）
 python -m pytest -v -m rpi tests/milestones/test_m3_rpi_hal.py
 ```
 
-Pi 驗收時需在 `docs/outsource/evidence/` 記錄：硬體型號、接線 config hash、Python 版本、測試時間與各測項 pass/fail。人工觀察（喇叭、OLED）使用固定 fixture 與 checklist，結果記入同目錄；人工結果不取代可自動檢查的 buffer / 呼叫順序斷言。
+Pi 驗收證據寫入正式 delivery 對應的 `docs/outsource/evidence/<delivery-id>/`，並逐卡填完 §3 欄位。人工觀察（喇叭、OLED）使用固定 fixture 與 checklist；人工結果不取代可自動檢查的 buffer、格式、呼叫順序、latency raw sample 或 lifecycle 斷言。
 
 M3 Pass 需同時滿足：
 1. 開發機 `python -m pytest -v` 全通過（含 M1 / M2 regression）。

@@ -86,6 +86,7 @@ Implement 章節的「最低單元測試」仍是 Developer 的元件測試輸�
 | **DEV-PY311** | Python 3.11 以上；Windows 或 Linux 跨平台純 Python、mock / config 測試 |
 | **DEV-PROC** | DEV-PY311，跨平台 subprocess 驗證 exit code (2/3/4/0) 與 pipe/stream readiness |
 | **POSIX-PROC** | Linux / Raspberry Pi OS 權威平台，驗證 POSIX `SIGINT` / `SIGTERM` 訊號觸發與原生 process lifecycle；Windows 自動 deselect，不得為此修改 production signal architecture |
+| **RPI-NATIVE** | Raspberry Pi 5 / Raspberry Pi OS；驗證 Pi-only dependency、native backend 與指定硬體 fixture。測項使用 `rpi` marker；非 Pi 或未明確選取 `-m rpi` 時由 collection hook **deselect** 並在 collection summary 列出，不得以 skip / xfail 偽裝為已執行 |
 
 M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only test 必須以 `rpi` marker 分流，且不屬本版 M1 / M2 的 Pass 證據。
 
@@ -112,6 +113,8 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 | 證據代碼 | 內容 |
 | :--- | :--- |
 | **EV-AUTO** | 完整命令、pytest node ID、Test ID 對照、平台與結果摘要 |
+| **EV-RPI** | `EV-PROC` 加 Pi 型號 / OS、完整 40-character implementation SHA、native artifact path + SHA-256、接線表、sanitized config path + SHA-256、fixture SHA、命令、操作步驟、預期 / 實際結果、開始 / 結束時間與 artifact 索引 |
+| **EV-MANUAL** | `EV-RPI` 加操作者、固定視覺 / 聽覺 checklist、逐項 pass / fail 與照片 / 影片 metadata；不得取代可自動驗證的 buffer、呼叫順序、格式或 lifecycle 斷言 |
 | **EV-RACE** | `EV-AUTO` 加 barrier / call-log 順序，能指出 Fact、task done、notice 或 lock 線性化點 |
 | **EV-LOG** | `EV-AUTO` 加 captured log；同時證明必要訊息存在、敏感 sentinel 不存在 |
 | **EV-PROC** | subprocess 命令、exit code、stdout/stderr 或 sanitized log、無殘留 task / child 的證據 |

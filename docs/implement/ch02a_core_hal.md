@@ -76,6 +76,10 @@ def make_audio_input(cfg) -> AudioInput:
 - null 為顯式 driver 選項：config 可主動選 null（例：測試 headless、缺硬體開發機）；RM 的「real 失敗改用 null」是另一條路徑（RM 主動 fallback）
 - mock 與 null 分開：mock 有可控輸入輸出（讀 WAV / 寫 WAV），供開發機與整合測試；null 是絕對無害的 stub，供硬體缺席時的 P5 降級
 
+M3 Display factory 的 real key 固定為 `ssd1351`。Composition root 必須先讓 Ch 10 完成 selected profile、artifact checksum、ABI、SPI、GPIO、rotation、byte order 與 frame-buffer cross validation，才呼叫 factory；factory 只有在 `ssd1351` 分支可 import `sbd.core.display.ssd1351.driver` 或載入 native library。`mock` / `null` 分支不得 probe artifact 或 import native code。SSD1351 adapter 只接收已驗證 config，並在任何 GPIO / SPI claim 前驗 ABI v1 / struct size；失敗交由既有 RM real→null 流程處理。
+
+這個 mapping 屬 chip-specific factory / backend 邊界。共用 `DisplayDevice`、Renderer、Arbiter 與 Resource Manager 不得判斷 SSD1351 pin、SPI 或 ABI 欄位。
+
 ### Factory 失敗與 RM Fallback
 
 Resource Manager 建立階段（ `arch.md` §6.1 職責 1 / 3 ）：

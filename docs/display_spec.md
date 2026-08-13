@@ -73,7 +73,7 @@ ST7789 / LCD 不屬於本 profile。若產品未來選用另一種 panel 或解�
 | `color.background` | `#000000` | 全畫面背景 |
 | `color.foreground` | `#FFFFFF` | State 與一般內容 |
 | `color.divider` | `#30343A` | Normal layout 分隔線 |
-| `color.error` | `#FFB000` | Error 文字；同時使用「錯誤」文字，不得只以顏色表意 |
+| `color.error` | `#FFB000` | Main Error 摘要；Status state 仍使用 `color.foreground` 並顯示「錯誤」，不得只以顏色表意 |
 
 同一 profile 不得依內容動態縮放版面、字級或安全邊距。
 
@@ -119,8 +119,9 @@ StatusBar 與 Main 是兩個同時可見的 region；Fullscreen 是互斥的 com
 | :--- | :--- | :--- | :--- |
 | `CMP-STATE` | StatusBar | `status.state {state}` | 顯示最新狀態文案；單行、垂直置中、靠左 |
 | `CMP-MAIN-TEXT` | Main | `main.text {text}` | Pixel-width 換行、overflow 截斷、missing-glyph fallback；只保存目前內容 |
-| `CMP-ERROR` | Main | `main.error {category, summary}` | 顯示安全的錯誤類別與摘要；使用 error style 及文字前綴「錯誤」 |
+| `CMP-ERROR` | Main | `main.error {category, summary}` | 顯示安全的錯誤類別與摘要；使用 error style，但不重複 Status state 已顯示的「錯誤」 |
 | `CMP-BLANK` | Fullscreen | `fullscreen.blank {}` | 產生全黑 frame，不含文字 |
+| `CMP-ANIMATION` | Fullscreen | 核准的 Boot / shutdown asset | **M7 Deferred**；bounded、cancelable，失敗回 `CMP-BLANK`；不屬 M3 selected profile 或 test gate |
 
 `fullscreen.text` 只供診斷或已另行定義的產品情境使用，不得取代 Boot / shutdown 的 Blank fallback。Animation component / asset 尚未進入 selected profile；若未來核准，必須遵守 §4.3。在此之前 Boot / shutdown 只使用 Blank。
 
@@ -146,6 +147,8 @@ Interrupt、recovery、startup 與 shutdown 不是新的 `status.state`。Displa
 | Scenario ID | Trigger / authoritative data | Layout / component | Content | Replace / clear |
 | :--- | :--- | :--- | :--- | :--- |
 | `SCN-BOOT` | App Display lifecycle 啟動 | Fullscreen / Blank | 全黑 | owner `app.lifecycle.boot`；建立第一個有效 Normal model 後 release；failure / NullDisplay 仍須 release ownership |
+| `SCN-BOOT-ANIMATION` | M7 app startup lifecycle | Fullscreen / Animation | 核准啟動動畫 | **M7 Deferred**；完成 / timeout / cancel 後進 Normal；失敗回 Blank |
+| `SCN-SHUTDOWN-ANIMATION` | M7 graceful shutdown lifecycle | Fullscreen / Animation | 核准關機動畫 | **M7 Deferred**；bounded best effort；完成 / timeout / failure 後 Blank，不延後 shutdown |
 | `SCN-STATE` | 初始 state `IDLE`，其後使用 `StateChanged.new` | Normal / State | §3.3 文案 | StatusBar 啟動時投影一次 `IDLE`；其後每次有效 transition 取代 |
 | `SCN-PERCEPTION` | 本回合、目前 session / turn 驗證通過的 `PerceptionResult.text` | Normal / Main Text | 語音、外部訊息或視覺輸入的目前文字 | Presenter 收到新 turn 的 `StateChanged.new == PERCEPTION` 時，先以 `write_main(None)` 清除上一輪內容；其後每個有效結果依 observer 收到順序取代，不合併 |
 | `SCN-ACTION-TOOL` | 已驗證、正規化且準備執行的 tool decision | Normal / Main Text | Tool registry 提供的安全動作名稱 | Action 開始時取代；下一輪接收或回到 IDLE 時清除 |
@@ -209,14 +212,14 @@ Display failure 不得使 session 進入 ERROR，也不得改變既有 process e
 
 ## 6. Requirement traceability
 
-| Requirement ID | Requirement | 本文件定位 |
-| :--- | :--- | :--- |
-| `DSP-REQ-001` | OLED 128×128 selected profile；LCD 排除 | §1 |
-| `DSP-REQ-002` | 固定離線繁中字型與高對比 visual rules | §2 |
-| `DSP-REQ-003` | Normal / Fullscreen 與 State / Main / Error / Blank | §3–§4 |
-| `DSP-REQ-004` | `SET-SHOW-SESSION-CONTENT` 預設開啟，只控制 Perception / Tool / Speak；startup-static，不支援 runtime reload | §4.1、§5.2 |
-| `DSP-REQ-005` | Sanitized error 與 privacy | §3.2、§4.1、§5.1 |
-| `DSP-REQ-006` | Boot / shutdown Blank | §4.1 |
-| `DSP-REQ-007` | 未來 Boot / shutdown animation 原則與 Blank fallback；尚未進入 selected profile | §4.3 |
-| `DSP-REQ-008` | Missing glyph、NullDisplay 與 runtime failure 不阻斷主流程 | §2.2、§5.3 |
-| `DSP-REQ-009` | Progress UI 不屬目前產品行為 | §1.3 |
+| Requirement ID | Requirement | 本文件定位 | Milestone | Approval owner / evidence |
+| :--- | :--- | :--- | :--- | :--- |
+| `DSP-REQ-001` | OLED 128×128 selected profile；LCD 排除 | §1 | M3 | Designer + Tester；Accepted Display POC / M3 coverage sign-off |
+| `DSP-REQ-002` | 固定離線繁中字型與高對比 visual rules | §2 | M3 Design Ready | User + Designer + Reviewer；approved mock / font inventory |
+| `DSP-REQ-003` | Normal / Fullscreen 與 State / Main / Error / Blank | §3–§4 | M3 baseline；Error runtime M4c | Designer + Tester；M3 / M4c test spec |
+| `DSP-REQ-004` | `SET-SHOW-SESSION-CONTENT` 預設開啟，只控制 Perception / Tool / Speak；startup-static，不支援 runtime reload | §4.1、§5.2 | M4c | User + Designer + Reviewer；M4c design / test approval |
+| `DSP-REQ-005` | Sanitized error 與 privacy | §3.2、§4.1、§5.1 | M4c | Designer + Reviewer + Tester；M4c design / test approval |
+| `DSP-REQ-006` | Boot / shutdown Blank | §4.1 | M3 | Designer + Tester；M3 coverage / Pi evidence |
+| `DSP-REQ-007` | Boot / shutdown animation 原則與 Blank fallback | §3.2、§4.1、§4.3 | M7 Deferred | User + Designer + Tester；M7 spec-first approval |
+| `DSP-REQ-008` | Missing glyph、NullDisplay 與 runtime failure 不阻斷主流程 | §2.2、§5.3 | M3 baseline；session mapping M4c | Reviewer + Tester；M3 / M4c evidence |
+| `DSP-REQ-009` | Progress UI 不屬目前產品行為 | §1.3 | M3 / M4c exclusion | Designer；milestone / test-spec exclusion review |
