@@ -4,16 +4,17 @@
 
 ## Current Status
 
-最後更新：2026-08-08
+最後更新：2026-08-13
 最終交付可達性：`AT_RISK` — M0 readiness gate 已完成；deterministic fake
 與 40-item fixture Pilot 已由 Tester 在 Pi 以完整 SHA 重現通過；User/Designer
-已批准 `CR-AUDIO-M3-PCM-001` Option A，仍等待 Core Team 接受，正式 60-item
-fixture completion 與 catalog review 亦未完成。
+批准的 `CR-AUDIO-M3-PCM-001` Option A 方向已獲 Core Designer 接受，但新增
+P4-A01 至 P4-A10 implementation validation，完成前阻擋 Core Audio real backend；
+正式 60-item fixture completion 與 catalog review 亦未完成。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
-| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；fake harness/cleanup 與 40-item Pilot `PASS`；等待 Core Team 接受 AudioInput adaptation 與完成正式 fixture review | [M1](m1_test_and_audio_baseline.md) |
+| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A 方向已接受；fake harness/cleanup 與 40-item Pilot `PASS`；P4 implementation validation 與正式 fixture review 未完成 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `NOT_STARTED` | VAD/ASR/TTS 隔離候選比較 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5 真實 M3 Audio HAL 整合 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 組合認證與正式交付 | [M4](m4_combined_validation_and_delivery.md) |

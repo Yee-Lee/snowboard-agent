@@ -11,7 +11,7 @@ Delivery ID：`DELIVERY-AUDIO-POC-M3-CONTRACT-001`
 
 This delivery supersedes the v0.1 draft as the POC-to-Core M3 design input.
 Core Team accepted the contract with the conditions in
-`docs/pm_handoff/DELIVERY-AUDIO-POC-M3-ACK-001.md`. The acknowledged Core
+`docs/pm_handoff/history/DELIVERY-AUDIO-POC-M3-ACK-001.md`. The acknowledged Core
 development branch is `dev_agent_m3`; its final integration SHA is not yet
 available and must not be inferred from the branch name.
 
@@ -35,7 +35,7 @@ accepted full 40-character SHA and the POC has M2 finalists.
 
 | ID | Required POC delivery | Status | Consequence if unresolved |
 | --- | --- | --- | --- |
-| P1 | Native `hw:` PCM matrix for rate/channel/sample format, 16 kHz feasibility, xrun behaviour, and lifecycle evidence. | `FAIL / USER APPROVED OPTION A` | Native device is fixed at 48 kHz, stereo, S32_LE; `CR-AUDIO-M3-PCM-001` awaits Core Team decision. |
+| P1 | Native `hw:` PCM matrix for rate/channel/sample format, 16 kHz feasibility, xrun behaviour, and lifecycle evidence. | `FAIL / OPTION A DIRECTION ACCEPTED` | Native device is fixed at 48 kHz, stereo, S32_LE; P4 implementation validation and Core final selection ACK remain required. |
 | P2 | ALSA card/device identifier, driver config hash, wiring and power confirmation, supplied through local config/evidence rather than generic source. | `PASS` | Closed by `M1-NATIVE-AUDIO-001` and `M1-HW-SMOKE-001`. |
 | P3 | TTS winner PCM rate/channels/bit depth/chunk behaviour and controlled fixture. | `PENDING M2` | POC M3 playback-winner evidence is blocked; Core Output API remains configurable. |
 
@@ -54,6 +54,6 @@ test only that exact SHA.
 | Core accepted v1.0 as M3 design input | Core Team Designer | `ACCEPTED WITH CONDITIONS` |
 | POC publishes P1 native capability matrix | Audio POC Tester | `FAIL / CHANGE REQUESTED` |
 | POC publishes P2 device/config evidence | Audio POC Tester / User | `PASS` |
-| Core accepts `CR-AUDIO-M3-PCM-001` | Core Team Designer | `PENDING` |
+| Core accepts `CR-AUDIO-M3-PCM-001` | Core Team Designer | `OPTION A DIRECTION ACCEPTED / P4 REQUIRED` |
 | Core supplies accepted M3 SHA | Core Team Designer | `PENDING` |
 | POC accepts SHA for POC M3 integration | Audio POC Tester / User | `PENDING` |

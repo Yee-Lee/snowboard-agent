@@ -1,0 +1,35 @@
+# PM Handoff Index
+
+本目錄只保留目前仍具約束力的規範與待處理 handoff；已完成且後續責任已由
+新文件承接的 transaction record 移至 `history/`。歸檔不代表刪除決策或證據，
+引用仍須指向可追溯的歷史文件。
+
+最後更新：2026-08-13
+
+## Authoritative POC Documents
+
+- [Audio POC 最終繳交清單](audio_poc_delivery_checklist.md)
+- [Audio POC 團隊開發指引](audio_poc_development_guide.md)
+- [Core Audio M3 要求](core_audio_m3_requirements.md)
+
+以上文件是持續有效的規範，不因單一 handoff 完成而歸檔。
+
+## Active Handoffs
+
+| Delivery | 狀態 | POC disposition |
+| --- | --- | --- |
+| [DELIVERY-AUDIO-POC-M3-ACK-002](DELIVERY-AUDIO-POC-M3-ACK-002.md) | `OPTION A DIRECTION ACCEPTED — IMPLEMENTATION VALIDATION REQUIRED` | 保留為 active parent decision；等待 P4 回交及 Core final selection ACK。 |
+| [DELIVERY-AUDIO-POC-M3-VALIDATION-001](DELIVERY-AUDIO-POC-M3-VALIDATION-001.md) | `ACTION REQUIRED — BLOCKS CORE AUDIO REAL BACKEND` | POC 須完成 P4-A01 至 P4-A10、逐項 recommendation、可重現 evidence 與完整 40-character SHA。 |
+
+P4 是目前 M1 change-request closure 與 Core Audio real-backend 的 blocking
+handoff。它推進最終繳交清單第 5 節「Raspberry Pi 5 與 M3 HAL 驗證」，但不表示
+POC 已獲准進入 M3；milestone 狀態仍以 `docs/milestone/README.md` 為準。
+
+## History
+
+| Delivery | 歸檔理由 | 後續承接 |
+| --- | --- | --- |
+| [DELIVERY-AUDIO-POC-M3-ACK-001](history/DELIVERY-AUDIO-POC-M3-ACK-001.md) | 初始 M3 contract acceptance 已完成；P1/P2 已有 evidence 與後續決定。 | P1/Option A 由 `ACK-002` 與 `VALIDATION-001` 承接；P3 仍由 `ACK-002` 保留為 pending。 |
+
+只有在決定已完成、未結責任已明確轉載到 active 文件，且 repo 內引用已更新後，
+handoff 才可移入 `history/`。

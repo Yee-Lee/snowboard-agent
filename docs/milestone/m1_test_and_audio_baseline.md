@@ -5,6 +5,9 @@
 Frozen-gate decision record：[M1 Frozen-Gate Draft](m1_frozen_gates_draft.md)
 （狀態為 `DESIGNER_APPROVED / NOT FROZEN`；真實 candidate run 尚未獲准。）
 
+Developer progress：[Audio POC Developer Progress — M1](../reviews/dev_progress_M1.md)
+（P4、Formal 60-item fixture 與 M1 gate review 的工作拆包及執行順序。）
+
 Core-team handoff：[Audio M3 Contract v1](../../poc_audio/deliveries/audio_m3_contract_v1.0.md)
 （核心 M3 的設計輸入；不是 POC M3 integration baseline。）
 
@@ -38,7 +41,15 @@ Current Pilot collection finding：[M1 Fixture Pilot Evidence](../../poc_audio/e
 and cleanup `PASS`. Formal completion remains required before freezing.
 
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
-（User/Designer 已批准 Option A，等待 Core Team 回覆。）
+（User/Designer 已批准 Option A；Core Designer 已接受方向，仍須完成 P4。）
+
+Current Core decision：[DELIVERY-AUDIO-POC-M3-ACK-002](../pm_handoff/DELIVERY-AUDIO-POC-M3-ACK-002.md)
+— Option A responsibility boundary accepted; binding、resampler、valid-bit
+mapping、buffering 與 async I/O 尚未獲准。
+
+Active POC handoff：[DELIVERY-AUDIO-POC-M3-VALIDATION-001](../pm_handoff/DELIVERY-AUDIO-POC-M3-VALIDATION-001.md)
+— P4-A01 至 P4-A10、decision table、reproducible evidence 與完整 40-character
+return SHA 均為 required；完成前 Core Audio real backend 維持 blocked。
 
 ## 目標
 
@@ -82,8 +93,9 @@ Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](
 
 Blocking M1 / real candidate entry：
 
-- Core Team 接受或有界修訂 `CR-AUDIO-M3-PCM-001`，確認明確的 AudioInput
-  conversion boundary。
+- 完成 `DELIVERY-AUDIO-POC-M3-VALIDATION-001` 的 P4-A01 至 P4-A10，回交完整
+  40-character SHA，並取得 Core final selection ACK。這是 Option A 尚未關閉的
+  implementation selection gate，也阻擋 Core Audio real backend。
 - 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
   review，使 frozen gate 可標為 `FROZEN`。
 
@@ -107,6 +119,8 @@ Blocking M1 / real candidate entry：
 - Fake candidate success/failure/cancel/cleanup results。
 - Pi/co-I2S environment、capability、WAV metadata、xrun 與 device cleanup results。
 - M3 HAL dependency status。
+- P4 binding/resampler、valid-bit mapping、signal quality、exact framing、async、
+  lifecycle、xrun、resource 與 clean-build/license evidence。
 
 ## 不做的工作
 

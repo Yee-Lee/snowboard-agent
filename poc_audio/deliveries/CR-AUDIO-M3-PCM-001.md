@@ -1,6 +1,6 @@
 # CR-AUDIO-M3-PCM-001 — Explicit AudioInput Format Adaptation
 
-狀態：`USER APPROVED OPTION A / AWAITING CORE TEAM DECISION`
+狀態：`OPTION A DIRECTION ACCEPTED / IMPLEMENTATION VALIDATION REQUIRED`
 日期：2026-08-08
 提出方：Audio POC Tester
 決策方：User/Designer and Core Team Designer
@@ -66,5 +66,7 @@ verification is complete.
 | Decision | Owner | Status |
 | --- | --- | --- |
 | Select A, B, C, or reject all | User / Designer | `APPROVED OPTION A` |
-| Accept matching Core M3 change | Core Team Designer | `PENDING` |
+| Accept matching Core M3 change | Core Team Designer | `OPTION A DIRECTION ACCEPTED` (`DELIVERY-AUDIO-POC-M3-ACK-002`) |
+| Validate implementation selection and return exact SHA | Audio POC | `ACTION REQUIRED` (`DELIVERY-AUDIO-POC-M3-VALIDATION-001`) |
+| Issue final binding/resampler selection ACK | Core Team Designer | `PENDING P4 RETURN` |
 | Update contract delivery and cross-validation tests | Audio POC / Core Team | `PENDING` |

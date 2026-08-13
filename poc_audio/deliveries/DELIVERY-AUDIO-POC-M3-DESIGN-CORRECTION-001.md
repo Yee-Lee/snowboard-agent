@@ -1,7 +1,7 @@
 # POC Audio → Core Team: M3 Audio Format Design Correction
 
 Delivery ID：`DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001`
-狀態：`READY FOR CORE TEAM REVIEW`
+狀態：`CORE DIRECTION ACCEPTED / P4 VALIDATION REQUIRED`
 日期：2026-08-08
 提供方：Audio POC / User as Designer
 接收方：Core Team Designer
@@ -141,11 +141,11 @@ convert a final TTS format before P3 is delivered.
 
 ## 9. Effect on POC schedule
 
-Core acceptance of this design correction is required to close the M1 change
-request and confirm a viable final-delivery path. The complete Core M3 backend
-SHA is not required for POC M1/M2: Core implementation may proceed in parallel
-with POC harness, fixture and candidate work. The full accepted SHA becomes a
-blocking dependency at POC M3 entry.
+Core Designer accepted the Option A responsibility boundary in
+`DELIVERY-AUDIO-POC-M3-ACK-002`. M1 change-request closure now requires the POC
+to complete `DELIVERY-AUDIO-POC-M3-VALIDATION-001`, return an exact SHA, and
+receive the Core final selection ACK. The complete Core M3 backend SHA remains
+a separate blocking dependency at POC M3 entry.
 
 POC real candidate runs remain blocked until the separate frozen-gate Tester
 verification, deterministic fake, schemas and fixture catalog are complete.
