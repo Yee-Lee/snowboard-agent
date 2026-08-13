@@ -1,6 +1,9 @@
 """Lazy display HAL factory."""
 
 from sbd.core.display.base import DisplayDevice
+from sbd.core.display.arbiter import DisplayArbiter
+from sbd.core.display.hints import DisplayHint, DisplayHintError, UnknownDisplaySlot
+from sbd.core.display.renderer import Oled128Renderer, RenderModel
 
 
 def make_display(config) -> DisplayDevice:
@@ -19,4 +22,7 @@ def make_display(config) -> DisplayDevice:
     raise ValueError(f"unknown display driver: {config.driver}")
 
 
-__all__ = ["DisplayDevice", "make_display"]
+__all__ = [
+    "DisplayArbiter", "DisplayDevice", "DisplayHint", "DisplayHintError",
+    "Oled128Renderer", "RenderModel", "UnknownDisplaySlot", "make_display",
+]

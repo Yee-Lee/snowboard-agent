@@ -11,11 +11,11 @@ InboxItem = Event | _TaskCompleted | _WakeAckElapsed | _RecoveryCompleted
 
 STATE_WHITELIST: dict[State, tuple[type, ...]] = {
     "IDLE": (ButtonPressed, WakeWordDetected, ExternalMessageArrived, InterruptRequested, ShutdownRequested, ErrorOccurred),
-    "WAKE": (InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _WakeAckElapsed),
-    "PERCEPTION": (PerceptionResult, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
-    "THINK": (LLMResponse, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
-    "ACTION": (ActionCompleted, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
-    "ERROR": (InterruptRequested, ShutdownRequested, ErrorOccurred, _TaskCompleted, _RecoveryCompleted),
+    "WAKE": (ButtonPressed, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _WakeAckElapsed),
+    "PERCEPTION": (ButtonPressed, PerceptionResult, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
+    "THINK": (ButtonPressed, LLMResponse, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
+    "ACTION": (ButtonPressed, ActionCompleted, InterruptRequested, ShutdownRequested, ErrorOccurred, ExternalMessageArrived, _TaskCompleted),
+    "ERROR": (ButtonPressed, InterruptRequested, ShutdownRequested, ErrorOccurred, _TaskCompleted, _RecoveryCompleted),
 }
 
 def is_allowed_in_state(item: InboxItem, state: State) -> bool:

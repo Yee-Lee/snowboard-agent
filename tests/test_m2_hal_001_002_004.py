@@ -12,7 +12,14 @@ from sbd.core.audio.null import NullAudioInput, NullAudioOutput
 from sbd.core.camera import make_camera
 from sbd.core.camera.mock import MockCamera
 from sbd.core.camera.null import NullCamera
-from sbd.core.config.models import AudioConfig, CameraConfig, DisplayConfig, GPIOConfig
+from sbd.core.config.models import (
+    AudioConfig,
+    AudioFormatConfig,
+    AudioInputConfig,
+    CameraConfig,
+    DisplayConfig,
+    GPIOConfig,
+)
 from sbd.core.display import make_display
 from sbd.core.display.mock import MockDisplay
 from sbd.core.display.null import NullDisplay
@@ -39,7 +46,7 @@ def _jpeg_dimensions(value: bytes) -> tuple[int, int]:
 
 def test_m2_hal_001_factories_lazy_load_only_selected_mock_backends() -> None:
     audio = AudioConfig(driver="mock")
-    display = DisplayConfig(driver="mock", width=8, height=8)
+    display = DisplayConfig(driver="mock")
     camera = CameraConfig(driver="mock", width=8, height=8)
     gpio = GPIOConfig(driver="mock")
     assert make_audio_input(audio).__class__.__name__ == "MockAudioInput"
@@ -55,9 +62,10 @@ def test_m2_hal_002_null_audio_iterator_exclusive_reopen_and_consumption() -> No
     async def run() -> None:
         config = AudioConfig(
             driver="null",
-            sample_rate=8_000,
-            channels=2,
-            frame_duration_ms=10,
+            input=AudioInputConfig(
+                stream_format=AudioFormatConfig(sample_rate=8_000, channels=2),
+                frame_duration_ms=10,
+            ),
         )
         audio_in = NullAudioInput(config)
         audio_out = NullAudioOutput()
@@ -98,8 +106,7 @@ def test_m2_hal_002_null_display_and_camera_return_format_valid_values() -> None
         display.clear()
         display.write_pixels(b"")
         display.show()
-        with pytest.raises(ValueError):
-            display.write_pixels(b"broken")
+        display.write_pixels(b"broken")
         await display.stop()
         await display.stop()
 
@@ -119,12 +126,10 @@ def test_m2_hal_002_null_display_and_camera_return_format_valid_values() -> None
 
 def test_m2_hal_004_mock_display_camera_and_gpio_contracts() -> None:
     async def run() -> None:
-        display = MockDisplay(
-            DisplayConfig(driver="mock", width=4, height=2, pixel_format="rgb565")
-        )
+        display = MockDisplay(DisplayConfig(driver="mock"))
         await display.start()
-        assert display.size() == (4, 2)
-        pixels = bytes(range(16))
+        assert display.size() == (128, 128)
+        pixels = bytes(32768)
         display.write_pixels(pixels)
         assert display.shown_buffers == []
         display.show()

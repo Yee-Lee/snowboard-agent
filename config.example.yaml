@@ -79,18 +79,38 @@ shutdown:
 core:
   audio:
     driver: mock
-    sample_rate: 16000
-    channels: 1
-    bit_depth: 16
-    frame_duration_ms: 20
-    input_device: null
-    output_device: null
+    input:
+      stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}
+      frame_duration_ms: 20
+      device: null
+      native_format: null
+      channel_index: null
+      valid_bits: null
+      valid_bits_alignment: null
+      resampler: null
+    output:
+      stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}
+      device: null
+      native_format: null
   display:
     driver: mock
+    profile: DSP-PROFILE-OLED-128
     width: 128
-    height: 64
-    pixel_format: mono1
+    height: 128
+    pixel_format: rgb565
+    rotation: 0
+    byte_order: msb_first
+    frame_buffer_bytes: 32768
+    show_session_content: true
+    native_library_path: null
+    native_library_sha256: null
+    native_abi_version: null
     spi_device: null
+    spi_speed_hz: null
+    spi_mode: null
+    spi_chip_select: null
+    dc_bcm: null
+    reset_bcm: null
   camera:
     driver: mock
     format: RGB
@@ -106,6 +126,8 @@ input_sources:
   button:
     policy: {enabled: true, required: false}
     conversation_pin: "conversation"
+    short_press_min_ms: 50
+    long_press_min_ms: 1500
   voice_wake:
     policy: {enabled: true, required: false}
     socket_path: "/run/snowboard/wake.sock"

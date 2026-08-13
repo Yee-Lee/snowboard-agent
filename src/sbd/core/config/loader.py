@@ -77,6 +77,10 @@ def _overlay_dict(
     if get_origin(field_type) is Literal:
         choices = get_args(field_type)
         if not any(type(overlay) is type(choice) and overlay == choice for choice in choices):
+            if path.startswith(("root.core.audio.", "root.core.display.")):
+                raise ConfigValueError(
+                    f"{path} must be one of {choices}, got {overlay!r}"
+                )
             raise ConfigTypeError(f"{path} must be one of {choices}, got {overlay!r}")
         return overlay
 

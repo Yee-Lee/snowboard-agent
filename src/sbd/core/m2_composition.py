@@ -10,14 +10,18 @@ from sbd.cognition.llm import LLMGeneration, MockLLMEngineAdapter
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
 from sbd.core.audio import make_audio_input, make_audio_output
+from sbd.core.audio.null import NullAudioInput, NullAudioOutput
 from sbd.core.camera import make_camera
+from sbd.core.camera.null import NullCamera
 from sbd.core.config.models import AppConfig
 from sbd.core.display import make_display
+from sbd.core.display.null import NullDisplay
 from sbd.core.event_bus import EventBus
 from sbd.core.gpio import make_gpio
 from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
 from sbd.input_events.external_message import ExternalMessageSource
 from sbd.input_events.mock import MockButtonInputSource, MockWakeWordInputSource
+from sbd.input_events.button import ButtonInputSource
 from sbd.perception.listen import Listen, MockASRAdapter
 from sbd.perception.look import Look, MockVisionAdapter
 from sbd.perception.read import Read
@@ -83,16 +87,29 @@ class M2Composition:
             allowed_channels=frozenset(config.external_message.allowed_channels),
         )
         self.external_message = external
-        self.button = MockButtonInputSource(bus=bus)
+        if config.core.gpio.driver == "gpiod":
+            pin_config = config.core.gpio.pins.get(
+                config.input_sources.button.conversation_pin
+            )
+            if pin_config is None:
+                raise ValueError("conversation button pin is missing from core.gpio.pins")
+            self.button = ButtonInputSource(
+                gpio=gpio, bus=bus, config=config.input_sources.button,
+                pin_config=pin_config,
+            )
+        else:
+            self.button = MockButtonInputSource(bus=bus)
         self.wake_word = MockWakeWordInputSource(bus=bus)
 
         rm.register(ResourceSpec(
             key="core.audio.input", phase=StartPhase.CORE,
             factory=lambda resolver: audio_input,
+            null_factory=lambda resolver: NullAudioInput(config.core.audio),
         ))
         rm.register(ResourceSpec(
             key="core.audio.output", phase=StartPhase.CORE,
             factory=lambda resolver: audio_output,
+            null_factory=lambda resolver: NullAudioOutput(),
         ))
         rm.register(ResourceSpec(
             key="core.audio", phase=StartPhase.CORE,
@@ -102,10 +119,12 @@ class M2Composition:
         rm.register(ResourceSpec(
             key="core.display", phase=StartPhase.CORE,
             factory=lambda resolver: display, capability_kind="display",
+            null_factory=lambda resolver: NullDisplay(),
         ))
         rm.register(ResourceSpec(
             key="core.camera", phase=StartPhase.CORE,
             factory=lambda resolver: camera, capability_kind="camera",
+            null_factory=lambda resolver: NullCamera(config.core.camera),
         ))
         rm.register(ResourceSpec(
             key="core.gpio", phase=StartPhase.CORE,
@@ -211,6 +230,7 @@ class M2Composition:
         if config.input_sources.button.policy.enabled:
             rm.register(ResourceSpec(
                 key="input.button", phase=StartPhase.INPUT_PRODUCER,
+                dependencies=("core.gpio",),
                 factory=lambda resolver: self.button,
                 required=config.input_sources.button.policy.required,
             ))

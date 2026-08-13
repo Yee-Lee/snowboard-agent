@@ -55,13 +55,14 @@ class NullAudioInput:
     ) -> None:
         self._config = config or AudioConfig(driver="null")
         self._logger = logger or logging.getLogger(__name__)
-        samples = (
-            self._config.sample_rate * self._config.frame_duration_ms // 1000
-        )
+        input_config = self._config.input
+        stream_format = input_config.stream_format
+        samples = stream_format.sample_rate * input_config.frame_duration_ms // 1000
+        container_bytes = {"s16_le": 2, "s32_le": 4}[stream_format.sample_format]
         self.silence_frame = bytes(
-            samples * self._config.channels * self._config.bit_depth // 8
+            samples * stream_format.channels * container_bytes
         )
-        self.frame_duration_seconds = self._config.frame_duration_ms / 1000.0
+        self.frame_duration_seconds = input_config.frame_duration_ms / 1000.0
         self._finite_frames = finite_frames
         self._active: _FrameStream | None = None
         self._started = False

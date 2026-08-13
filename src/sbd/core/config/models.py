@@ -144,6 +144,8 @@ class VoiceWakeConfig:
 class ButtonInputConfig:
     policy: ComponentPolicy = field(default_factory=lambda: ComponentPolicy(True, False))
     conversation_pin: str = "conversation"
+    short_press_min_ms: int = 50
+    long_press_min_ms: int = 1500
 
 @dataclass(frozen=True, slots=True)
 class ExternalInputConfig:
@@ -177,22 +179,54 @@ class LogConfig:
     rotate_backup_count: int = 0
 
 @dataclass(frozen=True, slots=True)
-class AudioConfig:
-    driver: str = "mock"
+class AudioFormatConfig:
     sample_rate: int = 16_000
     channels: int = 1
-    bit_depth: Literal[16] = 16
+    sample_format: Literal["s16_le", "s32_le"] = "s16_le"
+
+@dataclass(frozen=True, slots=True)
+class AudioInputConfig:
+    stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
     frame_duration_ms: int = 20
-    input_device: str | None = None
-    output_device: str | None = None
+    device: str | None = None
+    native_format: AudioFormatConfig | None = None
+    channel_index: Literal[0, 1] | None = None
+    valid_bits: int | None = None
+    valid_bits_alignment: str | None = None
+    resampler: str | None = None
+
+@dataclass(frozen=True, slots=True)
+class AudioOutputConfig:
+    stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
+    device: str | None = None
+    native_format: AudioFormatConfig | None = None
+
+@dataclass(frozen=True, slots=True)
+class AudioConfig:
+    driver: str = "mock"
+    input: AudioInputConfig = field(default_factory=AudioInputConfig)
+    output: AudioOutputConfig = field(default_factory=AudioOutputConfig)
 
 @dataclass(frozen=True, slots=True)
 class DisplayConfig:
     driver: str = "mock"
+    profile: Literal["DSP-PROFILE-OLED-128"] = "DSP-PROFILE-OLED-128"
     width: int = 128
-    height: int = 64
-    pixel_format: Literal["mono1", "rgb565", "rgb888"] = "mono1"
+    height: int = 128
+    pixel_format: Literal["rgb565"] = "rgb565"
+    rotation: Literal[0] = 0
+    byte_order: Literal["msb_first"] = "msb_first"
+    frame_buffer_bytes: Literal[32768] = 32768
+    show_session_content: bool = True
+    native_library_path: Path | None = None
+    native_library_sha256: str | None = None
+    native_abi_version: int | None = None
     spi_device: str | None = None
+    spi_speed_hz: int | None = None
+    spi_mode: int | None = None
+    spi_chip_select: int | None = None
+    dc_bcm: int | None = None
+    reset_bcm: int | None = None
 
 @dataclass(frozen=True, slots=True)
 class CameraConfig:

@@ -48,10 +48,15 @@ def fx_mock_app() -> MockAppFixture:
     return MockAppFixture()
 
 def pytest_collection_modifyitems(config, items):
-    """Skip rpi-marked tests unless explicitly selected."""
-    if config.getoption("-m", default=None):
+    """Deselect Pi-only tests unless the RPi suite is explicitly selected."""
+    marker_expression = (config.getoption("-m", default="") or "").strip()
+    if marker_expression == "rpi":
         return
-    skip_rpi = pytest.mark.skip(reason="needs Raspberry Pi 5 hardware, use -m rpi to run")
+
+    selected = []
+    deselected = []
     for item in items:
-        if "rpi" in item.keywords:
-            item.add_marker(skip_rpi)
+        (deselected if "rpi" in item.keywords else selected).append(item)
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = selected

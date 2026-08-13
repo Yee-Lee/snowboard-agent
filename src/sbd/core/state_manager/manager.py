@@ -236,6 +236,17 @@ class StateManager:
                 else:
                     logger.warning("Dropping external signal while ERROR convergence is active")
                 return
+            if isinstance(item, ButtonPressed) and self._state == "ERROR":
+                if self._pending is not None and self._pending.recovery_generation is not None:
+                    logger.warning("Dropping ButtonPressed while ERROR recovery is active")
+                    return
+                self._pending = None
+                self._session = None
+                await self._enter_wake("button")
+                return
+            if isinstance(item, ButtonPressed) and self._state != "IDLE":
+                await self._begin_convergence("interrupt")
+                return
             if self._state != "IDLE":
                 logger.warning("Dropping %s while state is %s", type(item).__name__, self._state)
                 return

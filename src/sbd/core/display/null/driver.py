@@ -20,8 +20,7 @@ class NullDisplay:
         pass
 
     def write_pixels(self, buf: bytes) -> None:
-        if len(buf) != 0:
-            raise ValueError("null display buffer must be empty")
+        pass
 
     def show(self) -> None:
         pass

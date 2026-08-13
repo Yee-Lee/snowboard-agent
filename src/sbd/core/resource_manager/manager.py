@@ -191,7 +191,19 @@ class ResourceManager:
                     self._capability_builder.get(dep, False)
                     for dep in spec.capability_dependencies
                 )
-                self._capability_builder[spec.capability_kind] = record.own_start_ok and deps_ok
+                core_contributors_ok = all(
+                    dep_record.started
+                    and not dep_record.using_null
+                    and not self._is_null_instance(dep_record.instance)
+                    for dependency in spec.dependencies
+                    if (dep_record := self._records[dependency]).spec.phase == StartPhase.CORE
+                )
+                self._capability_builder[spec.capability_kind] = (
+                    record.own_start_ok
+                    and deps_ok
+                    and core_contributors_ok
+                    and not self._is_null_instance(record.instance)
+                )
 
             if spec.phase == StartPhase.WORKER:
                 worker_kind = self._worker_kind(spec)
@@ -263,6 +275,10 @@ class ResourceManager:
                 kind = key.removeprefix(prefix)
                 return "reasoner" if kind == "reasoner" else kind
         return spec.capability_kind
+
+    @staticmethod
+    def _is_null_instance(instance: object | None) -> bool:
+        return instance is not None and ".null." in type(instance).__module__
 
     async def _late_fill_and_arm(self, spec: ResourceSpec) -> None:
         record = self._records[spec.key]

@@ -95,7 +95,10 @@ def test_m1_cfg_002_validation(tmp_path):
 
     with pytest.raises(ConfigValueError, match="exact integer"):
         # 16000 * 20 / 1000 * 1.5 = 480 bytes, let's make it float
-        load_with("core:\n  audio:\n    sample_rate: 16001\n    frame_duration_ms: 15\n    channels: 1\n    bit_depth: 16")
+        load_with(
+            "core:\n  audio:\n    input:\n      frame_duration_ms: 15\n"
+            "      stream_format:\n        sample_rate: 16001\n"
+        )
 
     with pytest.raises(ConfigValueError, match="rotate_backup_count"):
         load_with("log:\n  rotate_max_bytes: 100\n  rotate_backup_count: 0")
@@ -107,7 +110,10 @@ def test_m1_cfg_002_validation(tmp_path):
     dummy_model.write_text("dummy")
     with pytest.raises(ConfigValueError, match="Audio input format must match TTS output format"):
         load_with(
-            f"core:\n  audio:\n    sample_rate: 48000\naction:\n  tts:\n    driver: piper\n    model_path: {dummy_model.as_posix()}"
+            "core:\n  audio:\n    output:\n      stream_format:\n"
+            "        sample_rate: 48000\n        channels: 2\n"
+            "        sample_format: s32_le\n"
+            f"action:\n  tts:\n    driver: piper\n    model_path: {dummy_model.as_posix()}"
         )
 
 
@@ -116,7 +122,10 @@ def test_m1_cfg_002_validation(tmp_path):
     ("yaml_text", "path"),
     [
         ("wake:\n  ack_seconds: true", "wake.ack_seconds"),
-        ("core:\n  audio:\n    sample_rate: true", "audio.sample_rate"),
+        (
+            "core:\n  audio:\n    input:\n      stream_format:\n        sample_rate: true",
+            "audio.input.stream_format.sample_rate",
+        ),
         ("log:\n  level: VERBOSE", "log.level"),
         ("perception:\n  default_perceptions: [listen, 7]", "default_perceptions\\[1\\]"),
         ("resource:\n  startup_timeout_seconds:\n    default: true", "startup_timeout_seconds.default"),

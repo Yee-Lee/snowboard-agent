@@ -121,12 +121,29 @@ def validate_config(config: 'AppConfig'):
         if type(value) is not int or value <= 0:
             raise ConfigValueError(f"{path} must be a positive integer")
 
-    check_positive_int(config.core.display.width, "core.display.width")
-    check_positive_int(config.core.display.height, "core.display.height")
-    if config.core.display.pixel_format == "mono1" and config.core.display.width % 8:
-        raise ConfigValueError("core.display.width must be divisible by 8 for mono1")
+    display = config.core.display
+    selected_display = {
+        "profile": "DSP-PROFILE-OLED-128",
+        "width": 128,
+        "height": 128,
+        "pixel_format": "rgb565",
+        "rotation": 0,
+        "byte_order": "msb_first",
+        "frame_buffer_bytes": 32768,
+    }
+    for field, expected in selected_display.items():
+        if getattr(display, field) != expected:
+            raise ConfigValueError(
+                f"core.display.{field} must be {expected!r} for DSP-PROFILE-OLED-128"
+            )
     check_positive_int(config.core.camera.width, "core.camera.width")
     check_positive_int(config.core.camera.height, "core.camera.height")
+    if config.core.camera.format == "YUV" and (
+        config.core.camera.width % 2 or config.core.camera.height % 4
+    ):
+        raise ConfigValueError(
+            "core.camera YUV I420 width must be even and height divisible by 4"
+        )
     if type(config.core.camera.quality) is not int or not 1 <= config.core.camera.quality <= 100:
         raise ConfigValueError("core.camera.quality must be an integer in 1..100")
 
@@ -137,9 +154,20 @@ def validate_config(config: 'AppConfig'):
 
 
     ac = config.core.audio
-    bytes_per_frame = ac.sample_rate * ac.frame_duration_ms / 1000 * ac.channels * (ac.bit_depth / 8)
-    if not bytes_per_frame.is_integer():
-        raise ConfigValueError(f"Audio frame bytes must be an exact integer, got {bytes_per_frame}")
+    container_bytes = {"s16_le": 2, "s32_le": 4}
+    for path, fmt, duration in (
+        ("core.audio.input", ac.input.stream_format, ac.input.frame_duration_ms),
+        ("core.audio.output", ac.output.stream_format, 1_000),
+    ):
+        check_positive_int(fmt.sample_rate, f"{path}.stream_format.sample_rate")
+        check_positive_int(fmt.channels, f"{path}.stream_format.channels")
+        check_positive_int(duration, f"{path}.frame_duration_ms")
+        frame_bytes = (
+            fmt.sample_rate * duration / 1000
+            * fmt.channels * container_bytes[fmt.sample_format]
+        )
+        if not frame_bytes.is_integer():
+            raise ConfigValueError(f"{path} frame bytes must be an exact integer")
 
     # Log rotate
     if config.log.rotate_max_bytes > 0 and config.log.rotate_backup_count <= 0:
@@ -151,19 +179,37 @@ def validate_config(config: 'AppConfig'):
     check_model_path(config.cognition.llm.driver, config.cognition.llm.model_path, "cognition.llm.model_path")
     check_model_path(config.action.tts.driver, config.action.tts.model_path, "action.tts.model_path")
 
-    if config.core.audio.driver != "mock":
-        if not config.core.audio.input_device:
-            raise ConfigValueError("core.audio.input_device required for real driver")
-        if not config.core.audio.output_device:
-            raise ConfigValueError("core.audio.output_device required for real driver")
+    audio_real_fields = (
+        ac.input.device, ac.input.native_format, ac.input.channel_index,
+        ac.input.valid_bits, ac.input.valid_bits_alignment, ac.input.resampler,
+        ac.output.device, ac.output.native_format,
+    )
+    if ac.driver in {"mock", "null"} and any(value is not None for value in audio_real_fields):
+        raise ConfigValueError("core.audio mock/null cannot contain real-only fields")
+    if ac.driver == "alsa":
+        raise ConfigValueError(
+            "core.audio.driver=alsa is blocked until Audio P4 final selection ACK"
+        )
+    if ac.driver not in {"mock", "null", "alsa"}:
+        raise ConfigValueError(f"core.audio.driver is unsupported: {ac.driver}")
 
-    if config.core.display.driver != "mock" and not config.core.display.spi_device:
-        raise ConfigValueError("core.display.spi_device required for real driver")
+    display_real_fields = (
+        display.native_library_path, display.native_library_sha256,
+        display.native_abi_version, display.spi_device, display.spi_speed_hz,
+        display.spi_mode, display.spi_chip_select, display.dc_bcm, display.reset_bcm,
+    )
+    if display.driver in {"mock", "null"} and any(value is not None for value in display_real_fields):
+        raise ConfigValueError("core.display mock/null cannot contain real-only fields")
+    if display.driver == "ssd1351":
+        _validate_ssd1351(display)
+    elif display.driver not in {"mock", "null"}:
+        raise ConfigValueError(f"core.display.driver is unsupported: {display.driver}")
 
     # Audio input / TTS format match
     if config.action.tts.driver != "mock":
         # for piper mock maybe we don't care, but for real we check if TTS rate matches Audio out rate
-        if ac.sample_rate != 16000 or ac.channels != 1 or ac.bit_depth != 16:
+        fmt = ac.output.stream_format
+        if fmt.sample_rate != 16000 or fmt.channels != 1 or fmt.sample_format != "s16_le":
             raise ConfigValueError("Audio input format must match TTS output format (16000Hz, 1ch, 16bit)")
 
     # GPIO pin uniqueness
@@ -172,3 +218,54 @@ def validate_config(config: 'AppConfig'):
         if p.pin in pins:
             raise ConfigValueError(f"Duplicate physical GPIO pin: {p.pin}")
         pins.add(p.pin)
+
+    button = config.input_sources.button
+    button_pin = config.core.gpio.pins.get(button.conversation_pin)
+    if button.short_press_min_ms <= 0:
+        raise ConfigValueError("input_sources.button.short_press_min_ms must be positive")
+    if button.long_press_min_ms <= button.short_press_min_ms:
+        raise ConfigValueError("input_sources.button.long_press_min_ms must exceed short_press_min_ms")
+    if button_pin is not None and button.short_press_min_ms < button_pin.debounce_ms:
+        raise ConfigValueError("input_sources.button.short_press_min_ms must be >= GPIO debounce_ms")
+
+
+def _validate_ssd1351(display) -> None:
+    import hashlib
+    import re
+
+    required = {
+        "native_library_path": display.native_library_path,
+        "native_library_sha256": display.native_library_sha256,
+        "native_abi_version": display.native_abi_version,
+        "spi_device": display.spi_device,
+        "spi_speed_hz": display.spi_speed_hz,
+        "spi_mode": display.spi_mode,
+        "spi_chip_select": display.spi_chip_select,
+        "dc_bcm": display.dc_bcm,
+        "reset_bcm": display.reset_bcm,
+    }
+    for field, value in required.items():
+        if value is None:
+            raise ConfigValueError(f"core.display.{field} is required for ssd1351")
+    library = display.native_library_path
+    if not library.is_file():
+        raise ConfigValueError("core.display.native_library_path must name a regular file")
+    digest = display.native_library_sha256
+    if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        raise ConfigValueError("core.display.native_library_sha256 must be 64 lowercase hex characters")
+    if hashlib.sha256(library.read_bytes()).hexdigest() != digest:
+        raise ConfigValueError("core.display.native_library_sha256 does not match artifact")
+    exact = {
+        "native_abi_version": 1,
+        "spi_device": "/dev/spidev0.0",
+        "spi_speed_hz": 4_000_000,
+        "spi_mode": 0,
+        "spi_chip_select": 0,
+        "dc_bcm": 24,
+        "reset_bcm": 25,
+    }
+    for field, expected in exact.items():
+        if getattr(display, field) != expected:
+            raise ConfigValueError(f"core.display.{field} must be {expected!r}")
+    if display.dc_bcm == display.reset_bcm or {display.dc_bcm, display.reset_bcm} & {8, 10, 11}:
+        raise ConfigValueError("core.display DC/reset pins conflict with selected SPI fixture")

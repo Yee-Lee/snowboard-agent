@@ -108,13 +108,12 @@ class LoggingRuntime:
     handlers: tuple[logging.Handler, ...]
 
     async def flush(self, timeout_seconds: float) -> None:
-        def _flush():
-            for h in self.handlers:
-                h.flush()
-        try:
-            await asyncio.wait_for(asyncio.to_thread(_flush), timeout=timeout_seconds)
-        except asyncio.TimeoutError:
-            pass
+        # Standard logging handlers flush synchronously and do not perform a
+        # network operation. Keeping this on the owner thread also avoids
+        # leaving a default-executor shutdown waiter behind during early
+        # startup rollback, where the process must return its exit code.
+        for handler in self.handlers:
+            handler.flush()
 
     def close(self) -> None:
         for handler in self.handlers:

@@ -24,24 +24,33 @@
 - 估點沿用既有口徑：**1 SP 約為資深開發者半天**，包含產品實作、真實 assert、聚焦測試、必要文件與 Developer 自驗。
 - M3 重估為 **108 SP**（約 54 開發人日，單人順序執行口徑）。較原 99 SP 增加 9 SP，原因是 Test ID 由 43 增為 47、Audio native / stream config、fake-source seam及 Option A quality / lifecycle / resource evidence，並將 Ready / Blocked package 明確拆開。不含 USER 等待硬體／改線時間、Tester 獨立驗收、Designer 最終 review、外部 POC 回覆等待及驗收退件重工。
 
+### Developer 開發紀錄
+
+| 日期 | 工作包 | 狀態 | 結果 / 下一步 |
+| :--- | :--- | :--- | :--- |
+| 2026-08-13 | WP-M3-01 | **Completed** | 建立 47-ID manifest、M3 portable / RPi acceptance雙 gate、RPi deselection hook 與未預填 Pass 的 evidence card template；Blocked ID不會被計為Pass。 |
+| 2026-08-13 | WP-M3-01~06、08、09、11 | **Developer complete except approved blockers** | 24 個可執行 DEV Test ID 全綠；完成 nested Audio schema、OLED-128 strict config、Null/Mock HAL、Renderer、Arbiter、Boot/Shutdown owners、picamera2/gpiod/Button host seams與M3 portable composition。M3-AUD-003/004、M3-CFG-002等待Audio P4。 |
+| 2026-08-13 | WP-M3-10 | **Blocked — IR_dev_M3_I** | USER reference已驗 exact SHA `5c2b6ba532a2661d5db79e27736e79890931515f`並移至Core外 `/tmp`。ABI v1要求resolved `gpio_chip.chip_index`，Core Ch 10 DisplayConfig / factory輸入無對應欄位；已開 `M3-DISPLAY-CONFIG-001`，禁止硬編碼gpiochip0。 |
+| 2026-08-13 | Regression | **PASS (non-RPi)** | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -m 'not rpi'`：233 passed、1 deselected。`-m rpi` acceptance gate持續明確列出23個Blocked IDs，不宣稱M3 Accepted。 |
+
 ### 開工與 Blocking 結論
 
 | 分類 | 結論 | 工作包 / 解除條件 |
 | :--- | :--- | :--- |
-| **Ready now** | 可立即進入 W0；其後依 package 相依推進 | WP-M3-01~06、08、09；guardrail、portable config / HAL、Renderer、Arbiter、Audio schema / fake seam、Camera、GPIO / Button |
+| **Developer complete** | portable 工作已完成且 non-RPi regression 全綠 | WP-M3-01~06、08、09、11；guardrail、portable config / HAL、Renderer、Arbiter、Audio schema / fake seam、Camera、GPIO / Button與composition |
 | **Blocked — Audio P4** | 不得實作／merge selected real backend，不得加入 production dependency lock | WP-M3-07；等待 POC 完整 40-character SHA、P4-A01~A10 evidence及 Core Designer final selection ACK |
-| **Blocked — USER reference location** | Display design 已 Ready，但 native package 開工前須有可驗證的 accepted source | WP-M3-10；USER 指派 reference repo 位置，Developer 手動 clone 到 Core repo 外的暫存／指定目錄並驗證 accepted SHA；clone、binary、wheel、`.so` 不進 Core Git |
-| **Pending — target device** | 不阻擋 portable code；阻擋相應 Pi card與 M3 acceptance | WP-M3-12~13；等待 USER 確認 Pi / peripherals、local config及安全操作時段 |
+| **Blocked — Display config contract** | accepted source已定位並驗證，但Core config無法提供ABI v1必填gpiochip index | WP-M3-10；等待Designer解決 `IR_dev_M3_I / M3-DISPLAY-CONFIG-001`；禁止hardcode `gpiochip0` |
+| **Blocked — target device** | 不阻擋portable code；阻擋20張Pi card與M3 acceptance | WP-M3-12~13；前置real package解除後，等待USER確認Pi / peripherals、local config及安全操作時段 |
 | **Not M3 blocker** | 不列入本階段 gate | LLM POC、Audio P3 TTS winner、Display ACK advisory |
 
-目前沒有公開 API 無法落實的證據，因此不開立 `IR_dev_M3`。若 P4 final selection或accepted Display source與Core契約衝突，再依workflow發起審查。
+accepted Display ABI v1已證明無法由核准的Core `DisplayConfig` / `make_display(config)`輸入取得必填gpiochip index，因此已開立 `docs/reviews/IR_dev_M3_I.md`；在Designer修訂契約前，WP-M3-10維持Blocked。
 
 ### POC Input Baseline
 
 | POC domain | Accepted contract | Core adoption record | Source / artifact identity | License / target | Fixture / config | Open conditions | Evidence index |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Audio** | v1.0 locator：`docs/outsource/references/poc_audio/audio_m3_contract_v1.0.md` | `DELIVERY-AUDIO-POC-M3-ACK-001/002`；Option A direction accepted；`DELIVERY-AUDIO-POC-M3-VALIDATION-001` action required | Accepted delivery `87ff000559ded8c0d7499d621af7dfcccb81858c`；native evidence `0edeb7d9f8ff3811d1480ab4b464db2842978233`；候選 binding / resampler 尚未 selected，POC binary 不進 Core Git | Pi 5 target OS / arch、binding / resampler version、source hash、transitive dependency、license / notice與build identity皆由P4回交後核准 | INMP441 + MAX98357A、shared I2S、`googlevoicehat-soundcard`；P1 native FAIL、P2 direct `hw:0,0` PASS；實際channel、valid-bit alignment、sanitized local config / hash待P4與USER readiness | **Blocks Audio selected real package start**：P4 full SHA + required evidence + Core final selection ACK；P3延至M4a，不阻擋M3 | `DELIVERY-AUDIO-POC-M3-VALIDATION-001`定義P4-A01~A10；Core正式位置為`docs/outsource/evidence/<delivery-id>/audio/` |
-| **Display** | v0.3 locator：`docs/outsource/references/poc_display/display_m3_contract_draft.md` | `DELIVERY-005-poc_display-m3-v0.3-ack`；Accepted as M3 design input，D1~D5 Resolved | Source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit evidence `055517a905bd2c8f8531c05acfa658854e25491f`；review `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40`；header / adapter / config / checksum以external manifest為準 | Pi 5 / target OS arch；ABI v1、artifact license / notice與runtime identity由accepted manifest及target build重驗 | Waveshare 1.5-inch SSD1351；SPI0 CE0、4 MHz、DC24、RST25；實際artifact / config full hash由target build / readiness card記錄 | **Blocks native package start**：USER先指派reference repo位置，Developer再於Core repo外手動clone並驗證accepted SHA；clone與build outputs不進Git | POC D1~D5只作輸入；Core正式位置為`docs/outsource/evidence/<delivery-id>/display/` |
+| **Display** | v0.3 locator：`docs/outsource/references/poc_display/display_m3_contract_draft.md` | `DELIVERY-005-poc_display-m3-v0.3-ack`；Accepted as M3 design input，D1~D5 Resolved | Source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；已驗證checkout位於`/tmp/snowboard-display-reference-5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit evidence `055517a905bd2c8f8531c05acfa658854e25491f`；review `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | Pi 5 / target OS arch；ABI v1、artifact license / notice與runtime identity由accepted manifest及target build重驗 | Waveshare 1.5-inch SSD1351；SPI0 CE0、4 MHz、DC24、RST25；實際artifact / config full hash由target build / readiness card記錄 | **Blocks native package start**：ABI v1必填`gpio_chip.chip_index`無法由核准Core config提供；等待`IR_dev_M3_I`解決 | POC D1~D5只作輸入；Core正式位置為`docs/outsource/evidence/<delivery-id>/display/` |
 
 > Baseline 表只引用已採用紀錄，不以 branch HEAD、縮寫 checksum、候選套件或 POC「可見／不 crash」自驗冒充 Core integration baseline。所有external reference repo均由USER在相關package開工前指派位置，Developer手動clone到Core repo外並鎖定exact SHA；clone及產物不進Core Git。
 
@@ -51,19 +60,19 @@
 
 | 工作包 | SP | 範圍與主要交付 | 主要 Test ID | 相依 | 開工狀態 |
 | :--- | ---: | :--- | :--- | :--- | :--- |
-| **WP-M3-01** 測試與 evidence 骨架 | 5 | M3 entrypoint、47-ID manifest、RPI deselection、fixture / barrier / call-log、card schema、環境與checksum index | M3-REG-001（部分） | M2 PASS、TR spec Resolved | **Ready** |
-| **WP-M3-02** Portable config + SSD1351 strict config | 9 | Audio native / stream schema、mock/null real-only rejection、Display selected profile strict validation；不加入P4後才可決定的Audio allowlist | M3-CFG-001；M3-CFG-002 skeleton；M3-HAL-001（部分） | WP-M3-01 | **Ready** |
-| **WP-M3-03** Portable HAL / factory / fallback | 6 | Null / Mock契約、Pi-only lazy import、RM real→null、GPIO unavailable graph | M3-HAL-001~002、M3-AUD-001~002、M3-DSP-001~002、M3-CAM-001、M3-GPIO-001~002 | WP-M3-01、02 | **Ready** |
-| **WP-M3-04** selected profile Renderer | 10 | Hint / RenderModel、128×128 RGB565、offline fonts、State / Main / Blank、wrap / ellipsis / missing glyph | M3-REND-001~005 | WP-M3-01、02 | **Ready** |
-| **WP-M3-05** Display Arbiter / owner lifecycle | 10 | slot registry、atomic flush、fullscreen ownership、degrade latch、thread affinity、StatusBar、Boot / Shutdown Blank | M3-ARB-001~007、M3-SCN-001 | WP-M3-03、04 | **Ready after dependencies** |
-| **WP-M3-06** Audio schema / fake-source seam | 5 | native / stream boundaries、raw-source與converter seam、deterministic fixture與P4後測試接點；不選binding / resampler / valid bits | M3-AUD-003~004、M3-CFG-002 preparation | WP-M3-01~03 | **Ready with hard boundary** |
+| **WP-M3-01** 測試與 evidence 骨架 | 5 | M3 entrypoint、47-ID manifest、RPI deselection、fixture / barrier / call-log、card schema、環境與checksum index | M3-REG-001（部分） | M2 PASS、TR spec Resolved | **Completed** |
+| **WP-M3-02** Portable config + SSD1351 strict config | 9 | Audio native / stream schema、mock/null real-only rejection、Display selected profile strict validation；不加入P4後才可決定的Audio allowlist | M3-CFG-001；M3-CFG-002 skeleton；M3-HAL-001（部分） | WP-M3-01 | **Completed except P4 conditional ID** |
+| **WP-M3-03** Portable HAL / factory / fallback | 6 | Null / Mock契約、Pi-only lazy import、RM real→null、GPIO unavailable graph | M3-HAL-001~002、M3-AUD-001~002、M3-DSP-001~002、M3-CAM-001、M3-GPIO-001~002 | WP-M3-01、02 | **Completed** |
+| **WP-M3-04** selected profile Renderer | 10 | Hint / RenderModel、128×128 RGB565、offline fonts、State / Main / Blank、wrap / ellipsis / missing glyph | M3-REND-001~005 | WP-M3-01、02 | **Completed** |
+| **WP-M3-05** Display Arbiter / owner lifecycle | 10 | slot registry、atomic flush、fullscreen ownership、degrade latch、thread affinity、StatusBar、Boot / Shutdown Blank | M3-ARB-001~007、M3-SCN-001 | WP-M3-03、04 | **Completed** |
+| **WP-M3-06** Audio schema / fake-source seam | 5 | native / stream boundaries、raw-source與converter seam、deterministic fixture與P4後測試接點；不選binding / resampler / valid bits | M3-AUD-003~004、M3-CFG-002 preparation | WP-M3-01~03 | **Completed to approved P4 boundary** |
 | **WP-M3-07** Audio Option A selected real package | 11 | direct ALSA、核准conversion、exact framing、selected allowlist / dependency lock、async lifecycle、fallback與Pi setup | M3-AUD-003~004、M3-CFG-002、M3-AUDI-001~004 | WP-M3-02、03、06；P4 final ACK | **Blocked by Audio P4** |
-| **WP-M3-08** picamera2 real backend | 6 | JPEG / RGB / I420、stride / plane conversion、lifecycle、missing CSI fallback與setup | M3-CAMI-001~003 | WP-M3-02、03 | **Ready；Pi evidence Pending** |
-| **WP-M3-09** gpiod + Button InputSource | 10 | libgpiod 2.x fd readiness、debounce、GPIO output、five button semantics、graceful shutdown | M3-GPIOI-001~002、M3-BTN-001~005 | WP-M3-02、03 | **Ready；Pi evidence Pending** |
-| **WP-M3-10** SSD1351 native adapter | 13 | accepted ABI v1 adapter、source build、artifact validation、buffer / byte order、lifecycle、cleanup與setup | M3-DSPI-001~006 | WP-M3-02~05；USER-assigned reference location | **Blocked pending USER repo location** |
-| **WP-M3-11** Portable composition / fallback | 6 | M3 graph、null / mock factories、capability freeze、Display observer chain、Boot / Shutdown與blocked-real seam | M3-HAL-002、M3-SCN-001、M3-REG-001（部分） | WP-M3-02~05、08、09 | **Ready after dependencies** |
-| **WP-M3-12** Real composition + Pi diagnostics | 10 | selected real wiring、20 RPI nodes、fixed fixtures、latency / cleanup probes、USER checklist與cards | 全部20個RPI-NATIVE IDs | WP-M3-07~11；USER readiness | **Planned；full run blocked by 07 / 10** |
-| **WP-M3-13** Regression / exact-SHA delivery | 7 | 27 DEV IDs、20 Pi cards、M1/M2/full regression、clean Python 3.11+、evidence index與handoff | M3-REG-001；全體47 IDs | WP-M3-01~12 | **Planned** |
+| **WP-M3-08** picamera2 real backend | 6 | JPEG / RGB / I420、stride / plane conversion、lifecycle、missing CSI fallback與setup | M3-CAMI-001~003 | WP-M3-02、03 | **Developer complete；Pi evidence Blocked** |
+| **WP-M3-09** gpiod + Button InputSource | 10 | libgpiod 2.x fd readiness、debounce、GPIO output、five button semantics、graceful shutdown | M3-GPIOI-001~002、M3-BTN-001~005 | WP-M3-02、03 | **Developer complete；Pi evidence Blocked** |
+| **WP-M3-10** SSD1351 native adapter | 13 | accepted ABI v1 adapter、source build、artifact validation、buffer / byte order、lifecycle、cleanup與setup | M3-DSPI-001~006 | WP-M3-02~05；resolved config→ABI gpiochip boundary | **Blocked — IR_dev_M3_I** |
+| **WP-M3-11** Portable composition / fallback | 6 | M3 graph、null / mock factories、capability freeze、Display observer chain、Boot / Shutdown與blocked-real seam | M3-HAL-002、M3-SCN-001、M3-REG-001（部分） | WP-M3-02~05、08、09 | **Completed** |
+| **WP-M3-12** Real composition + Pi diagnostics | 10 | selected real wiring、20 RPI nodes、fixed fixtures、latency / cleanup probes、USER checklist與cards | 全部20個RPI-NATIVE IDs | WP-M3-07~11；USER readiness | **Blocked by 07 / 10 / target device** |
+| **WP-M3-13** Regression / exact-SHA delivery | 7 | 27 DEV IDs、20 Pi cards、M1/M2/full regression、clean Python 3.11+、evidence index與handoff | M3-REG-001；全體47 IDs | WP-M3-01~12 | **Portable regression complete；acceptance Blocked** |
 | **合計** | **108** | | **47 個 M3 Test ID** | | |
 
 ### 工作包最低完成條件
@@ -202,7 +211,7 @@
 | **W5 Target-device integration** | WP-M3-12 | USER readiness完成；20 RPI nodes及manual observations對candidate SHA完成 |
 | **W6 Acceptance / delivery** | WP-M3-13 | 27 DEV + 20 RPI、M1/M2/full regression、Tester PASS、Designer無Blocking |
 
-W0可立即開始。W1~W3可依內部相依持續推進，不等待Audio P4。W4兩個gate彼此獨立解除；external reference repo只在USER指派後手動clone到Core repo之外，且不進Git。
+W0~W3的可執行範圍已完成。W4的Audio gate等待P4 final ACK；Display reference已在Core repo外驗證，但config→ABI gpiochip boundary等待`IR_dev_M3_I`解決。external reference repo與build outputs不進Git。
 
 ---
 
@@ -225,7 +234,7 @@ python -m pytest -v -m "not rpi"
 
 DEV gate 判定：
 
-1. 27 個 M3 DEV Test ID 全綠，47-ID manifest 無空映射；P4解除前的conditional IDs只能標Blocked，不得用skip、xfail或空測試冒充通過。
+1. 24 個目前可執行的 M3 DEV Test ID 全綠，另外3個Audio P4 conditional DEV IDs明確標Blocked；47-ID manifest無空映射，不得用skip、xfail或空測試冒充通過。
 2. M1 / M2 entrypoint 與完整 non-RPI suite 全綠；未刪除、skip / xfail既有測項。
 3. `sounddevice`、未核准Audio Pi-only module、`picamera2`、`gpiod`、native display module / `.so` 不出現在 default import snapshot。
 4. race 不用 sleep控時；結束無 task / handle / fd / waiter；log與exception不含敏感內容。
