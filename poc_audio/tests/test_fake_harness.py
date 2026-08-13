@@ -32,6 +32,7 @@ from audio_poc.option_a_conversion import (  # noqa: E402
     decode_s32_interleaved,
     float_to_s16le,
 )
+from audio_poc.option_a_valid_bits import analyze_fixture_directory  # noqa: E402
 from audio_poc.option_a_validation import (  # noqa: E402
     P4_TEST_IDS,
     create_manifest,
@@ -178,6 +179,45 @@ class TrackedDocumentTests(unittest.TestCase):
             numpy,
         )
         numpy.testing.assert_allclose(decoded_right, [0.5, -0.5])
+
+    def test_option_a_valid_bit_analyzer_reports_no_raw_audio(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wav_path = root / "asr-clear-001.wav"
+            with wave.open(str(wav_path), "wb") as generated:
+                generated.setnchannels(2)
+                generated.setsampwidth(4)
+                generated.setframerate(48000)
+                for value in range(256):
+                    generated.writeframesraw(
+                        (((1 << 16) + value) << 8).to_bytes(4, "little", signed=True)
+                        + (0).to_bytes(4, "little", signed=True)
+                    )
+            (root / "fixture_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "source_sha": "0" * 40,
+                        "authorization_confirmed": True,
+                        "records": {
+                            "asr-clear-001": {
+                                "file": wav_path.name,
+                                "vad_class": "clear_speech",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = analyze_fixture_directory(root, root / "analysis.json")
+        self.assertEqual(result["result"], "PASS")
+        self.assertTrue(result["mapping_supported_by_raw_analysis"])
+        self.assertEqual(result["supported_mapping"]["valid_bits"], 24)
+        self.assertEqual(result["channels"][0]["container_low8_or"], 0)
+        self.assertEqual(result["channels"][0]["decoded_low8_or"], 255)
+        self.assertEqual(result["channels"][1]["nonzero_samples"], 0)
+        self.assertFalse(result["raw_audio_emitted"])
 
     def test_option_a_s16_conversion_saturates_without_wrap(self) -> None:
         import numpy

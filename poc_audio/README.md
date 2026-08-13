@@ -187,3 +187,15 @@ bash poc_audio/tools/run_option_a_conversion.sh \
 The deterministic mapping in this runner validates the conversion seam only.
 It does not select the target microphone channel or valid-bit alignment; those
 remain P4-A02 evidence decisions.
+
+Analyze an authorized native fixture directory for channel and S32 valid-bit
+evidence without emitting audio samples:
+
+```sh
+bash poc_audio/tools/run_option_a_valid_bits.sh \
+  poc_audio/fixtures/artifacts/<authorized-pilot> \
+  poc_audio/evidence/m3_option_a/<timestamp>/raw/valid-bits.json
+```
+
+The raw-analysis result must be reviewed together with wiring attestation and
+the prior human check of known fixture labels before P4-A02 can pass.

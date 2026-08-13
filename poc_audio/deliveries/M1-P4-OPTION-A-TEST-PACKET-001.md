@@ -27,6 +27,9 @@ PYTHONPATH=poc_audio/src python3 -m audio_poc.option_a_fixtures \
   poc_audio/evidence/m3_option_a/<timestamp>/raw/deterministic-fixtures
 bash poc_audio/tools/run_option_a_conversion.sh \
   poc_audio/evidence/m3_option_a/<timestamp>/raw/conversion
+bash poc_audio/tools/run_option_a_valid_bits.sh \
+  poc_audio/fixtures/artifacts/<authorized-pilot> \
+  poc_audio/evidence/m3_option_a/<timestamp>/raw/valid-bits.json
 ```
 
 Preparation creates a manifest with every test `Pending`; it is not hardware
