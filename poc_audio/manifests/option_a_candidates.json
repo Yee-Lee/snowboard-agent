@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "status": "provenance_partial_target_build_pending",
+  "status": "target_source_build_validated_dependency_selection_pending_core",
   "candidates": [
     {
       "name": "pyalsaaudio",
@@ -10,10 +10,22 @@
       "source_sha256": "a78a9dca33524b2c9064b34e21f5ab874272313cf324a9a77592f396a5e0fddc",
       "license": "PSF-2.0",
       "license_file": "LICENSE in source archive",
-      "runtime_dependencies": ["libasound"],
-      "build_dependencies": ["C compiler", "Python headers", "setuptools", "libasound development headers"],
-      "runtime_identity": null,
-      "target_build_status": "Pending"
+      "runtime_dependencies": ["libasound 1.2.14"],
+      "build_dependencies": [
+        "gcc 14.2.0",
+        "Python 3.13.5 headers",
+        "setuptools 82.0.0",
+        "wheel 0.48.0",
+        "libasound2-dev 1.2.14-1+rpt1"
+      ],
+      "runtime_identity": {
+        "platform": "Raspberry Pi 5 aarch64",
+        "python": "3.13.5",
+        "module_version": "0.11.0",
+        "native_linkage": "libasound.so.2",
+        "clean_rebuild_native_sha256": "c4778b78eddb01d0ec8313a7dbfc03a62cfaff7738818722f19f509eb2b75abf"
+      },
+      "target_build_status": "PASS"
     },
     {
       "name": "samplerate",
@@ -23,22 +35,42 @@
       "source_sha256": "c44dcb6fe680246f8f36588ba1f0fc7a0c5fbce710ad5e9b3812d88e8c39ac7d",
       "license": "MIT",
       "license_file": "LICENSE.rst in source archive",
-      "runtime_dependencies": ["numpy (exact target version pending)"],
+      "runtime_dependencies": ["numpy 2.4.2"],
       "build_dependencies": [
-        "C++14 compiler",
-        "setuptools>=61",
-        "setuptools_scm[toml]>=6.2",
-        "cmake",
+        "g++ 14.2.0",
+        "setuptools 82.0.0",
+        "setuptools-scm 10.2.1",
+        "vcs-versioning 2.2.4",
+        "packaging 26.3",
+        "wheel 0.48.0",
+        "cmake 3.31.6",
         "pybind11 commit f5fbe867d2d26e4a0a9177a51f6e568868ad3dc8 (BSD-3-Clause)",
         "libsamplerate commit c96f5e3de9c4488f4e6c97f59f5245f22fda22f7 (BSD-2-Clause)"
       ],
-      "runtime_identity": null,
-      "target_build_status": "Pending"
+      "runtime_identity": {
+        "platform": "Raspberry Pi 5 aarch64",
+        "python": "3.13.5",
+        "module_version": "0.2.4",
+        "numpy_version": "2.4.2",
+        "libsamplerate_linkage": "static",
+        "clean_rebuild_native_sha256": "767145b7f7ca6bd9917d18723927c905e805c61c526be47de9ea274a2227f8ef"
+      },
+      "target_build_status": "PASS"
     }
   ],
-  "unresolved": [
-    "Pin and hash the target-compatible NumPy and PEP 517 build dependencies.",
-    "Retain checksums and license notices for the pybind11 and libsamplerate build inputs.",
-    "Record clean Raspberry Pi target build commands and imported native-library identity."
+  "dependency_artifact_sha256": {
+    "numpy-2.4.2-cp313-aarch64-wheel": "c3cd545784805de05aafe1dde61752ea49a359ccba9760c1e5d1c88a93bbf2b7",
+    "packaging-26.3-wheel": "414c46fcfb5f98edc3e3139a1f1d780e01cf76995b072f11975c665fcc57de83",
+    "setuptools-82.0.0-wheel": "bfd26201c4c98f80aae52bc19dc14a5404126d3b4562fbc126c73a6f7bb607fc",
+    "setuptools-scm-10.2.1-wheel": "d0d73d77ef634616b1e8635e900863683b792817c0fc3ffe3424e65482e089e6",
+    "vcs-versioning-2.2.4-wheel": "3489158c0c0360bd46b2c3f036bb6a8520c484a0de1baa301a02901ebd635f87",
+    "wheel-0.48.0-wheel": "3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab",
+    "pybind11-f5fbe867-source": "2b57710b0c1f64eef81825042754cf517839d9a546addd7e5eb1c342f57cf308",
+    "libsamplerate-c96f5e3d-source": "35ceb3e63eb8884ec802b5be685a9aacf2458c4eb3c0ea38dc18ef1b00648c44"
+  },
+  "residual_risks": [
+    "The generated wheels were not byte-identical across clean rebuilds; binaries are evidence artifacts, not reference deliverables.",
+    "pyalsaaudio uses the legacy setup.py wheel path and emits a future pip deprecation warning.",
+    "Core dependency selection remains pending even though the POC target source build passed."
   ]
 }

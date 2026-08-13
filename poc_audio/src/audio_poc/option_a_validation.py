@@ -75,6 +75,7 @@ def create_manifest(
     config_path: Path,
 ) -> dict[str, Any]:
     runner_path = Path(__file__)
+    conversion_runner_path = root / "poc_audio/src/audio_poc/run_option_a_conversion.py"
     fixture_path = root / "poc_audio/src/audio_poc/option_a_fixtures.py"
     provenance_path = root / "poc_audio/manifests/option_a_candidates.json"
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -95,6 +96,7 @@ def create_manifest(
         "wiring": {"attestation": "pending-p4-a02"},
         "sanitized_config": relative_artifact(root, config_path),
         "runner": relative_artifact(root, runner_path),
+        "conversion_runner": relative_artifact(root, conversion_runner_path),
         "fixture_generator": relative_artifact(root, fixture_path),
         "candidate_provenance": relative_artifact(root, provenance_path),
         "candidates": provenance["candidates"],
@@ -116,7 +118,7 @@ def validate_manifest(document: dict[str, Any], root: Path) -> None:
     required = {
         "schema_version", "delivery_id", "test_packet_id", "poc_source_sha",
         "started_at_utc", "ended_at_utc", "hardware", "wiring",
-        "sanitized_config", "runner", "fixture_generator", "candidate_provenance", "candidates",
+        "sanitized_config", "runner", "conversion_runner", "fixture_generator", "candidate_provenance", "candidates",
         "tests", "reproduction_command",
     }
     missing = sorted(required - set(document))
@@ -152,7 +154,13 @@ def validate_manifest(document: dict[str, Any], root: Path) -> None:
             ):
                 raise ValueError("P4-A10 PASS requires target build and runtime identity")
 
-    for key in ("sanitized_config", "runner", "fixture_generator", "candidate_provenance"):
+    for key in (
+        "sanitized_config",
+        "runner",
+        "conversion_runner",
+        "fixture_generator",
+        "candidate_provenance",
+    ):
         artifact = document[key]
         artifact_path = resolve_repo_artifact(root, artifact["path"])
         if not artifact_path.is_file() or sha256_file(artifact_path) != artifact["sha256"]:

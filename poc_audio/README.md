@@ -175,3 +175,15 @@ bash poc_audio/tools/run_option_a_validation.sh validate \
 
 Do not use `--allow-dirty` for evidence submitted to Core; that switch exists
 only for local runner development and tests.
+
+After installing the pinned candidate artifacts in an isolated Pi environment,
+run deterministic P4-A03 through A05 conversion validation with:
+
+```sh
+bash poc_audio/tools/run_option_a_conversion.sh \
+  poc_audio/evidence/m3_option_a/<timestamp>/raw/conversion
+```
+
+The deterministic mapping in this runner validates the conversion seam only.
+It does not select the target microphone channel or valid-bit alignment; those
+remain P4-A02 evidence decisions.

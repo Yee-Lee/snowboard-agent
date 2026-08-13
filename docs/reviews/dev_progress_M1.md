@@ -31,8 +31,8 @@
 | 工作包 | SP | 主要交付 | 對應 | 相依 | Owner | 狀態 |
 | --- | ---: | --- | --- | --- | --- | --- |
 | **WP-M1-P4-01** Validation skeleton | 3 | runner/fixture/evidence 目錄、manifest schema、P4 test packet、sanitized config、reproduction command | A01–A10 | Active handoff | Developer | `LOCAL COMPLETE` |
-| **WP-M1-P4-02** Candidate provenance/build | 4 | source hash、license、dependencies、clean build/install、runtime identity及可重現 failure | A10 | P4-01 | Developer + Tester | `PLANNED / NEXT` |
-| **WP-M1-P4-03** Streaming conversion | 6 | channel policy、valid-bit seam、stateful anti-alias 48→16 kHz、saturating S16、不規則 chunk state/flush | A03–A05 | P4-01、02 | Developer | `PLANNED` |
+| **WP-M1-P4-02** Candidate provenance/build | 4 | source hash、license、dependencies、clean build/install、runtime identity及可重現 failure | A10 | P4-01 | Developer + Tester | `TARGET PASS` |
+| **WP-M1-P4-03** Streaming conversion | 6 | channel policy、valid-bit seam、stateful anti-alias 48→16 kHz、saturating S16、不規則 chunk state/flush | A03–A05 | P4-01、02 | Developer | `IN PROGRESS / NEXT` |
 | **WP-M1-P4-04** Async/lifecycle runner | 5 | heartbeat、bounded ownership、aclose/cancel/failure/idempotent stop、10次reopen及cleanup proof | A06–A07 | P4-03 | Developer | `PLANNED` |
 | **WP-M1-P4-05** Target native/valid bits | 4 | Pi direct open、realized format、wiring attestation、known-signal/raw analysis、channel與有效位元mapping | A01–A02 | P4-01、02、clean SHA | Tester + User | `PLANNED` |
 | **WP-M1-P4-06** Buffer/xrun/resources | 5 | period/buffer、5分鐘shared-clock run、xrun、10次warm-up、latency、CPU/RSS/temp/throttling | A08–A09 | P4-03～05、clean SHA | Tester | `PLANNED` |
@@ -162,3 +162,14 @@ Phase 2 exit：
   smoke通過。
 - 尚未建立clean exact-SHA Pi packet，A01至A10均未取得新hardware disposition；
   下一個Developer工作為P4-02 provenance/build，再銜接P4-03 conversion。
+
+### 2026-08-13 — P4 A01/A10 target validation
+
+- Pi在完整SHA `cc366b826de755bbf422734647b452f77eb9b34d`通過environment
+  pre-test、18項regression、packet/fixture reproduction與cleanup。
+- A01 direct `hw:0,0` open由kernel `hw_params`確認48 kHz、2ch、S32_LE；
+  close後ALSA owner為0。首次getter/pipeline錯誤保留為`INCONCLUSIVE`。
+- A10兩個pinned sdist皆完成target source build；第二輪clean build關閉package
+  index，只使用已hash的dependency wheels與external sources，offline install/import
+  通過。Core dependency selection仍未獲准。
+- P4-A02至A09維持`Pending`；下一步為P4-03 conversion與A02 known-signal mapping。

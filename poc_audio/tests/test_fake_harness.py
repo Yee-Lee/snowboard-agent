@@ -26,6 +26,12 @@ from audio_poc.fixture_recorder import (  # noqa: E402
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
 from audio_poc.models import TerminalStatus  # noqa: E402
 from audio_poc.option_a_fixtures import generate_fixtures  # noqa: E402
+from audio_poc.option_a_conversion import (  # noqa: E402
+    OptionAStreamConverter,
+    ValidBitMapping,
+    decode_s32_interleaved,
+    float_to_s16le,
+)
 from audio_poc.option_a_validation import (  # noqa: E402
     P4_TEST_IDS,
     create_manifest,
@@ -150,6 +156,81 @@ class TrackedDocumentTests(unittest.TestCase):
             [item["sha256"] for item in second["fixtures"]],
         )
         self.assertTrue(all(item["sample_count"] == 48000 for item in first["fixtures"]))
+
+    def test_option_a_valid_bit_decode_is_explicit(self) -> None:
+        import numpy
+
+        left = numpy.array(
+            [[0x40000000, 0], [-0x40000000, 0]],
+            dtype="<i4",
+        ).tobytes()
+        decoded_left = decode_s32_interleaved(
+            left,
+            ValidBitMapping(channel_index=0, valid_bits=24, alignment="left"),
+            numpy,
+        )
+        numpy.testing.assert_allclose(decoded_left, [0.5, -0.5])
+
+        right = numpy.array([[0, 0x00400000], [0, 0x00C00000]], dtype="<i4").tobytes()
+        decoded_right = decode_s32_interleaved(
+            right,
+            ValidBitMapping(channel_index=1, valid_bits=24, alignment="right"),
+            numpy,
+        )
+        numpy.testing.assert_allclose(decoded_right, [0.5, -0.5])
+
+    def test_option_a_s16_conversion_saturates_without_wrap(self) -> None:
+        import numpy
+
+        converted = numpy.frombuffer(
+            float_to_s16le(numpy.array([-2.0, -1.0, 0.0, 1.0, 2.0]), numpy),
+            dtype="<i2",
+        )
+        self.assertEqual(converted.tolist(), [-32768, -32768, 0, 32767, 32767])
+
+    def test_option_a_stream_preserves_partial_container_and_exact_frames(self) -> None:
+        import numpy
+
+        class FakeThirdRateResampler:
+            def __init__(self) -> None:
+                self.remainder = numpy.empty(0, dtype=numpy.float32)
+
+            def process(self, values, ratio, end_of_input=False):
+                self.assert_ratio = ratio
+                combined = numpy.concatenate((self.remainder, values))
+                complete = (combined.size // 3) * 3
+                output = combined[:complete:3].copy()
+                self.remainder = combined[complete:].copy()
+                if end_of_input and self.remainder.size:
+                    raise AssertionError("test input must have an exact 3:1 ratio")
+                return output
+
+        containers = numpy.zeros((960, 2), dtype="<i4")
+        containers[:, 0] = (
+            numpy.arange(960, dtype=numpy.int64).clip(max=(1 << 23) - 1) << 8
+        ).astype("<i4")
+        raw = containers.tobytes()
+        converter = OptionAStreamConverter(
+            ValidBitMapping(channel_index=0, valid_bits=24, alignment="left"),
+            numpy_module=numpy,
+            resampler_factory=FakeThirdRateResampler,
+        )
+        frames = []
+        for start in range(0, len(raw), 317):
+            frames.extend(converter.feed(raw[start : start + 317]))
+        flushed = converter.flush()
+        frames.extend(flushed.frames)
+        self.assertEqual(converter.total_input_samples, 960)
+        self.assertEqual(converter.total_resampled_samples, 320)
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(len(frames[0]), 640)
+        self.assertEqual(flushed.partial_pcm, b"")
+
+        converter.reset()
+        self.assertEqual(converter.total_input_samples, 0)
+        self.assertEqual(converter.feed(b"\x00"), ())
+        with self.assertRaisesRegex(ValueError, "incomplete interleaved container"):
+            converter.flush()
 
     def test_option_a_pass_requires_zero_cleanup_counters(self) -> None:
         config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"

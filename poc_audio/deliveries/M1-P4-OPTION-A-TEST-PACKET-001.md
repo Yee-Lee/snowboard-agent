@@ -25,6 +25,8 @@ PYTHONPATH=poc_audio/src python3 -m unittest discover -s poc_audio/tests -v
 bash poc_audio/tools/run_option_a_validation.sh prepare
 PYTHONPATH=poc_audio/src python3 -m audio_poc.option_a_fixtures \
   poc_audio/evidence/m3_option_a/<timestamp>/raw/deterministic-fixtures
+bash poc_audio/tools/run_option_a_conversion.sh \
+  poc_audio/evidence/m3_option_a/<timestamp>/raw/conversion
 ```
 
 Preparation creates a manifest with every test `Pending`; it is not hardware

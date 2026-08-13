@@ -7,7 +7,7 @@
   "required": [
     "schema_version", "delivery_id", "test_packet_id", "poc_source_sha",
     "started_at_utc", "ended_at_utc", "hardware", "wiring",
-    "sanitized_config", "runner", "fixture_generator", "candidate_provenance", "candidates",
+    "sanitized_config", "runner", "conversion_runner", "fixture_generator", "candidate_provenance", "candidates",
     "tests", "reproduction_command"
   ],
   "properties": {
@@ -21,6 +21,7 @@
     "wiring": {"type": "object"},
     "sanitized_config": {"$ref": "#/$defs/artifact"},
     "runner": {"$ref": "#/$defs/artifact"},
+    "conversion_runner": {"$ref": "#/$defs/artifact"},
     "fixture_generator": {"$ref": "#/$defs/artifact"},
     "candidate_provenance": {"$ref": "#/$defs/artifact"},
     "candidates": {
