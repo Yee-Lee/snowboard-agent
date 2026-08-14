@@ -11,6 +11,8 @@
 | [`PM-OUT-260805-002-m3-m4-poc-planning`](PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | M3 / M4 | **Blocked（整體 handoff）**：M3 Audio / Display input 已可用；剩餘 LLM / M4 intake 不阻擋 M3 開發 | `docs/outsource/responses/OUT-FB-2026-002-R1.md` (尚未產出) |
 | [`PM-OUT-260811-008-m3-display-spec-design`](PM-OUT-260811-008-m3-display-spec-design/brief.md) | M3 Display Spec 與 Design Ready | `OUT-M3-DISPLAY-SPEC-2026-001` | M3 / M4c / M7 | **Revised by PM-009**：Display POC Accepted；spec / mock / trace 技術 finding 已收斂，exact-SHA submission 待 USER-approved commit | [`OUT-M3-DISPLAY-SPEC-2026-001.md`](../responses/OUT-M3-DISPLAY-SPEC-2026-001.md) |
 | [`PM-OUT-260813-009-m3-display-test-spec-feedback`](PM-OUT-260813-009-m3-display-test-spec-feedback/brief.md) | M3 Display / Test Spec 收斂 | `OUT-M3-REVIEW-2026-001` | M3 / M4c / M7 | **Internal Development Ready approved**；四項 finding 技術內容已修訂，external delivery SHA 待 USER-approved commit；Pi cards Pending | [`OUT-M3-REVIEW-2026-001.md`](../responses/OUT-M3-REVIEW-2026-001.md) |
+| [`PM-OUT-260814-010-m4a-audio-poc-contract-gate`](PM-OUT-260814-010-m4a-audio-poc-contract-gate/brief.md) | M4a Audio POC Contract / Gate 協調 | `OUT-M4A-2026-001` | M4 / M4a | **Resolved（Core 端）**：Contract `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 已產出；Response `OUT-M4A-2026-001` 已完成；待 PM relay 轉交 Audio POC Team 並取得回交 SHA | [`OUT-M4A-2026-001.md`](../responses/OUT-M4A-2026-001.md) |
+
 
 ---
 

@@ -88,9 +88,22 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
-| M4a Audio | `PENDING` | M3 Accepted、Audio M4 winner與 `model_spec.md` baseline |
+| M4a Audio | `CONTRACT ISSUED — PENDING M3 P4 ACK → POC GATE 1` | Gate 0：M3 P4 final selection ACK（POC P4-A01~A10 evidence 待回交）；Gate 1：candidate list Core 書面確認；Gate 2：M4A-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + Core Tester 驗收 |
 | M4b LLM | `BLOCKED` | 尚未收到 LLM POC contract；缺 `model_spec.md` LiteRT-LM baseline 與已 review 的 child protocol |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
+
+### M4a Audio Contract Relay Flow（2026-08-14 發出）
+
+```
+Core Designer (contract owner) [DELIVERY-AUDIO-POC-M4A-CONTRACT-001]
+  → PM relay → Audio POC Team
+    Gate 0: POC 回交 M3 P4-A01~A10 evidence (exact SHA) → Core final selection ACK  ← 當前阻擋點
+    Gate 1: POC 提出 M4a candidate list → Core 書面確認範圍 (5 工作日內)
+    Gate 2: POC 執行 M4A-P1~P12 → 回交 exact SHA + manifest → Core final winner ACK
+    Gate 3: Developer 建立 M4a 工作包 → Core Tester 驗收 [Core 內部]
+```
+
+Response：`docs/outsource/responses/OUT-M4A-2026-001.md`（`PM-OUT-260814-010` finding `OUT-M4A-2026-001` Resolved）
 
 ---
 
