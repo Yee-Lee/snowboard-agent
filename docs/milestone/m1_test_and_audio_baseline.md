@@ -43,13 +43,18 @@ and cleanup `PASS`. Formal completion remains required before freezing.
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A；Core Designer 已接受方向，仍須完成 P4。）
 
-Current Core decision：[DELIVERY-AUDIO-POC-M3-ACK-002](../pm_handoff/DELIVERY-AUDIO-POC-M3-ACK-002.md)
+Core direction decision：[DELIVERY-AUDIO-POC-M3-ACK-002](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-ACK-002.md)
 — Option A responsibility boundary accepted; binding、resampler、valid-bit
 mapping、buffering 與 async I/O 尚未獲准。
 
 Active POC handoff：[DELIVERY-AUDIO-POC-M3-VALIDATION-001](../pm_handoff/DELIVERY-AUDIO-POC-M3-VALIDATION-001.md)
 — P4-A01 至 P4-A10、decision table、reproducible evidence 與完整 40-character
 return SHA 均為 required；完成前 Core Audio real backend 維持 blocked。
+
+Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+— 本 contract 已收件並納入 M2–M4 規劃，但尚待 POC 以完整
+40-character SHA 回覆 intake。其 Gate 0 就是目前 P4 final selection ACK；
+收件不代表 M2–M4 已獲准開始。
 
 ## 目標
 
@@ -98,6 +103,8 @@ Blocking M1 / real candidate entry：
   implementation selection gate，也阻擋 Core Audio real backend。
 - 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
   review，使 frozen gate 可標為 `FROZEN`。
+- 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個
+  reviewable exact SHA，由 PM 回覆 POC intake SHA；不另為行政收件建立高頻 commit。
 
 已關閉的 M1 baseline 項目：
 
@@ -110,6 +117,8 @@ Blocking M1 / real candidate entry：
 - Core M3 real backend 的完整 accepted SHA：阻擋 POC M3 entry，不阻擋 M1/M2。
 - P3 TTS output PCM format：由 M2 winner 產生，阻擋最終 AudioOutput
   cross-validation，不阻擋目前 M1。
+- M4a Gate 1 candidate authorization：只有 Gate 0/P4 final selection ACK 後才能申請，
+  阻擋 M2 真實 candidate run，不授權在 M1 提前 benchmark。
 
 ## 必要 Evidence
 

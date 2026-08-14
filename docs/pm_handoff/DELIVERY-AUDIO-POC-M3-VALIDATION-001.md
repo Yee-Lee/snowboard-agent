@@ -1,7 +1,7 @@
 # Core Team → POC Audio Team: M3 Option A Implementation Validation
 
 - **Delivery ID**: `DELIVERY-AUDIO-POC-M3-VALIDATION-001`
-- **Parent decision**: `DELIVERY-AUDIO-POC-M3-ACK-002`
+- **Parent decision**: [`DELIVERY-AUDIO-POC-M3-ACK-002`](history/DELIVERY-AUDIO-POC-M3-ACK-002.md)
 - **References**: `CR-AUDIO-M3-PCM-001`、`M1-NATIVE-AUDIO-001`
 - **Status**: `ACTION REQUIRED — BLOCKS CORE AUDIO REAL BACKEND`
 - **Requester / decision owner**: Core Team Designer

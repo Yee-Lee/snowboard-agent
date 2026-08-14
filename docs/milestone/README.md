@@ -4,20 +4,32 @@
 
 ## Current Status
 
-最後更新：2026-08-13
+最後更新：2026-08-14
 最終交付可達性：`AT_RISK` — M0 readiness gate 已完成；deterministic fake
 與 40-item fixture Pilot 已由 Tester 在 Pi 以完整 SHA 重現通過；User/Designer
 批准的 `CR-AUDIO-M3-PCM-001` Option A 方向已獲 Core Designer 接受，但新增
 P4-A01 至 P4-A10 implementation validation，完成前阻擋 Core Audio real backend；
-正式 60-item fixture completion 與 catalog review 亦未完成。
+正式 60-item fixture completion 與 catalog review 亦未完成。Core Team 新發的
+`DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 已收件並納入後續 milestone
+規劃，但尚待 POC intake SHA，且不改變目前 M1 進場順序。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
-| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A 方向已接受；fake harness/cleanup 與 40-item Pilot `PASS`；P4 implementation validation 與正式 fixture review 未完成 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `NOT_STARTED` | VAD/ASR/TTS 隔離候選比較 | [M2](m2_candidate_evaluation.md) |
-| M3 | `NOT_STARTED` | Pi 5 真實 M3 Audio HAL 整合 | [M3](m3_real_hardware_integration.md) |
-| M4 | `NOT_STARTED` | 組合認證與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
+| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A 方向已接受；fake harness/cleanup 與 40-item Pilot `PASS`；P4 implementation validation、正式 fixture review 與 M4a contract intake SHA 未完成 | [M1](m1_test_and_audio_baseline.md) |
+| M2 | `NOT_STARTED` | M4a Gate 1 書面授權後執行 VAD/ASR/TTS 隔離候選比較，累積 Gate 2 evidence | [M2](m2_candidate_evaluation.md) |
+| M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2 P1–P12 回交與 winner ACK | [M3](m3_real_hardware_integration.md) |
+| M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、M4a ACK audit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
+
+## Core M4a Contract Mapping
+
+| Contract stage | POC milestone disposition |
+| --- | --- |
+| Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
+| Gate 0：M3 P4 final selection | M1 exit blocker；未取得 Core final selection ACK 前不進 M2 |
+| Gate 1：candidate proposal/authorization | M2 第一個子 gate；ACK 前不執行真實 candidate run |
+| Gate 2：POC validation | M2 累積隔離 evidence；M3 以 accepted HAL/Pi 完成 P1–P12、return SHA 與 winner ACK |
+| Gate 3：Core production implementation | Core repo external follow-up；Gate 2 final ACK 後可啟動，不是 Audio POC milestone PASS |
 
 ## Status Rules
 

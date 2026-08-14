@@ -7,6 +7,8 @@
 - **Status**: `OPTION A DIRECTION ACCEPTED — IMPLEMENTATION VALIDATION REQUIRED`
 - **Date**: 2026-08-13
 - **Architecture change**: `No`
+- **Archive disposition**: `DIRECTION DECISION COMPLETE — OPEN ACTIONS TRANSFERRED`
+- **Archived**: 2026-08-14
 
 ## 1. Decision
 
