@@ -18,7 +18,7 @@
 
 | Delivery | 狀態 | POC disposition |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M3-VALIDATION-001](DELIVERY-AUDIO-POC-M3-VALIDATION-001.md) | `ACTION REQUIRED — BLOCKS CORE AUDIO REAL BACKEND` | POC 須完成 P4-A01 至 P4-A10、逐項 recommendation、可重現 evidence 與完整 40-character SHA。 |
+| [DELIVERY-AUDIO-POC-M3-VALIDATION-001](DELIVERY-AUDIO-POC-M3-VALIDATION-001.md) | `CORE REVIEW REQUIRED — FINAL ACK BLOCKS REAL BACKEND` | POC P4-A01 至 A10 evidence 與完整 test SHA 已回交；Core Designer 尚須發出 final selection ACK。 |
 | [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `READY FOR PM RELAY — PENDING POC INTAKE SHA` | 已收到但 Gate 0 仍受 M3 P4 final selection ACK 阻擋；不授權啟動 M2–M4 候選或驗證工作。 |
 
 P4 是目前 M1 change-request closure 與 Core Audio real-backend 的 blocking

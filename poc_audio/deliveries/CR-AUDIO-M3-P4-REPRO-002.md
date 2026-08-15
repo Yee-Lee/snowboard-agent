@@ -1,6 +1,6 @@
 # CR-AUDIO-M3-P4-REPRO-002 — Restore reproducible P4-A10 dependency artifacts
 
-Status: `RESOLVED — OPTION 2 ACCEPTED; P4-A10 RERUN PENDING`
+Status: `CLOSED — OPTION 2 A10 RERUN PASS; CORE FINAL ACK PENDING`
 Date: 2026-08-15
 Decision owner: Core Team Designer
 
@@ -25,9 +25,9 @@ non-reference raw evidence artifact.
 
 - P4-A06 through A09 are `PASS` at
   `55085162fbcdbb027f0958e945918874e5df6828`.
-- P4-A10's prior evidence remains traceable, but its current independent replay
-  is `INCONCLUSIVE` until matching dependency artifacts or corrected approved
-  hashes are supplied.
+- P4-A10's current independent replay is `PASS` at
+  `de3b0bab4daaf47f62956d4b27f6697b3d4fa823`; reviewed evidence is
+  [`P4-A10-RERUN-002`](../evidence/m3_option_a/P4-A10-RERUN-002.md).
 - Core P4 final selection ACK and the Core Audio real-backend unblock remain
   pending; this request must not be bypassed by treating cached wheels as a
   production dependency selection.
@@ -46,6 +46,16 @@ version, and each local SHA-256 matches the PyPI SHA-256. Their license
 metadata is `MIT`, except `packaging`, which is `Apache-2.0 OR BSD-2-Clause`.
 The approved values are recorded in `option_a_candidates.json`; no candidate
 package, source archive, native-source commit, or license choice changed.
+
+## Closure evidence
+
+The clean Pi rerun built both candidate sdists with package indexes disabled,
+installed the generated wheels into a separate fresh environment, and verified
+the pinned package/module identities and native linkage. The first controller
+attempt is retained as a `FAIL` caused by an invalid local artifact filename;
+the subsequent fresh rerun is `PASS`. P4 evidence is now ready for Core
+Designer final selection review, but this closure does not itself grant that
+ACK or unblock Core real-backend work.
 
 ## Requested decision
 
