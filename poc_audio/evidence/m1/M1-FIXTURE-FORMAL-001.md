@@ -29,6 +29,11 @@ contains only sanitized counts and hashes.
 | Native metadata/checksums | `PASS`, every record is 48 kHz / 2 channels / 4-byte samples with a checksum |
 | Cleanup | `PASS`, no partial files and no ALSA device owner |
 
+Follow-up technical and human sample review:
+[M1 Fixture Formal Sampling](M1-FIXTURE-FORMAL-SAMPLING-001.md) — `PASS WITH
+OBSERVATION`; the exact Formal 60-item complement, fixed 14-item technical
+sample, and User/Designer 10 / 10 speech listening review are recorded.
+
 ## Boundary and remaining review
 
 The completed revision is retained under the controlled local relative fixture

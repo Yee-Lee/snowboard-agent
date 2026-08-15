@@ -49,6 +49,11 @@ Current Formal collection finding：[M1 Formal Fixture Evidence](../../poc_audio
 600 seconds of non-speech, checksums and cleanup `PASS`; delivered-format/catalog
 and metric freeze review remain required.
 
+Current Formal fixture review：[M1 Formal Fixture Sampling](../../poc_audio/evidence/m1/M1-FIXTURE-FORMAL-SAMPLING-001.md)
+— exact 60-item complement technical review and User/Designer 10 / 10 speech
+listening sample are `PASS WITH OBSERVATION`; seven isolated near-full-scale
+source samples remain a non-blocking review observation.
+
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A；Core Designer 已接受方向，仍須完成 P4。）
 
@@ -127,9 +132,9 @@ Blocking M1 / real candidate entry：
   raw retention/config/result paths 與七項 decision table 已回交。Core final
   selection ACK 前，Option A implementation selection gate 與 Core Audio real
   backend 仍受阻擋。
-- Formal native acquisition 已完成；完成 delivered-format checksum/metadata、
-  normalization/label、catalog 與 metric definition review，使 frozen gate 可標為
-  `FROZEN`。
+- Formal native acquisition、exact-complement technical review 與分層人工聽檢已完成；
+  完成 delivered-format checksum/metadata、normalization/label、catalog 與 metric
+  definition review，使 frozen gate 可標為 `FROZEN`。
 - 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個
   reviewable exact SHA，由 PM 回覆 POC intake SHA；不另為行政收件建立高頻 commit。
 
