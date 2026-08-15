@@ -55,6 +55,11 @@ Active POC handoff：[DELIVERY-AUDIO-POC-M3-VALIDATION-001](../pm_handoff/DELIVE
 — P4-A01 至 P4-A10、decision table、reproducible evidence 與完整 40-character
 return SHA 均為 required；完成前 Core Audio real backend 維持 blocked。
 
+Latest P4 live evidence：[P4 A06–A09](../../poc_audio/evidence/m3_option_a/P4-A06-A09-001.md)
+— async/lifecycle/endurance/resource evidence at
+`55085162fbcdbb027f0958e945918874e5df6828` is `PASS`; A10 replay requires the
+open [reproducibility request](../../poc_audio/deliveries/CR-AUDIO-M3-P4-REPRO-002.md).
+
 Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 — 本 contract 已收件並納入 M2–M4 規劃，但尚待 POC 以完整
 40-character SHA 回覆 intake。其 Gate 0 就是目前 P4 final selection ACK；
@@ -105,6 +110,9 @@ Blocking M1 / real candidate entry：
 - 完成 `DELIVERY-AUDIO-POC-M3-VALIDATION-001` 的 P4-A01 至 P4-A10，回交完整
   40-character SHA，並取得 Core final selection ACK。這是 Option A 尚未關閉的
   implementation selection gate，也阻擋 Core Audio real backend。
+- 解決 `CR-AUDIO-M3-P4-REPRO-002`：取得可驗證的 P4-A10 dependency artifact
+  chain 或核准其替代路徑並重跑 clean Pi build；不得以本次 cached runtime wheel
+  當作 production dependency selection。
 - 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
   review，使 frozen gate 可標為 `FROZEN`。
 - 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個
