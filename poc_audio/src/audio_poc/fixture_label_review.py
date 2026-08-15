@@ -6,9 +6,12 @@ import argparse
 import array
 import json
 import math
+import signal
 import shutil
 import subprocess
 import sys
+import threading
+import time
 import wave
 from pathlib import Path
 from typing import Any
@@ -74,36 +77,85 @@ def review(proposals_path: Path, artifact_dir: Path, output_path: Path, playback
         if shutil.which("aplay") is None:
             raise RuntimeError("aplay is unavailable")
         playback_device = discover_voicehat_device("aplay")
+    player: subprocess.Popen[str] | None = None
+    paused_at: float | None = None
+    elapsed_before_pause = 0.0
+    timer_stop = threading.Event()
+
+    def elapsed_ms() -> int:
+        if paused_at is not None:
+            return round(elapsed_before_pause * 1000)
+        return round((elapsed_before_pause + (time.monotonic() - started_at)) * 1000)
+
+    started_at = time.monotonic()
+
+    def timer() -> None:
+        while not timer_stop.wait(0.1):
+            if player is not None and player.poll() is None:
+                print(f"\rplayback={elapsed_ms()} ms", end="", flush=True)
+
+    threading.Thread(target=timer, daemon=True).start()
     for proposal in document["proposals"]:
         fixture_id = proposal["fixture_id"]
         if fixture_id in accepted:
             continue
         source = artifact_dir / f"{fixture_id}.wav"
         print(f"\n{fixture_id} ({proposal['class']}, {proposal['category']})")
-        print(f"suggested speech={proposal['speech_intervals_ms']} pause={proposal.get('internal_pause_candidate_ms')}")
+        intervals = proposal["speech_intervals_ms"]
+        pause = proposal.get("internal_pause_candidate_ms")
+        if proposal["class"] == "clear_speech":
+            labels = {"s": intervals[0][0], "e": intervals[0][1]}
+        else:
+            labels = {"s": intervals[0][0], "w": pause[0], "c": pause[1], "e": intervals[-1][1]}
+        full_preview = preview_dir / f"{fixture_id}-full.wav"
+        duration_ms = max(interval[-1] for interval in intervals)
+        gain_db = _write_preview(source, full_preview, 0, duration_ms)
+        print(f"suggested={labels}; full preview gain={gain_db:+.2f} dB")
         while True:
-            for label, start, end in _preview_ranges(proposal):
-                preview = preview_dir / f"{fixture_id}-{label}.wav"
-                gain_db = _write_preview(source, preview, start, end)
-                print(f"playing {label}: {start}..{end} ms (preview gain {gain_db:+.2f} dB)")
-                subprocess.run(["aplay", "--device", playback_device, str(preview)], check=True)
-            answer = input("Enter=accept, r=replay, q=quit, or override times: ").strip().lower()
+            answer = input("p=play, u=pause, r=replay, s/e/w/c=<ms>, Enter=accept, q=quit: ").strip().lower()
             if not answer:
-                intervals, pause = proposal["speech_intervals_ms"], proposal.get("internal_pause_candidate_ms")
-            elif answer == "r":
+                if proposal["class"] == "clear_speech":
+                    intervals, pause = [[labels["s"], labels["e"]]], None
+                else:
+                    intervals, pause = [[labels["s"], labels["w"]], [labels["c"], labels["e"]]], [labels["w"], labels["c"]]
+            elif answer in {"p", "r"}:
+                if player is not None and player.poll() is None:
+                    if answer == "p" and paused_at is not None:
+                        player.send_signal(signal.SIGCONT)
+                        elapsed_before_pause += time.monotonic() - paused_at
+                        paused_at = None
+                        started_at = time.monotonic()
+                        continue
+                    player.terminate()
+                elapsed_before_pause = 0.0
+                paused_at = None
+                started_at = time.monotonic()
+                player = subprocess.Popen(["aplay", "--device", playback_device, str(full_preview)], text=True)
+                continue
+            elif answer == "u":
+                if player is not None and player.poll() is None and paused_at is None:
+                    elapsed_before_pause += time.monotonic() - started_at
+                    paused_at = time.monotonic()
+                    player.send_signal(signal.SIGSTOP)
                 continue
             elif answer == "q":
                 output_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                timer_stop.set()
                 return 0
             else:
                 try:
-                    intervals, pause = _parse_override(answer, proposal)
+                    key, value = answer.split("=", 1)
+                    if key not in labels:
+                        raise ValueError("unsupported label key")
+                    labels[key] = int(value)
+                    print(f"current={labels}")
                 except ValueError as error:
-                    print(error)
-                    continue
+                    print(f"invalid command: {error}")
+                continue
             accepted[fixture_id] = {"speech_intervals_ms": intervals, "internal_pause_interval_ms": pause, "review_status": "ACCEPTED_BY_LOCAL_REVIEW"}
             output_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             break
+    timer_stop.set()
     print(f"accepted={len(accepted)} output={output_path}")
     return 0
 
