@@ -61,9 +61,8 @@ Core direction decision：[DELIVERY-AUDIO-POC-M3-ACK-002](../pm_handoff/history/
 — Option A responsibility boundary accepted; binding、resampler、valid-bit
 mapping、buffering 與 async I/O 尚未獲准。
 
-Active POC handoff：[DELIVERY-AUDIO-POC-M3-VALIDATION-001](../pm_handoff/DELIVERY-AUDIO-POC-M3-VALIDATION-001.md)
-— P4-A01 至 P4-A10、decision table、reproducible evidence 與完整 40-character
-return SHA 均為 required；完成前 Core Audio real backend 維持 blocked。
+Core validation requirement：[DELIVERY-AUDIO-POC-M3-VALIDATION-001](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-VALIDATION-001.md)
+（P4-A01 至 P4-A10、decision table、manifest 與 reproducible evidence 要求已全數滿足並結案歸檔。）
 
 Latest P4 live evidence：[P4 A06–A09](../../poc_audio/evidence/m3_option_a/P4-A06-A09-001.md)
 — async/lifecycle/endurance/resource evidence at
@@ -74,17 +73,13 @@ Latest P4 clean-build evidence：[P4 A10 rerun](../../poc_audio/evidence/m3_opti
 `de3b0bab4daaf47f62956d4b27f6697b3d4fa823` is `PASS`; the reproducibility
 [request](../../poc_audio/deliveries/CR-AUDIO-M3-P4-REPRO-002.md) is closed.
 
-Core receipt：[DELIVERY-AUDIO-POC-M3-P4-ACK-003](../pm_handoff/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md)
-— P4 summaries are received, but Core requires the contract's complete,
-machine-readable validation return packet and seven-item decision table before
-it can issue final selection ACK. The requested
-[complete return](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md)
-is now prepared for that review.
+Core Final Selection ACK：[DELIVERY-AUDIO-POC-M3-P4-ACK-004](../pm_handoff/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md)
+— Core Designer 已審查完整 [P4 return packet](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md)
+並正式發出 `ACCEPTED — M3 AUDIO REAL PACKAGE MAY START`；Option A 實作基準正式核准，
+M4a Gate 0 已解除。歷史中介收件確認見 [ACK-003](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md)。
 
-Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
-— 本 contract 已收件並納入 M2–M4 規劃，但尚待 POC 以完整
-40-character SHA 回覆 intake。其 Gate 0 就是目前 P4 final selection ACK；
-收件不代表 M2–M4 已獲准開始。
+Active Core M4a contract：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+— 本 contract Gate 0 已由 Core ACK-004 通過；待 POC 提交 ASR/TTS 候選清單申請 Gate 1 授權。
 
 ## 目標
 
@@ -126,17 +121,13 @@ Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_h
 
 ## 目前 Blocking 與非 Blocking 依賴
 
-Blocking M1 / real candidate entry：
+Blocking M1 exit / M2 candidate entry：
 
-- P4-A01 至 P4-A10 evidence、machine-readable P4 return packet、manifest-relative
-  raw retention/config/result paths 與七項 decision table 已回交。Core final
-  selection ACK 前，Option A implementation selection gate 與 Core Audio real
-  backend 仍受阻擋。
 - Formal native acquisition、exact-complement technical review 與分層人工聽檢已完成；
   完成 delivered-format checksum/metadata、normalization/label、catalog 與 metric
-  definition review，使 frozen gate 可標為 `FROZEN`。
-- 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個
-  reviewable exact SHA，由 PM 回覆 POC intake SHA；不另為行政收件建立高頻 commit。
+  definition review，使 frozen gate 可標為 `FROZEN` 並執行 M1 exit review。
+- 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`DELIVERY-AUDIO-POC-M3-P4-ACK-004`
+  與本 milestone 規劃一併納入 reviewable exact SHA，由 PM 回覆 POC intake SHA。
 
 已核准的受控開發例外：
 
@@ -144,11 +135,15 @@ Blocking M1 / real candidate entry：
   驗證 native-to-ASR preparation 與 candidate runtime 是否可行。結果僅為
   `OBSERVATION`，不得改寫上述 blocking、宣告 candidate 結果或展開 M2。
 
-已關閉的 M1 baseline 項目：
+已關閉的 M1 baseline 與 P4 驗證項目：
 
 - lockfile、harness、result/candidate/fixture schema 與 deterministic fake 已完成；
   Tester 已在相同完整 SHA 重現 success、error、timeout、cancel、force-abort，且
   cleanup counters 全為 0（`M1-FAKE-001`）。
+- P4-A01 至 P4-A10 evidence、machine-readable P4 return packet、manifest-relative
+  raw retention/config/result paths 與七項 decision table 已獲 Core Designer
+  發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` 正式核准，M3 Audio real backend 與
+  M4a Gate 0 已正式解除！
 
 目前不阻擋 M1、但會阻擋後續階段：
 
