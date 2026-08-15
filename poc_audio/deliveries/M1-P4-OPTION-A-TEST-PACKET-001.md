@@ -30,11 +30,18 @@ bash poc_audio/tools/run_option_a_conversion.sh \
 bash poc_audio/tools/run_option_a_valid_bits.sh \
   poc_audio/fixtures/artifacts/<authorized-pilot> \
   poc_audio/evidence/m3_option_a/<timestamp>/raw/valid-bits.json
+bash poc_audio/tools/run_option_a_live.sh \
+  --capture-device hw:<card>,<device> \
+  --playback-device hw:<card>,<device> \
+  --output poc_audio/evidence/m3_option_a/<timestamp>/raw/p4-a06-a09.json
 ```
 
 Preparation creates a manifest with every test `Pending`; it is not hardware
 evidence. The Tester records the exact realized commands in the manifest as
 the implementation runners become available in P4-02 through P4-06.
+The live runner uses one bounded capture worker and one bounded playback worker;
+it records the five-minute endurance session, ten warmups, ten reopen cycles,
+cancel, invalid-device failure probes, and resource samples in one packet.
 
 ## Frozen gates and repetitions
 

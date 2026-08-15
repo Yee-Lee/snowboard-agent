@@ -36,6 +36,7 @@ from audio_poc.option_a_conversion import (  # noqa: E402
     decode_s32_interleaved,
     float_to_s16le,
 )
+from audio_poc.option_a_live import LiveConfig, latency_summary, pcm_node  # noqa: E402
 from audio_poc.option_a_valid_bits import analyze_fixture_directory  # noqa: E402
 from audio_poc.option_a_validation import (  # noqa: E402
     P4_TEST_IDS,
@@ -105,6 +106,22 @@ class FakeHarnessTests(unittest.IsolatedAsyncioTestCase):
 
 
 class TrackedDocumentTests(unittest.TestCase):
+    def test_option_a_live_config_requires_p4_durations_and_direct_devices(self) -> None:
+        with self.assertRaisesRegex(ValueError, "direct ALSA hw"):
+            LiveConfig("default", "hw:0,0").validate()
+        with self.assertRaisesRegex(ValueError, "at least 300"):
+            LiveConfig("hw:0,0", "hw:0,0", duration_seconds=299).validate()
+        with self.assertRaisesRegex(ValueError, "at least 10 for P4-A09"):
+            LiveConfig("hw:0,0", "hw:0,0", warmup_cycles=9).validate()
+        LiveConfig("hw:0,0", "hw:0,0").validate()
+
+    def test_option_a_live_procfs_mapping_and_latency_summary_are_explicit(self) -> None:
+        self.assertEqual(pcm_node("hw:0,0", "c"), Path("/proc/asound/card0/pcm0c/sub0/hw_params"))
+        self.assertEqual(pcm_node("hw:1,2", "p"), Path("/proc/asound/card1/pcm2p/sub0/hw_params"))
+        self.assertIsNone(pcm_node("plughw:0,0", "c"))
+        self.assertEqual(latency_summary([])["p95_ms"], None)
+        self.assertEqual(latency_summary([1.0, 2.0, 3.0])["p95_ms"], 3.0)
+
     def test_candidate_manifest_and_fixture_catalog(self) -> None:
         manifest = json.loads(
             (REPO_ROOT / "poc_audio/manifests/deterministic_fake.json").read_text(

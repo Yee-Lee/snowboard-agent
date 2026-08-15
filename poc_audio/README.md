@@ -200,6 +200,18 @@ bash poc_audio/tools/run_option_a_valid_bits.sh \
 The raw-analysis result must be reviewed together with wiring attestation and
 the prior human check of known fixture labels before P4-A02 can pass.
 
+For P4-A06 through A09 only, run the live Pi packet from the isolated candidate
+environment with direct `hw:` capture and playback devices. It records a
+five-minute concurrent session, heartbeat, cancel/reopen/failure cleanup and
+resource samples; review the raw JSON before assigning any P4 status:
+
+```sh
+bash poc_audio/tools/run_option_a_live.sh \
+  --capture-device hw:<card>,<device> \
+  --playback-device hw:<card>,<device> \
+  --output poc_audio/evidence/m3_option_a/<timestamp>/raw/p4-a06-a09.json
+```
+
 ## M1 Pilot ASR preflight
 
 The complete 40-item Pilot may be used only for the approved observation-only
