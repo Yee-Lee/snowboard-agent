@@ -24,6 +24,7 @@ from audio_poc.fixture_recorder import (  # noqa: E402
     verify_records,
 )
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
+from audio_poc.fixture_review import review_collection  # noqa: E402
 from audio_poc.fixture_preflight import (  # noqa: E402
     MANIFEST_NAME as PREFLIGHT_MANIFEST_NAME,
     prepare_pilot,
@@ -462,6 +463,49 @@ class TrackedDocumentTests(unittest.TestCase):
                 self.assertEqual(outcome["summary"]["result"], "PASS")
                 self.assertEqual(outcome["summary"]["valid_files"], 100)
                 self.assertEqual(outcome["summary"]["non_speech_seconds"], 50)
+
+    def test_fixture_review_uses_formal_complement_and_keeps_content_human_review(self) -> None:
+        import tempfile
+
+        plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
+        plan = load_plan(plan_path)
+        for capture_set in plan["sets"]:
+            capture_set["duration_seconds_each"] = 1
+        plan["_path"] = str(plan_path)
+        items = build_capture_items(plan)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            review_plan_path = root / "plan.json"
+            review_plan_path.write_text(json.dumps(plan), encoding="utf-8")
+            records = {}
+            for item in items:
+                wav_path = root / f"{item.fixture_id}.wav"
+                with wave.open(str(wav_path), "wb") as generated:
+                    generated.setnchannels(2)
+                    generated.setsampwidth(4)
+                    generated.setframerate(48000)
+                    generated.writeframes(
+                        (
+                            (123456).to_bytes(4, "little", signed=True)
+                            + (0).to_bytes(4, "little", signed=True)
+                        )
+                        * 48000
+                    )
+                records[item.fixture_id] = {
+                    "fixture_id": item.fixture_id,
+                    "file": wav_path.name,
+                    "vad_class": item.vad_class,
+                    "metadata": validate_wav(wav_path, plan["native_capture"]),
+                    "sha256": sha256_file(wav_path),
+                }
+            (root / "fixture_manifest.json").write_text(json.dumps({
+                "plan_id": plan["plan_id"], "native_capture": plan["native_capture"], "records": records,
+            }), encoding="utf-8")
+            review = review_collection(review_plan_path, root, "formal")
+            self.assertEqual(review["reviewed_fixture_count"], 60)
+            self.assertEqual(review["result"], "PASS")
+            self.assertEqual(len(review["stratified_sample"]), 14)
+            self.assertEqual(review["semantic_content_review"], "requires_authorized_human_listener")
 
     def test_monitor_duplicates_the_requested_channel_without_gain(self) -> None:
         import tempfile
