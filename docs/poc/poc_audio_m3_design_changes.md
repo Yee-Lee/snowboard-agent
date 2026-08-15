@@ -19,7 +19,7 @@ M3 只交付 Raspberry Pi 5 的真實 AudioInput / AudioOutput HAL 與固定 PCM
 1. Audio input / output 設定與 PCM 格式分離。
 2. VAD 正式納入 `perception/listen` 與 M4a model gate。
 
-兩項都維持 `snowboard-agent/docs/arch.md` 既有邊界： `core/audio` 只處理 PCM，VAD / endpoint / ASR 屬 `perception/listen` 。原則上不需要 Architect 改變架構；若 review 發現必須 改變模組邊界或跨 process 麥克風 ownership ，再另開 Designer -> Architect review。
+兩項都維持 `snowboard-agent/docs/specs/arch.md` 既有邊界： `core/audio` 只處理 PCM，VAD / endpoint / ASR 屬 `perception/listen` 。原則上不需要 Architect 改變架構；若 review 發現必須 改變模組邊界或跨 process 麥克風 ownership ，再另開 Designer -> Architect review。
 
 ## 2. DC-1：分離 Audio input / output 設定
 

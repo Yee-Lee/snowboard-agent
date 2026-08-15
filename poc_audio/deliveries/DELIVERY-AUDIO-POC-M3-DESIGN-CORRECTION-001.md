@@ -108,7 +108,7 @@ Core Team should update, at minimum:
   adaptation ownership, lifecycle and capability behaviour;
 - `docs/implement/ch10_config.md`: separate input/output and native/delivered
   config, strict validation and cross-validation;
-- `docs/arch.md`: explicit Audio HAL adaptation responsibility without moving
+- `docs/specs/arch.md`: explicit Audio HAL adaptation responsibility without moving
   VAD/ASR into HAL;
 - `config.example.yaml` and config loader/tests;
 - `src/sbd/core/audio` real backend/factory and related config models;
