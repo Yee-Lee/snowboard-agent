@@ -212,6 +212,19 @@ bash poc_audio/tools/run_option_a_live.sh \
   --output poc_audio/evidence/m3_option_a/<timestamp>/raw/p4-a06-a09.json
 ```
 
+For the Core-approved P4-A10 reproducibility rerun, place only the checked
+source archives and build wheels in an external artifact directory, then run a
+fresh offline build. The output path must be new and belongs under the packet's
+ignored `raw/` directory. The runner verifies every declared SHA-256, injects
+the pinned CMake dependencies without network fetches, builds both sources,
+and performs an independent install/import identity rerun:
+
+```sh
+bash poc_audio/tools/run_option_a_a10_clean_build.sh \
+  --artifact-dir /controlled/p4-a10-artifacts \
+  --output poc_audio/evidence/m3_option_a/<timestamp>/raw/a10-clean-build
+```
+
 ## M1 Pilot ASR preflight
 
 The complete 40-item Pilot may be used only for the approved observation-only

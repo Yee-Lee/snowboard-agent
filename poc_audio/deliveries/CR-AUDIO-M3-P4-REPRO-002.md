@@ -1,6 +1,6 @@
 # CR-AUDIO-M3-P4-REPRO-002 — Restore reproducible P4-A10 dependency artifacts
 
-Status: `OPEN — CORE/DESIGNER DECISION REQUIRED`
+Status: `RESOLVED — OPTION 2 ACCEPTED; P4-A10 RERUN PENDING`
 Date: 2026-08-15
 Decision owner: Core Team Designer
 
@@ -32,6 +32,21 @@ non-reference raw evidence artifact.
   pending; this request must not be bypassed by treating cached wheels as a
   production dependency selection.
 
+## Decision received
+
+Core Team Designer accepted Option 2 in
+[`RESP-AUDIO-M3-P4-REPRO-002`](../../docs/pm_handoff/RESP-AUDIO-M3-P4-REPRO-002.md):
+the POC may replace the four mismatching build-wheel hashes after basic
+provenance and license review, then must perform a fresh Pi clean build and
+P4-A10 rerun. This approval does not issue the P4 final selection ACK.
+
+The replacement files were checked against the official PyPI release metadata
+on 2026-08-15: each is a non-yanked, same-name wheel for the already pinned
+version, and each local SHA-256 matches the PyPI SHA-256. Their license
+metadata is `MIT`, except `packaging`, which is `Apache-2.0 OR BSD-2-Clause`.
+The approved values are recorded in `option_a_candidates.json`; no candidate
+package, source archive, native-source commit, or license choice changed.
+
 ## Requested decision
 
 Core/Designer should choose one of the following before final P4 disposition:
@@ -48,4 +63,3 @@ Core/Designer should choose one of the following before final P4 disposition:
 Use option 1 if the original retained artifacts are available; otherwise use
 option 2. Do not issue the P4 final selection ACK until the selected option has
 reproduced A10 with a complete artifact chain.
-

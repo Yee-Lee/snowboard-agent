@@ -60,10 +60,10 @@
   ],
   "dependency_artifact_sha256": {
     "numpy-2.4.2-cp313-aarch64-wheel": "c3cd545784805de05aafe1dde61752ea49a359ccba9760c1e5d1c88a93bbf2b7",
-    "packaging-26.3-wheel": "414c46fcfb5f98edc3e3139a1f1d780e01cf76995b072f11975c665fcc57de83",
-    "setuptools-82.0.0-wheel": "bfd26201c4c98f80aae52bc19dc14a5404126d3b4562fbc126c73a6f7bb607fc",
-    "setuptools-scm-10.2.1-wheel": "d0d73d77ef634616b1e8635e900863683b792817c0fc3ffe3424e65482e089e6",
-    "vcs-versioning-2.2.4-wheel": "3489158c0c0360bd46b2c3f036bb6a8520c484a0de1baa301a02901ebd635f87",
+    "packaging-26.3-wheel": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+    "setuptools-82.0.0-wheel": "70b18734b607bd1da571d097d236cfcfacaf01de45717d59e6e04b96877532e0",
+    "setuptools-scm-10.2.1-wheel": "b7c82f4102d389ee57dc66ccdb4f9b4bca3c40ba83b43f1f63d68ccd72db2580",
+    "vcs-versioning-2.2.4-wheel": "48ffea8a6a175c37a718c7ee2e5f508d0e500c2cf3371791f7948bccb2b44628",
     "wheel-0.48.0-wheel": "3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab",
     "pybind11-f5fbe867-source": "2b57710b0c1f64eef81825042754cf517839d9a546addd7e5eb1c342f57cf308",
     "libsamplerate-c96f5e3d-source": "35ceb3e63eb8884ec802b5be685a9aacf2458c4eb3c0ea38dc18ef1b00648c44"
