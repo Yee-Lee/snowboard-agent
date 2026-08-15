@@ -52,9 +52,9 @@
 ## Governing Documents
 
 - [工作流程與合作方式](../audio_poc_workflow.md)
-- [POC 開發指引](../pm_handoff/audio_poc_development_guide.md)
-- [最終繳交清單](../pm_handoff/audio_poc_delivery_checklist.md)
-- [M3 Audio 要求](../pm_handoff/core_audio_m3_requirements.md)
+- [POC 開發指引](../specs/audio_poc_development_guide.md)
+- [最終繳交清單](../specs/audio_poc_delivery_checklist.md)
+- [M3 Audio 要求](../specs/core_audio_m3_requirements.md)
 
 ## Reference Material (Non-authoritative)
 

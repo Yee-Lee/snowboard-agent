@@ -6,13 +6,14 @@
 
 最後更新：2026-08-15
 
-## Authoritative POC Documents
+## Authoritative POC Specifications
 
-- [Audio POC 最終繳交清單](audio_poc_delivery_checklist.md)
-- [Audio POC 團隊開發指引](audio_poc_development_guide.md)
-- [Core Audio M3 要求](core_audio_m3_requirements.md)
+永久生效之全域開發手冊、架構契約與最終驗收清單已移至專屬規範目錄：
+👉 [**`docs/specs/`**](../specs/README.md)
 
-以上文件是持續有效的規範，不因單一 handoff 完成而歸檔。
+- [Audio POC 最終繳交清單](../specs/audio_poc_delivery_checklist.md)
+- [Audio POC 團隊開發指引](../specs/audio_poc_development_guide.md)
+- [Core Audio M3 要求](../specs/core_audio_m3_requirements.md)
 
 ## Active Handoffs
 

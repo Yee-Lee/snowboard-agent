@@ -15,11 +15,11 @@ the milestone state changes:
 
 Read these only when the task needs them:
 
-- `docs/pm_handoff/audio_poc_delivery_checklist.md` — milestone entry, gate
+- `docs/specs/audio_poc_delivery_checklist.md` — milestone entry, gate
   review, delivery-manifest work, or a task that claims to close a final item.
-- `docs/pm_handoff/audio_poc_development_guide.md` — POC code, wrappers,
+- `docs/specs/audio_poc_development_guide.md` — POC code, wrappers,
   fixtures, candidate comparison, or combined-pipeline work.
-- `docs/pm_handoff/core_audio_m3_requirements.md` — M3 work or any change that
+- `docs/specs/core_audio_m3_requirements.md` — M3 work or any change that
   touches the Audio HAL contract.
 - `poc_audio/README.md` — workstation/Pi checkout preparation or remote test
   execution.

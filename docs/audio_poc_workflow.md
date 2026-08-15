@@ -6,7 +6,7 @@
 ## 1. 目的
 
 本文件定義 Audio POC 從環境就緒到正式交付的完整工作方式。所有工作以
-`docs/pm_handoff/audio_poc_delivery_checklist.md` 的最終交付為起點反推；每項工作都必須能回答：
+`docs/specs/audio_poc_delivery_checklist.md` 的最終交付為起點反推；每項工作都必須能回答：
 
 1. 它推進哪一個最終交付項目？
 2. 完成後產生什麼可重現證據？
