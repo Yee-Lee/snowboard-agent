@@ -46,9 +46,16 @@
     "annotation_sha256": "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
     "annotation_status": "PASS / HUMAN_REVIEWED"
   },
-  "delivered_format": {
-    "status": "BLOCKING_NOT_COMPLETE",
-    "required_policy": "Core-selected Option A channel-0 / signed-24-bit decode / stateful 48-to-16 kHz conversion / saturating S16_LE",
-    "required_evidence": ["transformed_metadata", "transformed_sha256", "cross_validation"]
+  "delivered_fixture_revision": {
+    "relative_path": "poc_audio/fixtures/artifacts/m1-authorized-zh-tw-v1-pilot-r1/delivered-option-a-v1/",
+    "manifest_name": "delivered_fixture_manifest.json",
+    "manifest_sha256": "1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2",
+    "preparer_id": "m1-option-a-delivery-v1",
+    "delivered_pcm": {
+      "sample_rate_hz": 16000,
+      "channels": 1,
+      "sample_format": "S16_LE"
+    },
+    "status": "PASS / CONVERTED_AND_CROSS_VALIDATED"
   }
 }
