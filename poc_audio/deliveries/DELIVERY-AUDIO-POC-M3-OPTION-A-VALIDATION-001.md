@@ -1,8 +1,9 @@
 # DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001
 
 - **Parent requirement:** `DELIVERY-AUDIO-POC-M3-VALIDATION-001`
+- **Response to receipt:** `DELIVERY-AUDIO-POC-M3-P4-ACK-003`
 - **POC implementation/test SHA:** `de3b0bab4daaf47f62956d4b27f6697b3d4fa823`
-- **Disposition:** `POC RECOMMENDATION — CORE FINAL SELECTION REQUIRED`
+- **Disposition:** `POC RETURN SUBMITTED — CORE FINAL SELECTION ACK REQUESTED`
 
 ## Complete return packet
 
