@@ -25,10 +25,12 @@
   "alsa_binding": {
     "candidate": "pyalsaaudio",
     "version": "0.11.0",
-    "blocking_model": "pending-p4-a06"
+    "blocking_model": "two bounded blocking workers; asyncio heartbeat remains on the event loop"
   },
   "buffering": {
-    "period_frames": "pending-p4-a08",
-    "period_count": "pending-p4-a08"
+    "period_frames": 960,
+    "period_count": 4,
+    "buffer_frames": 3840,
+    "mode": "direct ALSA blocking RW_INTERLEAVED"
   }
 }

@@ -67,7 +67,9 @@ Latest P4 clean-build evidence：[P4 A10 rerun](../../poc_audio/evidence/m3_opti
 Core receipt：[DELIVERY-AUDIO-POC-M3-P4-ACK-003](../pm_handoff/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md)
 — P4 summaries are received, but Core requires the contract's complete,
 machine-readable validation return packet and seven-item decision table before
-it can issue final selection ACK.
+it can issue final selection ACK. The requested
+[complete return](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md)
+is now prepared for that review.
 
 Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 — 本 contract 已收件並納入 M2–M4 規劃，但尚待 POC 以完整
@@ -116,11 +118,10 @@ Pending Core M4a contract intake：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_h
 
 Blocking M1 / real candidate entry：
 
-- P4-A01 至 P4-A10 evidence 已完成；依 Core receipt
-  `DELIVERY-AUDIO-POC-M3-P4-ACK-003`，仍須回交完整 machine-readable P4 return
-  packet、manifest-relative raw retention/config/result paths 與七項 decision
-  table，Core 才能評估 final selection ACK。此前 Option A implementation selection
-  gate 與 Core Audio real backend 仍受阻擋。
+- P4-A01 至 P4-A10 evidence、machine-readable P4 return packet、manifest-relative
+  raw retention/config/result paths 與七項 decision table 已回交。Core final
+  selection ACK 前，Option A implementation selection gate 與 Core Audio real
+  backend 仍受阻擋。
 - 完成 fixture catalog、授權/checksum、normalization/label 與 metric definition
   review，使 frozen gate 可標為 `FROZEN`。
 - 將 `DELIVERY-AUDIO-POC-M4A-CONTRACT-001` 與本 milestone 規劃一併納入下一個

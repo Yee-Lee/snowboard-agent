@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "result": "PASS",
+  "tests": {
+    "P4-A01": "PASS",
+    "P4-A02": "PASS",
+    "P4-A03": "PASS",
+    "P4-A04": "PASS",
+    "P4-A05": "PASS",
+    "P4-A06": "PASS",
+    "P4-A07": "PASS",
+    "P4-A08": "PASS",
+    "P4-A09": "PASS",
+    "P4-A10": "PASS"
+  },
+  "sanitized_evidence": [
+    "poc_audio/evidence/m3_option_a/P4-A01-A10-001.md",
+    "poc_audio/evidence/m3_option_a/P4-A02-A05-001.md",
+    "poc_audio/evidence/m3_option_a/P4-A06-A09-001.md",
+    "poc_audio/evidence/m3_option_a/P4-A10-RERUN-002.md"
+  ]
+}
