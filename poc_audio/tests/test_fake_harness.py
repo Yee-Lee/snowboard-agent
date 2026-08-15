@@ -517,8 +517,8 @@ class TrackedDocumentTests(unittest.TestCase):
         samples.extend([0] * 4800)
         proposal = propose_intervals(samples, 48000)
         self.assertEqual(proposal["method"], "energy_assisted_proposal_requires_human_review")
-        self.assertEqual(len(proposal["speech_intervals_ms"]), 2)
-        self.assertEqual(len(proposal["internal_pause_candidates_ms"]), 1)
+        self.assertEqual(proposal["utterance_interval_ms"], [100, 700])
+        self.assertEqual(proposal["largest_internal_pause_candidate_ms"], [300, 500])
 
     def test_monitor_duplicates_the_requested_channel_without_gain(self) -> None:
         import tempfile

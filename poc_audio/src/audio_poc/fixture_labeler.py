@@ -57,7 +57,7 @@ def propose_intervals(samples: array.array[int], sample_rate_hz: int) -> dict[st
                 runs.append([start, index])
             start = None
     runs = _merge_runs(runs, MAX_JOIN_GAP_MS // WINDOW_MS)
-    intervals = [[start * WINDOW_MS, end * WINDOW_MS] for start, end in runs]
+    active_intervals = [[start * WINDOW_MS, end * WINDOW_MS] for start, end in runs]
     pause_candidates = [
         [left[1] * WINDOW_MS, right[0] * WINDOW_MS]
         for left, right in zip(runs, runs[1:])
@@ -68,8 +68,11 @@ def propose_intervals(samples: array.array[int], sample_rate_hz: int) -> dict[st
         "energy_floor_dbfs": round(floor, 2),
         "energy_ceiling_dbfs": round(ceiling, 2),
         "energy_threshold_dbfs": round(threshold, 2),
-        "speech_intervals_ms": intervals,
-        "internal_pause_candidates_ms": pause_candidates,
+        "raw_active_intervals_ms": active_intervals,
+        "utterance_interval_ms": [active_intervals[0][0], active_intervals[-1][1]] if active_intervals else None,
+        "largest_internal_pause_candidate_ms": max(
+            pause_candidates, key=lambda interval: interval[1] - interval[0], default=None
+        ),
         "method": "energy_assisted_proposal_requires_human_review",
     }
 
@@ -96,6 +99,16 @@ def propose_labels(plan_path: Path, artifact_dir: Path) -> dict[str, Any]:
         if sys.byteorder != "little":
             values.byteswap()
         proposal = propose_intervals(values[0::2], rate)
+        utterance = proposal.pop("utterance_interval_ms")
+        pause = proposal.pop("largest_internal_pause_candidate_ms")
+        if utterance is None:
+            speech_intervals = []
+        elif item.vad_class == "clear_speech":
+            speech_intervals = [utterance]
+        elif pause is None:
+            speech_intervals = [utterance]
+        else:
+            speech_intervals = [[utterance[0], pause[0]], [pause[1], utterance[1]]]
         proposals.append(
             {
                 "fixture_id": item.fixture_id,
@@ -103,6 +116,8 @@ def propose_labels(plan_path: Path, artifact_dir: Path) -> dict[str, Any]:
                 "category": item.category,
                 "native_sha256": record["sha256"],
                 "review_status": "PROPOSED_REQUIRES_HUMAN_REVIEW",
+                "speech_intervals_ms": speech_intervals,
+                "internal_pause_candidate_ms": pause,
                 **proposal,
             }
         )
