@@ -1,9 +1,10 @@
-"""M3 strict config tests; Audio CFG-002 stays blocked by P4 selection."""
+"""M3 strict display and P4-selected Audio Option A config tests."""
 
 from __future__ import annotations
 
 import ctypes
 import hashlib
+import sys
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,28 @@ core:
     gpio_chip_index: 0
     dc_bcm: 24
     reset_bcm: 25
+{override}
+"""
+
+
+def _alsa_yaml(override: str = "") -> str:
+    return f"""
+core:
+  audio:
+    driver: alsa
+    input:
+      device: hw:0,0
+      native_format: {{sample_rate: 48000, channels: 2, sample_format: s32_le}}
+      stream_format: {{sample_rate: 16000, channels: 1, sample_format: s16_le}}
+      frame_duration_ms: 20
+      channel_index: 0
+      valid_bits: 24
+      valid_bits_alignment: msb
+      resampler: samplerate.sinc_best
+    output:
+      device: hw:0,0
+      native_format: {{sample_rate: 48000, channels: 2, sample_format: s32_le}}
+      stream_format: {{sample_rate: 48000, channels: 2, sample_format: s32_le}}
 {override}
 """
 
@@ -85,7 +108,31 @@ def test_m3_cfg_001(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert generic_config.core.display.gpio_chip_index is None
     assert generic_config.core.display.dc_bcm is None
 
-    blocked = tmp_path / "audio.yaml"
-    blocked.write_text("core:\n  audio:\n    driver: alsa\n")
-    with pytest.raises(ConfigValueError, match="P4 final selection ACK"):
-        load_config(local_path=blocked, environ={})
+
+
+def test_m3_cfg_002(tmp_path: Path) -> None:
+    valid = tmp_path / "alsa.yaml"
+    valid.write_text(_alsa_yaml())
+    config = load_config(local_path=valid, environ={})
+    assert config.core.audio.input.resampler == "samplerate.sinc_best"
+    assert config.core.audio.output.stream_format.sample_rate == 48_000
+
+    modules_before = set(sys.modules)
+    mutations = {
+        "plughw": _alsa_yaml().replace("hw:0,0", "plughw:0,0", 1),
+        "native": _alsa_yaml().replace("sample_rate: 48000, channels: 2, sample_format: s32_le", "sample_rate: 16000, channels: 1, sample_format: s16_le", 1),
+        "channel": _alsa_yaml().replace("channel_index: 0", "channel_index: 2"),
+        "valid-bits": _alsa_yaml().replace("valid_bits: 24", "valid_bits: 16"),
+        "alignment": _alsa_yaml().replace("valid_bits_alignment: msb", "valid_bits_alignment: lsb"),
+        "resampler": _alsa_yaml().replace("samplerate.sinc_best", "drop-every-third"),
+        "output": _alsa_yaml().replace("stream_format: {sample_rate: 48000, channels: 2, sample_format: s32_le}", "stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}"),
+        "missing": _alsa_yaml().replace("      resampler: samplerate.sinc_best\n", ""),
+    }
+    for name, payload in mutations.items():
+        candidate = tmp_path / f"{name}.yaml"
+        candidate.write_text(payload)
+        with pytest.raises(ConfigValueError, match=r"core\.audio"):
+            load_config(local_path=candidate, environ={})
+    assert not {"alsaaudio", "samplerate"}.intersection(
+        set(sys.modules).difference(modules_before)
+    )

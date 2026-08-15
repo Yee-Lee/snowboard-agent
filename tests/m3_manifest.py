@@ -15,21 +15,20 @@ Platform = Literal["DEV-PY311", "RPI-NATIVE"]
 
 _IMPLEMENTED_IDS = frozenset({
     "M3-HAL-001", "M3-HAL-002", "M3-AUD-001", "M3-AUD-002",
+    "M3-AUD-003", "M3-AUD-004", "M3-CFG-002",
     "M3-DSP-001", "M3-DSP-002", "M3-CAM-001", "M3-GPIO-001",
     "M3-GPIO-002", "M3-ARB-001", "M3-ARB-002", "M3-ARB-003",
     "M3-ARB-004", "M3-ARB-005", "M3-ARB-006", "M3-ARB-007",
     "M3-REND-001", "M3-REND-002", "M3-REND-003", "M3-REND-004",
     "M3-REND-005", "M3-SCN-001", "M3-CFG-001", "M3-REG-001",
-})
-
-_BLOCKED_IDS = frozenset({
-    "M3-AUD-003", "M3-AUD-004", "M3-CFG-002",
     "M3-BTN-001", "M3-BTN-002", "M3-BTN-003", "M3-BTN-004", "M3-BTN-005",
     "M3-AUDI-001", "M3-AUDI-002", "M3-AUDI-003", "M3-AUDI-004",
     "M3-CAMI-001", "M3-CAMI-002", "M3-CAMI-003",
     "M3-DSPI-001", "M3-DSPI-002", "M3-DSPI-003", "M3-DSPI-004",
     "M3-DSPI-005", "M3-DSPI-006", "M3-GPIOI-001", "M3-GPIOI-002",
 })
+
+_BLOCKED_IDS = frozenset()
 
 
 @dataclass(frozen=True, slots=True)

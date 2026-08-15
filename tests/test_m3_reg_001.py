@@ -18,6 +18,6 @@ def test_m3_reg_001() -> None:
     assert all(record.planned_node and "::test_m3_" in record.planned_node for record in M3_TEST_RECORDS)
     assert sum(record.platform == "DEV-PY311" for record in M3_TEST_RECORDS) == 27
     assert sum(record.platform == "RPI-NATIVE" for record in M3_TEST_RECORDS) == 20
-    assert len(implemented_nodes()) == 24
-    assert len(blocked_test_ids()) == 23
+    assert len(implemented_nodes()) == 47
+    assert len(blocked_test_ids()) == 0
     assert pending_test_ids() == ()

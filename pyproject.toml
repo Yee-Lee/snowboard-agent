@@ -16,7 +16,12 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-asyncio",
-    "numpy>=1.26"
+    "numpy>=1.26",
+    "samplerate==0.2.4"
+]
+rpi-audio = [
+    "pyalsaaudio==0.11.0",
+    "samplerate==0.2.4"
 ]
 
 [tool.setuptools.package-data]

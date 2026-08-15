@@ -34,16 +34,23 @@ def _session_skeleton(rm):
 
 
 def test_m3_hal_001() -> None:
+    modules_before = set(sys.modules)
     for driver in ("null", "mock"):
         assert make_audio_input(AudioConfig(driver=driver)) is not None
         assert make_audio_output(AudioConfig(driver=driver)) is not None
         assert make_display(DisplayConfig(driver=driver)) is not None
         assert make_camera(CameraConfig(driver=driver)) is not None
     assert make_gpio(GPIOConfig(driver="mock")) is not None
-    forbidden = {"sounddevice", "picamera2", "gpiod", "samplerate"}
-    roots = {name.split(".", 1)[0] for name in sys.modules}
+    forbidden = {"alsaaudio", "sounddevice", "picamera2", "gpiod", "samplerate"}
+    roots = {
+        name.split(".", 1)[0]
+        for name in set(sys.modules).difference(modules_before)
+    }
     assert forbidden.isdisjoint(roots)
-    assert not any("ssd1351" in name for name in sys.modules)
+    assert not any(
+        "ssd1351" in name
+        for name in set(sys.modules).difference(modules_before)
+    )
 
 
 def test_m3_hal_002() -> None:

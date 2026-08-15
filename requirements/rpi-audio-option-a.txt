@@ -1,0 +1,8 @@
+# M3 Option A production pins — DELIVERY-AUDIO-POC-M3-P4-ACK-004
+# Install on the verified Pi clean-build flow with package indexes disabled.
+# The SHA-256 values are the POC-verified sdists; wheels and native artifacts
+# are target evidence and are never committed to Core Git.
+pyalsaaudio==0.11.0 \
+    --hash=sha256:a78a9dca33524b2c9064b34e21f5ab874272313cf324a9a77592f396a5e0fddc
+samplerate==0.2.4 \
+    --hash=sha256:c44dcb6fe680246f8f36588ba1f0fc7a0c5fbce710ad5e9b3812d88e8c39ac7d

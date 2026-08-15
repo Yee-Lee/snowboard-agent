@@ -187,9 +187,7 @@ def validate_config(config: 'AppConfig'):
     if ac.driver in {"mock", "null"} and any(value is not None for value in audio_real_fields):
         raise ConfigValueError("core.audio mock/null cannot contain real-only fields")
     if ac.driver == "alsa":
-        raise ConfigValueError(
-            "core.audio.driver=alsa is blocked until Audio P4 final selection ACK"
-        )
+        _validate_alsa_option_a(ac)
     if ac.driver not in {"mock", "null", "alsa"}:
         raise ConfigValueError(f"core.audio.driver is unsupported: {ac.driver}")
 
@@ -278,3 +276,49 @@ def _validate_ssd1351(display) -> None:
         )
     if display.dc_bcm == display.reset_bcm or {display.dc_bcm, display.reset_bcm} & {8, 10, 11}:
         raise ConfigValueError("core.display DC/reset pins conflict with selected SPI fixture")
+
+
+def _validate_alsa_option_a(audio) -> None:
+    """Validate the P4-selected M3 Option A mapping before any ALSA import."""
+    input_config, output_config = audio.input, audio.output
+    required = {
+        "input.device": input_config.device,
+        "input.native_format": input_config.native_format,
+        "input.channel_index": input_config.channel_index,
+        "input.valid_bits": input_config.valid_bits,
+        "input.valid_bits_alignment": input_config.valid_bits_alignment,
+        "input.resampler": input_config.resampler,
+        "output.device": output_config.device,
+        "output.native_format": output_config.native_format,
+    }
+    for field, value in required.items():
+        if value is None:
+            raise ConfigValueError(f"core.audio.{field} is required for alsa")
+    for path, device in (("input", input_config.device), ("output", output_config.device)):
+        if not device.startswith("hw:") or device.startswith("plughw:"):
+            raise ConfigValueError(f"core.audio.{path}.device must be a direct hw: device")
+
+    native = (48_000, 2, "s32_le")
+    stream = (16_000, 1, "s16_le")
+
+    def fields(fmt):
+        return (fmt.sample_rate, fmt.channels, fmt.sample_format)
+
+    if fields(input_config.native_format) != native:
+        raise ConfigValueError("core.audio.input.native_format must be 48000/2/s32_le")
+    if fields(input_config.stream_format) != stream:
+        raise ConfigValueError("core.audio.input.stream_format must be 16000/1/s16_le")
+    if input_config.frame_duration_ms != 20:
+        raise ConfigValueError("core.audio.input.frame_duration_ms must be 20")
+    if input_config.channel_index not in {0, 1}:
+        raise ConfigValueError("core.audio.input.channel_index must be 0 or 1")
+    if input_config.valid_bits != 24:
+        raise ConfigValueError("core.audio.input.valid_bits must be 24")
+    if input_config.valid_bits_alignment != "msb":
+        raise ConfigValueError("core.audio.input.valid_bits_alignment must be msb")
+    if input_config.resampler != "samplerate.sinc_best":
+        raise ConfigValueError("core.audio.input.resampler must be samplerate.sinc_best")
+    if fields(output_config.native_format) != native or fields(output_config.stream_format) != native:
+        raise ConfigValueError(
+            "core.audio.output native_format and stream_format must be 48000/2/s32_le"
+        )

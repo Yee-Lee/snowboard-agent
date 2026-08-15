@@ -44,12 +44,19 @@ def _overlay_dict(
                 return _overlay_dict(base, overlay, path, candidate, path_base)
             except ConfigError as exc:
                 errors.append(exc)
+        if len(errors) == 1:
+            raise errors[0]
         expected = " | ".join(getattr(arg, "__name__", str(arg)) for arg in get_args(field_type))
         raise ConfigTypeError(f"{path} must match {expected}") from (errors[-1] if errors else None)
 
     if _is_dataclass(field_type):
         if not isinstance(overlay, dict):
             raise ConfigTypeError(f"{path} must be a mapping, got {type(overlay).__name__}")
+
+        # Optional nested config dataclasses (for example Audio native_format)
+        # have no base instance when first supplied by a local config.
+        if base is None:
+            return _instantiate_dataclass(field_type, overlay, path, path_base)
 
         kwargs = {}
         for f in dataclasses.fields(field_type):
