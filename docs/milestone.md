@@ -31,11 +31,15 @@
 M1 純軟體核心
  └── M2 Mock 對話垂直切片
       └── M3 Raspberry Pi HAL 與硬體 bring-up
-           └── M4 本機 AI 語音主線
-                └── M5 外部訊息與工具
-                     └── M6 語音喚醒、視覺輸入與整體收斂
-                          └── M7 Display UX 完整化
+           └── M4 本機 AI 語音主線（M4a + M4b + M4c 同 SHA 通過）
+                └── ALPHA Voice-only 產品化收斂 Gate
+                     └── M5 外部訊息與工具
+                          └── M6 語音喚醒、視覺輸入與整體收斂
+                               └── M7 Display UX 完整化
+                                    └── BETA 全能力產品收斂 Gate
 ```
+
+> `ALPHA` 與 `BETA` 為產品成熟度 Gate，不是功能 milestone。`M4 Accepted` 不推定 `ALPHA Accepted`；`M7 Accepted` 不推定 `BETA Accepted`。詳見 `docs/milestones/ALPHA.md` 與 `docs/milestones/BETA.md`。
 
 後一階段必須在前一階段驗收通過後開始。若前一階段只完成部分功能，不以 feature flag 或「已知失敗」跳過其 gate。
 
@@ -70,9 +74,11 @@ M1 純軟體核心
 | **M2** | 使用 mock / null 完成可啟動、可對話、可收斂的垂直切片 | 開發機 | `Ch 2a / 2b / 7 / 9` |
 | **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 selected Display profile | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display_spec.md` selected profile、Core 已採用的 Audio / Display POC contract |
 | **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、`model spec M4 baseline` |
-| **M5** | 依 Accepted M4 exact SHA 擴充 MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
+| **ALPHA** | Voice-only 產品化收斂 Gate：固定 hardware / config / model / dependency / manifest，驗證可重現 session / soak / failure / recovery / shutdown / resource / privacy | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted exact SHA |
+| **M5** | 依 ALPHA Accepted exact SHA 擴充 MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
 | **M7** | 正式 Display 版面、資產、動畫與視覺 UX 完整化 | Raspberry Pi 5 | `Ch 8`、M7 開發前核准的 `display_spec.md` revision |
+| **BETA** | 全能力產品收斂 Gate：在同一 Beta 候選 SHA 重跑 M4 ~ M7 regression，涵蓋長時間穩定、診斷、manifest inventory | Raspberry Pi 5 | `docs/milestones/BETA.md`；M7 Accepted exact SHA |
 
 ---
 

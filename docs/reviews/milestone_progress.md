@@ -120,6 +120,30 @@ Response：`docs/outsource/responses/OUT-M4B-2026-001.md`（`PM-OUT-260814-011` 
 
 ---
 
+## ALPHA / BETA Gate Forward Planning
+
+依 `PM-OUT-260814-012` (`OUT-ROADMAP-2026-001`) 新增。ALPHA 與 BETA 為產品成熟度 Gate，不是功能 milestone，分別分開記錄。
+
+| Gate | 狀態 | 阻擋 / 備註 |
+| :--- | :--- | :--- |
+| ALPHA Design Ready | `PENDING` | 阻擋：M4 Accepted；需 Tester 完成 `test_spec_ALPHA.md` 並由 Designer 簽核（`TR_spec_ALPHA_I`） |
+| ALPHA Accepted | `PENDING` | 阻擋：ALPHA Design Ready；Tester 驗收 + Designer CR；ALPHA Accepted 是 M5 entry 唯一 baseline SHA |
+| BETA Design Ready | `PENDING` | 阻擋：M7 Accepted 且 ALPHA Accepted；需 Tester 完成 `test_spec_BETA.md` 並由 Designer 簽核（`TR_spec_BETA_I`） |
+| BETA Accepted | `PENDING` | 阻擋：BETA Design Ready；Tester 對同一 Beta 候選 SHA 重跑 M4 ~ M7 regression + Designer CR |
+
+### Architecture Change Declaration
+
+依 `PM-OUT-260814-012` 要求，針對 ALPHA / BETA gate 新增：
+
+| 項目 | 結論 | 理由 |
+| :--- | :--- | :--- |
+| systemd / supervisor | **不引入** | 操作部署外部獨立處理；不在 Core 文件範圍 |
+| deployment / persistent config | **不引入** | ALPHA 固定化只記錄文件與 manifest，不實作新 deployment 機制 |
+| process ownership | **無變更** | 沿用 `arch.md` 現有定義，ALPHA/BETA 不新增 process 角色 |
+| update / rollback | **不引入** | 外部獨立處理 |
+
+**Architecture change: No**（`PM-OUT-260814-012` `OUT-ROADMAP-2026-001` 聲明）
+
 ## 下一動作順序
 
 1. ~~Reviewer 複審 `IR_review_III` 與 `MR_review_II`~~ — **Done**（`IR_review_III`、`MR_review_II` 已 Resolved）
