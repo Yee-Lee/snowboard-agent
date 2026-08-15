@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import array
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -15,8 +16,8 @@ from typing import Any
 from .fixture_recorder import discover_voicehat_device
 
 
-def _write_preview(source: Path, destination: Path, start_ms: int, end_ms: int) -> None:
-    """Write a temporary dual-mono S32 preview; source audio is never modified."""
+def _write_preview(source: Path, destination: Path, start_ms: int, end_ms: int) -> float:
+    """Write a temporary peak-normalized dual-mono preview; source is immutable."""
     with wave.open(str(source), "rb") as input_wav:
         rate = input_wav.getframerate()
         start = max(0, start_ms * rate // 1000)
@@ -27,9 +28,13 @@ def _write_preview(source: Path, destination: Path, start_ms: int, end_ms: int) 
     values.frombytes(payload)
     if sys.byteorder != "little":
         values.byteswap()
+    channel = values[0::2]
+    peak = max((abs(value) for value in channel), default=0)
+    gain = min(10 ** (24 / 20), (2147483647 * 0.7079 / peak) if peak else 1.0)
     dual = array.array("i")
-    for value in values[0::2]:
-        dual.extend((value, value))
+    for value in channel:
+        scaled = max(-2147483648, min(2147483647, round(value * gain)))
+        dual.extend((scaled, scaled))
     if sys.byteorder != "little":
         dual.byteswap()
     with wave.open(str(destination), "wb") as output_wav:
@@ -37,6 +42,7 @@ def _write_preview(source: Path, destination: Path, start_ms: int, end_ms: int) 
         output_wav.setsampwidth(4)
         output_wav.setframerate(rate)
         output_wav.writeframes(dual.tobytes())
+    return round(20 * math.log10(gain), 2)
 
 
 def _preview_ranges(proposal: dict[str, Any]) -> list[tuple[str, int, int]]:
@@ -78,8 +84,8 @@ def review(proposals_path: Path, artifact_dir: Path, output_path: Path, playback
         while True:
             for label, start, end in _preview_ranges(proposal):
                 preview = preview_dir / f"{fixture_id}-{label}.wav"
-                _write_preview(source, preview, start, end)
-                print(f"playing {label}: {start}..{end} ms")
+                gain_db = _write_preview(source, preview, start, end)
+                print(f"playing {label}: {start}..{end} ms (preview gain {gain_db:+.2f} dB)")
                 subprocess.run(["aplay", "--device", playback_device, str(preview)], check=True)
             answer = input("Enter=accept, r=replay, q=quit, or override times: ").strip().lower()
             if not answer:
