@@ -7,7 +7,7 @@
 使用完整 SHA 固定的產品 M3 Audio HAL 與目標 Pi 5/I2S 硬體重跑 finalists，證明固定 WAV/text 結果能在真實 capture/playback、外殼與環境中成立。
 
 本 milestone 也是
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 HAL
 與 Pi 資源重跑，再以完整 40-character SHA 回交 P1–P12 manifest，
 等待 Core Gate 2 ACK 與 final winner ACK。

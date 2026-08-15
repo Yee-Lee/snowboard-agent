@@ -7,7 +7,7 @@
 證明 M3 hardware-qualified winners 在同一 Pi 5 離線、同時常駐、連續 session 與 failure injection 下仍符合 gate，並形成可進入 internal review 的完整 delivery package。
 
 M4 也會 audit
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 Gate 1/2 ACK、winner/no-go 與 return SHA，但 Core Gate 3 production implementation/
 acceptance 屬 Core repo 後續工作，不得被 Audio POC 自行宣告完成。
 

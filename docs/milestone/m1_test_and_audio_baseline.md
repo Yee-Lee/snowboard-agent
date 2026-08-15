@@ -82,12 +82,12 @@ Latest P4 clean-build evidence：[P4 A10 rerun](../../poc_audio/evidence/m3_opti
 `de3b0bab4daaf47f62956d4b27f6697b3d4fa823` is `PASS`; the reproducibility
 [request](../../poc_audio/deliveries/CR-AUDIO-M3-P4-REPRO-002.md) is closed.
 
-Core Final Selection ACK：[DELIVERY-AUDIO-POC-M3-P4-ACK-004](../pm_handoff/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md)
+Core Final Selection ACK：[DELIVERY-AUDIO-POC-M3-P4-ACK-004](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md)
 — Core Designer 已審查完整 [P4 return packet](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md)
 並正式發出 `ACCEPTED — M3 AUDIO REAL PACKAGE MAY START`；Option A 實作基準正式核准，
 M4a Gate 0 已解除。歷史中介收件確認見 [ACK-003](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md)。
 
-Active Core M4a contract：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+Core M4a contract：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 — 本 contract Gate 0 已由 Core ACK-004 通過；待 POC 提交 ASR/TTS 候選清單申請 Gate 1 授權。
 
 ## 目標

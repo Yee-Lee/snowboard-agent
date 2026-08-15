@@ -7,7 +7,7 @@
 用 M1 固定的方法比較所有核准候選，淘汰不具交付資格者，為每一類產出可進入真實硬體整合的 finalist；此階段結果仍須通過 M3/M4 才能成為最終 winner。
 
 本 milestone 同時承接
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 Gate 1：POC 先回交 candidate/version/source hash/license/Pi build proposal，只對
 Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence 的累積，
 不是 Core final winner ACK。
