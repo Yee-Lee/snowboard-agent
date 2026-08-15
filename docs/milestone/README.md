@@ -5,18 +5,17 @@
 ## Current Status
 
 最後更新：2026-08-15
-最終交付可達性：`ON_TRACK` — M0 readiness gate 已完成；deterministic fake
-與 40-item fixture Pilot 已由 Tester 在 Pi 以完整 SHA 重現通過；P4-A01 至 A10
-已由 Core Designer 審核通過並發出正式 `DELIVERY-AUDIO-POC-M3-P4-ACK-004`
-(ACCEPTED)，M4a Gate 0 正式解除；正式 100-item fixture native acquisition、
-技術驗收與抽樣聽檢已通過，待 delivered-format/catalog/metric freeze review
-關閉以完成 M1 exit。
+最終交付可達性：`ON_TRACK` — M0 readiness gate 與 M1 共同測試基線已全數完成；
+Option A P4-A01 至 A10 已獲 Core ACK-004 核准，M4a Gate 0 正式通過；
+100 筆 native 與 delivered fixture、VAD timing labels 及 evaluation metrics
+已獲 User/Designer 核准並完成凍結（FROZEN）。M1 正式完成（COMPLETE），
+準備進入 M2 Gate 1 候選評測授權。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
-| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A P4-A01–A10 完整回交封裝已獲 Core ACK-004 正式核准；Formal 100-item acquisition、technical review 與 sampled listening `PASS WITH OBSERVATION`；待 fixture freeze review 關閉以進行 M1 exit | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `NOT_STARTED` | M4a Gate 0 已由 Core ACK-004 關閉；待 Gate 1 書面授權後執行 VAD/ASR/TTS 隔離候選比較，累積 Gate 2 evidence | [M2](m2_candidate_evaluation.md) |
+| M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture (native & delivered)、VAD timing labels 與評測門檻全數凍結 (FROZEN) | [M1](m1_test_and_audio_baseline.md) |
+| M2 | `NOT_STARTED` | M4a Gate 0 已通過；待提交 ASR/TTS 候選清單獲取 Gate 1 書面授權後展開候選評測 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2 P1–P12 回交與 winner ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、M4a ACK audit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 

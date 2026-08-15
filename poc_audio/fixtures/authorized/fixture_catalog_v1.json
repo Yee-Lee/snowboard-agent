@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "catalog_id": "m1-authorized-fixture-catalog-v1",
-  "status": "REVIEW_IN_PROGRESS / NOT_FROZEN",
+  "status": "FROZEN",
   "authorization": {
     "scope": "internal_audio_poc_evaluation_only",
     "redistribution": "prohibited",
@@ -37,7 +37,7 @@
     "reference_source": "recording_plan_v1.json:utterances[].reference_text",
     "categories": ["taiwan_mandarin", "code_switch", "number", "date", "product_term"],
     "normalization_definition": "poc_audio/fixtures/metrics_v1.md#asr",
-    "normalization_status": "REVIEW_READY"
+    "normalization_status": "FROZEN"
   },
   "vad": {
     "label_source": "review/vad-labels-v1.json",

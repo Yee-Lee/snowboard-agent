@@ -1,7 +1,7 @@
-# M1 Frozen-Gate Decision Record — Draft
+# M1 Frozen-Gate Decision Record
 
-狀態：`DESIGNER_APPROVED / NOT FROZEN`
-最後更新：2026-08-08  
+狀態：`FROZEN`
+最後更新：2026-08-15  
 決策者（Designer）：User
 驗證者（Tester）：Assistant / Test Controller
 
@@ -117,11 +117,11 @@ M1 結束前至少要填入下表；branch 名稱不是完成交付的替代品�
 | --- | --- | --- | --- |
 | Target hardware topology is correct | User / Designer | 2026-08-08 | INMP441 + MAX98357A + shared I2S + VoiceHAT overlay |
 | Controlled fixture recording authorization | User / Designer | 2026-08-09 | Internal POC evaluation only; no public release, redistribution, or Git storage of raw audio |
-| Fixture operational Pilot | User / Designer + Assistant / Test Controller | 2026-08-09 | [M1-FIXTURE-PILOT-001](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-001.md) `PASS`; formal fixture acceptance remains pending |
+| Fixture operational Pilot | User / Designer + Assistant / Test Controller | 2026-08-09 | [M1-FIXTURE-PILOT-001](../../poc_audio/evidence/m1/M1-FIXTURE-PILOT-001.md) `PASS` |
 | Pilot ASR observation-only preflight | User / Designer | 2026-08-09 | [CR-M1-PILOT-PREFLIGHT-001](../../poc_audio/deliveries/CR-M1-PILOT-PREFLIGHT-001.md); no candidate decision is permitted |
-| Fixture sets and metric definitions are accepted | `PENDING` | `PENDING` | `PENDING` |
+| Fixture sets and metric definitions are accepted | User / Designer + Assistant / Test Controller | 2026-08-15 | [DELIVERY-M1-FIXTURE-METRICS-FREEZE-001](../../poc_audio/deliveries/DELIVERY-M1-FIXTURE-METRICS-FREEZE-001.md) `PASS / FROZEN` |
 | Numeric advance gates are approved | User / Designer | 2026-08-08 | Adopt the initial values in section 4 |
 | Tester reproduced harness and cleanup checks | Assistant / Test Controller | 2026-08-08 | `334825330d8a5a66bddf1a2c64ae80c737aa552a`; [M1-FAKE-001](../../poc_audio/evidence/m1/M1-FAKE-001.md) `PASS` |
 
-完成四項核准、M1 entry conditions 與 deterministic fake baseline 後，才可把本
-文件改為 `FROZEN`，並由 milestone index 明確將 M1 改為 `IN_PROGRESS`。
+完成全數核准、M1 entry conditions 與 deterministic baseline 後，本文件正式標記為
+`FROZEN`。M1 測試基線與凍結門檻全數就緒。

@@ -1,9 +1,9 @@
 # M1：共同測試基線與 co-I2S Capability
 
-狀態：`CHANGE_REQUESTED`
+狀態：`COMPLETE`
 
-Frozen-gate decision record：[M1 Frozen-Gate Draft](m1_frozen_gates_draft.md)
-（狀態為 `DESIGNER_APPROVED / NOT FROZEN`；真實 candidate run 尚未獲准。）
+Frozen-gate decision record：[M1 Frozen-Gate Record](m1_frozen_gates_draft.md)
+（狀態為 `FROZEN`；真實 candidate run 與比較門檻已全數凍結。）
 
 Developer progress：[Audio POC Developer Progress — M1](../reviews/dev_progress_M1.md)
 （P4、Formal 60-item fixture 與 M1 gate review 的工作拆包及執行順序。）
@@ -53,6 +53,15 @@ Current Formal fixture review：[M1 Formal Fixture Sampling](../../poc_audio/evi
 — exact 60-item complement technical review and User/Designer 10 / 10 speech
 listening sample are `PASS WITH OBSERVATION`; seven isolated near-full-scale
 source samples remain a non-blocking review observation.
+
+Current VAD labels finding：[M1 Fixture VAD Labels Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-VAD-LABELS-001.md)
+— 50/50 timing labels (25 clear, 25 pause) human-reviewed and verified `PASS`.
+
+Current Delivered fixture finding：[M1 Delivered Fixture Evidence](../../poc_audio/evidence/m1/M1-FIXTURE-DELIVERY-001.md)
+— 100/100 Core-selected Option A 16 kHz mono S16_LE WAVs and manifest cross-validation `PASS`.
+
+Current Fixture and Metric Freeze Packet：[DELIVERY-M1-FIXTURE-METRICS-FREEZE-001](../../poc_audio/deliveries/DELIVERY-M1-FIXTURE-METRICS-FREEZE-001.md)
+— `ACCEPTED / FROZEN`; fixture catalog, metadata, and metric evaluation rules all frozen.
 
 Core design-correction delivery：[DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001](../../poc_audio/deliveries/DELIVERY-AUDIO-POC-M3-DESIGN-CORRECTION-001.md)
 （User/Designer 已批准 Option A；Core Designer 已接受方向，仍須完成 P4。）

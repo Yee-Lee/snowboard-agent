@@ -1,10 +1,13 @@
 # M1 Fixture and Metric Definitions v1
 
-Status: `PROPOSED / NOT FROZEN`
+Status: `FROZEN`
+Frozen date: 2026-08-15
+Approver (Designer): User
+Verifier (Tester): Test Controller
 
 These definitions make the approved numeric gates reproducible. They apply to
-all candidates in the same comparison set and may change only through gate
-review before real candidate results are disclosed.
+all candidates in the same comparison set and may change only through change
+request before real candidate results are disclosed.
 
 ## Common rules
 
