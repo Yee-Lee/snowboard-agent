@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import array
 import json
 import sys
 import unittest
@@ -25,6 +26,7 @@ from audio_poc.fixture_recorder import (  # noqa: E402
 )
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
 from audio_poc.fixture_review import review_collection  # noqa: E402
+from audio_poc.fixture_labeler import propose_intervals  # noqa: E402
 from audio_poc.fixture_preflight import (  # noqa: E402
     MANIFEST_NAME as PREFLIGHT_MANIFEST_NAME,
     prepare_pilot,
@@ -506,6 +508,17 @@ class TrackedDocumentTests(unittest.TestCase):
             self.assertEqual(review["result"], "PASS")
             self.assertEqual(len(review["stratified_sample"]), 14)
             self.assertEqual(review["semantic_content_review"], "requires_authorized_human_listener")
+
+    def test_fixture_labeler_proposes_two_intervals_and_a_pause_without_claiming_ground_truth(self) -> None:
+        samples = array.array("i", [0] * 4800)
+        samples.extend([500_000_000] * 9600)
+        samples.extend([0] * 9600)
+        samples.extend([500_000_000] * 9600)
+        samples.extend([0] * 4800)
+        proposal = propose_intervals(samples, 48000)
+        self.assertEqual(proposal["method"], "energy_assisted_proposal_requires_human_review")
+        self.assertEqual(len(proposal["speech_intervals_ms"]), 2)
+        self.assertEqual(len(proposal["internal_pause_candidates_ms"]), 1)
 
     def test_monitor_duplicates_the_requested_channel_without_gain(self) -> None:
         import tempfile
