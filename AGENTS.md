@@ -17,14 +17,21 @@ Read these only when the task needs them:
   result semantics, roles, milestone gates/status, test packets, Git/Pi work,
   data/artifact handling, delivery handoff, or when the shorter documents are
   ambiguous.
-- `docs/milestone/llm_delivery_gate_draft.md` — current repo-owned delivery mapping while the formal checklist is pending.
-- `docs/pm_handoff/llm_poc_delivery_checklist.md` — when delivered, milestone entry, gate review, delivery-manifest work.
-- `docs/pm_handoff/llm_poc_development_guide.md` — when delivered, POC code, wrappers, child process protocol.
-- `docs/pm_handoff/core_llm_m4b_tasks.md` — M4b boundary reference; its current status does not by itself authorize product integration.
+- `docs/pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md` — authoritative M4b LLM POC contract (read-only income).
+- `docs/pm_handoff/core_llm_m4b_tasks.md` — M4b boundary reference (read-only income).
 - `poc_llm/README.md` — workstation/Pi checkout preparation or remote test execution.
 
 Do not reread unchanged documents during the same task merely by habit. Follow
 links from the active milestone only when the current task needs that detail.
+
+## Document Handling & Communication Rules
+
+- **`docs/pm_handoff/` is Read-Only**: Incoming requirements, contracts, and handoff messages from PM / Core Team are strictly read-only.
+- **Handoff Archival (`docs/pm_handoff/history/`)**: When an incoming handoff message is completed, superseded, or no longer actively tracked, move it to `docs/pm_handoff/history/`. Do not delete incoming message records.
+- **Team Responses & Replies**:
+  - Use `docs/response/` for internal technical ACK, assessments, and requirement mapping (`ACK-*.md`).
+  - Use `docs/delivery/` for formal external handoffs and deliverables to be relayed by PM (`DELIVERY-*.md`).
+  - **Never edit or write responses directly inside `docs/pm_handoff/`**.
 
 ## Required Working Behavior
 
@@ -39,3 +46,4 @@ links from the active milestone only when the current task needs that detail.
 ## Final Outcome
 
 The POC must deliver an approved LiteRT-LM runtime, model baseline, prompt boundary, and child process protocol. The result must be reproducible on Raspberry Pi 5, offline, cancellable, clean after failure, integrated with an accepted M4a Audio HAL SHA, and proven with at least 20 combined sessions. Submission is only ready for internal review until all blocking findings are closed.
+

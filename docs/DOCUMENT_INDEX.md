@@ -1,32 +1,40 @@
-# Document Index (Income & Outcome)
+# Document Index (Income, Response, Delivery & Working Plan)
 
-這份文件用於追蹤我們從外部團隊（如 PM 或設計）收到的文件 (Income) 以及我們要交付給外部團隊的文件 (Outcome)。
+這份文件用於追蹤我們從外部團隊（PM / Core Team）收到的文件 (Income)、歷史已完成訊息 (Income History)、內部技術確認 (Response)、我們要交付給外部團隊的文件 (Delivery)，以及內部執行計畫 (Working Plan)。
 
-## Income (位於 `docs/pm_handoff/`)
-這些文件是從外部接收的任務、需求與檢查清單，對於開發團隊而言是**唯讀 (Read-only)** 的：
+## 1. Income (位於 `docs/pm_handoff/`)
+這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
-* `core_llm_m4b_tasks.md` - M4b LLM 任務需求與邊界規範
-* `llm_poc_delivery_checklist.md` - (待建立) LLM M4b 最終交付查檢表
-* `llm_poc_development_guide.md` - (待建立) LLM Child Process 開發指南
+* [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer 簽發之 M4b LLM POC 正式合約（Date: 2026-08-15）
+* [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
-*(註：原 Audio 團隊的交接文件如 `audio_poc_delivery_checklist.md` 等亦保留於此作為歷史參考)*
+## 2. Income History (位於 `docs/pm_handoff/history/`)
+已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
 
-## Working Plan (位於 `docs/milestone/`)
+* `DELIVERY-AUDIO-POC-M3-ACK-001.md` - (歷史) Audio M3 HAL 合約採用確認
+* `core_audio_m3_requirements.md` - (歷史) 舊主線 M3 音訊要求
+* `audio_poc_delivery_checklist.md` - (歷史) 舊 Audio 交付清單
+* `audio_poc_development_guide.md` - (歷史) 舊 Audio 開發指引
 
-以下是 repo-owned 工作文件，不冒充尚未交付的 PM/Designer Income：
+## 3. Response (位於 `docs/response/`)
+POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
 
-* `README.md` - LLM POC milestone 單一狀態入口
-* `llm_delivery_gate_draft.md` - 正式 checklist 交付前使用的 delivery mapping；狀態為 `NOT_FROZEN`
-* `m0_llm_readiness.md` - LLM environment/evidence-chain readiness
-* `m1_llm_contract_and_harness.md` - frozen contract、gates 與 deterministic harness
-* `m2_llm_candidate_evaluation.md` - runtime/model/quantization 候選比較
-* `m3_llm_child_pi_integration.md` - persistent child 與 Pi integration baseline
-* `m4_llm_combined_validation_and_delivery.md` - accepted M4a combined validation 與交付
+* [`ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - M4b 合約內部技術審查與 12 項測試指標承接確認
+* [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
-舊 Audio milestone 文件保留在 `docs/archive/audio_poc/milestone/` 作歷史參考；
-其狀態不適用於目前 LLM POC，且不會被活動 milestone 掃描讀取。
+## 4. Delivery (位於 `docs/delivery/`)
+我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
 
-## Outcome (位於 `docs/delivery/`)
-這些文件是我們要對外正式交付的紀錄，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
+* [`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md) - 回覆 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的 Gate 0 簽收回條與 Initial Manifest
 
-* (目前尚未有交付紀錄，未來將於此處新增)
+## 5. Working Plan (位於 `docs/milestone/`)
+Repo-owned 內部執行工作文件：
+
+* [`README.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/README.md) - LLM POC milestone 單一狀態入口
+* [`llm_delivery_gate_draft.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/llm_delivery_gate_draft.md) - 交付映射草案
+* [`m0_llm_readiness.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m0_llm_readiness.md) - LLM environment/evidence-chain readiness
+* [`m1_llm_contract_and_harness.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m1_llm_contract_and_harness.md) - 契約、門檻與 deterministic harness
+* [`m2_llm_candidate_evaluation.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m2_llm_candidate_evaluation.md) - runtime/model 候選初篩與比較
+* [`m3_llm_child_pi_integration.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m3_llm_child_pi_integration.md) - persistent child 與 Pi 整合
+* [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
+

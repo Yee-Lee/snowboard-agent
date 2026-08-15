@@ -168,17 +168,15 @@ hardware delivery SHA。若測試需要 artifact transfer，artifact checksum �
 - Offline、網路切換、安裝、reboot、privilege 或可能影響其他 Pi workload 的動作
   必須獨立取得 User 核准。
 
-## 10. Documents and State Maintenance
+## 10. Documents and Communication Channels
 
-- **Income (`docs/pm_handoff/`)**：PM/外部團隊交付的 requirements/checklists，對開發
-  團隊唯讀。尚未收到的文件不得自行在此目錄冒充 Income。
-- **Working plan (`docs/milestone/`)**：活動 milestone、repo-owned gate draft、風險與
-  evidence requirements。
-- **Outcome (`docs/delivery/`)**：正式對外交付，命名
-  `DELIVERY-{流水號}-{to_who}-{title}.md`。
-- **POC assets (`poc_llm/`)**：source、tests、tools、fixtures metadata、evidence index
-  與 POC delivery package。
-- `docs/DOCUMENT_INDEX.md` 追蹤 Income、Working plan 與 Outcome。
+- **Income (`docs/pm_handoff/`)**：PM/外部團隊交付的 requirements、contracts 與 handoff messages，對開發團隊**嚴格唯讀 (Read-only)**。本團隊禁止在 `docs/pm_handoff/` 中直接編輯或撰寫回覆。
+- **Income History (`docs/pm_handoff/history/`)**：已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息移至此目錄存檔，代表已完成不必重複追蹤。
+- **Response (`docs/response/`)**：內部技術確認、評估結果或對 Income 的內部 ACK 記錄（命名規範 `ACK-{TargetID}.md`）。
+- **Delivery (`docs/delivery/`)**：正式對外交付的文件，供 PM 轉交 Core Team/其他團隊，命名規範 `DELIVERY-{流水號}-{to_who}-{title}.md`。
+- **Working plan (`docs/milestone/`)**：活動 milestone、repo-owned gate draft、風險與 evidence requirements。
+- **POC assets (`poc_llm/`)**：source、tests、tools、fixtures metadata、evidence index 與 POC delivery package。
+- `docs/DOCUMENT_INDEX.md` 追蹤 Income、Income History、Response、Delivery 與 Working Plan。
 
 每次 milestone gate review 必須同步更新：狀態、交付可達性、取得的 evidence、未關閉
 exit conditions、risk/blocker/change request，以及唯一下一個獲准工作。
