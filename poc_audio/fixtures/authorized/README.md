@@ -82,6 +82,26 @@ direct device only for that local run, for example `--device hw:1,0`. The local
 manifest records the capture device for raw-evidence review; the tracked
 sanitized summary must not include it.
 
+## Formal completion on the Pi
+
+The reviewed Pilot is stored in the controlled `pilot-r1` revision rather than
+the recorder's incomplete default directory. Run the Formal wrapper locally in
+an attached Pi terminal; it verifies the 40-item Pilot first, uses that same
+revision for the remaining 60 clips, and refuses a dirty worktree or occupied
+audio device:
+
+```sh
+bash poc_audio/tools/m1_fixture_formal.sh record
+```
+
+The operator follows each displayed cue and presses Enter to record, `s` to
+skip a cue, or `q` to stop safely. The run is resumable. After the final clip,
+validate the complete 100-item revision with:
+
+```sh
+bash poc_audio/tools/m1_fixture_formal.sh verify
+```
+
 ## Capture and conversion boundary
 
 Capture the source in the device's reviewed native format: 48 kHz, stereo,
