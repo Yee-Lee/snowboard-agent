@@ -23,13 +23,9 @@ observed.
 
 ## Blocking work before freeze
 
-1. Annotate and independently review `speech_intervals_ms` for all 25 clear
-   and 25 pause fixtures; pause entries must include the internal-pause
-   interval. These labels must be reviewed against immutable native audio, not
-   inferred from signal energy.
-2. Produce the Core-selected native-to-delivered format revision and bind its
+1. Produce the Core-selected native-to-delivered format revision and bind its
    transformed metadata and SHA-256 values to this catalog.
-3. Run the Tester reproduction packet at the final clean SHA, then record the
+2. Run the Tester reproduction packet at the final clean SHA, then record the
    Designer acceptance in `m1_frozen_gates_draft.md`.
 
 ## Approval record
@@ -38,6 +34,6 @@ observed.
 | --- | --- | --- | --- |
 | Native acquisition and sampled listening | User / Designer | `PASS` | `M1-FIXTURE-FORMAL-001`, `M1-FIXTURE-FORMAL-SAMPLING-001` |
 | ASR reference categories and normalization v1 | User / Designer | `PENDING` | This packet, `metrics_v1.md` |
-| VAD timing labels | User / Designer + Tester | `PENDING` | Annotated local index and review output required |
+| VAD timing labels | User / Designer + Tester | `PASS` | [M1-FIXTURE-VAD-LABELS-001](../evidence/m1/M1-FIXTURE-VAD-LABELS-001.md) |
 | Delivered-format fixture revision | User / Designer + Tester | `PENDING` | Conversion/checksum evidence required |
 | Fixture/metric set frozen | User / Designer + Tester | `PENDING` | All rows above plus clean-SHA reproduction |

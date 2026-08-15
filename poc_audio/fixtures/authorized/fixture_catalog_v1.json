@@ -40,10 +40,11 @@
     "normalization_status": "REVIEW_READY"
   },
   "vad": {
-    "label_source": "PENDING_HUMAN_ANNOTATION",
+    "label_source": "review/vad-labels-v1.json",
     "required_fields": ["fixture_id", "class", "speech_intervals_ms", "internal_pause_interval_ms"],
     "annotation_rule": "Speech and internal-pause boundaries must be reviewed from the immutable native recording; do not infer labels solely from waveform energy.",
-    "annotation_status": "BLOCKING_NOT_COMPLETE"
+    "annotation_sha256": "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
+    "annotation_status": "PASS / HUMAN_REVIEWED"
   },
   "delivered_format": {
     "status": "BLOCKING_NOT_COMPLETE",

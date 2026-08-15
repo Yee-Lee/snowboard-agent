@@ -32,7 +32,7 @@
       "fixture_id": "m1-authorized-fixture-catalog-v1",
       "kind": "authorized_audio_catalog_metadata",
       "path": "poc_audio/fixtures/authorized/fixture_catalog_v1.json",
-      "sha256": "3c6049dacad28a807a2b93503da263a0c0e56cf117802c493943b02c657009e8",
+      "sha256": "dc79552c5e510b47a7d3f3be459c6128ebaaa7e312f62cf5c5163b8cc1e40606",
       "source": "project-authorized internal Audio POC collection metadata",
       "license": "PROJECT-INTERNAL-TEST-DATA",
       "sensitivity": "controlled_metadata"
