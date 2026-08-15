@@ -7,14 +7,15 @@
 最後更新：2026-08-15
 最終交付可達性：`AT_RISK` — M0 readiness gate 已完成；deterministic fake
 與 40-item fixture Pilot 已由 Tester 在 Pi 以完整 SHA 重現通過；P4-A01 至 A09
-已有 reviewed `PASS` evidence。Core-approved Option 2 的 fresh Pi A10 rerun 已
-`PASS`；P4 final selection ACK、正式 60-item fixture completion 與 catalog review
-尚未完成。M4a contract intake 仍不改變目前 M1 進場順序。
+已有 reviewed `PASS` evidence。Core 已 receipt P4 summaries，但要求完整
+machine-readable P4 return packet 才會評估 final selection ACK；正式 60-item
+fixture completion 與 catalog review 亦未完成。M4a contract intake 仍不改變目前
+M1 進場順序。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
-| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A 方向已接受；P4-A01 至 A10 `PASS`，Core final selection ACK、正式 fixture review 與 M4a contract intake SHA 未完成 | [M1](m1_test_and_audio_baseline.md) |
+| M1 | `CHANGE_REQUESTED` | P1 `FAIL`、P2 `PASS`；Option A 方向已接受；P4-A01 至 A10 `PASS`，完整 P4 return packet、Core final selection ACK、正式 fixture review 與 M4a contract intake SHA 未完成 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `NOT_STARTED` | M4a Gate 1 書面授權後執行 VAD/ASR/TTS 隔離候選比較，累積 Gate 2 evidence | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2 P1–P12 回交與 winner ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、M4a ACK audit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
