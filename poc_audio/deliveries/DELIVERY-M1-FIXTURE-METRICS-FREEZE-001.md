@@ -1,0 +1,43 @@
+# DELIVERY-M1-FIXTURE-METRICS-FREEZE-001 — Fixture and Metric Freeze Packet
+
+Status: `REVIEW_READY / NOT_FROZEN`
+
+## Purpose
+
+This packet advances M1's frozen-fixture and frozen-metric exit condition. It
+does not authorize a real candidate run. Its purpose is to let the Designer
+accept or reject a fully stated fixture boundary before any candidate result is
+observed.
+
+## Fixed inputs proposed for acceptance
+
+| Item | Proposed frozen value | Evidence |
+| --- | --- | --- |
+| Native fixture revision | `m1-authorized-zh-tw-v1-pilot-r1`, 100 files | `fixture_manifest.json` SHA `0072a95613d90664d09aa9e11274e3589d9dbcbb786047b060b420cebcddfabf` |
+| Native capture | 48 kHz / stereo / `S32_LE` via direct `hw:` | [Formal acquisition](../evidence/m1/M1-FIXTURE-FORMAL-001.md) |
+| Completeness and integrity | 25 clips per VAD class, 50 ASR references, 600 seconds non-speech | Formal verify `PASS` |
+| Technical/listening review | Formal 60-item complement; fixed 14-item technical sample and 10/10 speech listening review | [Formal sampling](../evidence/m1/M1-FIXTURE-FORMAL-SAMPLING-001.md) |
+| Catalog boundary | [fixture_catalog_v1.json](../fixtures/authorized/fixture_catalog_v1.json) | plan and local-manifest hashes; raw audio stays outside Git |
+| ASR normalization/scoring | `metrics_v1.md` ASR section | NFKC, lowercase Latin, remove punctuation/whitespace; preserve Han/Latin/digits |
+| VAD/ASR/TTS metric rules | [metrics_v1.md](../fixtures/metrics_v1.md) SHA `2c575431d7be1d47ed1b1bba2df8dfde8b246bbe562d6d13ced7c09b9f7a7bcc` | proposed numeric gates approved 2026-08-08; full fixture acceptance pending |
+
+## Blocking work before freeze
+
+1. Annotate and independently review `speech_intervals_ms` for all 25 clear
+   and 25 pause fixtures; pause entries must include the internal-pause
+   interval. These labels must be reviewed against immutable native audio, not
+   inferred from signal energy.
+2. Produce the Core-selected native-to-delivered format revision and bind its
+   transformed metadata and SHA-256 values to this catalog.
+3. Run the Tester reproduction packet at the final clean SHA, then record the
+   Designer acceptance in `m1_frozen_gates_draft.md`.
+
+## Approval record
+
+| Decision | Approver | Status | Evidence |
+| --- | --- | --- | --- |
+| Native acquisition and sampled listening | User / Designer | `PASS` | `M1-FIXTURE-FORMAL-001`, `M1-FIXTURE-FORMAL-SAMPLING-001` |
+| ASR reference categories and normalization v1 | User / Designer | `PENDING` | This packet, `metrics_v1.md` |
+| VAD timing labels | User / Designer + Tester | `PENDING` | Annotated local index and review output required |
+| Delivered-format fixture revision | User / Designer + Tester | `PENDING` | Conversion/checksum evidence required |
+| Fixture/metric set frozen | User / Designer + Tester | `PENDING` | All rows above plus clean-SHA reproduction |

@@ -27,6 +27,15 @@
       "source": "project-authored deterministic fake data",
       "license": "PROJECT-INTERNAL-TEST-DATA",
       "sensitivity": "non_sensitive"
+    },
+    {
+      "fixture_id": "m1-authorized-fixture-catalog-v1",
+      "kind": "authorized_audio_catalog_metadata",
+      "path": "poc_audio/fixtures/authorized/fixture_catalog_v1.json",
+      "sha256": "3c6049dacad28a807a2b93503da263a0c0e56cf117802c493943b02c657009e8",
+      "source": "project-authorized internal Audio POC collection metadata",
+      "license": "PROJECT-INTERNAL-TEST-DATA",
+      "sensitivity": "controlled_metadata"
     }
   ]
 }

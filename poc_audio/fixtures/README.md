@@ -17,3 +17,9 @@ Before the M1 frozen gate permits real candidates, the catalog must add:
 
 Changing a fixture file changes its checksum and requires gate review once the
 catalog is frozen.
+
+The authorized native collection is now bound by
+[fixture_catalog_v1.json](authorized/fixture_catalog_v1.json) to its controlled
+local manifest checksum. Its VAD timing labels and delivered-format revision
+remain explicitly pending; the corresponding freeze decision is tracked in
+[DELIVERY-M1-FIXTURE-METRICS-FREEZE-001](../deliveries/DELIVERY-M1-FIXTURE-METRICS-FREEZE-001.md).

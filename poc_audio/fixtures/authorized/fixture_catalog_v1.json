@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "catalog_id": "m1-authorized-fixture-catalog-v1",
+  "status": "REVIEW_IN_PROGRESS / NOT_FROZEN",
+  "authorization": {
+    "scope": "internal_audio_poc_evaluation_only",
+    "redistribution": "prohibited",
+    "raw_audio_git_tracked": false
+  },
+  "recording_plan": {
+    "path": "poc_audio/fixtures/authorized/recording_plan_v1.json",
+    "sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920"
+  },
+  "native_fixture_revision": {
+    "relative_path": "poc_audio/fixtures/artifacts/m1-authorized-zh-tw-v1-pilot-r1/",
+    "manifest_name": "fixture_manifest.json",
+    "manifest_sha256": "0072a95613d90664d09aa9e11274e3589d9dbcbb786047b060b420cebcddfabf",
+    "summary_name": "fixture_summary.json",
+    "summary_sha256": "c5d8c87d2507124af14a9ddccce36bf74a30e7fe11ffb0bf7a28188206679c8c",
+    "native_pcm": {
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "sample_format": "S32_LE",
+      "access": "direct_hw"
+    }
+  },
+  "coverage": {
+    "clear_speech": {"count": 25, "duration_seconds_each": 6},
+    "pause": {"count": 25, "duration_seconds_each": 8},
+    "silence": {"count": 25, "duration_seconds_each": 12},
+    "noise": {"count": 25, "duration_seconds_each": 12},
+    "asr_reference_count": 50,
+    "non_speech_seconds": 600
+  },
+  "asr": {
+    "language": "zh-TW",
+    "reference_source": "recording_plan_v1.json:utterances[].reference_text",
+    "categories": ["taiwan_mandarin", "code_switch", "number", "date", "product_term"],
+    "normalization_definition": "poc_audio/fixtures/metrics_v1.md#asr",
+    "normalization_status": "REVIEW_READY"
+  },
+  "vad": {
+    "label_source": "PENDING_HUMAN_ANNOTATION",
+    "required_fields": ["fixture_id", "class", "speech_intervals_ms", "internal_pause_interval_ms"],
+    "annotation_rule": "Speech and internal-pause boundaries must be reviewed from the immutable native recording; do not infer labels solely from waveform energy.",
+    "annotation_status": "BLOCKING_NOT_COMPLETE"
+  },
+  "delivered_format": {
+    "status": "BLOCKING_NOT_COMPLETE",
+    "required_policy": "Core-selected Option A channel-0 / signed-24-bit decode / stateful 48-to-16 kHz conversion / saturating S16_LE",
+    "required_evidence": ["transformed_metadata", "transformed_sha256", "cross_validation"]
+  }
+}
