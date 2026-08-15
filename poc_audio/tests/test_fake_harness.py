@@ -650,6 +650,68 @@ class TrackedDocumentTests(unittest.TestCase):
                 self.assertEqual((derived.getframerate(), derived.getnchannels(), derived.getsampwidth()), (16000, 1, 2))
                 self.assertEqual(derived.getnframes(), 16000)
 
+    def test_fixture_delivery_prepares_option_a_delivered_revision(self) -> None:
+        import tempfile
+        from audio_poc.fixture_delivery import prepare as prepare_delivered, MANIFEST_NAME as DELIVERED_MANIFEST_NAME
+
+        plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
+        plan = load_plan(plan_path)
+        for capture_set in plan["sets"]:
+            capture_set["duration_seconds_each"] = 1
+        plan["_path"] = str(plan_path)
+        items = build_capture_items(plan)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            native_dir = root / "native"
+            native_dir.mkdir()
+            records = {}
+            for item in items:
+                wav_path = native_dir / f"{item.fixture_id}.wav"
+                with wave.open(str(wav_path), "wb") as generated:
+                    generated.setnchannels(2)
+                    generated.setsampwidth(4)
+                    generated.setframerate(48000)
+                    generated.writeframes(
+                        (100_000_000).to_bytes(4, "little", signed=True)
+                        + (0).to_bytes(4, "little", signed=True)
+                    )
+                    generated.writeframes(b"\x00" * (47999 * 2 * 4))
+                records[item.fixture_id] = {
+                    "fixture_id": item.fixture_id,
+                    "vad_class": item.vad_class,
+                    "category": item.category,
+                    "file": wav_path.name,
+                    "sha256": sha256_file(wav_path),
+                    "metadata": validate_wav(wav_path, plan["native_capture"]),
+                }
+            (native_dir / "fixture_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0",
+                        "plan_id": plan["plan_id"],
+                        "plan_sha256": sha256_file(plan_path),
+                        "authorization_confirmed": True,
+                        "native_capture": plan["native_capture"],
+                        "source_sha": "0" * 40,
+                        "records": records,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            output_dir = root / "delivered"
+            result = prepare_delivered(plan_path, native_dir, output_dir)
+            self.assertEqual(result["result"], "PASS")
+            self.assertEqual(result["valid_files"], 100)
+            manifest = json.loads((output_dir / DELIVERED_MANIFEST_NAME).read_text(encoding="utf-8"))
+            self.assertEqual(manifest["delivered_pcm"]["sample_rate_hz"], 16000)
+            self.assertEqual(manifest["delivered_pcm"]["channels"], 1)
+            self.assertEqual(manifest["delivered_pcm"]["sample_format"], "S16_LE")
+            self.assertEqual(len(manifest["records"]), 100)
+            with wave.open(str(output_dir / "asr-clear-001.wav"), "rb") as derived:
+                self.assertEqual((derived.getframerate(), derived.getnchannels(), derived.getsampwidth()), (16000, 1, 2))
+                self.assertEqual(derived.getnframes(), 16000)
+
 
 if __name__ == "__main__":
     unittest.main()
+
