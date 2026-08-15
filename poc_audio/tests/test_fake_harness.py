@@ -27,6 +27,7 @@ from audio_poc.fixture_recorder import (  # noqa: E402
 from audio_poc.fixture_monitor import duplicate_channel_to_stereo  # noqa: E402
 from audio_poc.fixture_review import review_collection  # noqa: E402
 from audio_poc.fixture_labeler import propose_intervals  # noqa: E402
+from audio_poc.fixture_label_review import _parse_override, _preview_ranges  # noqa: E402
 from audio_poc.fixture_preflight import (  # noqa: E402
     MANIFEST_NAME as PREFLIGHT_MANIFEST_NAME,
     prepare_pilot,
@@ -519,6 +520,15 @@ class TrackedDocumentTests(unittest.TestCase):
         self.assertEqual(proposal["method"], "energy_assisted_proposal_requires_human_review")
         self.assertEqual(proposal["utterance_interval_ms"], [100, 700])
         self.assertEqual(proposal["largest_internal_pause_candidate_ms"], [300, 500])
+
+    def test_label_review_accepts_only_valid_class_specific_overrides(self) -> None:
+        clear = {"class": "clear_speech", "speech_intervals_ms": [[100, 900]]}
+        pause = {"class": "pause", "speech_intervals_ms": [[100, 400], [800, 1200]], "internal_pause_candidate_ms": [400, 800]}
+        self.assertEqual(_parse_override("120,880", clear), ([[120, 880]], None))
+        self.assertEqual(_parse_override("100,450,820,1200", pause), ([[100, 450], [820, 1200]], [450, 820]))
+        self.assertEqual(len(_preview_ranges(pause)), 3)
+        with self.assertRaises(ValueError):
+            _parse_override("120,880", pause)
 
     def test_monitor_duplicates_the_requested_channel_without_gain(self) -> None:
         import tempfile
