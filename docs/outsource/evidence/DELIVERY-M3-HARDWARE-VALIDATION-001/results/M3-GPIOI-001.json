@@ -1,13 +1,82 @@
 {
-  "config_sha256": "4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7",
-  "edge": "rising",
-  "implementation_sha": "bae36dcb2684a14a129be1e90f3533451d280820",
-  "pin": 23,
+  "actual": "events=[('rising', 2247.500013843), ('falling', 2247.556011526), ('rising', 2247.680009089)]; fast edge suppressed",
+  "artifacts": [
+    {
+      "package": "pyalsaaudio",
+      "version": "0.11.0"
+    },
+    {
+      "package": "samplerate",
+      "version": "0.2.4"
+    },
+    {
+      "package": "numpy",
+      "version": "2.4.2"
+    },
+    {
+      "package": "picamera2",
+      "version": "0.3.37"
+    },
+    {
+      "package": "gpiod",
+      "version": "2.2.0"
+    },
+    {
+      "package": "Pillow",
+      "version": "11.1.0"
+    },
+    {
+      "abi": 1,
+      "license": "delivery notice / accepted Display POC",
+      "path": "/home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so",
+      "sha256": "2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493"
+    }
+  ],
+  "artifacts_index": {
+    "card": "cards/M3-GPIOI-001.md",
+    "logs": "logs/",
+    "media_metadata": "media-metadata/",
+    "result": "results/M3-GPIOI-001.json"
+  },
+  "config": {
+    "path": "/home/yee/workspace/snowboard-agent/config.m3.local.yaml",
+    "sha256": "4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7"
+  },
+  "exit_code": 0,
+  "expected": "loopback edge, kernel debounce, idempotent unregister, and output level all work",
+  "finished_utc": "2026-08-16T15:49:47.108866+00:00",
+  "fixture": {
+    "name": "BCM17-to-BCM27 loopback",
+    "sha256": "59af7f40d80eae82f8900f951c7fac6fbd9494e775ab401fb37b25909f66896c",
+    "source_identity": "physical-fixture"
+  },
+  "hardware_and_wiring": {
+    "operator": "yee",
+    "peripherals": {
+      "audio": "Google voiceHAT SoundCard (I2S hw:0,0)",
+      "button": "Tactile switch on BCM23 (Pin 16) to GND",
+      "camera": "Raspberry Pi Camera Module v2 (Sony IMX219)",
+      "display": "Waveshare 1.5-inch RGB OLED (SSD1351)"
+    },
+    "pi": "Raspberry Pi 5 4GB Model B Rev 1.1",
+    "wiring": "Use runbook section 2 plus BCM17-to-BCM27 GPIO loopback jumper"
+  },
+  "manual_observation": null,
+  "metrics": {},
+  "product_revision": {
+    "branch": "dev_agent_m3",
+    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+  },
+  "reproduction": {
+    "command": "/home/yee/workspace/snowboard-agent/.venv/bin/python -m pytest -p no:cacheprovider -m rpi -q tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_001 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_002 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_004 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_005 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_003 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_005 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002",
+    "operation": "Install the documented loopback jumper before running the card"
+  },
+  "started_utc": "2026-08-16T15:49:46.758895+00:00",
+  "status": "Pass",
   "system": {
     "machine": "aarch64",
     "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
     "python": "3.13.5"
   },
-  "test_id": "M3-GPIOI-001",
-  "timestamp": 941.708009091
+  "test_id": "M3-GPIOI-001"
 }

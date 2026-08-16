@@ -1,10 +1,10 @@
 # DELIVERY-M3-HARDWARE-VALIDATION-001
 
-Status: **Superseded evidence — exact-SHA retest required**
+Status: **Pending Tester Review**
 
-The 20 JSON files currently under `results/` were produced for implementation
-SHA `bae36dcb2684a14a129be1e90f3533451d280820`. They do not validate the M3
-candidate containing the CR_M3_I fixes and must not be cited as PASS.
+The 20 JSON files currently under `results/` were successfully regenerated for implementation
+SHA `c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6`. They pass the automated hardware gate 
+and are ready for the independent Tester report.
 
 The junior developer handoff is `docs/runbooks/m3_rpi_validation.md`. The
 revised runner refuses a mismatched candidate SHA or dirty `src/`, `tests/`,

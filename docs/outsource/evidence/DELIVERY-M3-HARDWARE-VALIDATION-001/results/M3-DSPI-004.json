@@ -1,7 +1,78 @@
 {
-  "config_sha256": "f4872f9196bc30798b481828e237363f50af8a564de0d0bd9ec3227aa9a81ca1",
-  "implementation_sha": "bae36dcb2684a14a129be1e90f3533451d280820",
-  "reopen_cycles": 2,
+  "actual": "cycles=[{'cycle': 1, 'handle': 0, 'fds': []}, {'cycle': 2, 'handle': 0, 'fds': []}]; residual_threads=[]",
+  "artifacts": [
+    {
+      "package": "pyalsaaudio",
+      "version": "0.11.0"
+    },
+    {
+      "package": "samplerate",
+      "version": "0.2.4"
+    },
+    {
+      "package": "numpy",
+      "version": "2.4.2"
+    },
+    {
+      "package": "picamera2",
+      "version": "0.3.37"
+    },
+    {
+      "package": "gpiod",
+      "version": "2.2.0"
+    },
+    {
+      "package": "Pillow",
+      "version": "11.1.0"
+    },
+    {
+      "abi": 1,
+      "license": "delivery notice / accepted Display POC",
+      "path": "/home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so",
+      "sha256": "2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493"
+    }
+  ],
+  "artifacts_index": {
+    "card": "cards/M3-DSPI-004.md",
+    "logs": "logs/",
+    "media_metadata": "media-metadata/",
+    "result": "results/M3-DSPI-004.json"
+  },
+  "config": {
+    "path": "/home/yee/workspace/snowboard-agent/config.m3.local.yaml",
+    "sha256": "4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7"
+  },
+  "exit_code": 0,
+  "expected": "two arbiter write_main cycles reopen; each stop closes handle/GPIO/SPI/thread; stop idempotent",
+  "finished_utc": "2026-08-16T15:49:27.711413+00:00",
+  "fixture": {
+    "name": "two lifecycle reopen intents",
+    "sha256": "508ddbd426445e8c218d6288cf17f87f83833ee9d041ccc83f06b594c7179b8a",
+    "source_identity": "inline-fixture"
+  },
+  "hardware_and_wiring": {
+    "operator": "yee",
+    "peripherals": {
+      "audio": "Google voiceHAT SoundCard (I2S hw:0,0)",
+      "button": "Tactile switch on BCM23 (Pin 16) to GND",
+      "camera": "Raspberry Pi Camera Module v2 (Sony IMX219)",
+      "display": "Waveshare 1.5-inch RGB OLED (SSD1351)"
+    },
+    "pi": "Raspberry Pi 5 4GB Model B Rev 1.1",
+    "wiring": "Use runbook section 2 plus BCM17-to-BCM27 GPIO loopback jumper"
+  },
+  "manual_observation": null,
+  "metrics": {},
+  "product_revision": {
+    "branch": "dev_agent_m3",
+    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+  },
+  "reproduction": {
+    "command": "/home/yee/workspace/snowboard-agent/.venv/bin/python -m pytest -p no:cacheprovider -m rpi -q tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_001 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_002 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_004 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_005 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_003 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_005 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002",
+    "operation": "automated"
+  },
+  "started_utc": "2026-08-16T15:49:26.071564+00:00",
+  "status": "Pass",
   "system": {
     "machine": "aarch64",
     "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",

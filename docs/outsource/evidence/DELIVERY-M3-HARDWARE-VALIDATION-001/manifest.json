@@ -1,0 +1,109 @@
+{
+  "candidate": {
+    "branch": "dev_agent_m3",
+    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+  },
+  "cards": [
+    {
+      "path": "results/M3-AUDI-001.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-001"
+    },
+    {
+      "path": "results/M3-AUDI-002.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-002"
+    },
+    {
+      "path": "results/M3-AUDI-003.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-003"
+    },
+    {
+      "path": "results/M3-AUDI-004.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-004"
+    },
+    {
+      "path": "results/M3-BTN-001.json",
+      "status": "Pass",
+      "test_id": "M3-BTN-001"
+    },
+    {
+      "path": "results/M3-BTN-002.json",
+      "status": "Pass",
+      "test_id": "M3-BTN-002"
+    },
+    {
+      "path": "results/M3-BTN-003.json",
+      "status": "Pass",
+      "test_id": "M3-BTN-003"
+    },
+    {
+      "path": "results/M3-BTN-004.json",
+      "status": "Pass",
+      "test_id": "M3-BTN-004"
+    },
+    {
+      "path": "results/M3-BTN-005.json",
+      "status": "Pass",
+      "test_id": "M3-BTN-005"
+    },
+    {
+      "path": "results/M3-CAMI-001.json",
+      "status": "Pass",
+      "test_id": "M3-CAMI-001"
+    },
+    {
+      "path": "results/M3-CAMI-002.json",
+      "status": "Pass",
+      "test_id": "M3-CAMI-002"
+    },
+    {
+      "path": "results/M3-CAMI-003.json",
+      "status": "Pass",
+      "test_id": "M3-CAMI-003"
+    },
+    {
+      "path": "results/M3-DSPI-001.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-001"
+    },
+    {
+      "path": "results/M3-DSPI-002.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-002"
+    },
+    {
+      "path": "results/M3-DSPI-003.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-003"
+    },
+    {
+      "path": "results/M3-DSPI-004.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-004"
+    },
+    {
+      "path": "results/M3-DSPI-005.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-005"
+    },
+    {
+      "path": "results/M3-DSPI-006.json",
+      "status": "Pass",
+      "test_id": "M3-DSPI-006"
+    },
+    {
+      "path": "results/M3-GPIOI-001.json",
+      "status": "Pass",
+      "test_id": "M3-GPIOI-001"
+    },
+    {
+      "path": "results/M3-GPIOI-002.json",
+      "status": "Pass",
+      "test_id": "M3-GPIOI-002"
+    }
+  ],
+  "generated_at_utc": "2026-08-16T15:49:47.149053+00:00"
+}

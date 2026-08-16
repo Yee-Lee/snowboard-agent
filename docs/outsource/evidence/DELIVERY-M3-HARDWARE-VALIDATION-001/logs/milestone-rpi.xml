@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="139.191" timestamp="2026-08-16T23:47:28.184294+08:00" hostname="snowboard"><testcase classname="tests.milestones.test_m3_rpi_hal" name="test_m3_rpi_hardware_acceptance_gate" time="139.132" /></testsuite></testsuites>

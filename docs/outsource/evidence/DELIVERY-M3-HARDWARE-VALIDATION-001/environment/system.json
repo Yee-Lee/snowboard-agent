@@ -1,0 +1,7 @@
+{
+  "branch": "dev_agent_m3",
+  "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6",
+  "machine": "aarch64",
+  "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+  "python": "3.13.5"
+}

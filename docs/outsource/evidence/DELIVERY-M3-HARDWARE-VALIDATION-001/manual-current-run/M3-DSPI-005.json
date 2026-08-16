@@ -1,0 +1,13 @@
+{
+  "checks": {
+    "arrow_up": true,
+    "no_flicker": true,
+    "no_mirror": true,
+    "rgb_correct": true,
+    "text_readable": true
+  },
+  "media_metadata": [],
+  "observed_at_utc": "2026-08-16T15:49:31.292008+00:00",
+  "operator": "Yee",
+  "test_id": "M3-DSPI-005"
+}
