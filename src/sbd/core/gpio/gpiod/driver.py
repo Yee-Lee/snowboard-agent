@@ -67,14 +67,15 @@ class GpiodGPIO:
         }
         if edge not in edges or debounce_ms < 0 or not callable(callback):
             raise ValueError("invalid GPIO input registration")
-        pin_config = next((value for value in self._config.pins.values() if value.pin == pin), None)
-        settings = self._gpiod.LineSettings(
-            direction=self._gpiod.line.Direction.INPUT,
-            edge_detection=edges[edge],
-            active_low=pin_config.active_low if pin_config else False,
-            debounce_period=timedelta(milliseconds=debounce_ms),
-            event_clock=self._gpiod.line.Clock.MONOTONIC,
-        )
+        kwargs: dict[str, Any] = {
+            "direction": self._gpiod.line.Direction.INPUT,
+            "edge_detection": edges[edge],
+            "debounce_period": timedelta(milliseconds=debounce_ms),
+            "event_clock": self._gpiod.line.Clock.MONOTONIC,
+        }
+        if hasattr(self._gpiod.line, "Bias") and hasattr(self._gpiod.line.Bias, "PULL_UP"):
+            kwargs["bias"] = self._gpiod.line.Bias.PULL_UP
+        settings = self._gpiod.LineSettings(**kwargs)
         request = self._gpiod.request_lines(
             self._config.chip, config={pin: settings},
             consumer="snowboard-agent", event_buffer_size=16,

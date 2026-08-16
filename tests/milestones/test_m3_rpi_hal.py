@@ -46,7 +46,7 @@ def test_m3_rpi_hardware_acceptance_gate() -> None:
     nodes = implemented_nodes_for("RPI-NATIVE")
     assert len(nodes) == 20
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-q", *nodes],
+        [sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-m", "rpi", "-q", *nodes],
         capture_output=True,
         text=True,
     )

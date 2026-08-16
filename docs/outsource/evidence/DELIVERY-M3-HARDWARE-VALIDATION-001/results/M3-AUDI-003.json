@@ -1,0 +1,11 @@
+{
+  "config_sha256": "58b520b5a63e13076b92beb47e4be88e0c100935d08604dfe1053ae1fddcf04b",
+  "implementation_sha": "bae36dcb2684a14a129be1e90f3533451d280820",
+  "manual": "PASS",
+  "system": {
+    "machine": "aarch64",
+    "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+    "python": "3.13.5"
+  },
+  "test_id": "M3-AUDI-003"
+}

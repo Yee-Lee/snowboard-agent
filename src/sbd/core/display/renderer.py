@@ -93,7 +93,9 @@ class Oled128Renderer:
 
     def _replace_missing(self, text: str) -> str:
         return "".join(
-            "□" if self._glyph_key(self._regular, char) == self._missing_key else char
+            char
+            if char.isspace()
+            else ("□" if self._glyph_key(self._regular, char) == self._missing_key else char)
             for char in text
         )
 

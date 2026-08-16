@@ -1,0 +1,12 @@
+{
+  "config_sha256": "f4872f9196bc30798b481828e237363f50af8a564de0d0bd9ec3227aa9a81ca1",
+  "fixture": "orientation-and-rgb565-bars",
+  "implementation_sha": "bae36dcb2684a14a129be1e90f3533451d280820",
+  "manual": "PASS",
+  "system": {
+    "machine": "aarch64",
+    "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+    "python": "3.13.5"
+  },
+  "test_id": "M3-DSPI-005"
+}

@@ -3,8 +3,8 @@
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M3
-* **M3 gate status**: `Development Ready — Audio real backend blocked by POC P4`
-* **Last updated**: 2026-08-13
+* **M3 gate status**: `Development Ready — Audio real package selected; Core implementation and Pi acceptance pending`
+* **Last updated**: 2026-08-15
 * **Owner**: Designer
 
 ---
@@ -13,23 +13,23 @@
 
 ### 結論
 
-Core Display設計、strict SSD1351 mapping與M3–M7規劃已收斂；Display POC v0.3是Accepted design input。Audio P1 native failure / P2 PASS已接受Option A的產品方向，但binding、valid-bit alignment、resampler、buffer與async I/O尚無target-Pi可行性證據，因此已發出`DELIVERY-AUDIO-POC-M3-VALIDATION-001`。Developer可開始非Audio-real工作包；Audio real backend與production dependency lock維持Blocked。本結論不是M3 acceptance，RPI-NATIVE cards與外部PM exact-SHA intake仍為Pending。
+Core Display設計、strict SSD1351 mapping與M3–M7規劃已收斂；Display POC v0.3是Accepted design input。Audio P1 native failure / P2 PASS維持原判定；POC完整P4回交已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`選定direct ALSA binding、valid-bit mapping、resampler、buffer與async I/O。Developer可開始Audio real package與production dependency lock。本結論不是M3 acceptance；Core exact implementation SHA與RPI-NATIVE cards仍為Pending。
 
 ### Gate matrix
 
 | Gate | 狀態 | 證據 / 依據 | Owner / 下一動作 |
 | :--- | :--- | :--- | :--- |
 | M2 acceptance | `PASS` | PM handoff `PM-OUT-260807-006-m2-tester-verification` 已 Resolved | Core Team；無動作 |
-| Audio POC design input | `OPTION A DIRECTION ACCEPTED / P4 PENDING` | Audio v1.0；`DELIVERY-AUDIO-POC-M3-ACK-001/002`；`DELIVERY-AUDIO-POC-M3-VALIDATION-001`；POC evidence `0edeb7d9f8ff3811d1480ab4b464db2842978233` | P1 native matrix`FAIL`、P2`PASS`；POC驗證Option A implementation並回交full SHA；P3延至M4a |
+| Audio POC design input | `FINAL SELECTION ACKED` | `DELIVERY-AUDIO-POC-M3-P4-ACK-004`；POC delivery `882e2b6ff571eb9d54ec96bae7d3b63338c5965c`；implementation/test SHA `de3b0bab4daaf47f62956d4b27f6697b3d4fa823` | P1 native matrix`FAIL`、P2`PASS`；WP-M3-07可開始。P3延至M4a；Core Tester仍須驗收Core exact SHA |
 | Display POC design input | `ACCEPTED` | v0.3；`DELIVERY-005-poc_display-m3-v0.3-ack`；source candidate `5c2b6ba532a2661d5db79e27736e79890931515f`；stage-exit `4ed5f64a2604fa3c388cfa60fb971bb508a4ee40` | D1–D5 全數 Resolved；Pi build+evidence PASS；無 blocking finding |
 | LLM POC input | `N/A FOR M3` | `docs/milestones/M3.md` 排除真實 LLM | 不等待 LLM；轉列 M4b entry blocker |
 | Core Display Spec | `REVIEWED` | `docs/display_spec.md`；`docs/display_mock_contact_sheet.svg`；`IR_review_III`；PM-009 `OUT-M3-DSP-2026-005` Resolved | M7 stable IDs / trace / Error mock 已收斂 |
 | Font asset / provenance | `READY` | Noto Sans TC Regular + Medium 2.004、OFL 1.1；Spec 記錄 paths / SHA-256 | 納入 Design Ready delivery；不得改用 OS font |
 | Ch 2a / Ch 8 / Ch 10 alignment | `PARTIAL READY` | Audio native / stream語意已固定但implementation selection待P4；strict SSD1351 artifact / ABI / SPI / GPIO / rotation / byte-order / buffer mapping已固定 | Developer依package split實作；不得自行選Audio binding / resampler / buffering |
 | M3 / M4 / M5 / M7 planning alignment | `REVIEWED` | M4a / M4b / M4c、M5 exact-SHA dependency、M7 spec-first 規則；`MR_review_II` Resolved | 建立本輪 design commit |
-| M3 Design Ready | `READY WITH PACKAGE GATE` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display ACK；Audio ACK-001/002 | M3整體可開工；Audio real package等待P4 final selection ACK |
+| M3 Design Ready | `READY` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display ACK；Audio final ACK-004 | M3整體可開工；Audio real package依ACK-004 selected baseline實作 |
 | M3 test spec / coverage sign-off | `APPROVED + P4 CONDITIONAL` | `docs/test_spec/test_spec_M3.md`；`TR_spec_M3_I` Resolved；ACK-002 amendment | Audio implementation-specific case在P4後綁定核准選型；不提前宣稱PASS |
-| `dev_progress_M3.md` / 工作包 | `AUTHORIZED / DEVELOPER-OWNED` | test spec已簽核；working tree已有Developer檔案但不由Designer修改 | Developer立即拆分Ready / Blocked package，Audio real backend標`Blocked by Audio P4` |
+| `dev_progress_M3.md` / 工作包 | `AUTHORIZED / DEVELOPER-OWNED` | test spec已簽核；Audio final ACK-004；working tree已有Developer檔案但不由Designer修改 | Developer更新WP-M3-07為Ready，依selected baseline實作並回交Core exact SHA |
 | M3 target-device acceptance | `PENDING` | `docs/milestones/M3.md`；`OUT-M3-TEST-2026-001` | Tester 對 delivery exact SHA 獨立驗收；POC 自驗只作外部 evidence layer |
 
 ### Reviewer handoff scope（pre-commit working tree）
@@ -88,7 +88,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
-| M4a Audio | `CONTRACT ISSUED — PENDING M3 P4 ACK → POC GATE 1` | Gate 0：M3 P4 final selection ACK（POC P4-A01~A10 evidence 待回交）；Gate 1：candidate list Core 書面確認；Gate 2：M4A-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + Core Tester 驗收 |
+| M4a Audio | `CONTRACT ISSUED — POC GATE 1 MAY START` | Gate 0：M3 P4 final selection ACK-004 complete；Gate 1：candidate list Core 書面確認；Gate 2：M4A-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + Core Tester 驗收 |
 | M4b LLM | `CONTRACT ISSUED — PENDING PM RELAY → POC RECEIPT & GATE 1` | Gate 0：POC 回交 contract receipt + initial manifest；Gate 1：candidate list & Ubuntu 初篩 Core 書面確認；Gate 2：M4B-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + `docs/protocol.md` review + Core Tester 驗收 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
@@ -97,7 +97,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 ```
 Core Designer (contract owner) [DELIVERY-AUDIO-POC-M4A-CONTRACT-001]
   → PM relay → Audio POC Team
-    Gate 0: POC 回交 M3 P4-A01~A10 evidence (exact SHA) → Core final selection ACK  ← 當前阻擋點
+    Gate 0: POC 回交 M3 P4-A01~A10 evidence → Core final selection ACK-004  [complete]
     Gate 1: POC 提出 M4a candidate list → Core 書面確認範圍 (5 工作日內)
     Gate 2: POC 執行 M4A-P1~P12 → 回交 exact SHA + manifest → Core final winner ACK
     Gate 3: Developer 建立 M4a 工作包 → Core Tester 驗收 [Core 內部]

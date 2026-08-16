@@ -1,0 +1,12 @@
+{
+  "config_sha256": "4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7",
+  "expected": "ERROR short press starts new session",
+  "implementation_sha": "bae36dcb2684a14a129be1e90f3533451d280820",
+  "manual": "PASS",
+  "system": {
+    "machine": "aarch64",
+    "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+    "python": "3.13.5"
+  },
+  "test_id": "M3-BTN-004"
+}
