@@ -39,14 +39,23 @@ def _stereo_s32(left: list[int], right: list[int]) -> bytes:
 
 
 class _RawSource:
-    def __init__(self, chunks: list[bytes], *, pause_on_read: int | None = None) -> None:
+    def __init__(
+        self,
+        chunks: list[bytes],
+        *,
+        pause_on_read: int | None = None,
+        on_read: Callable[[], None] | None = None,
+    ) -> None:
         self._chunks = iter(chunks)
         self._pause_on_read = pause_on_read
+        self._on_read = on_read
         self.reads = 0
         self.close_calls = 0
 
     def read(self) -> bytes:
         self.reads += 1
+        if self._on_read is not None:
+            self._on_read()
         if self._pause_on_read == self.reads:
             time.sleep(0.05)
         return next(self._chunks)
@@ -188,6 +197,9 @@ def test_m3_aud_004() -> None:
     )
 
     async def scenario() -> None:
+        loop = asyncio.get_running_loop()
+        read_started = asyncio.Event()
+        cancelled._on_read = lambda: loop.call_soon_threadsafe(read_started.set)
         await audio.start()
         stream = audio.frames()
         first_frame = await anext(stream)
@@ -208,7 +220,7 @@ def test_m3_aud_004() -> None:
 
         cancelled_stream = audio.frames()
         read_task = asyncio.create_task(anext(cancelled_stream))
-        await asyncio.sleep(0)
+        await read_started.wait()
         read_task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await read_task

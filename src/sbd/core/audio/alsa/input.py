@@ -108,7 +108,15 @@ class AlsaAudioInput:
             # CancelledError is a BaseException on supported Python versions,
             # it must be handled explicitly or the active owner and ALSA
             # source remain attached to this input instance.
-            await asyncio.shield(self._release(stream))
+            task = asyncio.current_task()
+            cancelling = task.cancelling() if task and hasattr(task, "cancelling") else 0
+            if cancelling > 0:
+                task.uncancel()
+            try:
+                await self._release(stream)
+            finally:
+                if cancelling > 0:
+                    raise asyncio.CancelledError()
             raise
         except Exception:
             await self._release(stream)
