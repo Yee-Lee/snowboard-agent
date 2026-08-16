@@ -81,7 +81,7 @@ def test_m3_btn_001() -> None:
 def test_m3_btn_002() -> None:
     config = rpi_config("M3-BTN-002")
 
-    async def scenario() -> tuple[int, tuple[str, ...]]:
+    async def scenario() -> tuple[int, int, tuple[str, ...]]:
         bus, sm, listen, *_ = make_sm(hold_perception=True)
         listen.publish_fact = False
         states: list[str] = []
@@ -96,10 +96,11 @@ def test_m3_btn_002() -> None:
 
         bus.subscribe(StateChanged, on_state, name="m3.btn002.states")
         bus.subscribe(ButtonPressed, on_physical, name="m3.btn002.physical")
+        await sm.start()
         gpio, source = await _source(config, bus)
         try:
-            await sm.start()
-            await bus.publish(ButtonPressed("setup", config.input_sources.button.short_press_min_ms))
+            # Press 1: short press to trigger WAKE
+            wake_event = await asyncio.wait_for(physical.get(), interaction_timeout())
             while sm.state != "WAKE":
                 await asyncio.sleep(0.01)
             wake_session = sm._session
@@ -108,25 +109,26 @@ def test_m3_btn_002() -> None:
             await wait(listen.started)
             assert sm.state == "PERCEPTION" and sm._in_flight
 
-            event = await asyncio.wait_for(physical.get(), interaction_timeout())
+            # Press 2: short press during PERCEPTION to interrupt
+            interrupt_event = await asyncio.wait_for(physical.get(), interaction_timeout())
             while sm.state != "IDLE":
                 await asyncio.sleep(0.01)
             assert sm.state == "IDLE" and sm._session is None and sm._in_flight == {}
             await bus.publish(ShutdownRequested())
             await sm.wait_stopped()
             await sm.stop()
-            return event.duration_ms, tuple(states)
+            return wake_event.duration_ms, interrupt_event.duration_ms, tuple(states)
         finally:
             await source.stop()
             await gpio.stop()
 
-    duration, states = asyncio.run(scenario())
+    wake_ms, interrupt_ms, states = asyncio.run(scenario())
     record_result(
         "M3-BTN-002",
         expected="short press during PERCEPTION executes interrupt convergence and returns IDLE",
-        actual=f"duration_ms={duration}; state trace={states}; session and tasks drained",
-        fixture={"name": "physical button during held perception", "sha256": "physical-fixture"},
-        operation="Wait for the test to enter PERCEPTION, then short-press once",
+        actual=f"wake_ms={wake_ms}; interrupt_ms={interrupt_ms}; state trace={states}; session and tasks drained",
+        fixture={"name": "two physical button presses: WAKE then interrupt", "sha256": "physical-fixture"},
+        operation="Short-press once to enter PERCEPTION, then short-press again to interrupt",
     )
 
 
