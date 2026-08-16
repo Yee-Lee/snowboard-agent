@@ -12,7 +12,7 @@ from sbd.core.state_manager.manager import _PendingConvergence
 from sbd.core.state_manager.notices import _WakeAckElapsed
 from sbd.input_events.button import ButtonInputSource
 from tests.rpi_support import interaction_timeout, record_result, rpi_config
-from tests.test_state_manager import make_sm, wait
+from tests.test_state_manager import make_sm, start_perception, wait
 
 
 pytestmark = pytest.mark.rpi
@@ -83,30 +83,27 @@ def test_m3_btn_002() -> None:
 
     async def scenario() -> tuple[int, tuple[str, ...]]:
         bus, sm, listen, *_ = make_sm(hold_perception=True)
+        listen.publish_fact = False
         states: list[str] = []
         physical: asyncio.Queue[ButtonPressed] = asyncio.Queue()
 
         async def on_state(event: StateChanged) -> None:
             states.append(event.new)
 
-        bus.subscribe(StateChanged, on_state, name="m3.btn002.states")
-        await sm.start()
-        await bus.publish(ButtonPressed("setup", config.input_sources.button.short_press_min_ms))
-        await sm._inbox.join()
-        assert sm._session is not None
-        sm._inbox.put_nowait(_WakeAckElapsed(sm._session.session_id))
-        await wait(listen.started)
-        assert sm.state == "PERCEPTION" and sm._in_flight
-
         async def on_physical(event: ButtonPressed) -> None:
             if event.pin == config.input_sources.button.conversation_pin:
                 physical.put_nowait(event)
 
+        bus.subscribe(StateChanged, on_state, name="m3.btn002.states")
         bus.subscribe(ButtonPressed, on_physical, name="m3.btn002.physical")
         gpio, source = await _source(config, bus)
         try:
+            await start_perception(bus, sm, listen)
+            assert sm.state == "PERCEPTION" and sm._in_flight
+
             event = await asyncio.wait_for(physical.get(), interaction_timeout())
-            await sm._inbox.join()
+            while sm.state != "IDLE":
+                await asyncio.sleep(0.01)
             assert sm.state == "IDLE" and sm._session is None and sm._in_flight == {}
             await bus.publish(ShutdownRequested())
             await sm.wait_stopped()
