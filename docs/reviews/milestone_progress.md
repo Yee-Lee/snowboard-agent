@@ -3,8 +3,9 @@
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M3
-* **M3 gate status**: `Development Ready — Audio real package selected; Core implementation and Pi acceptance pending`
-* **Last updated**: 2026-08-15
+* **M3 gate status**: `Tester PASS — Pending Designer final Code/Test Review (CR_M3)`
+* **M3 implementation SHA**: `bae36dcb2684a14a129be1e90f3533451d280820`
+* **Last updated**: 2026-08-16
 * **Owner**: Designer
 
 ---
@@ -151,7 +152,9 @@ Response：`docs/outsource/responses/OUT-M4B-2026-001.md`（`PM-OUT-260814-011` 
 3. ~~Designer 複審 Display v0.3 → Accepted~~ — **Done**（`DELIVERY-005-poc_display-m3-v0.3-ack`）
 4. ~~Designer 彙整 M3 Design Ready conclusion~~ — **Done**（本 commit；gate 解除）
 5. ~~Tester 產出 `test_spec_M3.md`；Designer coverage sign-off~~ — **Done**（`TR_spec_M3_I` Resolved；Development Ready approved）
-6. 取得 USER commit 同意後建立 PM-009 單一候選 commit，回傳完整 40-character HEAD 完成 external exact-SHA intake。
-7. Developer建立／更新`dev_progress_M3.md`：Display、Camera、GPIO、Audio Protocol / mock/null / schema / fake seam列Ready；Audio real backend與dependency lock列`Blocked by Audio P4`。
-8. Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`回交完整source SHA與evidence；Core Designer審核並另發final selection ACK後，Developer才開始Audio real package。
-9. M3 delivery前由Core完成Audio Option A implementation / Pi evidence與Display artifact / fixture / performance evidence，再由Tester對exact implementation SHA驗收。
+6. ~~取得 USER commit 同意後建立 PM-009 單一候選 commit，回傳完整 40-character HEAD 完成 external exact-SHA intake。~~ — **Done**
+7. ~~Developer建立／更新`dev_progress_M3.md`：Display、Camera、GPIO、Audio Protocol / mock/null / schema / fake seam列Ready；Audio real backend與dependency lock列`Blocked by Audio P4`。~~ — **Done**
+8. ~~Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`回交完整source SHA與evidence；Core Designer審核並另發final selection ACK後，Developer才開始Audio real package。~~ — **Done**（`DELIVERY-AUDIO-POC-M3-P4-ACK-004`）
+9. ~~M3 delivery前由Core完成Audio Option A implementation / Pi evidence與Display artifact / fixture / performance evidence，再由Tester對exact implementation SHA驗收。~~ — **Done**（47/47 Test IDs；exact SHA `bae36dcb2684a14a129be1e90f3533451d280820`）
+10. ~~**Tester 對 exact SHA 獨立簽核 PASS**~~ — **Done** (`2026-08-16`；DEV 239 passed / 21 deselected；RPI 20/20 PASS；3 Advisory 不阻擋；詳見 `M3_tester_review.md`)
+11. **[NEXT] Designer 執行最終 Code/Test Review（CR_M3）** — 聚焦設計對齊及高風險 regression protection；若有 Blocking 偏離開立 `CR_M3.md`；Advisory 不阻擋 M3 Accepted。
