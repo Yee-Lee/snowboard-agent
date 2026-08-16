@@ -98,7 +98,14 @@ def test_m3_btn_002() -> None:
         bus.subscribe(ButtonPressed, on_physical, name="m3.btn002.physical")
         gpio, source = await _source(config, bus)
         try:
-            await start_perception(bus, sm, listen)
+            await sm.start()
+            await bus.publish(ButtonPressed("setup", config.input_sources.button.short_press_min_ms))
+            while sm.state != "WAKE":
+                await asyncio.sleep(0.01)
+            wake_session = sm._session
+            assert wake_session is not None
+            sm._inbox.put_nowait(_WakeAckElapsed(wake_session.session_id))
+            await wait(listen.started)
             assert sm.state == "PERCEPTION" and sm._in_flight
 
             event = await asyncio.wait_for(physical.get(), interaction_timeout())
