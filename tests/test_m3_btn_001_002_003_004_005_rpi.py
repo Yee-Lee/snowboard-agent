@@ -91,7 +91,7 @@ def test_m3_btn_002() -> None:
             states.append(event.new)
 
         async def on_physical(event: ButtonPressed) -> None:
-            if event.pin == config.input_sources.button.conversation_pin:
+            if event.button_id == config.input_sources.button.conversation_pin:
                 physical.put_nowait(event)
 
         bus.subscribe(StateChanged, on_state, name="m3.btn002.states")
