@@ -159,8 +159,9 @@ def test_m3_aud_003() -> None:
                 heartbeat += 1
 
         ticker = asyncio.create_task(tick())
-        frame = await anext(stream)
-        await ticker
+        # Wrap anext with wait_for to ensure timeout fails explicitly
+        frame = await asyncio.wait_for(anext(stream), timeout=5.0)
+        await asyncio.wait_for(ticker, timeout=5.0)
         assert len(frame) == 640
         values = struct.unpack("<320h", frame)
         assert values[:4] == (-32_768, -3_906, 32_767, 0)

@@ -148,7 +148,10 @@ class AlsaAudioInput:
         self._ensure_open_worker()
         while len(self._samples) < STREAM_SAMPLES:
             assert self._source is not None
-            payload = self._read_payload(self._source.read())
+            try:
+                payload = self._read_payload(self._source.read())
+            except StopIteration:
+                payload = b""
             if not payload:
                 raise EOFError("ALSA capture returned no frames")
             self._raw.extend(payload)
