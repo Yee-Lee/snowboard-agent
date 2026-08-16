@@ -95,12 +95,12 @@ def test_m3_btn_002() -> None:
                 physical.put_nowait(event)
 
         bus.subscribe(StateChanged, on_state, name="m3.btn002.states")
-        bus.subscribe(ButtonPressed, on_physical, name="m3.btn002.physical")
         await sm.start()
         gpio, source = await _source(config, bus)
         try:
-            # Press 1: short press to trigger WAKE
-            wake_event = await asyncio.wait_for(physical.get(), interaction_timeout())
+            # Synthetic short press → WAKE → PERCEPTION (no physical risk of long-press shutdown)
+            synthetic_ms = config.input_sources.button.short_press_min_ms + 50
+            await bus.publish(ButtonPressed(config.input_sources.button.conversation_pin, synthetic_ms))
             while sm.state != "WAKE":
                 await asyncio.sleep(0.01)
             wake_session = sm._session
@@ -109,7 +109,10 @@ def test_m3_btn_002() -> None:
             await wait(listen.started)
             assert sm.state == "PERCEPTION" and sm._in_flight
 
-            # Press 2: short press during PERCEPTION to interrupt
+            # Subscribe to physical button ONLY after PERCEPTION is confirmed
+            bus.subscribe(ButtonPressed, on_physical, name="m3.btn002.physical")
+
+            # Physical press: one short press during PERCEPTION verifies interrupt convergence
             interrupt_event = await asyncio.wait_for(physical.get(), interaction_timeout())
             while sm.state != "IDLE":
                 await asyncio.sleep(0.01)
@@ -117,7 +120,7 @@ def test_m3_btn_002() -> None:
             await bus.publish(ShutdownRequested())
             await sm.wait_stopped()
             await sm.stop()
-            return wake_event.duration_ms, interrupt_event.duration_ms, tuple(states)
+            return synthetic_ms, interrupt_event.duration_ms, tuple(states)
         finally:
             await source.stop()
             await gpio.stop()
