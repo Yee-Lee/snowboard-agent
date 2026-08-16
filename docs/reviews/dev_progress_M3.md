@@ -35,15 +35,16 @@
 | 2026-08-15 | WP-M3-10 | **Core implementation complete; Pi evidence Blocked** | 工作樹外的暫存 checkout 已不存在，但以標準 `git show 5c2b6ba532a2661d5db79e27736e79890931515f:<tracked path>` 重讀 accepted source 的 `display.h`、`pin_config.h` 與 ctypes adapter；未複製 POC source／artifact。完成lazy factory、artifact/ABI/config→struct驗證、back-buffer/lifecycle/status mapping與target runbook；temporary ABI-stub 3 passed、完整non-RPi 236 passed / 1 deselected、M3 manifest gate 1 passed / 1 deselected。Pi evidence仍Blocked。 |
 | 2026-08-15 | WP-M3-07 | **Core DEV implementation complete; Pi evidence Blocked** | `DELIVERY-AUDIO-POC-M3-P4-ACK-004`已放行real package；完成direct `hw:` strict mapping、48k stereo S32_LE→16k mono S16_LE、channel 0、24-bit MSB、stateful `samplerate.sinc_best`、960×4與single bounded worker。M3-CFG-002 / AUD-003 / AUD-004已進manifest；focused 9 passed、M3 manifest gate 1 passed / 1 deselected、完整non-RPi 239 passed / 1 deselected。M3-AUDI-001~004仍需exact Core SHA的Pi evidence。 |
 | 2026-08-15 | WP-M3-12 | **Automation cards ready; Pi evidence Pending** | 補齊20個`rpi` pytest nodes與strict local config / evidence / manual-observation guards；audio、camera、GPIO/button及SSD1351 cards均有自動assert與result JSON。20張card已標Executable，因缺Pi config / hardware / manual observation會明確Fail、不會Pass；host collection確認20 cards加milestone gate共21 nodes；完整non-RPi 239 passed / 21 deselected。操作見`docs/runbooks/m3_rpi_validation.md`。 |
-| 2026-08-16 | WP-M3-07, 08, 09, 10, 12, 13 | **ALL 20 RPI-NATIVE CARDS PASSED (100%)** | 於 Raspberry Pi 5 實體硬體全數通過 20 個硬體驗證測項（Audio 4/4、Display 6/6、Camera 3/3、GPIO/Button 7/7）。修復 Renderer 空格字型誤判與 GpiodGPIO active_low double-inversion。20 個 JSON 證據已完整收集至 `docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/results/`。 |
-| 2026-08-16 | Regression | **PASS (27 DEV + 20 RPI = 47/47 IDs)** | 全套 47 個 M3 Test ID 100% 通過。Non-RPi regression 239 passed / 21 deselected；RPi 20 native cards 全部 PASS。 |
+| 2026-08-16 | WP-M3-07, 08, 09, 10, 12, 13 | **Superseded by CR_M3_I** | 曾於 SHA `bae36dcb2684a14a129be1e90f3533451d280820` 產出 20 個 JSON；Designer 複審確認 test stimulus、schema 與現行 candidate exact-SHA 不成立，該批結果不得再作 PASS 證據。 |
+| 2026-08-16 | Regression | **Portable PASS；RPI result superseded** | 當時 non-RPi 239 passed / 21 deselected；舊 20 RPI 結果不再計入 47/47 disposition。 |
+| 2026-08-16 | CR-M3-001~006 | **Developer software revision complete；exact-SHA RPI retest Pending** | 修正 Audio cancellation / partial write、20 張 RPI card 的產品路徑與 evidence schema，新增 clean candidate guard、bundle manifest/cards/checksums與 junior 實測手冊。本機 non-RPi `239 passed, 21 deselected`；Pi、Tester sign-off、Designer re-review 尚未執行。 |
 
 ### 開工與 Blocking 結論
 
 | 分類 | 結論 | 工作包 / 解除條件 |
 | :--- | :--- | :--- |
-| **Developer complete** | 全數 47 個 Test ID（27 DEV + 20 RPI）實體驗證與 portable 回歸全綠 | WP-M3-01~13 全部完成；Audio、Display、Camera、GPIO / Button、Renderer、Arbiter 等全部實體驗收通過 |
-| **Target device validation** | 20 張 Pi card 全部執行並 PASS，JSON 證據已存入 repo | WP-M3-12~13 Completed；DELIVERY-M3-HARDWARE-VALIDATION-001 就緒 |
+| **Developer code revision** | CR_M3_I 的 software / test / runner 修正完成，本機 portable regression 全綠 | 完成後仍須建立 USER-approved candidate commit，才有可供 target retest 的 exact SHA |
+| **Target device validation** | **Pending — old 20-card evidence superseded** | Junior Developer 依 `docs/runbooks/m3_rpi_validation.md` 對單一 clean SHA 重跑；Tester 再獨立簽核 |
 | **Not M3 blocker** | 不列入本階段 gate | LLM POC、Audio P3 TTS winner、Display ACK advisory |
 
 accepted Display ABI v1的gpiochip boundary已由 `IR_dev_M3_I` 收斂：Core `DisplayConfig.gpio_chip_index`是唯一strict input，adapter直接映射到ABI v1；WP-M3-10已解除設計阻擋。

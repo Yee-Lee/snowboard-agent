@@ -63,6 +63,7 @@ class AlsaAudioInput:
         self._raw = bytearray()
         self._samples: list[int] = []
         self._active: _AlsaFrameStream | None = None
+        self._native_info: dict[str, Any] | None = None
         self._started = False
 
     async def start(self) -> None:
@@ -102,10 +103,18 @@ class AlsaAudioInput:
             raise StopAsyncIteration
         try:
             frame = await self._run_worker(self._next_frame_worker)
+        except asyncio.CancelledError:
+            # Cancellation is a normal stream-termination path.  Since
+            # CancelledError is a BaseException on supported Python versions,
+            # it must be handled explicitly or the active owner and ALSA
+            # source remain attached to this input instance.
+            await asyncio.shield(self._release(stream))
+            raise
         except Exception:
             await self._release(stream)
             raise
         if len(frame) != STREAM_BYTES:
+            await self._release(stream)
             raise RuntimeError("selected audio adapter produced an invalid frame length")
         return frame
 
@@ -153,6 +162,7 @@ class AlsaAudioInput:
         self._resampler = None
         self._raw.clear()
         self._samples.clear()
+        self._native_info = None
         if source is not None:
             close = getattr(source, "close", None)
             if close is not None:
@@ -201,6 +211,18 @@ class AlsaAudioInput:
         pcm.setperiodsize(NATIVE_PERIOD_FRAMES)
         if hasattr(pcm, "setperiods"):
             pcm.setperiods(NATIVE_PERIODS)
+        info = pcm.info()
+        actual = (
+            info.get("rate"), info.get("channels"),
+            str(info.get("format_name", "")).upper(), info.get("period_size"),
+        )
+        expected = (NATIVE_RATE, NATIVE_CHANNELS, "S32_LE", NATIVE_PERIOD_FRAMES)
+        if actual != expected:
+            pcm.close()
+            raise RuntimeError(
+                f"ALSA capture negotiation mismatch: expected={expected} actual={actual}"
+            )
+        self._native_info = dict(info)
         return pcm
 
     @staticmethod

@@ -13,10 +13,12 @@ import sys
 import pytest
 
 from tests.m3_manifest import (
+    M3_TEST_RECORDS,
     blocked_test_ids,
     implemented_nodes_for,
     pending_test_ids,
 )
+from tests.rpi_support import validate_evidence_bundle
 
 
 def test_m3_rpi_hal_milestone_suite() -> None:
@@ -51,3 +53,8 @@ def test_m3_rpi_hardware_acceptance_gate() -> None:
         text=True,
     )
     assert result.returncode == 0, f"M3 RPi suite failed:\n{result.stdout}\n{result.stderr}"
+    expected_ids = (
+        record.test_id for record in M3_TEST_RECORDS
+        if record.platform == "RPI-NATIVE"
+    )
+    validate_evidence_bundle(expected_ids)

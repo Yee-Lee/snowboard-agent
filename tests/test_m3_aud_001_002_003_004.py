@@ -11,6 +11,7 @@ import pytest
 
 from sbd.core.audio.null import NullAudioInput, NullAudioOutput
 from sbd.core.audio.alsa.input import AlsaAudioInput
+from sbd.core.audio.alsa.output import AlsaAudioOutput
 from sbd.core.config.models import (
     AudioConfig, AudioFormatConfig, AudioInputConfig, AudioOutputConfig,
 )
@@ -67,6 +68,16 @@ class _StreamingDecimator:
         output = self.pending[:count:3]
         del self.pending[:count]
         return output
+
+
+class _FakePCM:
+    def __init__(self, writes: list[int]) -> None:
+        self._writes = iter(writes)
+        self.payloads: list[bytes] = []
+
+    def write(self, payload: bytes) -> int:
+        self.payloads.append(payload)
+        return next(self._writes)
 
 
 def test_m3_aud_001() -> None:
@@ -154,12 +165,17 @@ def test_m3_aud_003() -> None:
 
 
 def test_m3_aud_004() -> None:
-    """Closing or failing a stream resets source, converter, and partial state."""
+    """Every termination path resets source, converter, buffers, and owner."""
     impulse = [8_388_607] + [0] * 959
     silence = [0] * 960
-    first = _RawSource([_stereo_s32(impulse, silence)])
-    second = _RawSource([_stereo_s32(impulse, silence)])
-    sources = iter((first, second))
+    payload = _stereo_s32(impulse, silence)
+    first = _RawSource([payload])
+    second = _RawSource([payload])
+    failed = _RawSource([b"partial", b""])
+    cancelled = _RawSource([payload], pause_on_read=1)
+    after_cancel = _RawSource([payload])
+    after_restart = _RawSource([payload])
+    sources = iter((first, second, failed, cancelled, after_cancel, after_restart))
     resamplers: list[_StreamingDecimator] = []
 
     def make_resampler() -> _StreamingDecimator:
@@ -182,7 +198,52 @@ def test_m3_aud_004() -> None:
         assert reopened_frame == first_frame
         await reopened.aclose()
         assert second.close_calls == 1
-        assert len(resamplers) == 2
+
+        failure_stream = audio.frames()
+        with pytest.raises(EOFError, match="no frames"):
+            await anext(failure_stream)
+        assert failed.close_calls == 1
+        assert audio._active is None
+        assert audio._raw == bytearray() and audio._samples == []
+
+        cancelled_stream = audio.frames()
+        read_task = asyncio.create_task(anext(cancelled_stream))
+        await asyncio.sleep(0)
+        read_task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await read_task
+        assert cancelled.close_calls == 1
+        assert audio._active is None
+
+        post_cancel = audio.frames()
+        assert await anext(post_cancel) == first_frame
+        await post_cancel.aclose()
+        assert after_cancel.close_calls == 1
+
+        await audio.stop()
+        await audio.stop()
+        await audio.start()
+        restarted = audio.frames()
+        assert await anext(restarted) == first_frame
+        await restarted.aclose()
+        assert after_restart.close_calls == 1
+        assert len(resamplers) == 6
         assert all(not item.pending for item in resamplers)
         await audio.stop()
     asyncio.run(scenario())
+
+    complete = _FakePCM([2])
+    output = AlsaAudioOutput(_alsa_config())
+    output._pcm = complete
+    output._write_worker(bytes(16))
+    assert [len(payload) for payload in complete.payloads] == [16]
+
+    partial = _FakePCM([1, 2])
+    output._pcm = partial
+    output._write_worker(bytes(24))
+    assert [len(payload) for payload in partial.payloads] == [24, 16]
+
+    stalled = _FakePCM([0])
+    output._pcm = stalled
+    with pytest.raises(OSError, match="no progress"):
+        output._write_worker(bytes(8))

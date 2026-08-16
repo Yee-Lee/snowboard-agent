@@ -18,6 +18,7 @@ class AlsaAudioOutput:
         self._config = config
         self._executor: ThreadPoolExecutor | None = None
         self._pcm: Any | None = None
+        self._native_info: dict[str, Any] | None = None
         self._started = False
 
     async def start(self) -> None:
@@ -68,17 +69,40 @@ class AlsaAudioOutput:
         pcm.setperiodsize(960)
         if hasattr(pcm, "setperiods"):
             pcm.setperiods(4)
+        info = pcm.info()
+        actual = (
+            info.get("rate"), info.get("channels"),
+            str(info.get("format_name", "")).upper(), info.get("period_size"),
+        )
+        expected = (48_000, 2, "S32_LE", 960)
+        if actual != expected:
+            pcm.close()
+            raise RuntimeError(
+                f"ALSA playback negotiation mismatch: expected={expected} actual={actual}"
+            )
+        self._native_info = dict(info)
         self._pcm = pcm
 
     def _write_worker(self, chunk: bytes) -> None:
         if self._pcm is None:
             raise RuntimeError("ALSA playback is unavailable")
-        written = self._pcm.write(chunk)
-        if isinstance(written, int) and written < 0:
-            raise OSError(f"ALSA write failed with status {written}")
+        remaining = memoryview(chunk)
+        while remaining:
+            written = self._pcm.write(remaining.tobytes())
+            if not isinstance(written, int):
+                raise OSError("ALSA write returned a non-integer frame count")
+            if written < 0:
+                raise OSError(f"ALSA write failed with status {written}")
+            if written == 0:
+                raise OSError("ALSA write made no progress")
+            consumed = written * _NATIVE_FRAME_BYTES
+            if consumed > len(remaining):
+                raise OSError("ALSA write returned an invalid frame count")
+            remaining = remaining[consumed:]
 
     def _close_worker(self) -> None:
         pcm, self._pcm = self._pcm, None
+        self._native_info = None
         if pcm is not None and hasattr(pcm, "close"):
             pcm.close()
 
