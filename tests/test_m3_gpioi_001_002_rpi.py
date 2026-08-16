@@ -56,12 +56,15 @@ def test_m3_gpioi_001() -> None:
             with pytest.raises(asyncio.TimeoutError):
                 await asyncio.wait_for(observed.get(), timeout=debounce_ms / 1000)
 
+            falling = await asyncio.wait_for(observed.get(), timeout=interaction_timeout())
+            assert falling.pin == input_pin and falling.edge == "falling"
+
             await asyncio.sleep(debounce_ms / 1000 + 0.02)
             await gpio.set_output(output_pin, True)
             second = await asyncio.wait_for(observed.get(), timeout=interaction_timeout())
             assert first.pin == second.pin == input_pin
             assert first.edge == second.edge == "rising"
-            assert first.at <= second.at
+            assert first.at <= falling.at <= second.at
 
             await gpio.unregister(input_pin)
             await gpio.unregister(input_pin)
@@ -70,7 +73,7 @@ def test_m3_gpioi_001() -> None:
                 await asyncio.wait_for(observed.get(), timeout=debounce_ms / 1000 + 0.05)
             await gpio.unregister(output_pin)
             await gpio.unregister(output_pin)
-            return [first, second]
+            return [first, falling, second]
         finally:
             await gpio.stop()
 
