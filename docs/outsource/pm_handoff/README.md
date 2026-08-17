@@ -10,7 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
 | [`PM-OUT-260817-015-llm-poc-contract-plan-review`](PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`006` | M4b | **Core revision ready — POC committed reply pending** | [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md) |
-| [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | M4a | **Core revision ready — POC committed plan pending** | [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md) |
+| [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | M4a | **G1A plan accepted — Core direct-delivery commit + POC remote push pending** | [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md) |
 
 ---
 
@@ -21,7 +21,7 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4 / M4b 開發進場** | **Contract Issued / Blocked by POC Gate 1** | Contract `DELIVERY-LLM-POC-M4B-CONTRACT-001` 已發出；待 PM relay 轉交 LLM POC Team 並回交 Gate 1 candidate 清單。 |
+| **M4a / M4b POC進場** | **M4a G1A accepted / M4b plan pending** | Audio G1A只放行provenance acquisition與fake scaffold，G1B逐列ACK前禁止candidate execution；LLM待回交revised committed plan。兩者均未進Gate 2。 |
 | **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。

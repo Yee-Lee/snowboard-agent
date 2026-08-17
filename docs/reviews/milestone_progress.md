@@ -90,7 +90,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
 | M4 Candidate process gate | `DESIGN REVISED — IMPLEMENTATION / DRY RUN PENDING` | `OUT-PROCESS-2026-001`：待Developer交付candidate runner、3.11 / 3.12 / 3.13 CI matrix與六項fail-closed tests；待Tester完成無硬體dry run後，才能建立首個M4 frozen candidate並啟動Pi acceptance。M3不重跑 |
-| M4a Audio | `CONTRACT REVISION READY — POC COMMITTED GATE PLAN PENDING` | 已核對Audio POC `dev_audio_m2` / `aad41ce13333bdf94bf6d6ab0996f83982f9f0b1`。Gate 1須回交committed executable plan；Gate 2A qualification只放行scaffold；Gate 2B須完成Audio internal M4、`POC Accepted` handoff與conformance kit；Gate 3才做Core product inheritance / delta與exact-SHA驗收 |
+| M4a Audio | `G1A PLANNING ACCEPTED — CORE DIRECT-DELIVERY COMMIT + POC REMOTE PUSH PENDING` | 已核對POC plan `poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md`、`dev_audio_m2` / `5d4086d2ae9011c559b10012b55414a87a3a8522`並接受D01～D05；本地branch較`origin/dev_audio_m2` ahead 1。G1A只放行provenance acquisition / fake scaffold；G1B逐列ACK前禁止build / candidate run。P9 surrogate由Core Designer在WP4 / S4前交付 |
 | M4b LLM | `CONTRACT REVISION READY — POC PLAN REVISION PENDING` | 已核對LLM POC `llm` / `4ac7ba3941077babf34c7c575003a65f5c541009`；未commit文件不計入intake。Gate 0須回交本revision receipt與committed plan；Gate 1凍結harness / candidate / Ubuntu pre-screen；Gate 2A standalone；Gate 2B依Accepted Audio reference跑P9 / P10B；Gate 3做Core product exact-SHA驗收 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
@@ -98,14 +98,15 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 ```
 Core Designer (contract owner) [DELIVERY-AUDIO-POC-M4A-CONTRACT-001]
-  → User / PM relay revised contract → Audio POC Team
-    Gate 1: POC commit executable plan + candidate proposal → Core written ACK
+  → committed delivery直接交付Audio POC Team
+    Gate 1A: POC committed plan 5d4086d... → Core planning ACK（D01～D05 accepted）
+    Gate 1B: POC exact candidate proposal → Core逐列candidate-scope ACK
     Gate 2A: POC 執行 standalone P1~P12 → selection ACK（只放行 scaffold）
     Gate 2B: POC internal M4 → POC Accepted final handoff + conformance kit
     Gate 3: Core product inheritance / delta mapping → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；Audio POC補強後的committed plan path / branch / full SHA待回覆。
+Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；G1A ACK：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`。016待POC commit push至約定remote且ACK committed / directly delivered後close；不等待G1B或Gate 2實測。
 
 ### M4b LLM Contract Relay Flow（2026-08-17 修訂）
 
