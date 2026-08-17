@@ -1,0 +1,5 @@
+4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7  <repo-root>/config.m3.local.yaml
+f6e28ad1753237d42be72be187a88f09a269097eeda24bcf12908db6bd361246  fixture:M3-AUDI-001:960-frame zero PCM
+2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493  <external-display-artifact>/libdisplay.so
+3c3fc22c8066785439e8fc6343deef38adb554efd02a8941eec66428e50c75f2  fixture:M3-AUDI-002:hw:__missing__,0
+fad46851b877f39b0b9504081fbb9a18b195dd5187c57d72fa55b9f4c940c390  fixture:M3-AUDI-004:live capture plus deterministic EOF seam

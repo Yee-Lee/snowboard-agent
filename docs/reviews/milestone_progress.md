@@ -2,10 +2,10 @@
 
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
-* **Current milestone**: M3
-* **M3 gate status**: `Tester PASS — Pending Designer final Code/Test Review (CR_M3)`
-* **M3 implementation SHA**: `bae36dcb2684a14a129be1e90f3533451d280820`
-* **Last updated**: 2026-08-16
+* **Current milestone**: M4
+* **M3 gate status**: `Accepted — Designer transition direct review complete`
+* **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
+* **Last updated**: 2026-08-17
 * **Owner**: Designer
 
 ---
@@ -29,9 +29,9 @@ Core Display設計、strict SSD1351 mapping與M3–M7規劃已收斂；Display P
 | Ch 2a / Ch 8 / Ch 10 alignment | `PARTIAL READY` | Audio native / stream語意已固定但implementation selection待P4；strict SSD1351 artifact / ABI / SPI / GPIO / rotation / byte-order / buffer mapping已固定 | Developer依package split實作；不得自行選Audio binding / resampler / buffering |
 | M3 / M4 / M5 / M7 planning alignment | `REVIEWED` | M4a / M4b / M4c、M5 exact-SHA dependency、M7 spec-first 規則；`MR_review_II` Resolved | 建立本輪 design commit |
 | M3 Design Ready | `READY` | Core design commit `08032cfa63e776b5e7771ff3817bcfb275e8bac1`；Display ACK；Audio final ACK-004 | M3整體可開工；Audio real package依ACK-004 selected baseline實作 |
-| M3 test spec / coverage sign-off | `APPROVED + P4 CONDITIONAL` | `docs/test_spec/test_spec_M3.md`；`TR_spec_M3_I` Resolved；ACK-002 amendment | Audio implementation-specific case在P4後綁定核准選型；不提前宣稱PASS |
-| `dev_progress_M3.md` / 工作包 | `AUTHORIZED / DEVELOPER-OWNED` | test spec已簽核；Audio final ACK-004；working tree已有Developer檔案但不由Designer修改 | Developer更新WP-M3-07為Ready，依selected baseline實作並回交Core exact SHA |
-| M3 target-device acceptance | `PENDING` | `docs/milestones/M3.md`；`OUT-M3-TEST-2026-001` | Tester 對 delivery exact SHA 獨立驗收；POC 自驗只作外部 evidence layer |
+| M3 test spec / coverage sign-off | `APPROVED + COMPLETED` | `docs/test_spec/test_spec_M3.md`；`TR_spec_M3_I` Resolved；ACK-002 amendment；`CR_M3_I` final disposition | test spec §3的Pending文字是簽核當時的execution snapshot，不是current milestone tracker；Accepted狀態以本表與CR為準 |
+| `dev_progress_M3.md` / 工作包 | `COMPLETED SNAPSHOT / DEVELOPER-OWNED` | Developer最後修訂記錄停在exact-SHA retest前；後續fixed-SHA evidence與Designer closeout見`CR_M3_I` | 不回寫Developer-owned歷史敘述；current acceptance authority為本表與CR |
+| M3 target-device acceptance | `ACCEPTED` | `CR_M3_I`；`designer-review-5c9e5aa-20260817/README.md`；implementation `5c9e5aa...` | USER核准transition direct review與免再次freeze；20/20 target cards、3項人工觀察及240項portable regression通過 |
 
 ### Reviewer handoff scope（pre-commit working tree）
 
@@ -157,6 +157,6 @@ Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract
 6. ~~取得 USER commit 同意後建立 PM-009 單一候選 commit，回傳完整 40-character HEAD 完成 external exact-SHA intake。~~ — **Done**
 7. ~~Developer建立／更新`dev_progress_M3.md`：Display、Camera、GPIO、Audio Protocol / mock/null / schema / fake seam列Ready；Audio real backend與dependency lock列`Blocked by Audio P4`。~~ — **Done**
 8. ~~Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`回交完整source SHA與evidence；Core Designer審核並另發final selection ACK後，Developer才開始Audio real package。~~ — **Done**（`DELIVERY-AUDIO-POC-M3-P4-ACK-004`）
-9. ~~M3 delivery前由Core完成Audio Option A implementation / Pi evidence與Display artifact / fixture / performance evidence，再由Tester對exact implementation SHA驗收。~~ — **Done**（47/47 Test IDs；exact SHA `bae36dcb2684a14a129be1e90f3533451d280820`）
-10. ~~**Tester 對 exact SHA 獨立簽核 PASS**~~ — **Done** (`2026-08-16`；DEV 239 passed / 21 deselected；RPI 20/20 PASS；3 Advisory 不阻擋；詳見 `M3_tester_review.md`)
-11. **[NEXT] Designer 執行最終 Code/Test Review（CR_M3）** — 聚焦設計對齊及高風險 regression protection；若有 Blocking 偏離開立 `CR_M3.md`；Advisory 不阻擋 M3 Accepted。
+9. ~~M3 delivery前由Core完成Audio Option A implementation / Pi evidence與Display artifact / fixture / performance evidence。~~ — **Done**（47/47 Test IDs；Accepted implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`）
+10. ~~USER核准transition direct review；Designer核對固定SHA的20張target cards、人工觀察與portable regression。~~ — **Done**（不再次freeze；兩批debug run限制已揭露並接受）
+11. ~~Designer完成最終Code/Test Review（CR_M3_I）。~~ — **Done**（CR-M3-001～006全部Pass；M3 Accepted）

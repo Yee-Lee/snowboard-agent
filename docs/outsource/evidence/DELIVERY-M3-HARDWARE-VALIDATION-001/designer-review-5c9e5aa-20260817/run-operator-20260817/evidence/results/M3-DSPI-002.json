@@ -1,0 +1,92 @@
+{
+  "actual": "lifecycle rendered 5 presents; current-run checklist passed",
+  "artifacts": [
+    {
+      "package": "pyalsaaudio",
+      "version": "0.11.0"
+    },
+    {
+      "package": "samplerate",
+      "version": "0.2.4"
+    },
+    {
+      "package": "numpy",
+      "version": "2.4.2"
+    },
+    {
+      "package": "picamera2",
+      "version": "0.3.37"
+    },
+    {
+      "package": "gpiod",
+      "version": "2.2.0"
+    },
+    {
+      "package": "Pillow",
+      "version": "11.1.0"
+    },
+    {
+      "abi": 1,
+      "license": "delivery notice / accepted Display POC",
+      "path": "<external-display-artifact>/libdisplay.so",
+      "sha256": "2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493"
+    }
+  ],
+  "artifacts_index": {
+    "card": "cards/M3-DSPI-002.md",
+    "logs": "logs/",
+    "media_metadata": "media-metadata/",
+    "result": "results/M3-DSPI-002.json"
+  },
+  "config": {
+    "path": "<repo-root>/config.m3.local.yaml",
+    "sha256": "4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7"
+  },
+  "exit_code": 0,
+  "expected": "boot blank, IDLE state text, and shutdown blank execute through lifecycle owner",
+  "finished_utc": "2026-08-17T14:39:48.460428+00:00",
+  "fixture": {
+    "name": "SCN-BOOT/STATE/SHUTDOWN sequence",
+    "sha256": "270446930f94b80bc87777fa0ed344de5421993276f32003ebade64e2db22c97",
+    "source_identity": "inline-fixture"
+  },
+  "hardware_and_wiring": {
+    "operator": "operator-1",
+    "peripherals": {
+      "audio": "Google voiceHAT SoundCard (I2S hw:0,0)",
+      "button": "Tactile switch on BCM23 (Pin 16) to GND",
+      "camera": "Raspberry Pi Camera Module v2 (Sony IMX219)",
+      "display": "Waveshare 1.5-inch RGB OLED (SSD1351)"
+    },
+    "pi": "Raspberry Pi 5 4GB Model B Rev 1.1",
+    "wiring": "Use runbook section 2 plus BCM17-to-BCM27 GPIO loopback jumper"
+  },
+  "manual_observation": {
+    "checks": {
+      "boot_blank": true,
+      "idle_text_readable": true,
+      "shutdown_blank": true
+    },
+    "media_metadata": [],
+    "observed_at_utc": "2026-08-17T14:39:48.101109+00:00",
+    "operator": "operator-1",
+    "test_id": "M3-DSPI-002"
+  },
+  "metrics": {},
+  "product_revision": {
+    "branch": "HEAD",
+    "implementation_sha": "5c9e5aac47e7f4f0dd168d8c75541438ee74f858"
+  },
+  "reproduction": {
+    "command": "<repo-root>/.venv/bin/python -m pytest -vv -s -p no:cacheprovider -m rpi tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002",
+    "operation": "Observe the three timed stages, then record the current-run checklist"
+  },
+  "started_utc": "2026-08-17T14:39:15.733120+00:00",
+  "status": "Pass",
+  "system": {
+    "machine": "aarch64",
+    "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+    "python": "3.13.5"
+  },
+  "test_id": "M3-DSPI-002"
+}

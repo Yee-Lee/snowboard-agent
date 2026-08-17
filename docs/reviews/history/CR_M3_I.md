@@ -1,7 +1,7 @@
 ---
 requestor: "Designer"
 owner: "Developer"
-status: "Revised"
+status: "Resolved"
 ---
 
 # CR_M3_I — M3 最終 Code/Test Review
@@ -224,3 +224,41 @@ exit code 0
    XFail、完整 evidence index，建立存在於 repo 的 sign-off。
 4. Designer 更新其 owner 文件並複審本輪 findings；只有 Requestor 可將本單改為
    `Resolved`。
+
+## Designer 最終複審裁定（2026-08-17）
+
+**本輪判定：PASS。** 固定 implementation SHA
+`5c9e5aac47e7f4f0dd168d8c75541438ee74f858` 的 CR-M3-001～006 Blocking
+findings 已全數符合契約或經 USER 明確核准的 transition disposition；未追加新門檻。
+
+USER 本輪明確要求直接審核已在實機通過的固定 SHA，且不再次 freeze。依
+`designer-review-5c9e5aa-20260817/README.md` 的 transition scope，Designer 可用兩批
+保留的 debug runs 作 Accepted / Rejected 判定，不冒充 legacy single-run acceptance，
+也不更改 `TR_dev_M3_I` 的 Tester-owned YAML 狀態。
+
+| Finding | 裁定 | 最終證據 |
+| --- | --- | --- |
+| CR-M3-001 | Pass | 20 個唯一 target Test ID 全部指向完整 SHA `5c9e5aa...`、同一 config checksum、`Pass` / exit 0；runner 對 `src/`、`tests/`、必要 scripts與dependency paths執行 exact-SHA / clean guard。 |
+| CR-M3-002 | Pass | Camera與GPIOI同名 nodes已直接覆蓋 fallback、format、debounce、cleanup、output與no-null GPIO policy；20 IDs無缺號或重複。 |
+| CR-M3-003 | Pass | Audio、Button與Display cards包含產品路徑 assertions；AUDI-003、DSPI-002、DSPI-005本次人工 checklist全部為true。 |
+| CR-M3-004 | Pass | 兩批 evidence均包含manifest、results、cards、environment、checksums、raw logs與media index；首次GPIOI-001 invocation failure及成功rerun均保留。 |
+| CR-M3-005 | Pass | Portable Audio lifecycle / partial-write regression通過；本次AUDI-001/002/004實機run為3 passed，AUDI-003播放與聽覺check通過。 |
+| CR-M3-006 | Pass | 本單、`milestone_progress.md`、hardware delivery README、PM handoff index及audit response統一以`5c9e5aa...`為M3 Accepted implementation；舊`bae36d...` / `cab627...` bundle維持superseded。 |
+
+### Designer 獨立驗證
+
+```text
+complete -m "not rpi": 240 passed, 21 deselected in 35.91s; exit 0
+evidence reconciliation: 20 unique IDs; exact SHA/config aligned;
+all status=Pass and exit_code=0; 3 manual checklists all true
+git diff --check 5c9e5aa^ 5c9e5aa: no output
+```
+
+Target evidence index：
+`docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/designer-review-5c9e5aa-20260817/README.md`。
+兩批 debug runs 的分批性已揭露；USER核准其作本次 transition direct review，故不要求
+重跑或再 freeze。`IR_dev_M3_oled_shutdown_I` 是未納入本 candidate scope 的 future
+Advisory，不阻擋本次 M3。
+
+本 CR 設為 `Resolved`；M3 implementation SHA `5c9e5aa...` 標記為 **Accepted**，
+可準備 milestone closeout commit proposal。

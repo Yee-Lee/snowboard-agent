@@ -1,0 +1,80 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- <repo-root>/.venv/bin/python
+rootdir: <repo-root>
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: asyncio-1.4.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 3 items
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 PASSED
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 ALSA lib confmisc.c:165:(snd_config_get_card) Cannot get card index for __missing__
+PASSED
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 PASSED
+
+=============================== warnings summary ===============================
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+  <repo-root>/src/sbd/core/audio/alsa/input.py:230: DeprecationWarning: This function is deprecated. Please use the named parameter `channels` to `PCM()` instead
+    pcm.setchannels(NATIVE_CHANNELS)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+  <repo-root>/src/sbd/core/audio/alsa/input.py:231: DeprecationWarning: This function is deprecated. Please use the named parameter `rate` to `PCM()` instead
+    pcm.setrate(NATIVE_RATE)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+  <repo-root>/src/sbd/core/audio/alsa/input.py:232: DeprecationWarning: This function is deprecated. Please use the named parameter `format` to `PCM()` instead
+    pcm.setformat(alsaaudio.PCM_FORMAT_S32_LE)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004
+  <repo-root>/src/sbd/core/audio/alsa/input.py:233: DeprecationWarning: This function is deprecated. Please use the named parameter `periodsize` to `PCM()` instead
+    pcm.setperiodsize(NATIVE_PERIOD_FRAMES)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002
+  <repo-root>/src/sbd/core/audio/alsa/output.py:66: DeprecationWarning: This function is deprecated. Please use the named parameter `channels` to `PCM()` instead
+    pcm.setchannels(2)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002
+  <repo-root>/src/sbd/core/audio/alsa/output.py:67: DeprecationWarning: This function is deprecated. Please use the named parameter `rate` to `PCM()` instead
+    pcm.setrate(48_000)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002
+  <repo-root>/src/sbd/core/audio/alsa/output.py:68: DeprecationWarning: This function is deprecated. Please use the named parameter `format` to `PCM()` instead
+    pcm.setformat(alsaaudio.PCM_FORMAT_S32_LE)
+
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001
+tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002
+  <repo-root>/src/sbd/core/audio/alsa/output.py:69: DeprecationWarning: This function is deprecated. Please use the named parameter `periodsize` to `PCM()` instead
+    pcm.setperiodsize(960)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 3 passed, 40 warnings in 7.54s ========================

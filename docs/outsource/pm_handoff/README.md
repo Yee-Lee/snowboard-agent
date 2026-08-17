@@ -20,9 +20,9 @@
 | :--- | :--- | :--- |
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
-| **M3 最終 delivery / acceptance** | **Pending** | External design/test delivery尚待 user-approved exact-SHA commit；產品實作、Audio P1/P2 與所有 RPI-NATIVE cards仍待完成。 |
+| **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
 | **M4 / M4b 開發進場** | **Contract Issued / Blocked by POC Gate 1** | Contract `DELIVERY-LLM-POC-M4B-CONTRACT-001` 已發出；待 PM relay 轉交 LLM POC Team 並回交 Gate 1 candidate 清單。 |
-| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
+| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
@@ -42,6 +42,7 @@
 | [`PM-OUT-260805-002-m3-m4-poc-planning`](history/PM-OUT-260805-002-m3-m4-poc-planning/brief.md) | Audio / Display / LLM 設計與 POC 接合準備 | `OUT-FB-2026-002-R1` | **Resolved** | Response: [`OUT-FB-2026-002-R1.md`](../responses/OUT-FB-2026-002-R1.md) |
 | [`PM-OUT-260811-008-m3-display-spec-design`](history/PM-OUT-260811-008-m3-display-spec-design/brief.md) | M3 Display Spec 與 Design Ready | `OUT-M3-DISPLAY-SPEC-2026-001` | **Resolved** | Response: [`OUT-M3-DISPLAY-SPEC-2026-001.md`](../responses/OUT-M3-DISPLAY-SPEC-2026-001.md) |
 | [`PM-OUT-260813-009-m3-display-test-spec-feedback`](history/PM-OUT-260813-009-m3-display-test-spec-feedback/brief.md) | M3 Display / Test Spec 收斂 | `OUT-M3-REVIEW-2026-001` | **Resolved** | Response: [`OUT-M3-REVIEW-2026-001.md`](../responses/OUT-M3-REVIEW-2026-001.md) |
+| [`PM-OUT-260817-013-m3-morning-retest-audit`](history/PM-OUT-260817-013-m3-morning-retest-audit/brief.md) | M3早晨重測與zero-debounce稽核 | `OUT-M3-AUDIT-2026-001` | **Resolved — fixed SHA accepted** | Response: [`OUT-M3-AUDIT-2026-001.md`](../responses/OUT-M3-AUDIT-2026-001.md) |
 | [`PM-OUT-260814-010-m4a-audio-poc-contract-gate`](history/PM-OUT-260814-010-m4a-audio-poc-contract-gate/brief.md) | M4a Audio POC Contract / Gate 協調 | `OUT-M4A-2026-001` | **Resolved** | Response: [`OUT-M4A-2026-001.md`](../responses/OUT-M4A-2026-001.md) |
 | [`PM-OUT-260814-011-m4b-llm-poc-contract-gate`](history/PM-OUT-260814-011-m4b-llm-poc-contract-gate/brief.md) | M4b LLM POC Contract / 002 結案移交 | `OUT-M4B-2026-001` | **Resolved** | Response: [`OUT-M4B-2026-001.md`](../responses/OUT-M4B-2026-001.md) |
 | [`PM-OUT-260814-012-alpha-beta-product-convergence`](history/PM-OUT-260814-012-alpha-beta-product-convergence/brief.md) | M4後ALPHA / M7後BETA產品收斂Gate | `OUT-ROADMAP-2026-001` | **Resolved** | 待產出 |
@@ -66,5 +67,6 @@ docs/outsource/pm_handoff/
     ├── PM-OUT-260813-009-m3-display-test-spec-feedback/
     ├── PM-OUT-260814-010-m4a-audio-poc-contract-gate/
     ├── PM-OUT-260814-011-m4b-llm-poc-contract-gate/
-    └── PM-OUT-260814-012-alpha-beta-product-convergence/
+    ├── PM-OUT-260814-012-alpha-beta-product-convergence/
+    └── PM-OUT-260817-013-m3-morning-retest-audit/
 ```

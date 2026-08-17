@@ -1,0 +1,19 @@
+4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7  <repo-root>/config.m3.local.yaml
+19e481ede2306b595b53f5fd67cea8480a579ff2df81ddee6af05d992470043c  fixture:M3-AUDI-003:440Hz-3s-48k-stereo-S32_LE
+2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493  <external-display-artifact>/libdisplay.so
+fd49a3d95441e8934832546773eb28d36b8704571386f14ca273986f12319a7b  fixture:M3-BTN-001:physical conversation button short press
+556fced3ba1e3f1332a5da125bd317319ae882cf9a37cb2574dfc9a3628aaa60  fixture:M3-BTN-002:two physical button presses: WAKE then interrupt
+b42fa4359f65936fd1c6abeb16454f431c6c7c7151da96f98a632cb5dfca8a6f  fixture:M3-BTN-003:physical conversation button long press
+173eac164b73ed74d82a55c1c58fb27daec5a9fc67ff37eb39f8690377af5424  fixture:M3-BTN-004:physical button with recovered ERROR precondition
+1a85430e3ce7fa46f1f3270b7e87f412281b544c1d68bdecc888f201788e4e94  fixture:M3-BTN-005:two physical presses across recovery barrier
+not-applicable  fixture:M3-CAMI-001:live CSI sensor
+f7e66f22426b25d174acc46908f2faa44b202a074f896aa136975de19bf23534  fixture:M3-CAMI-002:deterministic missing-CSI start failure
+not-applicable  fixture:M3-CAMI-003:live CSI sensor RGB/YUV
+3fe2dfa1c5095ffd8011db8d2a61b2b5c1189e6a9eab5cc859ae1db16a8f7336  fixture:M3-DSPI-001:main.text atomic intent
+270446930f94b80bc87777fa0ed344de5421993276f32003ebade64e2db22c97  fixture:M3-DSPI-002:SCN-BOOT/STATE/SHUTDOWN sequence
+43097840b53093e5af972e4540955c9167a14c314f69de6351f2e0039e23d044  fixture:M3-DSPI-003:missing native-library path
+508ddbd426445e8c218d6288cf17f87f83833ee9d041ccc83f06b594c7179b8a  fixture:M3-DSPI-004:two lifecycle reopen intents
+51f002246241249907686e820e28e4025ebde1a6de06583b0e41a098a7d8b882  fixture:M3-DSPI-005:four-quadrant RGBW + up-arrow
+e5a3a6d8bc816380c8b8a388e4dd64cf0771c97e0cf2449fefd1bce9815b749a  fixture:M3-DSPI-006:32768-byte red RGB565 frame
+59af7f40d80eae82f8900f951c7fac6fbd9494e775ab401fb37b25909f66896c  fixture:M3-GPIOI-001:BCM17-to-BCM27 loopback
+4e0e173e2ba1c3103ab15e2cd9e4c592abac679a96b330e228ee883de65e1322  fixture:M3-GPIOI-002:deterministic unavailable-gpiochip module

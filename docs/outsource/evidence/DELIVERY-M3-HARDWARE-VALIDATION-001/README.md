@@ -1,6 +1,15 @@
 # DELIVERY-M3-HARDWARE-VALIDATION-001
 
-Status: **Pending Tester Review**
+Status: **Accepted for M3 at implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`**
+
+The authoritative M3 closeout evidence is indexed at
+`designer-review-5c9e5aa-20260817/README.md`.  Under the USER-approved transition
+direct-review disposition, Designer reconciled 20 unique target Test IDs across two
+preserved debug runs: all results are `Pass` with exit code 0, all identify the fixed
+SHA and config checksum, and all three manual checklists passed.  `CR_M3_I` records
+the final acceptance decision.  No second freeze was required.
+
+## Superseded legacy bundle
 
 The 20 JSON files currently under `results/` were successfully regenerated for
 implementation SHA `cab627705c341d0058e0c395e96d0be10c4c4239`. They pass the
@@ -16,5 +25,5 @@ revised runner refuses a mismatched candidate SHA or dirty `src/`, `tests/`,
 - 20 `cards/M3-*.md` and 20 schema-complete `results/M3-*.json` files;
 - `logs/` and `media-metadata/index.json`.
 
-Until all 20 cards have been regenerated and the independent Tester report is
-committed, this delivery remains Pending and M3 is not Accepted or Closed.
+This legacy `cab627...` bundle remains superseded and is not the basis of M3
+acceptance.  It is retained only for audit history.

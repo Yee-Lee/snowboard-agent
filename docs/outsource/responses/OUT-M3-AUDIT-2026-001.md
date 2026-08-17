@@ -2,13 +2,14 @@
 
 ## 基本資訊
 
-- **階段**：commit 前 worktree 複驗；final candidate 尚未建立。
+- **階段**：M3 transition direct review完成；fixed candidate已由Designer接受。
 - **Branch**：`dev_agent_m3`。
-- **目前 HEAD**：`d81601789ef40aeccd01dd8d4b9db67a01d76163`；本回覆、程式與
-  regression 尚未提交，因此 **Response HEAD / 最終被測 implementation SHA：Pending**。
+- **Response / implementation baseline commit**：
+  `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`。此commit同時包含本回覆、Audio
+  修正及GPIO regression；本次Designer實機證據亦指向同一完整SHA。
 - **既有 Pi bundle implementation SHA**：
-  `cab627705c341d0058e0c395e96d0be10c4c4239`；因本輪將修改 `src/` / `tests/`，
-  不作為新候選的 acceptance evidence，commit 後必須依流程重跑。
+  `cab627705c341d0058e0c395e96d0be10c4c4239`；本輪後續修改了 `src/` / `tests/`，
+  因此該bundle已被supersede，不作為fixed candidate的acceptance evidence。
 - **Comparison baseline**：`c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6`。
 - **架構／dependency 變更**：無。
 - **Config 變更**：除錯期間曾由 BCM23 改為 BCM27，之後已恢復 BCM23；目前本機
@@ -74,5 +75,14 @@
   `docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/retest-audit-20260817/portable-precommit.md`
 - 舊 bundle identity：
   `docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/manifest.json`
-- 新候選 SHA、README / manifest / results / cards 對齊：**Pending**；須先通過 Tester 的
-  commit 前審查，再展示 commit proposal並取得 USER明確同意，commit 後才可重錄。
+- 最終候選 SHA、README / manifest / results / cards 對齊：
+  `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；索引為
+  `docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/designer-review-5c9e5aa-20260817/README.md`。
+
+## Closure disposition — 2026-08-17
+
+PM handoff 013的必做回覆已完成：可證明事實、事後推論與不可恢復證據分列；BCM27
+設定污染、zero-debounce defensive change、runner能力邊界、完整historical SHA、
+config checksum及portable regression均已定位。Designer另核對fixed SHA的20張target
+cards全部Pass / exit 0與三項人工觀察通過。USER明確核准本次transition direct review
+且不再次freeze，因此finding `OUT-M3-AUDIT-2026-001`判定 **Resolved**。

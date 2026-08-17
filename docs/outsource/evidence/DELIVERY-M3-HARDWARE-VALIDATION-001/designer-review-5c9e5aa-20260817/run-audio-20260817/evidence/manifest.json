@@ -1,0 +1,24 @@
+{
+  "candidate": {
+    "branch": "HEAD",
+    "implementation_sha": "5c9e5aac47e7f4f0dd168d8c75541438ee74f858"
+  },
+  "cards": [
+    {
+      "path": "results/M3-AUDI-001.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-001"
+    },
+    {
+      "path": "results/M3-AUDI-002.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-002"
+    },
+    {
+      "path": "results/M3-AUDI-004.json",
+      "status": "Pass",
+      "test_id": "M3-AUDI-004"
+    }
+  ],
+  "generated_at_utc": "2026-08-17T14:29:18.105760+00:00"
+}
