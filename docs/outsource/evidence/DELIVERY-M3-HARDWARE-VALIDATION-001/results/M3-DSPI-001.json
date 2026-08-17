@@ -44,7 +44,7 @@
   },
   "exit_code": 0,
   "expected": "one write_main intent produces exactly clear\u2192write_pixels\u2192show",
-  "finished_utc": "2026-08-16T15:49:09.934924+00:00",
+  "finished_utc": "2026-08-17T00:45:15.384648+00:00",
   "fixture": {
     "name": "main.text atomic intent",
     "sha256": "3fe2dfa1c5095ffd8011db8d2a61b2b5c1189e6a9eab5cc859ae1db16a8f7336",
@@ -64,14 +64,14 @@
   "manual_observation": null,
   "metrics": {},
   "product_revision": {
-    "branch": "dev_agent_m3",
-    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+    "branch": "HEAD",
+    "implementation_sha": "cab627705c341d0058e0c395e96d0be10c4c4239"
   },
   "reproduction": {
     "command": "/home/yee/workspace/snowboard-agent/.venv/bin/python -m pytest -p no:cacheprovider -m rpi -q tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_001 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_002 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_004 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_005 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_003 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_005 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002",
     "operation": "automated"
   },
-  "started_utc": "2026-08-16T15:49:09.103132+00:00",
+  "started_utc": "2026-08-17T00:45:14.552254+00:00",
   "status": "Pass",
   "system": {
     "machine": "aarch64",

@@ -1,5 +1,5 @@
 {
-  "actual": "duration_ms=256; states=('WAKE', 'PERCEPTION'); no task remained after shutdown",
+  "actual": "duration_ms=280; states=('WAKE', 'PERCEPTION'); no task remained after shutdown",
   "artifacts": [
     {
       "package": "pyalsaaudio",
@@ -44,7 +44,7 @@
   },
   "exit_code": 0,
   "expected": "physical short press publishes ButtonPressed and drives IDLE\u2192WAKE\u2192PERCEPTION",
-  "finished_utc": "2026-08-16T15:48:43.294418+00:00",
+  "finished_utc": "2026-08-17T00:44:52.125587+00:00",
   "fixture": {
     "name": "physical conversation button short press",
     "sha256": "fd49a3d95441e8934832546773eb28d36b8704571386f14ca273986f12319a7b",
@@ -64,14 +64,14 @@
   "manual_observation": null,
   "metrics": {},
   "product_revision": {
-    "branch": "dev_agent_m3",
-    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+    "branch": "HEAD",
+    "implementation_sha": "cab627705c341d0058e0c395e96d0be10c4c4239"
   },
   "reproduction": {
     "command": "/home/yee/workspace/snowboard-agent/.venv/bin/python -m pytest -p no:cacheprovider -m rpi -q tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_001 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_002 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_004 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_005 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_003 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_005 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002",
     "operation": "Short-press once only after pytest prints this card name"
   },
-  "started_utc": "2026-08-16T15:47:28.538884+00:00",
+  "started_utc": "2026-08-17T00:44:42.127461+00:00",
   "status": "Pass",
   "system": {
     "machine": "aarch64",

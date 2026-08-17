@@ -1,5 +1,5 @@
 {
-  "actual": "first duration=288 stayed ERROR; second duration=264 entered WAKE",
+  "actual": "first duration=180 stayed ERROR; second duration=216 entered WAKE",
   "artifacts": [
     {
       "package": "pyalsaaudio",
@@ -44,7 +44,7 @@
   },
   "exit_code": 0,
   "expected": "recovery-active short press is ignored; post-recovery short press starts WAKE",
-  "finished_utc": "2026-08-16T15:48:56.393369+00:00",
+  "finished_utc": "2026-08-17T00:45:02.000498+00:00",
   "fixture": {
     "name": "two physical presses across recovery barrier",
     "sha256": "1a85430e3ce7fa46f1f3270b7e87f412281b544c1d68bdecc888f201788e4e94",
@@ -64,14 +64,14 @@
   "manual_observation": null,
   "metrics": {},
   "product_revision": {
-    "branch": "dev_agent_m3",
-    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+    "branch": "HEAD",
+    "implementation_sha": "cab627705c341d0058e0c395e96d0be10c4c4239"
   },
   "reproduction": {
     "command": "/home/yee/workspace/snowboard-agent/.venv/bin/python -m pytest -p no:cacheprovider -m rpi -q tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_001 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_002 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_004 tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_005 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_001 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_002 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_003 tests/test_m3_audi_001_002_003_004_rpi.py::test_m3_audi_004 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_002 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_005 tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002",
     "operation": "Short-press once during recovery; after prompt/state boundary, short-press again"
   },
-  "started_utc": "2026-08-16T15:48:50.712888+00:00",
+  "started_utc": "2026-08-17T00:44:59.244406+00:00",
   "status": "Pass",
   "system": {
     "machine": "aarch64",

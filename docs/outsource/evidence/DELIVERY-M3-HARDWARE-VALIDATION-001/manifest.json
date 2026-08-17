@@ -1,7 +1,7 @@
 {
   "candidate": {
-    "branch": "dev_agent_m3",
-    "implementation_sha": "c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6"
+    "branch": "HEAD",
+    "implementation_sha": "cab627705c341d0058e0c395e96d0be10c4c4239"
   },
   "cards": [
     {
@@ -105,5 +105,5 @@
       "test_id": "M3-GPIOI-002"
     }
   ],
-  "generated_at_utc": "2026-08-16T15:49:47.149053+00:00"
+  "generated_at_utc": "2026-08-17T00:45:52.615153+00:00"
 }
