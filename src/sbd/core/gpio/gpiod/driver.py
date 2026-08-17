@@ -70,7 +70,8 @@ class GpiodGPIO:
         kwargs: dict[str, Any] = {
             "direction": self._gpiod.line.Direction.INPUT,
             "edge_detection": edges[edge],
-            "debounce_period": timedelta(milliseconds=debounce_ms),
+            **({"debounce_period": timedelta(milliseconds=debounce_ms)} if debounce_ms > 0 else {}),
+            
             "event_clock": self._gpiod.line.Clock.MONOTONIC,
         }
         if hasattr(self._gpiod.line, "Bias") and hasattr(self._gpiod.line.Bias, "PULL_UP"):
