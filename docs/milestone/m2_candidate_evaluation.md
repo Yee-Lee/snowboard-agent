@@ -1,16 +1,24 @@
 # M2：VAD、ASR、TTS 隔離候選比較
 
-狀態：`NOT_STARTED`
+狀態：`PLANNED / NEXT`
+
+Gate 狀態：`PLAN SUBMITTED / NOT AUTHORIZED`
 
 ## 目標
 
 用 M1 固定的方法比較所有核准候選，淘汰不具交付資格者，為每一類產出可進入真實硬體整合的 finalist；此階段結果仍須通過 M3/M4 才能成為最終 winner。
 
 本 milestone 同時承接
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 Gate 1：POC 先回交 candidate/version/source hash/license/Pi build proposal，只對
 Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence 的累積，
 不是 Core final winner ACK。
+
+2026-08-17 revised contract 所要求的 committed executable plan 已由
+[`RESP-AUDIO-M4A-GATE-PLAN-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md)
+提出。該回覆只是 planning packet，不是 candidate authorization；Core 書面
+核准 plan、language/VAD/provenance 邊界與 M4b surrogate 前，不下載、build
+或 benchmark 真實候選。
 
 ## 對最終交付的貢獻
 
@@ -38,11 +46,13 @@ Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence �
   lifecycle/offline 產生 preliminary evidence，HAL playback、Pi resource 與同時常駐的
   final disposition 留待 M3。
 
-M2 執行分成兩個子 gate：
+M2 執行分成三個受控步驟：
 
-1. **Gate 1 proposal**：只整理 candidate manifest、license/source/build 提案與
-   language/VAD boundary 問題；不下載大型 artifact、不執行真實 candidate run。
-2. **Authorized comparison**：只在 Core Designer 書面 ACK 後，對 ACK 明列範圍
+1. **Gate 1 planning**：提交 committed executable plan 與待決策項；不取得
+   candidate artifact、不執行真實 candidate run。
+2. **Gate 1 candidate proposal**：只在 Core 核准 provenance-only acquisition
+   邊界後，整理 exact candidate manifest、license/source/build 提案；仍不 benchmark。
+3. **Authorized comparison**：只在 Core Designer 另以書面 ACK 明列候選範圍後，
    執行 fixture benchmark 與 preliminary Gate 2 evidence。
 
 ## Entry Conditions

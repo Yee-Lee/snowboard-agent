@@ -4,7 +4,7 @@
 新文件承接的 transaction record 移至 `history/`。歸檔不代表刪除決策或證據，
 引用仍須指向可追溯的歷史文件。
 
-最後更新：2026-08-15
+最後更新：2026-08-17
 
 ## Authoritative POC Specifications
 
@@ -17,7 +17,9 @@
 
 ## Active Handoffs
 
-當前無待處理之 blocking handoff。M1 已全數結案凍結；待進入 M2 Gate 1 提出候選評測清單時新增 handoff。
+| Delivery | 狀態 | POC 回覆 / 下一步 |
+| --- | --- | --- |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `ACTION REQUIRED — AUDIO POC COMMITTED GATE PLAN PENDING` | POC 已提出 [`RESP-AUDIO-M4A-GATE-PLAN-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md)；待 Core 書面核准計畫並關閉 language、VAD、provenance-only acquisition 與 M4b surrogate 決策。未取得 ACK 前不得下載、build 或 benchmark 真實候選。 |
 
 ## History
 
@@ -29,7 +31,7 @@
 | [DELIVERY-AUDIO-POC-M3-P4-ACK-003](history/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md) | 中介收件確認（receipt disposition），指出缺件之 Blocking Finding。 | 已由正式核准的 [DELIVERY-AUDIO-POC-M3-P4-ACK-004](history/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md) 取代。 |
 | [RESP-AUDIO-M3-P4-REPRO-002](history/RESP-AUDIO-M3-P4-REPRO-002.md) | Core 核准 A10 clean-Pi rerun Option 2 之回覆。 | 已由 `CR-AUDIO-M3-P4-REPRO-002` 與 `P4-A10-RERUN-002` 執行並通過驗證。 |
 | [DELIVERY-AUDIO-POC-M3-P4-ACK-004](history/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md) | Core 已正式核准 P4 Option A 選型基準（`pyalsaaudio 0.11.0` + `samplerate 0.2.4 sinc_best`），M4a Gate 0 正式通過。 | 由已凍結之 M1 共同測試基線與 M3 real hardware integration 承接。 |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | M4a Contract 階段 0 已由 ACK-004 關閉，後續各階段評測規則已移入 M2/M3/M4 milestone 及 specs。 | 由 `docs/milestone/` 各 milestone 流程承接。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001 (initial revision)](history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | 初版在 Gate 0 關閉後曾歸檔；2026-08-17 修訂版已重新成為 active handoff。 | 以 active contract 與 `RESP-AUDIO-M4A-GATE-PLAN-001` 為本輪決策來源。 |
 
 只有在決定已完成、未結責任已明確轉載到 active 文件，且 repo 內引用已更新後，
 handoff 才可移入 `history/`。

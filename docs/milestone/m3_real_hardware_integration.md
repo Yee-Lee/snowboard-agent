@@ -7,17 +7,19 @@
 使用完整 SHA 固定的產品 M3 Audio HAL 與目標 Pi 5/I2S 硬體重跑 finalists，證明固定 WAV/text 結果能在真實 capture/playback、外殼與環境中成立。
 
 本 milestone 也是
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
-Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 HAL
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+Gate 2A 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 HAL
 與 Pi 資源重跑，再以完整 40-character SHA 回交 P1–P12 manifest，
-等待 Core Gate 2 ACK 與 final winner ACK。
+等待 Core Gate 2A selection ACK。該 ACK 可放行 artifact-independent Core
+adapter scaffold，不是 final reference、model baseline lock 或 `POC Accepted`。
 
 ## 對最終交付的貢獻
 
 - Pi 5/M3 HAL、真實 mic fixture、原生 TTS PCM playback 的正式 evidence。
 - Start/stop/reopen、device failure、backpressure、xrun、cancel 與 cleanup 認證。
 - 每類一個 hardware-qualified winner，或 evidence-backed no-go。
-- M4A-P1–P12 可重現 manifest、Gate 2 ACK 與 Core ASR/TTS final winner ACK。
+- M4A-P1–P12 可重現 manifest、Gate 2A selection ACK 與 M4 Gate 2B
+  final reference 所需的 hardware-qualified ASR/TTS 建議。
 
 ## 工作大綱
 
@@ -31,13 +33,13 @@ Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 
 - 若固定 fixture winner 在真實裝置失敗，回到 finalist 比較，不降低 gate。
 - 執行 M4A-P1–P8：ASR HAL frame 對齊/品質、TTS native PCM 與完整播放、
   ASR/TTS 個別 Pi resource/thermal。
-- 執行 M4A-P9：使用合約允許的 bounded LiteRT-LM stub 或可定位的既有
-  candidate 進行 10 分鐘 co-residency 資源量測。本項只是 CPU/RSS/thermal
+- 執行 M4A-P9：使用 Core 核准且 versioned/checksummed 的 deterministic
+  M4b residency surrogate 進行 co-residency 資源量測。本項只是 CPU/RSS/thermal
   budget evidence，不在 Audio POC 實作、選型或驗收 LiteRT-LM。
 - 在 accepted HAL/Pi 重跑 M4A-P10–P12 lifecycle、clean build/license 與 offline，
   並沿用較嚴格的 Audio POC ASR/TTS frozen quality gate。
 - 完成 contract 規定的 decision table、manifest 與 return delivery，回交完整
-  SHA 後等待 Core Gate 2 ACK 及 final winner ACK。
+  SHA 後等待 Core Gate 2A selection ACK；final reference 由 M4 Gate 2B 完成。
 
 ## Entry Conditions
 
@@ -47,8 +49,9 @@ Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 
 - M3 Audio HAL 已通過其產品驗收並提供 source/tests/docs/完整 SHA。
 - 目標 Pi、mic、speaker、外殼及真實測試環境可用。
 - User 可進行現場距離、噪音與聲音確認。
-- M4A-P9 使用的 LiteRT-LM stub/candidate 身份、命令與資源邊界已由
-  Core/PM 確認，且不導入 Audio 產品程式。
+- M4A-P9 使用的 versioned deterministic M4b residency surrogate 身份、
+  checksum、命令、RSS/thread/CPU envelope 與 decision rule 已由 Core/PM
+  確認，且不導入 Audio 產品程式。
 
 ## Exit Gate
 
@@ -60,8 +63,9 @@ Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 
 - M4 組合所需 format、endpoint、threads、timeout 與 execution-container 已固定。
 - M4A-P1–P12 每項的 PASS/FAIL/INCONCLUSIVE、raw evidence path、cleanup 與
   reproduction command 已由 return SHA 定位。
-- Core Designer 已發 Gate 2 evidence ACK 與 final winner ACK，或明確發出
+- Core Designer 已發 Gate 2A selection ACK，或明確發出
   evidence-backed no-go/補件要求；未取得 ACK 時 M3 不得標為 `COMPLETE`。
+  Final reference 與 `POC Accepted` 仍由 M4 Gate 2B 關閉。
 
 ## 必要 Evidence
 
@@ -70,7 +74,7 @@ Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 
 - VAD/ASR/TTS hardware run results。
 - Playback sequence、xrun/backpressure、device lifecycle 與 cleanup proof。
 - Latency/resource/thermal summary 與 rejected finalist reasons。
-- M4a Gate 2 manifest/decision table/return SHA、Core evidence ACK 與 final winner ACK。
+- M4a Gate 2A manifest/decision table/return SHA 與 Core selection ACK。
 
 ## 不做的工作
 
@@ -87,7 +91,7 @@ Gate 2 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3 
 - 固定 WAV finalist 在真實 mic/speaker 全部失敗。
 - Shared-clock 或 device ownership 使必要 lifecycle 無法成立。
 - Thermal、RSS、RTF 或 latency 顯示 M4 組合不可能達標。
-- M4A-P9 所需 stub/candidate 無可重現來源，或 Core 要求超出資源模擬
+- M4A-P9 所需 surrogate 無 version/checksum/可重現來源，或 Core 要求超出資源模擬
   而實作/驗收 LLM。
 - Contract quality gate 與已凍結 Audio POC gate 不一致；取較嚴格者，
   若無法同時達成則提出 change request。

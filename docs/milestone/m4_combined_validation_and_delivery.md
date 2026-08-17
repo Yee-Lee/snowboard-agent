@@ -7,8 +7,9 @@
 證明 M3 hardware-qualified winners 在同一 Pi 5 離線、同時常駐、連續 session 與 failure injection 下仍符合 gate，並形成可進入 internal review 的完整 delivery package。
 
 M4 也會 audit
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
-Gate 1/2 ACK、winner/no-go 與 return SHA，但 Core Gate 3 production implementation/
+[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+Gate 1/Gate 2A ACK、winner/no-go 與 return SHA，並作為 Gate 2B final reference
+與 portable conformance kit 的完整執行/回交階段；Core Gate 3 production implementation/
 acceptance 屬 Core repo 後續工作，不得被 Audio POC 自行宣告完成。
 
 ## 對最終交付的貢獻
@@ -24,15 +25,17 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - 關閉網路重跑主要 pipeline。
 - 若組合失敗，依既定順序評估較小 artifact、quantization、threads 或 lifecycle；不得改產品契約或降低 gate。
 - Audit candidate manifests、license、checksums、fixtures、results、Pi/M3 SHA、資料安全與 rejected candidates。
-- Audit M4a contract intake SHA、Gate 1 candidate authorization、Gate 2 P1–P12
-  manifest/return SHA、Core evidence ACK 與 final winner ACK。
+- Audit M4a contract intake SHA、Gate 1 planning/candidate authorization、Gate 2A
+  P1–P12 manifest/return SHA 與 Core selection ACK。
+- 建立 portable conformance kit：candidate lock/provenance/license index、shared protocol/
+  schema/vector/validator、lifecycle/offline/resource method、20-session result 與 known risks。
 - 準備 delivery manifest、evidence index、winner/no-go、已知風險與產品化 integration 工作包。
 - 進行 internal review，追蹤並關閉 blocking findings。
 
 ## Entry Conditions
 
 - M3 每類已有 hardware-qualified winner，或已有核准的 no-go 處理方案。
-- ASR/TTS 已取得 M4a Gate 2 evidence ACK 與 Core final winner ACK，或有
+- ASR/TTS 已取得 M4a Gate 2A selection ACK，或有
   核准的 no-go/change request。
 - 所有 winner artifact、format、endpoint、threads、timeout、execution-container 固定。
 - 組合 gate、session fixtures、failure injection 與 evidence 方法已確認。
@@ -47,9 +50,11 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - Delivery checklist 每一項都有 evidence、N/A 理由或正式 change request。
 - Delivery manifest、evidence index、完整 repo/baseline SHA 與產品化建議完成。
 - Repo 經資料安全 audit，不含模型、大型 raw result、私有音訊、敏感 transcript 或 secret。
-- M4a Gate 1/2 所有決策、ACK 與完整 SHA 已納入 delivery/evidence
+- M4a Gate 1/2A/2B 所有決策、ACK 與完整 SHA 已納入 delivery/evidence
   index；Core Gate 3 清楚標為 external follow-up，不假裝為 POC PASS。
-- 狀態標記為 `Ready for internal review`；只有 findings 關閉與 Designer 核准後才標記 `POC Accepted`。
+- Portable conformance kit 與 final handoff ID/full SHA 已直接回交 Core intake。
+- 狀態先標記為 `Ready for internal review`；只有 findings 關閉、Designer
+  核准且 Core 書面收件後才標記 Gate 2B `POC Accepted`。
 
 ## 必要 Evidence
 
@@ -59,7 +64,8 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - Delivery manifest、evidence index、license/checksum/source index。
 - Productization boundary、integration estimate、known risks 與 rejected candidates。
 - Review findings 及 closure evidence。
-- M4a contract intake/Gate 1/Gate 2 ACK chain、return SHA 與 Core Gate 3 handoff 索引。
+- M4a contract intake/Gate 1/Gate 2A ACK chain、Gate 2B final handoff SHA、
+  portable conformance kit 與 Core Gate 3 handoff 索引。
 
 ## 不做的工作
 

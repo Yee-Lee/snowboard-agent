@@ -87,7 +87,7 @@ Core Final Selection ACK：[DELIVERY-AUDIO-POC-M3-P4-ACK-004](../pm_handoff/hist
 並正式發出 `ACCEPTED — M3 AUDIO REAL PACKAGE MAY START`；Option A 實作基準正式核准，
 M4a Gate 0 已解除。歷史中介收件確認見 [ACK-003](../pm_handoff/history/DELIVERY-AUDIO-POC-M3-P4-ACK-003.md)。
 
-Core M4a contract：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/history/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
+Core M4a contract：[DELIVERY-AUDIO-POC-M4A-CONTRACT-001](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
 — 本 contract Gate 0 已由 Core ACK-004 通過；待 POC 提交 ASR/TTS 候選清單申請 Gate 1 授權。
 
 ## 目標
