@@ -48,3 +48,9 @@ poc_audio/evidence/m3_option_a/[0-9]*/
 # Controlled fixture audio stays local. Track only project-authored prompts,
 # metadata/checksum indexes, authorization records, and sanitized summaries.
 poc_audio/fixtures/artifacts/
+
+# Gate candidate sources/models/voices are controlled provenance artifacts.
+# Keep only the handling policy in Git; exact locators and hashes belong in
+# sanitized proposal manifests.
+poc_audio/artifacts/*
+!poc_audio/artifacts/README.md

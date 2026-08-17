@@ -1,4 +1,4 @@
-"""Dependency-free validation for tracked M1 JSON documents."""
+"""Dependency-free validation for tracked Audio POC JSON documents."""
 
 from __future__ import annotations
 
@@ -12,6 +12,11 @@ from .models import TerminalStatus
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+GATE_1B_DISPOSITIONS = {
+    "REQUEST_AUTHORIZE",
+    "REQUEST_REJECT",
+    "REQUEST_DEFER",
+}
 
 
 def validate_run_result(document: dict[str, Any]) -> None:
@@ -69,6 +74,176 @@ def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> No
     _validate_tracked_checksum(
         repo_root / str(document["artifact"]), str(document["artifact_sha256"])
     )
+
+
+def validate_gate1b_candidate_proposal(document: dict[str, Any]) -> None:
+    """Validate a provenance-only proposal without touching controlled artifacts."""
+
+    _require_keys(
+        document,
+        {
+            "schema_version",
+            "proposal_id",
+            "status",
+            "language",
+            "core_gate1a",
+            "poc_binding",
+            "controlled_artifact_policy",
+            "candidates",
+        },
+        "Gate 1B proposal",
+    )
+    if document["schema_version"] != "1.0":
+        raise ValueError("Gate 1B proposal schema_version must be 1.0")
+    if document["status"] != "PROPOSED_NOT_AUTHORIZED":
+        raise ValueError("Gate 1B proposal must remain PROPOSED_NOT_AUTHORIZED")
+    if document["language"] != "zh-TW":
+        raise ValueError("Gate 1B proposal language must remain frozen at zh-TW")
+
+    core = document["core_gate1a"]
+    _require_keys(core, {"delivery_id", "branch", "commit", "path"}, "Core Gate 1A")
+    if not GIT_SHA_RE.fullmatch(str(core["commit"])):
+        raise ValueError("Core Gate 1A commit must be a full Git SHA")
+
+    binding = document["poc_binding"]
+    _require_keys(binding, {"branch", "proposal_commit"}, "POC binding")
+    if binding["proposal_commit"] is not None:
+        raise ValueError("proposal_commit must be null before the proposal commit exists")
+
+    policy = document["controlled_artifact_policy"]
+    _require_keys(
+        policy,
+        {"tracked_in_git", "locator_prefix", "permitted_actions", "prohibited_actions"},
+        "controlled artifact policy",
+    )
+    if policy["tracked_in_git"] is not False:
+        raise ValueError("controlled artifacts must not be tracked in Git")
+    if not str(policy["locator_prefix"]).startswith("controlled://"):
+        raise ValueError("controlled locator prefix must use controlled://")
+
+    candidates = document["candidates"]
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("Gate 1B proposal must contain candidate rows")
+    ids: set[str] = set()
+    domains: set[str] = set()
+    for candidate in candidates:
+        _require_keys(
+            candidate,
+            {
+                "candidate_id",
+                "domain",
+                "origin",
+                "requested_disposition",
+                "decision_reason",
+                "engine",
+                "artifacts",
+                "dependencies",
+                "aarch64_build_proposal",
+                "native_contract",
+                "offline_cache",
+                "risks",
+            },
+            "Gate 1B candidate",
+        )
+        candidate_id = str(candidate["candidate_id"])
+        if candidate_id in ids:
+            raise ValueError(f"duplicate Gate 1B candidate_id: {candidate_id}")
+        ids.add(candidate_id)
+        domain = str(candidate["domain"])
+        if domain not in {"vad", "asr", "tts"}:
+            raise ValueError(f"invalid Gate 1B domain: {domain}")
+        domains.add(domain)
+        if candidate["requested_disposition"] not in GATE_1B_DISPOSITIONS:
+            raise ValueError(f"invalid Gate 1B disposition for {candidate_id}")
+        _validate_gate1b_engine(candidate["engine"], candidate_id)
+        artifacts = candidate["artifacts"]
+        if not isinstance(artifacts, list) or not artifacts:
+            raise ValueError(f"{candidate_id} must declare at least one artifact")
+        for artifact in artifacts:
+            _validate_gate1b_artifact(artifact, candidate_id)
+        dependencies = candidate["dependencies"]
+        _require_keys(
+            dependencies,
+            {"status", "runtime", "build", "native"},
+            f"{candidate_id} dependencies",
+        )
+        for key in ("runtime", "build", "native"):
+            if not isinstance(dependencies[key], list):
+                raise ValueError(f"{candidate_id} dependencies.{key} must be a list")
+        build = candidate["aarch64_build_proposal"]
+        _require_keys(
+            build,
+            {"platform", "status", "recipe", "network_policy"},
+            f"{candidate_id} aarch64 build proposal",
+        )
+        if build["status"] != "NOT_EXECUTED_GATE_1B":
+            raise ValueError(f"{candidate_id} build status must remain NOT_EXECUTED_GATE_1B")
+        if build["network_policy"] != "offline_from_hashed_inputs":
+            raise ValueError(f"{candidate_id} build must require hashed offline inputs")
+        native = candidate["native_contract"]
+        _require_keys(native, {"status", "input", "output"}, f"{candidate_id} native contract")
+        if native["status"] != "DECLARED_UNVERIFIED_GATE_1B":
+            raise ValueError(f"{candidate_id} native contract must remain unverified")
+        offline = candidate["offline_cache"]
+        _require_keys(offline, {"status", "locator"}, f"{candidate_id} offline cache")
+        if not str(offline["locator"]).startswith("controlled://"):
+            raise ValueError(f"{candidate_id} offline locator must use controlled://")
+    if domains != {"vad", "asr", "tts"}:
+        raise ValueError("Gate 1B proposal must cover VAD, ASR, and TTS")
+
+
+def _validate_gate1b_engine(engine: Any, candidate_id: str) -> None:
+    _require_keys(
+        engine,
+        {
+            "name",
+            "version",
+            "upstream_url",
+            "immutable_revision",
+            "source_sha256",
+            "source_size_bytes",
+            "source_acquired_at_utc",
+            "source_controlled_locator",
+            "license",
+            "notice",
+        },
+        f"{candidate_id} engine",
+    )
+    if not SHA256_RE.fullmatch(str(engine["source_sha256"])):
+        raise ValueError(f"{candidate_id} engine source_sha256 is invalid")
+    if int(engine["source_size_bytes"]) <= 0:
+        raise ValueError(f"{candidate_id} engine source_size_bytes must be positive")
+    if not str(engine["upstream_url"]).startswith("https://"):
+        raise ValueError(f"{candidate_id} engine upstream_url must use HTTPS")
+    if not str(engine["source_controlled_locator"]).startswith("controlled://"):
+        raise ValueError(f"{candidate_id} engine source locator must use controlled://")
+
+
+def _validate_gate1b_artifact(artifact: Any, candidate_id: str) -> None:
+    _require_keys(
+        artifact,
+        {
+            "role",
+            "filename",
+            "url",
+            "immutable_revision",
+            "sha256",
+            "size_bytes",
+            "acquired_at_utc",
+            "license",
+            "notice",
+            "controlled_locator",
+        },
+        f"{candidate_id} artifact",
+    )
+    if not SHA256_RE.fullmatch(str(artifact["sha256"])):
+        raise ValueError(f"{candidate_id} artifact sha256 is invalid")
+    if int(artifact["size_bytes"]) <= 0:
+        raise ValueError(f"{candidate_id} artifact size_bytes must be positive")
+    if not str(artifact["url"]).startswith("https://"):
+        raise ValueError(f"{candidate_id} artifact URL must use HTTPS")
+    if not str(artifact["controlled_locator"]).startswith("controlled://"):
+        raise ValueError(f"{candidate_id} artifact locator must use controlled://")
 
 
 def validate_fixture_catalog(document: dict[str, Any], repo_root: Path) -> None:

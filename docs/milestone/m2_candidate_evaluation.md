@@ -1,8 +1,8 @@
 # M2：VAD、ASR、TTS 隔離候選比較
 
-狀態：`PLANNED / NEXT`
+狀態：`IN_PROGRESS`
 
-Gate 狀態：`PLAN SUBMITTED / NOT AUTHORIZED`
+Gate 狀態：`GATE 1A ACCEPTED / GATE 1B PROPOSAL READY FOR REVIEW / REAL CANDIDATES NOT AUTHORIZED`
 
 ## 目標
 
@@ -16,9 +16,13 @@ Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence �
 
 2026-08-17 revised contract 所要求的 committed executable plan 已由
 [`RESP-AUDIO-M4A-GATE-PLAN-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md)
-提出。該回覆只是 planning packet，不是 candidate authorization；Core 書面
-核准 plan、language/VAD/provenance 邊界與 M4b surrogate 前，不下載、build
-或 benchmark 真實候選。
+提出，且 Core 已在 `dev_agent_m4` commit
+`e3d25d1fc70d726d5bd3162cdcb9571b30937587` 以
+`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001` 接受 Gate 1A、固定 `zh-TW`、
+VAD 範圍與 provenance-only 邊界。POC 已依該邊界準備
+[`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md)
+exact proposal；它仍不是 candidate authorization。Core 另行 committed ACK
+逐列核准前，不 build、install、import、load、execute 或 benchmark 真實候選。
 
 ## 對最終交付的貢獻
 
@@ -48,10 +52,9 @@ Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence �
 
 M2 執行分成三個受控步驟：
 
-1. **Gate 1 planning**：提交 committed executable plan 與待決策項；不取得
-   candidate artifact、不執行真實 candidate run。
-2. **Gate 1 candidate proposal**：只在 Core 核准 provenance-only acquisition
-   邊界後，整理 exact candidate manifest、license/source/build 提案；仍不 benchmark。
+1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
+2. **Gate 1 candidate proposal**：`GATE_REVIEW`；已依 provenance-only 邊界整理
+   exact candidate manifest、license/source/build 提案；未 build 或 benchmark。
 3. **Authorized comparison**：只在 Core Designer 另以書面 ACK 明列候選範圍後，
    執行 fixture benchmark 與 preliminary Gate 2 evidence。
 
@@ -108,3 +111,8 @@ steps，且 Core Designer 已書面核准 candidate scope、產品語言/voice
 ## Gate Review 問題
 
 M2 結束時必須回答：每類 finalist 是否有合理機會在 pinned M3 HAL、真實 mic/speaker 與三模型同時常駐下達到最終 gate？沒有合理路徑者不得只因單項 demo 成功而 advance。
+
+Gate 1B review 先回答：Core 是否逐列接受 `RESP-AUDIO-M4A-G1B-CANDIDATES-001`
+所請求的 5 個 exact rows，並正式 reject/defer 其餘 6 列？在 Core ACK 前，
+所有 manifest native format 與 build recipe 都是 `DECLARED_UNVERIFIED_GATE_1B` /
+`NOT_EXECUTED_GATE_1B`，不得標為 evidence PASS。

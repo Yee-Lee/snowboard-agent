@@ -19,7 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `ACTION REQUIRED — AUDIO POC COMMITTED GATE PLAN PENDING` | POC 已提出 [`RESP-AUDIO-M4A-GATE-PLAN-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md)；待 Core 書面核准計畫並關閉 language、VAD、provenance-only acquisition 與 M4b surrogate 決策。未取得 ACK 前不得下載、build 或 benchmark 真實候選。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B REVIEW REQUIRED` | Core 已於 `dev_agent_m4` / `e3d25d1fc70d726d5bd3162cdcb9571b30937587` 交付 `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`。POC 下一個 return packet 是 [`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md)；Core 須以 proposal full SHA 逐列 ACK。此前只允許 provenance/fake scaffold，不得 build、import、execute、benchmark 或 Pi/HAL run。 |
 
 ## History
 

@@ -9,15 +9,18 @@
 Option A P4-A01 至 A10 已獲 Core ACK-004 核准，M4a Gate 0 正式通過；
 100 筆 native 與 delivered fixture、VAD timing labels 及 evaluation metrics
 已獲 User/Designer 核准並完成凍結（FROZEN）。M1 正式完成（COMPLETE）。
-Core 2026-08-17 修訂合約要求 committed Gate plan，POC 已提出
-`RESP-AUDIO-M4A-GATE-PLAN-001`；但產品語言、VAD 授權、provenance-only
-artifact 取得與 M4b surrogate 仍無書面決定，因此 M2 真實候選工作不可開始。
+Core 已於 `dev_agent_m4` commit
+`e3d25d1fc70d726d5bd3162cdcb9571b30937587` 接受 Gate 1A，固定 `zh-TW`、
+VAD scope、provenance-only acquisition 邊界及 P9 surrogate owner/due point。
+POC 已在該邊界內完成 Gate 1B exact candidate proposal；metadata review 保留
+至少一個 VAD、兩個 ASR 與兩個 TTS 的可達路徑，但已有 license/dependency
+淘汰與 defer 風險。Core 另行逐列 ACK 前，M2 真實候選工作仍不可開始。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture (native & delivered)、VAD timing labels 與評測門檻全數凍結 (FROZEN) | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `PLANNED / NEXT` | Gate plan 已提出但未核准；待 Core planning/decision ACK 後準備 exact candidate proposal，另取得 candidate-scope ACK 才可展開評測 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | Gate 1A 已接受；Gate 1B exact proposal 已準備並進入 review，另取得逐列 candidate-scope ACK 才可 build/import/評測 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2A P1–P12 回交與 selection ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -27,7 +30,7 @@ artifact 取得與 M4b surrogate 仍無書面決定，因此 M2 真實候選工�
 | --- | --- |
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
-| Gate 1：planning + candidate authorization | `NEXT / NOT AUTHORIZED` — committed plan 已提出；待 Core 關閉決策並核准 plan，再回交 exact candidate manifest 取得 scope ACK |
+| Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B REVIEW` — plan 與 D01–D05 已關閉；`RESP-AUDIO-M4A-G1B-CANDIDATES-001` 已準備，逐列 scope ACK 前仍禁止真實 candidate build/import/run |
 | Gate 2A：POC qualification/selection | M2 累積隔離 evidence；M3 以 accepted HAL/Pi 完成 P1–P12、return SHA 與 selection ACK，不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |

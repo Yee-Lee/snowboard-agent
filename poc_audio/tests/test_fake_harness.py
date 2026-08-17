@@ -50,6 +50,7 @@ from audio_poc.option_a_validation import (  # noqa: E402
 from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
     validate_fixture_catalog,
+    validate_gate1b_candidate_proposal,
     validate_run_result,
 )
 
@@ -145,6 +146,38 @@ class TrackedDocumentTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 document = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(document["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
+    def test_gate1b_proposal_is_artifact_independent_and_not_authorized(self) -> None:
+        proposal = json.loads(
+            (REPO_ROOT / "poc_audio/manifests/m4a_gate1b_candidates.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validate_gate1b_candidate_proposal(proposal)
+        self.assertEqual(proposal["status"], "PROPOSED_NOT_AUTHORIZED")
+        self.assertIsNone(proposal["poc_binding"]["proposal_commit"])
+        self.assertFalse(proposal["controlled_artifact_policy"]["tracked_in_git"])
+        self.assertEqual(
+            {candidate["domain"] for candidate in proposal["candidates"]},
+            {"vad", "asr", "tts"},
+        )
+        self.assertTrue(
+            all(
+                candidate["aarch64_build_proposal"]["status"]
+                == "NOT_EXECUTED_GATE_1B"
+                for candidate in proposal["candidates"]
+            )
+        )
+
+    def test_gate1b_validator_rejects_execution_claim(self) -> None:
+        proposal = json.loads(
+            (REPO_ROOT / "poc_audio/manifests/m4a_gate1b_candidates.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        proposal["candidates"][0]["aarch64_build_proposal"]["status"] = "BUILT"
+        with self.assertRaisesRegex(ValueError, "NOT_EXECUTED_GATE_1B"):
+            validate_gate1b_candidate_proposal(proposal)
 
     def test_option_a_packet_starts_with_all_hardware_results_pending(self) -> None:
         config_path = REPO_ROOT / "poc_audio/config/option_a.sanitized.json"
@@ -714,4 +747,3 @@ class TrackedDocumentTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
