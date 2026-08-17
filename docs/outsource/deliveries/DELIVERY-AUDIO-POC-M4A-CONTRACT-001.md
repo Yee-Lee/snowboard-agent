@@ -1,9 +1,10 @@
 # Core Team → PM → Audio POC Team: M4a Audio POC Contract
 
 - **Delivery ID**: `DELIVERY-AUDIO-POC-M4A-CONTRACT-001`
-- **Finding ID**: `OUT-M4A-2026-001`
-- **References**: `PM-OUT-260814-010-m4a-audio-poc-contract-gate`、`DELIVERY-AUDIO-POC-M3-ACK-002`、`DELIVERY-AUDIO-POC-M3-VALIDATION-001`、`docs/milestones/M4.md §6.1–6.2`
-- **Status**: `READY FOR PM RELAY — PENDING POC INTAKE SHA`
+- **Finding ID**: `OUT-M4A-2026-001`、`OUT-M4A-2026-002` ～ `OUT-M4A-2026-005`
+- **References**: `PM-OUT-260814-010-m4a-audio-poc-contract-gate`、`DELIVERY-AUDIO-POC-M3-P4-ACK-004`、`DELIVERY-AUDIO-POC-M3-VALIDATION-001`、`docs/milestones/M4.md §6.1–6.2`
+- **Revision**: `2026-08-17 / PM-OUT-260817-016`
+- **Status**: `ACTION REQUIRED — AUDIO POC COMMITTED GATE PLAN PENDING`
 - **Contract owner**: Core Team Designer
 - **Relay owner**: PM (轉交 Audio POC Team)
 - **Date**: 2026-08-14
@@ -13,7 +14,7 @@
 
 ## 1. 背景與授權邊界
 
-M3 Audio 以 `DELIVERY-AUDIO-POC-M3-ACK-002` 確立 Option A 產品方向（HAL 內顯式 48→16 kHz conversion）；P1 維持 `FAIL`、P2 為 `PASS`；P4 implementation gate（`DELIVERY-AUDIO-POC-M3-VALIDATION-001`）尚待 POC 回交完整 source SHA。
+M3 Audio以`DELIVERY-AUDIO-POC-M3-P4-ACK-004`完成Option A final selection（HAL內顯式48→16 kHz conversion）；P1維持`FAIL`、P2為`PASS`。Accepted POC delivery為`882e2b6ff571eb9d54ec96bae7d3b63338c5965c`，implementation / test SHA為`de3b0bab4daaf47f62956d4b27f6697b3d4fa823`。這只解除M3 real-backend implementation gate，不代表Core M3產品驗收或M4a candidate selection已完成。
 
 M4a Audio 是以 M3 Accepted Audio HAL contract 為基礎，在 Core production code 中實作真實 ASR 與 TTS adapter。Audio POC Team 的責任是技術探索、candidate 驗證與 evidence 提交；Core 保留 dependency selection、design acceptance 與 final ACK 決定權。
 
@@ -26,7 +27,7 @@ M4a Audio 是以 M3 Accepted Audio HAL contract 為基礎，在 Core production 
 既有 M3 條件澄清：
 - P1 維持 `FAIL`（target hardware 不得改寫為 native 支援 16 kHz / mono / S16_LE）
 - P2 為 `PASS`（device / config / wiring evidence 已通過）
-- P4 為 M3 Option A implementation gate（尚待 POC P4-A01 ~ A10 evidence 回交）
+- P4已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`完成final selection；不在M4a重跑
 - P3（ASR / TTS winner）為 M4a 候選選型輸出，不得以 POC 自排 roadmap 預先視為已授權或已完成
 
 ---
@@ -60,11 +61,11 @@ M4a Audio 是以 M3 Accepted Audio HAL contract 為基礎，在 Core production 
 
 | 欄位 | 內容 |
 | :--- | :--- |
-| Entry | Audio POC 依 `DELIVERY-AUDIO-POC-M3-VALIDATION-001` 回交完整 40-character source SHA 與 P4-A01 ~ A10 evidence |
-| Exit | Core Designer 發出 M3 P4 final selection ACK，明列核准 binding / resampler / valid-bit / buffering / async I/O |
+| Entry | Audio POC依`DELIVERY-AUDIO-POC-M3-VALIDATION-001`回交完整source SHA與P4-A01～A10 evidence（已完成） |
+| Exit | `DELIVERY-AUDIO-POC-M3-P4-ACK-004`已核准binding / resampler / valid-bit / buffering / async I/O；POC delivery `882e2b6ff571eb9d54ec96bae7d3b63338c5965c`（已完成） |
 | Owner | POC 執行；Core Designer 決定 |
-| Blocking scope | 未取得 final selection ACK 前，Developer 不得開始 Audio real backend，M4a 不得視為已授權 |
-| 下一動作 | Core Designer 審核 POC P4 evidence 後發出 ACK；M3 P4 解除後才觸發 Gate 1 |
+| Blocking scope | `Resolved`；不得把M3 P4 ACK誤作M4a candidate / model ACK或Core product Pass |
+| 下一動作 | 進入本revision Gate 1 planning / candidate proposal review |
 
 ### Gate 1 ── M4a Candidate Proposal（POC 提出候選清單）
 
@@ -76,25 +77,25 @@ M4a Audio 是以 M3 Accepted Audio HAL contract 為基礎，在 Core production 
 | Blocking scope | 未取得 Core 書面確認前，不得視為候選已授權；不得開始 benchmark 或在 Core production code 引用 |
 | 下一動作 | POC 回交 candidate list（manifest + license table）；Core Designer 在 5 個工作日內回覆 |
 
-### Gate 2 ── M4a 功能 / 品質 / 資源驗證（POC 執行）
+### Gate 2 ── M4a POC qualification（POC 執行，分 2A / 2B）
 
 | 欄位 | 內容 |
 | :--- | :--- |
-| Entry | Gate 1 已取得候選授權；POC 依 §5 驗證清單對核准候選組合執行全套驗證 |
-| Exit | POC 回交完整 40-character source SHA + manifest（含每個 Test ID 狀態）；Core Designer 確認 evidence 完整可重現，發出 Gate 2 ACK |
+| Entry | Gate 1已取得候選授權；**Gate 2A** 依§5執行standalone candidate qualification；**Gate 2B** 以2A選定組合完成Audio POC internal M4的20-session、offline、failure injection與final handoff review |
+| Exit | 2A回交完整SHA / manifest後，Core可發selection ACK放行adapter scaffold；只有2B取得`POC Accepted`並回交final handoff ID、Accepted POC SHA與conformance kit後，Core才固定final reference package / model baseline並解除Gate 3 exit blocker |
 | Owner | POC 執行；Core Designer 審核；PM 轉達 ACK 通知 |
-| Blocking scope | 未取得 Gate 2 ACK 前，Developer 不得加入 ASR / TTS production dependency lock、model 或 adapter 實作 |
-| 下一動作 | Core Designer 審核後另發 final winner ACK（見 §7）；必要時要求補交 evidence 或替換候選重跑本 gate |
+| Blocking scope | 2A前不得引用真實候選；2A ACK後可並行做不鎖artifact的adapter scaffold。2B前不得固定production dependency / model / voice lock，不得把POC evidence當Core product Pass |
+| 下一動作 | Audio POC完成internal M4 review並直接將committed final handoff path / branch / full SHA交Core intake；若2B發現winner、resource、offline或lifecycle blocker，停止baseline lock與product acceptance，scaffold僅在受影響contract未變時可繼續 |
 
 ### Gate 3 ── M4a Core Production Implementation（Developer 實作，Core 內部 gate）
 
 | 欄位 | 內容 |
 | :--- | :--- |
-| Entry | Gate 2 final winner ACK 已發出；`model_spec.md` 已固定 ASR / TTS baseline（engine、model、voice、版本、license、checksum、Pi 安裝方式、benchmark evidence） |
-| Exit | Core Tester 對產品 delivery exact SHA 完成 M4a 驗收（`M4A-*` test cases）；Designer 最終 Code Review 無 Blocking finding |
+| Entry | Gate 2A selection ACK已發出，可開始scaffold；正式candidate freeze / acceptance另要求Gate 2B final reference package已intake，`model_spec.md`固定engine / model / voice / license / checksum與kit revision |
+| Exit | Core delivery逐項完成§7.1 inheritance / product-delta mapping；Core Tester對產品exact SHA重跑adapter / HAL wiring、production config / lock / packaging、RM / SM lifecycle、composition、resource、offline與regression；Designer最終review無Blocking |
 | Owner | Developer 實作；Tester 驗收；Designer 最終審查 |
 | Blocking scope | M4a 未 Accepted 前，M4c 不得啟動；M4a + M4b 未同時 Accepted 前，M4 不得宣告 Accepted |
-| 下一動作 | Developer 取得 Gate 2 ACK 後建立工作包；不在本 contract 範圍 |
+| 下一動作 | Developer在2A selection ACK後建立scaffold工作包；2B intake後才建立dependency / model / voice lock與acceptance工作包 |
 
 ---
 
@@ -110,7 +111,7 @@ M4a Audio 是以 M3 Accepted Audio HAL contract 為基礎，在 Core production 
 | **M4A-P6** | TTS 品質門檻 | 固定文字可產生清晰可理解語音；人工評分（mean opinion）≥ 3.5 / 5；記錄 voice / model 版本與 evidence path |
 | **M4A-P7** | Pi 資源（ASR only） | 10 warm-up 後保存 ASR inference CPU、RSS、P50 / P95 latency raw samples；temperature 與 throttling；Core 依數據核准，不可只寫「可接受」 |
 | **M4A-P8** | Pi 資源（TTS only） | 同上，針對 TTS synthesis phase |
-| **M4A-P9** | 同時常駐資源（M4a + M4b 模擬） | 同時跑 ASR warm-loop 與 LiteRT-LM stub（或已有 M4b candidate）；記錄 CPU、RSS 峰值、temperature；CPU 溫度 < 80°C 持續 10 分鐘 |
+| **M4A-P9** | M4b Resource Reservation | Gate 2A使用Core核准、versioned deterministic M4b residency surrogate保留LLM memory / thread / CPU envelope；若已有Accepted M4b package可另加實測。Surrogate只證明Audio finalist在預留budget下可行，不是M4a+M4b product Pass；真實combined validation由LLM Gate 2B與Core Gate 3執行 |
 | **M4A-P10** | Lifecycle | ASR / TTS engine init、warm-up、inference、shutdown 各至少 5 次；無 process / thread / fd 殘留；不得在 worker 內保留隱藏 session history |
 | **M4A-P11** | Build / license | 從 clean Pi target 依文件可 build / install / rerun；列 OS、kernel、Python、ALSA、package 與 native library 版本；binary / wheel / `.so` 不得提交 Core Git；license / notice 逐項列出 |
 | **M4A-P12** | Offline 驗證 | 所有 ASR / TTS inference 在 Pi 無網路環境可完整執行；log 不含 network call、external API endpoint 或 credential |
@@ -155,34 +156,93 @@ poc_audio/
 | Offline confirmation | 是否可在無網路 Pi 5 完整執行；log 是否無 credential / API endpoint |
 | Residual risk | 已知限制、未通過項目、是否仍可達成 M4a contract；No-Go 條件說明 |
 
-如任何 candidate 無法達成 M4A-P3 / P6 / P9 / P12 任一項，POC 須記錄可重現的 failure 並提出替代；不得宣告 Winner。
+如任何candidate無法達成M4A-P3 / P6 / P9 / P12任一項，POC須記錄可重現failure並提出替代；不得宣告2A finalist。2A ACK不是final reference package；Audio POC internal M4的20-session、failure injection、offline或review出現Blocking時，不得標`POC Accepted`，Core也不得freeze model baseline。
+
+### 7.1 Evidence inheritance / product-delta matrix
+
+| POC area | Classification | Core Gate 3 treatment |
+| :--- | :--- | :--- |
+| Candidate version、artifact checksum、license、rejected reasons | Inherited from accepted POC SHA | 引用immutable final handoff；identity不變時不重做candidate comparison |
+| P1 ASR stream vectors / validator | Reused test asset / rerun on product SHA | 對Core adapter與M3 HAL wiring重跑format / frame assertions |
+| P2 / P3 ASR quality comparison | Inherited + product smoke delta | 繼承frozen quality結果；Core以相同fixture subset驗adapter不改文字語意 |
+| P4 TTS PCM vectors / validator | Reused test asset / rerun on product SHA | 對Core TTS adapter與AudioOutput wiring重跑exact format |
+| P5 playback path | Product-only validation | POC可提供reference sequence；Core真實composition / Speak / HAL必須重驗 |
+| P6 TTS quality / User review | Inherited + product smoke delta | 引用POC受控review；Core只確認產品adapter未換voice / model / text |
+| P7 / P8 isolated resource metrics | Inherited benchmark | Core引用比較結果，但對產品process tree重跑resource / latency |
+| P9 resource reservation | Reused method / product-only combined result | 沿用surrogate envelope與量測方法；真實M4a+M4b在LLM Gate 2B / Core SHA重驗 |
+| P10 lifecycle / cleanup scenarios | Reused test asset / rerun on product SHA | 相同success / timeout / error / cancel / force-abort vectors重跑RM / SM integration |
+| P11 provenance / build | Inherited identity + product packaging delta | 引用source / license；Core驗production lock、install與受控artifact取得 |
+| P12 offline | Inherited reference + rerun on product SHA | POC offline證明候選可行；Core完整產品離線session仍須Pass |
+| Audio POC internal M4 20 sessions / failure / offline | Inherited reference package | Core引用fixture、method與known risks；產品composition與exact-SHA regression另跑 |
+
+Core Gate 3 mapping每列至少記：POC handoff ID、Accepted POC SHA、manifest / evidence path、fixture / metric revision + checksum、product implementation SHA、inheritance理由、delta Test ID / result。只寫「沿用POC」或把POC自驗標為Core Tester Pass均不合法。
+
+### 7.2 Portable conformance kit
+
+Audio POC final handoff至少提供可由POC wrapper與Core adapter共同使用的：
+
+- candidate lock / provenance / license index；adapter protocol與expected result schema；
+- fixture / prompt ID、revision、checksum、validator及事前固定threshold；
+- success / timeout / error / cancel / force-abort / reopen / cleanup scenarios與assertions；
+- offline check、resource量測方法 / budget、20-session sanitized result與known risks；
+- manifest與evidence index，所有path相對於Accepted POC SHA可定位。
+
+可重用資產：protocol、JSON schema、small non-sensitive test vectors / metadata、validators、tests與sanitized expected result。不得直接進Core Git：benchmark orchestration、raw audio、model / voice weights、wheel、`.so`、大型raw result或受控artifact。Core delivery引用kit version / SHA並提供POC→product conformance mapping；未沿用可重用資產時須列差異與替代驗證，不要求POC撰寫Core private implementation。
 
 ---
 
-## 8. 溝通順序（Contract relay flow）
+## 8. External Gate / Audio milestone crosswalk
+
+| External gate | Audio POC milestone | P IDs / delivery | Exit / Core impact |
+| :--- | :--- | :--- | :--- |
+| Gate 1 planning ACK | M1 frozen method + M2 plan | Candidate / fixture / metric freeze、P1～P12 executable plan | POC committed plan獲Core書面接受前，不下載／build／benchmark真實candidate |
+| Gate 2A selection | M2 isolated + M3 Pi/HAL | P1～P8、P9 resource reservation、P10～P12 | Core selection ACK；可做adapter scaffold，不可lock final artifact |
+| Gate 2B final reference | M4 combined validation / internal review | 20 sessions、failure injection、offline、final handoff、conformance kit | `POC Accepted` + final handoff ID / SHA；Core可固定model baseline並進Gate 3 acceptance |
+| Gate 3 Core product | Core M4a | inheritance / delta matrix + Core `M4A-*` | Core Tester對產品exact SHA PASS；POC evidence不取代產品驗收 |
+
+Audio POC可使用不同內部work-package名稱，但必須提供唯一External Gate→M1/M2/M3/M4→P1～P12→evidence crosswalk，逐項包含owner、producer、prerequisite、platform、fixture / input、command / runner、output path、decision rule、cleanup及exact-SHA binding。
+
+## 9. 溝通順序（Contract relay flow）
 
 ```
 Core Designer (contract owner)
   → [本 delivery] PM 正式轉交 Audio POC Team (relay owner)
     → POC Gate 1 回交 candidate list
-      → Core Designer 書面確認 Gate 1 (存於 deliveries/)
-        → POC Gate 2 執行驗證，回交 exact 40-char source SHA + manifest
-          → Core Designer 審核 → final winner ACK (或要求補交)
-            → PM 通知 Audio POC Team ACK 結果
-              → Developer 取得 Gate 2 final winner ACK → 建立 M4a 工作包
+      → Audio POC提交committed Gate 1/2 executable plan → Core Designer書面planning ACK
+        → POC Gate 2A執行M2 / M3 qualification，回交exact SHA + manifest
+          → Core Designer審核 → selection ACK → Core adapter scaffold可並行
+            → Audio POC internal M4完成20 sessions / failure / offline / review
+              → POC Accepted final handoff + conformance kit直接交Core intake
+                → Core固定final reference / model baseline → Gate 3 product acceptance
 ```
 
 每個步驟的 ACK 均由 Core Designer 書面發出，存放於 `docs/outsource/deliveries/`；PM 只負責轉交，不代替 Core 簽發 ACK，也不代替 Audio POC Team 宣告 gate 通過。Audio POC Team 以自己 repo 完整 SHA 與 manifest 回交；不得以 branch HEAD 或部分 evidence 替代。
 
 ---
 
-## 9. 本 contract 阻擋範圍摘要
+## 10. Audio POC 本輪回覆 packet（由 User 交付後回傳）
+
+Audio POC Team收到本revision後，請先完成技術對齊並在自己的repo一次commit可執行Gate計畫；Core不代寫POC private implementation。回覆至少包含：
+
+1. authoritative plan path與External Gate→M1/M2/M3/M4→P1～P12→evidence crosswalk；
+2. work packages的owner、dependency、順序、estimate / throughput assumption、entry / exit與re-estimation trigger；
+3. candidate eligibility / provenance / license / artifact取得與offline aarch64 build政策；
+4. shared protocol / wrapper / harness / schema / vector / validator / cleanup設計；VAD / ASR / TTS與User TTS review安排；
+5. M2 isolated、M3 Pi / HAL、M4 combined的evidence分界，包含Pi session、M4b surrogate / accepted baseline prerequisite、raw / sanitized / controlled artifact規則；
+6. 每個P ID的producer、platform、fixture、command、output path、decision / no-go、cleanup及SHA cut point；
+7. failure / no-go / change-request與fallback；
+8. reply document path、branch、完整40-character committed HEAD。
+
+Gate 1 proposal可先準備；在Core書面接受本plan前，不得把Gate 1標Approved，也不得下載、build或benchmark真實candidate。文件不得預填自己的未來SHA；commit後由回覆訊息提供。聊天或branch name不構成收件。
+
+## 11. 本 contract 阻擋範圍摘要
 
 | 阻擋項目 | 解除條件 |
 | :--- | :--- |
 | Audio POC M2 ~ M4 任何工作視為已授權 | Gate 1 Core 書面確認後（限授權候選範圍） |
-| Developer 加入 ASR / TTS production dependency lock | Gate 2 final winner ACK 後 |
-| Developer 開始 ASR / TTS model / adapter 實作 | Gate 2 final winner ACK 後 |
+| Developer 準備fake / protocol scaffold | Gate 1 planning ACK後 |
+| Developer 準備real adapter scaffold | Gate 2A selection ACK後；不得lock final artifact |
+| Developer 加入ASR / TTS production dependency / model / voice lock | Gate 2B `POC Accepted` final handoff intake後 |
 | M4a 視為 Accepted | Gate 3：Core Tester 對 delivery exact SHA 驗收 PASS |
 | M4c 啟動 | M4a + M4b 均取得 Tester 驗收 PASS（同一 delivery SHA） |
 | M4 宣告 Accepted | M4a + M4b + M4c 同一 delivery SHA 全數 Tester PASS |

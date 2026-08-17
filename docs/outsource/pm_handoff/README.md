@@ -9,6 +9,8 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
+| [`PM-OUT-260817-015-llm-poc-contract-plan-review`](PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`006` | M4b | **Core revision ready — POC committed reply pending** | [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md) |
+| [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | M4a | **Core revision ready — POC committed plan pending** | [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md) |
 
 ---
 
