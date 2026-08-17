@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import timedelta
 from types import SimpleNamespace
 
 from sbd.core.config.models import GPIOConfig
@@ -63,4 +64,33 @@ def test_gpiod_backend_fd_events_output_and_cleanup() -> None:
         await gpio.unregister(5); await gpio.unregister(5)
         await gpio.stop(); await gpio.stop()
         assert all(request.released for request in requests)
+    asyncio.run(scenario())
+
+def test_gpiod_backend_zero_debounce_omitted() -> None:
+    async def scenario():
+        requests = []
+        module = _module(requests)
+        gpio = GpiodGPIO(GPIOConfig(driver="gpiod"), gpiod_module=module)
+        await gpio.start()
+        gpio._loop = FakeLoop(gpio._loop)
+
+        # Capture the kwargs passed to LineSettings
+        captured_settings = []
+        original_line_settings = module.LineSettings
+
+        def spy_line_settings(**kwargs):
+            captured_settings.append(kwargs)
+            return original_line_settings(**kwargs)
+
+        module.LineSettings = spy_line_settings
+
+        # Test with debounce_ms=0 (the default if omitted)
+        await gpio.register_input(5, "both", lambda e: None, debounce_ms=0)
+        assert "debounce_period" not in captured_settings[-1]
+
+        # Test with debounce_ms>0
+        await gpio.register_input(6, "both", lambda e: None, debounce_ms=50)
+        assert captured_settings[-1]["debounce_period"] == timedelta(milliseconds=50)
+
+        await gpio.stop()
     asyncio.run(scenario())

@@ -2,9 +2,9 @@
 
 Status: **Pending Tester Review**
 
-The 20 JSON files currently under `results/` were successfully regenerated for implementation
-SHA `c5906f879ab9dd5d1080f92213e7eefbe0b4a1e6`. They pass the automated hardware gate 
-and are ready for the independent Tester report.
+The 20 JSON files currently under `results/` were successfully regenerated for
+implementation SHA `cab627705c341d0058e0c395e96d0be10c4c4239`. They pass the
+automated hardware gate and are ready for the independent Tester report.
 
 The junior developer handoff is `docs/runbooks/m3_rpi_validation.md`. The
 revised runner refuses a mismatched candidate SHA or dirty `src/`, `tests/`,

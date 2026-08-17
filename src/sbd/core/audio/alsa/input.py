@@ -136,7 +136,18 @@ class AlsaAudioInput:
         executor = self._executor
         if executor is None:
             raise RuntimeError("ALSA capture worker is unavailable")
-        return await asyncio.get_running_loop().run_in_executor(executor, operation)
+
+        # Keep all native capture operations on the same worker thread, but do
+        # not bridge the concurrent future through asyncio.run_in_executor().
+        # The supported Python 3.12.3 runtime can leave the second bridged
+        # future pending after the worker has already completed.  Polling the
+        # concurrent future keeps the event loop responsive and preserves the
+        # cancellation path: the native operation finishes before _release()
+        # queues source cleanup on this same worker.
+        worker_future = executor.submit(operation)
+        while not worker_future.done():
+            await asyncio.sleep(0.001)
+        return worker_future.result()
 
     def _ensure_open_worker(self) -> None:
         if self._source is None:
