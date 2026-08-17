@@ -31,6 +31,8 @@ Freeze受保護輸入至少包括：
 
 Provisional candidate commit的用途是提供portable matrix可重現的不可變SHA，不是freeze或Accepted宣告。建立前仍須依專案規範展示完整commit title、body及檔案，取得USER明確同意。Portable matrix與Designer review通過後，才把同一SHA寫入freeze manifest；若任一gate要求內容修改，建立新candidate並重跑三版本。
 
+Preflight只消費並驗證G4既有的freeze manifest；它不得建立freeze、把當前`HEAD`視為已freeze，或取代Designer的candidate review。Freeze manifest缺失、SHA不符或受保護輸入已改變時，G5必須在任何正式card或硬體操作前Fail。
+
 ## 3. Runner interface contract
 
 Developer工作包須提供單一入口（建議 `scripts/candidate_gate.py`）；可採其他等價實作，但以下CLI語意與fail-closed行為不可省略：
@@ -88,10 +90,11 @@ State Manager、EventBus、async cancellation、GPIO edge sequence與manual read
 
 ## 5. Debug, preflight, and acceptance isolation
 
-- `debug/<run-id>/`只用於bring-up與單卡重跑，可保留FAIL / diagnostic evidence，但永遠不能被acceptance manifest引用。
+- `debug/<run-id>/`只允許在一次完整formal acceptance失敗或中斷後作單卡診斷；可保留FAIL / diagnostic evidence，但永遠不能被acceptance manifest引用。G5通過後的第一個target執行必須是完整acceptance，不得先跑target debug。
 - `acceptance/<run-id>/`在preflight前必須不存在。Preflight以原子方式建立目錄及identity record；已存在或重複run ID即Fail。
-- Preflight不執行正式card，也不寫Pass result。它只驗證candidate、clean boundary、Pi 3.13、hardware / config / artifact checksum、portable matrix與runner readiness。
-- Acceptance只能在相同run ID的preflight PASS後開始，且須完整執行milestone RPI-NATIVE suite。任一card失敗、中斷或逾時，runner寫入FAIL summary、保留raw log並停止封包。
+- Preflight不執行正式card，也不寫Pass result。它只驗證既有freeze manifest、candidate、clean boundary、Pi 3.13、hardware / config / artifact checksum、portable matrix與runner readiness。
+- Acceptance只能在相同run ID的preflight PASS後開始；每次正式呼叫都須從suite起點完整執行milestone RPI-NATIVE suite，不得先逐卡執行再把結果宣告為完整run。任一card失敗、中斷或逾時，runner寫入FAIL summary、保留raw log並停止封包。
+- 正式run全數通過時，直接保存同一frozen SHA與run ID的完整evidence進入G7，不再要求debug或另一輪硬體測試。只有正式run失敗或中斷後才進debug；debug不會取得或延續acceptance身分。Debug完成後，仍須用全新run ID重新preflight並從頭執行一次完整acceptance。
 - 若修正protected input，使用新candidate SHA、重跑G2至G4並建立新acceptance run。若只修正未受保護的實體接線，仍保留失敗run並以新run ID重新preflight / acceptance。
 
 ## 6. Readiness and manual observations
@@ -99,6 +102,8 @@ State Manager、EventBus、async cancellation、GPIO edge sequence與manual read
 涉及child process、device或人工操作時，producer必須發出帶`run_id`、`test_id`、`ready_at_utc`與nonce的明確READY record；consumer在test-spec timeout內等待該record。固定`sleep`不能替代handshake。
 
 人工 observation 必須引用同一run ID、test ID、nonce及晚於READY的timestamp，並包含operator、checklist version、逐項boolean與record command exit code。缺檔、過期、wrong nonce / run、record command失敗或任一false都使card FAIL；不得先填PASS再等待測試。
+
+正式acceptance orchestrator可在READY後暫停並顯示操作提示，但人工結果只能由當下觀察設備的operator透過獨立record command提交。Orchestrator不得預填boolean、代替operator送出Pass，或在沒有有效observation時繼續下一張card；恢復執行時必須沿用該次acceptance的run ID、test ID與nonce。
 
 ## 7. Evidence layout and reconciliation
 

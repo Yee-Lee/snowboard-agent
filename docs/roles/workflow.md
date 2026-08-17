@@ -115,8 +115,8 @@ status: "[Open | Revised | Rejected | Resolved]"
 2. Provisional candidate snapshot：Designer核對candidate scope後，展示完整commit message與檔案，取得USER明確確認才建立candidate commit。它只提供G3可測的完整SHA，不是freeze或acceptance。
 3. Tester portable sign-off：對外部指定的provisional SHA執行契約／Test ID／event schema、靜態檢查及正式支援Python minor matrix；所有命令有bounded timeout，結果為0 Fail / Blocked / Skip / XFail。
 4. Designer candidate review / freeze：聚焦設計對齊、高風險regression protection及runner／evidence contract；Blocking全數解決後，將同一provisional SHA記錄為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、acceptance runner或上述路徑的未提交異動，都撤銷freeze並重新建立candidate，再回到步驟3；runner不得以當前`HEAD`自行授權。
-5. Target preflight：Tester 或受委託 operator 只驗 SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config identity、portable matrix index、run ID 未使用及 runner readiness；preflight 不產生正式 PASS card。
-6. Debug / acceptance 分流：debug run 可反覆跑單卡，只寫 `debug/<run-id>/`；正式 acceptance 使用全新且不可重用的 `acceptance/<run-id>/`。失敗或中斷須保存 FAIL evidence 並停止，不得用其他 run、SHA 或舊 card 補齊。
+5. Target preflight：Tester 或受委託 operator 只驗 SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config identity、portable matrix index、run ID 未使用及 runner readiness；preflight 必須讀取並驗證 G4 已建立的 freeze manifest，不得建立、取代或自行授權 freeze，也不產生正式 PASS card。
+6. Acceptance-first / debug fallback：G5通過後先以全新且不可重用的 `acceptance/<run-id>/` 從頭執行一次完整target suite；全數通過即收集同一frozen SHA與run ID的evidence進入G7，不先跑target debug。只有正式run失敗或中斷後才可用 `debug/<run-id>/` 反覆跑單卡；FAIL evidence須保存，debug不得補卡。修正protected input時建立新candidate SHA並回G3；只修正未受保護的實體接線時保留同一frozen SHA，但仍以新run ID重走G5與完整acceptance。
 7. Tester final reconciliation：一次完整 target gate 後，核對 portable matrix、target evidence與所有 manifest / card / result 都指向同一 SHA 與 run ID，再作 milestone PASS / FAIL 判定。
 8. Designer final confirmation：只確認 candidate review 後沒有 candidate-affecting 變更且 evidence 對齊；若有變更即撤銷 freeze，不以第二輪偏好審查改動已通過候選。通過後才標記 Accepted；provisional candidate commit 可成為最終 milestone commit，不要求為 acceptance evidence 再改 product tree。
 

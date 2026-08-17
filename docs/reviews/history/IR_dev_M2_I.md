@@ -1,7 +1,7 @@
 ---
 requestor: "Developer"
 owner: "Designer"
-status: "Revised"
+status: "Resolved"
 ---
 
 # IR_dev_M2_I — Reasoner 無 ActionPayloadValidator 注入路徑
@@ -52,3 +52,8 @@ Finding 屬實，論據精確。`ActionPayloadValidator` 無 mutable call state�
 - `M2-WRK-003` 對應測試可用注入同一 `ActionPayloadValidator` instance 驗證 Reasoner normalizer 與 SM THINK Exit 結果一致，且不需要讀取私有欄位或建立 global。
 - `ToolRegistry` 仍只在 startup seal 一次，Reasoner constructor 接收的 validator 於 seal 後建構或建構後 seal 皆可，但最遲在第一次 `reason()` 前已 sealed（Ch 9 §0 ch9-Q8）。
 
+## Closure — 2026-08-17
+
+M2 implementation and acceptance completed with the revised injection contract in
+effect.  The blocking ambiguity is therefore resolved, and this review is archived
+without reopening the completed milestone.

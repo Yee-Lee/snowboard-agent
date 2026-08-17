@@ -155,7 +155,7 @@ Interrupt、recovery、startup 與 shutdown 不是新的 `status.state`。Displa
 | `SCN-ACTION-SPEAK` | 已驗證且準備交給 speak action 的內容 | Normal / Main Text | 實際要說出的文字 | Dispatch 前取代；下一輪接收或回到 IDLE 時清除 |
 | `SCN-INTERRUPT` | SM 已接受 `InterruptRequested` 並開始 convergence | Normal / Main Text | `已中止` | 取代目前 Main；真正回到 IDLE 時清除 |
 | `SCN-ERROR` | `StateChanged.new == ERROR` 加上 error owner 提供的 sanitized category / summary | Normal / State + Error | `錯誤`與安全摘要 | 進入 ERROR 時取代 Main；recovery 完成並真正回到 IDLE 時清除 |
-| `SCN-SHUTDOWN` | App 進入 graceful shutdown | Fullscreen / Blank | 全黑 | owner `app.lifecycle.shutdown`；維持至 Display stop；取得失敗不得延後 shutdown |
+| `SCN-SHUTDOWN` | App 進入 graceful shutdown | Fullscreen / Blank | 全黑 | owner `app.lifecycle.shutdown`；維持至 Display stop；M4c起real SSD1351在釋放transport前best-effort present最終全黑frame，使stop後面板仍保持黑；present失敗不得阻止cleanup或延後shutdown |
 
 State Manager 初始 state 為 `IDLE` 且不發布虛構的 `None -> IDLE`，所以 StatusBar 的初始投影不是新增 Event。Presenter 不保存列表、不建立對話歷史，也不自行等待或合併多個結果。
 
@@ -219,7 +219,7 @@ Display failure 不得使 session 進入 ERROR，也不得改變既有 process e
 | `DSP-REQ-003` | Normal / Fullscreen 與 State / Main / Error / Blank | §3–§4 | M3 baseline；Error runtime M4c | Designer + Tester；M3 / M4c test spec |
 | `DSP-REQ-004` | `SET-SHOW-SESSION-CONTENT` 預設開啟，只控制 Perception / Tool / Speak；startup-static，不支援 runtime reload | §4.1、§5.2 | M4c | User + Designer + Reviewer；M4c design / test approval |
 | `DSP-REQ-005` | Sanitized error 與 privacy | §3.2、§4.1、§5.1 | M4c | Designer + Reviewer + Tester；M4c design / test approval |
-| `DSP-REQ-006` | Boot / shutdown Blank | §4.1 | M3 | Designer + Tester；M3 coverage / Pi evidence |
+| `DSP-REQ-006` | Boot / shutdown Blank | §4.1 | M3 baseline；M4c補stop後保持全黑 | Designer + Tester；M3 coverage / Pi evidence；M4c lifecycle regression |
 | `DSP-REQ-007` | Boot / shutdown animation 原則與 Blank fallback | §3.2、§4.1、§4.3 | M7 Deferred | User + Designer + Tester；M7 spec-first approval |
 | `DSP-REQ-008` | Missing glyph、NullDisplay 與 runtime failure 不阻斷主流程 | §2.2、§5.3 | M3 baseline；session mapping M4c | Reviewer + Tester；M3 / M4c evidence |
 | `DSP-REQ-009` | Progress UI 不屬目前產品行為 | §1.3 | M3 / M4c exclusion | Designer；milestone / test-spec exclusion review |

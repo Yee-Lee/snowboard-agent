@@ -1,7 +1,7 @@
 ---
 requestor: "Tester"
 owner: "Developer"
-status: "Revised"
+status: "Resolved"
 ---
 
 # TR_dev_M3_I — M3 開發驗證重新驗證
@@ -392,3 +392,15 @@ Developer 可準備 commit proposal。這不是 commit 授權、M3 Tester PASS�
    evidence index；舊 `cab627...` cards不得作為新候選 acceptance evidence。
 3. Tester收到 exact-SHA evidence後執行 final reconciliation；全部成立後才將本單
    改為 `Resolved` 並交 Designer最終簽核。
+
+---
+
+## Final closure — 2026-08-17
+
+The later fixed candidate
+`5c9e5aac47e7f4f0dd168d8c75541438ee74f858` supersedes the pre-commit state recorded
+above.  Its portable regression, complete target bundle, manual observations, and
+single-SHA reconciliation were accepted through `CR_M3_I` and
+`docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001/designer-review-5c9e5aa-20260817/README.md`.
+M3 is closed, so the prior findings require no further Developer round and this review
+is resolved for archive.

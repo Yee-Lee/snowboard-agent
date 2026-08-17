@@ -247,6 +247,7 @@ class DisplayDevice(Protocol):
 - 雙緩衝語意： clear / write_pixels 只動 back buffer； show 才 flush 到面板——避免半熟畫面出現、允許仲裁層於 flush 前組合多個區域
 - 同步方法： clear / write_pixels / show / size 為同步——ctypes 呼叫本身是同步 C，包成 async 只會多一層 overhead 且無 await 點
 - `size()` 為方法而非屬性：Protocol 慣例上屬性用 `@property` 亦可；使用方法避免 Protocol runtime check 對屬性支援不一致的問題
+- M4c起SSD1351正常`stop()`須在native handle仍有效時best-effort present恰好一個全零RGB565 full frame，再釋放handle、GPIO與SPI資源；present失敗不得阻止cleanup，重複`stop()`不得再次present或close。此為chip-specific lifecycle責任，不改`DisplayDevice`公開API，也不要求Null/Mock做硬體present。
 
 ### Buffer 格式
 
