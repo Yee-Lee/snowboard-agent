@@ -83,12 +83,22 @@ Implement 章節的「最低單元測試」仍是 Developer 的元件測試輸�
 
 | 代碼 | 要求 |
 | :--- | :--- |
-| **DEV-PY311** | Python 3.11 以上；Windows 或 Linux 跨平台純 Python、mock / config 測試 |
+| **DEV-PY311** | 歷史 Test ID 與 Developer fast loop 的最低版本代碼；Python 3.11，或經團隊指定的單一主要開發版本，執行 Windows / Linux 純 Python、mock / config 測試。不得把此單版本結果當成正式候選 matrix |
+| **PORTABLE-PY311** | 正式候選 portable gate：CPython 3.11，執行該 milestone 規定的 non-RPI suite |
+| **PORTABLE-PY312** | 正式候選 portable gate：CPython 3.12，執行與 3.11 相同的 suite 與 timeout policy |
+| **PORTABLE-PY313** | 正式候選 portable gate：CPython 3.13，執行與 3.11 相同的 suite 與 timeout policy |
 | **DEV-PROC** | DEV-PY311，跨平台 subprocess 驗證 exit code (2/3/4/0) 與 pipe/stream readiness |
 | **POSIX-PROC** | Linux / Raspberry Pi OS 權威平台，驗證 POSIX `SIGINT` / `SIGTERM` 訊號觸發與原生 process lifecycle；Windows 自動 deselect，不得為此修改 production signal architecture |
 | **RPI-NATIVE** | Raspberry Pi 5 / Raspberry Pi OS；驗證 Pi-only dependency、native backend 與指定硬體 fixture。測項使用 `rpi` marker；非 Pi 或未明確選取 `-m rpi` 時由 collection hook **deselect** 並在 collection summary 列出，不得以 skip / xfail 偽裝為已執行 |
 
 M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only test 必須以 `rpi` marker 分流，且不屬本版 M1 / M2 的 Pass 證據。
+
+### 2.1.1 Python minor 支援政策
+
+- Core 正式支援 CPython **3.11、3.12、3.13**；package metadata 必須表達等價的有界範圍 `>=3.11,<3.14`。加入 3.14 或移除既有 minor 都是明示的支援政策變更，須先更新本節、dependency / native ABI matrix 與 candidate gate。
+- Developer 日常 fast loop 只需團隊指定的單一主要版本；正式候選則必須在 3.11 / 3.12 / 3.13 執行相同 portable suite。三版本可由 CI、container 或集中驗證環境提供，不要求每台開發機安裝。
+- Raspberry Pi 只執行 milestone 已固定的正式部署 runtime；目前目標為 CPython 3.13。Pi 不重跑三個 minor。部署 runtime 或 native ABI 改變時，才撤銷 candidate freeze 並重跑 portable matrix及 Pi gate。
+- pure-Python dependency 與 Pi native dependency / ABI 分開鎖定並分開記錄 checksum；portable matrix 不宣稱硬體相容，Pi gate也不取代 Python 語意相容矩陣。
 
 ### 2.2 共用 fixture
 
@@ -122,6 +132,22 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 
 任何證據不得包含 credential、完整 payload、transcript、prompt、原始音訊 / 影像或 raw model output。
 
+### 2.4 Candidate、run 與 evidence identity
+
+自 M4 的第一個產品候選起，含 RPI-NATIVE 或人工觀察的驗收必須使用以下共同 identity contract；本節不回溯改判或重跑已完成的 M3：
+
+1. Runner 必須接收外部傳入的 40-character candidate SHA；只讀取當前 `HEAD` 不構成授權。HEAD 不符、SHA 格式錯誤或受保護路徑 dirty 均在測試啟動前 FAIL。
+2. 受保護路徑至少包含 `src/`、`tests/`、acceptance scripts、dependency / lock、package metadata及被 runner 讀取的 config contract。任一變更撤銷 freeze，portable matrix也因此失效。
+3. Portable matrix 使用唯一 `portable_run_id`；matrix index 逐版本記錄完整 SHA、命令、timeout、platform、Python、開始／結束、exit code及 Fail / Blocked / Skip / XFail 計數。三版本都必須是零，且不可混用 SHA。
+4. Target run 同時包含 `mode=debug|acceptance` 與唯一 `run_id`。debug evidence 永遠不能被 acceptance manifest引用；acceptance run ID 不可覆寫或續跑。任何中途失敗保存 FAIL與raw log，修正後以新 SHA（若受保護路徑有變）和新 run ID重啟。
+5. Preflight 只產出 readiness / identity 結果，不產生 PASS card。它必須驗證 target runtime、hardware、artifact、sanitized config checksum、portable matrix index及 output root 為空的新 run。
+6. 人工觀察使用 bounded readiness handshake：card 宣告已開始且帶相同 run ID後，operator 才能送 observation；缺失、過期、錯 run、record command 非零或 checklist 任一 fail，都使 card FAIL。固定 `sleep` 不算 readiness。
+7. README、manifest、cards、results、raw logs及 manual observations 的 SHA / run ID / mode 必須一致。Tester final reconciliation 發現不一致、缺檔或舊 run 混入時，判定 Fail，不得人工拼接成 Pass。
+
+每個 async、process、readiness 與人工等待都必須有由 test spec 設定的 bounded timeout；timeout 必須產生非零 exit、FAIL result及raw log，不得永久等待或轉為 Skip / XFail。
+
+State Manager、EventBus、async cancellation、GPIO edge sequence與manual readiness的契約行為，必須先以fake / simulated fixture納入portable gate。RPI-NATIVE只保留無法由portable fixture證明的真實kernel / driver、device ownership、signal、latency、thermal以及人工可聽／可視結果；不得在Pi acceptance中首次除錯純Python狀態或schema。
+
 ---
 
 ## 3. Developer 交付 Tester 的必要資料
@@ -135,6 +161,7 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 5. race case 的 barrier / call-log 證據；
 6. exit code、log redaction、無殘留 task / child 的相應證據；
 7. 未驗證風險與 Pi-only / 後續 milestone 排除項。
+8. 若含實體／人工 gate：portable matrix index、外部指定 candidate SHA、freeze manifest、target preflight與尚未使用的 acceptance run ID。
 
 缺少必要證據時，Tester 可判定 Blocked 或要求補交；不以測試數量或 coverage 百分比取代逐條 Test ID 驗收。
 

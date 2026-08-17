@@ -89,6 +89,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
+| M4 Candidate process gate | `DESIGN REVISED — IMPLEMENTATION / DRY RUN PENDING` | `OUT-PROCESS-2026-001`：待Developer交付candidate runner、3.11 / 3.12 / 3.13 CI matrix與六項fail-closed tests；待Tester完成無硬體dry run後，才能建立首個M4 frozen candidate並啟動Pi acceptance。M3不重跑 |
 | M4a Audio | `CONTRACT ISSUED — POC GATE 1 MAY START` | Gate 0：M3 P4 final selection ACK-004 complete；Gate 1：candidate list Core 書面確認；Gate 2：M4A-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + Core Tester 驗收 |
 | M4b LLM | `CONTRACT ISSUED — PENDING PM RELAY → POC RECEIPT & GATE 1` | Gate 0：POC 回交 contract receipt + initial manifest；Gate 1：candidate list & Ubuntu 初篩 Core 書面確認；Gate 2：M4B-P1~P12 驗證 + exact SHA + final winner ACK；Gate 3：`model_spec.md` baseline + `docs/protocol.md` review + Core Tester 驗收 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |

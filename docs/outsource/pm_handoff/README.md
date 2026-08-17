@@ -8,7 +8,7 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 目前無進行中的手交項目 | | | | | |
+| [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
 
 ---
 

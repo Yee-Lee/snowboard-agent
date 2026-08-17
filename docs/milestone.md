@@ -8,7 +8,7 @@
 
 ### 1.1 規劃前提
 
-* Python 最低版本為 3.11。
+* Core 正式支援 CPython 3.11、3.12、3.13；Developer fast loop 使用團隊指定的單一主要版本，candidate portable gate 必須覆蓋三個 minor。Pi 只跑該 milestone 固定的正式部署 runtime，不將 Python matrix 乘到實體測試。
 * Linux / Raspberry Pi OS / Raspberry Pi 5 是 POSIX process signal (`SIGINT` / `SIGTERM`)、native lifecycle、runtime 與硬體驗證的權威平台。
 * Windows 僅驗證純 Python、mock / null、config 與 portable subprocess 測試（如 pipe/stream readiness）；明確排除 POSIX process signal 節點驗證，且不得為此修改 production signal architecture。
 * 所有文件與驗收命令均使用啟用虛擬環境後的 python 。
@@ -52,6 +52,7 @@ M1 純軟體核心
 * 測試與 log 不包含 credential、prompt、完整 payload、transcript、音訊或影像內容。
 * Windows 可執行的 pure-Python / mock 測試不得意外 import Pi-only dependency。
 * Pi-only 驗收明確標記，且在 Raspberry Pi 5 上保存命令、版本、config 與結果摘要。
+* 含 Pi 或人工驗收的 milestone 自 M4 起依 `docs/roles/workflow.md` §4 執行 portable-first candidate gate：三版本 portable matrix 全綠後才 review / freeze；target preflight 與正式 acceptance 只接受同一外部指定 SHA，debug evidence 不得混入。
 * 若實作發現定稿契約不可落實，停止該項實作並交回 Designer；涉及架構邊界時再交 Architect，不在 code 中自行發明另一套契約。
 
 ### 1.5 Designer 輔助規格文件產出時機
