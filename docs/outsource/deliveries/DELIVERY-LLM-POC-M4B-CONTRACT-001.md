@@ -4,7 +4,7 @@
 - **Finding ID**: `OUT-M4B-2026-001`、`OUT-M4B-2026-002` ～ `OUT-M4B-2026-006`
 - **References**: `PM-OUT-260814-011-m4b-llm-poc-contract-gate`、`PM-OUT-260805-002-m3-m4-poc-planning`、`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`docs/milestones/M4.md §6.1–6.2`
 - **Revision**: `2026-08-17 / PM-OUT-260817-015`
-- **Status**: `ACTION REQUIRED — POC COMMITTED PLAN / GATE 0 RECEIPT PENDING`
+- **Status**: `GATE 0 R2 COMPLETE — GATE 1 NOT STARTED`
 - **Contract owner**: Core Team Designer
 - **Relay owner**: PM (轉交 LLM POC Team)
 - **Date**: 2026-08-15

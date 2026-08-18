@@ -1,7 +1,7 @@
 # M4 candidate gate 簡化與執行成本修正
 
 - Handoff ID : `PM-OUT-260818-018-m4-portable-gate-cost-correction`
-- Status : `Ready for PM`
+- Status : `Resolved — implemented at f87c5e6`
 - Finding ID : `OUT-PROCESS-2026-001`
 - Related handoff : `PM-OUT-260817-014-local-hardware-test-gate-reform`
 - Reviewed Core candidate : branch `dev_agent_m4`, HEAD `71b2c97e2ab2e4e632131f2775de7e75746f0a82`

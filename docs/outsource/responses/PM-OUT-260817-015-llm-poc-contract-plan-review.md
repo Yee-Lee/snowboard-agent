@@ -1,13 +1,14 @@
 # Response: PM-OUT-260817-015 — M4b LLM POC Contract / Plan Review
 
 - **Handoff**: `PM-OUT-260817-015-llm-poc-contract-plan-review`
-- **Findings**: `OUT-M4B-2026-002` ～ `OUT-M4B-2026-006`
-- **Status**: `POC committed reply received — revision required before closure`
+- **Findings**: `OUT-M4B-2026-002` ～ `OUT-M4B-2026-007`
+- **Status**: `Resolved — Gate 0 R2 accepted at POC SHA 0d415d1...`
 - **Response owner**: Core Team Designer
 - **Date**: 2026-08-17
 - **Reviewed Core baseline**: `dev_agent_m3` / `c559e5cf65d20676696293f06f1e5bc2afd02ae6`
 - **Reviewed LLM POC baseline**: `llm` / `4ac7ba3941077babf34c7c575003a65f5c541009`
-- **Reviewed LLM POC reply**: `origin/llm` / `0cff62f942f2eec82fcc0b0f953a7cc4a2819e3a`
+- **Reviewed LLM POC reply**: `origin/llm` / `0d415d174390665ed92793937d30334f01e3df14`
+- **Final ACK**: `DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`
 - **Core response SHA**: `Pending PM intake after this response is committed; this file does not self-reference its future commit`
 - **Architecture change**: `No`
 
@@ -96,3 +97,16 @@ contract revision：
 M3/M4 gate語意，補齊Gate 1可執行packet及Gate 2A/2B工作包，再以新的單一commit push至
 `origin/llm`並通知完整40-character SHA。Core只複驗上述四項及其直接影響範圍；不要求在
 015結案前執行Ubuntu benchmark、Pi Gate 2或產生candidate結果。
+
+## 9. Final exact-SHA re-review — 2026-08-18
+
+Core Designer確認LLM POC `HEAD`與`origin/llm`均為
+`0d415d174390665ed92793937d30334f01e3df14`。官方Gate 1 packet suite六項全數通過；
+runner-owned log hygiene、cold P4完整性、leader-first process-group cleanup及selector
+authenticated-input四條原Blocking路徑均已關閉。Validator self-test為`PASS`，Gate 2A / 2B
+plan-only均為`PLAN_VALID`且`execution_performed=false`。
+
+最終裁決記錄於
+[`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`](../deliveries/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)。
+015與Gate 0 R2至此`Resolved`；Gate 1仍為`NOT_STARTED`，本結論不選定finalist、不授權Pi
+Gate 2A，也不把test-double結果當作candidate evidence。

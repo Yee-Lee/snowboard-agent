@@ -89,9 +89,9 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
-| M4 Candidate process gate | `DESIGN REVISED — IMPLEMENTATION / DRY RUN PENDING` | `OUT-PROCESS-2026-001`：待Developer交付candidate runner、3.11 / 3.12 / 3.13 CI matrix與六項fail-closed tests；待Tester完成無硬體dry run後，才能建立首個M4 frozen candidate並啟動Pi acceptance。M3不重跑 |
+| M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
 | M4a Audio | `G1B FOCUSED SCOPE ACCEPTED — PRIMARY EXECUTION PENDING` | `origin/dev_audio_m2` / `756ded69dd7b4661fcbac272d4d234c387890fc8`已完成exact-SHA intake。`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`只授權SenseVoice ASR與Matcha TTS進offline build / Gate 2A；其餘7列Deferred、3列Rejected。Primary失敗不得自動切換fallback；P9 surrogate仍由Core Designer在WP4 / S4前交付 |
-| M4b LLM | `POC REPLY RECEIVED — REVISION REQUIRED BEFORE CLOSURE` | 已核對`origin/llm` / `0cff62f942f2eec82fcc0b0f953a7cc4a2819e3a`；POC仍承載舊contract、合併Gate 2A/2B且缺Gate 1可執行packet與完整Gate 2工作包。修正後以新exact SHA複驗；Gate 2A standalone、Gate 2B依Accepted Audio reference跑P9 / P10B、Gate 3做Core product exact-SHA驗收 |
+| M4b LLM | `GATE 0 R2 ACCEPTED — GATE 1 NOT STARTED` | `origin/llm` / `0d415d174390665ed92793937d30334f01e3df14`已關閉`OUT-M4B-2026-007-A～D`；ACK為`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`。017 early memory preflight仍是Pi Gate 2A authorization blocker；Gate 2B另依Accepted Audio reference跑P9 / P10B，Gate 3做Core product exact-SHA驗收 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -120,7 +120,7 @@ Core Designer (contract owner) [DELIVERY-LLM-POC-M4B-CONTRACT-001]
     Gate 3: Core product implementation → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；LLM POC `0cff62f...`已完成intake但未通過，待修正後回覆新的committed reply path / branch / full SHA。
+Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；LLM POC `0d415d1...`已完成exact-SHA複驗並由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2。Gate 1尚未開始；017 resource preflight須在Pi Gate 2A授權前收斂。
 
 ---
 
