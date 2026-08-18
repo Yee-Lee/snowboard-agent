@@ -2,7 +2,7 @@
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
 已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0 為
-`IN_PROGRESS`。本文件不另行建立狀態；M0 授權只涵蓋 frozen packet 的唯讀
+`GATE_REVIEW`，待 Internal Tester confirmation。本文件不另行建立狀態；M0 授權只涵蓋 frozen packet 的唯讀
 inventory、`/tmp` marker 與 dummy lifecycle，不包含安裝 runtime、下載模型或 reboot。
 
 ## Layout

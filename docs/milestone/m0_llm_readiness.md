@@ -1,6 +1,6 @@
 # LLM M0：Environment and Evidence-Chain Readiness
 
-狀態：`IN_PROGRESS`
+狀態：`GATE_REVIEW`
 
 性質：前置 readiness gate；不是 runtime/model benchmark，也不是 hardware baseline。
 
@@ -88,6 +88,20 @@ request 未確認前，不構成 M0 `IN_PROGRESS` 或 hardware evidence。
 - Exact SHA、clean check、transfer checksum 與 child cleanup proof。
 - Raw evidence location/checksum、sanitized evidence index 與 review decision。
 - Risks、blockers、adjustment requests 與下一個獲准工作。
+
+## M0-RUN-001 Review Record
+
+- Execution SHA：`afb310b5337857e01741ab455086b53f9904f280`；workstation/Pi 相同且
+  execution 前 worktree clean。
+- Sanitized index：`poc_llm/evidence/m0/M0-RUN-001.md`；lifecycle JSON 依
+  `m0-evidence.schema.json` 保存。
+- POC Test Controller observation：`PASS`；Technical Lead evidence review：`PASS
+  recommendation`。
+- Open exit condition：Internal Tester 尚未對 exact SHA、raw manifest、inventory、
+  transfer/cleanup 與 lifecycle proof 做獨立 confirmation，因此 M0 不標示
+  `COMPLETE`。
+- Forward risk：4GB Pi 目前配置約 2GB swap（未使用）。這不影響 M0 inventory
+  result，但 Gate 2A 前必須另行核准並證明 `swap=0`。
 
 ## Prohibited in M0
 
