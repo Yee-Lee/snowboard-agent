@@ -1,0 +1,37 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate1:selection:1.0",
+  "type":"object","additionalProperties":false,
+  "required":["packet_id","result","proposed_finalists","rejected_pairings","candidate_evidence_count","max_two_enforced","violations"],
+  "properties":{
+    "packet_id":{"const":"G1-UBUNTU-PRESCREEN-002"},
+    "result":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required"]},
+    "proposed_finalists":{
+      "type":"array","maxItems":2,
+      "items":{
+        "type":"object","additionalProperties":false,
+        "required":["candidate_id","pairing_revision","disposition"],
+        "properties":{
+          "candidate_id":{"type":"string"},
+          "pairing_revision":{"type":"string"},
+          "disposition":{"enum":["PASS","Core threshold decision required"]}
+        }
+      }
+    },
+    "rejected_pairings":{
+      "type":"array",
+      "items":{
+        "type":"object","additionalProperties":false,
+        "required":["candidate_id","pairing_revision","reason"],
+        "properties":{
+          "candidate_id":{"type":"string"},
+          "pairing_revision":{"type":"string"},
+          "reason":{"type":"string","minLength":1}
+        }
+      }
+    },
+    "candidate_evidence_count":{"type":"integer","minimum":0},
+    "max_two_enforced":{"const":true},
+    "violations":{"type":"array","items":{"type":"string"}}
+  }
+}

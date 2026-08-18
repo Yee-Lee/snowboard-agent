@@ -4,7 +4,7 @@
 - **Core revision**: `2026-08-17 / PM-OUT-260817-015`
 - **Repository / branch**: `poc_llm/snowboard-agent` / `llm`
 - **Delivery HEAD**: supplied in the post-commit response; not self-prefilled
-- **Status**: `SUBMITTED R2 — PENDING CORE DESIGNER EXACT-SHA INTAKE`
+- **Status**: `R2 REVISION 001 RESUBMITTED — PENDING CORE DESIGNER EXACT-SHA REVIEW`
 - **Owner**: LLM POC Technical Lead
 
 ## Authoritative Artifacts
@@ -13,20 +13,21 @@
 | --- | --- | --- |
 | Revised Core contract | `docs/pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md` | `Received; 2026-08-17 revision` |
 | 015 handoff | `docs/pm_handoff/PM-OUT-260817-015-llm-poc-contract-plan-review.md` | `Received` |
+| R2 revision request | `docs/pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md` | `Received; OUT-M4B-2026-007` |
 | Receipt R2 | `docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md` | `Submitted R2` |
 | 015 response | `docs/response/RESP-PM-OUT-260817-015.md` | `Team revised; Core closure pending` |
 | Unique crosswalk | `docs/milestone/m4b_traceability_crosswalk.md` | `Controlled` |
 | Execution plan | `docs/milestone/m4b_execution_plan.md` | `Authoritative planning packet` |
-| Gate 1 packet | `poc_llm/tests/gate1/GATE1-PACKET-001.md` | `Frozen scaffold; execution not authorized` |
+| Gate 1 packet | `poc_llm/tests/gate1/GATE1-PACKET-002.md` | `Fail-closed frozen executable packet; execution not authorized` |
 | Fixture catalog | `poc_llm/fixtures/gate1/catalog.json` | `20 cases × 3 repetitions; self-test PASS` |
 | Validator / lock | `poc_llm/harness/gate1_validator.py` / `poc_llm/harness/gate1-lock.json` | `v1.0.0; checksums frozen` |
-| Ubuntu runner | `poc_llm/tools/run_gate1_prescreen.py` | `Prepared; no candidate run` |
+| Ubuntu runner / selector | `poc_llm/tools/run_gate1_prescreen.py` / `poc_llm/tools/select_gate1_finalists.py` | `Protocol/negative self-test PASS; no candidate run` |
 | Gate 2 plan validator | `poc_llm/tools/run_m4b_gate.py` | `2A/2B PLAN_VALID; hardware execution blocked` |
-| Candidate/result schemas | `poc_llm/fixtures/gate1/candidate.schema.json` / `poc_llm/evidence/gate1/gate1-result.schema.json` | `Prepared` |
+| Candidate/result/selection schemas | `poc_llm/fixtures/gate1/candidate.schema.json` / `poc_llm/evidence/gate1/gate1-result.schema.json` / `poc_llm/evidence/gate1/gate1-selection.schema.json` | `Locked and self-tested` |
 
 ## Gate and Evidence State
 
-- Gate 0 R2: `Submitted; Core exact-SHA intake pending`.
+- Gate 0 R2 revision 001: `Resubmitted; Core exact-SHA review pending`.
 - Internal M0: `NOT_STARTED`; prior local dummy self-test is not hardware evidence.
 - Gate 1: `Blocked pending Gate 0 completion, candidates, runners and approvals`.
 - Gate 2A P1–P8/P10A/P11/P12: `Blocked pending Gate 1 ACK`.
@@ -48,8 +49,8 @@
 
 ## Next Authorized Work
 
-1. Submit this R2 packet in one new commit after `0cff62f...`; do not amend prior history.
-2. Await Core exact-SHA Gate 0 intake.
+1. Submit the OUT-M4B-2026-007 correction in one new commit after `1d3444...`; do not amend prior history.
+2. Await Core exact-SHA Gate 0 R2 re-review.
 3. Prepare candidate manifests and runner/resource approvals without downloading or benchmarking.
 4. Do not run Ubuntu Gate 1, Pi Gate 2A or combined Gate 2B until each entry authorization exists.
 

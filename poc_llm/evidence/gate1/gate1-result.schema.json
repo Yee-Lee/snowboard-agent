@@ -1,38 +1,78 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snowboard:llm-poc:gate1:result:1.0",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["packet_id", "candidate_id", "platform", "result", "cases", "metrics"],
-  "properties": {
-    "packet_id": {"const": "G1-UBUNTU-PRESCREEN-001"},
-    "candidate_id": {"type": "string", "pattern": "^CAND-[A-Z0-9-]+$"},
-    "platform": {"enum": ["ubuntu-x86_64", "ubuntu-aarch64"]},
-    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked", "Core threshold decision required"]},
-    "cases": {
-      "type": "array",
-      "minItems": 60,
-      "items": {
-        "type": "object",
-        "required": ["fixture_id", "repetition", "normalized", "log_forbidden_hits"],
-        "properties": {
-          "fixture_id": {"type": "string"},
-          "repetition": {"type": "integer", "minimum": 1, "maximum": 3},
-          "normalized": {"type": "object"},
-          "log_forbidden_hits": {"type": "array", "maxItems": 0}
-        }
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate1:result:2.0",
+  "type":"object","additionalProperties":false,
+  "required":["packet_id","run_id","candidate_id","pairing_revision","platform","result","identity","gates","cases","metrics","cleanup","violations"],
+  "properties":{
+    "packet_id":{"const":"G1-UBUNTU-PRESCREEN-002"},
+    "run_id":{"type":"string","pattern":"^G1-RUN-[A-Z0-9-]+$"},
+    "candidate_id":{"type":"string","pattern":"^(CAND-[A-Z0-9-]+|UNBOUND)$"},
+    "pairing_revision":{"type":"string","minLength":1},
+    "platform":{"enum":["ubuntu-x86_64","ubuntu-aarch64"]},
+    "result":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required"]},
+    "identity":{
+      "type":"object","additionalProperties":false,
+      "required":["lock_sha256","manifest_sha256","command_sha256","runtime_sha256","model_sha256","config_sha256","catalog_sha256","candidate_schema_sha256","validator_sha256","runner_sha256","result_schema_sha256","selection_schema_sha256","selector_sha256"],
+      "properties":{
+        "lock_sha256":{"$ref":"#/$defs/sha"},"manifest_sha256":{"$ref":"#/$defs/sha"},
+        "command_sha256":{"$ref":"#/$defs/sha"},
+        "runtime_sha256":{"$ref":"#/$defs/sha"},"model_sha256":{"$ref":"#/$defs/sha"},
+        "config_sha256":{"$ref":"#/$defs/sha"},"catalog_sha256":{"$ref":"#/$defs/sha"},
+        "candidate_schema_sha256":{"$ref":"#/$defs/sha"},
+        "validator_sha256":{"$ref":"#/$defs/sha"},"runner_sha256":{"$ref":"#/$defs/sha"},
+        "result_schema_sha256":{"$ref":"#/$defs/sha"},
+        "selection_schema_sha256":{"$ref":"#/$defs/sha"},"selector_sha256":{"$ref":"#/$defs/sha"}
       }
     },
-    "metrics": {
-      "type": "object",
-      "required": ["ready_ms", "hot_ttft_ms_p95", "hot_tokens_per_second", "peak_rss_bytes", "disk_bytes"],
-      "properties": {
-        "ready_ms": {"type": "number", "minimum": 0},
-        "hot_ttft_ms_p95": {"type": "number", "minimum": 0},
-        "hot_tokens_per_second": {"type": "number", "minimum": 0},
-        "peak_rss_bytes": {"type": "integer", "minimum": 0},
-        "disk_bytes": {"type": "integer", "minimum": 0}
+    "gates":{
+      "type":"object","additionalProperties":false,
+      "required":["P1","P2","P3","P4","P5","P6","P8","P11"],
+      "properties":{
+        "P1":{"$ref":"#/$defs/gate"},"P2":{"$ref":"#/$defs/gate"},"P3":{"$ref":"#/$defs/gate"},
+        "P4":{"$ref":"#/$defs/gate"},"P5":{"$ref":"#/$defs/gate"},"P6":{"$ref":"#/$defs/gate"},
+        "P8":{"$ref":"#/$defs/gate"},"P11":{"$ref":"#/$defs/gate"}
       }
-    }
+    },
+    "cases":{"type":"array","items":{
+      "type":"object","additionalProperties":false,
+      "required":["fixture_id","repetition","normalized","log_forbidden_hits"],
+      "properties":{
+        "fixture_id":{"type":"string","pattern":"^G1-P[23]-[0-9]{3}$"},
+        "repetition":{"type":"integer","minimum":1,"maximum":3},
+        "normalized":{"type":"object"},
+        "log_forbidden_hits":{"type":"array","items":{"type":"string"}}
+      }
+    }},
+    "metrics":{
+      "type":"object","additionalProperties":false,
+      "required":["cold_total_ms","hot_total_ms","ttft_ms","output_tokens","hot_tokens_per_second_samples","cold_total_ms_p50","cold_total_ms_p95","hot_total_ms_p50","hot_total_ms_p95","hot_ttft_ms_p50","hot_ttft_ms_p95","hot_tokens_per_second_p50","hot_tokens_per_second_p95","peak_rss_bytes","disk_bytes"],
+      "properties":{
+        "cold_total_ms":{"type":"array","items":{"type":"number","minimum":0}},
+        "hot_total_ms":{"type":"array","items":{"type":"number","minimum":0}},
+        "ttft_ms":{"type":"array","items":{"type":"number","minimum":0}},
+        "output_tokens":{"type":"array","items":{"type":"integer","minimum":0}},
+        "hot_tokens_per_second_samples":{"type":"array","items":{"type":"number","minimum":0}},
+        "cold_total_ms_p50":{"type":"number","minimum":0},
+        "cold_total_ms_p95":{"type":"number","minimum":0},
+        "hot_total_ms_p50":{"type":"number","minimum":0},
+        "hot_total_ms_p95":{"type":"number","minimum":0},
+        "hot_ttft_ms_p50":{"type":"number","minimum":0},
+        "hot_ttft_ms_p95":{"type":"number","minimum":0},
+        "hot_tokens_per_second_p50":{"type":"number","minimum":0},
+        "hot_tokens_per_second_p95":{"type":"number","minimum":0},
+        "peak_rss_bytes":{"type":"integer","minimum":0},
+        "disk_bytes":{"type":"integer","minimum":0}
+      }
+    },
+    "cleanup":{
+      "type":"object","additionalProperties":false,
+      "required":["exit_code","waited","process_group_absent"],
+      "properties":{"exit_code":{"type":["integer","null"]},"waited":{"type":"boolean"},"process_group_absent":{"type":"boolean"}}
+    },
+    "violations":{"type":"array","items":{"type":"string"}}
+  },
+  "$defs":{
+    "sha":{"type":"string","pattern":"^([0-9a-f]{64}|UNAVAILABLE)$"},
+    "gate":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required","Conditional escalation","Pending"]}
   }
 }

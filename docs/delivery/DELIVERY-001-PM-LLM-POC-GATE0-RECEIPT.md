@@ -3,11 +3,11 @@
 - **Delivery ID**: `DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT-R2`
 - **In Response To**: `DELIVERY-LLM-POC-M4B-CONTRACT-001`
 - **Core revision**: `2026-08-17 / PM-OUT-260817-015`
-- **Finding IDs**: `OUT-M4B-2026-002` through `OUT-M4B-2026-006`
+- **Finding IDs**: `OUT-M4B-2026-002` through `OUT-M4B-2026-007`
 - **From**: LLM POC Team
 - **To**: PM for Core Designer recording
 - **Date**: 2026-08-18
-- **Status**: `SUBMITTED R2 — PENDING CORE DESIGNER EXACT-SHA INTAKE`
+- **Status**: `R2 REVISION 001 RESUBMITTED — PENDING CORE DESIGNER EXACT-SHA REVIEW`
 
 本 receipt 不包含 delivery commit SHA。PM 拉回約定 branch 後自行記錄實際 HEAD，再交
 Core Designer 登錄。POC Team 不以 branch 名稱、內部 ACK 或本 receipt 自行宣告 Gate 0
@@ -37,6 +37,11 @@ LLM POC Team 確認已閱讀並承接 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的
 | External Gate 2A | `NOT_STARTED / BLOCKED` | Gate 1 ACK 後才可執行 LLM-only；僅 provisional finalist |
 | External Gate 2B | `NOT_STARTED / BLOCKED` | Accepted Audio package + 2A ACK 後；通過才可 final winner |
 
+Core 對 `1d3444009a1edbf63e1b24a5e6977cbdb7203c80` 提出的
+`DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001` 已收件。POC 已針對唯一 blocker
+`OUT-M4B-2026-007` 以 `G1-UBUNTU-PRESCREEN-002` 修正；在 Core 複驗新 exact SHA 前，
+Gate 0 R2 仍未完成，015 仍未關閉。
+
 Gate 0 行政收件與 Internal M0 readiness 完全分離。Receipt 提交不代表 Pi 存取、安裝、
 下載、網路切換、Ubuntu benchmark 或 Gate 2A/2B hardware run 已獲准。
 
@@ -57,6 +62,10 @@ blockers 及下一個獲准工作；未執行項目只標 `Pending` 或 `Blocked
 Authoritative Gate 1／2A／2B work-package plan：
 
 `docs/milestone/m4b_execution_plan.md`
+
+Authoritative Gate 1 executable packet：
+
+`poc_llm/tests/gate1/GATE1-PACKET-002.md`
 
 ## 4. Gate 1 Preparation Boundary
 

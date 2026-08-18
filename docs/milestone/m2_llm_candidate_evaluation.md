@@ -22,7 +22,7 @@ Ubuntu 結果只用於 Gate 1 finalist selection，不得取代任何 M4B-P1～P
 
 ## Work Packet
 
-Authoritative executable packet：`poc_llm/tests/gate1/GATE1-PACKET-001.md`。Frozen catalog、
+Authoritative executable packet：`poc_llm/tests/gate1/GATE1-PACKET-002.md`。Frozen catalog、
 validator、runner、schemas 與 checksums 由 `poc_llm/harness/gate1-lock.json` 控制。
 
 - 在 x86 與 arm64 對每個有效 pairing 執行相同 setup、smoke、format、lifecycle、offline

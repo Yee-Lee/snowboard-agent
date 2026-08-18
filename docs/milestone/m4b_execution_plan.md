@@ -2,7 +2,7 @@
 
 狀態：`COMMITTED PLANNING PACKET / EXECUTION NOT AUTHORIZED`
 
-Revision：`2026-08-17-r1`
+Revision：`2026-08-18-r2`
 
 Owner：POC Technical Lead
 
@@ -32,20 +32,27 @@ benchmark、Pi run 或 candidate evidence。
 
 | Field | Definition |
 | --- | --- |
-| Package | `G1-UBUNTU-PRESCREEN-001` |
+| Package | `G1-UBUNTU-PRESCREEN-002` |
 | Owner / approver | Developer + POC Test Controller / Technical Lead review / Core Designer ACK |
 | Dependency | Gate 0 recorded complete；M0 confirmed；Ubuntu x86_64/aarch64 owners and artifact approvals |
 | Platform | Ubuntu x86_64 and native Ubuntu aarch64; both mandatory |
 | Entry / exit | Frozen lock + candidate manifests → both-platform evidence, at most two proposed finalists, Core written ACK |
 | Estimate | 3–5 working days after artifacts and both runners are available |
 | Re-estimation trigger | Candidate count/pairing changes, runner unavailable >1 day, artifact/storage delta >25%, license or aarch64 incompatibility |
-| Runner / command | `poc_llm/tools/run_gate1_prescreen.py`; exact commands in `poc_llm/tests/gate1/GATE1-PACKET-001.md` |
+| Runner / command | Fail-closed `poc_llm/tools/run_gate1_prescreen.py` + both-platform selector; exact commands in `poc_llm/tests/gate1/GATE1-PACKET-002.md` |
 | Evidence | Raw outside Git under approved run ID; sanitized schema `poc_llm/evidence/gate1/gate1-result.schema.json` |
-| Cleanup | Bounded candidate process group TERM→KILL→wait; unique raw dir; no remaining child/process group |
-| Failure / no-go | Any hard eligibility/P2/P3/log/cleanup violation fails pairing; zero eligible pairing produces no-go/change request |
+| Cleanup | Success requires SHUTDOWN ACK, exit 0 and absent process group; failure uses bounded group TERM→KILL→wait and records proof; unique raw dir |
+| Failure / no-go | Schema/identity drift, incomplete P1/P2/P3/P4/P5/P6/P8/P11, log/exit/cleanup violation or missing paired platform rejects pairing; zero eligible pairing produces no-go/change request |
 
 Gate 1 selects proposed Pi candidates only. It produces neither Gate 2A provisional finalist nor
 final winner.
+
+The runner validates all lock identities, the candidate manifest and every sanitized platform
+result. It launches the exact bound argv, drives the portable gates itself and cannot derive PASS
+from candidate-supplied P2/P3 bulk JSON. The selector validates both same-manifest platform results,
+requires the exact 60-case and P4 matrices, applies the frozen deterministic ranking and emits a
+schema-valid aggregate with at most two proposed finalists. Protocol and expected-JSON-printer
+regressions are test-only and do not start Gate 1.
 
 ## Gate 2A Work Packages — LLM-only Pi 5
 

@@ -7,6 +7,7 @@
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-17 revision，包含 OUT-M4B-2026-002～006
 * [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](pm_handoff/PM-OUT-260817-015-llm-poc-contract-plan-review.md) - Core contract / plan review 原始 brief
+* [`DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - Core 對 `1d3444...` 的 R2 複驗退件；`OUT-M4B-2026-007` Gate 1 false-PASS blocker
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 * [`PM-POC-LLM-20260817-001-readiness-correction.md`](pm_handoff/PM-POC-LLM-20260817-001-readiness-correction.md) - Gate 0/M0、Ubuntu pre-screen、traceability、executable packet 與 authority boundary 修正；`On hold — pending PM-OUT-260817-015`
 
@@ -24,6 +25,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - M4b 合約內部技術審查與 12 項測試指標承接確認
 * [`RESP-POC-LLM-READINESS-2026-001.md`](response/RESP-POC-LLM-READINESS-2026-001.md) - 逐 finding 修訂回覆；Team revised 不代表 PM/Core 已關閉 finding
 * [`RESP-PM-OUT-260817-015.md`](response/RESP-PM-OUT-260817-015.md) - 015 複驗回覆、changed paths 與 remaining Core decisions
+* [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)
