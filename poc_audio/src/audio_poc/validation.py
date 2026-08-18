@@ -178,6 +178,54 @@ def validate_m4a_runtime_preflight(document: dict[str, Any]) -> None:
         raise ValueError("M4a runtime preflight cleanup is not clean")
 
 
+def validate_m4a_candidate_smoke(document: dict[str, Any]) -> None:
+    """Validate the two-item preliminary real-candidate smoke report."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "platform", "network_policy", "scope", "results", "execution_status",
+        "cleanup",
+    }
+    _require_keys(document, required, "M4a candidate smoke")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-AUTHORIZED-CANDIDATE-SMOKE":
+        raise ValueError("M4a candidate smoke identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a candidate smoke source SHA is invalid")
+    if document["network_policy"] != "offline_from_hashed_inputs":
+        raise ValueError("M4a candidate smoke network policy is invalid")
+    if document["scope"] != "ONE_ASR_FIXTURE_AND_ONE_TTS_PROMPT_PRELIMINARY_NOT_GATE":
+        raise ValueError("M4a candidate smoke scope is invalid")
+    results = document["results"]
+    if not isinstance(results, list) or len(results) != 2:
+        raise ValueError("M4a candidate smoke requires two results")
+    if document["execution_status"] == "SMOKE_PASS_PRELIMINARY_NOT_GATE":
+        if any(item.get("terminal_status") != "SUCCESS" for item in results):
+            raise ValueError("M4a candidate smoke PASS disagrees with a result")
+        by_id = {item.get("candidate_id"): item for item in results}
+        asr = by_id.get("asr-sherpa-sensevoice-int8-2025-09-09", {})
+        tts = by_id.get("tts-sherpa-matcha-zh-en-1.13.5", {})
+        if asr.get("raw_transcript_emitted") is not False:
+            raise ValueError("M4a candidate smoke emitted an ASR transcript")
+        if tts.get("pcm_emitted") is not False or tts.get("audio_device_opened") is not False:
+            raise ValueError("M4a candidate smoke emitted or played TTS PCM")
+        if tts.get("sample_rate_hz") != 16000 or int(tts.get("sample_count", 0)) <= 0:
+            raise ValueError("M4a candidate smoke TTS native PCM is invalid")
+    cleanup = document["cleanup"]
+    _require_keys(
+        cleanup,
+        {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"},
+        "M4a candidate smoke cleanup",
+    )
+    counters_clean = all(
+        cleanup[name] == 0
+        for name in ("child_processes", "threads", "iterators", "streams", "device_owners")
+    )
+    if cleanup["clean"] != counters_clean:
+        raise ValueError("M4a candidate smoke cleanup flag disagrees with counters")
+    if document["execution_status"] == "SMOKE_PASS_PRELIMINARY_NOT_GATE" and not counters_clean:
+        raise ValueError("M4a candidate smoke PASS requires clean cleanup")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,

@@ -183,6 +183,23 @@ aarch64 and Python 3.13, installs the two authorized wheels with `--no-index`
 and `--no-deps`, records package/native-library identity, and leaves both
 candidate models unloaded.
 
+The first real-candidate smoke remains preliminary and does not play audio. It
+uses frozen `asr-clear-001` plus tracked `tts-001`, extracts both exact archives
+into a new external work directory, and returns ASR quality counts/hash and TTS
+native PCM metadata without storing transcript or PCM bytes:
+
+```bash
+bash poc_audio/tools/run_m4a_candidate_smoke.sh \
+  --artifact-dir poc_audio/artifacts/gate1b \
+  --runtime-dir /controlled/audio-poc/runtime/sherpa-onnx-1.13.5 \
+  --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
+  --work-dir /controlled/audio-poc/work/smoke-001 \
+  --output /tmp/m4a-candidate-smoke.json
+```
+
+This smoke cannot close the frozen 50-item ASR, 20-prompt TTS, lifecycle,
+resource, User-quality, or Gate 2A requirements.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests

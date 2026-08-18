@@ -25,6 +25,8 @@ from audio_poc.m4a_authorized_preflight import (  # noqa: E402
     create_report,
 )
 from audio_poc.m4a_runtime_preflight import install_command  # noqa: E402
+from audio_poc.m4a_candidate_worker import edit_distance, normalize_asr  # noqa: E402
+from audio_poc.m4a_candidate_smoke import safe_extract  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -63,6 +65,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_fixture_catalog,
     validate_gate1b_candidate_proposal,
     validate_m4a_authorized_preflight,
+    validate_m4a_candidate_smoke,
     validate_m4a_runtime_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
@@ -203,6 +206,42 @@ class TrackedDocumentTests(unittest.TestCase):
                 "--no-deps", "/store/core.whl", "/store/api.whl",
             ],
         )
+
+    def test_candidate_smoke_normalization_matches_frozen_rule(self) -> None:
+        self.assertEqual(normalize_asr("請檢查 Wi-Fi 狀態！"), "請檢查wifi狀態")
+        self.assertEqual(edit_distance("今天舒服", "今天很舒服"), 1)
+
+    def test_candidate_smoke_rejects_archive_path_escape(self) -> None:
+        import io
+        import tarfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "bad.tar.bz2"
+            with tarfile.open(archive, "w:bz2") as package:
+                entry = tarfile.TarInfo("../escape")
+                entry.size = 1
+                package.addfile(entry, io.BytesIO(b"x"))
+            with self.assertRaisesRegex(ValueError, "outside expected root"):
+                safe_extract(archive, root / "output", "expected")
+
+    def test_candidate_smoke_validator_retains_failure_without_gate_claim(self) -> None:
+        report = {
+            "schema_version": "1.0",
+            "report_id": "M4A-G1B-AUTHORIZED-CANDIDATE-SMOKE",
+            "generated_at_utc": "2026-08-18T00:00:00Z",
+            "poc_source_sha": "0" * 40,
+            "platform": {},
+            "network_policy": "offline_from_hashed_inputs",
+            "scope": "ONE_ASR_FIXTURE_AND_ONE_TTS_PROMPT_PRELIMINARY_NOT_GATE",
+            "results": [{"terminal_status": "ERROR"}, {"terminal_status": "SUCCESS"}],
+            "execution_status": "SMOKE_FAIL_RETAINED",
+            "cleanup": {
+                "child_processes": 0, "threads": 0, "iterators": 0,
+                "streams": 0, "device_owners": 0, "clean": True,
+            },
+        }
+        validate_m4a_candidate_smoke(report)
 
     def test_runtime_preflight_validator_rejects_inference_claim(self) -> None:
         report = {

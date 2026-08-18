@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a focused candidate smoke report",
+  "type": "object",
+  "required": ["schema_version", "report_id", "generated_at_utc", "poc_source_sha", "platform", "network_policy", "scope", "results", "execution_status", "cleanup"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "report_id": {"const": "M4A-G1B-AUTHORIZED-CANDIDATE-SMOKE"},
+    "poc_source_sha": {"pattern": "^[0-9a-f]{40}$"},
+    "network_policy": {"const": "offline_from_hashed_inputs"},
+    "scope": {"const": "ONE_ASR_FIXTURE_AND_ONE_TTS_PROMPT_PRELIMINARY_NOT_GATE"},
+    "results": {"type": "array", "minItems": 2, "maxItems": 2},
+    "execution_status": {"enum": ["SMOKE_PASS_PRELIMINARY_NOT_GATE", "SMOKE_FAIL_RETAINED"]},
+    "cleanup": {"type": "object"}
+  }
+}
