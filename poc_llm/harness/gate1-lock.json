@@ -1,0 +1,11 @@
+{
+  "packet_id": "G1-UBUNTU-PRESCREEN-001",
+  "validator_version": "1.0.0",
+  "artifacts": {
+    "catalog": {"path":"poc_llm/fixtures/gate1/catalog.json","sha256":"c4b1f29228324848fe5f196a8f6e3e61412daa0ed5fd79ce9c9d04857b4c2796"},
+    "candidate_schema": {"path":"poc_llm/fixtures/gate1/candidate.schema.json","sha256":"d3816cb13099dea38b24d85e3afbfd1f7ce2efa5124febfcb9fcea3e533b1339"},
+    "validator": {"path":"poc_llm/harness/gate1_validator.py","sha256":"d209f1cb1532ab51bca212298fa681d3a0045710e6a0248fac8ffca04c54d542"},
+    "runner": {"path":"poc_llm/tools/run_gate1_prescreen.py","sha256":"581107388c6369f53a9b96877775e19bbdb33944f1360d43ebcb3e153e9efeae"},
+    "result_schema": {"path":"poc_llm/evidence/gate1/gate1-result.schema.json","sha256":"fc986ee316be9bb3ce6455ffcf3a2d5f70232ed5cdcd5abcb84cb7ebb1c31938"}
+  }
+}

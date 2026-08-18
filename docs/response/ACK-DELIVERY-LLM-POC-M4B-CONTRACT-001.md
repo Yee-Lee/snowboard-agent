@@ -33,7 +33,8 @@ POC 團隊已將內部工作規劃與合約之 4 大 Gate 進行精確對齊：
 | :--- | :--- | :--- |
 | **Gate 0** | Contract Receipt & Scope Confirmation | • 建立本內部 team ACK<br>• 於 `docs/delivery/` 產出對外 receipt，並於 `poc_llm/deliveries/` 提交實際 Initial Manifest<br>• PM 記錄實際 HEAD、Core Designer 登錄後才完成 Gate 0；本 ACK 不授權 Gate 1/2 |
 | **Gate 1** | Candidate Proposal & Ubuntu Pre-screening | • 整理 Gemma-2-2B, Qwen2.5-1.5B/3B, SmolLM2-1.7B 與 LiteRT-LM / llama.cpp 清單<br>• 提供 Exact Version, Source SHA-256, License Table<br>• 提交 Ubuntu x86/arm64 初篩數據，等待 Core Designer 5 日內書面確認 |
-| **Gate 2** | Pi 5 驗證 / Benchmark / Persistent-Child 契約 | • 於 Pi 5 執行 M4B-P1 ~ M4B-P12 全套不可變測試<br>• 回交 Exact 40-char SHA、Sanitized Evidence、Validation 報告與 Winner/No-Go 決定表<br>• 取得 Core Designer Final Winner ACK |
+| **Gate 2A** | Pi 5 LLM-only 驗證 | • 執行 P1～P8、P10A、P11、P12<br>• 回交 exact SHA 與 evidence<br>• 最多取得 Core Designer provisional finalist ACK |
+| **Gate 2B** | Accepted Audio combined 驗證 | • 執行 P9、P10B 與 required 2A regression<br>• 只有 2A/2B mandatory gates 完整後可取得 final winner ACK |
 | **Gate 3** | Core Production Implementation | • 配合主線團隊進行 M4b 產品化 Handoff（`model_spec.md` 與 `protocol.md`） |
 
 ---

@@ -1,0 +1,30 @@
+{
+  "catalog_id": "G1-P2P3-CATALOG",
+  "revision": "2026-08-17-r1",
+  "repetitions": 3,
+  "validator_version": "1.0.0",
+  "allowed_actions": ["speak", "tool", "rest"],
+  "allowed_perceptions": ["listen", "read", "look"],
+  "cases": [
+    {"fixture_id":"G1-P2-001","input_ref":"public.synthetic.speak.zh_tw","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P2-002","input_ref":"public.synthetic.speak.en","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P2-003","input_ref":"public.synthetic.tool.light_on","expected":{"mode":"valid","action_kind":"tool","tool_name":"device.light.on","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P2-004","input_ref":"public.synthetic.tool.light_off","expected":{"mode":"valid","action_kind":"tool","tool_name":"device.light.off","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P2-005","input_ref":"public.synthetic.rest","expected":{"mode":"valid","action_kind":"rest","next_perceptions":[]}},
+    {"fixture_id":"G1-P2-006","input_ref":"public.synthetic.capability.listen","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P2-007","input_ref":"public.synthetic.capability.read","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["read"]}},
+    {"fixture_id":"G1-P2-008","input_ref":"public.synthetic.capability.look","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["look"]}},
+    {"fixture_id":"G1-P2-009","input_ref":"public.synthetic.capability.multi","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["listen","read"]}},
+    {"fixture_id":"G1-P2-010","input_ref":"public.synthetic.capability.deduplicate","expected":{"mode":"valid","action_kind":"speak","next_perceptions":["listen"]}},
+    {"fixture_id":"G1-P3-011","input_ref":"public.synthetic.failure.empty_output","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-012","input_ref":"public.synthetic.failure.invalid_json","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-013","input_ref":"public.synthetic.failure.unknown_action","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-014","input_ref":"public.synthetic.failure.unknown_tool","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-015","input_ref":"public.synthetic.failure.empty_speak","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-016","input_ref":"public.synthetic.failure.missing_payload","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-017","input_ref":"public.synthetic.failure.illegal_perception","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-018","input_ref":"public.synthetic.failure.refusal","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-019","input_ref":"public.synthetic.failure.extra_keys","expected":{"mode":"fallback"}},
+    {"fixture_id":"G1-P3-020","input_ref":"public.synthetic.failure.leak_marker","expected":{"mode":"fallback"}}
+  ]
+}

@@ -1,7 +1,7 @@
 # LLM POC Workspace
 
-目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 已由
-POC Team 提交、等待 PM/Core 登錄；Internal M0 仍為 `NOT_STARTED`。本文件不另行建立
+目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
+已由 POC Team 提交、等待 Core exact-SHA intake；Internal M0 仍為 `NOT_STARTED`。本文件不另行建立
 狀態，也不代表已核准連線 Pi、安裝 runtime、下載模型或開始測試。
 
 ## Layout
@@ -17,7 +17,7 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC
 工具或結果替代 LLM M0。
 
-## Gate 0 R1 Artifacts
+## M0 Packet Retained from R1
 
 - `deliveries/POC-llm-DEL-2026-001-R1.md`：實際 Initial Manifest。
 - `pyproject.toml`、`requirements-m0.lock`：Python 3.11+ standard-library-only setup/lock。
@@ -25,6 +25,18 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 - `tools/run_m0_dummy_packet.py`：local timeout/terminate/kill/wait cleanup runner。
 - `tests/m0/M0-TEST-REQUEST-001.md`：immutable packet draft 與受控 Pi runbook。
 - `evidence/m0/m0-evidence.schema.json`：sanitized evidence schema。
+
+## Core 2026-08-17 R2 Planning Artifacts
+
+- `deliveries/POC-llm-DEL-2026-001-R2.md`：015 複驗 Initial Manifest。
+- `tests/gate1/GATE1-PACKET-001.md`：frozen Ubuntu x86_64/aarch64 packet。
+- `fixtures/gate1/catalog.json`：20-case P2/P3 catalog；每 case 3 repetitions。
+- `harness/gate1_validator.py`、`harness/gate1-lock.json`：validator v1.0.0 與 checksums。
+- `tools/run_gate1_prescreen.py`：bounded candidate command、cleanup 與 validation runner。
+- `tools/run_m4b_gate.py`：Gate 2A/2B frozen case-set plan validator；不執行 hardware。
+- `fixtures/gate1/candidate.schema.json`、`evidence/gate1/gate1-result.schema.json`：schemas。
+
+Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不是 candidate evidence。
 
 ## Before Any M0 Run
 

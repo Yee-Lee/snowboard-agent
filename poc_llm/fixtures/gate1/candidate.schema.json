@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:gate1:candidate:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidate_id", "runtime", "model", "quantization", "license", "offline", "aarch64_compatible", "commands"],
+  "properties": {
+    "candidate_id": {"type": "string", "pattern": "^CAND-[A-Z0-9-]+$"},
+    "runtime": {
+      "type": "object",
+      "required": ["name", "version", "source_sha256"],
+      "properties": {"name":{"type":"string"},"version":{"type":"string"},"source_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}
+    },
+    "model": {
+      "type": "object",
+      "required": ["name", "artifact_sha256"],
+      "properties": {"name":{"type":"string"},"artifact_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}
+    },
+    "quantization": {"type": "string"},
+    "license": {"type": "string", "minLength": 1},
+    "offline": {"const": true},
+    "aarch64_compatible": {"const": true},
+    "commands": {
+      "type": "object",
+      "required": ["ubuntu-x86_64", "ubuntu-aarch64"],
+      "properties": {
+        "ubuntu-x86_64": {"type":"array","minItems":1,"items":{"type":"string"}},
+        "ubuntu-aarch64": {"type":"array","minItems":1,"items":{"type":"string"}}
+      }
+    }
+  }
+}

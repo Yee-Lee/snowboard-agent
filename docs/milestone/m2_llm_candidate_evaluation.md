@@ -22,6 +22,9 @@ Ubuntu 結果只用於 Gate 1 finalist selection，不得取代任何 M4B-P1～P
 
 ## Work Packet
 
+Authoritative executable packet：`poc_llm/tests/gate1/GATE1-PACKET-001.md`。Frozen catalog、
+validator、runner、schemas 與 checksums 由 `poc_llm/harness/gate1-lock.json` 控制。
+
 - 在 x86 與 arm64 對每個有效 pairing 執行相同 setup、smoke、format、lifecycle、offline
   preflight 與輕量 performance packet，保存每次有效/無效結果。
 - 每個 run 記錄 runner environment、candidate/config/fixture IDs、命令、開始/結束時間、
@@ -41,8 +44,9 @@ Ubuntu 結果只用於 Gate 1 finalist selection，不得取代任何 M4B-P1～P
 - 最多兩個 finalists 通過所有 frozen Ubuntu hard gates，或提交 evidence-backed no-go／
   change request；不得把 `INCONCLUSIVE` 當成 `PASS` 或任意淘汰。
 - POC Technical Lead 完成 evidence review，Internal Tester 確認 packet/result 完整性。
-- Core Designer 對 candidate proposal 與 finalists 發出 External Gate 1 書面 ACK；在 ACK
-  到位前 M2 可進 `GATE_REVIEW`，但 M3/Pi Gate 2 必須保持 `NOT_STARTED / BLOCKED`。
+- Core Designer 對 candidate proposal 與最多兩個 proposed finalists 發出 External Gate 1
+  書面 ACK；在 ACK
+  到位前 M2 可進 `GATE_REVIEW`，但 M3/Pi Gate 2A 必須保持 `NOT_STARTED / BLOCKED`。
 
 ## Necessary Evidence
 
@@ -61,7 +65,7 @@ Ubuntu 結果只用於 Gate 1 finalist selection，不得取代任何 M4B-P1～P
 
 ## Prohibited in M2
 
-- 不在 Gate 1 ACK 前開始 Raspberry Pi 5 candidate benchmark 或 Gate 2 測試。
-- 不以 Ubuntu 結果宣告 M4B-P1～P12 `PASS` 或選定最終 winner。
+- 不在 Gate 1 ACK 前開始 Raspberry Pi 5 candidate benchmark 或 Gate 2A 測試。
+- 不以 Ubuntu 結果宣告 Pi M4B-P1～P12 `PASS`、Gate 2A provisional finalist 或 final winner。
 - 不提交模型、大型 raw result、private prompt/output、endpoint、credential 或 secret。
 - 不因結果不佳更改 pairing ID、fixture、metric、淘汰規則或只發布最好一次。

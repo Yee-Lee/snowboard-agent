@@ -4,9 +4,10 @@
 - **Handoff ID**: `PM-POC-LLM-20260817-001`
 - **Responding team**: LLM POC Team
 - **Date**: 2026-08-18
-- **Status**: `TEAM_REVISED — PENDING PM RECEIPT / CORE DESIGNER FINDING CLOSURE`
+- **Status**: `SUPERSEDED BY RESP-PM-OUT-260817-015 FOR ACTIVE REVIEW`
 
-`Team revised` 不代表 finding 已關閉，也不代表 External Gate 0、Gate 1 或 Gate 2 已由
+本文件保留 001 readiness 修訂歷史；目前活動複驗以 `RESP-PM-OUT-260817-015.md` 為準。
+`Team revised` 不代表 finding 已關閉，也不代表 External Gate 0、Gate 1、Gate 2A/2B 已由
 Core Designer 核准。PM 應以拉回 branch 後的實際 HEAD 作收件紀錄；本回覆不預填或
 引用 delivery commit SHA。
 
@@ -26,8 +27,9 @@ Core Designer 核准。PM 應以拉回 branch 後的實際 HEAD 作收件紀錄�
 - `docs/llm_poc_workflow.md`：明定 POC ACK/self-test 不取代 Core Designer ACK。
 - `poc_llm/README.md`：只引用權威 index，不另行宣告競爭狀態。
 
-**Remaining limitation**：PM 尚未拉回實際 HEAD；Core Designer 尚未登錄 Gate 0。
-`PM-OUT-260817-015` 亦尚未收入 repo，因此本 finding 仍由 PM/Core 決定是否關閉。
+**Remaining limitation**：`PM-OUT-260817-015` 與 Core contract revision 已於 R2 收入 repo；
+Gate 0 仍待 Core Designer 對 R2 exact SHA 複驗。015 的新要求以
+`RESP-PM-OUT-260817-015.md` 為目前活動回覆。
 
 ### POC-LLM-PLAN-2026-002 — High
 
@@ -100,4 +102,4 @@ SHA、`model_spec.md` 與 `protocol.md` 尚未交付，相關 POC 決策維持 `
 
 POC Team 請 PM 以本次集中修訂 commit 的實際 branch HEAD 收件，並交 Core Designer
 逐項判斷 finding closure。Gate 0 被登錄前只可準備 Gate 1 proposal/packet；Gate 1 未取得
-Core Designer 書面 ACK 前不得執行 Pi 5 Gate 2 candidate validation。
+Core Designer 書面 ACK 前不得執行 Pi 5 Gate 2A；Gate 2B 另受 Accepted Audio dependency 阻擋。

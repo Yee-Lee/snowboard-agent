@@ -6,7 +6,7 @@
 - **Branch**: `llm`
 - **Delivery HEAD**: recorded by PM after pull; intentionally not prefilled by POC Team
 - **Date**: 2026-08-18
-- **Status**: `SUBMITTED — PENDING PM RECEIPT / CORE DESIGNER RECORDING`
+- **Status**: `SUPERSEDED BY POC-llm-DEL-2026-001-R2`
 - **Owner**: LLM POC Technical Lead
 
 ## Environment State
