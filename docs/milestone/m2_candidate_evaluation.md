@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP3 PREFLIGHT IN PROGRESS`
+Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP3 FOCUSED SMOKE PASS, FULL QUALIFICATION IN PROGRESS`
 
 ## 目標
 
@@ -43,9 +43,13 @@ provenance review，沒有 build、install、import、load、execute、benchmark
 - `tts-sherpa-matcha-zh-en-1.13.5` — TTS primary。
 
 其餘 10 rows 均為 `DEFERRED` / `REJECTED`，primary 失敗後也不得自動啟用
-fallback。兩個 primary 的 6 個唯一受控輸入已在 POC workstation 重新核對大小
-與 SHA-256，全部匹配 manifest。WP3 仍等待 WP2 protocol/schema、fake lifecycle
-與 validator scaffold 完成。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
+fallback。兩個 primary 的五個唯一受控輸入（七個逐列 artifact bindings）已在
+workstation 與 Pi 重新核對大小及 SHA-256，全部匹配 manifest。WP2
+protocol/schema、fake lifecycle 與 validator scaffold 已完成；Pi artifact
+preflight、offline install/import identity 及一筆 ASR/TTS focused smoke 也已通過，見
+[`M4A-G1B-WP3-PREFLIGHT-SMOKE-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-PREFLIGHT-SMOKE-001.md)。
+完整 50-item ASR、20-prompt TTS、repetition/resource/lifecycle/offline/User review
+仍未完成。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
 finalist/no-go exit condition 尚無關閉路徑；見
 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。
 Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑完整 suite
@@ -87,8 +91,9 @@ M2 執行分成四個受控步驟：
    `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
    force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
    candidate runtime。
-4. **Authorized comparison**：`PREFLIGHT IN PROGRESS`；只執行兩個 primary，
-   累積 fixture benchmark 與 preliminary Gate 2 evidence。
+4. **Authorized comparison**：`FOCUSED SMOKE PASS / FULL QUALIFICATION IN PROGRESS`；
+   只執行兩個 primary。Artifact、runtime 與單筆真實 candidate smoke 已有 clean-Pi
+   evidence；完整 fixture benchmark 與 lifecycle/resource evidence 尚待累積。
 
 ## Entry Conditions
 
@@ -100,8 +105,9 @@ M2 執行分成四個受控步驟：
 
 真實 candidate execution 的 Gate 1B 子 gate已對兩個 primary 滿足：proposal
 已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
-steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 尚須建立
-固定 fixture checksum、乾淨 test SHA 與受控 artifact preflight；VAD 執行邊界仍待
+steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 的固定
+fixture checksum、乾淨 test SHA、受控 artifact preflight 與 focused smoke 已完成，
+完整 qualification 尚未完成；VAD 執行邊界仍待
 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 
 ## Exit Gate
