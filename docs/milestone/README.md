@@ -4,7 +4,7 @@
 
 ## Current Status
 
-最後更新：2026-08-17
+最後更新：2026-08-18
 最終交付可達性：`AT_RISK` — M0 readiness gate 與 M1 共同測試基線已全數完成；
 Option A P4-A01 至 A10 已獲 Core ACK-004 核准，M4a Gate 0 正式通過；
 100 筆 native 與 delivered fixture、VAD timing labels 及 evaluation metrics
@@ -13,8 +13,10 @@ Core 已於 `dev_agent_m4` commit
 `e3d25d1fc70d726d5bd3162cdcb9571b30937587` 接受 Gate 1A，固定 `zh-TW`、
 VAD scope、provenance-only acquisition 邊界及 P9 surrogate owner/due point。
 POC 已在該邊界內完成 Gate 1B exact candidate proposal；metadata review 保留
-至少一個 VAD、兩個 ASR 與兩個 TTS 的可達路徑，但已有 license/dependency
-淘汰與 defer 風險。Core 另行逐列 ACK 前，M2 真實候選工作仍不可開始。
+至少一個 VAD、兩個 ASR 與三個 TTS 的可達路徑；2026-08-18 amendment
+加入 User 指定的 Matcha zh/en primary TTS evaluation row，固定 archive、16 kHz
+Vocos、runtime wheels 與 ModelScope lineage，但保留訓練資料/notice legal blocker。
+Core 另行逐列 ACK 前，M2 真實候選工作仍不可開始。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
@@ -30,7 +32,7 @@ POC 已在該邊界內完成 Gate 1B exact candidate proposal；metadata review 
 | --- | --- |
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
-| Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B REVIEW` — plan 與 D01–D05 已關閉；`RESP-AUDIO-M4A-G1B-CANDIDATES-001` 已準備，逐列 scope ACK 前仍禁止真實 candidate build/import/run |
+| Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B REVIEW` — plan 與 D01–D05 已關閉；`RESP-AUDIO-M4A-G1B-CANDIDATES-001` 已加入 Matcha amendment，逐列 scope ACK 前仍禁止真實 candidate build/import/run |
 | Gate 2A：POC qualification/selection | M2 累積隔離 evidence；M3 以 accepted HAL/Pi 完成 P1–P12、return SHA 與 selection ACK，不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |

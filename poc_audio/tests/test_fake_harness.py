@@ -168,6 +168,18 @@ class TrackedDocumentTests(unittest.TestCase):
                 for candidate in proposal["candidates"]
             )
         )
+        candidates = {
+            candidate["candidate_id"]: candidate for candidate in proposal["candidates"]
+        }
+        matcha = candidates["tts-sherpa-matcha-zh-en-1.13.5"]
+        self.assertEqual(matcha["requested_disposition"], "REQUEST_AUTHORIZE")
+        self.assertEqual(
+            {artifact["sha256"] for artifact in matcha["artifacts"][:2]},
+            {
+                "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",
+                "b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e",
+            },
+        )
 
     def test_gate1b_validator_rejects_execution_claim(self) -> None:
         proposal = json.loads(

@@ -4,7 +4,7 @@
 新文件承接的 transaction record 移至 `history/`。歸檔不代表刪除決策或證據，
 引用仍須指向可追溯的歷史文件。
 
-最後更新：2026-08-17
+最後更新：2026-08-18
 
 ## Authoritative POC Specifications
 
@@ -19,7 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B REVIEW REQUIRED` | Core 已於 `dev_agent_m4` / `e3d25d1fc70d726d5bd3162cdcb9571b30937587` 交付 `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`。POC 下一個 return packet 是 [`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md)；Core 須以 proposal full SHA 逐列 ACK。此前只允許 provenance/fake scaffold，不得 build、import、execute、benchmark 或 Pi/HAL run。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B REVIEW REQUIRED` | Core 已於 `dev_agent_m4` / `e3d25d1fc70d726d5bd3162cdcb9571b30937587` 交付 `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`。POC 的 [`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md) 已於 2026-08-18 加入 User 指定的 Matcha zh/en primary TTS amendment；Core 須以新的 proposal full SHA 對全部 12 rows 逐列 ACK。此前只允許 provenance/fake scaffold，不得 build、import、execute、benchmark 或 Pi/HAL run。 |
 
 ## History
 

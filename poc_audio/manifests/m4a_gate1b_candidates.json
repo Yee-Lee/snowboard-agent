@@ -723,6 +723,97 @@
         "locator": "controlled://audio-poc/gate1b/models/vits-melo-tts-zh_en"
       },
       "risks": ["44.1 kHz output differs from other TTS variants and must remain explicit", "zh-TW naturalness and Pi resource use remain untested"]
+    },
+    {
+      "candidate_id": "tts-sherpa-matcha-zh-en-1.13.5",
+      "domain": "tts",
+      "origin": "poc_alternative",
+      "requested_disposition": "REQUEST_AUTHORIZE",
+      "decision_reason": "User designated this exact Matcha zh/en row as the primary TTS evaluation candidate. The sherpa two-wheel aarch64 runtime closure, acoustic archive, 16 kHz vocoder, release-asset identities, and ModelScope source lineage are fixed; Core legal review of the non-embedded notice and training-data lineage remains required.",
+      "engine": {
+        "name": "sherpa-onnx",
+        "version": "1.13.5",
+        "upstream_url": "https://github.com/k2-fsa/sherpa-onnx/commit/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+        "immutable_revision": "git:3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+        "source_sha256": "821a848857d9cb80985841d2197435a3a63f5bc40f7855cd6d958781ed2c31bd",
+        "source_size_bytes": 11458271,
+        "source_acquired_at_utc": "2026-08-17T14:49:56Z",
+        "source_controlled_locator": "controlled://audio-poc/gate1b/sources/sherpa-onnx-v1.13.5.tar.gz",
+        "license": "Apache-2.0",
+        "notice": "Repository LICENSE; exact source commit as above. Runtime source license is separate from the Matcha model and vocoder notices."
+      },
+      "artifacts": [
+        {
+          "role": "matcha-zh-en-acoustic-archive",
+          "filename": "matcha-icefall-zh-en.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-icefall-zh-en.tar.bz2",
+          "immutable_revision": "github-release-asset:347044526:updated:2026-01-28T07:53:05Z;modelscope:f05803ec98df733d5775dfb0c40a919ae699cfb6:model-steps-3.onnx",
+          "sha256": "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",
+          "size_bytes": 79033838,
+          "acquired_at_utc": "2026-08-17T16:20:55Z",
+          "license": "Apache-2.0 per ModelScope repository metadata at f05803ec98df733d5775dfb0c40a919ae699cfb6; archive has no embedded LICENSE",
+          "notice": "GitHub asset API digest matches the POC hash. The archive acoustic model SHA-256 524286bf6cf11be74329ae1c682ac69e34d6860c2ea9fd1290319d561540b16a matches the ModelScope LFS object at the pinned commit; the model card says it was fine-tuned from dengcunqin/matcha_tts_zh_en using unspecified mixed Chinese/English data.",
+          "controlled_locator": "controlled://audio-poc/gate1b/models/matcha-icefall-zh-en.tar.bz2"
+        },
+        {
+          "role": "matcha-16khz-vocoder",
+          "filename": "vocos-16khz-univ.onnx",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-16khz-univ.onnx",
+          "immutable_revision": "github-release-asset:305290479:updated:2025-10-17T02:20:25Z;modelscope:f05803ec98df733d5775dfb0c40a919ae699cfb6:vocos-16khz-univ.onnx",
+          "sha256": "b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e",
+          "size_bytes": 53882848,
+          "acquired_at_utc": "2026-08-18T01:43:58Z",
+          "license": "Apache-2.0 per ModelScope repository metadata at f05803ec98df733d5775dfb0c40a919ae699cfb6; release asset has no embedded notice",
+          "notice": "GitHub asset API digest and the pinned ModelScope LFS OID both match the POC-computed SHA-256 and size.",
+          "controlled_locator": "controlled://audio-poc/gate1b/models/vocos-16khz-univ.onnx"
+        },
+        {
+          "role": "python313-aarch64-wrapper-wheel",
+          "filename": "sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl",
+          "url": "https://files.pythonhosted.org/packages/5a/77/b36cd40906bef1b3a6593200587eea5c4e7c1e94d29c4fd88a876e1cd6ca/sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+          "immutable_revision": "pypi:sherpa-onnx==1.13.5:cp313:aarch64",
+          "sha256": "f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f",
+          "size_bytes": 4167203,
+          "acquired_at_utc": "2026-08-17T15:20:49Z",
+          "license": "Apache-2.0",
+          "notice": "Official PyPI wrapper wheel; not imported or installed.",
+          "controlled_locator": "controlled://audio-poc/gate1b/sources/sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl"
+        },
+        {
+          "role": "aarch64-native-core-wheel",
+          "filename": "sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+          "url": "https://files.pythonhosted.org/packages/e6/58/505668cedd7036bcba305c1a1f5424a3340f4701297a628de83d61e8ed58/sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+          "immutable_revision": "pypi:sherpa-onnx-core==1.13.5:aarch64",
+          "sha256": "4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa",
+          "size_bytes": 13051193,
+          "acquired_at_utc": "2026-08-17T15:20:54Z",
+          "license": "Apache-2.0",
+          "notice": "Only declared transitive Python dependency; not imported or installed.",
+          "controlled_locator": "controlled://audio-poc/gate1b/sources/sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl"
+        }
+      ],
+      "dependencies": {
+        "status": "EXACT_TWO_WHEEL_RUNTIME_AND_TWO_MODEL_ARTIFACT_CLOSURE",
+        "runtime": ["sherpa-onnx==1.13.5", "sherpa-onnx-core==1.13.5"],
+        "build": [],
+        "native": ["manylinux2014 aarch64 native runtime bundled in sherpa-onnx-core wheel", "16 kHz Vocos model required by the archive README", "espeak-ng data, Chinese lexicon, tokens, and rule FSTs embedded in the acoustic archive"]
+      },
+      "aarch64_build_proposal": {
+        "platform": "Raspberry Pi 5 / Debian 13 / aarch64 / Python 3.13",
+        "status": "NOT_EXECUTED_GATE_1B",
+        "recipe": ["Install exactly the two hashed wheels with pip --no-index into an isolated environment; unpack the hashed acoustic archive and bind both it and the exact 16 kHz vocoder by controlled path only after a row-specific Gate 1B ACK."],
+        "network_policy": "offline_from_hashed_inputs"
+      },
+      "native_contract": {
+        "status": "DECLARED_UNVERIFIED_GATE_1B",
+        "input": "UTF-8 Chinese/English text through archive-contained espeak-ng data, lexicon, tokens, and Chinese rule FSTs.",
+        "output": "Archive and vocoder metadata declare 16000 Hz mono audio; sample representation and the ordered S16_LE adapter boundary must be asserted post-ACK, with no resampling."
+      },
+      "offline_cache": {
+        "status": "PROPOSED_EXPLICIT_ACOUSTIC_AND_VOCODER_PATHS_NO_RUNTIME_FETCH",
+        "locator": "controlled://audio-poc/gate1b/models/matcha-icefall-zh-en"
+      },
+      "risks": ["The archive contains no LICENSE; Apache-2.0 is recorded in the pinned ModelScope repository metadata and still requires Core legal review", "the derivative model card names a base model but does not identify the mixed Chinese/English training dataset or its redistribution terms", "English quality is described upstream as weaker and zh-TW naturalness remains untested", "16 kHz sample representation, Pi resource use, cancel behavior, and cleanup remain unverified before Gate 1B"]
     }
   ]
 }

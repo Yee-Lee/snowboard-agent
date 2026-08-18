@@ -24,6 +24,15 @@ VAD 範圍與 provenance-only 邊界。POC 已依該邊界準備
 exact proposal；它仍不是 candidate authorization。Core 另行 committed ACK
 逐列核准前，不 build、install、import、load、execute 或 benchmark 真實候選。
 
+2026-08-18 已依 User 決定恢復 amendment，將 sherpa-onnx Matcha zh/en
+列為 TTS primary evaluation candidate。完整 archive 與 16 kHz Vocos 的 GitHub
+release asset ID/digest、POC SHA-256、大小及 ModelScope release-time commit/LFS
+OID 已互相核對；amended proposal 現提出六個 `REQUEST_AUTHORIZE` rows。Matcha
+archive 未內附 LICENSE，且 model card 沒有固定混合中英訓練資料的名稱與條款，
+因此 Core legal review 仍是 final-winner blocker。此次只完成 provenance review；
+Matcha 未 build、install、import、load、execute、benchmark 或上 Pi，仍須 Core 以
+新的 committed proposal SHA 逐列 ACK。
+
 ## 對最終交付的貢獻
 
 - 完整 candidate manifest、license/checksum/source 與成功或失敗結果。
@@ -113,6 +122,6 @@ steps，且 Core Designer 已書面核准 candidate scope、產品語言/voice
 M2 結束時必須回答：每類 finalist 是否有合理機會在 pinned M3 HAL、真實 mic/speaker 與三模型同時常駐下達到最終 gate？沒有合理路徑者不得只因單項 demo 成功而 advance。
 
 Gate 1B review 先回答：Core 是否逐列接受 `RESP-AUDIO-M4A-G1B-CANDIDATES-001`
-所請求的 5 個 exact rows，並正式 reject/defer 其餘 6 列？在 Core ACK 前，
+所請求的 6 個 exact rows，並正式 reject/defer 其餘 6 列？在 Core ACK 前，
 所有 manifest native format 與 build recipe 都是 `DECLARED_UNVERIFIED_GATE_1B` /
 `NOT_EXECUTED_GATE_1B`，不得標為 evidence PASS。
