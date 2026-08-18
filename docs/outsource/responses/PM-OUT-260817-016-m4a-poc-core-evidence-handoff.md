@@ -2,21 +2,21 @@
 
 - **Handoff**: `PM-OUT-260817-016-m4a-poc-core-evidence-handoff`
 - **Findings**: `OUT-M4A-2026-002` ～ `OUT-M4A-2026-005`
-- **Status**: `G1A plan accepted — Core direct-delivery commit and POC remote push pending`
+- **Status**: `Resolved — G1A durable intake complete; archived`
 - **Response owner**: Core Team Designer
 - **Date**: 2026-08-17
 - **Reviewed Core baseline**: `dev_agent_m3` / `c559e5cf65d20676696293f06f1e5bc2afd02ae6`
 - **Reviewed Audio POC baseline**: `dev_audio_m2` / `aad41ce13333bdf94bf6d6ab0996f83982f9f0b1`
 - **Accepted Audio POC plan**: `poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md` / `dev_audio_m2` / `5d4086d2ae9011c559b10012b55414a87a3a8522`
 - **Initial Core response commit**: `d81601789ef40aeccd01dd8d4b9db67a01d76163`
-- **Core planning ACK**: [`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md)（included in this intake change; exact Core SHA recorded after commit）
+- **Core planning ACK**: [`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md) / `dev_agent_m4` / `6fe09257304a2eb56723a5e8e8d4ad94d9f41963`
 - **Architecture change**: `No`
 
 ## 1. 結論與交付
 
 Core已修訂既有權威contract [`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../deliveries/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)、[`M4.md`](../../milestones/M4.md)及[`milestone_progress.md`](../../reviews/milestone_progress.md)，沒有建立重複contract addendum。Audio POC已回交authoritative Gate plan；Core接受該plan並以獨立planning ACK記錄D01～D05與Gate 1A授權邊界。
 
-已核對Audio POC工作目錄乾淨，plan commit為`dev_audio_m2` / `5d4086d2ae9011c559b10012b55414a87a3a8522`。Core relay副本與POC authoritative plan的SHA-256同為`2c186c6f777c830c984bd476e7cb8a8f6e977110875b50bce732c18e2f8d2810`；POC保存的contract也與Core revision checksum一致。核對時該branch較`origin/dev_audio_m2` ahead 1，因此durable remote intake仍待POC push。
+已核對Audio POC工作目錄乾淨；`origin/dev_audio_m2`目前為`756ded69dd7b4661fcbac272d4d234c387890fc8`，且包含plan commit `5d4086d2ae9011c559b10012b55414a87a3a8522`。Core relay副本與POC authoritative plan的SHA-256同為`2c186c6f777c830c984bd476e7cb8a8f6e977110875b50bce732c18e2f8d2810`；POC保存的contract也與Core revision checksum一致。Core G1A ACK已由`6fe09257304a2eb56723a5e8e8d4ad94d9f41963` durable commit，因此016兩項行政closure條件均已完成。
 
 ## 2. Findings disposition
 
@@ -73,11 +73,11 @@ G1A ACK接受以下已commit內容：
 3. owner、dependency、estimate / re-estimation、entry / exit、platform、runner、evidence、cleanup、failure / no-go與S0～S5；
 4. P9 surrogate prerequisite、final handoff及portable conformance kit產生規則。
 
-016不等待G1B、candidate build或Gate 2A / 2B實測。其剩餘行政closure條件只有：(a) POC將`5d4086d...` push至約定remote，使Core / PM可解析exact SHA；(b) Core將G1A ACK commit並由Designer直接交付。完成後016可標Resolved / archive。G1A已允許provenance-only acquisition與fake scaffold；G1B前仍禁止真實candidate build / import / execution / benchmark。
+016不等待G1B、candidate build或Gate 2A / 2B實測。POC remote已包含`5d4086d...`，Core G1A ACK亦已commit並直接交付，因此本handoff標記`Resolved`並歸檔。後續candidate scope由`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`承接，不重開016 findings。
 
 ## 8. Core本輪驗證
 
-- 解析Audio POC plan exact commit並確認工作目錄乾淨；記錄local branch較remote ahead 1。
+- 解析Audio POC plan exact commit並確認工作目錄乾淨；確認`5d4086d...`可由`origin/dev_audio_m2`解析。
 - 比對Core relay副本、POC authoritative response及雙方contract checksum一致。
 - 逐項檢查Gate 1A / 1B / 2A / 2B / Gate 3 entry、exit、owner、阻擋及change-request回流。
 - 驗證WP0～WP5、S0～S5、P1～P12、inheritance / delta及portable-kit mapping齊全。

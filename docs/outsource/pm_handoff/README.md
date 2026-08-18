@@ -9,8 +9,7 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
-| [`PM-OUT-260817-015-llm-poc-contract-plan-review`](PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`006` | M4b | **Core revision ready — POC committed reply pending** | [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md) |
-| [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | M4a | **G1A plan accepted — Core direct-delivery commit + POC remote push pending** | [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md) |
+| [`PM-OUT-260817-015-llm-poc-contract-plan-review`](PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`006` | M4b | **POC reply `0cff62f...` received — revision required before closure** | [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md) |
 
 ---
 
@@ -21,8 +20,8 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a G1A accepted / M4b plan pending** | Audio G1A只放行provenance acquisition與fake scaffold，G1B逐列ACK前禁止candidate execution；LLM待回交revised committed plan。兩者均未進Gate 2。 |
-| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
+| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b plan revision required** | Audio `756ded69...`已完成intake；Core只授權SenseVoice ASR與Matcha TTS進Gate 2A，其他rows為Deferred / Rejected。LLM `0cff62f...`已完成exact-SHA intake，但contract revision、Gate 2A/2B crosswalk及可執行packet尚未對齊。 |
+| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013/016** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
@@ -46,6 +45,7 @@
 | [`PM-OUT-260814-010-m4a-audio-poc-contract-gate`](history/PM-OUT-260814-010-m4a-audio-poc-contract-gate/brief.md) | M4a Audio POC Contract / Gate 協調 | `OUT-M4A-2026-001` | **Resolved** | Response: [`OUT-M4A-2026-001.md`](../responses/OUT-M4A-2026-001.md) |
 | [`PM-OUT-260814-011-m4b-llm-poc-contract-gate`](history/PM-OUT-260814-011-m4b-llm-poc-contract-gate/brief.md) | M4b LLM POC Contract / 002 結案移交 | `OUT-M4B-2026-001` | **Resolved** | Response: [`OUT-M4B-2026-001.md`](../responses/OUT-M4B-2026-001.md) |
 | [`PM-OUT-260814-012-alpha-beta-product-convergence`](history/PM-OUT-260814-012-alpha-beta-product-convergence/brief.md) | M4後ALPHA / M7後BETA產品收斂Gate | `OUT-ROADMAP-2026-001` | **Resolved** | 待產出 |
+| [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](history/PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | **Resolved — G1A durable intake complete** | Response: [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md)；G1B: [`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md) |
 | [`CR-AUDIO-M3-P4-REPRO-002.md`](history/CR-AUDIO-M3-P4-REPRO-002.md) | Restore reproducible P4-A10 dependency artifacts | 無 | **Resolved** | Response: [`RESP-AUDIO-M3-P4-REPRO-002.md`](../responses/RESP-AUDIO-M3-P4-REPRO-002.md) |
 
 ---
@@ -68,5 +68,6 @@ docs/outsource/pm_handoff/
     ├── PM-OUT-260814-010-m4a-audio-poc-contract-gate/
     ├── PM-OUT-260814-011-m4b-llm-poc-contract-gate/
     ├── PM-OUT-260814-012-alpha-beta-product-convergence/
+    ├── PM-OUT-260817-016-m4a-poc-core-evidence-handoff/
     └── PM-OUT-260817-013-m3-morning-retest-audit/
 ```

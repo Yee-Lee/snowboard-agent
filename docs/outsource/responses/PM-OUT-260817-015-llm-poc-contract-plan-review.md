@@ -2,11 +2,12 @@
 
 - **Handoff**: `PM-OUT-260817-015-llm-poc-contract-plan-review`
 - **Findings**: `OUT-M4B-2026-002` ～ `OUT-M4B-2026-006`
-- **Status**: `Core revision ready — LLM POC committed reply pending`
+- **Status**: `POC committed reply received — revision required before closure`
 - **Response owner**: Core Team Designer
 - **Date**: 2026-08-17
 - **Reviewed Core baseline**: `dev_agent_m3` / `c559e5cf65d20676696293f06f1e5bc2afd02ae6`
 - **Reviewed LLM POC baseline**: `llm` / `4ac7ba3941077babf34c7c575003a65f5c541009`
+- **Reviewed LLM POC reply**: `origin/llm` / `0cff62f942f2eec82fcc0b0f953a7cc4a2819e3a`
 - **Core response SHA**: `Pending PM intake after this response is committed; this file does not self-reference its future commit`
 - **Architecture change**: `No`
 
@@ -62,3 +63,36 @@ Core收到後只對該exact SHA作intake。聊天、branch name、工作目錄�
 - 逐項對照Core architecture、Reasoner normalizer與action payload契約。
 - 檢查M4a / M4b Gate 2A→Audio final reference→LLM Gate 2B順序無循環依賴。
 - 僅修改文件；未執行或宣稱POC benchmark / Pi evidence Pass。
+
+## 8. POC committed reply intake — 2026-08-18
+
+Core Designer已確認LLM POC工作樹乾淨，`origin/llm`可解析且正好指向
+`0cff62f942f2eec82fcc0b0f953a7cc4a2819e3a`。該commit相對原baseline
+`4ac7ba3941077babf34c7c575003a65f5c541009`包含Gate 0 receipt、Initial Manifest、
+milestone index、crosswalk及M0 fake lifecycle packet；因此「已commit並push、可作exact-SHA
+intake」成立。
+
+但015尚不能標記`Resolved`或歸檔。以下Blocking差異仍直接違反本response §6與Core
+contract revision：
+
+1. **POC承載的contract仍是舊revision。** POC路徑
+   `docs/pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md`的SHA-256為
+   `b2d7163da58f4e39cdaf1c99acfacebf4f433c38897a0004e5d92cbd4da4f217`，不等於Core
+   revision的`d7d7adb84891803016b8656eb474f7a56bf39d5e416256192d003026c210585c`；前者仍只列
+   `OUT-M4B-2026-001`，並保留舊P2/P3、cancel level、Gate 2與resource規則。
+2. **Gate 2A / 2B與Test ID crosswalk未對齊。** POC crosswalk仍把Gate 2合併，M3只列
+   P1～P8/P11、把P10與P12移到M4；Core contract要求Gate 2A執行P1～P8、P10A、P11、P12，
+   Gate 2B才執行P9/P10B。POC M3並在combined gate前固定winner，與「2A僅provisional
+   finalist、2B後才final winner」衝突。
+3. **Gate 1 packet仍是規劃描述，不是§10要求的可執行packet。** Commit只有M0 dummy
+   runner/schema；尚未提供Gate 1 frozen fixture catalog、P2/P3 expected results、validator
+   version/checksum、Ubuntu x86/arm64 command/timeout/result schema與最多兩名finalist的固定
+   decision packet。
+4. **Gate 2 work package欄位不完整。** M3/M4文件尚缺逐包estimate、re-estimation trigger、
+   可定位runner/command、P10A/P10B分流及Core五種result semantics；不得讓後續執行者自行
+   補解產品契約。
+
+最低複驗條件：POC先以Core 2026-08-17 revision取代舊contract副本，修正唯一crosswalk與
+M3/M4 gate語意，補齊Gate 1可執行packet及Gate 2A/2B工作包，再以新的單一commit push至
+`origin/llm`並通知完整40-character SHA。Core只複驗上述四項及其直接影響範圍；不要求在
+015結案前執行Ubuntu benchmark、Pi Gate 2或產生candidate結果。
