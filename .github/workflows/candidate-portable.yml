@@ -1,0 +1,87 @@
+name: Candidate portable matrix
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Portable CPython ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      CANDIDATE_SHA: ${{ github.sha }}
+      PORTABLE_RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install portable test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run fail-closed portable candidate suite
+        timeout-minutes: 10
+        run: >-
+          python scripts/candidate_gate.py portable
+          --candidate-sha "$CANDIDATE_SHA"
+          --run-id "$PORTABLE_RUN_ID"
+          --python "${{ matrix.python-version }}"
+          --suite tests
+          --test-id OUT-PROCESS-2026-001
+          --timeout-seconds 480
+          --output "candidate-evidence/portable/$PORTABLE_RUN_ID/python-${{ matrix.python-version }}"
+      - name: Upload version evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-result-${{ matrix.python-version }}
+          path: candidate-evidence
+          if-no-files-found: warn
+
+  aggregate:
+    name: Aggregate portable candidate evidence
+    needs: portable
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CANDIDATE_SHA: ${{ github.sha }}
+      PORTABLE_RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download all version evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: portable-result-*
+          merge-multiple: true
+          path: candidate-evidence
+      - name: Build PASS-only matrix index
+        run: >-
+          python scripts/candidate_gate.py matrix
+          --candidate-sha "$CANDIDATE_SHA"
+          --run-id "$PORTABLE_RUN_ID"
+          --input-root "candidate-evidence/portable/$PORTABLE_RUN_ID"
+          --output "candidate-evidence/portable/$PORTABLE_RUN_ID/matrix-index.json"
+      - name: Upload matrix index
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-matrix-index
+          path: candidate-evidence/portable/${{ env.PORTABLE_RUN_ID }}
+          if-no-files-found: warn
