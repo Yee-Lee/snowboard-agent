@@ -7,6 +7,7 @@
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer 簽發之 M4b LLM POC 正式合約（Date: 2026-08-15）
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
+* [`PM-POC-LLM-20260817-001-readiness-correction.md`](pm_handoff/PM-POC-LLM-20260817-001-readiness-correction.md) - Gate 0/M0、Ubuntu pre-screen、traceability、executable packet 與 authority boundary 修正；`On hold — pending PM-OUT-260817-015`
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -20,21 +21,23 @@
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
 
 * [`ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - M4b 合約內部技術審查與 12 項測試指標承接確認
+* [`RESP-POC-LLM-READINESS-2026-001.md`](response/RESP-POC-LLM-READINESS-2026-001.md) - 逐 finding 修訂回覆；Team revised 不代表 PM/Core 已關閉 finding
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
 
 * [`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md) - 回覆 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的 Gate 0 簽收回條與 Initial Manifest
+* [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 
 ## 5. Working Plan (位於 `docs/milestone/`)
 Repo-owned 內部執行工作文件：
 
 * [`README.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/README.md) - LLM POC milestone 單一狀態入口
 * [`llm_delivery_gate_draft.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/llm_delivery_gate_draft.md) - 交付映射草案
+* [`m4b_traceability_crosswalk.md`](milestone/m4b_traceability_crosswalk.md) - External Gate、Internal Milestone、D1–D8、M4B-P1～P12 與 evidence owner 的唯一 crosswalk
 * [`m0_llm_readiness.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m0_llm_readiness.md) - LLM environment/evidence-chain readiness
 * [`m1_llm_contract_and_harness.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m1_llm_contract_and_harness.md) - 契約、門檻與 deterministic harness
 * [`m2_llm_candidate_evaluation.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m2_llm_candidate_evaluation.md) - runtime/model 候選初篩與比較
 * [`m3_llm_child_pi_integration.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m3_llm_child_pi_integration.md) - persistent child 與 Pi 整合
 * [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
-

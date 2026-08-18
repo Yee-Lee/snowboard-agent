@@ -1,0 +1,12 @@
+[project]
+name = "snowboard-llm-poc-m0"
+version = "0.1.0"
+description = "Deterministic readiness packet for the Snowboard LLM POC"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.llm-poc-m0]
+packet-id = "M0-PACKET-001"
+dependency-lock = "requirements-m0.lock"
+network-required = false
+model-download-required = false

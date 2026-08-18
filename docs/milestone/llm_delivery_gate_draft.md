@@ -1,8 +1,12 @@
-# LLM POC Delivery Gate — Working Draft
+# LLM POC Delivery Gate — Historical Working Draft
 
-狀態：`WORKING_DRAFT / NOT_FROZEN`
+狀態：`SUPERSEDED FOR TRACEABILITY`
 
-最後更新：2026-08-09
+最後更新：2026-08-18
+
+> D1–D8 的權威定義、External Gate／Internal Milestone 映射及 M4B-P1～P12
+> crosswalk 已移至 [M4b Delivery Taxonomy and Traceability Crosswalk](m4b_traceability_crosswalk.md)。
+> 本檔以下內容只保留為 Gate 0 前的規劃歷史，不得作為狀態或追蹤來源。
 
 ## Authority and Use
 

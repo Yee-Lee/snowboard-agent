@@ -7,14 +7,17 @@
 ## 目標與交付貢獻
 
 證明 workstation 能以 exact SHA、clean Pi worktree、受控命令 lifecycle 與完整
-evidence chain 支撐後續 LiteRT-LM 測試。主要推進 delivery areas D1、D5、D8。
+evidence chain 支撐後續 LiteRT-LM 測試。主要推進 delivery areas D1、D5、D8；
+M0 是 Internal Milestone，不是 External Gate 0，也不會因 Gate 0 收件自動開始。
 
 舊 Audio M0 可作 runbook 參考，但其 `PASS` 不會轉移到本 milestone。
 
 ## Entry Conditions
 
-- User 明確核准開始 M0 與唯讀 Pi 操作；在此之前保持 `NOT_STARTED`。
-- M0 test packet 已列出允許命令、expected outputs、timeout、cancel、cleanup 與 evidence schema。
+- User 明確核准開始 M0、唯讀 Pi inventory 與限定 `/tmp` marker transfer/cleanup；
+  在此之前保持 `NOT_STARTED`。
+- `poc_llm/tests/m0/M0-TEST-REQUEST-001.md` 已核准，並列出允許命令、expected outputs、
+  timeout、cancel、cleanup、重跑上限與 evidence schema。
 - 要驗證的完整 commit SHA 已固定，workstation source clean，Pi 可 checkout 相同 SHA。
 - Operator-managed SSH alias/key/host fingerprint 已就緒且不寫入 repo 或 evidence。
 - 目標 Pi 已上電；任何需要安裝、下載、reboot、網路停用或 privilege 的動作另行核准。
@@ -30,6 +33,30 @@ evidence chain 支撐後續 LiteRT-LM 測試。主要推進 delivery areas D1、
   不載入真實模型。
 - 盤點後續 runtime/model 所需 toolchain 與 aarch64 compatibility，但不在 M0 安裝或下載。
 - 記錄 raw evidence 的受控位置與 sanitized index 產生方法。
+
+## Prepared Packet (not execution evidence)
+
+- Python requirement/setup：`poc_llm/pyproject.toml`、`poc_llm/requirements-m0.lock`。
+- Deterministic child：`poc_llm/src/llm_poc_m0/dummy_child.py`。
+- Local lifecycle runner：`poc_llm/tools/run_m0_dummy_packet.py`。
+- Test request：`poc_llm/tests/m0/M0-TEST-REQUEST-001.md`。
+- Sanitized evidence schema：`poc_llm/evidence/m0/m0-evidence.schema.json`。
+
+這些檔案存在只代表 packet 已準備；在 exact SHA、entry review、User/Pi 授權及 immutable
+request 未確認前，不構成 M0 `IN_PROGRESS` 或 hardware evidence。
+
+## Owner, Resource Schedule and Retry Limit
+
+- Developer：維護 packet 與 local/fake self-test；預估 0.5 工作日。
+- POC Test Controller：在核准 Pi exact SHA 執行 inventory/command/transfer/lifecycle；
+  Pi 可用後預估 0.5 工作日。
+- Technical Lead：review evidence/result recommendation；Internal Tester：正式 confirmation；
+  預估 0.5 工作日。
+- Pi 5 4GB/8GB availability：`Blocked — pending operator confirmation`；M0 可先在任一核准
+  Pi 執行 readiness，但必須記錄實際 RAM variant，不能外推另一 variant。
+- Storage：repo/venv/小型 marker 預算小於 50 MiB；model storage/download：0，M0 禁止下載模型。
+- 每個 case 最多一次 controlled rerun。原始 failure/`INCONCLUSIVE` evidence 必須保留；
+  超過上限由 Technical Lead 建立 change request。
 
 ## Exit Gate
 

@@ -1,6 +1,13 @@
 # Snowboard 架構設計
 
-離線 AI 語音助理，執行於 Raspberry Pi 5 (Pi OS)。本文件描述模組權責、邊界、能力範圍與流程；實作進度與檔案清單見 `implement.md`。
+> **POC authority boundary**：本 repo 只把本文件用作 LLM POC wrapper、child protocol、
+> resource/evidence decision 的背景與設計輸入。以下產品拓撲不是 Core production
+> architecture 的權威副本，也不能固定產品 composition root、model baseline 或產品
+> protocol。相關產品決策必須引用 Core 指定且已 Accepted 的 exact 40-character SHA、
+> `docs/model_spec.md`、`docs/protocol.md` 與書面 ACK；在這些輸入到位前均為 `Proposed`。
+
+離線 AI 語音助理，執行於 Raspberry Pi 5 (Pi OS)。本文件描述 POC 所需的模組邊界背景；
+產品實作進度與檔案清單若由 Core 提供，應以其指定 exact SHA 為準。
 
 ## 1. 目標與邊界
 
@@ -26,7 +33,8 @@ Snowboard 為裝置端執行的離線 AI 語音助理。核心承諾：
 
 * ASR：離線語音辨識
 * TTS：離線語音合成
-* LLM：LiteRT-LM 執行 Gemma3:e2b
+* LLM：runtime/model 尚待 Gate 1/2 evidence 與 Core Designer ACK 固定；LiteRT-LM 與
+  合約候選僅為 Proposed，不構成產品 baseline
 * Tool calling：本機工具註冊 + 執行
 * 外部通訊：MQTT / UART / 其他 IPC
 * 喚醒：wake word、GPIO 按鈕、外部訊息

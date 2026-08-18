@@ -1,7 +1,7 @@
 # LLM POC 工作流程與合作方式
 
 狀態：Authoritative working process  
-最後更新：2026-08-09
+最後更新：2026-08-18
 
 ## 1. 目的與權威順序
 
@@ -19,7 +19,7 @@
 
 1. User 已明確給定的範圍、核准與外部限制。
 2. 已正式交付的 PM/Designer Income 文件。
-3. `docs/milestone/README.md` 的活動狀態、entry/exit gate 與風險。
+3. `docs/milestone/README.md` 的 External Gate、Internal Milestone、目前授權與風險。
 4. 本 workflow 的角色、evidence、Git/Pi 與安全規則。
 5. Repo-owned working drafts；它們不得自行降低外部 acceptance gate。
 
@@ -61,17 +61,29 @@ findings 且 Designer 核准後，才是 `POC Accepted`。
 - 未經 review 的 runtime、model、prompt、output schema 或 acceptance gate 變更。
 - 把 POC wrapper、benchmark harness 或 fake 直接視為產品主線實作。
 
-## 4. Milestone Lifecycle
+## 4. External Gate and Internal Milestone Lifecycle
 
-活動狀態只由 [milestone index](milestone/README.md) 判定：
+活動狀態只由 [milestone index](milestone/README.md) 判定。External Contract Gate 是
+PM/Core 的行政與授權狀態；Internal Milestone 是 POC execution/readiness 狀態，兩者
+不得合併或互相推導。
+
+External Gate lifecycle：
+
+| Gate | POC Team 可做的狀態動作 | 關閉權限 |
+| --- | --- | --- |
+| Gate 0 | 修訂 package 並標記 `SUBMITTED`；不得標記 `COMPLETE` | PM 記錄實際 branch HEAD；Core Designer 登錄 |
+| Gate 1 | 提交 candidate proposal 與 Ubuntu pre-screen evidence | Core Designer 書面確認 finalists 與 Pi 授權 |
+| Gate 2 | 提交 Pi 5 P1～P12 evidence 與 winner/no-go | Core Designer 發出 Gate 2/final winner ACK |
+
+Internal Milestone lifecycle：
 
 | Milestone | Gate purpose |
 | --- | --- |
 | M0 | Environment、exact SHA、remote command control 與 evidence chain readiness |
-| M1 | Freeze contract、protocol、fixtures、metrics/gates；fake 驗證 harness |
-| M2 | 在 frozen packet 下比較 runtime/model/quantization candidates |
-| M3 | 固定 winner/no-go，驗證 persistent child 與 Pi integration baseline |
-| M4 | Accepted M4a SHA 上完成 combined/offline/fault validation 與交付 |
+| M1 | Freeze contract、protocol、fixtures、metrics/gates；固定 pairing 與 preflight |
+| M2 | Ubuntu x86/arm64 pre-screen，最多保留兩個 Pi finalists |
+| M3 | Gate 1 ACK 後在 Pi 5 驗證 candidate、persistent child 與 P1～P12 baseline |
+| M4 | Accepted M4a SHA 上完成 combined/offline/fault validation 與 Gate 2 交付 |
 
 允許的 milestone 狀態為：`NOT_STARTED`、`PLANNED / NEXT`、`IN_PROGRESS`、
 `GATE_REVIEW`、`COMPLETE`、`BLOCKED`、`CHANGE_REQUESTED`。
@@ -79,7 +91,8 @@ findings 且 Designer 核准後，才是 `POC Accepted`。
 撰寫或修正計畫文件不會自動開始 milestone。Milestone 只有在 entry review 完成、
 下一個 test request 已獲准、索引明確改成 `IN_PROGRESS` 後才算開始。
 
-任何 milestone 狀態變更，都必須同時在索引更新最終交付可達性、已取得 evidence、
+External Gate 變更與 Internal Milestone 變更必須分欄記錄。任何狀態變更，都必須
+同時在索引更新最終交付可達性、已取得 evidence、
 未關閉 exit conditions、risk/blocker/change request，以及唯一下一個獲准工作。
 
 不得因前一個 Audio POC milestone 名稱相同而轉移其 `COMPLETE` 或 `PASS`。可以引用
@@ -90,19 +103,22 @@ result 與 review decision。
 
 | 角色 | 責任與決策權 |
 | --- | --- |
-| Technical Lead（Assistant） | 規劃 work item、定義 test request/packet、審查 evidence、做技術 `PASS/FAIL/INCONCLUSIVE` 判定、維護風險並提出 change request。 |
+| Technical Lead（Assistant） | 規劃 work item、定義 test request/packet、review self-test 與 hardware evidence、提出技術 `PASS/FAIL/INCONCLUSIVE` 建議、維護風險與 change request；不能取代 Internal Tester acceptance。 |
 | Developer（agent） | 只在 workstation 修改 POC source/tests/docs；先完成 local/fake tests，交付完整 SHA 與可執行 test request。不得直接宣告 hardware pass，不得在測試中修改 Pi worktree。 |
-| Tester / Test Controller（agent） | 只對指定 exact SHA 做 Pi clean checkout、pre-test、test packet 執行與 evidence 回收；回報觀察結果，不改 gate、不挑選較好 run。 |
+| POC Test Controller（agent） | 只對指定 exact SHA 做 Pi clean checkout、pre-test、immutable packet 執行與 evidence 回收；回報 team self-test observation，不改 gate、不挑選較好 run。 |
+| Internal Tester（獨立驗收角色） | 對指定 delivery exact SHA、packet 與 evidence 做正式 confirmation；只有此角色的確認可支撐 POC acceptance，且不能由同一次 Developer self-test 冒充。 |
 | User | 提供/控制目標硬體，核准 Pi 存取、下載/安裝、網路切換、特權、commit/push 與產品層決策。 |
 | Designer | 凍結 Reasoner/prompt/output/protocol 與品質/資源 gate，核准 winner 或 no-go。 |
 | Reviewer | 依 delivery checklist 審查可重現性、finding closure 與 acceptance readiness。 |
 
-同一個 agent session 可以依序兼任 Developer 與 Tester，但必須在以下三個交接點
-明確切換角色：
+同一個 agent session 可以依序兼任 Developer 與 POC Test Controller，結果只能標記
+`POC Team self-test`，不能標記為 Internal Tester confirmation。必須在以下交接點
+明確切換與留下記錄：
 
 1. Developer 交付 exact full SHA 與 clean local evidence。
 2. Technical Lead 發出 immutable test request/packet。
-3. Tester 回收 evidence，Technical Lead 另行 review 後才判定結果。
+3. POC Test Controller 回收 evidence，Technical Lead 另行 review 並提出結果建議。
+4. Internal Tester 對 delivery exact SHA 獨立確認後，才可支撐正式 POC acceptance。
 
 ## 6. Work Item and Test Packet
 
@@ -151,7 +167,9 @@ POC repo 是 source、tests、harness、schemas、fixtures metadata、sanitized 
 5. 執行 immutable test packet；Pi worktree 不做 source edit 或臨時修補。
 6. 回收 raw evidence/checksum，產出 sanitized index，Technical Lead review。
 
-Commit message 格式：`[work_type][LLM-Mn]: concise title`。
+Commit subject 格式依 repository `AGENTS.md`：`{work-type}{milestone/stage}: {title}`；
+commit body 使用 60–100 words 的精簡英文 bullet list。Gate 修訂集中在 milestone 或
+remote verification 完成時一次提交，不為每個小文件建立 commit。
 
 未經 User 同意不得執行 commit。未 push、Pi 無法 fetch 的 local SHA 不得作為正式
 hardware delivery SHA。若測試需要 artifact transfer，artifact checksum 與受控來源
@@ -172,7 +190,8 @@ hardware delivery SHA。若測試需要 artifact transfer，artifact checksum �
 
 - **Income (`docs/pm_handoff/`)**：PM/外部團隊交付的 requirements、contracts 與 handoff messages，對開發團隊**嚴格唯讀 (Read-only)**。本團隊禁止在 `docs/pm_handoff/` 中直接編輯或撰寫回覆。
 - **Income History (`docs/pm_handoff/history/`)**：已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息移至此目錄存檔，代表已完成不必重複追蹤。
-- **Response (`docs/response/`)**：內部技術確認、評估結果或對 Income 的內部 ACK 記錄（命名規範 `ACK-{TargetID}.md`）。
+- **Response (`docs/response/`)**：內部技術確認、評估結果或對 Income 的逐 finding
+  回覆。預設命名為 `ACK-{TargetID}.md`；若 Income 明確指定 `RESP-*`，依該要求命名。
 - **Delivery (`docs/delivery/`)**：正式對外交付的文件，供 PM 轉交 Core Team/其他團隊，命名規範 `DELIVERY-{流水號}-{to_who}-{title}.md`。
 - **Working plan (`docs/milestone/`)**：活動 milestone、repo-owned gate draft、風險與 evidence requirements。
 - **POC assets (`poc_llm/`)**：source、tests、tools、fixtures metadata、evidence index 與 POC delivery package。
@@ -180,6 +199,10 @@ hardware delivery SHA。若測試需要 artifact transfer，artifact checksum �
 
 每次 milestone gate review 必須同步更新：狀態、交付可達性、取得的 evidence、未關閉
 exit conditions、risk/blocker/change request，以及唯一下一個獲准工作。
+
+`docs/arch.md` 只可對 POC-specific wrapper、protocol、resource 與 evidence decision
+具有 repository-local authority。產品架構、model baseline、composition root 與產品
+protocol 必須引用 Core 指定 exact SHA/ACK；POC 文件不得自行宣告為產品權威。
 
 ## 11. Dependencies and Change Requests
 

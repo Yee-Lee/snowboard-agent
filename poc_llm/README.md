@@ -1,7 +1,8 @@
 # LLM POC Workspace
 
-目前 milestone：M0 `NOT_STARTED`。本文件只說明 workspace 與受控執行規則；不代表
-已核准連線 Pi、安裝 runtime、下載模型或開始測試。
+目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 已由
+POC Team 提交、等待 PM/Core 登錄；Internal M0 仍為 `NOT_STARTED`。本文件不另行建立
+狀態，也不代表已核准連線 Pi、安裝 runtime、下載模型或開始測試。
 
 ## Layout
 
@@ -12,8 +13,18 @@
 - `evidence/`：sanitized evidence index/summary；raw results 走受控管道。
 - `deliveries/`：POC delivery manifests 與 handoff package。
 
-目前只有目錄 scaffold，尚無獲准的 M0 executable packet。不要用 Audio POC 工具或
-結果替代 LLM M0。
+Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence schema；它們
+目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC
+工具或結果替代 LLM M0。
+
+## Gate 0 R1 Artifacts
+
+- `deliveries/POC-llm-DEL-2026-001-R1.md`：實際 Initial Manifest。
+- `pyproject.toml`、`requirements-m0.lock`：Python 3.11+ standard-library-only setup/lock。
+- `src/llm_poc_m0/dummy_child.py`：deterministic lifecycle child。
+- `tools/run_m0_dummy_packet.py`：local timeout/terminate/kill/wait cleanup runner。
+- `tests/m0/M0-TEST-REQUEST-001.md`：immutable packet draft 與受控 Pi runbook。
+- `evidence/m0/m0-evidence.schema.json`：sanitized evidence schema。
 
 ## Before Any M0 Run
 

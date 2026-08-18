@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:m0:evidence:1.0",
+  "title": "LLM POC M0 Sanitized Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "result",
+    "python",
+    "duration_ms",
+    "tests"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "packet_id": {"const": "M0-PACKET-001"},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "python": {"type": "string", "pattern": "^3\\.(1[1-9]|[2-9][0-9])\\."},
+    "duration_ms": {"type": "integer", "minimum": 0},
+    "tests": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["case_id", "exit_code", "orphan_zero", "result"],
+        "properties": {
+          "case_id": {"type": "string"},
+          "exit_code": {"type": "integer"},
+          "orphan_zero": {"type": "boolean"},
+          "escalation_observed": {"type": "boolean"},
+          "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

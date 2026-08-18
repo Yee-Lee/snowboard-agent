@@ -1,17 +1,19 @@
-# LLM M1：Frozen Contract, Gates and Deterministic Harness
+# LLM M1：Frozen Contract, Candidate Pairing and Deterministic Harness
 
 狀態：`NOT_STARTED`
 
 ## 目標與交付貢獻
 
 在揭露真實 candidate 結果前，凍結 Reasoner/LLM boundary、protocol semantics、
-fixtures、metrics、資源門檻與比較方法，並用 deterministic fake 證明 harness 能正確
-觀察 failure lifecycle。主要推進 D2、D3、D4、D8。
+fixtures、metrics、資源門檻與比較方法，固定 runtime/model/quantization 的有效 pairing，
+並用 deterministic fake 證明 harness 能正確觀察 failure lifecycle。主要推進
+D1、D2、D3、D4、D8。
 
 ## Entry Conditions
 
-- M0 為 `COMPLETE` 且 gate result 為 `PASS`。
-- Designer、Tester 與 Technical Lead 的 gate owner/approver 已登錄。
+- External Gate 0 已由 Core Designer 登錄為 `COMPLETE`。
+- M0 為 `COMPLETE`，Internal Tester confirmation 為 `PASS`。
+- Designer、Internal Tester 與 Technical Lead 的 gate owner/approver 已登錄。
 - 正式 checklist/development guide 已收到；若仍未收到，只有不依賴未定語意的
   scaffold 工作可執行，milestone 不得關閉。
 - Prompt/output/protocol 與候選 gate 尚未受真實 benchmark 結果影響。
@@ -23,6 +25,9 @@ fixtures、metrics、資源門檻與比較方法，並用 deterministic fake 證
 - 定義 protocol version、READY、GENERATE、RESULT、CANCEL、ERROR、SHUTDOWN、
   request ID、deadline 與 completion/exit proof。
 - 建立 candidate manifest、fixture catalog、result/evidence schemas 與 deterministic fake。
+- 為每個 runtime/model/quantization/config pairing 配發固定 candidate ID；記錄 exact
+  version、source/archive SHA-256、artifact SHA-256、quantization method、license、offline
+  取得方法與 aarch64 compatibility preflight。
 - 固定 candidate identity、warm-up、repetitions、cold/hot、p50/p95、tokens/s、RSS、
   CPU、disk、thermal 與 validity gate 的量測方法。
 - Fake 覆蓋 success、malformed output、timeout、cancel、stale/duplicate result、crash、
@@ -41,7 +46,8 @@ fixtures、metrics、資源門檻與比較方法，並用 deterministic fake 證
 - Frozen decision record、approver、日期與版本。
 - Protocol/output/config schema 與 fixtures checksum。
 - Fake run commands、results、fault matrix 與 cleanup proof。
-- M2 candidate set、license/source preflight 與固定 benchmark packet。
+- M2 Ubuntu x86/arm64 candidate set、license/source/offline/aarch64 preflight 與固定
+  benchmark packet。
 
 ## Prohibited in M1
 

@@ -1,75 +1,74 @@
-# LLM POC Team → PM → Core Team: M4b LLM POC Gate 0 Receipt & Initial Manifest
+# LLM POC Team → PM → Core Designer: M4b Gate 0 Receipt R1
 
-- **Delivery ID**: `DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT`
+- **Delivery ID**: `DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT-R1`
 - **In Response To**: `DELIVERY-LLM-POC-M4B-CONTRACT-001`
-- **Finding ID**: `OUT-M4B-2026-001`
+- **Correction**: `PM-POC-LLM-20260817-001`
+- **Finding IDs**: `POC-LLM-GOV-2026-001` through `POC-LLM-BOUNDARY-2026-005`
 - **From**: LLM POC Team
-- **To**: PM (轉交 Core Team Designer)
-- **Date**: 2026-08-15
-- **Status**: `GATE 0 COMPLETE — READY FOR GATE 1 CANDIDATE PROPOSAL`
-- **POC Intake Commit SHA**: `PENDING_OPERATOR_COMMIT`
+- **To**: PM for Core Designer recording
+- **Date**: 2026-08-18
+- **Status**: `SUBMITTED — PENDING PM RECEIPT / CORE DESIGNER RECORDING`
 
----
+本 receipt 不包含 delivery commit SHA。PM 拉回約定 branch 後自行記錄實際 HEAD，再交
+Core Designer 登錄。POC Team 不以 branch 名稱、內部 ACK 或本 receipt 自行宣告 Gate 0
+`COMPLETE`。
 
-## 1. 簽收聲明與邊界確認 (Contract Receipt & Scope Confirmation)
+## 1. Contract Receipt and Boundary Confirmation
 
-LLM POC 團隊已於 2026-08-15 正式接收並完整審閱由 Core Team Designer 制定、經 PM 轉交之 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 合約。
+LLM POC Team 確認已閱讀並承接 `DELIVERY-LLM-POC-M4B-CONTRACT-001`：
 
-我們在此確認：
-1. **完全採納合約邊界**：POC 團隊負責候選推論引擎探索、Persistent Child Process 參考封裝、Raspberry Pi 5 驗證與可重現 Evidence 交付；Core Team 保留 Model Baseline 定案、Protocol 審核與最終 ACK 決定權。
-2. **遵守 4 大 Gate 生命週期**：未取得各 Gate 的 Core Designer 書面 ACK 前，所有 POC 項目維持 `Proposed`，不提早將 POC 封裝直接作為主線依賴。
-3. **承接 M4B-P1 至 M4B-P12 驗證清單**：全套 12 項測試指標（包含 Persistent Child 生命週期 $\le$ 10s、JSON Intent 輸出、TTFT $\le$ 2.5s / 速度 $\ge$ 4.0 tok/sec 基準、Cancel $\le$ 500ms、Force Abort + `waitpid()` 證明、Single-turn 歷史隔離、M4a 共存 Peak RSS $\le$ 3.5GB/6.0GB、溫度 $< 80^\circ\text{C}$、20 次 Soak、Clean Script 與完全離線運作）作為後續 Gate 2 驗收唯一依據。
+- POC 範圍為 runtime/model/quantization 探索、Ubuntu pre-screen、persistent-child
+  reference wrapper、Pi 5 M4B-P1～P12 validation 與可重現 evidence。
+- Core Designer 保留 candidate/finalist、model baseline、protocol、Gate 1、Gate 2 與
+  final winner/no-go 的核准權。
+- POC Team self-test、Technical Lead review 與本團隊 ACK 不能取代 Core Designer ACK；
+  正式 POC acceptance 另需 Internal Tester confirmation。
+- Model weights、大型 raw results、private prompt/output、endpoint、credential、secret 與
+  SSH 設定不進 Git。
 
----
+## 2. Gate and Milestone State
 
-## 2. 初始工作區結構與 Initial Manifest (Workspace Layout)
+| State type | Current state | Recorder / approver |
+| --- | --- | --- |
+| External Gate 0 | `SUBMITTED` | PM 記錄實際 HEAD；Core Designer 登錄後才 `COMPLETE` |
+| Internal M0 | `NOT_STARTED` | Entry review、User/Pi 授權、immutable packet 核准後才可開始 |
+| External Gate 1 | `NOT_STARTED / BLOCKED` | Ubuntu pre-screen 完成後由 Core Designer 書面確認 |
+| External Gate 2 | `NOT_STARTED / BLOCKED` | Gate 1 ACK 後才可開始 Pi candidate validation |
 
-POC 團隊已於本儲存庫中建立標準隔離工作區 `poc_llm/`，其結構如下：
+Gate 0 行政收件與 Internal M0 readiness 完全分離。Receipt 提交不代表 Pi 存取、安裝、
+下載、網路切換、Ubuntu benchmark 或 Gate 2 hardware run 已獲准。
 
-```text
-poc_llm/
-├── deliveries/               # POC 交付文件與 Validation 報告
-├── evidence/                 # Sanitized evidence 索引與測試結果摘要
-│   └── m4b/
-│       ├── manifest.json     # 測試執行清單、SHA-256、License 與狀態
-│       ├── environment.txt   # Pi 5 / Ubuntu 硬體與 OS 規格記錄
-│       └── results/          # 結構化測試結果 (JSON/Markdown)
-├── fixtures/                 # 非敏感測試 Prompt、Schema 與 Catalog
-├── src/                      # Reference Runtime、Child Process Protocol & Client
-├── tests/                    # Deterministic Fake Harness、Protocol & Unit Tests
-├── tools/                    # 可重現 Setup、Benchmark Runner & Evidence Collector
-└── README.md                 # 工作區指引與受控執行政策
-```
+## 3. Submitted Initial Manifest
 
----
+實際 Gate 0 manifest：
 
-## 3. Gate 1 候選初篩計畫摘要 (Candidate Pre-screening Plan)
+`poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md`
 
-依合約 §3 規定，POC 團隊於 Gate 1 提出的候選提案將包含：
+Manifest 記錄 repo/branch、環境與 runner 狀態、artifact/evidence 狀態、真實存在路徑、
+blockers 及下一個獲准工作；未執行項目只標 `Pending` 或 `Blocked`。規劃中的目錄樹不再
+被當成 manifest。
 
-* **推論引擎 (Engines)**：
-  1. `LiteRT-LM` (Google TFLite / MediaPipe LLM)
-  2. `llama.cpp` (GGUF 推論引擎，作為對照與備選)
-* **模型候選 (Models, $\le$ 3B)**：
-  1. `Gemma-2-2B-IT` (Google)
-  2. `Qwen2.5-1.5B-Instruct` / `Qwen2.5-3B-Instruct` (Alibaba)
-  3. `SmolLM2-1.7B-Instruct` (HuggingFace)
-* **量化格式 (Quantization)**：
-  - INT4、INT8、GGUF (Q4_K_M / Q8_0)
-* **提示詞與格式 (Prompt & Format)**：
-  - 繁體中文 (zh-TW) / 英文 System Prompt，要求嚴格輸出結構化 JSON Intent (`speak` / `tool` / `rest`)。
+唯一 taxonomy 與 External Gate／Internal Milestone／D1–D8／M4B-P1～P12 crosswalk：
 
----
+`docs/milestone/m4b_traceability_crosswalk.md`
 
-## 4. 資料安全與衛生保證 (Data & Artifact Hygiene Assurance)
+## 4. Gate 1 Preparation Boundary
 
-POC 團隊嚴格落實以下安全原則：
-- 任何模型權重檔（.bin / .gguf / .tflite / .task 等）、大型 Raw Results、Private Prompts / Transcripts 及 SSH 連線金鑰**絕不進入 Git 儲存庫**。
-- Git 僅記錄可公開之開源來源 URL、檔案 SHA-256 Checksum、License 授權類別、非敏感 Fixtures 與 Sanitized Evidence Summaries。
+Gate 0 登錄後，POC Team 可依序準備：
 
----
+1. 完成 Internal M0 entry review 與核准的 readiness run。
+2. 固定 runtime/model/quantization/config pairing ID、license、source/artifact checksum、
+   offline method 與 aarch64 compatibility preflight。
+3. 凍結 Ubuntu x86/arm64 packet、metrics、淘汰規則與重跑上限。
+4. 執行獲准的 Ubuntu pre-screen，最多提出兩個 Pi finalists。
+5. 等待 Core Designer Gate 1 書面確認；在此之前不執行 Gate 2 Pi candidate validation。
 
-## 5. Gate 0 結案與 Gate 1 啟動請求
+## 5. Requested PM Action
 
-1. **Gate 0 狀態**：`COMPLETE`（已完成合約接收、範圍確認、工作區配置與 Initial Manifest 定義）。
-2. **請求動作**：請 PM 轉交本回條予 Core Team Designer 備查，並授權 LLM POC 團隊正式啟動 **Gate 1（候選提案與 Ubuntu 初篩測試）**。
+請 PM：
+
+1. 拉回約定 branch 並自行記錄實際 branch HEAD。
+2. 確認本 receipt、readiness response、Initial Manifest 與其中列出的相對路徑存在。
+3. 將 receipt 交 Core Designer 登錄 External Gate 0。
+4. 回傳 Gate 0 recording 與 pending `PM-OUT-260817-015`；Gate 1 未經書面確認不得啟動
+   Pi 5 Gate 2。

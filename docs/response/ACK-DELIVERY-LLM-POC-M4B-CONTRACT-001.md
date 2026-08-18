@@ -7,7 +7,11 @@
 - **Relay Owner**: PM
 - **Responding Agent / Team**: LLM POC Team (Technical Lead & Developer)
 - **Date**: 2026-08-15
-- **Status**: `ACCEPTED_AND_ALIGNED`
+- **Status**: `TEAM_ACK_ONLY — DOES NOT CLOSE EXTERNAL GATE`
+
+> 本文件只記錄 POC Team 已閱讀合約，不是 Core Designer ACK，也不授權 Gate 1/2。
+> External Gate 與 Internal Milestone 的目前狀態只以
+> `docs/milestone/README.md` 為準。
 
 ---
 
@@ -27,7 +31,7 @@ POC 團隊已將內部工作規劃與合約之 4 大 Gate 進行精確對齊：
 
 | Gate | 合約階段定義 | POC 團隊對應行動與內部映射 |
 | :--- | :--- | :--- |
-| **Gate 0** | Contract Receipt & Scope Confirmation | • 建立本內部 ACK<br>• 於 `docs/delivery/` 產出對外 `DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md` 回條與 Initial Manifest<br>• 正式取得 POC 探索授權 |
+| **Gate 0** | Contract Receipt & Scope Confirmation | • 建立本內部 team ACK<br>• 於 `docs/delivery/` 產出對外 receipt，並於 `poc_llm/deliveries/` 提交實際 Initial Manifest<br>• PM 記錄實際 HEAD、Core Designer 登錄後才完成 Gate 0；本 ACK 不授權 Gate 1/2 |
 | **Gate 1** | Candidate Proposal & Ubuntu Pre-screening | • 整理 Gemma-2-2B, Qwen2.5-1.5B/3B, SmolLM2-1.7B 與 LiteRT-LM / llama.cpp 清單<br>• 提供 Exact Version, Source SHA-256, License Table<br>• 提交 Ubuntu x86/arm64 初篩數據，等待 Core Designer 5 日內書面確認 |
 | **Gate 2** | Pi 5 驗證 / Benchmark / Persistent-Child 契約 | • 於 Pi 5 執行 M4B-P1 ~ M4B-P12 全套不可變測試<br>• 回交 Exact 40-char SHA、Sanitized Evidence、Validation 報告與 Winner/No-Go 決定表<br>• 取得 Core Designer Final Winner ACK |
 | **Gate 3** | Core Production Implementation | • 配合主線團隊進行 M4b 產品化 Handoff（`model_spec.md` 與 `protocol.md`） |
@@ -57,4 +61,6 @@ POC 團隊已將內部工作規劃與合約之 4 大 Gate 進行精確對齊：
 
 ## 4. 結論與下一步
 
-本 ACK 確認 LLM POC 團隊完全採納合約規範。外部正式回條同步以 `DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md` 交付 PM 轉達。
+本 ACK 只確認 LLM POC 團隊理解並承接合約規範。修訂後外部 receipt 以
+`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md` 提交 PM；Gate 0 是否完成由 PM/Core
+依實際收件與登錄決定。

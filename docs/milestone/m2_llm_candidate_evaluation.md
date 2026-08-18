@@ -1,44 +1,67 @@
-# LLM M2：Runtime and Model Candidate Evaluation
+# LLM M2：Ubuntu Candidate Pre-screen and Gate 1 Submission
 
 狀態：`NOT_STARTED`
 
 ## 目標與交付貢獻
 
-依 M1 frozen packet，在 Raspberry Pi 5 公平比較 LiteRT-LM runtime/model/quantization
-candidates，保留成功與失敗結果，提出 finalists 或 evidence-backed no-go。主要推進
-D2、D4、D5、D7、D8。
+依 M1 frozen packet 在 Ubuntu x86/arm64 執行 runtime/model/quantization pairing 初篩，
+保留成功與失敗 evidence，以固定淘汰規則選出最多兩個 Raspberry Pi 5 finalists，並
+提交 External Gate 1 candidate proposal。主要推進 D2、D4、D5、D7、D8。
+
+Ubuntu 結果只用於 Gate 1 finalist selection，不得取代任何 M4B-P1～P12 Pi evidence。
 
 ## Entry Conditions
 
-- M1 `COMPLETE`，contract、candidate manifest、fixtures、metrics 與 gates 均已 frozen。
-- 每個 artifact 的來源、license、checksum、quantization 與受控儲存位置已確認。
-- Pi checkout 使用可 fetch 的 exact full SHA，pre-test 通過且 worktree clean。
-- Candidate/runtime 安裝或 artifact transfer 已另行取得所需核准。
+- External Gate 0 已由 Core Designer 登錄為 `COMPLETE`，M1 為 `COMPLETE`。
+- Candidate matrix 已為每個 runtime/model/quantization/config pairing 配發不可變 ID。
+- Exact version、source/archive SHA-256、model/artifact SHA-256、quantization method、license、
+  offline 取得方法、transitive dependencies 與 aarch64 compatibility preflight 已固定。
+- Ubuntu x86 與 arm64 runner 的 OS/architecture、owner、available storage/memory 與執行
+  方式已登錄；任何下載、安裝或 artifact transfer 已另行核准。
+- Benchmark packet、fixtures、metrics、淘汰規則、重跑上限與 evidence schema 已 frozen。
 
 ## Work Packet
 
-- 依固定順序與相同 fixture/config 執行 correctness、cold/hot 與 resource runs。
-- 測量 cold READY、generation p50/p95、tokens/s、RSS、CPU、disk、threads/processes、
-  temperature 與 throttling。
-- 驗證合法 action、malformed output/P5、capability、history isolation、offline 與 log hygiene。
-- 對 timeout、cancel、crash 與 force-abort 執行固定 fault packet，確認 exit proof/orphan=0。
-- 每次變更 runtime、model、quantization 或 frozen parameter 都建立新的 candidate ID。
+- 在 x86 與 arm64 對每個有效 pairing 執行相同 setup、smoke、format、lifecycle、offline
+  preflight 與輕量 performance packet，保存每次有效/無效結果。
+- 每個 run 記錄 runner environment、candidate/config/fixture IDs、命令、開始/結束時間、
+  exit code、artifact checksum、raw evidence checksum 與 cleanup proof。
+- 初篩 metrics 至少包含 setup success、READY/generate smoke、JSON intent 格式率、
+  timeout/cancel/cleanup observability、latency/tokens-per-second sample、RSS 與 disk footprint。
+- 固定淘汰條件：license/source/checksum 不完整、無可重現 offline setup、arm64 incompatibility、
+  lifecycle/cleanup failure、無法產生合法 single-turn output，或超出 frozen hard resource gate。
+- Performance 未達起始目標但未觸犯 hard gate 時保留實測值，由 Designer 比較；不得事後
+  改 gate。Environment failure 記為 `INCONCLUSIVE`，不能直接淘汰 candidate。
+- 依 validity、correctness、resource headroom、reproducibility 與風險排序，最多保留兩個
+  finalists；提交 candidate matrix、license table、rejected reasons 與 Gate 1 request。
 
 ## Exit Gate
 
-- 所有已執行 candidates 都有完整 manifest、raw evidence index 與 advance/reject 理由。
-- 至少一個 finalist 通過全部 M2 gates，或正式提交 no-go/change request。
-- 無 cherry-pick repetitions、事後 gate 修改或以 Ubuntu/其他硬體取代 Pi 5 結果。
-- Technical Lead 審查 Tester evidence 後做 `PASS`、`FAIL` 或 `INCONCLUSIVE` 判定。
+- 每個 pairing 都有固定 ID、x86/arm64 evidence state 與 advance/reject 理由。
+- 最多兩個 finalists 通過所有 frozen Ubuntu hard gates，或提交 evidence-backed no-go／
+  change request；不得把 `INCONCLUSIVE` 當成 `PASS` 或任意淘汰。
+- POC Technical Lead 完成 evidence review，Internal Tester 確認 packet/result 完整性。
+- Core Designer 對 candidate proposal 與 finalists 發出 External Gate 1 書面 ACK；在 ACK
+  到位前 M2 可進 `GATE_REVIEW`，但 M3/Pi Gate 2 必須保持 `NOT_STARTED / BLOCKED`。
 
 ## Necessary Evidence
 
-- Exact SHA、Pi environment、candidate/artifact/config/fixture IDs。
-- Raw result checksum、sanitized metrics、exit codes、thermal 與 cleanup proof。
-- Candidate comparison、rejected results、risks 與 finalist/no-go recommendation。
+- Candidate matrix、pairing IDs、versions、source/artifact checksums、license 與 offline method。
+- Ubuntu x86/arm64 environment、commands、exit codes、metrics、raw evidence checksums 與 cleanup。
+- 淘汰矩陣、最多兩個 finalists、residual risks、Internal Tester confirmation 與 Gate 1 request。
+- Core Designer Gate 1 ACK，或尚未核准時的明確 `GATE_REVIEW / BLOCKED` 狀態。
+
+## Owner, Schedule and Retry Limit
+
+- Developer：setup、runner 與 local self-test；POC Test Controller：immutable Ubuntu runs。
+- Technical Lead：evidence review 與 finalist recommendation；Internal Tester：完整性確認；
+  Core Designer：Gate 1 approver。
+- Runner 可用後預估 3–5 個工作日；artifact download/storage 依 candidate matrix 另行核准。
+- 每個 candidate/case 最多一次 controlled rerun；原始結果保留。超過上限須提出 change request。
 
 ## Prohibited in M2
 
-- 不把 benchmark wrapper 直接接入產品 composition root。
-- 不修改 M4a Audio baseline或讓模型執行 tool handler。
-- 不提交模型、大型 raw result、private prompt/output 或 secret。
+- 不在 Gate 1 ACK 前開始 Raspberry Pi 5 candidate benchmark 或 Gate 2 測試。
+- 不以 Ubuntu 結果宣告 M4B-P1～P12 `PASS` 或選定最終 winner。
+- 不提交模型、大型 raw result、private prompt/output、endpoint、credential 或 secret。
+- 不因結果不佳更改 pairing ID、fixture、metric、淘汰規則或只發布最好一次。

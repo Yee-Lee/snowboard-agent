@@ -4,13 +4,13 @@
 
 ## 目標與交付貢獻
 
-固定唯一 POC winner（或確認 no-go），完成 reference child/client、strict config 與
-failure lifecycle，證明其可在 Pi 5 長時間、可取消、可清理且不跨 operation 保留
-history。主要推進 D2、D3、D4、D5、D7。
+對 Gate 1 核准的最多兩個 finalists 啟動 Raspberry Pi 5 Gate 2，先執行
+M4B-P1～P8/P11 candidate 與 persistent-child baseline，固定唯一 POC winner（或確認
+no-go），再把相同 baseline 交 M4 完成 P9/P10/P12。主要推進 D2、D3、D4、D5、D7、D8。
 
 ## Entry Conditions
 
-- M2 `COMPLETE` 且 finalist/winner recommendation 已由 Designer 接受；或 no-go 已進 gate review。
+- M2 `COMPLETE`，且 External Gate 1 finalists 已取得 Core Designer 書面 ACK。
 - Runtime/model/artifact/config 與 protocol versions 均已固定。
 - Reasoner boundary fixtures 可用，但產品 composition root 不在本 POC 修改範圍。
 - M4 所需 accepted M4a SHA dependency 已有 owner、取得路徑與風險狀態。
@@ -22,6 +22,8 @@ history。主要推進 D2、D3、D4、D5、D7。
 - 驗證 cooperative cancel；逾時後 terminate、kill、waitpid，並拒絕 stale/duplicate result。
 - 驗證 child crash/rebuild、shutdown/restart、strict config、offline 與 repeated generation。
 - 使用固定 Pi packet 重跑 latency/resource/thermal 並檢查 process/thread/RSS 累積。
+- 依權威 crosswalk 執行 M4B-P1～P8、P11，並為 M4 的 P9、P10、P12 combined/offline
+  cases 產生相同 candidate/config/protocol baseline；任何未執行項目保持 `Pending/Blocked`。
 - 產出 `model_spec.md`、`protocol.md` 所需 handoff material，但不直接修改產品 composition root。
 
 ## Exit Gate
