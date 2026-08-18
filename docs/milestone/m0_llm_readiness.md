@@ -1,6 +1,6 @@
 # LLM M0：Environment and Evidence-Chain Readiness
 
-狀態：`NOT_STARTED`
+狀態：`IN_PROGRESS`
 
 性質：前置 readiness gate；不是 runtime/model benchmark，也不是 hardware baseline。
 
@@ -21,6 +21,19 @@ M0 是 Internal Milestone，不是 External Gate 0，也不會因 Gate 0 收件�
 - 要驗證的完整 commit SHA 已固定，workstation source clean，Pi 可 checkout 相同 SHA。
 - Operator-managed SSH alias/key/host fingerprint 已就緒且不寫入 repo 或 evidence。
 - 目標 Pi 已上電；任何需要安裝、下載、reboot、網路停用或 privilege 的動作另行核准。
+
+## Entry Review Record
+
+- Date：2026-08-18。
+- External Gate 0：Core Designer 已對 `0d415d174390665ed92793937d30334f01e3df14`
+  登錄 `COMPLETE`。
+- User authorization：核准 M0 啟動、operator-managed SSH 唯讀 inventory、
+  `/tmp` marker transfer/cleanup，並核准建立 Pi checkout。
+- Pi checkout：`/home/yee/workspace/poc_llm/snowboard-agent`；SSH preflight 觀察為
+  `aarch64`。Endpoint、account、key 與 host fingerprint 不進 repo/evidence。
+- Packet：`M0-TEST-REQUEST-001`；執行 exact SHA 為包含本 frozen packet 的
+  milestone commit，由 Test Controller 在 run 開始前登錄並雙端核對。
+- Entry decision：`IN_PROGRESS`；這不是 hardware result 或 Internal Tester acceptance。
 
 ## Work Packet
 

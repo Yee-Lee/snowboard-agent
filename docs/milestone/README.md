@@ -8,18 +8,18 @@
 
 ## Current Delivery Reachability
 
-最終交付可達性：`GATE0_R2_REVISION_002_RESUBMISSION_PENDING_CORE_REVIEW`。
+最終交付可達性：`GATE0_R2_COMPLETE_M0_IN_PROGRESS`。
 
-POC Team 已將 Core 對 `096cd7...` 的 Revision 002 原樣收件，並完成
-`OUT-M4B-2026-007-A～D` 的直接修正與六項 packet regression。`RESUBMITTED` 在本修訂
-commit push 後生效；Core Designer 對新 exact SHA 複驗前不得標示 `COMPLETE`。本輪沒有
-Ubuntu benchmark、Pi run 或 candidate evidence。
+Core Designer 已複驗 `llm` / `0d415d174390665ed92793937d30334f01e3df14`，
+關閉 `OUT-M4B-2026-007-A～D`，並正式登錄 Gate 0 R2 `COMPLETE`。PM handoff 015
+已解決；此 ACK 僅接受 planning/regression packet，不代表已執行 Ubuntu benchmark、
+Pi run 或 candidate evidence。
 
 ## External Contract Gates
 
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
-| **Gate 0** Contract Receipt | `R2 REVISION 002 RESUBMITTED / PENDING CORE REVIEW` | POC Team 提交；PM 收件；Core Designer 登錄 | Core 對新 exact SHA 確認 OUT-M4B-2026-007-A～D 已關閉 | 等待複驗；不執行 benchmark |
+| **Gate 0** Contract Receipt | `COMPLETE` | POC Team 提交；PM 收件；Core Designer 已登錄 | `0d415d...` 複驗通過；OUT-M4B-2026-007-A～D 已關閉 | 進行 M0 entry review；不自動啟動 M0 |
 | **Gate 1** Candidate Proposal & Ubuntu Pre-screen | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 固定 pairing、license/offline/provenance preflight、Ubuntu x86/arm64 初篩及最多兩個 finalists 均完整 | Core Designer ACK 後才可進 Gate 2A |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
@@ -32,14 +32,15 @@ POC Team 的 ACK、self-test 或 Technical Lead review 都不能把 External Gat
 
 | Milestone | 狀態 | 摘要 | 依據 |
 | --- | --- | --- | --- |
-| **M0** | `NOT_STARTED` | Environment、exact SHA、command lifecycle 與 evidence-chain readiness | [M0](m0_llm_readiness.md) |
+| **M0** | `IN_PROGRESS` | Environment、exact SHA、command lifecycle 與 evidence-chain readiness | [M0](m0_llm_readiness.md) |
 | **M1** | `PLANNED` | Freeze boundary/harness，固定 candidate pairing 與 preflight | [M1](m1_llm_contract_and_harness.md) |
 | **M2** | `PLANNED` | Ubuntu x86/arm64 pre-screen，最多保留兩個 Pi finalists | [M2](m2_llm_candidate_evaluation.md) |
 | **M3** | `PLANNED` | Gate 2A：Pi 5 LLM-only P1～P8、P10A、P11、P12；provisional finalist | [M3](m3_llm_child_pi_integration.md) |
 | **M4** | `PLANNED` | Gate 2B：Accepted Audio package、P9、P10B、2A regression；final winner | [M4](m4_llm_combined_validation_and_delivery.md) |
 
-Internal M0 在 entry review、test request 核准及 Pi 操作授權前保持 `NOT_STARTED`。
-Gate 0 行政收件完成不會自動啟動 M0，M0 完成也不能取代 Gate 1 Core Designer ACK。
+Internal M0 已完成 entry review 並獲得 test request/Pi 操作授權；只有執行、
+evidence review 與 Internal Tester confirmation 通過後才可標示 `COMPLETE`。M0 完成也不能
+取代 Gate 1 Core Designer ACK。
 
 ## Delivery Taxonomy and Traceability
 
@@ -50,11 +51,13 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 
 ## Open Dependencies, Risks and Adjustment Requests
 
-- **Blocker — OUT-M4B-2026-007-A～D re-review**：Core 已退回 `096cd7...`；POC 已修正
-  runner-owned log hygiene、cold P4、leader-first orphan cleanup 與 selector authentication，
-  等待 Core 對新 exact SHA 複驗，015 仍保持 open。
-- **Blocker — Internal M0 authorization**：Pi 5 4GB/8GB availability、operator access 與
-  immutable test request 尚待 entry review；M0 仍為 `NOT_STARTED`。
+- **Active — Internal M0 execution/review**：entry review 與 Pi 授權已完成；local
+  deterministic lifecycle packet 已觀察為 `PASS`（非 hardware evidence）。下一個唯一
+  獲准工作是在 milestone exact SHA 上執行 M0 packet、review evidence 並交付
+  Internal Tester confirmation。
+- **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0
+  配對 Gemma4-E2B、Qwen2.5-1.5B 與 Qwen2.5-0.5B；尚未完成 exact artifact、
+  license、offline 與 provenance manifest，也未凍結 candidate。
 - **Risk — Ubuntu arm64 availability**：Gate 1 所需 Ubuntu arm64 runner 尚未登錄；若無
   native runner，必須提出可重現替代方案並取得 Core Designer 同意，不能以 x86 結果代替。
 - **Dependency — M4a**：Accepted M4a Audio HAL full SHA、owner 與取得路徑仍待提供。
@@ -63,6 +66,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 
 ## Gate 0 R2 Submission Package
 
+- [Core Final ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)
 - [Readiness correction response](../response/RESP-POC-LLM-READINESS-2026-001.md)
 - [015 response](../response/RESP-PM-OUT-260817-015.md)
 - [Revised Gate 0 receipt](../delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md)
@@ -76,10 +80,12 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 ## Governing Documents
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
-- [PM-OUT-260817-015](../pm_handoff/PM-OUT-260817-015-llm-poc-contract-plan-review.md)
-- [Gate 0 R2 revision request](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md)
-- [Gate 0 R2 Revision 002](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md)
-- [Readiness correction](../pm_handoff/PM-POC-LLM-20260817-001-readiness-correction.md)
+- [Gate 0 R2 Final ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)
+- [LiteRT-LM candidate research reference](../pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md)
+- [PM-OUT-260817-015 (resolved history)](../pm_handoff/history/PM-OUT-260817-015-llm-poc-contract-plan-review.md)
+- [Gate 0 R2 revision request (history)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md)
+- [Gate 0 R2 Revision 002 (history)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md)
+- [Readiness correction (history)](../pm_handoff/history/PM-POC-LLM-20260817-001-readiness-correction.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)
 - [POC workspace/Pi entry point](../../poc_llm/README.md)

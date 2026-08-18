@@ -1,7 +1,7 @@
 # M0-TEST-REQUEST-001 — Environment and Evidence-chain Readiness
 
 - **Packet ID**: `M0-PACKET-001`
-- **Status**: `DRAFT / NOT AUTHORIZED FOR PI EXECUTION`
+- **Status**: `APPROVED / EXECUTE ONLY AT THE COMMIT CONTAINING THIS PACKET`
 - **Internal milestone**: M0
 - **Delivery areas**: D1, D5, D8
 - **Developer**: LLM POC Developer
@@ -11,6 +11,9 @@
 - **Python**: 3.11+
 - **Third-party dependencies**: none
 - **Model/runtime download**: prohibited
+- **Pi checkout**: `/home/yee/workspace/poc_llm/snowboard-agent`
+- **Workstation raw evidence**: `/tmp/llm-poc-m0-001`
+- **Pi temporary marker**: `/tmp/llm-poc-m0-marker-001.txt`
 
 This packet is executable from a clean checkout without a model download. Local execution only
 validates the deterministic harness. It does not start M0 or produce Pi hardware acceptance.
@@ -21,7 +24,8 @@ validates the deterministic harness. It does not start M0 or produce Pi hardware
 2. User approves the exact SHA, operator-managed SSH target, temporary `/tmp` marker transfer,
    cleanup, and read-only inventory commands. Installation, reboot, privilege and network changes
    remain separately prohibited unless explicitly approved.
-3. Workstation and Pi checkouts are clean and resolve to the same exact 40-character SHA.
+3. The POC Test Controller records the 40-character commit containing this immutable packet as
+   the run SHA. Workstation and Pi checkouts are clean and resolve to that same SHA before execution.
 4. `LLM_POC_SSH_TARGET` is provided by operator SSH configuration; endpoint, username, key path
    and host fingerprint are not written to repo or evidence.
 5. Raw evidence destination is outside Git and has an operator-approved retention policy.
@@ -59,7 +63,7 @@ Any missing frame, timeout, unexpected exit, remaining process group or incomple
 Run only after the entry approval. Capture command, UTC timestamp, exit code and sanitized output:
 
 ```sh
-ssh "$LLM_POC_SSH_TARGET" 'uname -a'
+ssh "$LLM_POC_SSH_TARGET" 'uname -srmv'
 ssh "$LLM_POC_SSH_TARGET" 'uname -m'
 ssh "$LLM_POC_SSH_TARGET" 'getconf GNU_LIBC_VERSION'
 ssh "$LLM_POC_SSH_TARGET" 'cat /proc/device-tree/model'
@@ -68,8 +72,8 @@ ssh "$LLM_POC_SSH_TARGET" 'df -B1 /'
 ssh "$LLM_POC_SSH_TARGET" 'cat /sys/class/thermal/thermal_zone0/temp'
 ssh "$LLM_POC_SSH_TARGET" 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
 ssh "$LLM_POC_SSH_TARGET" 'vcgencmd get_throttled'
-ssh "$LLM_POC_SSH_TARGET" 'git -C <approved-pi-checkout> rev-parse HEAD'
-ssh "$LLM_POC_SSH_TARGET" 'git -C <approved-pi-checkout> status --porcelain'
+ssh "$LLM_POC_SSH_TARGET" 'git -C /home/yee/workspace/poc_llm/snowboard-agent rev-parse HEAD'
+ssh "$LLM_POC_SSH_TARGET" 'git -C /home/yee/workspace/poc_llm/snowboard-agent status --porcelain'
 ```
 
 `vcgencmd` or cpufreq absence is recorded as environment evidence and may make the relevant case
@@ -77,10 +81,20 @@ ssh "$LLM_POC_SSH_TARGET" 'git -C <approved-pi-checkout> status --porcelain'
 
 ## Transfer and Cleanup Case
 
-The operator must replace `<approved-local-raw-dir>` and `<approved-pi-checkout>` before packet
-freeze. The only permitted Pi write is a uniquely named marker below `/tmp`; cleanup targets that
-exact file, never a directory or wildcard. Commands must be copied into the frozen request with a
-literal validated marker name before execution.
+The only permitted Pi write outside the approved checkout setup is the exact marker below `/tmp`.
+The raw directory must not exist before the run and must not be reused.
+
+```sh
+mkdir /tmp/llm-poc-m0-001
+sha256sum poc_llm/fixtures/m0/transfer-marker-v1.txt
+scp poc_llm/fixtures/m0/transfer-marker-v1.txt "$LLM_POC_SSH_TARGET":/tmp/llm-poc-m0-marker-001.txt
+ssh "$LLM_POC_SSH_TARGET" 'sha256sum /tmp/llm-poc-m0-marker-001.txt'
+scp "$LLM_POC_SSH_TARGET":/tmp/llm-poc-m0-marker-001.txt /tmp/llm-poc-m0-001/returned-marker.txt
+sha256sum /tmp/llm-poc-m0-001/returned-marker.txt
+ssh "$LLM_POC_SSH_TARGET" 'unlink /tmp/llm-poc-m0-marker-001.txt && test ! -e /tmp/llm-poc-m0-marker-001.txt'
+unlink /tmp/llm-poc-m0-001/returned-marker.txt
+test ! -e /tmp/llm-poc-m0-001/returned-marker.txt
+```
 
 Required observations: workstation SHA-256, uploaded Pi SHA-256, downloaded SHA-256 are identical;
 the exact Pi marker and local returned marker are absent after cleanup. Failure to prove absence is
@@ -99,7 +113,8 @@ the exact Pi marker and local returned marker are absent after cleanup. Failure 
 
 - Developer local validation: 0.5 working day; Pi execution: 0.5 day after availability; evidence
   review and Internal Tester confirmation: 0.5 day.
-- Pi 5 4GB/8GB availability: `Blocked — pending operator confirmation`.
+- Pi availability: `Ready — operator supplied an aarch64 target; exact RAM variant is determined
+  by the frozen inventory commands`.
 - Storage budget: <50 MiB; model/artifact download: 0.
 - Each case permits at most one controlled rerun after an identified environment correction. Keep
   the original result and reason. Further reruns require a change request and new packet version.

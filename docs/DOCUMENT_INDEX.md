@@ -6,11 +6,9 @@
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-17 revision，包含 OUT-M4B-2026-002～006
-* [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](pm_handoff/PM-OUT-260817-015-llm-poc-contract-plan-review.md) - Core contract / plan review 原始 brief
-* [`DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - Core 對 `1d3444...` 的 R2 複驗退件；`OUT-M4B-2026-007` Gate 1 false-PASS blocker
-* [`DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md) - Core 對 `096cd7...` 的複驗；007-A～D log/P4/cleanup/selector blockers
+* [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) - Core 對 `0d415d...` 的 Final ACK；Gate 0 R2 `COMPLETE`、015 resolved
+* [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
-* [`PM-POC-LLM-20260817-001-readiness-correction.md`](pm_handoff/PM-POC-LLM-20260817-001-readiness-correction.md) - Gate 0/M0、Ubuntu pre-screen、traceability、executable packet 與 authority boundary 修正；`On hold — pending PM-OUT-260817-015`
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -19,6 +17,10 @@
 * `core_audio_m3_requirements.md` - (歷史) 舊主線 M3 音訊要求
 * `audio_poc_delivery_checklist.md` - (歷史) 舊 Audio 交付清單
 * `audio_poc_development_guide.md` - (歷史) 舊 Audio 開發指引
+* `PM-OUT-260817-015-llm-poc-contract-plan-review.md` - (已解決) Core contract / plan review 原始 brief
+* `DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md` - (已關閉) `OUT-M4B-2026-007` revision request
+* `DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md` - (已關閉) `007-A～D` revision request
+* `PM-POC-LLM-20260817-001-readiness-correction.md` - (已完成) Gate 0/M0 readiness correction
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
