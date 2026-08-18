@@ -13,7 +13,7 @@ import re
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -65,6 +65,44 @@ def authorized_candidate(document: dict[str, Any], candidate_id: str) -> dict[st
     raise ValueError(f"candidate is absent from Gate 1B proposal: {candidate_id}")
 
 
+def controlled_artifact_path(
+    document: dict[str, Any], artifact: dict[str, Any], artifact_dir: Path
+) -> Path:
+    """Resolve one manifest locator below the supplied controlled-store root.
+
+    Gate 1B locators intentionally preserve the ``models/`` and ``sources/``
+    namespaces.  Resolving from those locators, rather than searching by
+    basename, prevents a same-named file in a different controlled namespace
+    from satisfying an authorized input check.
+    """
+
+    filename = str(artifact["filename"])
+    locator = artifact.get("controlled_locator")
+    if locator is None:
+        # Kept only for small synthetic unit-test documents.  All tracked Gate
+        # 1B artifacts have a locator and therefore take the strict path below.
+        return artifact_dir / filename
+
+    prefix = str(document["controlled_artifact_policy"]["locator_prefix"])
+    locator = str(locator)
+    if not locator.startswith(prefix):
+        raise ValueError(f"artifact locator is outside the controlled store: {filename}")
+    relative = PurePosixPath(locator.removeprefix(prefix))
+    if (
+        relative.is_absolute()
+        or not relative.parts
+        or any(part in {"", ".", ".."} for part in relative.parts)
+        or relative.name != filename
+    ):
+        raise ValueError(f"artifact locator is invalid: {filename}")
+
+    root = artifact_dir.resolve()
+    path = (root.joinpath(*relative.parts)).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(f"artifact locator escapes the controlled store: {filename}")
+    return path
+
+
 def verify_candidate_inputs(
     document: dict[str, Any], candidate_id: str, artifact_dir: Path
 ) -> list[VerifiedArtifact]:
@@ -76,7 +114,7 @@ def verify_candidate_inputs(
         if filename in seen_filenames:
             continue
         seen_filenames.add(filename)
-        path = artifact_dir / filename
+        path = controlled_artifact_path(document, artifact, artifact_dir)
         if not path.is_file():
             raise ValueError(f"required controlled artifact is unavailable: {filename}")
         actual_size = path.stat().st_size

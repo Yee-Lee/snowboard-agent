@@ -20,7 +20,10 @@ from audio_poc.m4a_conformance import (  # noqa: E402
     ConformanceScenario,
     M4aFakeConformanceHarness,
 )
-from audio_poc.m4a_authorized_preflight import create_report  # noqa: E402
+from audio_poc.m4a_authorized_preflight import (  # noqa: E402
+    controlled_artifact_path,
+    create_report,
+)
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -161,6 +164,30 @@ class TrackedDocumentTests(unittest.TestCase):
             report = create_report(document, "0" * 40, artifact_dir, ["asr-sherpa-sensevoice-int8-2025-09-09"])
         validate_m4a_authorized_preflight(report)
         self.assertEqual(report["candidate_reports"][0]["execution_status"], "PREFLIGHT_PASS_NOT_EXECUTED")
+
+    def test_authorized_preflight_uses_the_manifest_controlled_namespace(self) -> None:
+        artifact = b"exact controlled input"
+        digest = hashlib.sha256(artifact).hexdigest()
+        document = {
+            "controlled_artifact_policy": {
+                "locator_prefix": "controlled://audio-poc/gate1b/",
+            },
+        }
+        entry = {
+            "filename": "model.bin",
+            "controlled_locator": "controlled://audio-poc/gate1b/models/model.bin",
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact_dir = Path(temporary)
+            model_path = artifact_dir / "models/model.bin"
+            model_path.parent.mkdir()
+            model_path.write_bytes(artifact)
+            self.assertEqual(
+                controlled_artifact_path(document, entry, artifact_dir), model_path.resolve()
+            )
+            entry["controlled_locator"] = "controlled://audio-poc/gate1b/../model.bin"
+            with self.assertRaisesRegex(ValueError, "artifact locator is invalid"):
+                controlled_artifact_path(document, entry, artifact_dir)
 
     def test_option_a_live_config_requires_p4_durations_and_direct_devices(self) -> None:
         with self.assertRaisesRegex(ValueError, "direct ALSA hw"):

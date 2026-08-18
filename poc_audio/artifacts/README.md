@@ -14,3 +14,8 @@ audio, or private transcripts to Git.
 The tracked proposal records sanitized relative locators, upstream URLs,
 filenames, sizes, SHA-256 values, licenses/notices, and acquisition timestamps.
 The local directory contents are intentionally ignored.
+
+Keep the directory layout after `controlled://audio-poc/gate1b/` when staging
+an artifact store (for example, `models/` and `sources/`). The authorized
+preflight resolves the manifest locator below the supplied store root; it does
+not search a flattened directory by filename.
