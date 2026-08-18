@@ -90,6 +90,43 @@ def validate_m4a_conformance_result(document: dict[str, Any]) -> None:
         raise ValueError("M4a conformance cleanup flag disagrees with counts")
 
 
+def validate_m4a_authorized_preflight(document: dict[str, Any]) -> None:
+    """Validate an artifact-only report for the two focused Gate 1B rows."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "core_gate1b_ack_commit", "poc_gate1b_proposal_commit", "network_policy",
+        "candidate_reports",
+    }
+    _require_keys(document, required, "M4a authorized preflight")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-AUTHORIZED-PREFLIGHT":
+        raise ValueError("M4a authorized preflight identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a authorized preflight source SHA is invalid")
+    if document["core_gate1b_ack_commit"] != "790c0f86e12422542ef94cacd3c4dd850e346bca":
+        raise ValueError("M4a authorized preflight Core ACK binding is invalid")
+    if document["poc_gate1b_proposal_commit"] != "756ded69dd7b4661fcbac272d4d234c387890fc8":
+        raise ValueError("M4a authorized preflight proposal binding is invalid")
+    if document["network_policy"] != "offline_from_hashed_inputs":
+        raise ValueError("M4a authorized preflight network policy is invalid")
+    allowed = {"asr-sherpa-sensevoice-int8-2025-09-09", "tts-sherpa-matcha-zh-en-1.13.5"}
+    reports = document["candidate_reports"]
+    if not isinstance(reports, list) or not reports:
+        raise ValueError("M4a authorized preflight requires candidate reports")
+    ids = [item.get("candidate_id") for item in reports]
+    if len(ids) != len(set(ids)) or not set(ids) <= allowed:
+        raise ValueError("M4a authorized preflight has unauthorized or duplicate candidates")
+    for report in reports:
+        if report.get("execution_status") != "PREFLIGHT_PASS_NOT_EXECUTED":
+            raise ValueError("M4a authorized preflight must not claim execution")
+        artifacts = report.get("verified_artifacts")
+        if not isinstance(artifacts, list) or not artifacts:
+            raise ValueError("M4a authorized preflight requires verified artifacts")
+        for artifact in artifacts:
+            if not SHA256_RE.fullmatch(str(artifact.get("sha256"))) or int(artifact.get("size_bytes", 0)) <= 0:
+                raise ValueError("M4a authorized preflight artifact identity is invalid")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,

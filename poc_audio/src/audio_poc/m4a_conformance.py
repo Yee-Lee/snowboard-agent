@@ -82,11 +82,11 @@ class M4aFakeConformanceHarness:
         error_code: str | None = None
         force_abort_used = False
         try:
-            ready = await self._read(process, 1.0)
+            ready = await self._read(process, 3.0)
             self._expect(ready, "ready")
             events.append("ready")
             await self._send(process, {"command": "start", "session_id": session_id})
-            started_message = await self._read(process, 1.0)
+            started_message = await self._read(process, 3.0)
             self._expect(started_message, "started")
             events.append("started")
             await self._send(process, {"command": "run", "session_id": session_id})
@@ -185,7 +185,11 @@ class M4aFakeConformanceHarness:
             await asyncio.wait_for(process.wait(), scenario.terminate_grace_seconds)
             return False
         except TimeoutError:
-            process.kill()
+            try:
+                process.kill()
+            except ProcessLookupError:
+                await process.wait()
+                return False
             await process.wait()
             return True
 

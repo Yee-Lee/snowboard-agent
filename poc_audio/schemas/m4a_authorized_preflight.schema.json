@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a authorized candidate preflight report",
+  "type": "object",
+  "required": ["schema_version", "report_id", "generated_at_utc", "poc_source_sha", "core_gate1b_ack_commit", "poc_gate1b_proposal_commit", "network_policy", "candidate_reports"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "report_id": {"const": "M4A-G1B-AUTHORIZED-PREFLIGHT"},
+    "poc_source_sha": {"pattern": "^[0-9a-f]{40}$"},
+    "core_gate1b_ack_commit": {"const": "790c0f86e12422542ef94cacd3c4dd850e346bca"},
+    "poc_gate1b_proposal_commit": {"const": "756ded69dd7b4661fcbac272d4d234c387890fc8"},
+    "network_policy": {"const": "offline_from_hashed_inputs"},
+    "candidate_reports": {"type": "array", "minItems": 1}
+  }
+}

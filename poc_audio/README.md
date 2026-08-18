@@ -152,6 +152,21 @@ internal-only recording authorization. A completed recording set still needs
 checksum/metadata review and the pinned conversion boundary before it becomes a
 candidate fixture.
 
+### M2 Gate 1B authorized artifact preflight
+
+Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On
+the Pi, point it at the external controlled artifact directory before any
+install/import/load. It verifies exact filename, byte size and SHA-256 and
+writes a report that explicitly remains `PREFLIGHT_PASS_NOT_EXECUTED`:
+
+```bash
+bash poc_audio/tools/run_m4a_authorized_preflight.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --output /tmp/m4a-authorized-preflight.json
+```
+
+The check is offline and does not install or execute a candidate runtime.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests

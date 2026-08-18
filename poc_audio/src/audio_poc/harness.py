@@ -21,7 +21,8 @@ class Scenario:
     worker_mode: str
     timeout_seconds: float
     cancel_after_seconds: float | None = None
-    terminate_grace_seconds: float = 0.15
+    # A normal SIGTERM must not become a false force-abort on a busy Pi host.
+    terminate_grace_seconds: float = 1.0
 
 
 class FakeProcessHarness:
@@ -49,7 +50,7 @@ class FakeProcessHarness:
         force_abort_used = False
 
         try:
-            ready = await self._read_message(process, timeout_seconds=1.0)
+            ready = await self._read_message(process, timeout_seconds=3.0)
             if ready.get("event") != "ready":
                 error_code = "FAKE_READY_PROTOCOL_ERROR"
                 force_abort_used = await self._terminate(process, scenario)
@@ -168,7 +169,11 @@ class FakeProcessHarness:
             await asyncio.wait_for(process.wait(), scenario.terminate_grace_seconds)
             return False
         except TimeoutError:
-            process.kill()
+            try:
+                process.kill()
+            except ProcessLookupError:
+                await process.wait()
+                return False
             await process.wait()
             return True
 

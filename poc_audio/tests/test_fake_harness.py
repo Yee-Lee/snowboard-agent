@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import array
+import hashlib
 import json
 import sys
+import tempfile
 import unittest
 import wave
 from pathlib import Path
@@ -18,6 +20,7 @@ from audio_poc.m4a_conformance import (  # noqa: E402
     ConformanceScenario,
     M4aFakeConformanceHarness,
 )
+from audio_poc.m4a_authorized_preflight import create_report  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -55,6 +58,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
     validate_fixture_catalog,
     validate_gate1b_candidate_proposal,
+    validate_m4a_authorized_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
 )
@@ -139,6 +143,25 @@ class M4aConformanceHarnessTests(unittest.IsolatedAsyncioTestCase):
 
 
 class TrackedDocumentTests(unittest.TestCase):
+    def test_authorized_preflight_only_accepts_the_two_acked_rows(self) -> None:
+        artifact = b"exact controlled input"
+        digest = hashlib.sha256(artifact).hexdigest()
+        document = {
+            "candidates": [{
+                "candidate_id": "asr-sherpa-sensevoice-int8-2025-09-09",
+                "domain": "asr",
+                "requested_disposition": "REQUEST_AUTHORIZE",
+                "engine": {"name": "sherpa-onnx", "version": "1.13.5"},
+                "artifacts": [{"role": "model", "filename": "model.bin", "size_bytes": len(artifact), "sha256": digest}],
+            }]
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact_dir = Path(temporary)
+            (artifact_dir / "model.bin").write_bytes(artifact)
+            report = create_report(document, "0" * 40, artifact_dir, ["asr-sherpa-sensevoice-int8-2025-09-09"])
+        validate_m4a_authorized_preflight(report)
+        self.assertEqual(report["candidate_reports"][0]["execution_status"], "PREFLIGHT_PASS_NOT_EXECUTED")
+
     def test_option_a_live_config_requires_p4_durations_and_direct_devices(self) -> None:
         with self.assertRaisesRegex(ValueError, "direct ALSA hw"):
             LiveConfig("default", "hw:0,0").validate()

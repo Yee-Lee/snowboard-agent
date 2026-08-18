@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP2 COMPLETE / WP3 NEXT`
+Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP3 PREFLIGHT IN PROGRESS`
 
 ## 目標
 
@@ -87,7 +87,7 @@ M2 執行分成四個受控步驟：
    `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
    force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
    candidate runtime。
-4. **Authorized comparison**：`PLANNED / NEXT`；只執行兩個 primary，
+4. **Authorized comparison**：`PREFLIGHT IN PROGRESS`；只執行兩個 primary，
    累積 fixture benchmark 與 preliminary Gate 2 evidence。
 
 ## Entry Conditions
