@@ -1,7 +1,7 @@
 # LLM POC Workspace
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
-Revision 001 已由 POC Team 修正、等待 Core 對新 exact SHA 複驗；Internal M0 仍為 `NOT_STARTED`。本文件不另行建立
+Revision 002 已由 POC Team 修正、等待 Core 對新 exact SHA 複驗；Internal M0 仍為 `NOT_STARTED`。本文件不另行建立
 狀態，也不代表已核准連線 Pi、安裝 runtime、下載模型或開始測試。
 
 ## Layout
@@ -29,13 +29,13 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 ## Core 2026-08-18 R2 Revision Artifacts
 
 - `deliveries/POC-llm-DEL-2026-001-R2.md`：015 複驗 Initial Manifest。
-- `tests/gate1/GATE1-PACKET-002.md`：fail-closed frozen Ubuntu x86_64/aarch64 packet；supersedes packet 001。
+- `tests/gate1/GATE1-PACKET-003.md`：authenticated fail-closed Ubuntu packet；supersedes packet 002。
 - `fixtures/gate1/catalog.json`：20-case P2/P3 catalog；每 case 3 repetitions。
 - `harness/gate1_validator.py`、`harness/gate1-lock.json`：validator v1.0.0 與 checksums。
 - `tools/run_gate1_prescreen.py`、`tools/select_gate1_finalists.py`：portable gates、bounded cleanup、both-platform max-two selection。
 - `tools/run_m4b_gate.py`：Gate 2A/2B frozen case-set plan validator；不執行 hardware。
 - `fixtures/gate1/candidate.schema.json`、`evidence/gate1/gate1-result.schema.json`、`evidence/gate1/gate1-selection.schema.json`：locked schemas。
-- `tests/gate1/test_gate1_packet.py`：protocol flow、no-LLM false-PASS regression 與 selector self-test。
+- `tests/gate1/test_gate1_packet.py`：protocol/no-LLM、log leak、cold P4、orphan cleanup、unauthenticated selector 與 max-two regressions。
 
 Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不是 candidate evidence。
 

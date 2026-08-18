@@ -3,6 +3,17 @@
   "revision": "2026-08-17-r1",
   "repetitions": 3,
   "validator_version": "1.0.0",
+  "log_hygiene": {
+    "scanner_version": "1.0.0",
+    "forbidden_patterns": [
+      {"id":"RAW_MODEL_OUTPUT","pattern":"raw model output:"},
+      {"id":"PRIVATE_PROMPT","pattern":"BEGIN PRIVATE PROMPT"},
+      {"id":"SECRET_PAYLOAD","pattern":"SECRET_PAYLOAD"},
+      {"id":"CREDENTIAL_ASSIGNMENT","pattern":"credential="},
+      {"id":"API_KEY_ASSIGNMENT","pattern":"api_key="},
+      {"id":"HIDDEN_CONTEXT","pattern":"hidden context:"}
+    ]
+  },
   "allowed_actions": ["speak", "tool", "rest"],
   "allowed_perceptions": ["listen", "read", "look"],
   "cases": [

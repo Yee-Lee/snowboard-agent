@@ -7,7 +7,7 @@
 - **From**: LLM POC Team
 - **To**: PM for Core Designer recording
 - **Date**: 2026-08-18
-- **Status**: `R2 REVISION 001 RESUBMITTED — PENDING CORE DESIGNER EXACT-SHA REVIEW`
+- **Status**: `R2 REVISION 002 RESUBMITTED — PENDING CORE DESIGNER EXACT-SHA REVIEW`
 
 本 receipt 不包含 delivery commit SHA。PM 拉回約定 branch 後自行記錄實際 HEAD，再交
 Core Designer 登錄。POC Team 不以 branch 名稱、內部 ACK 或本 receipt 自行宣告 Gate 0
@@ -31,7 +31,7 @@ LLM POC Team 確認已閱讀並承接 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的
 
 | State type | Current state | Recorder / approver |
 | --- | --- | --- |
-| External Gate 0 | `SUBMITTED R2` | Core Designer 對 R2 exact SHA intake 後才 `COMPLETE` |
+| External Gate 0 | `R2 REVISION 002 RESUBMITTED / PENDING CORE REVIEW` | Core Designer 對新 exact SHA 複驗後才 `COMPLETE` |
 | Internal M0 | `NOT_STARTED` | Entry review、User/Pi 授權、immutable packet 核准後才可開始 |
 | External Gate 1 | `NOT_STARTED / BLOCKED` | Ubuntu pre-screen 完成後由 Core Designer 書面確認 |
 | External Gate 2A | `NOT_STARTED / BLOCKED` | Gate 1 ACK 後才可執行 LLM-only；僅 provisional finalist |
@@ -41,6 +41,10 @@ Core 對 `1d3444009a1edbf63e1b24a5e6977cbdb7203c80` 提出的
 `DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001` 已收件。POC 已針對唯一 blocker
 `OUT-M4B-2026-007` 以 `G1-UBUNTU-PRESCREEN-002` 修正；在 Core 複驗新 exact SHA 前，
 Gate 0 R2 仍未完成，015 仍未關閉。
+
+Core 對 `096cd728a277db584b23a5b0c91e3e7692b672fb` 提出的 Revision 002 已收件。
+POC 以 `G1-UBUNTU-PRESCREEN-003` 修正 `OUT-M4B-2026-007-A～D`；在 Core 複驗新
+exact SHA 前，上述狀態與 015 blocker 均不自行關閉。
 
 Gate 0 行政收件與 Internal M0 readiness 完全分離。Receipt 提交不代表 Pi 存取、安裝、
 下載、網路切換、Ubuntu benchmark 或 Gate 2A/2B hardware run 已獲准。
@@ -65,7 +69,7 @@ Authoritative Gate 1／2A／2B work-package plan：
 
 Authoritative Gate 1 executable packet：
 
-`poc_llm/tests/gate1/GATE1-PACKET-002.md`
+`poc_llm/tests/gate1/GATE1-PACKET-003.md`
 
 ## 4. Gate 1 Preparation Boundary
 

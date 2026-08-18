@@ -1,13 +1,13 @@
 {
-  "packet_id": "G1-UBUNTU-PRESCREEN-002",
+  "packet_id": "G1-UBUNTU-PRESCREEN-003",
   "validator_version": "1.0.0",
   "artifacts": {
-    "catalog": {"path":"poc_llm/fixtures/gate1/catalog.json","sha256":"c4b1f29228324848fe5f196a8f6e3e61412daa0ed5fd79ce9c9d04857b4c2796"},
+    "catalog": {"path":"poc_llm/fixtures/gate1/catalog.json","sha256":"e0b23661f225a846d8ad237140aac4196a2cd5ebc15980be33603abd8befe50f"},
     "candidate_schema": {"path":"poc_llm/fixtures/gate1/candidate.schema.json","sha256":"569f91c3143f0f577343d2efc1c4dd29c6a1e6d7382f1416900d88de191a416a"},
     "validator": {"path":"poc_llm/harness/gate1_validator.py","sha256":"d209f1cb1532ab51bca212298fa681d3a0045710e6a0248fac8ffca04c54d542"},
-    "runner": {"path":"poc_llm/tools/run_gate1_prescreen.py","sha256":"3b5f3cf0cff3d8d93f7fd14b00b69c51f877329ec7eda78d8c595190e5adffc6"},
-    "result_schema": {"path":"poc_llm/evidence/gate1/gate1-result.schema.json","sha256":"fbfa75a50aa56ac437f8f39693c030df5f06938cfbd9edf07fd0f46b355e1f6e"},
-    "selection_schema": {"path":"poc_llm/evidence/gate1/gate1-selection.schema.json","sha256":"2754f1d4bfb9a4246d719dca29773c4062daca0ea1412c5474bea9a0d82aab4d"},
-    "selector": {"path":"poc_llm/tools/select_gate1_finalists.py","sha256":"3284dd28ceff3ade8e277bcf6b1f06950eb53ea7d04184b1a20e556ca6fff371"}
+    "runner": {"path":"poc_llm/tools/run_gate1_prescreen.py","sha256":"a02a2513d3b3fe5ae26d54b6d16dcd1d005128b19cf0a5fb94f8e1968b1be74b"},
+    "result_schema": {"path":"poc_llm/evidence/gate1/gate1-result.schema.json","sha256":"6313d221311ca37044625095cce7a309a501968f41d221fbcd1b1fc9b869ca7c"},
+    "selection_schema": {"path":"poc_llm/evidence/gate1/gate1-selection.schema.json","sha256":"b4425735f711733d7d956dd76ba8d7b3034bc8ed42c579cccd93ff84b75fb4d7"},
+    "selector": {"path":"poc_llm/tools/select_gate1_finalists.py","sha256":"acc77c15bb26fac7fe5986a52600e2d939c0008eb500bd71810959bd4cf6d1d2"}
   }
 }

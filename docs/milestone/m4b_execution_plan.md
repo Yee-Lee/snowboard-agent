@@ -2,7 +2,7 @@
 
 狀態：`COMMITTED PLANNING PACKET / EXECUTION NOT AUTHORIZED`
 
-Revision：`2026-08-18-r2`
+Revision：`2026-08-18-r3`
 
 Owner：POC Technical Lead
 
@@ -32,14 +32,14 @@ benchmark、Pi run 或 candidate evidence。
 
 | Field | Definition |
 | --- | --- |
-| Package | `G1-UBUNTU-PRESCREEN-002` |
+| Package | `G1-UBUNTU-PRESCREEN-003` |
 | Owner / approver | Developer + POC Test Controller / Technical Lead review / Core Designer ACK |
 | Dependency | Gate 0 recorded complete；M0 confirmed；Ubuntu x86_64/aarch64 owners and artifact approvals |
 | Platform | Ubuntu x86_64 and native Ubuntu aarch64; both mandatory |
 | Entry / exit | Frozen lock + candidate manifests → both-platform evidence, at most two proposed finalists, Core written ACK |
 | Estimate | 3–5 working days after artifacts and both runners are available |
 | Re-estimation trigger | Candidate count/pairing changes, runner unavailable >1 day, artifact/storage delta >25%, license or aarch64 incompatibility |
-| Runner / command | Fail-closed `poc_llm/tools/run_gate1_prescreen.py` + both-platform selector; exact commands in `poc_llm/tests/gate1/GATE1-PACKET-002.md` |
+| Runner / command | Authenticated fail-closed runner + both-platform selector; exact commands in `poc_llm/tests/gate1/GATE1-PACKET-003.md` |
 | Evidence | Raw outside Git under approved run ID; sanitized schema `poc_llm/evidence/gate1/gate1-result.schema.json` |
 | Cleanup | Success requires SHUTDOWN ACK, exit 0 and absent process group; failure uses bounded group TERM→KILL→wait and records proof; unique raw dir |
 | Failure / no-go | Schema/identity drift, incomplete P1/P2/P3/P4/P5/P6/P8/P11, log/exit/cleanup violation or missing paired platform rejects pairing; zero eligible pairing produces no-go/change request |
@@ -53,6 +53,11 @@ from candidate-supplied P2/P3 bulk JSON. The selector validates both same-manife
 requires the exact 60-case and P4 matrices, applies the frozen deterministic ranking and emits a
 schema-valid aggregate with at most two proposed finalists. Protocol and expected-JSON-printer
 regressions are test-only and do not start Gate 1.
+
+Revision r3 additionally makes log-hygiene evidence runner-owned, requires complete cold/hot P4
+raw samples and aggregates, reconciles the process group even after leader exit, and makes selector
+eligibility depend on available identities matching the loaded lock and supplied manifests. The
+four A～D negative regressions remain test-only and do not constitute candidate evidence.
 
 ## Gate 2A Work Packages — LLM-only Pi 5
 

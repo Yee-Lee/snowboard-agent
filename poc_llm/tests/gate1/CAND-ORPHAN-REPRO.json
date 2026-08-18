@@ -1,0 +1,11 @@
+{
+  "candidate_id":"CAND-ORPHAN-REPRO","pairing_revision":"negative-r1",
+  "runtime":{"name":"protocol-negative-double","version":"2","path":"poc_llm/tests/gate1/fake_candidate.py","sha256":"dcf71aae813f7cdb0c90ba1c5a395479de4e62e090f82551150e7dc16a3b0271"},
+  "model":{"name":"test-only-artifact","version":"1","path":"poc_llm/tests/gate1/fake_model.artifact.txt","sha256":"8bfee74c9e67b53729378823e3cf623f3532d8fbb178f0a7e73467bda23872e3"},
+  "config":{"name":"self-test-config","version":"1","path":"poc_llm/tests/gate1/fake_config.json","sha256":"4dc00c2bdda06da54bfbe1078d425173d4febd7b097d6c2afec96e7d1b8a2d4c"},
+  "quantization":"test-only","license":"test-only","offline":true,"aarch64_compatible":true,
+  "commands":{
+    "ubuntu-x86_64":{"argv":["python3","poc_llm/tests/gate1/fake_candidate.py","--catalog","poc_llm/fixtures/gate1/catalog.json","--candidate-id","CAND-ORPHAN-REPRO","--runtime-sha","dcf71aae813f7cdb0c90ba1c5a395479de4e62e090f82551150e7dc16a3b0271","--model-sha","8bfee74c9e67b53729378823e3cf623f3532d8fbb178f0a7e73467bda23872e3","--config-sha","4dc00c2bdda06da54bfbe1078d425173d4febd7b097d6c2afec96e7d1b8a2d4c","--behavior","orphan"],"sha256":"273012164289cb5f4c353f3a41c56e55b7bf185da4a3d8af0b1fc674398f92f5"},
+    "ubuntu-aarch64":{"argv":["python3","poc_llm/tests/gate1/fake_candidate.py","--catalog","poc_llm/fixtures/gate1/catalog.json","--candidate-id","CAND-ORPHAN-REPRO","--runtime-sha","dcf71aae813f7cdb0c90ba1c5a395479de4e62e090f82551150e7dc16a3b0271","--model-sha","8bfee74c9e67b53729378823e3cf623f3532d8fbb178f0a7e73467bda23872e3","--config-sha","4dc00c2bdda06da54bfbe1078d425173d4febd7b097d6c2afec96e7d1b8a2d4c","--behavior","orphan"],"sha256":"273012164289cb5f4c353f3a41c56e55b7bf185da4a3d8af0b1fc674398f92f5"}
+  }
+}

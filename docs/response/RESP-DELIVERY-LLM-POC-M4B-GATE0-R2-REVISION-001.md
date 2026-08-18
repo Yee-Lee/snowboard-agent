@@ -7,6 +7,7 @@
 - **Response SHA**: supplied after commit; not self-prefilled
 - **Finding**: `OUT-M4B-2026-007`
 - **Status**: `TEAM REVISED — CORE EXACT-SHA RE-REVIEW PENDING`
+- **Superseded by**: `RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002`
 - **Execution boundary**: no Ubuntu candidate benchmark, Pi run or candidate evidence performed
 
 The Core delivery was copied byte-for-byte into the local read-only income directory before review.

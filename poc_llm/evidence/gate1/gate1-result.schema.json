@@ -1,10 +1,10 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "$id":"urn:snowboard:llm-poc:gate1:result:2.0",
+  "$id":"urn:snowboard:llm-poc:gate1:result:3.0",
   "type":"object","additionalProperties":false,
-  "required":["packet_id","run_id","candidate_id","pairing_revision","platform","result","identity","gates","cases","metrics","cleanup","violations"],
+  "required":["packet_id","run_id","candidate_id","pairing_revision","platform","result","identity","gates","cases","metrics","log_hygiene","cleanup","violations"],
   "properties":{
-    "packet_id":{"const":"G1-UBUNTU-PRESCREEN-002"},
+    "packet_id":{"const":"G1-UBUNTU-PRESCREEN-003"},
     "run_id":{"type":"string","pattern":"^G1-RUN-[A-Z0-9-]+$"},
     "candidate_id":{"type":"string","pattern":"^(CAND-[A-Z0-9-]+|UNBOUND)$"},
     "pairing_revision":{"type":"string","minLength":1},
@@ -15,10 +15,9 @@
       "required":["lock_sha256","manifest_sha256","command_sha256","runtime_sha256","model_sha256","config_sha256","catalog_sha256","candidate_schema_sha256","validator_sha256","runner_sha256","result_schema_sha256","selection_schema_sha256","selector_sha256"],
       "properties":{
         "lock_sha256":{"$ref":"#/$defs/sha"},"manifest_sha256":{"$ref":"#/$defs/sha"},
-        "command_sha256":{"$ref":"#/$defs/sha"},
-        "runtime_sha256":{"$ref":"#/$defs/sha"},"model_sha256":{"$ref":"#/$defs/sha"},
-        "config_sha256":{"$ref":"#/$defs/sha"},"catalog_sha256":{"$ref":"#/$defs/sha"},
-        "candidate_schema_sha256":{"$ref":"#/$defs/sha"},
+        "command_sha256":{"$ref":"#/$defs/sha"},"runtime_sha256":{"$ref":"#/$defs/sha"},
+        "model_sha256":{"$ref":"#/$defs/sha"},"config_sha256":{"$ref":"#/$defs/sha"},
+        "catalog_sha256":{"$ref":"#/$defs/sha"},"candidate_schema_sha256":{"$ref":"#/$defs/sha"},
         "validator_sha256":{"$ref":"#/$defs/sha"},"runner_sha256":{"$ref":"#/$defs/sha"},
         "result_schema_sha256":{"$ref":"#/$defs/sha"},
         "selection_schema_sha256":{"$ref":"#/$defs/sha"},"selector_sha256":{"$ref":"#/$defs/sha"}
@@ -45,34 +44,101 @@
     }},
     "metrics":{
       "type":"object","additionalProperties":false,
-      "required":["cold_total_ms","hot_total_ms","ttft_ms","output_tokens","hot_tokens_per_second_samples","cold_total_ms_p50","cold_total_ms_p95","hot_total_ms_p50","hot_total_ms_p95","hot_ttft_ms_p50","hot_ttft_ms_p95","hot_tokens_per_second_p50","hot_tokens_per_second_p95","peak_rss_bytes","disk_bytes"],
+      "required":["cold_total_ms","cold_ttft_ms","cold_output_tokens","cold_tokens_per_second_samples","hot_total_ms","hot_ttft_ms","hot_output_tokens","hot_tokens_per_second_samples","cold_total_ms_p50","cold_total_ms_p95","cold_ttft_ms_p50","cold_ttft_ms_p95","cold_tokens_per_second_p50","cold_tokens_per_second_p95","hot_total_ms_p50","hot_total_ms_p95","hot_ttft_ms_p50","hot_ttft_ms_p95","hot_tokens_per_second_p50","hot_tokens_per_second_p95","peak_rss_bytes","disk_bytes"],
       "properties":{
-        "cold_total_ms":{"type":"array","items":{"type":"number","minimum":0}},
-        "hot_total_ms":{"type":"array","items":{"type":"number","minimum":0}},
-        "ttft_ms":{"type":"array","items":{"type":"number","minimum":0}},
-        "output_tokens":{"type":"array","items":{"type":"integer","minimum":0}},
-        "hot_tokens_per_second_samples":{"type":"array","items":{"type":"number","minimum":0}},
-        "cold_total_ms_p50":{"type":"number","minimum":0},
-        "cold_total_ms_p95":{"type":"number","minimum":0},
-        "hot_total_ms_p50":{"type":"number","minimum":0},
-        "hot_total_ms_p95":{"type":"number","minimum":0},
-        "hot_ttft_ms_p50":{"type":"number","minimum":0},
-        "hot_ttft_ms_p95":{"type":"number","minimum":0},
-        "hot_tokens_per_second_p50":{"type":"number","minimum":0},
-        "hot_tokens_per_second_p95":{"type":"number","minimum":0},
-        "peak_rss_bytes":{"type":"integer","minimum":0},
-        "disk_bytes":{"type":"integer","minimum":0}
+        "cold_total_ms":{"$ref":"#/$defs/number_array"},
+        "cold_ttft_ms":{"$ref":"#/$defs/number_array"},
+        "cold_output_tokens":{"$ref":"#/$defs/token_array"},
+        "cold_tokens_per_second_samples":{"$ref":"#/$defs/number_array"},
+        "hot_total_ms":{"$ref":"#/$defs/number_array"},
+        "hot_ttft_ms":{"$ref":"#/$defs/number_array"},
+        "hot_output_tokens":{"$ref":"#/$defs/token_array"},
+        "hot_tokens_per_second_samples":{"$ref":"#/$defs/number_array"},
+        "cold_total_ms_p50":{"$ref":"#/$defs/nonnegative"},"cold_total_ms_p95":{"$ref":"#/$defs/nonnegative"},
+        "cold_ttft_ms_p50":{"$ref":"#/$defs/nonnegative"},"cold_ttft_ms_p95":{"$ref":"#/$defs/nonnegative"},
+        "cold_tokens_per_second_p50":{"$ref":"#/$defs/nonnegative"},"cold_tokens_per_second_p95":{"$ref":"#/$defs/nonnegative"},
+        "hot_total_ms_p50":{"$ref":"#/$defs/nonnegative"},"hot_total_ms_p95":{"$ref":"#/$defs/nonnegative"},
+        "hot_ttft_ms_p50":{"$ref":"#/$defs/nonnegative"},"hot_ttft_ms_p95":{"$ref":"#/$defs/nonnegative"},
+        "hot_tokens_per_second_p50":{"$ref":"#/$defs/nonnegative"},"hot_tokens_per_second_p95":{"$ref":"#/$defs/nonnegative"},
+        "peak_rss_bytes":{"type":"integer","minimum":0},"disk_bytes":{"type":"integer","minimum":0}
+      }
+    },
+    "log_hygiene":{
+      "type":"object","additionalProperties":false,
+      "required":["scanner_version","stderr_sha256","stderr_bytes_scanned","stdout_frames_scanned","forbidden_sentinel_ids","candidate_claims_ignored"],
+      "properties":{
+        "scanner_version":{"type":"string","minLength":1},
+        "stderr_sha256":{"$ref":"#/$defs/sha"},
+        "stderr_bytes_scanned":{"type":"integer","minimum":0},
+        "stdout_frames_scanned":{"type":"integer","minimum":0},
+        "forbidden_sentinel_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}},
+        "candidate_claims_ignored":{"const":true}
       }
     },
     "cleanup":{
       "type":"object","additionalProperties":false,
-      "required":["exit_code","waited","process_group_absent"],
-      "properties":{"exit_code":{"type":["integer","null"]},"waited":{"type":"boolean"},"process_group_absent":{"type":"boolean"}}
+      "required":["exit_code","waited","term_sent","kill_sent","process_group_absent"],
+      "properties":{
+        "exit_code":{"type":["integer","null"]},"waited":{"type":"boolean"},
+        "term_sent":{"type":"boolean"},"kill_sent":{"type":"boolean"},
+        "process_group_absent":{"type":"boolean"}
+      }
     },
     "violations":{"type":"array","items":{"type":"string"}}
   },
+  "allOf":[
+    {
+      "if":{"properties":{"result":{"enum":["PASS","Core threshold decision required"]}}},
+      "then":{
+        "properties":{
+          "identity":{"properties":{
+            "lock_sha256":{"$ref":"#/$defs/available_sha"},"manifest_sha256":{"$ref":"#/$defs/available_sha"},
+            "command_sha256":{"$ref":"#/$defs/available_sha"},"runtime_sha256":{"$ref":"#/$defs/available_sha"},
+            "model_sha256":{"$ref":"#/$defs/available_sha"},"config_sha256":{"$ref":"#/$defs/available_sha"},
+            "catalog_sha256":{"$ref":"#/$defs/available_sha"},"candidate_schema_sha256":{"$ref":"#/$defs/available_sha"},
+            "validator_sha256":{"$ref":"#/$defs/available_sha"},"runner_sha256":{"$ref":"#/$defs/available_sha"},
+            "result_schema_sha256":{"$ref":"#/$defs/available_sha"},
+            "selection_schema_sha256":{"$ref":"#/$defs/available_sha"},"selector_sha256":{"$ref":"#/$defs/available_sha"}
+          }},
+          "cases":{"minItems":60,"maxItems":60},
+          "metrics":{"properties":{
+            "cold_total_ms":{"minItems":3,"maxItems":3},"cold_ttft_ms":{"minItems":3,"maxItems":3},
+            "cold_output_tokens":{"minItems":3,"maxItems":3},"cold_tokens_per_second_samples":{"minItems":3,"maxItems":3},
+            "hot_total_ms":{"minItems":20,"maxItems":20},"hot_ttft_ms":{"minItems":20,"maxItems":20},
+            "hot_output_tokens":{"minItems":20,"maxItems":20},"hot_tokens_per_second_samples":{"minItems":20,"maxItems":20}
+          }},
+          "log_hygiene":{"properties":{"forbidden_sentinel_ids":{"maxItems":0}}},
+          "cleanup":{"properties":{
+            "exit_code":{"const":0},"waited":{"const":true},"term_sent":{"const":false},
+            "kill_sent":{"const":false},"process_group_absent":{"const":true}
+          }},
+          "violations":{"maxItems":0}
+        }
+      }
+    },
+    {
+      "if":{"properties":{"result":{"const":"PASS"}}},
+      "then":{"properties":{"gates":{"properties":{
+        "P1":{"const":"PASS"},"P2":{"const":"PASS"},"P3":{"const":"PASS"},"P4":{"const":"PASS"},
+        "P5":{"const":"PASS"},"P6":{"enum":["PASS","Conditional escalation"]},
+        "P8":{"const":"PASS"},"P11":{"const":"PASS"}
+      }}}}
+    },
+    {
+      "if":{"properties":{"result":{"const":"Core threshold decision required"}}},
+      "then":{"properties":{"gates":{"properties":{
+        "P1":{"const":"PASS"},"P2":{"const":"PASS"},"P3":{"const":"PASS"},
+        "P4":{"const":"Core threshold decision required"},"P5":{"const":"PASS"},
+        "P6":{"enum":["PASS","Conditional escalation"]},"P8":{"const":"PASS"},"P11":{"const":"PASS"}
+      }}}}
+    }
+  ],
   "$defs":{
     "sha":{"type":"string","pattern":"^([0-9a-f]{64}|UNAVAILABLE)$"},
+    "available_sha":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "nonnegative":{"type":"number","minimum":0},
+    "number_array":{"type":"array","items":{"type":"number","minimum":0}},
+    "token_array":{"type":"array","items":{"type":"integer","minimum":1,"maximum":16}},
     "gate":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required","Conditional escalation","Pending"]}
   }
 }

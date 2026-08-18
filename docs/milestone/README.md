@@ -8,18 +8,18 @@
 
 ## Current Delivery Reachability
 
-最終交付可達性：`GATE0_R2_REVISION_001_RESUBMISSION_PENDING_CORE_REVIEW`。
+最終交付可達性：`GATE0_R2_REVISION_002_RESUBMISSION_PENDING_CORE_REVIEW`。
 
-POC Team 已將 Core 對 `1d3444...` 的 R2 revision request 原樣收件並完成
-`OUT-M4B-2026-007` fail-closed packet 修正。`RESUBMITTED` 在本修訂 commit push 後生效；
-Core Designer 對新 exact SHA 複驗前不得標示 `COMPLETE`。本輪沒有 Ubuntu benchmark、
-Pi run 或 candidate evidence；只有 protocol/negative/selector self-test。
+POC Team 已將 Core 對 `096cd7...` 的 Revision 002 原樣收件，並完成
+`OUT-M4B-2026-007-A～D` 的直接修正與六項 packet regression。`RESUBMITTED` 在本修訂
+commit push 後生效；Core Designer 對新 exact SHA 複驗前不得標示 `COMPLETE`。本輪沒有
+Ubuntu benchmark、Pi run 或 candidate evidence。
 
 ## External Contract Gates
 
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
-| **Gate 0** Contract Receipt | `R2 REVISION 001 RESUBMITTED / PENDING CORE REVIEW` | POC Team 提交；PM 收件；Core Designer 登錄 | Core 對新 exact SHA 確認 OUT-M4B-2026-007 已關閉 | 等待複驗；不執行 benchmark |
+| **Gate 0** Contract Receipt | `R2 REVISION 002 RESUBMITTED / PENDING CORE REVIEW` | POC Team 提交；PM 收件；Core Designer 登錄 | Core 對新 exact SHA 確認 OUT-M4B-2026-007-A～D 已關閉 | 等待複驗；不執行 benchmark |
 | **Gate 1** Candidate Proposal & Ubuntu Pre-screen | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 固定 pairing、license/offline/provenance preflight、Ubuntu x86/arm64 初篩及最多兩個 finalists 均完整 | Core Designer ACK 後才可進 Gate 2A |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
@@ -50,8 +50,9 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 
 ## Open Dependencies, Risks and Adjustment Requests
 
-- **Blocker — OUT-M4B-2026-007 re-review**：Core 已退回 `1d3444...`；POC 已修正
-  Gate 1 false-PASS surface，等待 Core 對新 exact SHA 複驗，015 仍保持 open。
+- **Blocker — OUT-M4B-2026-007-A～D re-review**：Core 已退回 `096cd7...`；POC 已修正
+  runner-owned log hygiene、cold P4、leader-first orphan cleanup 與 selector authentication，
+  等待 Core 對新 exact SHA 複驗，015 仍保持 open。
 - **Blocker — Internal M0 authorization**：Pi 5 4GB/8GB availability、operator access 與
   immutable test request 尚待 entry review；M0 仍為 `NOT_STARTED`。
 - **Risk — Ubuntu arm64 availability**：Gate 1 所需 Ubuntu arm64 runner 尚未登錄；若無
@@ -68,8 +69,8 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [Gate 0 initial manifest R2](../../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md)
 - [M4b traceability crosswalk](m4b_traceability_crosswalk.md)
 - [Authoritative execution plan](m4b_execution_plan.md)
-- [OUT-M4B-2026-007 response](../response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md)
-- [Gate 1 packet](../../poc_llm/tests/gate1/GATE1-PACKET-002.md)
+- [OUT-M4B-2026-007-A～D response](../response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md)
+- [Gate 1 packet](../../poc_llm/tests/gate1/GATE1-PACKET-003.md)
 - [M0 test request](../../poc_llm/tests/m0/M0-TEST-REQUEST-001.md)
 
 ## Governing Documents
@@ -77,6 +78,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [PM-OUT-260817-015](../pm_handoff/PM-OUT-260817-015-llm-poc-contract-plan-review.md)
 - [Gate 0 R2 revision request](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md)
+- [Gate 0 R2 Revision 002](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md)
 - [Readiness correction](../pm_handoff/PM-POC-LLM-20260817-001-readiness-correction.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)
