@@ -24,6 +24,7 @@ from audio_poc.m4a_authorized_preflight import (  # noqa: E402
     controlled_artifact_path,
     create_report,
 )
+from audio_poc.m4a_runtime_preflight import install_command  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -62,6 +63,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_fixture_catalog,
     validate_gate1b_candidate_proposal,
     validate_m4a_authorized_preflight,
+    validate_m4a_runtime_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
 )
@@ -188,6 +190,51 @@ class TrackedDocumentTests(unittest.TestCase):
             entry["controlled_locator"] = "controlled://audio-poc/gate1b/../model.bin"
             with self.assertRaisesRegex(ValueError, "artifact locator is invalid"):
                 controlled_artifact_path(document, entry, artifact_dir)
+
+    def test_runtime_preflight_install_is_exact_and_offline(self) -> None:
+        command = install_command(
+            Path("/runtime/bin/python"),
+            [Path("/store/core.whl"), Path("/store/api.whl")],
+        )
+        self.assertEqual(
+            command,
+            [
+                "/runtime/bin/python", "-m", "pip", "install", "--no-index",
+                "--no-deps", "/store/core.whl", "/store/api.whl",
+            ],
+        )
+
+    def test_runtime_preflight_validator_rejects_inference_claim(self) -> None:
+        report = {
+            "schema_version": "1.0",
+            "report_id": "M4A-G1B-AUTHORIZED-RUNTIME-PREFLIGHT",
+            "generated_at_utc": "2026-08-18T00:00:00Z",
+            "poc_source_sha": "0" * 40,
+            "core_gate1b_ack_commit": "790c0f86e12422542ef94cacd3c4dd850e346bca",
+            "poc_gate1b_proposal_commit": "756ded69dd7b4661fcbac272d4d234c387890fc8",
+            "candidate_ids": [
+                "asr-sherpa-sensevoice-int8-2025-09-09",
+                "tts-sherpa-matcha-zh-en-1.13.5",
+            ],
+            "network_policy": "offline_from_hashed_inputs",
+            "platform": {},
+            "verified_artifacts": [],
+            "install": {"index_disabled": True, "dependencies_disabled": True},
+            "runtime_identity": {
+                "packages": {"sherpa-onnx": "1.13.5", "sherpa-onnx-core": "1.13.5"},
+                "api": {"OfflineRecognizer": True, "OfflineTts": True},
+                "native_libraries": [{"filename": "runtime.so"}],
+            },
+            "execution_status": "RUNTIME_IMPORT_PASS_NOT_INFERRED",
+            "cleanup": {
+                "child_processes": 0, "threads": 0, "iterators": 0,
+                "streams": 0, "device_owners": 0, "clean": True,
+            },
+        }
+        validate_m4a_runtime_preflight(report)
+        report["execution_status"] = "INFERENCE_PASS"
+        with self.assertRaisesRegex(ValueError, "must not claim inference"):
+            validate_m4a_runtime_preflight(report)
 
     def test_option_a_live_config_requires_p4_durations_and_direct_devices(self) -> None:
         with self.assertRaisesRegex(ValueError, "direct ALSA hw"):

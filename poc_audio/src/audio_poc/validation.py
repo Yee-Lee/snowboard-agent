@@ -127,6 +127,57 @@ def validate_m4a_authorized_preflight(document: dict[str, Any]) -> None:
                 raise ValueError("M4a authorized preflight artifact identity is invalid")
 
 
+def validate_m4a_runtime_preflight(document: dict[str, Any]) -> None:
+    """Validate the Pi-only offline install/import report."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "core_gate1b_ack_commit", "poc_gate1b_proposal_commit", "candidate_ids",
+        "network_policy", "platform", "verified_artifacts", "install",
+        "runtime_identity", "execution_status", "cleanup",
+    }
+    _require_keys(document, required, "M4a runtime preflight")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-AUTHORIZED-RUNTIME-PREFLIGHT":
+        raise ValueError("M4a runtime preflight identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a runtime preflight source SHA is invalid")
+    if document["core_gate1b_ack_commit"] != "790c0f86e12422542ef94cacd3c4dd850e346bca":
+        raise ValueError("M4a runtime preflight Core ACK binding is invalid")
+    if document["poc_gate1b_proposal_commit"] != "756ded69dd7b4661fcbac272d4d234c387890fc8":
+        raise ValueError("M4a runtime preflight proposal binding is invalid")
+    expected_ids = {
+        "asr-sherpa-sensevoice-int8-2025-09-09",
+        "tts-sherpa-matcha-zh-en-1.13.5",
+    }
+    if set(document["candidate_ids"]) != expected_ids:
+        raise ValueError("M4a runtime preflight candidate scope is invalid")
+    if document["network_policy"] != "offline_from_hashed_inputs":
+        raise ValueError("M4a runtime preflight network policy is invalid")
+    install = document["install"]
+    if install.get("index_disabled") is not True or install.get("dependencies_disabled") is not True:
+        raise ValueError("M4a runtime preflight install is not closed offline")
+    if document["execution_status"] != "RUNTIME_IMPORT_PASS_NOT_INFERRED":
+        raise ValueError("M4a runtime preflight must not claim inference")
+    identity = document["runtime_identity"]
+    if identity.get("packages") != {"sherpa-onnx": "1.13.5", "sherpa-onnx-core": "1.13.5"}:
+        raise ValueError("M4a runtime preflight package identity is invalid")
+    if identity.get("api") != {"OfflineRecognizer": True, "OfflineTts": True}:
+        raise ValueError("M4a runtime preflight API identity is invalid")
+    if not identity.get("native_libraries"):
+        raise ValueError("M4a runtime preflight native identity is absent")
+    cleanup = document["cleanup"]
+    _require_keys(
+        cleanup,
+        {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"},
+        "M4a runtime preflight cleanup",
+    )
+    if cleanup["clean"] is not True or any(
+        cleanup[name] != 0
+        for name in ("child_processes", "threads", "iterators", "streams", "device_owners")
+    ):
+        raise ValueError("M4a runtime preflight cleanup is not clean")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,

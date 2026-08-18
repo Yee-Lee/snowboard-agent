@@ -167,6 +167,22 @@ bash poc_audio/tools/run_m4a_authorized_preflight.sh \
 
 The check is offline and does not install or execute a candidate runtime.
 
+After that report passes on a clean Pi SHA, create a new isolated runtime and
+prove exact offline install/import identity without extracting or loading a
+model, running inference, or opening an audio device:
+
+```bash
+bash poc_audio/tools/run_m4a_runtime_preflight.sh \
+  --artifact-dir poc_audio/artifacts/gate1b \
+  --runtime-dir /controlled/audio-poc/runtime/sherpa-onnx-1.13.5 \
+  --output /tmp/m4a-runtime-preflight.json
+```
+
+The runtime and output paths must both be new. The runner accepts only Pi 5,
+aarch64 and Python 3.13, installs the two authorized wheels with `--no-index`
+and `--no-deps`, records package/native-library identity, and leaves both
+candidate models unloaded.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests
