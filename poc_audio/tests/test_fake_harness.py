@@ -14,6 +14,10 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from audio_poc.harness import FakeProcessHarness, Scenario  # noqa: E402
+from audio_poc.m4a_conformance import (  # noqa: E402
+    ConformanceScenario,
+    M4aFakeConformanceHarness,
+)
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -51,6 +55,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_candidate_manifest,
     validate_fixture_catalog,
     validate_gate1b_candidate_proposal,
+    validate_m4a_conformance_result,
     validate_run_result,
 )
 
@@ -108,6 +113,29 @@ class FakeHarnessTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.cleanup.clean)
         self.assertEqual(result.cleanup.child_processes, 0)
         validate_run_result(result.to_dict())
+
+
+class M4aConformanceHarnessTests(unittest.IsolatedAsyncioTestCase):
+    async def test_fake_protocol_covers_terminal_and_reopen_paths(self) -> None:
+        harness = M4aFakeConformanceHarness("0" * 40)
+        scenarios = (
+            (ConformanceScenario("success", "asr", "success", 0.3), TerminalStatus.SUCCESS),
+            (ConformanceScenario("error", "asr", "error", 0.3), TerminalStatus.ERROR),
+            (ConformanceScenario("timeout", "tts", "hang", 0.05), TerminalStatus.TIMEOUT),
+            (ConformanceScenario("cancel", "tts", "cancelable", 0.3, 0.02), TerminalStatus.CANCELLED),
+            (ConformanceScenario("force-abort", "asr", "stubborn", 0.05), TerminalStatus.FORCE_ABORTED),
+            (ConformanceScenario("reopen", "tts", "success", 0.3), TerminalStatus.SUCCESS),
+        )
+        run_ids: set[str] = set()
+        for scenario, expected in scenarios:
+            with self.subTest(scenario=scenario.name):
+                result = await harness.run(scenario)
+                self.assertEqual(result.terminal_status, expected)
+                self.assertTrue(result.cleanup.clean)
+                self.assertEqual(result.events[:2], ("ready", "started"))
+                validate_m4a_conformance_result(result.to_dict())
+                self.assertNotIn(result.run_id, run_ids)
+                run_ids.add(result.run_id)
 
 
 class TrackedDocumentTests(unittest.TestCase):

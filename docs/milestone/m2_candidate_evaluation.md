@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP2 NEXT`
+Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP2 COMPLETE / WP3 NEXT`
 
 ## 目標
 
@@ -82,9 +82,12 @@ M2 執行分成四個受控步驟：
 1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
 2. **Gate 1 candidate proposal**：`COMPLETE`；Core Gate 1B ACK 已逐列 disposition
    12 rows，只接受 SenseVoice ASR 與 Matcha TTS 兩個 primary execution rows。
-3. **Shared conformance scaffold**：`PLANNED / NEXT`；先完成 protocol/schema、
-   fake success/error/timeout/cancel/force-abort 與 reusable validators。
-4. **Authorized comparison**：`AUTHORIZED AFTER WP2`；只執行兩個 primary，
+3. **Shared conformance scaffold**：`COMPLETE`；
+   [`m4a_conformance.py`](../../poc_audio/src/audio_poc/m4a_conformance.py)、
+   `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
+   force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
+   candidate runtime。
+4. **Authorized comparison**：`PLANNED / NEXT`；只執行兩個 primary，
    累積 fixture benchmark 與 preliminary Gate 2 evidence。
 
 ## Entry Conditions
@@ -97,7 +100,7 @@ M2 執行分成四個受控步驟：
 
 真實 candidate execution 的 Gate 1B 子 gate已對兩個 primary 滿足：proposal
 已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
-steps，且 Core Designer 已書面核准 ASR/TTS scope。WP3 尚須滿足 WP2 exit、
+steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 尚須建立
 固定 fixture checksum、乾淨 test SHA 與受控 artifact preflight；VAD 執行邊界仍待
 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 

@@ -53,6 +53,43 @@ def validate_run_result(document: dict[str, Any]) -> None:
         raise ValueError("cleanup clean flag disagrees with cleanup counts")
 
 
+def validate_m4a_conformance_result(document: dict[str, Any]) -> None:
+    """Validate the fake-only WP2 protocol result without candidate imports."""
+
+    required = {
+        "schema_version", "run_id", "source_sha", "candidate_id", "domain",
+        "scenario", "protocol_version", "events", "started_at_utc", "duration_ms",
+        "terminal_status", "worker_exit_code", "error_code", "force_abort_used", "cleanup",
+    }
+    _require_keys(document, required, "M4a conformance result")
+    if document["schema_version"] != "1.0" or document["protocol_version"] != 1:
+        raise ValueError("M4a conformance schema or protocol version is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["source_sha"])):
+        raise ValueError("M4a conformance source_sha must be a full Git SHA")
+    if document["domain"] not in {"asr", "tts"}:
+        raise ValueError("M4a conformance domain is invalid")
+    events = document["events"]
+    if not isinstance(events, list) or events[:2] != ["ready", "started"]:
+        raise ValueError("M4a conformance must begin READY then STARTED")
+    terminal = str(document["terminal_status"])
+    if terminal not in {status.value for status in TerminalStatus}:
+        raise ValueError("M4a conformance terminal status is invalid")
+    event_for_terminal = {
+        "success": "result", "error": "error", "timeout": "timeout",
+        "cancelled": "cancelled", "force_aborted": "force_aborted",
+    }[terminal]
+    if events[-1] != event_for_terminal:
+        raise ValueError("M4a conformance terminal event disagrees with status")
+    cleanup = document["cleanup"]
+    _require_keys(
+        cleanup,
+        {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"},
+        "M4a conformance cleanup",
+    )
+    if cleanup["clean"] != all(cleanup[name] == 0 for name in ("child_processes", "threads", "iterators", "streams", "device_owners")):
+        raise ValueError("M4a conformance cleanup flag disagrees with counts")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,
