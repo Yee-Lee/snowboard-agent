@@ -105,7 +105,7 @@ status: "[Open | Revised | Rejected | Resolved]"
 
 [B] 設計：Designer 寫 implement/ (若架構矛盾發起 AR_impl) -> Reviewer 審查通過 (IR_review)。
 
-[C] 規劃：Designer 寫 milestone.md -> Reviewer 審查通過 (MR_review) -> Tester 依此寫 docs/test_spec/test_spec_M{x}.md -> Designer 審查 (TR_spec_M{x})，確認測試 100% 覆蓋設計；若 milestone 含實體／人工驗收，test spec 與 runbook 必須同時定義 portable gate、candidate freeze、target preflight、debug／acceptance 分流及 evidence schema，簽核後進入 [D]。
+[C] 規劃：Designer 寫 milestone.md -> Reviewer 審查通過 (MR_review) -> Tester 依此寫 docs/test_spec/test_spec_M{x}.md -> Designer 審查 (TR_spec_M{x})，確認測試 100% 覆蓋設計；若 milestone 含實體／人工驗收，test spec 與 runbook 必須定義 portable / target scope、candidate SHA、bounded timeout、target preflight及最小 evidence 欄位，簽核後進入 [D]。
 
 [D] 開發：Developer 寫 docs/reviews/dev_progress_M{x}.md 估點拆包 -> 撰寫 src/ 與 tests/ (若遇阻發起 IR_dev)。
 
@@ -113,24 +113,24 @@ status: "[Open | Revised | Rejected | Resolved]"
 
 1. Developer fast loop：在團隊指定的單一主要 Python minor 執行受影響 unit / integration tests。
 2. Provisional candidate snapshot：Designer核對candidate scope後，展示完整commit message與檔案，取得USER明確確認才建立candidate commit。它只提供G3可測的完整SHA，不是freeze或acceptance。
-3. Tester portable sign-off：對外部指定的provisional SHA執行契約／Test ID／event schema、靜態檢查及正式支援Python minor matrix；所有命令有bounded timeout，結果為0 Fail / Blocked / Skip / XFail。
-4. Designer candidate review / freeze：聚焦設計對齊、高風險regression protection及runner／evidence contract；Blocking全數解決後，將同一provisional SHA記錄為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、acceptance runner或上述路徑的未提交異動，都撤銷freeze並重新建立candidate，再回到步驟3；runner不得以當前`HEAD`自行授權。
-5. Target preflight：Tester 或受委託 operator 只驗 SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config identity、portable matrix index、run ID 未使用及 runner readiness；preflight 必須讀取並驗證 G4 已建立的 freeze manifest，不得建立、取代或自行授權 freeze，也不產生正式 PASS card。
-6. Acceptance-first / debug fallback：G5通過後先以全新且不可重用的 `acceptance/<run-id>/` 從頭執行一次完整target suite；全數通過即收集同一frozen SHA與run ID的evidence進入G7，不先跑target debug。只有正式run失敗或中斷後才可用 `debug/<run-id>/` 反覆跑單卡；FAIL evidence須保存，debug不得補卡。修正protected input時建立新candidate SHA並回G3；只修正未受保護的實體接線時保留同一frozen SHA，但仍以新run ID重走G5與完整acceptance。
-7. Tester final reconciliation：一次完整 target gate 後，核對 portable matrix、target evidence與所有 manifest / card / result 都指向同一 SHA 與 run ID，再作 milestone PASS / FAIL 判定。
+3. Tester portable sign-off：只在準備或更新frozen candidate時，對外部指定的provisional SHA平行執行正式支援Python minor matrix；portable命令排除`rpi` marker，所有命令有bounded timeout，結果為0 Fail / Blocked / Skip / XFail。一般development push只跑主要版本與affected tests。
+4. Designer candidate review / freeze：聚焦設計對齊與高風險regression protection；Blocking全數解決後，記錄同一provisional SHA為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、candidate / acceptance runner或candidate workflow的異動撤銷freeze並回到步驟3；branch名稱只作診斷資訊。
+5. Target preflight：Tester 或受委託 operator 驗證外部指定SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config checksum、portable matrix完整及run output未使用。Preflight不產生正式PASS card，也不要求獨立freeze manifest或多層checksum chain。
+6. Target acceptance / debug：正式acceptance以全新且不可重用的`acceptance/<run-id>/`完整執行target suite並保存result與raw log。Debug可按診斷需要執行，不需先驗證正式FAIL bundle，但debug結果不得標記或合併為正式PASS。修正protected input時建立新candidate SHA並回G3；只修正實體接線時可保留同一frozen SHA，但以新run ID重走preflight與完整acceptance。
+7. Tester final reconciliation：核對portable matrix與target result指向同一SHA，正式target result使用同一run ID；人工測項另在既有report / card記錄run ID、Test ID、operator、時間與Pass / Fail，再作milestone判定。
 8. Designer final confirmation：只確認 candidate review 後沒有 candidate-affecting 變更且 evidence 對齊；若有變更即撤銷 freeze，不以第二輪偏好審查改動已通過候選。通過後才標記 Accepted；provisional candidate commit 可成為最終 milestone commit，不要求為 acceptance evidence 再改 product tree。
 
 ### 4.1 Candidate gate 的 owner、回退與證據
 
 | Gate | Owner | Entry | Exit | 失敗回退 | Evidence |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Contract / static | Designer + Tester | design / test spec 已簽核 | schema / type / Test ID 檢查全綠 | 回 Designer / Developer | `portable/<run-id>/static/` |
+| Contract / static | Designer + Tester | design / test spec 已簽核 | schema / type / Test ID 檢查全綠 | 回 Designer / Developer | 既有測試輸出 |
 | Developer fast loop | Developer | 工作包可執行 | 受影響測試全綠 | 留在 Developer loop | local log；非 acceptance |
 | Provisional candidate snapshot | Designer；commit需 USER | fast loop完成；candidate scope已核對 | 產生未freeze的完整SHA與clean protected paths | USER未同意則不commit；內容變更須建立新candidate | commit file list + SHA |
-| Portable candidate matrix | Tester | 外部指定provisional SHA | 每個正式 Python minor 0 Fail / Blocked / Skip / XFail，且 timeout 未觸發 | 回Developer；修正後建立新candidate並重跑完整matrix | `portable/<run-id>/python-3.{minor}/` + matrix index |
-| Candidate review / freeze | Designer | portable matrix完整 | review無Blocking；同一provisional SHA登記為frozen | finding造成內容變更即建立新candidate、回portable gate | review單 + freeze manifest |
-| Target preflight | Tester / operator | frozen SHA + 新 acceptance run ID | identity、readiness與 portable index 全數吻合 | 不啟動 acceptance；修正 identity 或撤銷 freeze | `acceptance/<run-id>/preflight.json` |
+| Portable candidate matrix | Tester | 外部指定provisional SHA | 每個正式 Python minor 0 Fail / Blocked / Skip / XFail，且 timeout 未觸發 | 回Developer；修正後建立新candidate並重跑完整matrix | 每版本result / raw log + matrix index |
+| Candidate review / freeze | Designer | portable matrix完整 | review無Blocking；同一provisional SHA登記為frozen | finding造成protected input變更即建立新candidate、回portable gate | review記錄 + SHA |
+| Target preflight | Tester / operator | frozen SHA + 新 acceptance run ID | SHA、clean paths、runtime、hardware / artifact / config checksum與portable index吻合 | 不啟動 acceptance；修正 identity 或撤銷 freeze | 單一`preflight.json` |
 | Target acceptance | Tester / operator | preflight PASS | target suite 一次完整結束 | 保存 FAIL bundle；code 修正用新 SHA / 新 run 重啟 | `acceptance/<run-id>/` |
-| Final reconciliation | Tester；Designer confirmation | target run 完整 | matrix / target / SHA / run ID 一致 | 缺證據維持 Fail / Blocked，不拼接 | milestone sign-off + evidence index |
+| Final reconciliation | Tester；Designer confirmation | target run 完整 | matrix與target SHA一致；正式result的run ID一致 | 缺證據維持 Fail / Blocked，不拼接 | milestone sign-off + result / raw log |
 
-正式 evidence 的每筆結果至少包含：run ID、mode、完整 SHA、branch、受保護路徑 dirty check、完整命令、平台、Python、config / artifact checksum、開始／結束、exit code、raw log path。README、manifest、cards、results 任一 identity 不一致即 FAIL。固定 `sleep` 不得作 runner readiness；必須使用可逾時且有明確成功訊號的 handshake。人工觀察缺失、過期、run ID 不符或記錄命令失敗，該 card 必須 FAIL。
+每個正式命令保存一份最小result：run ID、完整SHA、完整命令、平台、Python、開始／結束、exit code、status與raw log path；preflight另記Git外artifact / config checksum。Branch只作診斷資訊。人工測項只需在既有report / card記錄run ID、Test ID、operator、時間與Pass / Fail，不要求通用READY、nonce、producer PID或獨立record command。

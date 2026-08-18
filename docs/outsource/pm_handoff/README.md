@@ -10,6 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
 | [`PM-OUT-260817-015-llm-poc-contract-plan-review`](PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`006` | M4b | **POC reply `0cff62f...` received — revision required before closure** | [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md) |
+| [`PM-OUT-260818-018-m4-portable-gate-cost-correction`](PM-OUT-260818-018-m4-portable-gate-cost-correction/brief.md) | M4 candidate gate簡化與執行成本修正 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Implemented — minimal gate retained** | 無需response |
 
 ---
 
