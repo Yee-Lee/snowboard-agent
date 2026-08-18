@@ -19,7 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B REVIEW REQUIRED` | Core 已於 `dev_agent_m4` / `e3d25d1fc70d726d5bd3162cdcb9571b30937587` 交付 `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`。POC 的 [`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md) 已於 2026-08-18 加入 User 指定的 Matcha zh/en primary TTS amendment；Core 須以新的 proposal full SHA 對全部 12 rows 逐列 ACK。此前只允許 provenance/fake scaffold，不得 build、import、execute、benchmark 或 Pi/HAL run。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` | Core 已於 [`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`](DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md) / commit `790c0f86e12422542ef94cacd3c4dd850e346bca` 核對 proposal SHA `756ded69dd7b4661fcbac272d4d234c387890fc8`，只授權 SenseVoice ASR 與 Matcha TTS 兩個 primary。下一步先完成 WP2 scaffold，再執行兩列 WP3；其餘 10 rows 禁止執行，VAD scope 由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
 
 ## History
 

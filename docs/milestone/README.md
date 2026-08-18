@@ -16,13 +16,19 @@ POC 已在該邊界內完成 Gate 1B exact candidate proposal；metadata review 
 至少一個 VAD、兩個 ASR 與三個 TTS 的可達路徑；2026-08-18 amendment
 加入 User 指定的 Matcha zh/en primary TTS evaluation row，固定 archive、16 kHz
 Vocos、runtime wheels 與 ModelScope lineage，但保留訓練資料/notice legal blocker。
-Core 另行逐列 ACK 前，M2 真實候選工作仍不可開始。
+Core 已在 `dev_agent_m4` commit
+`790c0f86e12422542ef94cacd3c4dd850e346bca` 發出
+`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`，只授權 SenseVoice ASR 與
+Matcha TTS 兩個 primary rows 進入 offline build 與 isolated Gate 2A。
+WP3 執行仍須先完成 WP2 shared conformance scaffold；其餘 10 rows 禁止執行。
+本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
+已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture (native & delivered)、VAD timing labels 與評測門檻全數凍結 (FROZEN) | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | Gate 1A 已接受；Gate 1B exact proposal 已準備並進入 review，另取得逐列 candidate-scope ACK 才可 build/import/評測 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | Gate 1B 已接受兩個 primary rows；下一步先完成 WP2 scaffold，再只對 SenseVoice/Matcha 執行 WP3；VAD scope CR 未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2A P1–P12 回交與 selection ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -32,8 +38,8 @@ Core 另行逐列 ACK 前，M2 真實候選工作仍不可開始。
 | --- | --- |
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
-| Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B REVIEW` — plan 與 D01–D05 已關閉；`RESP-AUDIO-M4A-G1B-CANDIDATES-001` 已加入 Matcha amendment，逐列 scope ACK 前仍禁止真實 candidate build/import/run |
-| Gate 2A：POC qualification/selection | M2 累積隔離 evidence；M3 以 accepted HAL/Pi 完成 P1–P12、return SHA 與 selection ACK，不是 final baseline lock |
+| Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` — Core commit `790c0f86e12422542ef94cacd3c4dd850e346bca` 只授權 SenseVoice ASR 與 Matcha TTS；其餘 rows 不可執行 |
+| Gate 2A：POC qualification/selection | `WP2 NEXT / WP3 AUTHORIZED AFTER WP2` — M2 先完成 shared scaffold，再累積兩個 primary 的隔離 evidence；M3 以 accepted HAL/Pi 完成 P1–P12、return SHA 與 selection ACK，不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |
 

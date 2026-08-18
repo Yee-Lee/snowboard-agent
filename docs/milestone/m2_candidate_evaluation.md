@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1A ACCEPTED / GATE 1B PROPOSAL READY FOR REVIEW / REAL CANDIDATES NOT AUTHORIZED`
+Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP2 NEXT`
 
 ## 目標
 
@@ -21,17 +21,35 @@ Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence �
 `DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001` 接受 Gate 1A、固定 `zh-TW`、
 VAD 範圍與 provenance-only 邊界。POC 已依該邊界準備
 [`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md)
-exact proposal；它仍不是 candidate authorization。Core 另行 committed ACK
-逐列核准前，不 build、install、import、load、execute 或 benchmark 真實候選。
+exact proposal。Core 已在 `dev_agent_m4` commit
+`790c0f86e12422542ef94cacd3c4dd850e346bca` 以
+[`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md)
+完成逐列 disposition；只有 SenseVoice ASR 與 Matcha TTS 可在 WP2 完成後
+build、install、import、load、execute 與 isolated benchmark。
 
 2026-08-18 已依 User 決定恢復 amendment，將 sherpa-onnx Matcha zh/en
 列為 TTS primary evaluation candidate。完整 archive 與 16 kHz Vocos 的 GitHub
 release asset ID/digest、POC SHA-256、大小及 ModelScope release-time commit/LFS
 OID 已互相核對；amended proposal 現提出六個 `REQUEST_AUTHORIZE` rows。Matcha
 archive 未內附 LICENSE，且 model card 沒有固定混合中英訓練資料的名稱與條款，
-因此 Core legal review 仍是 final-winner blocker。此次只完成 provenance review；
-Matcha 未 build、install、import、load、execute、benchmark 或上 Pi，仍須 Core 以
-新的 committed proposal SHA 逐列 ACK。
+因此 Core legal review 仍是 final-winner blocker。proposal amendment 當時只完成
+provenance review，沒有 build、install、import、load、execute、benchmark 或上 Pi；
+後續 execution scope 以本頁記錄的 Core Gate 1B ACK 為準。
+
+2026-08-18 Core ACK 已核對 proposal commit
+`756ded69dd7b4661fcbac272d4d234c387890fc8`，並事前固定只執行：
+
+- `asr-sherpa-sensevoice-int8-2025-09-09` — ASR primary。
+- `tts-sherpa-matcha-zh-en-1.13.5` — TTS primary。
+
+其餘 10 rows 均為 `DEFERRED` / `REJECTED`，primary 失敗後也不得自動啟用
+fallback。兩個 primary 的 6 個唯一受控輸入已在 POC workstation 重新核對大小
+與 SHA-256，全部匹配 manifest。WP3 仍等待 WP2 protocol/schema、fake lifecycle
+與 validator scaffold 完成。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
+finalist/no-go exit condition 尚無關閉路徑；見
+[`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。
+Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑完整 suite
+關閉（32/32 tests `OK`）；它不是 Gate 2A candidate evidence。
 
 ## 對最終交付的貢獻
 
@@ -59,13 +77,15 @@ Matcha 未 build、install、import、load、execute、benchmark 或上 Pi，仍
   lifecycle/offline 產生 preliminary evidence，HAL playback、Pi resource 與同時常駐的
   final disposition 留待 M3。
 
-M2 執行分成三個受控步驟：
+M2 執行分成四個受控步驟：
 
 1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
-2. **Gate 1 candidate proposal**：`GATE_REVIEW`；已依 provenance-only 邊界整理
-   exact candidate manifest、license/source/build 提案；未 build 或 benchmark。
-3. **Authorized comparison**：只在 Core Designer 另以書面 ACK 明列候選範圍後，
-   執行 fixture benchmark 與 preliminary Gate 2 evidence。
+2. **Gate 1 candidate proposal**：`COMPLETE`；Core Gate 1B ACK 已逐列 disposition
+   12 rows，只接受 SenseVoice ASR 與 Matcha TTS 兩個 primary execution rows。
+3. **Shared conformance scaffold**：`PLANNED / NEXT`；先完成 protocol/schema、
+   fake success/error/timeout/cancel/force-abort 與 reusable validators。
+4. **Authorized comparison**：`AUTHORIZED AFTER WP2`；只執行兩個 primary，
+   累積 fixture benchmark 與 preliminary Gate 2 evidence。
 
 ## Entry Conditions
 
@@ -75,10 +95,11 @@ M2 執行分成三個受控步驟：
 - PM relay/ACK 回傳路徑、candidate proposal template 與 Core decision owner 已確認。
 - 敏感 fixture 受控位置可用。
 
-真實 candidate execution 的子 gate 還必須滿足：Gate 1 proposal 已列版本、
-artifact、source SHA-256、transitive dependency、license/notice 與 Pi build
-steps，且 Core Designer 已書面核准 candidate scope、產品語言/voice
-與 VAD 執行邊界。
+真實 candidate execution 的 Gate 1B 子 gate已對兩個 primary 滿足：proposal
+已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
+steps，且 Core Designer 已書面核准 ASR/TTS scope。WP3 尚須滿足 WP2 exit、
+固定 fixture checksum、乾淨 test SHA 與受控 artifact preflight；VAD 執行邊界仍待
+`CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 
 ## Exit Gate
 
@@ -121,7 +142,7 @@ steps，且 Core Designer 已書面核准 candidate scope、產品語言/voice
 
 M2 結束時必須回答：每類 finalist 是否有合理機會在 pinned M3 HAL、真實 mic/speaker 與三模型同時常駐下達到最終 gate？沒有合理路徑者不得只因單項 demo 成功而 advance。
 
-Gate 1B review 先回答：Core 是否逐列接受 `RESP-AUDIO-M4A-G1B-CANDIDATES-001`
-所請求的 6 個 exact rows，並正式 reject/defer 其餘 6 列？在 Core ACK 前，
-所有 manifest native format 與 build recipe 都是 `DECLARED_UNVERIFIED_GATE_1B` /
-`NOT_EXECUTED_GATE_1B`，不得標為 evidence PASS。
+Gate 1B review 已回答：Core 只接受 SenseVoice ASR 與 Matcha TTS，並正式
+defer/reject 其餘 10 rows。這只解除兩個 exact rows 的 execution prohibition；
+manifest native format 與 build recipe 仍從 `DECLARED_UNVERIFIED_GATE_1B` /
+`NOT_EXECUTED_GATE_1B` 開始，必須由 WP3 evidence 實測，不得因 ACK 標為 PASS。
