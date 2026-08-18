@@ -115,7 +115,7 @@ Audio POC可依G1A ACK評估VAD及frozen endpoint state machine，供其M2～M4�
 | **M4A-P6** | TTS 品質門檻 | 固定文字可產生清晰可理解語音；人工評分（mean opinion）≥ 3.5 / 5；記錄 voice / model 版本與 evidence path |
 | **M4A-P7** | Pi 資源（ASR only） | 10 warm-up 後保存 ASR inference CPU、RSS、P50 / P95 latency raw samples；temperature 與 throttling；Core 依數據核准，不可只寫「可接受」 |
 | **M4A-P8** | Pi 資源（TTS only） | 同上，針對 TTS synthesis phase |
-| **M4A-P9** | M4b Resource Reservation | Gate 2A使用Core核准、versioned deterministic M4b residency surrogate保留LLM memory / thread / CPU envelope；若已有Accepted M4b package可另加實測。Surrogate只證明Audio finalist在預留budget下可行，不是M4a+M4b product Pass；真實combined validation由LLM Gate 2B與Core Gate 3執行 |
+| **M4A-P9** | M4b Resource Reservation | Gate 2A使用Core核准、versioned deterministic M4b residency surrogate作Audio-only planning input；Audio POC不執行Core combined memory preflight，也不宣告跨POC capacity Pass。POC只依既有contract交付artifact、固定設定與reproduction command；Accepted Audio與LLM packages完成Core intake且Developer建立composition smoke後，Core Tester才依`M4-REG-001`作即時診斷。真實combined validation仍由LLM Gate 2B與Core Gate 3執行 |
 | **M4A-P10** | Lifecycle | ASR / TTS engine init、warm-up、inference、shutdown 各至少 5 次；無 process / thread / fd 殘留；不得在 worker 內保留隱藏 session history |
 | **M4A-P11** | Build / license | 從 clean Pi target 依文件可 build / install / rerun；列 OS、kernel、Python、ALSA、package 與 native library 版本；binary / wheel / `.so` 不得提交 Core Git；license / notice 逐項列出 |
 | **M4A-P12** | Offline 驗證 | 所有 ASR / TTS inference 在 Pi 無網路環境可完整執行；log 不含 network call、external API endpoint 或 credential |

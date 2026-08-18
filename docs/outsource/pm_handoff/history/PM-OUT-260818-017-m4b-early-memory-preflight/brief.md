@@ -1,7 +1,7 @@
 # M4b Pi 5 4GB 前期 memory preflight 與跨POC資源預算
 
 - Handoff ID : `PM-OUT-260818-017-m4b-early-memory-preflight`
-- Status : `Ready for PM`
+- Status : `Resolved — post-POC Core integration preflight implemented`
 - Finding ID : `OUT-M4B-2026-007`
 - Priority : `Blocking before Pi Gate 2A authorization`
 - Owner : Core Team Designer（主導Audio / LLM POC跨團隊契約）

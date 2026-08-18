@@ -9,7 +9,6 @@
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`PM-OUT-260817-014-local-hardware-test-gate-reform`](PM-OUT-260817-014-local-hardware-test-gate-reform/brief.md) | 本機／實體測試順序與candidate gate改革 | `OUT-PROCESS-2026-001` | M4起共用流程 | **Revised — implementation / dry run pending** | [`OUT-PROCESS-2026-001.md`](../responses/OUT-PROCESS-2026-001.md) |
-| [`PM-OUT-260818-017-m4b-early-memory-preflight`](PM-OUT-260818-017-m4b-early-memory-preflight/brief.md) | M4b Pi 5 4GB early memory preflight與跨POC資源預算 | `OUT-M4B-2026-007` | M4a / M4b | **Intake complete — Core design response pending** | [`PM-OUT-260818-017-m4b-early-memory-preflight.md`](../responses/PM-OUT-260818-017-m4b-early-memory-preflight.md) |
 
 ---
 
@@ -20,8 +19,8 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b Gate 0 R2 accepted** | Audio `756ded69...`已完成focused intake。LLM `0d415d1...`已由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2；Gate 1尚未開始，017 early memory preflight在Pi Gate 2A授權前必須收斂。 |
-| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013/015/016/018** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
+| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b Gate 0 R2 accepted** | Audio `756ded69...`已完成focused intake。LLM `0d415d1...`已由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2；Gate 1尚未開始。017已收斂為Core Tester可在實測階段重跑的`M4-REG-001`，不新增Gate或POC combined執行責任。 |
+| **本 PM handoff 結案** | **Resolved for 002/008/009/010/011/012/013/015/016/017/018** | 均已完成產出，各項責任已全數明確對接，並歸檔至 history。 |
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
@@ -47,6 +46,7 @@
 | [`PM-OUT-260814-012-alpha-beta-product-convergence`](history/PM-OUT-260814-012-alpha-beta-product-convergence/brief.md) | M4後ALPHA / M7後BETA產品收斂Gate | `OUT-ROADMAP-2026-001` | **Resolved** | 待產出 |
 | [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff`](history/PM-OUT-260817-016-m4a-poc-core-evidence-handoff/brief.md) | M4a Audio POC evidence inheritance與產品化交接 | `OUT-M4A-2026-002`～`005` | **Resolved — G1A durable intake complete** | Response: [`PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`](../responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md)；G1B: [`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md) |
 | [`PM-OUT-260817-015-llm-poc-contract-plan-review`](history/PM-OUT-260817-015-llm-poc-contract-plan-review/brief.md) | M4b LLM POC contract與執行規劃補強 | `OUT-M4B-2026-002`～`007` | **Resolved — Gate 0 R2 accepted at `0d415d1...`** | Response: [`PM-OUT-260817-015-llm-poc-contract-plan-review.md`](../responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md)；ACK: [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) |
+| [`PM-OUT-260818-017-m4b-early-memory-preflight`](history/PM-OUT-260818-017-m4b-early-memory-preflight/brief.md) | M4b Pi 5 4GB early memory preflight與跨POC資源預算 | `OUT-M4B-2026-007` | **Resolved — post-POC Core integration preflight implemented** | Response: [`PM-OUT-260818-017-m4b-early-memory-preflight.md`](../responses/PM-OUT-260818-017-m4b-early-memory-preflight.md)；Test: [`test_spec_M4.md`](../../test_spec/test_spec_M4.md) |
 | [`PM-OUT-260818-018-m4-portable-gate-cost-correction`](history/PM-OUT-260818-018-m4-portable-gate-cost-correction/brief.md) | M4 candidate gate簡化與執行成本修正 | `OUT-PROCESS-2026-001` | **Resolved — implemented at `f87c5e6`** | 無需response；實作與流程文件已收斂至minimal gate |
 | [`CR-AUDIO-M3-P4-REPRO-002.md`](history/CR-AUDIO-M3-P4-REPRO-002.md) | Restore reproducible P4-A10 dependency artifacts | 無 | **Resolved** | Response: [`RESP-AUDIO-M3-P4-REPRO-002.md`](../responses/RESP-AUDIO-M3-P4-REPRO-002.md) |
 
@@ -73,5 +73,6 @@ docs/outsource/pm_handoff/
     ├── PM-OUT-260817-015-llm-poc-contract-plan-review/
     ├── PM-OUT-260817-016-m4a-poc-core-evidence-handoff/
     ├── PM-OUT-260817-013-m3-morning-retest-audit/
+    ├── PM-OUT-260818-017-m4b-early-memory-preflight/
     └── PM-OUT-260818-018-m4-portable-gate-cost-correction/
 ```

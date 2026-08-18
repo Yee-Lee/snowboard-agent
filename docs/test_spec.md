@@ -21,7 +21,7 @@
 | [test_spec_M1.md](test_spec/test_spec_M1.md) | M1 純軟體核心 | 完成 |
 | [test_spec_M2.md](test_spec/test_spec_M2.md) | M2 Mock 對話垂直切片 | 完成 |
 | [test_spec_M3.md](test_spec/test_spec_M3.md) | M3 Raspberry Pi HAL 與硬體 bring-up | 完成 |
-| test_spec_M4.md | M4 本機 AI 語音主線 | 待補（M3 驗收期間） |
+| [test_spec_M4.md](test_spec/test_spec_M4.md) | M4 本機 AI 語音主線 | 部分完成（017 memory preflight） |
 | test_spec_M5.md | M5 外部訊息與工具 | 待補 |
 | test_spec_M6.md | M6 語音喚醒、視覺輸入與整體收斂 | 待補 |
 | test_spec_M7.md | M7 Display UX 完整化 | 待補 |
