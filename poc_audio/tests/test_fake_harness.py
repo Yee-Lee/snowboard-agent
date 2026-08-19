@@ -3,6 +3,7 @@ from __future__ import annotations
 import array
 import hashlib
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -33,6 +34,7 @@ from audio_poc.m4a_qualification import (  # noqa: E402
     summarize_asr,
     summarize_tts,
 )
+from audio_poc.m4a_tts_lifecycle import process_group_alive, stop_group  # noqa: E402
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -73,6 +75,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_m4a_authorized_preflight,
     validate_m4a_candidate_smoke,
     validate_m4a_qualification,
+    validate_m4a_tts_lifecycle,
     validate_m4a_runtime_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
@@ -314,6 +317,63 @@ class TrackedDocumentTests(unittest.TestCase):
         report["security"]["speaker_playback"] = True
         with self.assertRaisesRegex(ValueError, "security boundary"):
             validate_m4a_qualification(report)
+
+    def test_tts_lifecycle_validator_retains_p12_and_no_playback(self) -> None:
+        def scenario(name: str, status: str, force: bool = False) -> dict:
+            return {
+                "scenario": name, "terminal_status": status,
+                "force_abort_used": force,
+                "cleanup": {"clean": True},
+            }
+
+        report = {
+            "schema_version": "1.0", "report_id": "M4A-G1B-WP3-MATCHA-LIFECYCLE",
+            "generated_at_utc": "2026-08-19T00:00:00Z", "poc_source_sha": "0" * 40,
+            "candidate_id": "tts-sherpa-matcha-zh-en-1.13.5", "platform": {},
+            "scope": "MATCHA_NATIVE_PROCESS_LIFECYCLE_AND_NETWORK_ATTEMPT_TRACE_NO_PLAYBACK",
+            "scenarios": [
+                scenario("success", "SUCCESS"), scenario("error", "ERROR"),
+                scenario("timeout", "TIMEOUT"), scenario("cancel", "CANCELLED"),
+                scenario("force_abort", "FORCE_ABORTED", True),
+            ],
+            "reopen_cycles": [scenario(f"reopen_{index}", "SUCCESS") for index in range(1, 6)],
+            "network_trace_run": scenario("network_trace", "SUCCESS"),
+            "network_evidence": {
+                "network_disabled": False,
+                "disposition": "NO_NETWORK_SYSCALL_OBSERVED_NETWORK_REMAINED_ENABLED_P12_PENDING",
+            },
+            "security": {"pcm_emitted": False, "audio_device_opened": False, "speaker_playback": False},
+            "execution_status": "LIFECYCLE_PASS_P12_PENDING",
+            "cleanup": {"child_processes": 0, "threads": 0, "iterators": 0, "streams": 0, "device_owners": 0, "clean": True},
+        }
+        validate_m4a_tts_lifecycle(report)
+        report["network_evidence"]["network_disabled"] = True
+        with self.assertRaisesRegex(ValueError, "retain the P12"):
+            validate_m4a_tts_lifecycle(report)
+
+    def test_tts_lifecycle_stops_normal_and_stubborn_process_groups(self) -> None:
+        normal = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            start_new_session=True,
+        )
+        self.assertFalse(stop_group(normal))
+        self.assertFalse(process_group_alive(normal.pid))
+
+        stubborn = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print('ready', flush=True); time.sleep(30)",
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+        assert stubborn.stdout is not None
+        self.assertEqual(stubborn.stdout.readline().strip(), "ready")
+        self.assertTrue(stop_group(stubborn, grace_seconds=0.05))
+        stubborn.stdout.close()
+        self.assertFalse(process_group_alive(stubborn.pid))
 
     def test_runtime_preflight_validator_rejects_inference_claim(self) -> None:
         report = {

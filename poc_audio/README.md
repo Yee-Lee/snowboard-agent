@@ -222,6 +222,24 @@ observations. Candidate lifecycle, network-disabled P12 evidence, RSS-growth
 review and User TTS quality review remain explicit pending items. Keep the raw
 JSON outside Git and commit only a reviewed sanitized evidence summary.
 
+After reviewing the full-fixture result, exercise the still-eligible Matcha
+persistent-child lifecycle with a new work/output pair:
+
+```bash
+bash poc_audio/tools/run_m4a_tts_lifecycle.sh \
+  --artifact-dir poc_audio/artifacts/gate1b \
+  --runtime-dir /controlled/audio-poc/runtime/sherpa-onnx-1.13.5 \
+  --work-dir /controlled/audio-poc/work/tts-lifecycle-001 \
+  --output /tmp/m4a-tts-lifecycle.json
+```
+
+The packet runs success, declared error, timeout, cancel, force-abort, five
+reopen cycles and a `strace` network-syscall observation. Matcha generates only
+in-memory metadata; the worker emits no PCM and never opens playback. A zero
+network-syscall trace while networking remains enabled does not close P12;
+network-disabled evidence still requires an approved isolation method or an
+operator-approved temporary network change.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests

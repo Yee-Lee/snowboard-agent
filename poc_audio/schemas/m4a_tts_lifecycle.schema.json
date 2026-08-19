@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a Matcha lifecycle report",
+  "type": "object",
+  "required": ["schema_version", "report_id", "generated_at_utc", "poc_source_sha", "candidate_id", "platform", "scope", "scenarios", "reopen_cycles", "network_trace_run", "network_evidence", "security", "execution_status", "cleanup"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "report_id": {"const": "M4A-G1B-WP3-MATCHA-LIFECYCLE"},
+    "poc_source_sha": {"pattern": "^[0-9a-f]{40}$"},
+    "candidate_id": {"const": "tts-sherpa-matcha-zh-en-1.13.5"},
+    "scope": {"const": "MATCHA_NATIVE_PROCESS_LIFECYCLE_AND_NETWORK_ATTEMPT_TRACE_NO_PLAYBACK"},
+    "execution_status": {"enum": ["LIFECYCLE_PASS_P12_PENDING", "LIFECYCLE_FAIL_RETAINED"]}
+  }
+}

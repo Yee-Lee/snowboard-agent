@@ -312,6 +312,69 @@ def validate_m4a_qualification(document: dict[str, Any]) -> None:
         raise ValueError("M4a qualification cleanup flag disagrees with counters")
 
 
+def validate_m4a_tts_lifecycle(document: dict[str, Any]) -> None:
+    """Validate Matcha lifecycle evidence without overstating the offline gate."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "candidate_id", "platform", "scope", "scenarios", "reopen_cycles",
+        "network_trace_run", "network_evidence", "security", "execution_status",
+        "cleanup",
+    }
+    _require_keys(document, required, "M4a TTS lifecycle")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-WP3-MATCHA-LIFECYCLE":
+        raise ValueError("M4a TTS lifecycle identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a TTS lifecycle source SHA is invalid")
+    if document["candidate_id"] != "tts-sherpa-matcha-zh-en-1.13.5":
+        raise ValueError("M4a TTS lifecycle candidate scope is invalid")
+    if document["scope"] != "MATCHA_NATIVE_PROCESS_LIFECYCLE_AND_NETWORK_ATTEMPT_TRACE_NO_PLAYBACK":
+        raise ValueError("M4a TTS lifecycle scope is invalid")
+    expected = {
+        "success": "SUCCESS", "error": "ERROR", "timeout": "TIMEOUT",
+        "cancel": "CANCELLED", "force_abort": "FORCE_ABORTED",
+    }
+    scenarios = document["scenarios"]
+    if not isinstance(scenarios, list) or {item.get("scenario") for item in scenarios} != set(expected):
+        raise ValueError("M4a TTS lifecycle scenario coverage is invalid")
+    for item in scenarios:
+        if item.get("terminal_status") != expected[item["scenario"]]:
+            if document["execution_status"] == "LIFECYCLE_PASS_P12_PENDING":
+                raise ValueError("M4a TTS lifecycle PASS disagrees with a scenario")
+        if item["scenario"] == "force_abort" and document["execution_status"] == "LIFECYCLE_PASS_P12_PENDING":
+            if item.get("force_abort_used") is not True:
+                raise ValueError("M4a TTS lifecycle force-abort proof is absent")
+        if document["execution_status"] == "LIFECYCLE_PASS_P12_PENDING" and item.get("cleanup", {}).get("clean") is not True:
+            raise ValueError("M4a TTS lifecycle PASS requires scenario cleanup")
+    reopen = document["reopen_cycles"]
+    if not isinstance(reopen, list) or len(reopen) != 5:
+        raise ValueError("M4a TTS lifecycle requires five reopen cycles")
+    if document["execution_status"] == "LIFECYCLE_PASS_P12_PENDING" and any(
+        item.get("terminal_status") != "SUCCESS" or item.get("cleanup", {}).get("clean") is not True
+        for item in reopen
+    ):
+        raise ValueError("M4a TTS lifecycle reopen PASS is invalid")
+    network = document["network_evidence"]
+    if network.get("network_disabled") is not False or network.get("disposition") != "NO_NETWORK_SYSCALL_OBSERVED_NETWORK_REMAINED_ENABLED_P12_PENDING":
+        raise ValueError("M4a TTS lifecycle must retain the P12 network-disabled gate")
+    trace = document["network_trace_run"]
+    if document["execution_status"] == "LIFECYCLE_PASS_P12_PENDING" and (
+        trace.get("terminal_status") != "SUCCESS" or trace.get("cleanup", {}).get("clean") is not True
+    ):
+        raise ValueError("M4a TTS lifecycle traced run is invalid")
+    if document["security"] != {"pcm_emitted": False, "audio_device_opened": False, "speaker_playback": False}:
+        raise ValueError("M4a TTS lifecycle no-playback boundary is invalid")
+    if document["execution_status"] not in {"LIFECYCLE_PASS_P12_PENDING", "LIFECYCLE_FAIL_RETAINED"}:
+        raise ValueError("M4a TTS lifecycle execution status is invalid")
+    cleanup = document["cleanup"]
+    _require_keys(cleanup, {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"}, "M4a TTS lifecycle cleanup")
+    counters_clean = all(cleanup[name] == 0 for name in (
+        "child_processes", "threads", "iterators", "streams", "device_owners"
+    ))
+    if cleanup["clean"] != counters_clean:
+        raise ValueError("M4a TTS lifecycle cleanup flag disagrees with counters")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,
