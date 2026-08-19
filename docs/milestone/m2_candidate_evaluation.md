@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR + MATCHA TTS ONLY / WP3 FOCUSED SMOKE PASS, FULL QUALIFICATION IN PROGRESS`
+Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR REJECTED BY FROZEN QUALITY GATE / MATCHA TTS PERFORMANCE PASS, REMAINING GATES IN PROGRESS`
 
 ## 目標
 
@@ -48,8 +48,17 @@ workstation 與 Pi 重新核對大小及 SHA-256，全部匹配 manifest。WP2
 protocol/schema、fake lifecycle 與 validator scaffold 已完成；Pi artifact
 preflight、offline install/import identity 及一筆 ASR/TTS focused smoke 也已通過，見
 [`M4A-G1B-WP3-PREFLIGHT-SMOKE-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-PREFLIGHT-SMOKE-001.md)。
-完整 50-item ASR、20-prompt TTS、repetition/resource/lifecycle/offline/User review
-仍未完成。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
+完整 50-item ASR 與 20-prompt TTS 的三次 cold、三次 warm-up 及二十次 hot
+qualification 已在 Pi SHA `63c2cc179bb3c2525201da0f7a78d2c50b63d759`
+完成。SenseVoice 台灣華語 core CER 41.629%、整體整句正確率 6%，均未達
+frozen 20%/70% hard gates，故該 primary 已 `REJECT`；全 20 hot cycles 對每筆
+fixture 的 hypothesis hash 都穩定重現。Matcha first-buffer p95 285.098 ms、RTF
+p95 0.112776，通過 performance gates，但 User quality、lifecycle、真正斷網、
+resource-growth review 與 legal blockers 仍未關閉。見
+[`M4A-G1B-WP3-FULL-QUALIFICATION-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-FULL-QUALIFICATION-001.md)。
+SenseVoice 失敗後不得自動啟用 fallback，已提出
+[`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md)
+請 Core 決定授權 exact Whisper.cpp fallback 或接受 ASR no-go。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
 finalist/no-go exit condition 尚無關閉路徑；見
 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。
 Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑完整 suite
@@ -91,9 +100,10 @@ M2 執行分成四個受控步驟：
    `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
    force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
    candidate runtime。
-4. **Authorized comparison**：`FOCUSED SMOKE PASS / FULL QUALIFICATION IN PROGRESS`；
-   只執行兩個 primary。Artifact、runtime 與單筆真實 candidate smoke 已有 clean-Pi
-   evidence；完整 fixture benchmark 與 lifecycle/resource evidence 尚待累積。
+4. **Authorized comparison**：`FULL FIXTURE QUALITY/PERFORMANCE REVIEWED / REMAINING TTS GATES IN PROGRESS`；
+   只執行兩個 primary。SenseVoice 已因 frozen ASR quality hard gates `REJECT`；
+   Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
+   growth 與 legal conditions 尚待關閉。ASR fallback 等待新 Core ACK。
 
 ## Entry Conditions
 
@@ -107,7 +117,8 @@ M2 執行分成四個受控步驟：
 已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
 steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 的固定
 fixture checksum、乾淨 test SHA、受控 artifact preflight 與 focused smoke 已完成，
-完整 qualification 尚未完成；VAD 執行邊界仍待
+full-fixture quality/performance 已完成；TTS remaining gates 尚未完成，ASR fallback
+執行邊界等待 `CR-AUDIO-M4A-G1B-ASR-SCOPE-001`，VAD 執行邊界仍待
 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 
 ## Exit Gate
