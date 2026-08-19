@@ -2,9 +2,9 @@
 
 - **Delivery ID**: `DELIVERY-LLM-POC-M4B-CONTRACT-001`
 - **Finding ID**: `OUT-M4B-2026-001`、`OUT-M4B-2026-002` ～ `OUT-M4B-2026-006`
-- **References**: `PM-OUT-260814-011-m4b-llm-poc-contract-gate`、`PM-OUT-260805-002-m3-m4-poc-planning`、`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`docs/milestones/M4.md §6.1–6.2`
-- **Revision**: `2026-08-17 / PM-OUT-260817-015`
-- **Status**: `GATE 0 R2 COMPLETE — GATE 1 NOT STARTED`
+- **References**: `PM-OUT-260814-011-m4b-llm-poc-contract-gate`、`PM-OUT-260805-002-m3-m4-poc-planning`、`PM-OUT-260817-015-llm-poc-contract-plan-review`、`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST`、`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`docs/milestones/M4.md §6.1–6.2`
+- **Revision**: `2026-08-19 / Gate 1 platform split approved`
+- **Status**: `GATE 0 R2 COMPLETE — GATE 1 PACKET REVISION AUTHORIZED / REAL EXECUTION NOT AUTHORIZED`
 - **Contract owner**: Core Team Designer
 - **Relay owner**: PM (轉交 LLM POC Team)
 - **Date**: 2026-08-15
@@ -43,7 +43,7 @@ M4b Local LLM 是以 Core production 架構中的 Resource Manager、Reasoner �
 | Model 候選 | Gemma-2-2B-IT、Qwen2.5-1.5B/3B-Instruct、SmolLM2-1.7B-Instruct | 參數量 ≤ 3B，優先以 1.5B ~ 2B 為主，確保 Pi 5 資源餘裕 |
 | Quantization | INT4、INT8、GGUF (Q4_K_M / Q8_0) | 須提供 quantization 工具、參數與 quantized artifact SHA-256 |
 | Prompt & Format | zh-TW / en System Prompt + JSON intent output | 評估 intent 抽取準確率與 output formatting 穩定度 |
-| Target 平台 | Ubuntu初篩→Raspberry Pi 5 4GB mandatory gate；8GB informational portability run | 不得提交binary、wheel、model weights或`.so`進Core Git；8GB不得補救4GB Fail |
+| Target 平台 | Gate 1：Ubuntu 24.04 x86_64完整初篩→Raspberry Pi 5 4GB / Debian 13 aarch64 compatibility try-run；Gate 2A：同一產品Pi獨立完整驗證 | Gate 1 Pi try-run不產生Gate 2 credit；不得提交binary、wheel、model weights或`.so`進Core Git；8GB不得補救4GB Fail |
 
 ---
 
@@ -59,21 +59,30 @@ M4b Local LLM 是以 Core production 架構中的 Resource Manager、Reasoner �
 | Blocking scope | 未完成 Gate 0 前，LLM POC 探索工作不具備正式合約授權 |
 | 下一動作 | POC 準備 Gate 1 candidate proposal |
 
-### Gate 1 ── M4b Candidate Proposal & Ubuntu Pre-screening（候選提案與初篩）
+### Gate 1 ── M4b Candidate Proposal, x86 Pre-screen & Pi Compatibility（候選提案、x86初篩與Pi相容性）
 
 | 欄位 | 內容 |
 | :--- | :--- |
-| Entry | Gate 0 完成；POC 已依 §9 crosswalk 凍結 harness / fixture / validator；提出 runtime / model / quantization candidate 清單與 Ubuntu pre-screen packet |
-| Exit | Candidate eligibility / provenance / license完整，Ubuntu pre-screen依相同fixture與decision table完成，最多兩個finalist；Core Designer書面確認後才可進入Pi Gate 2 |
+| Entry | Gate 0 完成；POC 已依 §9 crosswalk 凍結 harness / fixture / validator；提出 runtime / model / quantization candidate清單、Ubuntu 24.04 x86_64完整初篩packet與獨立Pi compatibility packet |
+| Exit | Candidate eligibility / provenance / license完整；x86完整初篩依凍結fixture與decision table完成；依x86排序預選最多兩個candidate並完成產品Pi compatibility try-run；只有Pi `PASS`者可成為Gate 1 proposed finalist；Core Designer書面確認後才可進入Gate 2A |
 | Owner | POC 提交；Core Designer 核准範圍 |
-| Blocking scope | 未取得 Core 書面確認前，不得將候選視為已核准，不得在 Core production 引用 |
-| 下一動作 | POC 回交 candidate list（manifest + license table）；Core Designer 在 5 個工作日內回覆 |
+| Blocking scope | 未取得Core書面Gate 1 ACK前，不得將候選視為已核准，不得開始Gate 2A或在Core production引用；Pi try-run只是Gate 1 compatibility evidence，不得標記為M4B-P1～P12、performance、resource、thermal、offline-product或winner evidence |
+| 下一動作 | POC先回交新frozen packet / schema / selector revision的單一commit供Core intake；另取得artifact acquisition與real execution授權後才可執行 |
+
+#### Gate 1 平台分流與選擇規則
+
+1. **x86完整初篩**：在Ubuntu 24.04 x86_64執行凍結P1/P2/P3/P4/P5/P6/P8 portable subset與P11 provenance。P4必須保留完整raw samples / P50 / P95，但只作harness completeness與候選比較，不推導Pi acceptance performance。
+2. **最多兩名預選**：selector只使用authenticated x86 evidence排序，在Pi執行前一次選出最多兩名。同一selection cycle不得因Pi `FAIL`或`INCONCLUSIVE`改測第三名；若需補位，必須提出新cycle / revision並取得書面授權。
+3. **Pi compatibility try-run**：只對上述預選者，在Raspberry Pi 5 4GB / Debian 13 aarch64的隔離環境驗證pinned aarch64 runtime/dependency bundle checksum、offline install/import、exact runtime/model/config identity、bounded model load、READY/PING、一次minimal deterministic generation、SHUTDOWN ACK、exit `0`與orphan `0`。
+4. **結果語意**：候選相容只可為`PASS`、`FAIL`或`INCONCLUSIVE`；有效不相容為`FAIL`，環境、identity或evidence無法判定為`INCONCLUSIVE`。只有authenticated x86 evidence與Pi `PASS`同時成立者才可進Gate 1提案。
+5. **Identity與污染邊界**：candidate ID、pairing revision、model artifact、config、protocol與fixture identity必須一致；platform-native runtime wheels / dependency bundles可有不同SHA-256，但必須在acquisition lock與evidence中逐平台明列。Try-run必須記錄Git clean check、approved raw path、bounded timeout、network-disabled proof、cleanup與隔離環境處置。
+6. **不可繼承**：Gate 2A必須在`swap=0`、獨立核准packet與新run/evidence namespace下完整重跑 §5 / §7.1 mandatory matrix；Gate 1 Pi try-run不可複製、改名或引用為Gate 2A credit。
 
 ### Gate 2 ── M4b Pi 5 驗證（POC 執行，分 2A / 2B）
 
 | 欄位 | 內容 |
 | :--- | :--- |
-| Entry | Gate 1 已取得候選授權；POC 依 §5 / §7.1 對核准候選執行。**Gate 2A** 先跑LLM-only P1～P8、P10A、P11、P12；**Gate 2B** 取得Core記錄的Accepted Audio POC final reference package後，跑P9與P10B combined gate |
+| Entry | Gate 1已取得候選書面ACK；POC依獨立核准的Gate 2 packet對同一candidate identity從頭執行 §5 / §7.1，不繼承Gate 1 Pi try-run結果。**Gate 2A**在Pi 5 4GB / Debian 13 aarch64、`swap=0`下先跑LLM-only P1～P8、P10A、P11、P12；**Gate 2B**取得Core記錄的Accepted Audio POC final reference package後，跑P9與P10B combined gate |
 | Exit | 2A可產生provisional finalist ACK；只有2A與2B都完成、同一POC candidate SHA / fixture revision且全部mandatory gate通過，Core Designer才發final winner ACK |
 | Owner | POC 執行；Core Designer 審核；PM 轉達 ACK 通知 |
 | Blocking scope | Gate 2A前Core只能準備protocol / fake scaffold；2A provisional ACK後可做不鎖runtime/model的adapter scaffold。未取得2B final winner ACK前，不得加入production dependency / model lock或宣告M4b baseline |
@@ -175,8 +184,8 @@ poc_llm/
 | External gate | POC internal milestone | Delivery area | P IDs | Required evidence / decision |
 | :--- | :--- | :--- | :--- | :--- |
 | Gate 0 | Internal M0 | Receipt / Initial Manifest | N/A | 本revision receipt、repo path、branch、full SHA、owner / approver、environment inventory |
-| Gate 1 | Internal M1 + Ubuntu pre-screen | Frozen harness、candidate proposal、eligibility / license、Ubuntu packet | P1/P2/P3/P4/P5/P6/P8的portable subset；P11 provenance | committed harness / fixture / validator schema、最多2 finalist、Core written ACK |
-| Gate 2A | Internal M2 / M3 standalone | Pi lifecycle、result、performance、offline | P1～P8、P10A、P11、P12 | Pi 5 4GB mandatory；provisional finalist ACK，不是winner |
+| Gate 1 | Internal M1 + x86 pre-screen + Pi compatibility | Frozen harness、candidate proposal、eligibility / license、Ubuntu 24.04 x86_64完整packet、獨立Pi compatibility packet | x86執行P1/P2/P3/P4/P5/P6/P8 portable subset與P11 provenance；Pi只執行Gate 1 compatibility test ID | x86一次預選最多2名；只保留Pi `PASS`者；無Gate 2 credit；Core written ACK |
+| Gate 2A | Internal M2 / M3 standalone | 獨立Pi lifecycle、result、performance、offline重跑 | P1～P8、P10A、P11、P12 | 同一Pi 5 4GB / Debian 13 aarch64但使用`swap=0`、新run與新evidence；provisional finalist ACK，不是winner |
 | Gate 2B | Internal M4 combined | Audio+LLM residency / 20-session soak | P9、P10B及2A regression | Accepted Audio POC handoff引用、combined manifest、final winner ACK |
 | Gate 3 | Core product milestone M4b | Production adapter / child / product delta | Core `M4B-*` | Core Tester對product exact SHA驗收；POC evidence不等於產品Pass |
 
@@ -188,14 +197,18 @@ POC不得再把External Gate 0與Internal M0當成同一個approval，也不得�
 Core Designer (contract owner)
   → [本 delivery] PM 正式轉交 LLM POC Team (relay owner)
     → POC Gate 0 回交 contract receipt + initial manifest + committed planning packet
-      → POC Gate 1 回交 frozen harness + candidate list + Ubuntu pre-screen evidence（最多2 finalist）
-        → Core Designer 書面確認 Gate 1 (存於 deliveries/)
-          → POC Gate 2A 執行 Pi standalone，回交 exact SHA + manifest → provisional finalist ACK
-            → Accepted Audio POC final reference package ready
-              → POC Gate 2B 執行 P9 / P10B combined gate
-                → Core Designer 審核 → final winner ACK (或要求補交)
-              → PM 通知 LLM POC Team ACK 結果
-                → Developer 取得 Gate 2 final winner ACK → 建立 M4b 工作包
+      → POC 回交新Gate 1 frozen packet / schema / selector revision的exact SHA
+        → Core Designer intake packet revision；artifact acquisition / real execution另行授權
+          → POC執行Ubuntu 24.04 x86_64完整初篩，一次預選最多2名
+            → POC對預選者執行Gate 1 Pi compatibility try-run（無Gate 2 credit）
+              → POC回交authenticated x86 + Pi compatibility evidence與proposed finalist list
+                → Core Designer書面確認Gate 1 (存於 deliveries/)
+                  → POC Gate 2A以獨立packet / run / evidence完整重跑Pi standalone → provisional finalist ACK
+                    → Accepted Audio POC final reference package ready
+                      → POC Gate 2B 執行 P9 / P10B combined gate
+                        → Core Designer 審核 → final winner ACK (或要求補交)
+                          → PM 通知 LLM POC Team ACK 結果
+                            → Developer 取得 Gate 2 final winner ACK → 建立 M4b 工作包
 ```
 
 每個步驟的 ACK 均由 Core Designer 書面發出，存放於 `docs/outsource/deliveries/`；PM 只負責轉交，不代替 Core 簽發 ACK，也不代替 LLM POC Team 宣告 gate 通過。LLM POC Team 以自己 repo 完整 SHA 與 manifest 回交；不得以 branch HEAD 或部分 evidence 替代。
@@ -204,14 +217,16 @@ Core Designer (contract owner)
 
 ## 10. POC 本輪回覆 packet（由 User / PM 交付後回傳）
 
-LLM POC Team收到本revision後，可整理不依賴候選下載的scaffold，但在Core Gate 1 ACK前不得啟動Pi Gate 2或宣告爭議項目Pass。請在POC repo一次commit以下內容並回覆：
+LLM POC Team收到本revision後，可修訂不依賴候選下載的plan / schema / selector / negative regression，但本交付只授權產生新frozen packet revision。Artifact acquisition、runtime/model install、真x86 candidate run、Pi try-run、network切換或Gate 2A執行均須另行授權。請在POC repo一次commit以下內容並回覆：
 
 1. authoritative milestone index與External Gate→Internal Milestone→Delivery Area→P1～P12→evidence path唯一crosswalk；
 2. Gate 0 receipt與真實Initial Manifest；
-3. Gate 1可執行packet：candidate eligibility / provenance / license、Ubuntu pre-screen、frozen harness / fixture catalog / validator、command、timeout、result schema及最多2 finalist decision；
-4. Gate 2A / 2B work packages：owner、dependency、platform、entry / exit、estimate、re-estimation trigger、runner、cleanup、failure / no-go及evidence path；
-5. P2/P3 catalog與expected result不含敏感prompt / raw output，但須有fixture ID、revision、checksum與validator version；
-6. 回覆文件path、branch、完整40-character commit SHA。文件不得預填自己的未來SHA；commit後由回覆訊息提供。
+3. 新Gate 1可執行packet：candidate eligibility / provenance / license、Ubuntu 24.04 x86_64完整pre-screen、frozen harness / fixture catalog / validator、command、timeout、x86 result schema、Pi compatibility test ID / schema / evidence path與最多2 finalist decision；
+4. selector依x86 authenticated evidence一次預選最多2名、Pi結果只作後置eligibility filter、同cycle不補位，並有missing / forged identity、Pi `FAIL`、Pi `INCONCLUSIVE`、evidence carry-over與cleanup failure的negative regressions；
+5. candidate / acquisition schema分別記錄邏輯runtime version與x86 / Pi platform-native artifact SHA-256；Pi try-run記錄exact POC SHA、approved raw path、offline bundle、network-disabled proof、bounded timeout、exit / orphan與隔離環境cleanup；
+6. Gate 2A / 2B work packages：owner、dependency、platform、entry / exit、estimate、re-estimation trigger、runner、cleanup、failure / no-go及evidence path；明列Gate 2A使用`swap=0`、獨立packet / run / namespace完整重跑，並拒絕Gate 1 evidence carry-over；
+7. P2/P3 catalog與expected result不含敏感prompt / raw output，但須有fixture ID、revision、checksum與validator version；
+8. 回覆文件path、branch、完整40-character commit SHA。文件不得預填自己的未來SHA；commit後由回覆訊息提供。
 
 聊天、摘要或branch name不構成Gate 0 exit。Core只對已commit packet作intake；若本地無法解析POC提供的SHA，狀態維持`Blocked — committed input unavailable`。
 
@@ -220,6 +235,11 @@ LLM POC Team收到本revision後，可整理不依賴候選下載的scaffold，�
 | 阻擋項目 | 解除條件 |
 | :--- | :--- |
 | LLM POC 工作視為已正式授權 | Gate 0 POC Receipt + Gate 1 Core 書面確認 |
+| 新Gate 1 packet / schema / selector revision | 本2026-08-19 contract revision授權進行；POC以單一commit回交exact SHA供Core intake |
+| Gate 1 artifact acquisition / real x86 execution | 新frozen packet已完成Core intake，且User對下載、安裝、容量、owner與raw path另行核准 |
+| Gate 1 Pi compatibility try-run | 已有authenticated x86排序與當次預選最多2名，且User核准Pi存取、offline/network切換、artifact transfer / install與隔離cleanup |
+| Gate 1 finalist ACK | 每個proposed finalist的authenticated x86 evidence與Pi compatibility `PASS`完整；`FAIL` / `INCONCLUSIVE`不得補位或進入ACK |
+| Gate 2A execution | Gate 1 finalist ACK + 獨立核准Gate 2A packet + Pi 5 4GB / Debian 13 aarch64 `swap=0`；不繼承Gate 1 evidence |
 | Developer 準備protocol / fake adapter scaffold | Gate 0 receipt後可開始；不得鎖runtime/model |
 | Developer 準備real adapter scaffold | Gate 2A provisional finalist ACK後可開始；不得標baseline |
 | Developer 加入 LLM production dependency / model lock | Gate 2B final winner ACK + `model_spec.md`後 |
