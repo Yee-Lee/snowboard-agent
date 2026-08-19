@@ -1,6 +1,6 @@
 # LLM M0：Environment and Evidence-Chain Readiness
 
-狀態：`GATE_REVIEW`
+狀態：`COMPLETE`
 
 性質：前置 readiness gate；不是 runtime/model benchmark，也不是 hardware baseline。
 
@@ -97,8 +97,8 @@ request 未確認前，不構成 M0 `IN_PROGRESS` 或 hardware evidence。
   `m0-evidence.schema.json` 保存。
 - POC Test Controller observation：`PASS`；Technical Lead evidence review：`PASS
   recommendation`。
-- Open exit condition：Internal Tester 尚未對 exact SHA、raw manifest、inventory、
-  transfer/cleanup 與 lifecycle proof 做獨立 confirmation，因此 M0 不標示
+- Open exit condition：Internal Tester 已對 exact SHA、raw manifest、inventory、
+  transfer/cleanup 與 lifecycle proof 完成獨立 confirmation，M0 正式標示為
   `COMPLETE`。
 - Forward risk：4GB Pi 目前配置約 2GB swap（未使用）。這不影響 M0 inventory
   result，但 Gate 2A 前必須另行核准並證明 `swap=0`。

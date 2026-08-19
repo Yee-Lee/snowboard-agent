@@ -4,7 +4,7 @@
 風險的唯一狀態入口。External Gate 由合約 owner/recorder 關閉；Internal Milestone
 由 POC workflow 的 entry/exit review 控制，兩者不得共用狀態。
 
-最後更新：2026-08-18
+最後更新：2026-08-19
 
 ## Current Delivery Reachability
 
@@ -32,15 +32,13 @@ POC Team 的 ACK、self-test 或 Technical Lead review 都不能把 External Gat
 
 | Milestone | 狀態 | 摘要 | 依據 |
 | --- | --- | --- | --- |
-| **M0** | `GATE_REVIEW` | `M0-RUN-001` 執行完成；Technical Lead `PASS recommendation`，待 Internal Tester confirmation | [M0](m0_llm_readiness.md) |
+| **M0** | `COMPLETE` | `M0-RUN-001` 執行與審核皆完成；Internal Tester confirmed | [M0](m0_llm_readiness.md) |
 | **M1** | `PLANNED` | Freeze boundary/harness，固定 candidate pairing 與 preflight | [M1](m1_llm_contract_and_harness.md) |
 | **M2** | `PLANNED` | Ubuntu x86/arm64 pre-screen，最多保留兩個 Pi finalists | [M2](m2_llm_candidate_evaluation.md) |
 | **M3** | `PLANNED` | Gate 2A：Pi 5 LLM-only P1～P8、P10A、P11、P12；provisional finalist | [M3](m3_llm_child_pi_integration.md) |
 | **M4** | `PLANNED` | Gate 2B：Accepted Audio package、P9、P10B、2A regression；final winner | [M4](m4_llm_combined_validation_and_delivery.md) |
 
-Internal M0 已完成 entry、packet execution 與 Technical Lead evidence review；只有
-Internal Tester confirmation 通過後才可標示 `COMPLETE`。M0 完成也不能取代
-Gate 1 Core Designer ACK。
+Internal M0 已完成 entry、packet execution、Technical Lead evidence review 與 Internal Tester confirmation，標示為 `COMPLETE`。M0 完成不能取代 Gate 1 Core Designer ACK。
 
 ## Delivery Taxonomy and Traceability
 
@@ -51,9 +49,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 
 ## Open Dependencies, Risks and Adjustment Requests
 
-- **Gate review — Internal M0**：`afb310b...` 上的 inventory、exact-SHA/clean
-  proof、marker checksum/cleanup 與 lifecycle 皆支持 Technical Lead `PASS recommendation`。
-  下一個唯一獲准工作是 Internal Tester 獨立 confirmation；在此之前不啟動 M1。
+- **Milestone status — Internal M0**：`afb310b...` 上的 exact-SHA/clean proof、marker checksum/cleanup 與 lifecycle 皆已通過 Internal Tester 獨立 confirmation，M0 標示為 `COMPLETE`。下一個獲准工作是啟動 M1。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0
