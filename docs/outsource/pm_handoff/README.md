@@ -8,7 +8,7 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 目前無進行中的 PM handoff | — | — | — | **All received requests dispositioned** | — |
+| [`PM-OUT-260819-019-audio-asr-recovery-gate`](PM-OUT-260819-019-audio-asr-recovery-gate/brief.md) | Audio ASR recovery candidate、4-thread profile與real-time hard gate | `CR-AUDIO-M4A-G1B-ASR-SCOPE-001` | M4a Gate 1B | **Open — Core ACK required** | 待 Core 回覆 |
 
 ---
 
