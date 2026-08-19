@@ -226,6 +226,92 @@ def validate_m4a_candidate_smoke(document: dict[str, Any]) -> None:
         raise ValueError("M4a candidate smoke PASS requires clean cleanup")
 
 
+def validate_m4a_qualification(document: dict[str, Any]) -> None:
+    """Validate the authorized full-fixture report and its no-playback boundary."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "platform", "scope", "method", "input_identity", "network_evidence",
+        "raw_runs", "summaries", "resources", "security", "pending",
+        "execution_status", "cleanup",
+    }
+    _require_keys(document, required, "M4a qualification")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-WP3-FULL-QUALIFICATION":
+        raise ValueError("M4a qualification identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a qualification source SHA is invalid")
+    if document["scope"] != "AUTHORIZED_ASR_TTS_FULL_FIXTURE_QUALITY_RESOURCE_NO_PLAYBACK":
+        raise ValueError("M4a qualification scope is invalid")
+    method = document["method"]
+    expected_method = {
+        "threads": 2,
+        "warmups": 3,
+        "cold_repetitions": 3,
+        "cold_definition": "new_worker_and_model_load_then_one_complete_suite",
+        "hot_repetitions": 20,
+        "hot_definition": "one_loaded_model_runs_complete_suite_twenty_times",
+        "percentile": "nearest_rank",
+    }
+    if method != expected_method:
+        raise ValueError("M4a qualification method differs from the frozen S3 method")
+    identity = document["input_identity"]
+    if identity.get("asr_fixture_count") != 50 or identity.get("tts_prompt_count") != 20:
+        raise ValueError("M4a qualification fixture counts are invalid")
+    for name in (
+        "delivered_fixture_manifest_sha256", "asr_fixture_set_sha256",
+        "recording_plan_sha256", "tts_prompts_sha256",
+    ):
+        if not SHA256_RE.fullmatch(str(identity.get(name))):
+            raise ValueError(f"M4a qualification input hash is invalid: {name}")
+    if document["network_evidence"] != "OFFLINE_ENVIRONMENT_ONLY_NOT_NETWORK_DISABLED_P12_PENDING":
+        raise ValueError("M4a qualification must not claim the P12 offline gate")
+    raw_runs = document["raw_runs"]
+    if set(raw_runs) != {"asr", "tts"}:
+        raise ValueError("M4a qualification candidate scope is invalid")
+    expected_ids = {"asr": "asr-sherpa-sensevoice-int8-2025-09-09", "tts": "tts-sherpa-matcha-zh-en-1.13.5"}
+    for domain, run in raw_runs.items():
+        if run.get("domain") != domain or len(run.get("cold", [])) != 3:
+            raise ValueError(f"M4a qualification {domain} run structure is invalid")
+        for worker in [*run["cold"], run.get("hot", {})]:
+            if worker.get("terminal_status") == "SUCCESS":
+                if worker.get("candidate_id") != expected_ids[domain]:
+                    raise ValueError("M4a qualification contains an unauthorized candidate")
+                if any(worker.get(name) is not False for name in (
+                    "raw_transcript_emitted", "pcm_emitted", "audio_device_opened"
+                )):
+                    raise ValueError("M4a qualification worker violated the data/playback boundary")
+    security = document["security"]
+    if security != {
+        "raw_transcript_emitted": False,
+        "pcm_emitted": False,
+        "audio_device_opened": False,
+        "speaker_playback": False,
+    }:
+        raise ValueError("M4a qualification security boundary is invalid")
+    pending = document["pending"]
+    if not isinstance(pending, list) or len(pending) < 4:
+        raise ValueError("M4a qualification must retain remaining gate items")
+    statuses = {
+        "QUALIFICATION_QUALITY_LATENCY_PASS_PENDING_RESOURCE_LIFECYCLE_USER_OFFLINE",
+        "QUALIFICATION_QUALITY_LATENCY_FAIL_RETAINED",
+        "QUALIFICATION_INCONCLUSIVE_RETAINED",
+    }
+    if document["execution_status"] not in statuses:
+        raise ValueError("M4a qualification execution status is invalid")
+    summaries = document["summaries"]
+    _require_keys(summaries, {"asr", "tts"}, "M4a qualification summaries")
+    if document["execution_status"] == "QUALIFICATION_QUALITY_LATENCY_PASS_PENDING_RESOURCE_LIFECYCLE_USER_OFFLINE":
+        if summaries["asr"].get("quality_gate_pass") is not True or summaries["tts"].get("performance_gate_pass") is not True:
+            raise ValueError("M4a qualification PASS disagrees with metric summaries")
+    cleanup = document["cleanup"]
+    _require_keys(cleanup, {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"}, "M4a qualification cleanup")
+    counters_clean = all(cleanup[name] == 0 for name in (
+        "child_processes", "threads", "iterators", "streams", "device_owners"
+    ))
+    if cleanup["clean"] != counters_clean:
+        raise ValueError("M4a qualification cleanup flag disagrees with counters")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,

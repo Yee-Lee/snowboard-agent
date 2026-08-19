@@ -27,6 +27,12 @@ from audio_poc.m4a_authorized_preflight import (  # noqa: E402
 from audio_poc.m4a_runtime_preflight import install_command  # noqa: E402
 from audio_poc.m4a_candidate_worker import edit_distance, normalize_asr  # noqa: E402
 from audio_poc.m4a_candidate_smoke import safe_extract  # noqa: E402
+from audio_poc.m4a_qualification import (  # noqa: E402
+    numeric_summary,
+    percentile,
+    summarize_asr,
+    summarize_tts,
+)
 from audio_poc.fixture_recorder import (  # noqa: E402
     CaptureItem,
     archive_existing_record,
@@ -66,6 +72,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_gate1b_candidate_proposal,
     validate_m4a_authorized_preflight,
     validate_m4a_candidate_smoke,
+    validate_m4a_qualification,
     validate_m4a_runtime_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
@@ -242,6 +249,71 @@ class TrackedDocumentTests(unittest.TestCase):
             },
         }
         validate_m4a_candidate_smoke(report)
+
+    def test_qualification_percentile_uses_nearest_rank(self) -> None:
+        self.assertEqual(percentile([1, 2, 3, 4, 5], 0.50), 3)
+        self.assertEqual(percentile([1, 2, 3, 4, 5], 0.95), 5)
+        self.assertEqual(numeric_summary([])["p95"], None)
+
+    def test_qualification_summaries_enforce_frozen_metrics(self) -> None:
+        asr_item = {
+            "category": "taiwan_mandarin", "latency_ms": 10, "rtf": 0.1,
+            "reference_length": 10, "edit_distance": 1, "sentence_correct": True,
+        }
+        tts_item = {"latency_ms": 100, "first_chunk_ms": 100, "rtf": 0.2}
+        asr = {
+            "cold": [{"terminal_status": "SUCCESS", "results": [dict(asr_item) for _ in range(50)]} for _ in range(3)],
+            "hot": {"terminal_status": "SUCCESS", "results": [dict(asr_item) for _ in range(1000)]},
+        }
+        tts = {
+            "cold": [{"terminal_status": "SUCCESS", "results": [dict(tts_item) for _ in range(20)]} for _ in range(3)],
+            "hot": {"terminal_status": "SUCCESS", "results": [dict(tts_item) for _ in range(400)]},
+        }
+        self.assertTrue(summarize_asr(asr)["quality_gate_pass"])
+        self.assertTrue(summarize_tts(tts)["performance_gate_pass"])
+
+    def test_qualification_validator_rejects_playback_claim(self) -> None:
+        worker = {
+            "terminal_status": "SUCCESS", "candidate_id": "asr-sherpa-sensevoice-int8-2025-09-09",
+            "raw_transcript_emitted": False, "pcm_emitted": False, "audio_device_opened": False,
+        }
+        tts_worker = dict(worker, candidate_id="tts-sherpa-matcha-zh-en-1.13.5")
+        report = {
+            "schema_version": "1.0", "report_id": "M4A-G1B-WP3-FULL-QUALIFICATION",
+            "generated_at_utc": "2026-08-19T00:00:00Z", "poc_source_sha": "0" * 40,
+            "platform": {}, "scope": "AUTHORIZED_ASR_TTS_FULL_FIXTURE_QUALITY_RESOURCE_NO_PLAYBACK",
+            "method": {
+                "threads": 2, "warmups": 3, "cold_repetitions": 3,
+                "cold_definition": "new_worker_and_model_load_then_one_complete_suite",
+                "hot_repetitions": 20,
+                "hot_definition": "one_loaded_model_runs_complete_suite_twenty_times",
+                "percentile": "nearest_rank",
+            },
+            "input_identity": {
+                "delivered_fixture_manifest_sha256": "0" * 64,
+                "asr_fixture_count": 50, "asr_fixture_set_sha256": "1" * 64,
+                "recording_plan_sha256": "2" * 64,
+                "tts_prompts_sha256": "3" * 64, "tts_prompt_count": 20,
+            },
+            "network_evidence": "OFFLINE_ENVIRONMENT_ONLY_NOT_NETWORK_DISABLED_P12_PENDING",
+            "raw_runs": {
+                "asr": {"domain": "asr", "cold": [worker] * 3, "hot": worker},
+                "tts": {"domain": "tts", "cold": [tts_worker] * 3, "hot": tts_worker},
+            },
+            "summaries": {"asr": {"quality_gate_pass": True}, "tts": {"performance_gate_pass": True}},
+            "resources": {},
+            "security": {
+                "raw_transcript_emitted": False, "pcm_emitted": False,
+                "audio_device_opened": False, "speaker_playback": False,
+            },
+            "pending": ["lifecycle", "offline", "user review", "rss review"],
+            "execution_status": "QUALIFICATION_QUALITY_LATENCY_PASS_PENDING_RESOURCE_LIFECYCLE_USER_OFFLINE",
+            "cleanup": {"child_processes": 0, "threads": 0, "iterators": 0, "streams": 0, "device_owners": 0, "clean": True},
+        }
+        validate_m4a_qualification(report)
+        report["security"]["speaker_playback"] = True
+        with self.assertRaisesRegex(ValueError, "security boundary"):
+            validate_m4a_qualification(report)
 
     def test_runtime_preflight_validator_rejects_inference_claim(self) -> None:
         report = {

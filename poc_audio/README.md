@@ -200,6 +200,28 @@ bash poc_audio/tools/run_m4a_candidate_smoke.sh \
 This smoke cannot close the frozen 50-item ASR, 20-prompt TTS, lifecycle,
 resource, User-quality, or Gate 2A requirements.
 
+### M2 full-fixture qualification without playback
+
+After the focused smoke passes, use a new work directory and output file to run
+the frozen three cold suites and twenty hot suites for both authorized rows.
+The runner verifies all 50 delivered ASR WAV checksums, all 20 tracked TTS
+prompts and every authorized candidate artifact before loading a model. It
+never writes PCM, opens ALSA or plays a speaker:
+
+```bash
+bash poc_audio/tools/run_m4a_qualification.sh \
+  --artifact-dir poc_audio/artifacts/gate1b \
+  --runtime-dir /controlled/audio-poc/runtime/sherpa-onnx-1.13.5 \
+  --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
+  --work-dir /controlled/audio-poc/work/qualification-001 \
+  --output /tmp/m4a-qualification.json
+```
+
+The report may close only the full-fixture ASR quality and TTS latency/RTF
+observations. Candidate lifecycle, network-disabled P12 evidence, RSS-growth
+review and User TTS quality review remain explicit pending items. Keep the raw
+JSON outside Git and commit only a reviewed sanitized evidence summary.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests
