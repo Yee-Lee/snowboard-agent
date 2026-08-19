@@ -26,8 +26,12 @@ WP3 full-fixture qualification 已在 Pi SHA
 `63c2cc179bb3c2525201da0f7a78d2c50b63d759` 完成：SenseVoice core CER 41.629%、
 整體整句正確率 6%，未達 frozen gates 並已 `REJECT`；Matcha first-buffer/RTF
 performance gates 通過，但 User quality、lifecycle、network-disabled、resource
-growth 與 legal conditions 仍 pending。已提出 `CR-AUDIO-M4A-G1B-ASR-SCOPE-001`
-要求 Core 授權 exact Whisper.cpp fallback 或接受 ASR no-go；其餘 rows 仍禁止執行。
+growth 與 legal conditions 仍 pending。Product Team 已修訂
+`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`：要求以 faster-whisper small multilingual
+int8、4 threads 作為下一 primary，新增 hot final-transcript p95 <=1.5 s
+hard gate 且不放寬現有品質、RTF 或資源邊界。SenseVoice 不再調整，
+既有 Whisper.cpp base 維持 deferred；所有 fallback 仍須 Core exact-row ACK
+後才能執行。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 
@@ -46,7 +50,7 @@ growth 與 legal conditions 仍 pending。已提出 `CR-AUDIO-M4A-G1B-ASR-SCOPE-
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
 | Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` — Core commit `790c0f86e12422542ef94cacd3c4dd850e346bca` 只授權 SenseVoice ASR 與 Matcha TTS；其餘 rows 不可執行 |
-| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — full-fixture evidence 已拒絕 SenseVoice、Matcha performance 通過但 remaining gates pending；ASR fallback 等待新 ACK，M3 尚未開始；Gate 2A 不是 final baseline lock |
+| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — full-fixture evidence 已拒絕 SenseVoice、Matcha performance 通過但 remaining gates pending；Product Team 已要求 faster-whisper small/4-thread/1.5 s hard gate exact-row ACK，M3 尚未開始；Gate 2A 不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |
 
