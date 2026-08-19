@@ -2,14 +2,14 @@
 
 狀態：`COMMITTED PLANNING PACKET / EXECUTION NOT AUTHORIZED`
 
-Revision：`2026-08-18-r3`
+Revision：`2026-08-19-r4`
 
 Owner：POC Technical Lead
 
 Approver：Core Designer
 
 本文件是 Gate 1、Gate 2A、Gate 2B work-package 的唯一 authoritative plan。它依
-`DELIVERY-LLM-POC-M4B-CONTRACT-001` 2026-08-17 revision 建立；目前沒有 Ubuntu
+`DELIVERY-LLM-POC-M4B-CONTRACT-001` 2026-08-19 revision 建立；目前沒有 Ubuntu
 benchmark、Pi run 或 candidate evidence。
 
 ## Result Semantics
@@ -32,37 +32,38 @@ benchmark、Pi run 或 candidate evidence。
 
 | Field | Definition |
 | --- | --- |
-| Package | `G1-UBUNTU-PRESCREEN-003` |
+| Package | `G1-X86-PI-COMPAT-004` |
 | Owner / approver | Developer + POC Test Controller / Technical Lead review / Core Designer ACK |
-| Dependency | Gate 0 recorded complete；M0 confirmed；Ubuntu x86_64/aarch64 owners and artifact approvals |
-| Platform | Ubuntu x86_64 and native Ubuntu aarch64; both mandatory |
-| Entry / exit | Frozen lock + candidate manifests → both-platform evidence, at most two proposed finalists, Core written ACK |
+| Dependency | Gate 0 recorded complete；M0 confirmed；packet 004 Core intake；artifact acquisition與x86/Pi執行分別核准 |
+| Platform | Ubuntu 24.04 x86_64完整初篩；產品Pi 5 4GB / Debian 13 aarch64 bounded compatibility |
+| Entry / exit | Frozen lock + candidate/acquisition manifests → x86一次預選最多2名 → Pi PASS後置filter → Core written ACK |
 | Estimate | 3–5 working days after artifacts and both runners are available |
-| Re-estimation trigger | Candidate count/pairing changes, runner unavailable >1 day, artifact/storage delta >25%, license or aarch64 incompatibility |
-| Runner / command | Authenticated fail-closed runner + both-platform selector; exact commands in `poc_llm/tests/gate1/GATE1-PACKET-003.md` |
-| Evidence | Raw outside Git under approved run ID; sanitized schema `poc_llm/evidence/gate1/gate1-result.schema.json` |
+| Re-estimation trigger | Candidate count/pairing/cycle changes、Pi預選者需補位、artifact/storage delta >25%、license或Pi incompatibility |
+| Runner / command | Authenticated x86 runner + immutable preselection + Pi compatibility + final filter；見 `GATE1-PACKET-004.md` |
+| Evidence | Raw outside Git；x86/Pi/aggregate分離schemas與namespace，Gate 1 Pi evidence不得進2A |
 | Cleanup | Success requires SHUTDOWN ACK, exit 0 and absent process group; failure uses bounded group TERM→KILL→wait and records proof; unique raw dir |
-| Failure / no-go | Schema/identity drift, incomplete P1/P2/P3/P4/P5/P6/P8/P11, log/exit/cleanup violation or missing paired platform rejects pairing; zero eligible pairing produces no-go/change request |
+| Failure / no-go | x86 identity/gate/cleanup failure拒絕preselection；Pi FAIL/INCONCLUSIVE移除但不補第三名；zero retained產生no-go/change request |
 
 Gate 1 selects proposed Pi candidates only. It produces neither Gate 2A provisional finalist nor
 final winner.
 
-The runner validates all lock identities, the candidate manifest and every sanitized platform
-result. It launches the exact bound argv, drives the portable gates itself and cannot derive PASS
-from candidate-supplied P2/P3 bulk JSON. The selector validates both same-manifest platform results,
-requires the exact 60-case and P4 matrices, applies the frozen deterministic ranking and emits a
-schema-valid aggregate with at most two proposed finalists. Protocol and expected-JSON-printer
-regressions are test-only and do not start Gate 1.
+The x86 runner validates lock/candidate/acquisition identities, launches the exact bound argv and
+drives portable gates itself. The selector authenticates exact 60-case/P4 evidence, ranks x86 once
+and freezes at most two preselected candidates. Only those candidates may run the separate Pi
+compatibility packet；Pi PASS is a later eligibility filter and never changes the x86 ranking or
+backfills a third candidate. Protocol/fake regressions are test-only and do not start Gate 1.
 
-Revision r3 additionally makes log-hygiene evidence runner-owned, requires complete cold/hot P4
-raw samples and aggregates, reconciles the process group even after leader exit, and makes selector
-eligibility depend on available identities matching the loaded lock and supplied manifests. The
-four A～D negative regressions remain test-only and do not constitute candidate evidence.
+Revision r4 preserves r3 log/P4/process-group/authentication controls and adds platform-native
+acquisition identity、separate x86/Pi/aggregate schemas、immutable preselection、no-backfill、
+Pi cleanup filtering and Gate 2 evidence carry-over rejection.
 
 ## Gate 2A Work Packages — LLM-only Pi 5
 
 Common dependency：Gate 1 Core ACK、same frozen candidate/config/fixture/validator SHA、Pi 5 4GB
 mandatory environment（swap=0）、8GB informational environment、operator authorization。
+
+Gate 2A must use a new run ID、independent packet and `evidence/m4b/2a/` namespace. Gate 1 Pi
+compatibility output is not accepted as any P1～P12 input or completion proof.
 
 Common platform：Raspberry Pi 5 4GB mandatory；8GB runs use identical configuration and cannot
 repair a 4GB mandatory failure。
@@ -90,7 +91,7 @@ handoff ID/full SHA/kit. Missing Audio input is `Blocked`; surrogate is debug-on
 | Package | P IDs | Owner | Entry / exit | Estimate | Runner / evidence | Cleanup and failure/no-go |
 | --- | --- | --- | --- | ---: | --- | --- |
 | `G2B-WP01-INTAKE-REGRESSION` | P1, P2, P5, P7, P8, P11, P12 regression | Developer verifies package; Test Controller runs; Internal Tester confirms | Same 2A candidate/config/fixture, Accepted Audio SHA/kit, 4GB swap=0 → baseline hashes and mandatory regression PASS | 1 day | Planned `run_m4b_gate.py --gate 2B --cases P1,P2,P5,P7,P8,P11,P12`; `evidence/m4b/2b/<run>/regression` | Baseline drift = Blocked; valid regression failure revokes final eligibility and returns to 2A review |
-| `G2B-WP02-RESIDENCY` | P9 | Test Controller / Internal Tester | Regression valid → Core parent + LLM + real ASR/TTS residency measurements | 1 day | Planned runner `--cases P9`; `evidence/m4b/2b/<run>/residency` | 4GB >3.5GB/OOM/swap≠0 = FAIL; missing Audio = Blocked; 8GB cannot repair 4GB |
+| `G2B-WP02-RESIDENCY` | P9 | Test Controller / Internal Tester | Regression valid → Core parent + LLM + real ASR/TTS residency measurements | 1 day | Planned runner `--cases P9`; `evidence/m4b/2b/<run>/residency` | `system_used > 3584 MiB`、OOM、full pressure stall增加或swap≠0 = FAIL；sum RSS僅diagnostic；missing Audio = Blocked |
 | `G2B-WP03-COMBINED-SOAK` | P3 regression through catalog, P10B; P4 hot sanity | Test Controller / Internal Tester | P9 valid, same 20-case catalog → 20 ASR fixture→LLM→TTS sessions, 5s interval | 1.5 days | Planned runner `--cases P3,P4-HOT,P10B`; `evidence/m4b/2b/<run>/combined-soak` | ≥80°C, throttling, crash, leak, schema/fallback/log or owner residue = FAIL |
 | `G2B-WP04-FINAL-DECISION` | 2A + 2B aggregate | Technical Lead recommends; Core Designer decides | All mandatory 2A, regression, P9 and P10B reviewed → final winner ACK or no-go | 0.5 day | Combined manifest, full SHA and decision matrix | Only Core Designer may issue final winner; unresolved threshold or mandatory result blocks decision |
 

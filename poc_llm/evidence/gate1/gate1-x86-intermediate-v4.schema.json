@@ -1,0 +1,11 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate1:x86-intermediate:4.0",
+  "type":"object",
+  "required":["packet_id","run_id","candidate_id","pairing_revision","platform","result","identity","gates","cases","metrics","log_hygiene","cleanup","violations"],
+  "properties":{
+    "packet_id":{"const":"G1-X86-PI-COMPAT-004"},
+    "platform":{"const":"ubuntu-x86_64"},
+    "result":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required"]}
+  }
+}

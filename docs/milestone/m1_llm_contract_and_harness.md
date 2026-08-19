@@ -1,6 +1,6 @@
 # LLM M1：Frozen Contract, Candidate Pairing and Deterministic Harness
 
-狀態：`NOT_STARTED`
+狀態：`IN_PROGRESS`
 
 ## 目標與交付貢獻
 
@@ -17,6 +17,19 @@ D1、D2、D3、D4、D8。
 - 正式 checklist/development guide 已收到；若仍未收到，只有不依賴未定語意的
   scaffold 工作可執行，milestone 不得關閉。
 - Prompt/output/protocol 與候選 gate 尚未受真實 benchmark 結果影響。
+
+## Entry Review Record
+
+- Entry review date：2026-08-19。
+- User confirmed internal review passed；Internal M0 已在 `eeb00e341056ccef77c10ae8ca4bcbbbfa683d39`
+  標示為 `COMPLETE`，且 workstation、`origin/llm`、Pi clean checkout 已對齊該 SHA。
+- Core Designer 的 Gate 0 R2 ACK 接受 planning/regression packet；2026-08-19 platform
+  change ACK 另批准以 `G1-X86-PI-COMPAT-004` 取代 packet 003，待新 exact SHA intake。
+- 本次授權只涵蓋 contract/schema/fixture/pairing preflight 與 deterministic fake tests。
+  Packet 的真實 Ubuntu candidate execution 仍標示 `EXECUTION NOT AUTHORIZED`；Pi 也不得
+  提前執行 Gate 2A。
+- 正式 checklist/development guide 若仍未交付，維持為 M1 exit dependency；不得以現有
+  scaffold 關閉 M1。
 
 ## Work Packet
 
@@ -46,8 +59,25 @@ D1、D2、D3、D4、D8。
 - Frozen decision record、approver、日期與版本。
 - Protocol/output/config schema 與 fixtures checksum。
 - Fake run commands、results、fault matrix 與 cleanup proof。
-- M2 Ubuntu x86/arm64 candidate set、license/source/offline/aarch64 preflight 與固定
-  benchmark packet。
+- M2 Ubuntu 24.04 x86完整初篩、最多兩名不可變preselection、產品Pi compatibility、
+  license/source/offline/aarch64 acquired-bundle proof 與固定 benchmark packet。
+
+## Current Evidence and Open Exit Conditions
+
+- `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
+  Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。
+- `G1-CANDIDATE-PREFLIGHT-001`：已從官方 metadata 固定 LiteRT-LM v0.16.0 的兩平台
+  wheel SHA-256，以及 Gemma4-E2B、Qwen2.5-1.5B、Qwen2.5-0.5B 的 upstream revision、
+  artifact SHA-256、size 與 license proposal。
+- Open：尚未取得 artifact/dependency bundle、source/archive checksum、candidate adapter、
+  strict config 與實體 manifest，因此不得執行真實 Gate 1 candidate run。
+- `G1-X86-PI-COMPAT-004`：candidate/acquisition identity、x86/Pi/aggregate schemas、一次
+  max-two preselection、Pi eligibility filter、no-backfill與Gate 2 carry-over guard已形成；
+  deterministic revision-004 regressions 9/9通過，待完整回歸與Core exact-SHA intake。
+- Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
+  try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
+- Open：PromptBuilder/protocol/strict-config frozen decision record 與 Designer/Tester exit
+  approval 尚未完成，M1 不得標示 `GATE_REVIEW` 或 `COMPLETE`。
 
 ## Prohibited in M1
 

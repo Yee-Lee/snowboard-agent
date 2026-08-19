@@ -72,7 +72,7 @@ External Gate lifecycle：
 | Gate | POC Team 可做的狀態動作 | 關閉權限 |
 | --- | --- | --- |
 | Gate 0 | 修訂 package 並標記 `SUBMITTED`；不得標記 `COMPLETE` | PM 記錄實際 branch HEAD；Core Designer 登錄 |
-| Gate 1 | 提交 candidate proposal 與 Ubuntu pre-screen evidence | Core Designer 書面確認 finalists 與 Pi 授權 |
+| Gate 1 | 提交 Ubuntu x86完整初篩、不可變max-two預選與產品Pi compatibility evidence | Core Designer 書面確認 finalists 與 Gate 2A授權 |
 | Gate 2A | 提交 Pi 5 LLM-only P1～P8、P10A、P11、P12 evidence | Core Designer 最多發 provisional finalist ACK |
 | Gate 2B | 提交 Accepted Audio P9、P10B 與 2A regression | Core Designer 發 final winner/no-go ACK |
 
@@ -82,7 +82,7 @@ Internal Milestone lifecycle：
 | --- | --- |
 | M0 | Environment、exact SHA、remote command control 與 evidence chain readiness |
 | M1 | Freeze contract、protocol、fixtures、metrics/gates；固定 pairing 與 preflight |
-| M2 | Ubuntu x86/arm64 pre-screen，最多保留兩個 Pi finalists |
+| M2 | Ubuntu x86完整初篩一次預選最多兩名，再以產品Pi compatibility作後置eligibility filter |
 | M3 | Gate 2A：Gate 1 ACK 後驗證 Pi LLM-only P1～P8、P10A、P11、P12 |
 | M4 | Gate 2B：Accepted Audio package 上完成 P9、P10B、2A regression 與 final delivery |
 

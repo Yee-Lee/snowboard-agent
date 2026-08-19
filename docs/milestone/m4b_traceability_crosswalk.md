@@ -1,6 +1,6 @@
 # M4b Delivery Taxonomy and Traceability Crosswalk
 
-狀態：`CONTROLLED / CORE-2026-08-17-R1`
+狀態：`CONTROLLED / CORE-2026-08-19-R2`
 
 Owner：POC Technical Lead
 
@@ -28,7 +28,7 @@ External approver：Core Designer
 | External gate | Internal milestone | Primary areas | P IDs | Evidence / decision | Owner / approver |
 | --- | --- | --- | --- | --- | --- |
 | Gate 0 | M0 administrative/readiness mapping；狀態仍分離 | D1, D8 | N/A | revision receipt、R2 manifest、committed packets | POC Team / PM / Core Designer |
-| Gate 1 | M1 frozen harness + M2 Ubuntu pre-screen | D1, D2, D3, D4, D5, D8 | portable P1/P2/P3/P4/P5/P6/P8 + P11 | both-platform evidence、最多兩個 proposed finalists、Core ACK | Test Controller / Core Designer |
+| Gate 1 | M1 frozen harness + M2 x86/Pi compatibility | D1, D2, D3, D4, D5, D8 | x86 portable P1/P2/P3/P4/P5/P6/P8 + P11；Pi `G1-PI-COMPAT-004` | x86一次預選最多2名、Pi PASS後置filter、無2A credit、Core ACK | Test Controller / Core Designer |
 | Gate 2A | M3 LLM-only Pi | D2, D3, D4, D5, D6, D7, D8 | P1～P8、P10A、P11、P12 | 4GB mandatory；provisional finalist ACK only | Test Controller + Technical Lead / Internal Tester + Core Designer |
 | Gate 2B | M4 Audio+LLM combined | D3, D4, D5, D6, D7, D8 | P9、P10B、required 2A regression | Accepted Audio package、4GB combined、final winner ACK | Test Controller + Technical Lead / Internal Tester + Core Designer |
 | Gate 3 | Core production M4b | Core-owned | Core `M4B-*` | product exact-SHA acceptance | Core Developer / Tester / Designer |

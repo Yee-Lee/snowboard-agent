@@ -1,0 +1,20 @@
+{
+  "packet_id":"G1-X86-PI-COMPAT-004",
+  "revision":"2026-08-19-r4",
+  "validator_version":"1.0.0",
+  "artifacts":{
+    "catalog":{"path":"poc_llm/fixtures/gate1/catalog.json","sha256":"e0b23661f225a846d8ad237140aac4196a2cd5ebc15980be33603abd8befe50f"},
+    "candidate_schema":{"path":"poc_llm/fixtures/gate1/candidate-v4.schema.json","sha256":"70ed84ef2955e763b96733d9a1ae66022bbe6833f0386eb6055ed72a79204af4"},
+    "acquisition_schema":{"path":"poc_llm/fixtures/gate1/acquisition-v4.schema.json","sha256":"d31ce91053593e7e46232e6a5eba37f95b1742689ffba33f015f53e134b63259"},
+    "validator":{"path":"poc_llm/harness/gate1_validator.py","sha256":"d209f1cb1532ab51bca212298fa681d3a0045710e6a0248fac8ffca04c54d542"},
+    "runner":{"path":"poc_llm/tools/run_gate1_x86_prescreen_v4.py","sha256":"0ef0554865655f701f940464e00be1c907c485e9cb37427158ba56bf2d420d68"},
+    "runner_core":{"path":"poc_llm/tools/run_gate1_prescreen.py","sha256":"a02a2513d3b3fe5ae26d54b6d16dcd1d005128b19cf0a5fb94f8e1968b1be74b"},
+    "pi_runner":{"path":"poc_llm/tools/run_gate1_pi_compat_v4.py","sha256":"ea570f6e1db2ef6d9b5342cd48a60321561dd6c55c03a06113c9993c9a22244b"},
+    "result_schema":{"path":"poc_llm/evidence/gate1/gate1-x86-intermediate-v4.schema.json","sha256":"6164cae9f2023d34d234d6679eaa7ccf1fbbca8676996f4e54cf4cc1358b635a"},
+    "x86_result_schema":{"path":"poc_llm/evidence/gate1/gate1-x86-result-v4.schema.json","sha256":"8c3803f146037803ae0ad2fff9345f4e0c2f3dd149008b17fabebe474bf54544"},
+    "pi_result_schema":{"path":"poc_llm/evidence/gate1/gate1-pi-compat-result-v4.schema.json","sha256":"882a0a293a6d5c7587c1e37e388f391db4f93628e3b08b42a820c387ced3e898"},
+    "selection_schema":{"path":"poc_llm/evidence/gate1/gate1-selection-v4.schema.json","sha256":"65352721d551013e5f2ce9ac3f0a5b9917ee3ae630cdc0dbacc75ae454f7c496"},
+    "selector":{"path":"poc_llm/tools/select_gate1_finalists_v4.py","sha256":"78cc338c81b23709d91da9ca9fefd4d73999dad778c91f093a5b2638ccb78fda"},
+    "gate2_guard":{"path":"poc_llm/tools/run_m4b_gate.py","sha256":"7192767570ca7739f01f4ddcfe8c261e1587b6fbb378dc33a65533fb1fd7e547"}
+  }
+}

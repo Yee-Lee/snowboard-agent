@@ -14,6 +14,8 @@ P11、P12。2A 只能提出 provisional finalist 或 no-go，不能決定 final 
 - Runtime/model/artifact/config 與 protocol versions 均已固定。
 - Reasoner boundary fixtures 可用，但產品 composition root 不在本 POC 修改範圍。
 - M4 所需 accepted M4a SHA dependency 已有 owner、取得路徑與風險狀態。
+- Product target 為目前 `snowboard.local` 的 Raspberry Pi 5 4GB / Debian 13 aarch64
+  環境；Gate 1 的 Ubuntu aarch64 pre-screen 不要求替換產品 Pi OS。
 
 ## Work Packet
 

@@ -1,9 +1,10 @@
 # LLM POC Workspace
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
-已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0 為
-`GATE_REVIEW`，待 Internal Tester confirmation。本文件不另行建立狀態；M0 授權只涵蓋 frozen packet 的唯讀
-inventory、`/tmp` marker 與 dummy lifecycle，不包含安裝 runtime、下載模型或 reboot。
+已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0 已完成，M1 為
+`IN_PROGRESS`。本文件不另行建立狀態；M1 授權只涵蓋 frozen contract/schema/fixture、
+candidate pairing preflight 與 deterministic fake，不包含真實 candidate benchmark、
+安裝 runtime、下載模型或提前執行 Pi Gate 2A。
 
 ## Layout
 
@@ -27,16 +28,22 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 - `tests/m0/M0-TEST-REQUEST-001.md`：immutable packet draft 與受控 Pi runbook。
 - `evidence/m0/m0-evidence.schema.json`：sanitized evidence schema。
 
-## Core 2026-08-18 R2 Revision Artifacts
+## Core 2026-08-18 R2 and 2026-08-19 Platform Revision Artifacts
 
 - `deliveries/POC-llm-DEL-2026-001-R2.md`：015 複驗 Initial Manifest。
 - `tests/gate1/GATE1-PACKET-003.md`：authenticated fail-closed Ubuntu packet；supersedes packet 002。
+- `tests/gate1/GATE1-PACKET-004.md`、`harness/gate1-lock-v4.json`：Core-approved x86完整
+  初篩＋產品Pi compatibility replacement；待 exact-SHA intake，真實執行未授權。
 - `fixtures/gate1/catalog.json`：20-case P2/P3 catalog；每 case 3 repetitions。
 - `harness/gate1_validator.py`、`harness/gate1-lock.json`：validator v1.0.0 與 checksums。
-- `tools/run_gate1_prescreen.py`、`tools/select_gate1_finalists.py`：portable gates、bounded cleanup、both-platform max-two selection。
+- `tools/run_gate1_x86_prescreen_v4.py`、`tools/run_gate1_pi_compat_v4.py`、
+  `tools/select_gate1_finalists_v4.py`：x86完整初篩、max-two不可變預選、產品Pi compatibility
+  後置filter與bounded cleanup。Revision 003工具只保留歷史regression。
 - `tools/run_m4b_gate.py`：Gate 2A/2B frozen case-set plan validator；不執行 hardware。
-- `fixtures/gate1/candidate.schema.json`、`evidence/gate1/gate1-result.schema.json`、`evidence/gate1/gate1-selection.schema.json`：locked schemas。
-- `tests/gate1/test_gate1_packet.py`：protocol/no-LLM、log leak、cold P4、orphan cleanup、unauthenticated selector 與 max-two regressions。
+- Revision 004 另以 `candidate-v4.schema.json`、`acquisition-v4.schema.json` 與分離的
+  x86/Pi/aggregate schemas固定logical/platform-native identity及evidence boundary。
+- `tests/gate1/test_gate1_packet.py`保留revision-003回歸；`test_gate1_packet_v4.py`覆蓋
+  immutable preselection、Pi filter、no-backfill、cleanup與Gate 2 carry-over rejection。
 
 Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不是 candidate evidence。
 

@@ -5,8 +5,9 @@
 ## 1. Income (位於 `docs/pm_handoff/`)
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
-* [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-17 revision，包含 OUT-M4B-2026-002～006
+* [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
 * [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) - Core 對 `0d415d...` 的 Final ACK；Gate 0 R2 `COMPLETE`、015 resolved
+* [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Core批准x86完整初篩＋產品Pi compatibility分流；只授權packet revision，真實執行未授權
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
@@ -30,12 +31,15 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-PM-OUT-260817-015.md`](response/RESP-PM-OUT-260817-015.md) - 015 複驗回覆、changed paths 與 remaining Core decisions
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md) - 007-A～D authenticated fail-closed packet 修正與複驗回覆
+* [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
 
 * [`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md) - 回覆 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的 Gate 0 簽收回條與 Initial Manifest
+* [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md`](delivery/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) - 請 Core 核准 Gate 1 以 Ubuntu x86_64 完整初篩，最多兩個候選再於產品 Debian Pi 執行 bounded compatibility try-run
+* [`DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md`](delivery/DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md) - Revision 004 packet/schema/selector deterministic return；exact SHA於commit後另行提供
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

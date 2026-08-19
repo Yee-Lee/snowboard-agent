@@ -18,7 +18,19 @@ def main() -> int:
     parser.add_argument("--gate", choices=("2A", "2B"), required=True)
     parser.add_argument("--cases", required=True)
     parser.add_argument("--plan-only", action="store_true")
+    parser.add_argument("--source-packet-id")
+    parser.add_argument("--run-id")
+    parser.add_argument("--evidence-namespace")
     args = parser.parse_args()
+    if (
+        (args.source_packet_id and args.source_packet_id.startswith("G1-"))
+        or (args.run_id and args.run_id.startswith("G1-"))
+        or (args.evidence_namespace and "gate1" in args.evidence_namespace.lower())
+    ):
+        print(json.dumps({
+            "gate": args.gate, "result": "FAIL", "reason": "Gate 1 evidence carry-over is forbidden",
+        }, sort_keys=True))
+        return 1
     cases = set(args.cases.split(","))
     unknown = sorted(cases - CASE_SETS[args.gate])
     missing = sorted(CASE_SETS[args.gate] - cases)
