@@ -75,6 +75,9 @@ def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validat
         if schema_errors:
             errors.append(f"frame {index} schema: {schema_errors[0].message}")
             continue
+        if fatal:
+            errors.append(f"frame {index}: frame after FATAL")
+            continue
         frame_type = frame["type"]
         request_id = frame.get("request_id")
         if frame_type == "READY":

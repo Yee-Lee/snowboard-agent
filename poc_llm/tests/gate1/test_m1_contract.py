@@ -272,6 +272,51 @@ class M1ContractTest(unittest.TestCase):
                 frame = {**base, "code": code, "state": state}
                 self.assertEqual(self.protocol.is_valid(frame), expected)
 
+    def test_fatal_rejects_every_trailing_frame_type(self) -> None:
+        ready = copy.deepcopy(self.fixtures["valid_sequences"][0]["frames"][0])
+        generate = copy.deepcopy(self.fixtures["valid_sequences"][0]["frames"][1])
+        fatal = {
+            "type": "ERROR",
+            "protocol_version": "snowboard.llm/1",
+            "request_id": "req-001",
+            "code": "PROTOCOL_ERROR",
+            "state": "FATAL",
+        }
+        trailing_frames = {
+            "READY": ready,
+            "ERROR": {
+                "type": "ERROR",
+                "protocol_version": "snowboard.llm/1",
+                "request_id": "req-stale",
+                "code": "INVALID_REQUEST",
+                "state": "READY",
+            },
+            "RESULT": copy.deepcopy(
+                self.fixtures["valid_sequences"][0]["frames"][2]
+            ),
+            "CANCEL": {
+                "type": "CANCEL",
+                "protocol_version": "snowboard.llm/1",
+                "request_id": "req-001",
+            },
+            "SHUTDOWN": {
+                "type": "SHUTDOWN",
+                "protocol_version": "snowboard.llm/1",
+            },
+            "SHUTDOWN_ACK": {
+                "type": "SHUTDOWN_ACK",
+                "protocol_version": "snowboard.llm/1",
+            },
+        }
+        for frame_type, trailing in trailing_frames.items():
+            with self.subTest(frame_type=frame_type):
+                errors = validate_sequence(
+                    [ready, generate, fatal, trailing], self.protocol
+                )
+                self.assertTrue(
+                    any("frame after FATAL" in error for error in errors), errors
+                )
+
     def test_protocol_stdout_extra_field_is_rejected(self) -> None:
         frame = copy.deepcopy(self.fixtures["valid_sequences"][0]["frames"][0])
         frame["debug"] = "not allowed on protocol stdout"

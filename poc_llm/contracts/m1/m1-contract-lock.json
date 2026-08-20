@@ -10,7 +10,7 @@
     "config": {"path": "poc_llm/contracts/m1/strict-config.schema.json", "sha256": "14c46de1d7979be5e3562d18c7b979749f01c37cb00850d80f5016b1e1fd3945"},
     "fixtures": {"path": "poc_llm/contracts/m1/contract-fixtures.json", "sha256": "e4a6b02eab4bc0ed6a3fabe43a317974af48cfae3c36a00f8f11966532b71ab4"},
     "boundary": {"path": "poc_llm/harness/m1_contract_boundary.py", "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
-    "validator": {"path": "poc_llm/harness/m1_contract_validator.py", "sha256": "04683e8308d8ca7dc3fbbab4c05ad0e401f0117d0fe36ebf1b892b30a5025b2f"},
-    "tests": {"path": "poc_llm/tests/gate1/test_m1_contract.py", "sha256": "ee9b7fd685bb933b4ed8136952c691f0c335622e4ce803c09cebae2a65a0c1ca"}
+    "validator": {"path": "poc_llm/harness/m1_contract_validator.py", "sha256": "4a28f4feb5cd0b24e0eb11838f82f1586cee2b3dd5eb12f62cfed33fd69b0b39"},
+    "tests": {"path": "poc_llm/tests/gate1/test_m1_contract.py", "sha256": "f7996ee728a8a8d1947acc5c70c9ec1f8e3c02f3353b7982c4b89b79fb943685"}
   }
 }
