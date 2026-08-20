@@ -229,6 +229,12 @@ report from the same Candidate SHA, and only unlocks when Q8 passes both
 quality gates while latency exceeds 1.5 seconds or peak RSS exceeds 1250 MiB.
 If Q8 fails quality, Q5 remains prohibited.
 
+When the operator explicitly chooses an early directional read instead of the
+frozen packet, append `--diagnostic-hot-repetitions 2`. This skips cold suites,
+retains all three warmups, and measures two complete 50-item hot cycles. Its
+report is always marked `PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE`; it cannot pass a
+gate or unlock Q5, and the full 20-repetition run remains pending.
+
 #### ACK-001 historical SenseVoice/Matcha runners
 
 The following preserved commands reproduce the already-reviewed ACK-001

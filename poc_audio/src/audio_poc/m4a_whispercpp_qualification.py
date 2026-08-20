@@ -271,7 +271,12 @@ def run_loaded_suite(command: list[str], stderr_path: Path, items: list[dict[str
     }
 
 
-def summarize(run: dict[str, Any]) -> dict[str, Any]:
+def summarize(
+    run: dict[str, Any],
+    expected_cold_repetitions: int = COLD_REPETITIONS,
+    expected_hot_repetitions: int = HOT_REPETITIONS,
+    gate_eligible: bool = True,
+) -> dict[str, Any]:
     cold = [item for worker in run["cold"] if worker["terminal_status"] == "SUCCESS"
             for item in worker["results"]]
     hot = run["hot"]["results"] if run["hot"]["terminal_status"] == "SUCCESS" else []
@@ -289,7 +294,10 @@ def summarize(run: dict[str, Any]) -> dict[str, Any]:
                 100.0 * sum(bool(item["sentence_correct"]) for item in selected) / len(selected), 6
             ) if selected else None,
         }
-    execution_complete = len(cold) == COLD_REPETITIONS * 50 and len(hot) == HOT_REPETITIONS * 50
+    execution_complete = (
+        len(cold) == expected_cold_repetitions * 50
+        and len(hot) == expected_hot_repetitions * 50
+    )
     core_cer = categories.get("taiwan_mandarin", {}).get("cer_percent")
     overall_sentence = round(
         100.0 * sum(bool(item["sentence_correct"]) for item in hot) / len(hot), 6
@@ -301,40 +309,49 @@ def summarize(run: dict[str, Any]) -> dict[str, Any]:
          if worker["peak_rss_mib"] is not None),
         default=None,
     )
-    quality_pass = bool(
+    quality_thresholds_observed_met = bool(
         execution_complete and core_cer is not None and core_cer <= 20.0
         and overall_sentence is not None and overall_sentence >= 70.0
     )
-    latency_pass = bool(execution_complete and hot_latency["p95"] is not None
-                        and float(hot_latency["p95"]) <= 1500.0)
-    rtf_pass = bool(execution_complete and hot_rtf["p95"] is not None
-                    and float(hot_rtf["p95"]) <= 2.0)
+    latency_threshold_observed_met = bool(
+        execution_complete and hot_latency["p95"] is not None
+        and float(hot_latency["p95"]) <= 1500.0
+    )
+    rtf_threshold_observed_met = bool(
+        execution_complete and hot_rtf["p95"] is not None
+        and float(hot_rtf["p95"]) <= 2.0
+    )
     fallback_trigger = bool(
-        quality_pass and ((hot_latency["p95"] is not None and float(hot_latency["p95"]) > 1500.0)
-                          or (peak_rss is not None and peak_rss > 1250.0))
+        gate_eligible and quality_thresholds_observed_met
+        and ((hot_latency["p95"] is not None and float(hot_latency["p95"]) > 1500.0)
+             or (peak_rss is not None and peak_rss > 1250.0))
     )
     hashes_by_fixture: dict[str, set[str]] = {}
     for item in hot:
         hashes_by_fixture.setdefault(str(item["fixture_id"]), set()).add(
             str(item["hypothesis_sha256"])
         )
-    determinism_pass = bool(
+    determinism_threshold_observed_met = bool(
         execution_complete and len(hashes_by_fixture) == 50
         and all(len(hashes) == 1 for hashes in hashes_by_fixture.values())
     )
     return {
         "execution_complete": execution_complete,
+        "gate_eligible": gate_eligible,
         "quality": {
             "taiwan_mandarin_core_cer_percent": core_cer,
             "overall_sentence_correctness_percent": overall_sentence,
-            "gate_pass": quality_pass,
+            "thresholds_observed_met": quality_thresholds_observed_met,
+            "gate_pass": gate_eligible and quality_thresholds_observed_met,
         },
         "performance": {
             "hot_final_transcript_ms": hot_latency,
             "hot_rtf": hot_rtf,
             "peak_rss_mib": peak_rss,
-            "latency_gate_pass": latency_pass,
-            "rtf_gate_pass": rtf_pass,
+            "latency_threshold_observed_met": latency_threshold_observed_met,
+            "rtf_threshold_observed_met": rtf_threshold_observed_met,
+            "latency_gate_pass": gate_eligible and latency_threshold_observed_met,
+            "rtf_gate_pass": gate_eligible and rtf_threshold_observed_met,
         },
         "categories": categories,
         "determinism": {
@@ -342,7 +359,8 @@ def summarize(run: dict[str, Any]) -> dict[str, Any]:
             "maximum_unique_hypotheses_per_fixture": max(
                 (len(hashes) for hashes in hashes_by_fixture.values()), default=0
             ),
-            "gate_pass": determinism_pass,
+            "threshold_observed_met": determinism_threshold_observed_met,
+            "gate_pass": gate_eligible and determinism_threshold_observed_met,
         },
         "q5_fallback_triggered": fallback_trigger,
     }
@@ -370,7 +388,7 @@ def validate_qualification_report(report: dict[str, Any]) -> None:
         raise ValueError("runner output must remain unreviewed")
     if report.get("candidate_id") not in {PRIMARY_ID, FALLBACK_ID}:
         raise ValueError("qualification candidate is unauthorized")
-    if report.get("method") != {
+    formal_method = {
         "threads": 4,
         "workers": 1,
         "warmups": WARMUPS,
@@ -379,7 +397,20 @@ def validate_qualification_report(report: dict[str, Any]) -> None:
         "hot_definition": "one_loaded_model_runs_fifty_fixtures_twenty_times",
         "percentile": "nearest_rank",
         "inference_timeout_seconds": INFERENCE_TIMEOUT_SECONDS,
-    }:
+    }
+    diagnostic_method = {
+        "mode": "PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE",
+        "threads": 4,
+        "workers": 1,
+        "warmups": WARMUPS,
+        "cold_repetitions": 0,
+        "hot_repetitions": 2,
+        "hot_definition": "one_loaded_model_runs_fifty_fixtures_two_times",
+        "percentile": "nearest_rank",
+        "inference_timeout_seconds": INFERENCE_TIMEOUT_SECONDS,
+    }
+    method = report.get("method")
+    if method not in (formal_method, diagnostic_method):
         raise ValueError("qualification method is not frozen")
     security = report.get("security", {})
     if security != {
@@ -390,9 +421,23 @@ def validate_qualification_report(report: dict[str, Any]) -> None:
     }:
         raise ValueError("qualification security boundary is invalid")
     summary = report.get("summary", {})
+    diagnostic = method == diagnostic_method
+    if diagnostic and (
+        summary.get("gate_eligible") is not False
+        or summary.get("quality", {}).get("gate_pass") is not False
+        or summary.get("performance", {}).get("latency_gate_pass") is not False
+        or summary.get("performance", {}).get("rtf_gate_pass") is not False
+        or summary.get("determinism", {}).get("gate_pass") is not False
+        or summary.get("q5_fallback_triggered") is not False
+        or report.get("execution_status") not in {
+            "PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE",
+            "PARTIAL_DIAGNOSTIC_INCONCLUSIVE_RETAINED",
+        }
+    ):
+        raise ValueError("partial diagnostic must remain ineligible for gate or Q5 claims")
     quality_pass = bool(summary.get("quality", {}).get("gate_pass"))
     status = report.get("execution_status")
-    if report["candidate_id"] == PRIMARY_ID and not quality_pass \
+    if not diagnostic and report["candidate_id"] == PRIMARY_ID and not quality_pass \
             and summary.get("execution_complete") \
             and status != "Q8_QUALITY_FAIL_STOP_NO_Q5":
         raise ValueError("Q8 quality failure must stop without Q5")
@@ -418,6 +463,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--candidate", choices=(PRIMARY_ID, FALLBACK_ID), default=PRIMARY_ID)
     parser.add_argument("--q8-result", type=Path)
+    parser.add_argument("--diagnostic-hot-repetitions", type=int, choices=(2,))
     return parser.parse_args()
 
 
@@ -464,10 +510,13 @@ def main() -> int:
     )
     args.work_dir.mkdir(parents=True)
     command = [str(args.binary.resolve()), "--model", str(model)]
+    diagnostic = args.diagnostic_hot_repetitions is not None
+    cold_repetitions = 0 if diagnostic else COLD_REPETITIONS
+    hot_repetitions = args.diagnostic_hot_repetitions or HOT_REPETITIONS
     owners_before = audio_device_owner_count()
     thermal_before = thermal_observation()
     cold = []
-    for repetition in range(1, COLD_REPETITIONS + 1):
+    for repetition in range(1, cold_repetitions + 1):
         result = run_loaded_suite(
             command, args.work_dir / f"cold-{repetition}.stderr.log", items,
             args.fixture_dir, 1, 0,
@@ -476,15 +525,26 @@ def main() -> int:
         cold.append(result)
     hot = run_loaded_suite(
         command, args.work_dir / "hot.stderr.log", items, args.fixture_dir,
-        HOT_REPETITIONS, WARMUPS,
+        hot_repetitions, WARMUPS,
     )
     assert_network_isolated()
     owners_after = audio_device_owner_count()
-    summary = summarize({"cold": cold, "hot": hot})
+    summary = summarize(
+        {"cold": cold, "hot": hot},
+        expected_cold_repetitions=cold_repetitions,
+        expected_hot_repetitions=hot_repetitions,
+        gate_eligible=not diagnostic,
+    )
     cleanup_clean = owners_before == owners_after == 0 and all(
         worker["cleanup"]["clean"] for worker in [*cold, hot]
     )
-    if not summary["execution_complete"] or not cleanup_clean:
+    if diagnostic:
+        status = (
+            "PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE"
+            if summary["execution_complete"] and cleanup_clean
+            else "PARTIAL_DIAGNOSTIC_INCONCLUSIVE_RETAINED"
+        )
+    elif not summary["execution_complete"] or not cleanup_clean:
         status = "INCONCLUSIVE_RETAINED"
     elif not summary["quality"]["gate_pass"]:
         status = "Q8_QUALITY_FAIL_STOP_NO_Q5" if args.candidate == PRIMARY_ID else "Q5_QUALITY_FAIL_RETAINED"
@@ -507,16 +567,26 @@ def main() -> int:
             "report_sha256": sha256_file(args.build_report),
             "binary_sha256": sha256_file(args.binary),
         },
-        "method": {
+        "method": ({
             "threads": 4,
             "workers": 1,
             "warmups": WARMUPS,
-            "cold_repetitions": COLD_REPETITIONS,
-            "hot_repetitions": HOT_REPETITIONS,
+            "cold_repetitions": cold_repetitions,
+            "hot_repetitions": hot_repetitions,
             "hot_definition": "one_loaded_model_runs_fifty_fixtures_twenty_times",
             "percentile": "nearest_rank",
             "inference_timeout_seconds": INFERENCE_TIMEOUT_SECONDS,
-        },
+        } if not diagnostic else {
+            "mode": "PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE",
+            "threads": 4,
+            "workers": 1,
+            "warmups": WARMUPS,
+            "cold_repetitions": 0,
+            "hot_repetitions": 2,
+            "hot_definition": "one_loaded_model_runs_fifty_fixtures_two_times",
+            "percentile": "nearest_rank",
+            "inference_timeout_seconds": INFERENCE_TIMEOUT_SECONDS,
+        }),
         "input_identity": {
             "delivered_fixture_manifest_sha256": FIXTURE_MANIFEST_SHA256,
             "recording_plan_sha256": PLAN_SHA256,

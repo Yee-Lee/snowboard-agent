@@ -345,6 +345,48 @@ class WhisperCppRecoveryTests(unittest.TestCase):
         self.assertTrue(summary["determinism"]["gate_pass"])
         self.assertTrue(summary["q5_fallback_triggered"])
 
+    def test_two_cycle_diagnostic_reports_metrics_without_gate_or_q5_claims(self) -> None:
+        def result(cycle: int, fixture: int) -> dict[str, object]:
+            return {
+                "fixture_id": f"asr-{fixture:03d}",
+                "category": "taiwan_mandarin",
+                "latency_ms": 1000.0,
+                "native_inference_ms": 999.0,
+                "cpu_ms": 2000.0,
+                "peak_rss_mib": 1300.0,
+                "audio_duration_seconds": 2.0,
+                "rtf": 0.5,
+                "reference_length": 10,
+                "hypothesis_length": 10,
+                "edit_distance": 0,
+                "sentence_correct": True,
+                "hypothesis_sha256": "0" * 64,
+                "raw_transcript_emitted": False,
+                "cycle": cycle,
+            }
+
+        hot = {
+            "terminal_status": "SUCCESS",
+            "results": [
+                result(cycle, fixture)
+                for cycle in range(1, 3)
+                for fixture in range(50)
+            ],
+            "peak_rss_mib": 1300.0,
+        }
+        summary = summarize(
+            {"cold": [], "hot": hot},
+            expected_cold_repetitions=0,
+            expected_hot_repetitions=2,
+            gate_eligible=False,
+        )
+        self.assertTrue(summary["execution_complete"])
+        self.assertTrue(summary["quality"]["thresholds_observed_met"])
+        self.assertFalse(summary["quality"]["gate_pass"])
+        self.assertFalse(summary["performance"]["latency_gate_pass"])
+        self.assertFalse(summary["determinism"]["gate_pass"])
+        self.assertFalse(summary["q5_fallback_triggered"])
+
     def test_q5_review_must_bind_current_candidate_sha(self) -> None:
         result = {
             "report_id": "M4A-G1B-ASR-RECOVERY-QUALIFICATION",

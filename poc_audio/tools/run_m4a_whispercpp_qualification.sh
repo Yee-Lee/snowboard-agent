@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [[ $# -lt 12 ]]; then
-  echo "usage: $0 --artifact-dir DIR --fixture-dir DIR --binary FILE --build-report FILE --work-dir DIR --output FILE [--candidate ID] [--q8-result FILE]" >&2
+  echo "usage: $0 --artifact-dir DIR --fixture-dir DIR --binary FILE --build-report FILE --work-dir DIR --output FILE [--candidate ID] [--q8-result FILE] [--diagnostic-hot-repetitions 2]" >&2
   exit 2
 fi
 
