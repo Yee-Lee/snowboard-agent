@@ -8,7 +8,7 @@
 
 ## Current Delivery Reachability
 
-最終交付可達性：`GATE0_R2_COMPLETE_M1_GATE_REVIEW`。
+最終交付可達性：`GATE0_R2_COMPLETE_M1_COMPLETE`。
 
 Core Designer 已複驗 `llm` / `0d415d174390665ed92793937d30334f01e3df14`，
 關閉 `OUT-M4B-2026-007-A～D`，並正式登錄 Gate 0 R2 `COMPLETE`。PM handoff 015
@@ -33,7 +33,7 @@ POC Team 的 ACK、self-test 或 Technical Lead review 都不能把 External Gat
 | Milestone | 狀態 | 摘要 | 依據 |
 | --- | --- | --- | --- |
 | **M0** | `COMPLETE` | `M0-RUN-001` 執行與審核皆完成；Internal Tester confirmed | [M0](m0_llm_readiness.md) |
-| **M1** | `GATE_REVIEW` | Exact candidate 已獲 Designer freeze；只待同一 SHA 的 Internal Tester sign-off | [M1](m1_llm_contract_and_harness.md) |
+| **M1** | `COMPLETE` | Frozen exact candidate 經驗證無誤；Internal Tester 完成 lock/evidence 獨立 sign-off | [M1](m1_llm_contract_and_harness.md) |
 | **M2** | `PLANNED` | Ubuntu x86完整初篩＋產品Pi compatibility，最多保留兩個 proposed finalists | [M2](m2_llm_candidate_evaluation.md) |
 | **M3** | `PLANNED` | Gate 2A：Pi 5 LLM-only P1～P8、P10A、P11、P12；provisional finalist | [M3](m3_llm_child_pi_integration.md) |
 | **M4** | `PLANNED` | Gate 2B：Accepted Audio package、P9、P10B、2A regression；final winner | [M4](m4_llm_combined_validation_and_delivery.md) |
@@ -52,10 +52,10 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - **Milestone status — Internal M1**：Core 已於 `a99009fd5378d987411f37686814c84a1cb2a713`
   接受 `G1-X86-PI-COMPAT-004`；不需再修改 packet/schema/selector/regressions。Artifact
   acquisition、storage、真實 x86 run、Pi access/transfer/install/network/run 仍未獲授權。
-- **M1 freeze review**：Core repo 的 `DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001` 已接受並
-  freeze exact candidate `830d0b4ed2d41406c789bb110ed84b7553f330a4`，關閉唯一 blocker
-  `M1-FREEZE-003-R2` 且沒有新增 blocker。M1 進入 `GATE_REVIEW`，只待 Internal Tester
-  對同一 SHA 的 lock 與既有 deterministic evidence sign-off；真實執行仍未授權。
+- **M1 completion**：Core repo 的 `DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001` 已接受並
+  freeze exact candidate `830d0b4ed2d41406c789bb110ed84b7553f330a4`。Internal Tester
+  已完成同一 SHA 的 lock、self-test 與 35/35 回歸測試獨立 sign-off。M1 標示為
+  `COMPLETE` 並建立 `m1` tag；真實執行仍未授權。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0

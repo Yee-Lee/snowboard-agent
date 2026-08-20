@@ -1,6 +1,6 @@
 # LLM M1：Frozen Contract, Candidate Pairing and Deterministic Harness
 
-狀態：`GATE_REVIEW`
+狀態：`COMPLETE`
 
 ## 目標與交付貢獻
 
@@ -96,8 +96,7 @@ D1、D2、D3、D4、D8。
 - Forward Gate 1/M2 authorization：workstation x86 owner/raw path、artifact acquisition與real
   execution尚未批准；Pi try-run另需x86 preselection、artifact transfer/install、
   network-disabled與cleanup授權。這些不是 M1 Tester sign-off 的新增條件。
-- Open：只待 Internal Tester 對 frozen exact SHA、lock、self-test、20/20、35/35 與
-  candidate-path immutability 獨立 sign-off；完成前 M1 不得標示 `COMPLETE` 或建立 `m1` tag。
+- Closed：Internal Tester 已完成 [`ACK-INTERNAL-TESTER-M1-SIGNOFF-001`](../response/ACK-INTERNAL-TESTER-M1-SIGNOFF-001.md) 獨立 sign-off，包含 exact candidate immutability、lock、self-test、20/20 與 35/35 驗證。M1 狀態更新為 `COMPLETE`，正式授權建立 `m1` tag。
 
 ## Prohibited in M1
 
