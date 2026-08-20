@@ -36,8 +36,9 @@ resource/latency fallback；hot final-transcript p95 <=1.5 s hard gate 與現有
 Whisper.cpp base 與 faster-whisper small 維持 deferred。Core 已以
 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002` 接受 exact whisper.cpp
 1.9.2 source、small Q8_0 primary、conditional Q5_1、4-thread profile 與原 hard
-gates；目前只完成 ACK intake 與 fail-closed scaffold，artifact、build、load、
-qualification 均尚未執行，不能標記為 Gate 2A PASS。
+gates；ACK intake、fail-closed artifact/build scaffold 與 persistent worker/
+qualification harness 已完成本地實作，artifact、Pi build、model load、qualification
+均尚未執行，不能標記為 Gate 2A PASS。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 

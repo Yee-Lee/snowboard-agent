@@ -192,9 +192,14 @@ def validate_recovery_manifest(document: dict[str, Any]) -> None:
 
     expected_cache = {
         "GGML_NATIVE": "OFF", "GGML_BLAS": "OFF", "GGML_CUDA": "OFF",
-        "GGML_VULKAN": "OFF", "GGML_RPC": "OFF", "WHISPER_CURL": "OFF",
+        "GGML_VULKAN": "OFF", "GGML_OPENCL": "OFF", "GGML_RPC": "OFF",
+        "GGML_OPENMP": "OFF", "GGML_METAL": "OFF", "GGML_SYCL": "OFF",
+        "GGML_KOMPUTE": "OFF", "GGML_CCACHE": "OFF", "WHISPER_CURL": "OFF",
         "WHISPER_BUILD_SERVER": "OFF", "WHISPER_COMMON_FFMPEG": "OFF",
-        "WHISPER_SDL2": "OFF",
+        "WHISPER_SDL2": "OFF", "WHISPER_BUILD_TESTS": "OFF",
+        "WHISPER_BUILD_EXAMPLES": "OFF", "WHISPER_USE_SYSTEM_GGML": "OFF",
+        "WHISPER_COREML": "OFF", "WHISPER_OPENVINO": "OFF",
+        "WHISPER_MKL": "OFF",
     }
     if document["build_closure"].get("cmake_cache") != expected_cache:
         raise ValueError("recovery CPU-only CMake closure is invalid")
@@ -252,21 +257,38 @@ def verify_source_license(archive: Path, required_name: str) -> None:
         raise ValueError("engine source archive does not contain the required LICENSE")
 
 
-def q5_fallback_reason(q8_result: dict[str, Any]) -> str:
+def q5_fallback_reason(q8_result: dict[str, Any], expected_source_sha: str | None = None) -> str:
     if (
         q8_result.get("report_id") != "M4A-G1B-ASR-RECOVERY-QUALIFICATION"
         or q8_result.get("review_status") != "REVIEWED"
         or q8_result.get("candidate_id") != PRIMARY_ID
     ):
         raise ValueError("Q5 fallback proof is not a Q8 result")
+    if expected_source_sha is not None and q8_result.get("poc_source_sha") != expected_source_sha:
+        raise ValueError("Q5 fallback proof does not bind the current Candidate SHA")
+    if (
+        q8_result.get("execution_status") not in {
+            "QUALITY_PASS_PERFORMANCE_FAIL_RETAINED",
+            "QUALITY_PERFORMANCE_PASS_PENDING_REVIEW_AND_LIFECYCLE",
+        }
+        or q8_result.get("summary", {}).get("execution_complete") is not True
+        or q8_result.get("cleanup", {}).get("clean") is not True
+    ):
+        raise ValueError("Q5 fallback proof is not a complete clean Q8 qualification")
     quality = q8_result.get("quality", {})
-    cer = float(quality.get("taiwan_mandarin_core_cer_percent", float("inf")))
-    sentence = float(quality.get("overall_sentence_correctness_percent", float("-inf")))
+    try:
+        cer = float(quality.get("taiwan_mandarin_core_cer_percent", float("inf")))
+        sentence = float(quality.get("overall_sentence_correctness_percent", float("-inf")))
+    except (TypeError, ValueError) as error:
+        raise ValueError("Q8 quality metrics are invalid") from error
     if not math.isfinite(cer) or not math.isfinite(sentence) or cer > 20.0 or sentence < 70.0:
         raise ValueError("Q8 failed a quality gate; Q5 execution must stop")
     performance = q8_result.get("performance", {})
-    latency = float(performance.get("hot_final_transcript_p95_seconds", 0.0))
-    rss = float(performance.get("peak_rss_mib", 0.0))
+    try:
+        latency = float(performance.get("hot_final_transcript_p95_seconds", -1.0))
+        rss = float(performance.get("peak_rss_mib", -1.0))
+    except (TypeError, ValueError) as error:
+        raise ValueError("Q8 fallback metrics are invalid") from error
     if not math.isfinite(latency) or not math.isfinite(rss) or latency < 0.0 or rss < 0.0:
         raise ValueError("Q8 fallback metrics are invalid")
     reasons = []
@@ -299,7 +321,7 @@ def create_preflight_report(
     if candidate_id == FALLBACK_ID:
         if q8_result is None:
             raise ValueError("Q5 requires a reviewed Q8 result")
-        fallback_reason = q5_fallback_reason(q8_result)
+        fallback_reason = q5_fallback_reason(q8_result, source_sha)
     elif candidate_id != PRIMARY_ID:
         raise ValueError(f"candidate is not authorized by ACK-002: {candidate_id}")
 

@@ -13,6 +13,7 @@
     "platform",
     "toolchain",
     "commands",
+    "wrapper_source",
     "cmake_cache",
     "binary",
     "network_evidence",
@@ -33,9 +34,10 @@
     "platform": {"type": "object"},
     "toolchain": {"type": "object"},
     "commands": {"type": "object"},
+    "wrapper_source": {"type": "array", "minItems": 2, "maxItems": 2},
     "cmake_cache": {"type": "object"},
     "binary": {"type": "object"},
-    "network_evidence": {"const": "NO_ROUTE_AND_NO_ACTIVE_NON_LOOPBACK_INTERFACE_BEFORE_AND_AFTER_BUILD"},
+    "network_evidence": {"const": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_BUILD"},
     "execution_status": {"const": "BUILD_PASS_MODEL_NOT_LOADED_INFERENCE_NOT_RUN"}
   }
 }

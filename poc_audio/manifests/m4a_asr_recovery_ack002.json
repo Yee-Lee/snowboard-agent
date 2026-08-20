@@ -85,16 +85,37 @@
   "build_closure": {
     "target": "Raspberry Pi 5 / Debian 13 / aarch64",
     "build_system": "CMake with C/C++ toolchain, pthread and vendored ggml",
+    "wrapper": {
+      "binary": "m4a-whispercpp-worker",
+      "source": [
+        "poc_audio/native/whispercpp_worker/CMakeLists.txt",
+        "poc_audio/native/whispercpp_worker/worker.cpp"
+      ],
+      "lifecycle": "one persistent process and one model context",
+      "protocol": "bounded local stdin/stdout; no listener, network, audio device or transcript evidence"
+    },
     "cmake_cache": {
       "GGML_NATIVE": "OFF",
       "GGML_BLAS": "OFF",
       "GGML_CUDA": "OFF",
       "GGML_VULKAN": "OFF",
+      "GGML_OPENCL": "OFF",
       "GGML_RPC": "OFF",
+      "GGML_OPENMP": "OFF",
+      "GGML_METAL": "OFF",
+      "GGML_SYCL": "OFF",
+      "GGML_KOMPUTE": "OFF",
+      "GGML_CCACHE": "OFF",
       "WHISPER_CURL": "OFF",
       "WHISPER_BUILD_SERVER": "OFF",
       "WHISPER_COMMON_FFMPEG": "OFF",
-      "WHISPER_SDL2": "OFF"
+      "WHISPER_SDL2": "OFF",
+      "WHISPER_BUILD_TESTS": "OFF",
+      "WHISPER_BUILD_EXAMPLES": "OFF",
+      "WHISPER_USE_SYSTEM_GGML": "OFF",
+      "WHISPER_COREML": "OFF",
+      "WHISPER_OPENVINO": "OFF",
+      "WHISPER_MKL": "OFF"
     },
     "prohibited_runtime_dependencies": [
       "Python",
@@ -102,6 +123,7 @@
       "CUDA",
       "Vulkan",
       "OpenCL",
+      "OpenMP",
       "RPC",
       "server",
       "FFmpeg",

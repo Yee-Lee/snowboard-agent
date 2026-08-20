@@ -167,6 +167,8 @@ bash poc_audio/tools/run_m4a_authorized_preflight.sh \
 
 The check is offline and does not install or execute a candidate runtime.
 
+#### ACK-002 whisper.cpp recovery
+
 The rejected SenseVoice evidence and its historical runner remain unchanged.
 For ACK-002 ASR recovery, the separate runner verifies the exact whisper.cpp
 source archive, selected small model and all required notices. Its default is
@@ -191,20 +193,46 @@ On the clean Pi Candidate SHA, disconnect network routes and run the separate
 build closure into a new external directory:
 
 ```bash
-bash poc_audio/tools/run_m4a_whispercpp_build.sh \
+unshare --user --map-root-user --net -- bash poc_audio/tools/run_m4a_whispercpp_build.sh \
   --artifact-dir /controlled/audio-poc/gate1b \
   --work-dir /controlled/audio-poc/work/whispercpp-q8-build-001 \
   --output /tmp/m4a-whispercpp-build.json
 ```
 
 The runner refuses non-Pi 5/aarch64/Debian 13 hosts, a dirty checkout, reused
-work/output paths, a non-loopback default route or an active non-loopback
-network interface. It checks isolation before and after building only
-`whisper-cli`, verifies every frozen CMake cache flag, rejects prohibited
-dynamic dependencies, and records toolchain, commands, binary checksum and
+work/output paths, the initial network namespace, a non-loopback default route
+or an active non-loopback network interface. It checks isolation before and
+after building only the
+bounded persistent `m4a-whispercpp-worker`, verifies every frozen CMake cache
+flag, rejects prohibited dynamic dependencies, and records toolchain, commands, binary checksum and
 `ldd`. Its success status still says model not loaded and inference not run.
 
-After that report passes on a clean Pi SHA, create a new isolated runtime and
+After artifact and build reports are reviewed, run Q8 qualification from the
+same clean Candidate SHA. The runner uses one persistent model process, four
+compute threads, the frozen 50-item set, three cold suites, three warmups and
+twenty hot suites. It hashes transcripts instead of storing them and never
+opens capture or playback devices:
+
+```bash
+unshare --user --map-root-user --net -- bash poc_audio/tools/run_m4a_whispercpp_qualification.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
+  --binary /controlled/audio-poc/work/whispercpp-q8-build-001/build/bin/m4a-whispercpp-worker \
+  --build-report /tmp/m4a-whispercpp-build.json \
+  --work-dir /controlled/audio-poc/work/whispercpp-q8-qualification-001 \
+  --output /tmp/m4a-whispercpp-q8-qualification.json
+```
+
+The raw report remains `UNREVIEWED`. Q5 requires a separately reviewed Q8
+report from the same Candidate SHA, and only unlocks when Q8 passes both
+quality gates while latency exceeds 1.5 seconds or peak RSS exceeds 1250 MiB.
+If Q8 fails quality, Q5 remains prohibited.
+
+#### ACK-001 historical SenseVoice/Matcha runners
+
+The following preserved commands reproduce the already-reviewed ACK-001
+SenseVoice/Matcha path; they are not prerequisites or fallbacks for ACK-002.
+For that historical path, create a new isolated runtime and
 prove exact offline install/import identity without extracting or loading a
 model, running inference, or opening an audio device:
 

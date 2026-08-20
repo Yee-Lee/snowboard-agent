@@ -1,8 +1,8 @@
 """Pi-only offline build closure for the ACK-002 whisper.cpp recovery row.
 
-The runner compiles and inspects ``whisper-cli`` but never loads a model or
-runs inference.  It must run from a clean, network-disabled Pi checkout after
-the controlled artifacts have passed the ACK-002 preflight.
+The runner compiles and inspects the bounded persistent POC worker but never
+loads a model or runs inference. It must run from a clean, network-disabled Pi
+checkout after the controlled artifacts have passed the ACK-002 preflight.
 """
 
 from __future__ import annotations
@@ -34,20 +34,35 @@ CMAKE_FLAGS = {
     "GGML_BLAS": "OFF",
     "GGML_CUDA": "OFF",
     "GGML_VULKAN": "OFF",
+    "GGML_OPENCL": "OFF",
     "GGML_RPC": "OFF",
+    "GGML_OPENMP": "OFF",
+    "GGML_METAL": "OFF",
+    "GGML_SYCL": "OFF",
+    "GGML_KOMPUTE": "OFF",
+    "GGML_CCACHE": "OFF",
     "WHISPER_CURL": "OFF",
     "WHISPER_BUILD_SERVER": "OFF",
     "WHISPER_COMMON_FFMPEG": "OFF",
     "WHISPER_SDL2": "OFF",
+    "WHISPER_BUILD_TESTS": "OFF",
+    "WHISPER_BUILD_EXAMPLES": "OFF",
+    "WHISPER_USE_SYSTEM_GGML": "OFF",
+    "WHISPER_COREML": "OFF",
+    "WHISPER_OPENVINO": "OFF",
+    "WHISPER_MKL": "OFF",
 }
 PROHIBITED_CACHE_TRUE = {
-    "GGML_BLAS", "GGML_CUDA", "GGML_VULKAN", "GGML_OPENCL", "GGML_RPC",
+    "GGML_BLAS", "GGML_CUDA", "GGML_VULKAN", "GGML_OPENCL", "GGML_RPC", "GGML_OPENMP",
+    "GGML_METAL", "GGML_SYCL", "GGML_KOMPUTE",
     "WHISPER_CURL", "WHISPER_BUILD_SERVER", "WHISPER_COMMON_FFMPEG",
-    "WHISPER_FFMPEG", "WHISPER_SDL2",
+    "WHISPER_FFMPEG", "WHISPER_SDL2", "WHISPER_BUILD_TESTS", "WHISPER_BUILD_EXAMPLES",
+    "WHISPER_USE_SYSTEM_GGML", "WHISPER_COREML", "WHISPER_OPENVINO", "WHISPER_MKL",
 }
 PROHIBITED_DYNAMIC_NAMES = (
     "python", "openblas", "libblas", "cuda", "vulkan", "opencl", "libcurl",
-    "avcodec", "avformat", "avutil", "swresample", "sdl2",
+    "libgomp", "libomp", "avcodec", "avformat", "avutil", "swresample", "sdl2",
+    "libasound", "portaudio",
 )
 
 
@@ -76,6 +91,14 @@ def assert_pi_target() -> dict[str, str]:
 
 
 def assert_network_isolated() -> None:
+    current_namespace = Path("/proc/self/ns/net")
+    initial_namespace = Path("/proc/1/ns/net")
+    if (
+        not current_namespace.exists()
+        or not initial_namespace.exists()
+        or current_namespace.stat().st_ino == initial_namespace.stat().st_ino
+    ):
+        raise RuntimeError("offline execution requires an isolated network namespace")
     route = Path("/proc/net/route")
     if route.is_file():
         for line in route.read_text(encoding="ascii").splitlines()[1:]:
@@ -122,9 +145,10 @@ def safe_extract_source(archive: Path, destination: Path) -> Path:
     return source_dir
 
 
-def configure_command(source_dir: Path, build_dir: Path) -> list[str]:
-    command = ["cmake", "-S", str(source_dir), "-B", str(build_dir),
-               "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF"]
+def configure_command(wrapper_source_dir: Path, source_dir: Path, build_dir: Path) -> list[str]:
+    command = ["cmake", "-S", str(wrapper_source_dir), "-B", str(build_dir),
+               f"-DWHISPER_SOURCE_DIR={source_dir}", "-DCMAKE_BUILD_TYPE=Release",
+               "-DBUILD_SHARED_LIBS=OFF"]
     command.extend(f"-D{name}={value}" for name, value in CMAKE_FLAGS.items())
     return command
 
@@ -162,6 +186,8 @@ def build_report(
 ) -> dict[str, Any]:
     platform_report = assert_pi_target()
     assert_network_isolated()
+    if work_dir.resolve().is_relative_to(repo_root().resolve()):
+        raise RuntimeError("build work directory must remain outside the POC repository")
     if work_dir.exists():
         raise RuntimeError("build work directory must be new")
     if shutil.which("cmake") is None or shutil.which("c++") is None or shutil.which("ldd") is None:
@@ -176,17 +202,18 @@ def build_report(
     )
     source_dir = safe_extract_source(source_archive, work_dir / "source")
     build_dir = work_dir / "build"
-    configure = configure_command(source_dir, build_dir)
-    build = ["cmake", "--build", str(build_dir), "--target", "whisper-cli", "-j", "4"]
+    wrapper_source_dir = repo_root() / "poc_audio/native/whispercpp_worker"
+    configure = configure_command(wrapper_source_dir, source_dir, build_dir)
+    build = ["cmake", "--build", str(build_dir), "--target", "m4a-whispercpp-worker", "-j", "4"]
     subprocess.run(configure, check=True, env={**os.environ, "CMAKE_DISABLE_FIND_PACKAGE_CURL": "TRUE"})
     subprocess.run(build, check=True)
     assert_network_isolated()
 
     cache = parse_cmake_cache(build_dir / "CMakeCache.txt")
     validate_cmake_cache(cache)
-    binary = build_dir / "bin/whisper-cli"
+    binary = build_dir / "bin/m4a-whispercpp-worker"
     if not binary.is_file():
-        raise RuntimeError("whisper-cli binary is missing after build")
+        raise RuntimeError("persistent whisper.cpp worker is missing after build")
     dynamic_listing = command_output(["ldd", str(binary)])
     validate_dynamic_dependencies(dynamic_listing)
     return {
@@ -202,6 +229,16 @@ def build_report(
             "cxx": command_output(["c++", "--version"]),
         },
         "commands": {"configure": configure, "build": build},
+        "wrapper_source": [
+            {
+                "relative_path": "poc_audio/native/whispercpp_worker/CMakeLists.txt",
+                "sha256": sha256_file(wrapper_source_dir / "CMakeLists.txt"),
+            },
+            {
+                "relative_path": "poc_audio/native/whispercpp_worker/worker.cpp",
+                "sha256": sha256_file(wrapper_source_dir / "worker.cpp"),
+            },
+        ],
         "cmake_cache": {name: cache[name] for name in CMAKE_FLAGS},
         "binary": {
             "relative_path": binary.relative_to(work_dir).as_posix(),
@@ -209,7 +246,7 @@ def build_report(
             "sha256": sha256_file(binary),
             "dynamic_dependencies": dynamic_listing.splitlines(),
         },
-        "network_evidence": "NO_ROUTE_AND_NO_ACTIVE_NON_LOOPBACK_INTERFACE_BEFORE_AND_AFTER_BUILD",
+        "network_evidence": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_BUILD",
         "execution_status": "BUILD_PASS_MODEL_NOT_LOADED_INFERENCE_NOT_RUN",
     }
 

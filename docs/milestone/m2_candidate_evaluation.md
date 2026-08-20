@@ -102,7 +102,9 @@ conditional Q5_1 fallback。Q5_1 只在 Q8_0 同時通過 CER/整句正確率 ga
 hot final-transcript p95 >1.5 s 或 peak RSS >1250 MiB 時解鎖；Q8 quality fail
 必須停止。四 threads、單 worker、greedy/zh/no-context/no-timestamps/no-internal-VAD
 及既有 frozen gates 不變。ACK intake 不構成 artifact、build、inference 或 Gate 2A
-PASS；新 recovery manifest 與 artifact-only preflight 明確保持 `BUILD_NOT_RUN`。
+PASS；recovery manifest、artifact/build preflight 與 persistent qualification
+harness 已在 workstation 完成無模型 compile/fake lifecycle 驗證，但正式 evidence
+仍明確保持 `BUILD_NOT_RUN` / model not loaded / inference not run。
 
 M2 執行分成四個受控步驟：
 
