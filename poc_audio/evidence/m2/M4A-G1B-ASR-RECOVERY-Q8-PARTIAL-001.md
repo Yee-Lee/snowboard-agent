@@ -50,6 +50,28 @@ Taiwan-Mandarin. The result completed 100 measured inferences. All report-level
 gate fields remained false because this packet is intentionally ineligible for
 formal gate claims.
 
+## Controlled semantic review
+
+One additional review-only, offline persistent-worker pass over the same 50
+fixtures was completed after this packet. It is not a scorer run and does not
+change any frozen gate, candidate disposition, or formal-qualification status.
+Raw reference/hypothesis pairs remain only in the external controlled location
+`evidence/private/m2/20260820T062452Z-q8-semantic-review-1b29f68/`
+(`transcripts.jsonl` SHA-256
+`c7c17c77068d1fa0e405dd50ba68bf8d0eef692ffe4f03bf0b321adfb2ad32ed`); they are
+not committed here.
+
+A reviewed qualitative classification found 26/50 outputs directly usable,
+12/50 plausibly recoverable only with domain context and confirmation, and
+12/50 unsafe to infer because a number, date, control action, technical term,
+or other material meaning changed. Taiwan-Mandarin was materially stronger
+(15 direct, 3 contextual, 2 unsafe of 20) than code-switch (2, 3, 5 of 10).
+This does not establish that all fixture recordings are poor: the failures
+cluster around English/technical vocabulary and critical slots. An LLM may
+normalize harmless formatting and request clarification, but must not guess an
+action or critical value. The pass processed all 50 items and ended with zero
+child processes, threads, streams, and audio-device owners.
+
 ## Interrupted formal run and lifecycle finding
 
 The initially started frozen three-cold/twenty-hot run was stopped at the User's

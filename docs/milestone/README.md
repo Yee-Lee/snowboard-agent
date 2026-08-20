@@ -44,6 +44,15 @@ CPU-only build 已通過；User 指定的兩次 hot partial diagnostic 已完成
 554 MiB，顯示品質與即時 latency 的強烈 no-go 訊號。此 packet 明確不是 formal
 gate evidence；原 20-repetition run 已依 User 指示中止且沒有 final report，Q5
 保持禁止，不能標記為 Gate 2A PASS。
+Small Q8 的受控語意審查另確認：50 筆中 26 筆可直接使用、12 筆僅可在確認下由
+domain context 復原、12 筆因關鍵語意變更而不應猜測。User 已決定不恢復 Q8 的
+20-repetition formal run，並提出「small Q5 與 base Q5 各三個 hot cycles 作無 HAT
+速度/品質取捨觀察、medium Q8 一次品質/RSS 診斷，品質足夠時再研究 AI HAT+ 2」
+方向。無 HAT 路線不降低既有 hot p95 <=1.5 s 即時邊界；任何品質取捨仍需產品決策，
+不得默認改寫 frozen quality gate。此方向已記為
+`CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`，待 Product/Core exact-row ACK。
+在 ACK 前，small Q5、base Q5、medium 與 HAT 皆不得執行，現有 frozen gates 與
+small Q8 disposition 不變。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 

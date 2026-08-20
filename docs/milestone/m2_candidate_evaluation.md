@@ -111,7 +111,17 @@ hot partial diagnostic 亦已在 SHA
 quality/latency strong no-go signal。見
 [`M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001`](../../poc_audio/evidence/m2/M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001.md)。
 此 packet 強制 gate-ineligible；原 20-repetition run 依 User 指示中止且沒有 final
-report，故 formal qualification 仍未完成。Q5 未解鎖且不得執行。
+report，故 formal qualification 仍未完成。User 已決定不恢復該 Q8 formal run。
+Small Q8 的 review-only semantic pass 將 raw transcript 留在 repo 外 private
+evidence，並分類為 26/50 可直接使用、12/50 只可在確認下由 context 復原、12/50
+不可安全猜測；台灣華語普通句型明顯優於 code-switch、數字／日期與 technical/control
+terms。這是補充品質風險，不變更 frozen score。使用者要求將 Q5 改為三個 hot cycles
+的無 HAT latency/resource diagnostic，並將 base Q5 亦列為三個 hot cycles 的速度/
+品質觀察；medium Q8 維持一次品質/RSS diagnostic、品質足夠時再評估 AI HAT+ 2 的
+兩階段方向。無 HAT 路線維持 hot final-transcript p95 <=1.5 s 即時邊界；任何品質
+取捨仍須產品裁決、不得默認放寬 frozen quality gate。完整 request 見
+[`CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002.md)。
+現有 ACK 不允許這些例外，故 small Q5、base Q5、medium 與 HAT 均未解鎖且不得執行。
 
 M2 執行分成四個受控步驟：
 
@@ -128,7 +138,8 @@ M2 執行分成四個受控步驟：
    Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
    growth 與 legal conditions 尚待關閉。ASR recovery exact artifact/notice preflight
    與 CPU-only build closure 已通過；兩次 hot partial diagnostic 顯示品質與 latency
-   no-go signal，但 frozen 20-repetition qualification 未完成，Q5 保持禁止。
+   no-go signal。User 已明確停止未完成的 Q8 20-repetition formal run；small Q5、
+   base Q5、medium 與 HAT 的任何 diagnostic 均待新的 Core ACK。
 
 ## Entry Conditions
 
