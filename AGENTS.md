@@ -51,6 +51,11 @@ links from the active milestone only when the current task needs that detail.
 - Create immutable annotated tags `m0`, `m1`, and so on only when the matching
   milestone or readiness gate is formally complete. Never move an existing
   milestone tag.
+- An agent may place a PM-authorized delivery or handoff file at the exact path
+  requested in another repository. This is a delivery-only exception: do not
+  alter any other file, index, workflow, status, response, ACK, branch, tag, or
+  Git history in the receiving repository, and do not commit or push it. The
+  receiving team owns intake and all repository changes after delivery.
 - At every milestone gate, update the milestone index, remaining-delivery
   assessment, risks, and any required adjustment request.
 

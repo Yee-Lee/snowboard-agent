@@ -167,6 +167,43 @@ bash poc_audio/tools/run_m4a_authorized_preflight.sh \
 
 The check is offline and does not install or execute a candidate runtime.
 
+The rejected SenseVoice evidence and its historical runner remain unchanged.
+For ACK-002 ASR recovery, the separate runner verifies the exact whisper.cpp
+source archive, selected small model and all required notices. Its default is
+Q8_0; Q5_1 additionally requires a reviewed Q8 result that proves both frozen
+quality gates passed and that latency or RSS triggered fallback:
+
+```bash
+bash poc_audio/tools/run_m4a_whispercpp_preflight.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --output /tmp/m4a-whispercpp-artifact-preflight.json
+```
+
+The controlled store must contain `sources/` and `models/` at the ACK locators,
+plus `notices/model-repository-LICENSE`,
+`notices/whispercpp-model-documentation.md` and
+`notices/upstream-whisper-lineage.md`. A pass is artifact-only and explicitly
+reports `BUILD_NOT_RUN`; it does not authorize inference until the CPU-only
+CMake cache, binary identity, dynamic dependencies and offline build evidence
+have also been reviewed.
+
+On the clean Pi Candidate SHA, disconnect network routes and run the separate
+build closure into a new external directory:
+
+```bash
+bash poc_audio/tools/run_m4a_whispercpp_build.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --work-dir /controlled/audio-poc/work/whispercpp-q8-build-001 \
+  --output /tmp/m4a-whispercpp-build.json
+```
+
+The runner refuses non-Pi 5/aarch64/Debian 13 hosts, a dirty checkout, reused
+work/output paths, a non-loopback default route or an active non-loopback
+network interface. It checks isolation before and after building only
+`whisper-cli`, verifies every frozen CMake cache flag, rejects prohibited
+dynamic dependencies, and records toolchain, commands, binary checksum and
+`ldd`. Its success status still says model not loaded and inference not run.
+
 After that report passes on a clean Pi SHA, create a new isolated runtime and
 prove exact offline install/import identity without extracting or loading a
 model, running inference, or opening an audio device:

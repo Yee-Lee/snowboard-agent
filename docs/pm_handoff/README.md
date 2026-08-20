@@ -20,7 +20,8 @@
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
 | [commit_workflow_update](commit_workflow_update.md) | `INTEGRATED` | 已將 unpublished WIP squash、Candidate SHA append-only、單一 `audio` branch 與 immutable milestone tags 整合至 [`docs/audio_poc_workflow.md`](../audio_poc_workflow.md) 與 `AGENTS.md`。 |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED / ASR CR REVISED` | SenseVoice 已依 frozen quality gate 拒絕；Product Team 已修訂 [`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md)，要求 whisper.cpp small Q8_0 primary、conditional Q5_1、4 threads 與 1.5 s hard latency gate。新 rows 在 Core exact-row ACK 前不得執行；VAD 仍由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
+| [DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002](DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) | `ACCEPTED / INTAKE IN PROGRESS` | Core 已核准 whisper.cpp small Q8_0 primary 與 conditional Q5_1；下一步是 exact artifact/notice preflight 與 CPU-only build closure。ACK 不代表 build、qualification 或 Gate 2A PASS。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED / ASR RECOVERY ACKED` | SenseVoice 已依 frozen quality gate 拒絕；[`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md) 已由 ACK-002 接受。VAD 仍由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
 
 ## History
 

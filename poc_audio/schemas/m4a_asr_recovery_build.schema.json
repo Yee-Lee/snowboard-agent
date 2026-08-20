@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a Gate 1B ACK-002 offline whisper.cpp build closure",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "generated_at_utc",
+    "poc_source_sha",
+    "candidate_id",
+    "artifact_preflight",
+    "platform",
+    "toolchain",
+    "commands",
+    "cmake_cache",
+    "binary",
+    "network_evidence",
+    "execution_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "report_id": {"const": "M4A-G1B-ASR-RECOVERY-OFFLINE-BUILD"},
+    "generated_at_utc": {"type": "string"},
+    "poc_source_sha": {"pattern": "^[0-9a-f]{40}$"},
+    "candidate_id": {
+      "enum": [
+        "asr-whispercpp-small-q8_0-1.9.2",
+        "asr-whispercpp-small-q5_1-1.9.2"
+      ]
+    },
+    "artifact_preflight": {"type": "object"},
+    "platform": {"type": "object"},
+    "toolchain": {"type": "object"},
+    "commands": {"type": "object"},
+    "cmake_cache": {"type": "object"},
+    "binary": {"type": "object"},
+    "network_evidence": {"const": "NO_ROUTE_AND_NO_ACTIVE_NON_LOOPBACK_INTERFACE_BEFORE_AND_AFTER_BUILD"},
+    "execution_status": {"const": "BUILD_PASS_MODEL_NOT_LOADED_INFERENCE_NOT_RUN"}
+  }
+}

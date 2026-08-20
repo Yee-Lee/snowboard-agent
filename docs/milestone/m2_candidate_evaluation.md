@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ACCEPTED — SENSEVOICE ASR REJECTED BY FROZEN QUALITY GATE / MATCHA TTS PERFORMANCE PASS, REMAINING GATES IN PROGRESS`
+Gate 狀態：`GATE 1B ASR RECOVERY ACKED — WHISPER.CPP PREFLIGHT/BUILD/QUALIFICATION PENDING / MATCHA REMAINING GATES IN PROGRESS`
 
 ## 目標
 
@@ -95,6 +95,15 @@ Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑�
   lifecycle/offline 產生 preliminary evidence，HAL playback、Pi resource 與同時常駐的
   final disposition 留待 M3。
 
+2026-08-20 Core 以
+[`DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md)
+接受 whisper.cpp `1.9.2` exact source、multilingual small Q8_0 primary 與
+conditional Q5_1 fallback。Q5_1 只在 Q8_0 同時通過 CER/整句正確率 gates、但
+hot final-transcript p95 >1.5 s 或 peak RSS >1250 MiB 時解鎖；Q8 quality fail
+必須停止。四 threads、單 worker、greedy/zh/no-context/no-timestamps/no-internal-VAD
+及既有 frozen gates 不變。ACK intake 不構成 artifact、build、inference 或 Gate 2A
+PASS；新 recovery manifest 與 artifact-only preflight 明確保持 `BUILD_NOT_RUN`。
+
 M2 執行分成四個受控步驟：
 
 1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
@@ -108,7 +117,8 @@ M2 執行分成四個受控步驟：
 4. **Authorized comparison**：`FULL FIXTURE QUALITY/PERFORMANCE REVIEWED / REMAINING TTS GATES IN PROGRESS`；
    只執行兩個 primary。SenseVoice 已因 frozen ASR quality hard gates `REJECT`；
    Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
-   growth 與 legal conditions 尚待關閉。ASR fallback 等待新 Core ACK。
+   growth 與 legal conditions 尚待關閉。ASR recovery ACK 已收件，exact artifact/
+   notice preflight、CPU-only build closure 與 frozen qualification 尚待執行。
 
 ## Entry Conditions
 
@@ -122,8 +132,8 @@ M2 執行分成四個受控步驟：
 已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
 steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 的固定
 fixture checksum、乾淨 test SHA、受控 artifact preflight 與 focused smoke 已完成，
-full-fixture quality/performance 已完成；TTS remaining gates 尚未完成，ASR fallback
-執行邊界等待 `CR-AUDIO-M4A-G1B-ASR-SCOPE-001`，VAD 執行邊界仍待
+full-fixture quality/performance 已完成；TTS remaining gates 尚未完成，ASR recovery
+執行邊界已由 ACK-002 固定但尚未完成 preflight/build/qualification，VAD 執行邊界仍待
 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 
 ## Exit Gate

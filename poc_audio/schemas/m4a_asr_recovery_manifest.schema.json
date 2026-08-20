@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a Gate 1B ACK-002 ASR recovery manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "ack_id",
+    "reviewed_poc",
+    "status",
+    "controlled_artifact_policy",
+    "engine_source",
+    "model_repository",
+    "candidates",
+    "execution_policy",
+    "runtime_profile",
+    "gates",
+    "build_closure"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "manifest_id": {"const": "M4A-G1B-ASR-RECOVERY-ACK-002"},
+    "ack_id": {"const": "DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002"},
+    "reviewed_poc": {"type": "object"},
+    "status": {"const": "AUTHORIZED_NOT_EXECUTED"},
+    "controlled_artifact_policy": {"type": "object"},
+    "engine_source": {"type": "object"},
+    "model_repository": {"type": "object"},
+    "candidates": {"type": "array", "minItems": 2, "maxItems": 2},
+    "execution_policy": {"type": "object"},
+    "runtime_profile": {"type": "object"},
+    "gates": {"type": "object"},
+    "build_closure": {"type": "object"}
+  }
+}

@@ -2,7 +2,8 @@
 
 - **Change request ID**: `CR-AUDIO-M4A-G1B-ASR-SCOPE-001`
 - **Related ACK**: `DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`
-- **Status**: `OPEN — CORE ACK REQUIRED`
+- **Status**: `ACCEPTED — CORE ACK-002 RECEIVED`
+- **Resolution**: `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 - **Requestor**: Product Team
 - **Decision owner**: Core Designer
 - **POC owner after ACK**: Audio POC Technical Lead
@@ -74,6 +75,16 @@ Core should return one written disposition:
 Until that response, the POC must not execute any ASR fallback. No further Pi
 testing is requested by this handoff, and the device may be shut down after this
 document is delivered.
+
+## Resolution
+
+Core accepted the requested order, exact source/model identities, four-thread
+profile and unchanged gates in
+[`DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`](../../docs/pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md).
+Q8_0 is the only primary. Q5_1 remains non-executable until a reviewed Q8_0
+result passes both quality gates and triggers latency or peak-RSS fallback.
+Artifact preflight, CPU-only build closure and qualification evidence remain
+pending; accepting this request is not a Gate 2A pass.
 
 ## Technical references
 

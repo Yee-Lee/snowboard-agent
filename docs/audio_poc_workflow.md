@@ -197,6 +197,16 @@ tag 只能在對應 readiness gate / milestone 正式 `COMPLETE` 後建立，必
 指向完成記錄的 exact commit，且不得刪除、重建或移動。M4 delivery
 manifest 仍同時記錄完整 SHA，不只依賴 tag 名稱。
 
+### 跨 repo PM delivery 邊界
+
+Assistant 可依 User / PM 明確指定，將一份 PM-authorized delivery 或 handoff
+新檔原樣放到其他 repo 的指定收件路徑。這是唯一的 delivery-only 寫入例外，
+不授權 Assistant 修改目的 repo 的既有檔案、README / index、milestone 狀態、
+workflow、response、ACK、source、tests、branch、tag 或 Git history，也不授權在
+目的 repo 執行 commit 或 push。收件後的 intake、裁決、歸檔、ACK、commit 與
+push 全部由目的 repo 團隊負責；Audio POC 只在自己的 `audio` branch 記錄已交付
+文件與後續收到的 committed response / ACK。
+
 ### Commit message convention
 
 Every POC commit uses this subject format:
