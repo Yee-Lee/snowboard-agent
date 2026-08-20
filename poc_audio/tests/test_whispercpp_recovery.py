@@ -251,13 +251,14 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             ]
         }
         labels = {
-            "accepted": {
-                "clear": {"speech_intervals_ms": [[100, 700]], "internal_pause_interval_ms": None},
-                "pause": {
+            "records": [
+                {"fixture_id": "clear", "class": "clear_speech",
+                 "speech_intervals_ms": [[100, 700]], "internal_pause_interval_ms": None},
+                {"fixture_id": "pause", "class": "pause",
                     "speech_intervals_ms": [[100, 400], [800, 1200]],
                     "internal_pause_interval_ms": [400, 800],
                 },
-            }
+            ]
         }
         accepted = _validate_labels(labels, plan)
         self.assertEqual(accepted["pause"]["speech_intervals_ms"], [[100, 400], [800, 1200]])

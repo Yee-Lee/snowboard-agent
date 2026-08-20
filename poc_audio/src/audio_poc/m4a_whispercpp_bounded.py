@@ -169,11 +169,21 @@ class ProcessActivityMonitor:
 
 
 def _validate_labels(document: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
-    accepted = document.get("accepted")
+    raw_records = document.get("records")
+    if isinstance(raw_records, list):
+        accepted = {
+            str(record.get("fixture_id")): record
+            for record in raw_records
+            if isinstance(record, dict) and isinstance(record.get("fixture_id"), str)
+        }
+    else:
+        accepted = document.get("accepted")
     expected = {str(item["fixture_id"]): item for item in plan["utterances"]}
     if not isinstance(accepted, dict) or set(accepted) != set(expected):
         raise ValueError("VAD label index does not contain the frozen 50 ASR fixtures")
     for fixture_id, label in accepted.items():
+        if label.get("class", expected[fixture_id]["vad_class"]) != expected[fixture_id]["vad_class"]:
+            raise ValueError(f"VAD class mismatch: {fixture_id}")
         intervals = label.get("speech_intervals_ms")
         required_count = 1 if expected[fixture_id]["vad_class"] == "clear_speech" else 2
         if not isinstance(intervals, list) or len(intervals) != required_count:
