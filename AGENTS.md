@@ -28,6 +28,8 @@ links from the active milestone only when the current task needs that detail.
 
 - **`docs/pm_handoff/` is Read-Only**: Incoming requirements, contracts, and handoff messages from PM / Core Team are strictly read-only.
 - **Handoff Archival (`docs/pm_handoff/history/`)**: When an incoming handoff message is completed, superseded, or no longer actively tracked, move it to `docs/pm_handoff/history/`. Do not delete incoming message records.
+- **Round-close audit**: Before every round-closing commit, classify every direct file in `docs/pm_handoff/`. Keep only unresolved or currently governing incoming items there; move completed, superseded, or incorporated items to `docs/pm_handoff/history/`, then update affected links and `docs/DOCUMENT_INDEX.md`.
+- **Completion report**: At the end of each completed round, report every remaining unfinished item, including pending external decisions, blockers, unauthorized actions, and open milestone exit conditions. Explicitly state when none remain.
 - **Team Responses & Replies**:
   - Use `docs/response/` for internal technical ACK, assessments, and requirement mapping (`ACK-*.md`).
   - Use `docs/delivery/` for formal external handoffs and deliverables to be relayed by PM (`DELIVERY-*.md`).
@@ -46,4 +48,3 @@ links from the active milestone only when the current task needs that detail.
 ## Final Outcome
 
 The POC must deliver an approved LiteRT-LM runtime, model baseline, prompt boundary, and child process protocol. The result must be reproducible on Raspberry Pi 5, offline, cancellable, clean after failure, integrated with an accepted M4a Audio HAL SHA, and proven with at least 20 combined sessions. Submission is only ready for internal review until all blocking findings are closed.
-

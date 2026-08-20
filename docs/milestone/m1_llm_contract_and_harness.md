@@ -68,13 +68,15 @@ D1、D2、D3、D4、D8。
 - R1 [`M1-FROZEN-CONTRACT-001`](../response/ACK-M1-FROZEN-CONTRACT-001.md) 已由 Core 在
   exact SHA `0b5a92872f8a695b145b389168111420cd2592c5` 拒絕；該 SHA 保持 immutable，且不再是
   freeze candidate。
-- [`M1-FREEZE-CANDIDATE-002`](../response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md)
-  已以兩層 ReasoningInput/child projection、callable P5 normalizer、per-code lifecycle table
-  及 manifest-bound identity validator 修正 `M1-FREEZE-001～004`；lock 驗證 9 個 executable
-  artifacts，self-test `PASS`，targeted regressions 19/19 `OK`。Exact review target 為
-  `llm` / `93b34c14d5ee0f767ee16dd0fbbbb72e18775760`，已由
-  [`DELIVERY-005`](../delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) 請求
-  Designer/Tester review。
+- R2 [`M1-FREEZE-CANDIDATE-002`](../response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md)
+  已由 Core Revision 002 關閉 `M1-FREEZE-001/002/004`；R2 exact SHA
+  `93b34c14d5ee0f767ee16dd0fbbbb72e18775760` 因 post-FATAL false-pass 未獲 freeze。
+- R3 [`M1-FREEZE-003-R2`](../response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md)
+  只修改 lifecycle validator、六類 post-FATAL direct regression 與兩個 lock hashes。Exact
+  review target `llm` / `830d0b4ed2d41406c789bb110ed84b7553f330a4` 的 self-test
+  `PASS`、targeted 20/20、combined 35/35；已由
+  [`DELIVERY-006`](../delivery/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) 請求
+  locked-scope review。
 - `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
   Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。
 - `G1-CANDIDATE-PREFLIGHT-001`：已從官方 metadata 固定 LiteRT-LM v0.16.0 的兩平台
@@ -88,9 +90,9 @@ D1、D2、D3、D4、D8。
   self-test `PASS` 與 Gate 2A/2B plan validation `PLAN_VALID`；packet revision 已完成。
 - Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
   try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
-- Open：`M1-FREEZE-CANDIDATE-002` 尚待 Core Designer 核准 corrected semantics，並待
-  Internal Tester 獨立核准 lock/schemas/fixtures/validator/regressions/evidence completeness；
-  兩者批准前 M1 不得標示 `GATE_REVIEW` 或 `COMPLETE`。
+- Open：R3 尚待 Core Designer 核准唯一 FATAL guard，之後才由 Internal Tester 獨立核准
+  exact SHA、lock 與 deterministic evidence；兩者批准前 M1 不得標示 `GATE_REVIEW`、
+  `COMPLETE` 或建立 `m1` tag。
 
 ## Prohibited in M1
 

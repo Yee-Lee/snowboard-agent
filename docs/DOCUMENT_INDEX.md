@@ -6,12 +6,8 @@
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
-* [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) - Core 對 `0d415d...` 的 Final ACK；Gate 0 R2 `COMPLETE`、015 resolved
-* [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Core批准x86完整初篩＋產品Pi compatibility分流；只授權packet revision，真實執行未授權
-* [`DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md) - Core 接受 Gate 1 packet Revision 004 exact SHA；real execution 未授權
-* [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](pm_handoff/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - Core 拒絕 M1 R1 exact candidate，要求四項語意/驗證缺口以單一 append-only replacement 修正
+* [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](pm_handoff/DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - Core 關閉 findings 001/002/004；唯一 blocker 為 `M1-FREEZE-003-R2` FATAL terminal guard
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
-* [`commit_workflow_update.md`](pm_handoff/commit_workflow_update.md) - Candidate Commit 收斂與送驗後 append-only Git 歷史原則
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
@@ -25,6 +21,11 @@
 * `DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md` - (已關閉) `OUT-M4B-2026-007` revision request
 * `DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md` - (已關閉) `007-A～D` revision request
 * `PM-POC-LLM-20260817-001-readiness-correction.md` - (已完成) Gate 0/M0 readiness correction
+* `DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md` - (已完成) Gate 0 R2 Final ACK
+* `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md` - (已完成) Gate 1 platform revision 授權；已由 packet R4 承接
+* `DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md` - (已完成) Gate 1 Packet Revision 004 acceptance
+* `commit_workflow_update.md` - (已納入) Candidate Commit 與 append-only 原則已整合至 repo workflow
+* `DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md` - (已取代) R1 四項 finding 已由 Revision 002 收斂為單一 FATAL blocker
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -37,6 +38,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
 * [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - M1 replacement candidate 對 `M1-FREEZE-001～004` 的實作與 executable proof 對照
+* [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - FATAL child-wire terminal guard、六類 direct regression 與 R3 exact candidate 回覆
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)
@@ -47,6 +49,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md`](delivery/DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md) - Revision 004 packet/schema/selector deterministic return；exact SHA於commit後另行提供
 * [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md`](delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) - M1 locked PromptBuilder/response/protocol/strict-config Freeze Candidate；請 Core Designer/Internal Tester 一次整包 review
 * [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md`](delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) - 對 Core 四項 findings 的單一 replacement；review target `llm` / `93b34c14...`
+* [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md`](delivery/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) - locked-scope FATAL replacement；review target `llm` / `830d0b4e...`
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

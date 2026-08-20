@@ -85,7 +85,7 @@ Technical Lead review 順序為 SHA/environment/packet、artifact/fixture checks
 
 ## 6. Git and Pi Workflow
 
-本節承接 [`commit_workflow_update.md`](pm_handoff/commit_workflow_update.md)。POC repo 是
+本節承接已歸檔的 [`commit_workflow_update.md`](pm_handoff/history/commit_workflow_update.md)。POC repo 是
 source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktree，不是開發來源。
 
 - 唯一開發、驗證與 milestone 交付 branch 是 `llm`；不得建立或推送其他 POC branch，
@@ -98,6 +98,11 @@ source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktre
   filtering 或 force-push 改寫 frozen Candidate。
 - Commit subject 為 `{work-type}{milestone/stage}: {title}`；body 使用 60–100 words 的
   英文 bullet list。提交集中於 milestone 或 remote verification，不為小文件頻繁 commit。
+- 每輪收斂 commit 前，必須逐一盤點 `docs/pm_handoff/` 直屬 Income。只有尚待處理、仍有
+  未決事項或目前仍具治理效力的文件可留在根目錄；已完成、被取代或規則已納入 repo
+  workflow 的文件須保持內容不變並移至 `docs/pm_handoff/history/`，同步修正 index 與引用。
+- 每輪完成時必須向 User 回報所有未完成項目，包括待外部裁決、blocker、尚未授權的動作
+  與 active milestone open exit conditions；若沒有未完成項目，必須明確回報「無」。
 - 未經 User 核准不得 commit/push。未 push、Pi 無法 fetch 的 SHA 不得作 hardware delivery。
 
 Internal Milestone 正式標為 `COMPLETE` 後，才建立對應的 immutable annotated tag：`m0`、
