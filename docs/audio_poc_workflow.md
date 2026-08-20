@@ -149,26 +149,40 @@ test packet 與 evidence review 三個交接點明確切換角色；不得在相
 `model_reasoning_effort` 可由 user/profile/project config 設定；實際可用模型
 仍以 workspace policy 為準。
 
-## 7.2 Git、Draft PR 與 Pi worktree 流程
+## 7.2 Git、Candidate Commit、單一分支與 Pi worktree 流程
 
 POC repo 是程式碼、測試 harness、lockfile、schema、fixture catalog 與
 sanitized evidence index 的唯一來源。Pi checkout 是受控的
 deployment/test worktree，不是第二個開發來源；不得在 Pi 上留下未提交的
 程式修正後直接進行 benchmark。
 
-日常迭代使用 feature branch 與 Draft PR。若交接或復原確有需要，可建立符合
-commit subject convention 的 scoped WIP commit；每一輪真實硬體測試都必須指向
-該輪唯一、完整的 commit SHA。
-Assistant 先在工作站修改並完成適用的 local/fake/smoke tests，再建立 commit；
-Pi 僅取得該 commit 後執行 environment pre-test 與已核准的 hardware test。
+本 repo 只維持一條永久開發分支 `audio`。不再為 milestone 建立
+`dev_audio_m*` 或其他長期 feature branches；所有正式 Candidate、修正與交付
+依時間順序直接在 `audio` 向前追加。
+
+在本地 fast loop 尚未送驗時，Developer / Agent 可自行管理 WIP commits。準備進入
+跨平台驗證、Pi 實體驗證或 milestone review 前，必須將本輪尚未公開、
+尚未送驗的零碎 WIP squash 為單一乾淨 Candidate Commit。該 candidate 必須
+符合 commit convention、可重現，且有唯一完整 SHA。
+
+Candidate SHA 一旦 push、交給 Tester/Reviewer 或用於硬體測試，即視為
+不可變的驗證憑證。Reject、FAIL 或 INCONCLUSIVE 結果必須保留並寫入
+evidence / feedback；禁止使用 `git reset`、`git rebase`、force-push 或移動
+tag 竄改已送驗歷史。後續修正只能 append on top；新修正可在未送驗
+階段收斂為下一個 Candidate SHA，但不得改寫舊 candidate。
+
+Assistant 先在工作站修改並完成適用的 local/fake/smoke tests，再建立
+Candidate Commit 並 push `audio`；Pi 僅取得該完整 SHA 後執行
+environment pre-test 與已核准的 hardware test。
 
 ```text
-workstation edit/test -> commit -> push feature branch / Draft PR
-                                      |
-                                      v
-Pi: git fetch -> checkout exact full SHA -> clean check -> pre-test -> test
-                                      |
-                                      v
+workstation fast loop -> squash unpublished WIP -> Candidate Commit -> push audio
+                                                                  |
+                                                                  v
+Pi: git fetch -> checkout exact candidate SHA -> clean check -> pre-test -> test
+                                                                  |
+                                                                  v
+reject: preserve evidence -> append fixes -> next candidate       |
 sanitized evidence review <- controlled evidence return <- raw evidence
 ```
 
@@ -177,9 +191,11 @@ Pi 更新預設使用 `git fetch` 後 checkout 完整 SHA（或已核准的 tag�
 checkout 後 `git status --porcelain` 必須無輸出；該 SHA 必須記入 test packet
 與 evidence index。
 
-Candidate/正式 gate 的 source SHA 必須由不可變 tag 或保留中的 POC branch
-固定。即使 PR 採 squash merge，原始測試 SHA 也不得失去可重建路徑。M4
-delivery manifest 仍以完整 SHA 為準。
+Candidate/正式 gate 的 source SHA 以 `audio` 上的不可改寫 commit 固定。
+相同 SHA 若通過 milestone gate，再建立 annotated tag `m0`、`m1`、……。
+tag 只能在對應 readiness gate / milestone 正式 `COMPLETE` 後建立，必須
+指向完成記錄的 exact commit，且不得刪除、重建或移動。M4 delivery
+manifest 仍同時記錄完整 SHA，不只依賴 tag 名稱。
 
 ### Commit message convention
 
@@ -207,11 +223,11 @@ credentials, raw evidence, or private audio/transcript data.
 Create one commit for one complete, reviewable work segment: for example a
 frozen-gate decision, a completed hardware evidence bundle, a formal handoff,
 or a milestone gate outcome. Do not commit each intermediate documentation
-edit, investigation, or small correction. Keep transient agent working notes
-outside tracked source; use a scoped WIP commit that still follows the subject
-convention only when a handoff or recovery requires a durable checkpoint. A
-real hardware test still requires an exact
-full SHA, even when its preceding development work is batched.
+edit, investigation, or small correction. Local unpublished WIP commits are
+allowed, but must converge to one clean Candidate Commit before external,
+cross-platform, hardware, or milestone validation. Never squash, amend, rebase,
+reset, or force-push a candidate after submission. A real hardware test still
+requires an exact full SHA, even when its preceding development work is batched.
 
 SCP/rsync 只可用於不進 Git 的模型、受控 fixture 或 raw evidence，並須有
 checksum 與受控路徑；它們不得取代 source-code deployment。模型、大型結果、

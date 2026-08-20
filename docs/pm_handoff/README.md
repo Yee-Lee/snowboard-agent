@@ -4,7 +4,7 @@
 新文件承接的 transaction record 移至 `history/`。歸檔不代表刪除決策或證據，
 引用仍須指向可追溯的歷史文件。
 
-最後更新：2026-08-18
+最後更新：2026-08-20
 
 ## Authoritative POC Specifications
 
@@ -19,7 +19,8 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` | Core 已於 [`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`](DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md) / commit `790c0f86e12422542ef94cacd3c4dd850e346bca` 核對 proposal SHA `756ded69dd7b4661fcbac272d4d234c387890fc8`，只授權 SenseVoice ASR 與 Matcha TTS 兩個 primary。WP2 fake-only scaffold 已完成，下一步執行兩列 WP3；其餘 10 rows 禁止執行，VAD scope 由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
+| [commit_workflow_update](commit_workflow_update.md) | `INTEGRATED` | 已將 unpublished WIP squash、Candidate SHA append-only、單一 `audio` branch 與 immutable milestone tags 整合至 [`docs/audio_poc_workflow.md`](../audio_poc_workflow.md) 與 `AGENTS.md`。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED / ASR CR REVISED` | SenseVoice 已依 frozen quality gate 拒絕；Product Team 已修訂 [`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md)，要求 whisper.cpp small Q8_0 primary、conditional Q5_1、4 threads 與 1.5 s hard latency gate。新 rows 在 Core exact-row ACK 前不得執行；VAD 仍由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
 
 ## History
 

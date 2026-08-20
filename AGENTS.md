@@ -42,6 +42,15 @@ links from the active milestone only when the current task needs that detail.
   barge-in, AEC, wake word, or unrelated product features.
 - Do not commit models, large results, private audio, secrets, or sensitive
   transcripts.
+- Use `audio` as the only persistent development branch. Local WIP commits may
+  be squashed before a candidate is published, but a published or submitted
+  candidate SHA is immutable and must never be rewritten with reset or rebase.
+- Record rejected validation evidence and append fixes on top of the rejected
+  candidate. Converge those new fixes into the next candidate without altering
+  any previously submitted SHA.
+- Create immutable annotated tags `m0`, `m1`, and so on only when the matching
+  milestone or readiness gate is formally complete. Never move an existing
+  milestone tag.
 - At every milestone gate, update the milestone index, remaining-delivery
   assessment, risks, and any required adjustment request.
 

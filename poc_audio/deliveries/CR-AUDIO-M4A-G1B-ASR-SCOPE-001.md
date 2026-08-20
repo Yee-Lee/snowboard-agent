@@ -27,27 +27,34 @@ normalization, threshold or post-processing change may be used to make it pass.
 
 Core is requested to revise the Gate 1B execution authorization as follows:
 
-1. Make **faster-whisper `small`, multilingual, CPU `int8`** the next primary
-   ASR candidate. The exact model revision, artifact hashes, license/notice and
-   complete aarch64 offline dependency closure must be proposed and ACKed before
-   build, install, import, load or execution. Discovery metadata may inform that
-   proposal but does not itself authorize execution.
-2. Freeze the candidate runtime profile at `cpu_threads=4`, `num_workers=1`,
-   `compute_type=int8`, `beam_size=1`, `best_of=1`, `temperature=0`,
-   `language=zh`, `condition_on_previous_text=false`,
-   `without_timestamps=true`, and `vad_filter=false`. VAD remains a separate
-   bounded-utterance stage.
-3. Add a **hard hot final-transcript latency p95 gate of <=1.5 seconds**. Keep
+1. Make **whisper.cpp `1.9.2`, multilingual `small`, Q8_0** the next primary ASR
+   candidate. Proposed model bytes are `ggml-small-q8_0.bin`, 264 MB, SHA-256
+   `49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f`.
+   Core must bind an immutable model-repository revision, the existing exact
+   whisper.cpp source revision, license/notice and complete CPU-only aarch64
+   build closure before execution.
+2. Pre-authorize **the same engine and multilingual `small` model in Q5_1** only
+   as a conditional resource/latency fallback. Proposed bytes are
+   `ggml-small-q5_1.bin`, 190 MB, SHA-256
+   `ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb`.
+   Q5_1 may run only if Q8_0 first passes both frozen quality gates but misses
+   the 1.5-second latency gate or exceeds the existing 1250 MiB peak-RSS
+   advisory ceiling. If Q8_0 fails quality, stop rather than try the more
+   compressed row.
+3. Freeze both rows at four CPU threads, one worker, greedy decoding equivalent
+   to `beam_size=1` / `best_of=1`, `temperature=0`, `language=zh`, translation
+   disabled, previous-text conditioning disabled, timestamps disabled and
+   internal VAD disabled. VAD remains a separate bounded-utterance stage.
+4. Add a **hard hot final-transcript latency p95 gate of <=1.5 seconds**. Keep
    the <=1.0-second target as advisory. Do not relax the existing RTF p95
    <=2.0, Taiwan-Mandarin core CER <=20%, overall sentence correctness >=70%,
    peak-RSS advisory ceiling of 1250 MiB, frozen fixtures or lifecycle gates.
-4. Do not authorize another SenseVoice tuning pass. SenseVoice Large is out of
+5. Do not authorize another SenseVoice tuning pass. SenseVoice Large is out of
    this round because no exact, reviewable public artifact plus license and
    mature aarch64/offline runtime path has been established for this POC.
-5. Keep existing row `asr-whispercpp-base-q5_1-1.9.2` **DEFERRED and not
-   executable**. The whisper.cpp engine remains eligible only as a future,
-   separately proposed `small` quantized resource fallback if faster-whisper
-   small is near the quality gate but misses latency or memory constraints.
+6. Keep existing row `asr-whispercpp-base-q5_1-1.9.2` **DEFERRED and not
+   executable**. Also keep faster-whisper `small` multilingual CPU `int8`
+   deferred this round; it is no longer the requested recovery primary.
 
 The 4-thread change and 1.5-second latency limit are deliberate product
 requirements for real-time voice response. They supersede the prior two-thread
@@ -58,8 +65,9 @@ or invalidate the completed SenseVoice evidence.
 
 Core should return one written disposition:
 
-- `ACCEPTED`: issue an exact-row ACK containing the pinned faster-whisper small
-  artifact/runtime closure and the profile and gates above; or
+- `ACCEPTED`: issue exact-row ACKs for whisper.cpp small Q8_0 and the conditional
+  Q5_1 fallback, including their pinned artifacts, source/build closure,
+  execution order, profile and gates above; or
 - `REJECTED`: state that no compliant exact row can be authorized, allowing the
   POC to close ASR as an evidence-backed no-go.
 
@@ -69,7 +77,7 @@ document is delivered.
 
 ## Technical references
 
-- [faster-whisper README](https://github.com/SYSTRAN/faster-whisper/blob/master/README.md)
-- [faster-whisper transcription API](https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py)
+- [whisper.cpp README](https://github.com/ggml-org/whisper.cpp/blob/master/README.md)
+- [whisper.cpp model files](https://huggingface.co/ggerganov/whisper.cpp/tree/main)
 - [OpenAI Whisper model sizes](https://github.com/openai/whisper)
 - [SenseVoice repository](https://github.com/FunAudioLLM/SenseVoice)

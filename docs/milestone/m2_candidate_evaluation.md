@@ -58,10 +58,12 @@ resource-growth review 與 legal blockers 仍未關閉。見
 [`M4A-G1B-WP3-FULL-QUALIFICATION-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-FULL-QUALIFICATION-001.md)。
 SenseVoice 失敗後不得自動啟用 fallback，已提出
 [`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md)
-由 Product Team 要求 Core 以 faster-whisper small multilingual int8、4 threads 及
-hot final-transcript p95 <=1.5 s hard gate 回傳 exact-row ACK。SenseVoice 本輪
-不再調整，SenseVoice Large 不納入，既有 Whisper.cpp base 維持 deferred；
-所有 fallback 在新 ACK 前均不得執行。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
+由 Product Team 要求 Core 以 whisper.cpp 1.9.2 multilingual small Q8_0、
+4 threads 及 hot final-transcript p95 <=1.5 s hard gate 回傳 primary exact-row
+ACK；small Q5_1 只在 Q8_0 先通過 frozen quality、但未達 latency 或既有
+1250 MiB peak-RSS advisory ceiling 時才能作為條件式 fallback。SenseVoice 本輪不再調整，
+SenseVoice Large 不納入，既有 Whisper.cpp base 與 faster-whisper small 維持
+deferred；所有新 rows 在 ACK 前均不得執行。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
 finalist/no-go exit condition 尚無關閉路徑；見
 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。
 Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑完整 suite
