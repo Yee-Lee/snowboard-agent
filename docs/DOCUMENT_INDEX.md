@@ -6,7 +6,6 @@
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
-* [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](pm_handoff/DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - Core 關閉 findings 001/002/004；唯一 blocker 為 `M1-FREEZE-003-R2` FATAL terminal guard
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
@@ -26,6 +25,7 @@
 * `DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md` - (已完成) Gate 1 Packet Revision 004 acceptance
 * `commit_workflow_update.md` - (已納入) Candidate Commit 與 append-only 原則已整合至 repo workflow
 * `DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md` - (已取代) R1 四項 finding 已由 Revision 002 收斂為單一 FATAL blocker
+* `DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md` - (已關閉) R3 exact SHA 已獲 Core Designer freeze approval
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -39,6 +39,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - M1 replacement candidate 對 `M1-FREEZE-001～004` 的實作與 executable proof 對照
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - FATAL child-wire terminal guard、六類 direct regression 與 R3 exact candidate 回覆
+* [`ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001.md`](response/ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001.md) - Core repo Designer freeze ACK intake；同一 SHA Internal Tester sign-off pending
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)

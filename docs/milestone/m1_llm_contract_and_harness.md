@@ -1,6 +1,6 @@
 # LLM M1：Frozen Contract, Candidate Pairing and Deterministic Harness
 
-狀態：`IN_PROGRESS`
+狀態：`GATE_REVIEW`
 
 ## 目標與交付貢獻
 
@@ -77,22 +77,27 @@ D1、D2、D3、D4、D8。
   `PASS`、targeted 20/20、combined 35/35；已由
   [`DELIVERY-006`](../delivery/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) 請求
   locked-scope review。
+- Core repo 的 `DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001` 已由 Designer freeze 同一 exact
+  SHA、關閉唯一 blocker 且不新增 blocker；目前 candidate-affecting paths 與 frozen SHA
+  無差異。POC intake record：
+  [`ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001`](../response/ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001.md)。
 - `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
   Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。
 - `G1-CANDIDATE-PREFLIGHT-001`：已從官方 metadata 固定 LiteRT-LM v0.16.0 的兩平台
   wheel SHA-256，以及 Gemma4-E2B、Qwen2.5-1.5B、Qwen2.5-0.5B 的 upstream revision、
   artifact SHA-256、size 與 license proposal。
-- Open：尚未取得 artifact/dependency bundle、source/archive checksum、candidate adapter、
-  strict config 與實體 manifest，因此不得執行真實 Gate 1 candidate run。
+- Forward Gate 1/M2 dependency：artifact/dependency bundle、source/archive checksum、candidate
+  adapter、strict config instance 與實體 manifest 尚未取得；Designer ACK 明確表示這些不再
+  阻擋 M1 freeze，但未授權真實 candidate run。
 - `G1-X86-PI-COMPAT-004`：candidate/acquisition identity、x86/Pi/aggregate schemas、一次
   max-two preselection、Pi eligibility filter、no-backfill與Gate 2 carry-over guard已形成；
   Core 已確認 revision-004 regressions 9/9、retained revision-003 regressions 6/6、validator
   self-test `PASS` 與 Gate 2A/2B plan validation `PLAN_VALID`；packet revision 已完成。
-- Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
-  try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
-- Open：R3 尚待 Core Designer 核准唯一 FATAL guard，之後才由 Internal Tester 獨立核准
-  exact SHA、lock 與 deterministic evidence；兩者批准前 M1 不得標示 `GATE_REVIEW`、
-  `COMPLETE` 或建立 `m1` tag。
+- Forward Gate 1/M2 authorization：workstation x86 owner/raw path、artifact acquisition與real
+  execution尚未批准；Pi try-run另需x86 preselection、artifact transfer/install、
+  network-disabled與cleanup授權。這些不是 M1 Tester sign-off 的新增條件。
+- Open：只待 Internal Tester 對 frozen exact SHA、lock、self-test、20/20、35/35 與
+  candidate-path immutability 獨立 sign-off；完成前 M1 不得標示 `COMPLETE` 或建立 `m1` tag。
 
 ## Prohibited in M1
 
