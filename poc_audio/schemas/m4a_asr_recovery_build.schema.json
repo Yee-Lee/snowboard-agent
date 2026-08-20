@@ -30,12 +30,14 @@
         "asr-whispercpp-small-q5_1-1.9.2"
       ]
     },
+    "build_profile": {"enum": ["generic", "native"]},
     "artifact_preflight": {"type": "object"},
     "platform": {"type": "object"},
     "toolchain": {"type": "object"},
     "commands": {"type": "object"},
     "wrapper_source": {"type": "array", "minItems": 2, "maxItems": 2},
     "cmake_cache": {"type": "object"},
+    "compile_commands_sha256": {"pattern": "^[0-9a-f]{64}$"},
     "binary": {"type": "object"},
     "network_evidence": {"const": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_BUILD"},
     "execution_status": {"const": "BUILD_PASS_MODEL_NOT_LOADED_INFERENCE_NOT_RUN"}

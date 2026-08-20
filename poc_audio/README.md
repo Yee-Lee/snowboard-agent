@@ -235,6 +235,44 @@ retains all three warmups, and measures two complete 50-item hot cycles. Its
 report is always marked `PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE`; it cannot pass a
 gate or unlock Q5, and the full 20-repetition run remains pending.
 
+#### VAD-label-bounded Q8 investigation
+
+For `POC-AUDIO-PERF-2026-001`, preserve the historical runner above and create
+new generic/native builds with `--build-profile`. Native changes only
+`GGML_NATIVE` from `OFF` to `ON`; OpenMP and BLAS remain disabled:
+
+```bash
+bash poc_audio/tools/run_m4a_whispercpp_build.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --work-dir /controlled/audio-poc/work/whispercpp-q8-native-build-001 \
+  --output /tmp/m4a-whispercpp-q8-native-build.json \
+  --build-profile native
+```
+
+After reviewing both build reports, run the longest-fixture screening with
+generic/4 threads and native/1,2,4 threads. Then run only the selected
+four-thread profile over all 50 fixtures for two hot cycles:
+
+```bash
+bash poc_audio/tools/run_m4a_whispercpp_bounded.sh \
+  --artifact-dir /controlled/audio-poc/gate1b \
+  --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
+  --vad-label-index /controlled/audio-poc/fixtures/review/vad-labels-v1.json \
+  --binary /controlled/audio-poc/work/BUILD/build/bin/m4a-whispercpp-worker \
+  --build-report /tmp/BUILD.json \
+  --work-dir /controlled/audio-poc/work/q8-bounded-two-hot \
+  --output /tmp/q8-bounded-two-hot.json \
+  --mode diagnostic --threads 4 --hot-repetitions 2
+```
+
+The runner checks the exact frozen label checksum and creates contiguous WAVs
+from first labelled speech start through last labelled speech end, preserving
+all internal pauses. Derived audio/raw reports remain outside Git. It records
+controller/native/CPU time, input and labelled speech duration, RTF, RSS,
+task/core utilization, governor/frequency, thermal and cleanup. It never opens
+an audio device or plays sound. Absolute final-transcript latency is an M2
+observation in this packet; all other frozen gates remain unchanged.
+
 #### ACK-001 historical SenseVoice/Matcha runners
 
 The following preserved commands reproduce the already-reviewed ACK-001

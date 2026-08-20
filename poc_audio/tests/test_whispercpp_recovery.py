@@ -23,13 +23,20 @@ from audio_poc.m4a_whispercpp_preflight import (  # noqa: E402
     verify_source_license,
 )
 from audio_poc.m4a_whispercpp_build import (  # noqa: E402
+    BUILD_PROFILE_OVERRIDES,
     CMAKE_FLAGS,
+    build_profile_flags,
     configure_command,
     non_loopback_interfaces,
     safe_extract_source,
     validate_cmake_cache,
     validate_dynamic_dependencies,
     validate_namespace_separation,
+)
+from audio_poc.m4a_whispercpp_bounded import (  # noqa: E402
+    LABEL_INDEX_SHA256,
+    _validate_labels,
+    derive_bounded_fixtures,
 )
 from audio_poc.m4a_whispercpp_qualification import (  # noqa: E402
     NativeWhisperWorker,
@@ -166,6 +173,16 @@ class WhisperCppRecoveryTests(unittest.TestCase):
         self.assertIn("-DBUILD_SHARED_LIBS=OFF", command)
         self.assertIn("-DWHISPER_SOURCE_DIR=/source", command)
 
+    def test_native_profile_changes_only_ggml_native(self) -> None:
+        self.assertEqual(set(BUILD_PROFILE_OVERRIDES), {"generic", "native"})
+        generic = build_profile_flags("generic")
+        native = build_profile_flags("native")
+        self.assertEqual(
+            {name for name in generic if generic[name] != native[name]},
+            {"GGML_NATIVE"},
+        )
+        self.assertEqual(native["GGML_NATIVE"], "ON")
+
     def test_build_cache_must_retain_all_frozen_flags(self) -> None:
         validate_cmake_cache(dict(CMAKE_FLAGS))
         changed = dict(CMAKE_FLAGS)
@@ -200,6 +217,7 @@ class WhisperCppRecoveryTests(unittest.TestCase):
     def test_shell_runners_create_their_own_offline_namespace(self) -> None:
         for relative_path in (
             "poc_audio/tools/run_m4a_whispercpp_build.sh",
+            "poc_audio/tools/run_m4a_whispercpp_bounded.sh",
             "poc_audio/tools/run_m4a_whispercpp_qualification.sh",
         ):
             source = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
@@ -212,7 +230,8 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             REPO_ROOT / "poc_audio/native/whispercpp_worker/worker.cpp"
         ).read_text(encoding="utf-8")
         for statement in (
-            "constexpr int kThreads = 4;",
+            "constexpr int kMaxThreads = 4;",
+            "params.n_threads = threads;",
             "params.no_context = true;",
             "params.no_timestamps = true;",
             'params.language = "zh";',
@@ -223,6 +242,31 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             "context_params.use_gpu = false;",
         ):
             self.assertIn(statement, source)
+
+    def test_bounded_labels_preserve_internal_pause_and_crop_contiguously(self) -> None:
+        plan = {
+            "utterances": [
+                {"fixture_id": "clear", "vad_class": "clear_speech"},
+                {"fixture_id": "pause", "vad_class": "pause"},
+            ]
+        }
+        labels = {
+            "accepted": {
+                "clear": {"speech_intervals_ms": [[100, 700]], "internal_pause_interval_ms": None},
+                "pause": {
+                    "speech_intervals_ms": [[100, 400], [800, 1200]],
+                    "internal_pause_interval_ms": [400, 800],
+                },
+            }
+        }
+        accepted = _validate_labels(labels, plan)
+        self.assertEqual(accepted["pause"]["speech_intervals_ms"], [[100, 400], [800, 1200]])
+
+    def test_bounded_label_checksum_is_frozen(self) -> None:
+        self.assertEqual(
+            LABEL_INDEX_SHA256,
+            "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
+        )
 
     def test_fake_persistent_worker_success_and_clean_quit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

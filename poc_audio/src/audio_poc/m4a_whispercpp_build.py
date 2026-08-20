@@ -52,6 +52,10 @@ CMAKE_FLAGS = {
     "WHISPER_OPENVINO": "OFF",
     "WHISPER_MKL": "OFF",
 }
+BUILD_PROFILE_OVERRIDES = {
+    "generic": {},
+    "native": {"GGML_NATIVE": "ON"},
+}
 PROHIBITED_CACHE_TRUE = {
     "GGML_BLAS", "GGML_CUDA", "GGML_VULKAN", "GGML_OPENCL", "GGML_RPC", "GGML_OPENMP",
     "GGML_METAL", "GGML_SYCL", "GGML_KOMPUTE",
@@ -177,11 +181,21 @@ def safe_extract_source(archive: Path, destination: Path) -> Path:
     return source_dir
 
 
-def configure_command(wrapper_source_dir: Path, source_dir: Path, build_dir: Path) -> list[str]:
+def build_profile_flags(profile: str) -> dict[str, str]:
+    if profile not in BUILD_PROFILE_OVERRIDES:
+        raise ValueError(f"unsupported build profile: {profile}")
+    return {**CMAKE_FLAGS, **BUILD_PROFILE_OVERRIDES[profile]}
+
+
+def configure_command(
+    wrapper_source_dir: Path, source_dir: Path, build_dir: Path,
+    profile: str = "generic",
+) -> list[str]:
+    flags = build_profile_flags(profile)
     command = ["cmake", "-S", str(wrapper_source_dir), "-B", str(build_dir),
                f"-DWHISPER_SOURCE_DIR={source_dir}", "-DCMAKE_BUILD_TYPE=Release",
-               "-DBUILD_SHARED_LIBS=OFF"]
-    command.extend(f"-D{name}={value}" for name, value in CMAKE_FLAGS.items())
+               "-DBUILD_SHARED_LIBS=OFF", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
+    command.extend(f"-D{name}={value}" for name, value in flags.items())
     return command
 
 
@@ -196,12 +210,14 @@ def parse_cmake_cache(path: Path) -> dict[str, str]:
     return values
 
 
-def validate_cmake_cache(values: dict[str, str]) -> None:
-    for name, expected in CMAKE_FLAGS.items():
+def validate_cmake_cache(values: dict[str, str], profile: str = "generic") -> None:
+    expected_flags = build_profile_flags(profile)
+    for name, expected in expected_flags.items():
         if values.get(name) != expected:
             raise RuntimeError(f"CMake cache does not preserve {name}={expected}")
     for name in PROHIBITED_CACHE_TRUE:
-        if values.get(name, "OFF").upper() in {"1", "ON", "TRUE", "YES", "Y"}:
+        if expected_flags.get(name, "OFF") == "OFF" and \
+                values.get(name, "OFF").upper() in {"1", "ON", "TRUE", "YES", "Y"}:
             raise RuntimeError(f"CMake cache enables prohibited feature: {name}")
 
 
@@ -214,7 +230,7 @@ def validate_dynamic_dependencies(listing: str) -> None:
 
 def build_report(
     manifest: dict[str, Any], artifact_dir: Path, work_dir: Path, source_sha: str,
-    candidate_id: str, q8_result: dict[str, Any] | None,
+    candidate_id: str, q8_result: dict[str, Any] | None, build_profile: str = "generic",
 ) -> dict[str, Any]:
     platform_report = assert_pi_target()
     assert_network_isolated()
@@ -235,14 +251,15 @@ def build_report(
     source_dir = safe_extract_source(source_archive, work_dir / "source")
     build_dir = work_dir / "build"
     wrapper_source_dir = repo_root() / "poc_audio/native/whispercpp_worker"
-    configure = configure_command(wrapper_source_dir, source_dir, build_dir)
+    profile_flags = build_profile_flags(build_profile)
+    configure = configure_command(wrapper_source_dir, source_dir, build_dir, build_profile)
     build = ["cmake", "--build", str(build_dir), "--target", "m4a-whispercpp-worker", "-j", "4"]
     subprocess.run(configure, check=True, env={**os.environ, "CMAKE_DISABLE_FIND_PACKAGE_CURL": "TRUE"})
     subprocess.run(build, check=True)
     assert_network_isolated()
 
     cache = parse_cmake_cache(build_dir / "CMakeCache.txt")
-    validate_cmake_cache(cache)
+    validate_cmake_cache(cache, build_profile)
     binary = build_dir / "bin/m4a-whispercpp-worker"
     if not binary.is_file():
         raise RuntimeError("persistent whisper.cpp worker is missing after build")
@@ -254,11 +271,19 @@ def build_report(
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "poc_source_sha": source_sha,
         "candidate_id": candidate_id,
+        "build_profile": build_profile,
         "artifact_preflight": artifact_report,
         "platform": platform_report,
         "toolchain": {
             "cmake": command_output(["cmake", "--version"]),
             "cxx": command_output(["c++", "--version"]),
+            "lscpu": command_output(["lscpu"]),
+            "release_flags": {
+                "c": cache.get("CMAKE_C_FLAGS_RELEASE", ""),
+                "cxx": cache.get("CMAKE_CXX_FLAGS_RELEASE", ""),
+                "ggml_cpu_arm_arch": cache.get("GGML_CPU_ARM_ARCH", ""),
+                "cmake_system_processor": cache.get("CMAKE_SYSTEM_PROCESSOR", ""),
+            },
         },
         "commands": {"configure": configure, "build": build},
         "wrapper_source": [
@@ -271,7 +296,8 @@ def build_report(
                 "sha256": sha256_file(wrapper_source_dir / "worker.cpp"),
             },
         ],
-        "cmake_cache": {name: cache[name] for name in CMAKE_FLAGS},
+        "cmake_cache": {name: cache[name] for name in profile_flags},
+        "compile_commands_sha256": sha256_file(build_dir / "compile_commands.json"),
         "binary": {
             "relative_path": binary.relative_to(work_dir).as_posix(),
             "size_bytes": binary.stat().st_size,
@@ -291,6 +317,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--candidate", choices=(PRIMARY_ID, FALLBACK_ID), default=PRIMARY_ID)
     parser.add_argument("--q8-result", type=Path)
+    parser.add_argument("--build-profile", choices=tuple(BUILD_PROFILE_OVERRIDES), default="generic")
     return parser.parse_args()
 
 
@@ -307,7 +334,7 @@ def main() -> int:
         if args.q8_result is not None else None
     report = build_report(
         manifest, args.artifact_dir, args.work_dir, args.source_sha,
-        args.candidate, q8_result,
+        args.candidate, q8_result, args.build_profile,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

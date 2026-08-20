@@ -18,7 +18,7 @@
 namespace {
 
 constexpr int kSampleRate = 16000;
-constexpr int kThreads = 4;
+constexpr int kMaxThreads = 4;
 constexpr std::size_t kMaxSamples = 60U * kSampleRate;
 
 uint16_t read_u16(std::istream & input) {
@@ -148,9 +148,9 @@ std::string hex_encode(const std::string & value) {
     return output.str();
 }
 
-std::string transcribe(whisper_context * context, const std::vector<float> & samples) {
+std::string transcribe(whisper_context * context, const std::vector<float> & samples, int threads) {
     whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-    params.n_threads = kThreads;
+    params.n_threads = threads;
     params.translate = false;
     params.no_context = true;
     params.no_timestamps = true;
@@ -189,8 +189,20 @@ std::string transcribe(whisper_context * context, const std::vector<float> & sam
 }  // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 3 || std::string(argv[1]) != "--model") {
-        std::cerr << "usage: m4a-whispercpp-worker --model MODEL" << std::endl;
+    if (argc != 5 || std::string(argv[1]) != "--model" ||
+            std::string(argv[3]) != "--threads") {
+        std::cerr << "usage: m4a-whispercpp-worker --model MODEL --threads N" << std::endl;
+        return 2;
+    }
+    int threads = 0;
+    try {
+        threads = std::stoi(argv[4]);
+    } catch (const std::exception &) {
+        std::cerr << "invalid thread count" << std::endl;
+        return 2;
+    }
+    if (threads < 1 || threads > kMaxThreads) {
+        std::cerr << "thread count must be between 1 and 4" << std::endl;
         return 2;
     }
     if (std::string(whisper_version()) != "1.9.2") {
@@ -225,7 +237,7 @@ int main(int argc, char ** argv) {
             const auto samples = read_pcm16_mono_wav(line.substr(sizeof(prefix) - 1U));
             const uint64_t wall_started = monotonic_us();
             const uint64_t cpu_started = process_cpu_us();
-            const std::string transcript = transcribe(context, samples);
+            const std::string transcript = transcribe(context, samples, threads);
             const uint64_t cpu_us = process_cpu_us() - cpu_started;
             const uint64_t wall_us = monotonic_us() - wall_started;
             std::cout << "RESULT\t" << hex_encode(transcript) << "\t" << wall_us << "\t"

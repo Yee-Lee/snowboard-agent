@@ -123,6 +123,18 @@ terms。這是補充品質風險，不變更 frozen score。使用者要求將 Q
 [`CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002.md)。
 現有 ACK 不允許這些例外，故 small Q5、base Q5、medium 與 HAT 均未解鎖且不得執行。
 
+後續收到 high-priority `POC-AUDIO-PERF-2026-001` review：既有 Q8 使用完整固定長度
+WAV、generic `GGML_NATIVE/OPENMP/BLAS=OFF` build，亦未證明四核心實際並行，不能據此
+完成 CPU-only ASR no-go/finalist 判定。User 要求 Q8 先以 frozen VAD label 的第一個
+speech start 至最後一個 speech end 建立單一 contiguous input，保留所有 internal
+pause；以最小成本比較 generic/native 一個編譯變因與 native 1/2/4 thread scaling，
+再對選定 4-thread profile 跑 50 fixtures x 2 hot cycles。完整 test packet 見
+[`RESP-POC-AUDIO-PERF-2026-001`](../../poc_audio/deliveries/RESP-POC-AUDIO-PERF-2026-001.md)。
+Q5、base、medium 與 HAT 在此結果 review 前全部暫停。M2 的 1.5 s absolute latency
+暫列 observation、留待 future integrated VAD-to-ASR frozen timestamps；RTF、品質、
+資源、determinism、offline 與 lifecycle gates 不變。這是待 Product/Core 接受的 scope
+change，不得用來重寫歷史 Q8 結果或事後宣告 PASS。
+
 M2 執行分成四個受控步驟：
 
 1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。

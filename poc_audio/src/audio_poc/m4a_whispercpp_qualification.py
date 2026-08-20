@@ -509,7 +509,7 @@ def main() -> int:
         manifest, candidate["controlled_locator"], candidate["filename"], args.artifact_dir
     )
     args.work_dir.mkdir(parents=True)
-    command = [str(args.binary.resolve()), "--model", str(model)]
+    command = [str(args.binary.resolve()), "--model", str(model), "--threads", "4"]
     diagnostic = args.diagnostic_hot_repetitions is not None
     cold_repetitions = 0 if diagnostic else COLD_REPETITIONS
     hot_repetitions = args.diagnostic_hot_repetitions or HOT_REPETITIONS

@@ -1,13 +1,19 @@
 # PM change request: ASR diagnostic scope after small Q8 signal
 
 - **Change request ID**: `CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`
-- **Status**: `REQUESTED — PENDING PRODUCT / CORE DECISION`
+- **Status**: `SUPERSEDED BEFORE EXECUTION — Q8 BOUNDED INVESTIGATION FIRST`
 - **Related ACK**: `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 - **Requestor**: Product Team
 - **Decision owner**: Core Designer
 - **POC owner after ACK**: Audio POC Technical Lead
 
 ## Trigger and unchanged evidence
+
+> Supersession note: Product direction now requires completion of
+> `POC-AUDIO-PERF-2026-001` bounded-input Q8 investigation before any Q5, base,
+> medium or HAT discussion. None of the diagnostic rows requested below were
+> executed. The current response is
+> [`RESP-POC-AUDIO-PERF-2026-001`](RESP-POC-AUDIO-PERF-2026-001.md).
 
 The authorized whisper.cpp multilingual small Q8_0 two-cycle partial diagnostic
 on Raspberry Pi 5 observed 9.502262% Taiwan-Mandarin core CER, 28% overall

@@ -53,6 +53,13 @@ domain context 復原、12 筆因關鍵語意變更而不應猜測。User 已決
 `CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`，待 Product/Core exact-row ACK。
 在 ACK 前，small Q5、base Q5、medium 與 HAT 皆不得執行，現有 frozen gates 與
 small Q8 disposition 不變。
+Internal Engineering feedback `POC-AUDIO-PERF-2026-001` 隨後指出完整 6/8 秒 WAV、
+generic build 與未證明的四核心利用率不足以作 Q8 最終判定。User 已要求先以 frozen
+VAD labels 建立保留自然停頓的 bounded input，最小化比較 generic/native build 與
+1/2/4 threads，再對選定的 Q8 4-thread profile 跑兩個 hot cycles；Q5、base、medium
+及 HAT 全部延後。M2 暫將 1.5 s absolute latency 改列 observation，RTF、品質、資源及
+lifecycle gates 不變；此 scope change 尚須 Product/Core 接受，既有 11.080 s evidence
+不得重標或刪除。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 
