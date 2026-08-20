@@ -2,6 +2,10 @@
 
 - **Git 操作與版控原則**：禁止任何 AI 角色直接修改、建立或寫入 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制與異動操作必須一律透過標準 CLI `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。需要實體／人工驗收的階段，得在 Developer fast loop 完成後建立一次 **provisional candidate commit**，作為 portable matrix 的不可變受測 SHA；它尚未 freeze，也不代表 Tester PASS或milestone Accepted。portable gate或candidate review要求修改時，必須重新取得USER同意建立新candidate commit。candidate commit與最終milestone commit都受本確認規則約束。
 
+- **單一分支與不可變 milestone tags**：Core repo 只維持一條永久開發分支 `core`，所有 Candidate、修正與交付依時間順序直接 append。不再為 milestone 建立 `dev_agent_m*` 或長期 feature branch；舊分支保留為歷史參考，不刪除、不改寫。未送驗 WIP 可在本地整理；Candidate SHA 一旦 push、送驗或用於正式驗證，禁止 amend、rebase、reset 或 force-push，Reject / FAIL / INCONCLUSIVE 必須保留 evidence 並以 append fix 產生新 SHA。
+
+- 每個 Core milestone 只在 Tester PASS、Designer final review 完成且狀態正式標記 `Accepted` 後，對完成記錄所在的 exact commit 建立小寫 annotated tag `core_m1`、`core_m2`、……。Tag 是不可移動的 milestone identity，不得刪除、重建或改指其他 SHA；delivery / evidence 仍必須同時記錄完整 40-character SHA，不得只寫 tag。Core 無 M0 milestone，因此不建立 `core_m0`。
+
 - **Git Commit Message 規範**：
 
   **標題格式**：`[work_type][milestone]: [title]`

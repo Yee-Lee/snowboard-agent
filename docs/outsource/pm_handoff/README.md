@@ -8,11 +8,11 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [`PM-OUT-260819-019-audio-asr-recovery-gate`](PM-OUT-260819-019-audio-asr-recovery-gate/brief.md) | Audio ASR recovery candidate、4-thread profile與real-time hard gate | `CR-AUDIO-M4A-G1B-ASR-SCOPE-001` | M4a Gate 1B | **Open — Core ACK required** | 待 Core 回覆 |
+| — | 目前無 Open task / request | — | — | — | — |
 
 ---
 
-### Milestone gate 判讀（Core Team，2026-08-19）
+### Milestone gate 判讀（Core Team，2026-08-20）
 
 | Gate | 目前狀態 | 外部 contract 影響 |
 | :--- | :--- | :--- |
@@ -21,6 +21,11 @@
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
 | **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b Gate 0 R2 accepted** | Audio `756ded69...`已完成focused intake。LLM `0d415d1...`已由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2；Gate 1平台分流已核准修訂packet，但真實x86 / Pi執行仍未授權。017已收斂為Core Tester可在實測階段重跑的`M4-REG-001`，不新增Gate或POC combined執行責任。 |
 | **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM平台變更已核准packet revision，但Gate 1真實執行仍未授權。 |
+
+2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
+授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
+Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 / Gate 2A
+追蹤。
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
@@ -52,6 +57,7 @@
 | [`DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001`](history/DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md) | Audio POC M3 Option A P4-A01～A10完整回交 | 無 | **Resolved — Option A final selection accepted** | ACK：[`DELIVERY-AUDIO-POC-M3-P4-ACK-004.md`](../deliveries/DELIVERY-AUDIO-POC-M3-P4-ACK-004.md) |
 | [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST`](history/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) | M4b Gate 1 x86完整初篩＋產品Pi compatibility平台分流 | 無 | **Resolved — packet revision authorized / real execution not authorized** | Contract：[`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)；ACK已直接交付POC incoming |
 | [`CR-AUDIO-M3-P4-REPRO-002.md`](history/CR-AUDIO-M3-P4-REPRO-002.md) | Restore reproducible P4-A10 dependency artifacts | 無 | **Resolved** | Response: [`RESP-AUDIO-M3-P4-REPRO-002.md`](../responses/RESP-AUDIO-M3-P4-REPRO-002.md) |
+| [`PM-OUT-260819-019-audio-asr-recovery-gate`](history/PM-OUT-260819-019-audio-asr-recovery-gate/brief.md) | whisper.cpp small Q8_0/Q5_1 ASR recovery與real-time hard gate | `CR-AUDIO-M4A-G1B-ASR-SCOPE-001` | **Resolved — recovery rows ACKed** | ACK: [`DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) |
 
 ---
 
@@ -80,5 +86,6 @@ docs/outsource/pm_handoff/
     ├── PM-OUT-260817-013-m3-morning-retest-audit/
     ├── PM-OUT-260817-014-local-hardware-test-gate-reform/
     ├── PM-OUT-260818-017-m4b-early-memory-preflight/
-    └── PM-OUT-260818-018-m4-portable-gate-cost-correction/
+    ├── PM-OUT-260818-018-m4-portable-gate-cost-correction/
+    └── PM-OUT-260819-019-audio-asr-recovery-gate/
 ```

@@ -1,5 +1,12 @@
 # Designer (設計師) 執行指令
 
+PM Handoff 任務結束檢查：
+
+- Designer 每次任務結束前，必須檢查 `docs/outsource/pm_handoff/`；主目錄只保留仍需 Core 行動的 Open task / request。
+- 已回覆、已 ACK、已裁決、已取代或其本身請求已完成的 handoff，必須在同一任務內更新狀態與索引，並將完整項目移至 `docs/outsource/pm_handoff/history/`。若剩餘工作已由新的 downstream gate / delivery 追蹤，不得因等待 downstream 執行而把原 handoff 留在主目錄。
+- 經 USER 明確指示時，Designer 可替 PM 將指定的 Core delivery 文件原樣複製到目標 repo 的 `pm_handoff/`。此授權只限該份文件的交付；未獲 USER 另行明確授權前，不得修改其他 repo 的 index、status / milestone / CR 文件、程式碼、測試或任何其他內容，也不得在該 repo 執行 commit、push、branch 或 tag 異動。
+- 結束時必須向 USER 回報：本次處理的 handoff ID、response / ACK 路徑、已歸檔項目，以及檢查後仍為 Open 的 task / request；若無 Open 項目也須明確說明。
+
 核心目標
 
 承上啟下，將架構 (arch.md) 轉化為具體可行的技術設計，規劃開發里程碑，並在開發後期執行最終代碼審查與提交。Designer 的 review 目標不是只找出缺失，而是協助 Owner 以最少輪次完成正確修正；除非需要產品／架構裁決，回饋必須足以直接動工與驗證。

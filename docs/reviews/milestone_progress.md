@@ -3,10 +3,27 @@
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M4
+* **Permanent development branch**: `core`
 * **M3 gate status**: `Accepted — Designer transition direct review complete`
 * **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
 * **Last updated**: 2026-08-17
 * **Owner**: Designer
+
+---
+
+## Git milestone identity migration (2026-08-20)
+
+Core 後續只在 `core` 分支 append 開發。舊 `dev_agent_m*` 分支保留為歷史參考，
+不刪除也不繼續開發。已完成 milestone 的不可移動 annotated tag 對應為：
+
+| Tag | Completion commit | Basis |
+| :--- | :--- | :--- |
+| `core_m1` | `a82b766484734a5299314560037fdcd11ed2be83` | M1 carry-over Tester PASS 後完成 `DELIVERY-M1-II-001` evidence / SHA alignment；是現行 Core history 的 M1 closure |
+| `core_m2` | `0f915158100aea889c5929eb0b4b8a9c5b022a7c` | M2 Accepted、`OUT-M2-2026-003`～`005` 修正已納入，並歸檔 `PM-OUT-260807-006` |
+| `core_m3` | `2fb2e18f934c3d06392074adba3c4518402101e9` | Designer 完成 final review、標記 M3 Accepted 並記錄 implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858` |
+
+M4 仍在進行，不預先建立 `core_m4`。Tag 只標識 milestone completion commit；
+acceptance / delivery 仍以文件中的完整 implementation / candidate SHA 為準。
 
 ---
 
