@@ -19,8 +19,8 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b Gate 0 R2 accepted** | Audio `756ded69...`已完成focused intake。LLM `0d415d1...`已由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2；Gate 1平台分流已核准修訂packet，但真實x86 / Pi執行仍未授權。017已收斂為Core Tester可在實測階段重跑的`M4-REG-001`，不新增Gate或POC combined執行責任。 |
-| **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM平台變更已核准packet revision，但Gate 1真實執行仍未授權。 |
+| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b M1 candidate frozen by Designer** | Audio `756ded69...`已完成focused intake。LLM Gate 0 R2與Gate 1 Packet R4仍維持接受；M1 exact candidate `830d0b4...`已由`DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001`完成Designer freeze，僅待Internal Tester對同一SHA獨立sign-off；真實x86 / Pi執行仍未授權。017已收斂為Core Tester可在實測階段重跑的`M4-REG-001`，不新增Gate或POC combined執行責任。 |
+| **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM M1 R3已完成Designer freeze，後續只剩Internal Tester gate。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
@@ -58,6 +58,9 @@ Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 
 | [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST`](history/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) | M4b Gate 1 x86完整初篩＋產品Pi compatibility平台分流 | 無 | **Resolved — packet revision authorized / real execution not authorized** | Contract：[`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)；ACK已直接交付POC incoming |
 | [`CR-AUDIO-M3-P4-REPRO-002.md`](history/CR-AUDIO-M3-P4-REPRO-002.md) | Restore reproducible P4-A10 dependency artifacts | 無 | **Resolved** | Response: [`RESP-AUDIO-M3-P4-REPRO-002.md`](../responses/RESP-AUDIO-M3-P4-REPRO-002.md) |
 | [`PM-OUT-260819-019-audio-asr-recovery-gate`](history/PM-OUT-260819-019-audio-asr-recovery-gate/brief.md) | whisper.cpp small Q8_0/Q5_1 ASR recovery與real-time hard gate | `CR-AUDIO-M4A-G1B-ASR-SCOPE-001` | **Resolved — recovery rows ACKed** | ACK: [`DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) |
+| [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE`](history/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) | LLM POC M1 Prompt/Response/Protocol/Config freeze candidate | 無 | **Resolved — Designer revision required at `0b5a928...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) |
+| [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2`](history/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) | LLM POC M1 freeze replacement R2 | 無 | **Resolved — three findings closed, one localized revision at `93b34c1...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) |
+| [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3`](history/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) | LLM POC M1 freeze replacement R3 | 無 | **Resolved — Designer frozen at `830d0b4...`; Internal Tester sign-off pending** | ACK: [`DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md) |
 
 ---
 
@@ -70,6 +73,9 @@ docs/outsource/pm_handoff/
     ├── CR-AUDIO-M3-P4-REPRO-002.md
     ├── DELIVERY-AUDIO-POC-M3-OPTION-A-VALIDATION-001.md
     ├── DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md
+    ├── DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md
+    ├── DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md
+    ├── DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md
     ├── PM-OUT-260805-001-m1-carryover-feedback/
     ├── PM-OUT-260805-002-m3-m4-poc-planning/
     ├── PM-OUT-260806-003-m1-test-platform-scope/

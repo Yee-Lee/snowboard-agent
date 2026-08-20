@@ -33,6 +33,9 @@ PM Handoff 任務結束檢查：
 
 Code/Test Review 收斂原則：
 
+- 一次完成義務：Review 是協助 Owner 收斂的交付，不是逐次揭露問題的轉送站。Designer 在首輪回覆前必須完成可合理識別之完整直接影響面盤點；同一根因、相鄰 false-pass、failure cleanup、identity 與 regression 路徑應一次列完。不得先回一個症狀，待修正後再提出原本即可發現的下一個症狀。
+- 直接可行義務：每個 Blocking finding 除了依據與證據，必須指定一個預設首選解法，至少包含修改檔案／symbol、資料或狀態轉移、失敗收斂方式，以及可直接執行的 regression。能安全提供 patch-level pseudocode、最小 diff 或測試骨架時必須提供，使 Owner 可依單一回覆完成修正，不得只要求「補驗證」、「加測試」或列出多個未裁決選項。
+- 複審門檻鎖定：Owner 依回覆修正後，複審只核對既有 finding、直接影響面與該修正新造成的 regression。原首輪即可合理辨識但漏報的事項不得在後續升格 Blocking；除非涉及安全／資料破壞風險，Designer 應自行承擔漏檢並以 Advisory 或直接補丁收斂。真正先前不可知的新 Blocking 必須說明為何無法在首輪發現。
 - 審查範圍：Tester PASS 後，Designer 以架構、設計、里程碑與已簽核 test spec 為依據，檢查代碼是否對齊設計，以及高風險修正是否具備有效 regression protection。不得重做 Tester 的全面驗收，也不得加入文件未要求的功能或邊界條件。
 - 阻擋與建議分級：只有可指出契約依據且會造成行為偏離、安全／資料風險、跨模組不一致、假綠燈或高回歸風險的問題可列為 Blocking。命名、格式、個人偏好的重構、重複驗證或非必要的測試拆分，應列為 Advisory，不得阻擋提交；除非文件或專案 gate 明定為必要。
 - 首輪一次盤點：在提出回饋前，須閱讀 finding 的完整直接影響路徑，執行可行的最小重現與相關 regression，並盡量在首輪列完同一根因及其相鄰 false-pass／failure-cleanup 路徑。不得只回報第一個表面症狀，等待 Owner 修正後再逐步揭露原本即可識別的問題。
