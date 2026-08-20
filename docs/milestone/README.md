@@ -37,8 +37,13 @@ Whisper.cpp base 與 faster-whisper small 維持 deferred。Core 已以
 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002` 接受 exact whisper.cpp
 1.9.2 source、small Q8_0 primary、conditional Q5_1、4-thread profile 與原 hard
 gates；ACK intake、fail-closed artifact/build scaffold 與 persistent worker/
-qualification harness 已完成本地實作，artifact、Pi build、model load、qualification
-均尚未執行，不能標記為 Gate 2A PASS。
+qualification harness 已完成。Pi SHA
+`1b29f685de64970f6abbc12a0820a2ef4ec0a444` 的 exact artifact preflight 與隔離
+CPU-only build 已通過；User 指定的兩次 hot partial diagnostic 已完成，core CER
+9.502262%、整句正確率 28%、hot p95 11.080 s、RTF p95 1.831987、peak RSS
+554 MiB，顯示品質與即時 latency 的強烈 no-go 訊號。此 packet 明確不是 formal
+gate evidence；原 20-repetition run 已依 User 指示中止且沒有 final report，Q5
+保持禁止，不能標記為 Gate 2A PASS。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 
@@ -46,7 +51,7 @@ qualification harness 已完成本地實作，artifact、Pi build、model load�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture (native & delivered)、VAD timing labels 與評測門檻全數凍結 (FROZEN) | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | SenseVoice ASR frozen quality `FAIL/REJECT`；whisper.cpp recovery ACK-002 已收件、preflight/build/qualification pending；Matcha remaining gates 與 VAD scope 未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | SenseVoice ASR frozen quality `FAIL/REJECT`；whisper.cpp Q8 preflight/build 通過、partial diagnostic 顯示 quality/latency no-go signal，但 formal qualification 未完成且 Q5 禁止；Matcha remaining gates 與 VAD scope 未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2A P1–P12 回交與 selection ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -57,7 +62,7 @@ qualification harness 已完成本地實作，artifact、Pi build、model load�
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
 | Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` — 原 ACK-001 授權 SenseVoice ASR 與 Matcha TTS；ACK-002 已在 SenseVoice rejection 後將 ASR disposition 改為 whisper.cpp small Q8_0 primary 與 conditional Q5_1，其餘 rows 不可執行 |
-| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — full-fixture evidence 已拒絕 SenseVoice、Matcha performance 通過但 remaining gates pending；Core 已 ACK whisper.cpp small Q8_0 primary 與 conditional Q5_1，artifact/build/qualification 尚未執行，M3 尚未開始；Gate 2A 不是 final baseline lock |
+| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — full-fixture evidence 已拒絕 SenseVoice、Matcha performance 通過但 remaining gates pending；whisper.cpp Q8 artifact/build 通過，兩次 hot partial diagnostic 顯示整句正確率 28% 與 p95 11.080 s 的 no-go signal，但 20-rep formal qualification 未完成且 Q5 禁止；M3 尚未開始，Gate 2A 不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |
 

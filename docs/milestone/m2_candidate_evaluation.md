@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ASR RECOVERY ACKED — WHISPER.CPP PREFLIGHT/BUILD/QUALIFICATION PENDING / MATCHA REMAINING GATES IN PROGRESS`
+Gate 狀態：`GATE 1B ASR RECOVERY ACKED — WHISPER.CPP PREFLIGHT/BUILD PASS, PARTIAL NO-GO SIGNAL, FORMAL QUALIFICATION INCOMPLETE / MATCHA REMAINING GATES IN PROGRESS`
 
 ## 目標
 
@@ -104,7 +104,14 @@ hot final-transcript p95 >1.5 s 或 peak RSS >1250 MiB 時解鎖；Q8 quality fa
 及既有 frozen gates 不變。ACK intake 不構成 artifact、build、inference 或 Gate 2A
 PASS；recovery manifest、artifact/build preflight 與 persistent qualification
 harness 已在 workstation 完成無模型 compile/fake lifecycle 驗證，但正式 evidence
-仍明確保持 `BUILD_NOT_RUN` / model not loaded / inference not run。
+已推進至 Pi exact artifact preflight 與隔離 CPU-only build PASS。User 指定的兩次
+hot partial diagnostic 亦已在 SHA
+`1b29f685de64970f6abbc12a0820a2ef4ec0a444` 完成；core CER 9.502262%、整句
+正確率 28%、hot p95 11.080 s、RTF p95 1.831987、peak RSS 554 MiB，呈現
+quality/latency strong no-go signal。見
+[`M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001`](../../poc_audio/evidence/m2/M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001.md)。
+此 packet 強制 gate-ineligible；原 20-repetition run 依 User 指示中止且沒有 final
+report，故 formal qualification 仍未完成。Q5 未解鎖且不得執行。
 
 M2 執行分成四個受控步驟：
 
@@ -119,8 +126,9 @@ M2 執行分成四個受控步驟：
 4. **Authorized comparison**：`FULL FIXTURE QUALITY/PERFORMANCE REVIEWED / REMAINING TTS GATES IN PROGRESS`；
    只執行兩個 primary。SenseVoice 已因 frozen ASR quality hard gates `REJECT`；
    Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
-   growth 與 legal conditions 尚待關閉。ASR recovery ACK 已收件，exact artifact/
-   notice preflight、CPU-only build closure 與 frozen qualification 尚待執行。
+   growth 與 legal conditions 尚待關閉。ASR recovery exact artifact/notice preflight
+   與 CPU-only build closure 已通過；兩次 hot partial diagnostic 顯示品質與 latency
+   no-go signal，但 frozen 20-repetition qualification 未完成，Q5 保持禁止。
 
 ## Entry Conditions
 
@@ -135,7 +143,8 @@ M2 執行分成四個受控步驟：
 steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 的固定
 fixture checksum、乾淨 test SHA、受控 artifact preflight 與 focused smoke 已完成，
 full-fixture quality/performance 已完成；TTS remaining gates 尚未完成，ASR recovery
-執行邊界已由 ACK-002 固定但尚未完成 preflight/build/qualification，VAD 執行邊界仍待
+執行邊界已由 ACK-002 固定，preflight/build 已完成但 formal qualification 尚未完成；
+partial diagnostic 不能取代 gate evidence。VAD 執行邊界仍待
 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
 
 ## Exit Gate
