@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:m1:protocol-frame:1.0",
+  "oneOf": [
+    {"$ref": "#/$defs/ready"},
+    {"$ref": "#/$defs/generate"},
+    {"$ref": "#/$defs/result"},
+    {"$ref": "#/$defs/cancel"},
+    {"$ref": "#/$defs/cancelled"},
+    {"$ref": "#/$defs/error"},
+    {"$ref": "#/$defs/shutdown"},
+    {"$ref": "#/$defs/shutdown_ack"}
+  ],
+  "$defs": {
+    "version": {"const": "snowboard.llm/1"},
+    "request_id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9._:-]+$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ready": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "state", "identity"],
+      "properties": {
+        "type": {"const": "READY"}, "protocol_version": {"$ref": "#/$defs/version"}, "state": {"const": "READY"},
+        "identity": {
+          "type": "object", "additionalProperties": false,
+          "required": ["runtime_sha256", "model_sha256", "config_sha256"],
+          "properties": {
+            "runtime_sha256": {"$ref": "#/$defs/sha"}, "model_sha256": {"$ref": "#/$defs/sha"},
+            "config_sha256": {"$ref": "#/$defs/sha"}
+          }
+        }
+      }
+    },
+    "generate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "input"],
+      "properties": {
+        "type": {"const": "GENERATE"}, "protocol_version": {"$ref": "#/$defs/version"},
+        "request_id": {"$ref": "#/$defs/request_id"}, "input": {"type": "object"}
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "response"],
+      "properties": {
+        "type": {"const": "RESULT"}, "protocol_version": {"$ref": "#/$defs/version"},
+        "request_id": {"$ref": "#/$defs/request_id"}, "response": {"type": "object"}
+      }
+    },
+    "cancel": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id"],
+      "properties": {"type": {"const": "CANCEL"}, "protocol_version": {"$ref": "#/$defs/version"}, "request_id": {"$ref": "#/$defs/request_id"}}
+    },
+    "cancelled": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "state"],
+      "properties": {"type": {"const": "CANCELLED"}, "protocol_version": {"$ref": "#/$defs/version"}, "request_id": {"$ref": "#/$defs/request_id"}, "state": {"const": "READY"}}
+    },
+    "error": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "code", "state"],
+      "properties": {
+        "type": {"const": "ERROR"}, "protocol_version": {"$ref": "#/$defs/version"},
+        "request_id": {"$ref": "#/$defs/request_id"},
+        "code": {"enum": ["BUSY", "INVALID_REQUEST", "TIMEOUT", "GENERATION_FAILED", "CANCEL_FAILED", "PROTOCOL_ERROR"]},
+        "state": {"enum": ["READY", "FATAL"]}
+      }
+    },
+    "shutdown": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version"],
+      "properties": {"type": {"const": "SHUTDOWN"}, "protocol_version": {"$ref": "#/$defs/version"}}
+    },
+    "shutdown_ack": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version"],
+      "properties": {"type": {"const": "SHUTDOWN_ACK"}, "protocol_version": {"$ref": "#/$defs/version"}}
+    }
+  }
+}

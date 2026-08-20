@@ -123,10 +123,15 @@ Pi 執行時必須 clean checkout exact SHA、先做 pre-test、再執行 immuta
 
 - `docs/pm_handoff/`：外部 Income，嚴格唯讀；完成、取代或不再追蹤時移至 `history/`。
 - `docs/response/`：內部技術 ACK、assessment 與 finding response。
-- `docs/delivery/`：由 PM 轉交外部的正式 delivery。
+- `docs/delivery/`：由 PM 或 User 明確授權的 Agent courier 轉交外部的正式 delivery。
 - `docs/milestone/`：index、active milestone、crosswalk 與 execution plan。
 - `poc_llm/`：source、tests、tools、fixtures metadata、evidence index 與 delivery package。
 - `docs/DOCUMENT_INDEX.md`：上述文件的索引；不得在 Income 內直接撰寫團隊回覆。
+
+Agent courier 只能把已核准交付的單一文件放入 User 指定的外部 inbound handoff 路徑；
+這是唯一允許的 target write。交付前檢查同名衝突與 target 規範，交付後回報 path/checksum；
+不得修改 target 的 source、README/index、既有文件或其他 worktree 內容，也不得在 target
+執行 git add、commit、tag、push。Target repo 的後續 intake 與版本控制完全由 Core Team 負責。
 
 產品架構、model baseline、composition root 與產品 protocol 必須引用 Core 指定 SHA/ACK；
 repo-owned architecture 文件只能描述 POC-specific wrapper、protocol、resource 與 evidence。

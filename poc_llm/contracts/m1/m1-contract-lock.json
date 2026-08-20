@@ -1,0 +1,14 @@
+{
+  "contract_id": "M1-FROZEN-CONTRACT-001",
+  "revision": "2026-08-20-r1",
+  "status": "FREEZE_CANDIDATE_APPROVAL_PENDING",
+  "artifacts": {
+    "prompt": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "8353facf7764ea62f7798dba6c8d71f959eb03f25a1fac8672a3d3eaf76a215a"},
+    "response": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "43703f3892977e7e65e841ea7f116e5fd6dd9e7c84774719b2724c9c13df5359"},
+    "protocol": {"path": "poc_llm/contracts/m1/protocol-frame.schema.json", "sha256": "cc863acbe593bbdfbeb305a9b3c6e8564c3762d8d9e7f8e5d382d80795c81343"},
+    "config": {"path": "poc_llm/contracts/m1/strict-config.schema.json", "sha256": "963f5577114d341f472d1914f82e1dedc1d9c999683c95f4b2b12e8b5061579a"},
+    "fixtures": {"path": "poc_llm/contracts/m1/contract-fixtures.json", "sha256": "8e1af7986111fb3500f105bf05c7d34e076c55c689226ecf74a522eb188a61ac"},
+    "validator": {"path": "poc_llm/harness/m1_contract_validator.py", "sha256": "e86aef3eb713981f918eaec09cad2473a72901a5f796198145dfa41e46c95965"},
+    "tests": {"path": "poc_llm/tests/gate1/test_m1_contract.py", "sha256": "5ea41649423c3b52a2ca0648b16dc3c8fd7530fae500cc61adaed0a4bb894890"}
+  }
+}

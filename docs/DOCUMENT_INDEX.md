@@ -34,6 +34,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md) - 007-A～D authenticated fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
+* [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)
@@ -42,6 +43,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md) - 回覆 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的 Gate 0 簽收回條與 Initial Manifest
 * [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md`](delivery/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) - 請 Core 核准 Gate 1 以 Ubuntu x86_64 完整初篩，最多兩個候選再於產品 Debian Pi 執行 bounded compatibility try-run
 * [`DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md`](delivery/DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md) - Revision 004 packet/schema/selector deterministic return；exact SHA於commit後另行提供
+* [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md`](delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) - M1 locked PromptBuilder/response/protocol/strict-config Freeze Candidate；請 Core Designer/Internal Tester 一次整包 review
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

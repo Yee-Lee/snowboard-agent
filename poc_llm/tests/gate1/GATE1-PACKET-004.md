@@ -2,7 +2,7 @@
 
 - **Packet ID**: `G1-X86-PI-COMPAT-004`
 - **Revision**: `2026-08-19-r4`
-- **Status**: `FROZEN REPLACEMENT PACKET / CORE INTAKE PENDING / REAL EXECUTION NOT AUTHORIZED`
+- **Status**: `FROZEN REPLACEMENT PACKET / CORE ACCEPTED / REAL EXECUTION NOT AUTHORIZED`
 - **x86 platform**: Ubuntu 24.04 x86_64 full portable pre-screen
 - **Compatibility platform**: Raspberry Pi 5 4GB / Debian 13 aarch64, bounded try-run only
 - **Owner / reviewer / approver**: POC Test Controller / Technical Lead / Core Designer
@@ -13,8 +13,9 @@
 
 This packet implements the approved 2026-08-19 contract revision and
 `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001`. It replaces
-`G1-UBUNTU-PRESCREEN-003` only after Core accepts the returned exact SHA. Packet 003 remains
-historical and must not be used for new revision-004 evidence.
+`G1-UBUNTU-PRESCREEN-003`. Core accepted Revision 004 at
+`a99009fd5378d987411f37686814c84a1cb2a713`; packet 003 is historical and must not be used for
+new revision-004 evidence.
 
 ## Frozen identity
 

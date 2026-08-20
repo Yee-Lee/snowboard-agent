@@ -1,0 +1,103 @@
+{
+  "fixture_id": "M1-CONTRACT-FIXTURES-001",
+  "revision": "2026-08-20-r1",
+  "valid_prompt": {
+    "request_id": "req-001",
+    "perceptions": [{"kind": "listen", "status": "ok", "text": "synthetic public input"}],
+    "pending_message_count": 0,
+    "capabilities": {
+      "perceptions": ["listen", "read"],
+      "actions": ["speak", "tool", "rest"],
+      "tools": [{"name": "device.light.on", "arguments_schema": {"type": "object"}}]
+    }
+  },
+  "valid_responses": [
+    {"action_kind": "speak", "action_payload": {"text": "Synthetic response."}, "next_perceptions": ["listen"]},
+    {"action_kind": "tool", "action_payload": {"name": "device.light.on", "arguments": {}}, "next_perceptions": ["read"]},
+    {"action_kind": "rest", "action_payload": {}, "next_perceptions": []}
+  ],
+  "p5_fallbacks": {
+    "speak_listen_available": {"action_kind": "speak", "action_payload": {"text": "Sorry, please try again."}, "next_perceptions": ["listen"]},
+    "speak_or_listen_unavailable": {"action_kind": "rest", "action_payload": {}, "next_perceptions": []}
+  },
+  "valid_config": {
+    "protocol_version": "snowboard.llm/1",
+    "driver": "litert_lm",
+    "runtime_path": "/approved/runtime",
+    "model_path": "/approved/model.task",
+    "runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "max_input_tokens": 128,
+    "max_output_tokens": 16,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "threads": 4,
+    "ready_timeout_ms": 10000,
+    "generate_timeout_ms": 15000,
+    "cancel_timeout_ms": 500,
+    "term_timeout_ms": 2000,
+    "kill_timeout_ms": 1000,
+    "rebuild_timeout_ms": 10000,
+    "runtime_download": false,
+    "network_fallback": false,
+    "fallback_model": null
+  },
+  "schema_negative_cases": [
+    {"case_id": "PROMPT-EXTRA-FIELD", "target": "prompt", "mutation": {"extra": true}},
+    {"case_id": "RESPONSE-UNKNOWN-ACTION", "target": "response", "value": {"action_kind": "unknown", "action_payload": {}, "next_perceptions": []}},
+    {"case_id": "RESPONSE-DUPLICATE-PERCEPTION", "target": "response", "value": {"action_kind": "speak", "action_payload": {"text": "x"}, "next_perceptions": ["listen", "listen"]}},
+    {"case_id": "CONFIG-FLOATING-DRIVER", "target": "config", "mutation": {"driver": "auto"}},
+    {"case_id": "CONFIG-RUNTIME-DOWNLOAD", "target": "config", "mutation": {"runtime_download": true}},
+    {"case_id": "CONFIG-IMPLICIT-FALLBACK", "target": "config", "mutation": {"fallback_model": "/other/model.task"}},
+    {"case_id": "CONFIG-UNAPPROVED-THREADS", "target": "config", "mutation": {"threads": 8}}
+  ],
+  "valid_sequences": [
+    {
+      "case_id": "GENERATE-RESULT-SHUTDOWN",
+      "frames": [
+        {"type": "READY", "protocol_version": "snowboard.llm/1", "state": "READY", "identity": {"runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111", "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333"}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-001", "input": {}},
+        {"type": "RESULT", "protocol_version": "snowboard.llm/1", "request_id": "req-001", "response": {}},
+        {"type": "SHUTDOWN", "protocol_version": "snowboard.llm/1"},
+        {"type": "SHUTDOWN_ACK", "protocol_version": "snowboard.llm/1"}
+      ]
+    },
+    {
+      "case_id": "GENERATE-CANCEL-SHUTDOWN",
+      "frames": [
+        {"type": "READY", "protocol_version": "snowboard.llm/1", "state": "READY", "identity": {"runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111", "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333"}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-002", "input": {}},
+        {"type": "CANCEL", "protocol_version": "snowboard.llm/1", "request_id": "req-002"},
+        {"type": "CANCELLED", "protocol_version": "snowboard.llm/1", "request_id": "req-002", "state": "READY"},
+        {"type": "SHUTDOWN", "protocol_version": "snowboard.llm/1"},
+        {"type": "SHUTDOWN_ACK", "protocol_version": "snowboard.llm/1"}
+      ]
+    }
+  ],
+  "invalid_sequences": [
+    {
+      "case_id": "SECOND-ACTIVE-GENERATE",
+      "frames": [
+        {"type": "READY", "protocol_version": "snowboard.llm/1", "state": "READY", "identity": {"runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111", "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333"}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-a", "input": {}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-b", "input": {}}
+      ]
+    },
+    {
+      "case_id": "STALE-RESULT",
+      "frames": [
+        {"type": "READY", "protocol_version": "snowboard.llm/1", "state": "READY", "identity": {"runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111", "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333"}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-current", "input": {}},
+        {"type": "RESULT", "protocol_version": "snowboard.llm/1", "request_id": "req-old", "response": {}}
+      ]
+    },
+    {
+      "case_id": "SHUTDOWN-WITH-ACTIVE-REQUEST",
+      "frames": [
+        {"type": "READY", "protocol_version": "snowboard.llm/1", "state": "READY", "identity": {"runtime_sha256": "1111111111111111111111111111111111111111111111111111111111111111", "model_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333"}},
+        {"type": "GENERATE", "protocol_version": "snowboard.llm/1", "request_id": "req-active", "input": {}},
+        {"type": "SHUTDOWN", "protocol_version": "snowboard.llm/1"}
+      ]
+    }
+  ]
+}

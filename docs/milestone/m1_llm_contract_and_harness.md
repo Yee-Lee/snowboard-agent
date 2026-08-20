@@ -65,6 +65,13 @@ D1、D2、D3、D4、D8。
 
 ## Current Evidence and Open Exit Conditions
 
+- [`M1-FROZEN-CONTRACT-001`](../response/ACK-M1-FROZEN-CONTRACT-001.md)：已將
+  Core-fixed output/P5/capability/lifecycle 語意與 PromptBuilder/wire/strict-config exact
+  Freeze Candidate 收斂成單一 review packet；4 schemas、checksum lock、fixtures、validator
+  與 5 項 contextual/lifecycle regressions已形成，等待一次 Designer/Tester review。
+- 對外 review delivery：[`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE`](../delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md)；
+  commit 後由 PM 或 User-authorized Agent courier 以 `llm` exact SHA 轉交 Core
+  Designer/Internal Tester。
 - `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
   Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。
 - `G1-CANDIDATE-PREFLIGHT-001`：已從官方 metadata 固定 LiteRT-LM v0.16.0 的兩平台
@@ -78,8 +85,9 @@ D1、D2、D3、D4、D8。
   self-test `PASS` 與 Gate 2A/2B plan validation `PLAN_VALID`；packet revision 已完成。
 - Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
   try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
-- Open：PromptBuilder/protocol/strict-config frozen decision record 與 Designer/Tester exit
-  approval 尚未完成，M1 不得標示 `GATE_REVIEW` 或 `COMPLETE`。
+- Open：`M1-FROZEN-CONTRACT-001` exact candidate 尚待 Designer 整包 approve/reject，並待
+  Internal Tester 核准 locked schemas/fixtures/evidence rules；批准前 M1 不得標示
+  `GATE_REVIEW` 或 `COMPLETE`。
 
 ## Prohibited in M1
 

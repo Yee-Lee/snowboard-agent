@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:m1:response:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action_kind", "action_payload", "next_perceptions"],
+  "properties": {
+    "action_kind": {"enum": ["speak", "tool", "rest"]},
+    "action_payload": {"type": "object"},
+    "next_perceptions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["listen", "read", "look"]}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"action_kind": {"const": "speak"}}},
+      "then": {
+        "properties": {
+          "action_payload": {
+            "type": "object", "additionalProperties": false, "required": ["text"],
+            "properties": {"text": {"type": "string", "minLength": 1}}
+          },
+          "next_perceptions": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"action_kind": {"const": "tool"}}},
+      "then": {
+        "properties": {
+          "action_payload": {
+            "type": "object", "additionalProperties": false, "required": ["name", "arguments"],
+            "properties": {
+              "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"},
+              "arguments": {"type": "object"}
+            }
+          },
+          "next_perceptions": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"action_kind": {"const": "rest"}}},
+      "then": {
+        "properties": {
+          "action_payload": {"maxProperties": 0},
+          "next_perceptions": {"maxItems": 0}
+        }
+      }
+    }
+  ]
+}
