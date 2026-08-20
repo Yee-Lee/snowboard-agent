@@ -60,6 +60,16 @@ VAD labels 建立保留自然停頓的 bounded input，最小化比較 generic/n
 及 HAT 全部延後。M2 暫將 1.5 s absolute latency 改列 observation，RTF、品質、資源及
 lifecycle gates 不變；此 scope change 尚須 Product/Core 接受，既有 11.080 s evidence
 不得重標或刪除。
+本輪已在 clean Pi SHA `fd51a4f36da61fa9af7e210c7dec0170b0cffcbc` 完成：同一個
+4.45 秒 bounded 最長樣本的 generic/native 4-thread latency 為 11.046/4.031 秒，
+證明 native Cortex-A76 build 有 2.74x 單變因收益及四核心實際滿載；這不是 VAD
+裁切收益。50 fixtures x 2 hot cycles 的 input latency p50/p95 為 4.042/4.139 秒、
+RTF p50/p95 為 1.307/1.933、peak RSS 555.438 MiB。跨 packet RTF 相較舊 1.832
+沒有改善，不能把 absolute latency 下降宣稱為整體效率提升。整句正確率 34% 未達
+70% frozen gate；code-switch 10%、數字與產品詞均 0%，故 small Q8 不由此 packet
+advance。建議下一個獲准 row 先對 medium 作六個語意失敗樣本加一個最長樣本的
+低成本品質/latency/RSS screen；exact quantization/artifact 未經 Product/Core ACK 前
+不得執行，Q5、base 與 HAT 維持 deferred。
 本輪未授權 VAD row，與 Audio POC 最終須交付 VAD baseline/no-go 的出口不一致，
 已提出 `CR-AUDIO-M4A-G1B-VAD-SCOPE-001`，因此最終交付維持 `AT_RISK`。
 
@@ -67,7 +77,7 @@ lifecycle gates 不變；此 scope change 尚須 Product/Core 接受，既有 11
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過；M1 仍須明確進場 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture (native & delivered)、VAD timing labels 與評測門檻全數凍結 (FROZEN) | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | SenseVoice ASR frozen quality `FAIL/REJECT`；whisper.cpp Q8 preflight/build 通過、partial diagnostic 顯示 quality/latency no-go signal，但 formal qualification 未完成且 Q5 禁止；Matcha remaining gates 與 VAD scope 未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | SenseVoice `REJECT`；whisper.cpp small Q8 bounded/native 2-hot diagnostic 的 RTF observation 通過但 frozen overall quality `FAIL`，未 advance；medium quick screen 待 exact-row ACK；Matcha remaining gates 與 VAD scope 未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL 整合，完成 M4a Gate 2A P1–P12 回交與 selection ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | Audio POC 20-session 組合認證、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -78,7 +88,7 @@ lifecycle gates 不變；此 scope change 尚須 Product/Core 接受，既有 11
 | Contract intake SHA | M1 下一個 reviewable exact SHA 回覆；不單獨建立行政 commit |
 | Gate 0：M3 P4 final selection | `PASSED` — Core 發出 `DELIVERY-AUDIO-POC-M3-P4-ACK-004` (ACCEPTED)，核准 Option A 實作基準 |
 | Gate 1：planning + candidate authorization | `GATE 1A ACCEPTED / GATE 1B ACCEPTED` — 原 ACK-001 授權 SenseVoice ASR 與 Matcha TTS；ACK-002 已在 SenseVoice rejection 後將 ASR disposition 改為 whisper.cpp small Q8_0 primary 與 conditional Q5_1，其餘 rows 不可執行 |
-| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — full-fixture evidence 已拒絕 SenseVoice、Matcha performance 通過但 remaining gates pending；whisper.cpp Q8 artifact/build 通過，兩次 hot partial diagnostic 顯示整句正確率 28% 與 p95 11.080 s 的 no-go signal，但 20-rep formal qualification 未完成且 Q5 禁止；M3 尚未開始，Gate 2A 不是 final baseline lock |
+| Gate 2A：POC qualification/selection | `WP2 COMPLETE / WP3 IN PROGRESS` — SenseVoice 已拒絕；Matcha performance 通過但 remaining gates pending；whisper.cpp small Q8 bounded/native 2-hot diagnostic 為 34% overall sentence correctness、4.139 s latency p95、1.933 RTF p95 與 555.438 MiB RSS，品質 `FAIL` 且未 advance；medium quick screen 待 exact-row ACK，formal qualification 未完成；M3 尚未開始，Gate 2A 不是 final baseline lock |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | Core repo external follow-up；Gate 2A ACK 後僅可建 scaffold，Gate 2B final reference intake 後才可固定 baseline；不是 Audio POC milestone PASS |
 

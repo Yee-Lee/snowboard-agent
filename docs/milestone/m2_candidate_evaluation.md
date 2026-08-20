@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ASR RECOVERY ACKED — WHISPER.CPP PREFLIGHT/BUILD PASS, PARTIAL NO-GO SIGNAL, FORMAL QUALIFICATION INCOMPLETE / MATCHA REMAINING GATES IN PROGRESS`
+Gate 狀態：`GATE 1B ASR RECOVERY ACKED — SMALL Q8 BOUNDED/NATIVE DIAGNOSTIC QUALITY FAIL, FORMAL QUALIFICATION INCOMPLETE / MATCHA REMAINING GATES IN PROGRESS`
 
 ## 目標
 
@@ -135,6 +135,26 @@ Q5、base、medium 與 HAT 在此結果 review 前全部暫停。M2 的 1.5 s ab
 資源、determinism、offline 與 lifecycle gates 不變。這是待 Product/Core 接受的 scope
 change，不得用來重寫歷史 Q8 結果或事後宣告 PASS。
 
+Clean Pi SHA `fd51a4f36da61fa9af7e210c7dec0170b0cffcbc` 已完成該 review。Frozen
+VAD labels 只用於建立 1.74–4.45 秒的理想 bounded input，並非執行 VAD engine。
+同一個 4.45 秒樣本的 generic/native 4-thread latency 為 11.046/4.031 秒，native
+Cortex-A76 build 的單變因收益為 2.74x，四核心確實以約 99.5–100% 使用；此數字
+不是 VAD 裁切相對舊 6/8 秒 fixture 的收益。新 50 fixtures x 2 hot cycles 的 latency
+p50/p95 為 4.042/4.139 秒、RTF p50/p95 為 1.307/1.933、peak RSS 555.438 MiB。
+舊/new 跨 packet RTF p95 1.832/1.933 沒有改善，absolute latency 下降混合了輸入、
+build 與統計方法差異，不能當整體效率 A/B。
+
+Quality review 為 Taiwan-Mandarin core CER 5.429864%、overall sentence correctness
+34%；後者未達 frozen 70% gate。Taiwan Mandarin sentence correctness 70%，但
+code-switch 10%、number 0%、product term 0%，private semantic spot check 亦確認
+關鍵詞、數字與產品實體不可交由 LLM 猜回。完整 sanitized evidence 見
+[`POC-AUDIO-PERF-2026-001`](../../poc_audio/evidence/m2/POC-AUDIO-PERF-2026-001/README.md)。
+Small Q8 因品質不從此 diagnostic advance，formal 20-repetition qualification 仍未
+執行。下一步建議待 Product/Core 核准 exact medium quantized row 後，只先跑六個
+代表性語意錯誤各一次及最長 bounded fixture 一次；沒有明顯 quality step change 即
+停止，通過 quick screen 才考慮 50 fixtures x 2 hot cycles。Q5、base 與 HAT 維持
+deferred，medium 在 ACK 前亦不得執行。
+
 M2 執行分成四個受控步驟：
 
 1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
@@ -145,13 +165,15 @@ M2 執行分成四個受控步驟：
    `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
    force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
    candidate runtime。
-4. **Authorized comparison**：`FULL FIXTURE QUALITY/PERFORMANCE REVIEWED / REMAINING TTS GATES IN PROGRESS`；
+4. **Authorized comparison**：`SMALL Q8 BOUNDED DIAGNOSTIC QUALITY FAIL / REMAINING TTS GATES IN PROGRESS`；
    只執行兩個 primary。SenseVoice 已因 frozen ASR quality hard gates `REJECT`；
    Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
    growth 與 legal conditions 尚待關閉。ASR recovery exact artifact/notice preflight
-   與 CPU-only build closure 已通過；兩次 hot partial diagnostic 顯示品質與 latency
-   no-go signal。User 已明確停止未完成的 Q8 20-repetition formal run；small Q5、
-   base Q5、medium 與 HAT 的任何 diagnostic 均待新的 Core ACK。
+   與 CPU-only build closure 已通過；VAD-label-bounded native 4-thread 兩次 hot
+   diagnostic 的 RTF observation 通過，但 overall sentence correctness 34% 使 frozen
+   quality gate `FAIL`，small Q8 未 advance。User 已明確停止未完成的 Q8
+   20-repetition formal run；medium quick screen、small/base Q5 與 HAT 的任何
+   diagnostic 均待新的 Core ACK。
 
 ## Entry Conditions
 
