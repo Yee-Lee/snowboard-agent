@@ -8,7 +8,9 @@
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
 * [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) - Core 對 `0d415d...` 的 Final ACK；Gate 0 R2 `COMPLETE`、015 resolved
 * [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Core批准x86完整初篩＋產品Pi compatibility分流；只授權packet revision，真實執行未授權
+* [`DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md) - Core 接受 Gate 1 packet Revision 004 exact SHA；real execution 未授權
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
+* [`commit_workflow_update.md`](pm_handoff/commit_workflow_update.md) - Candidate Commit 收斂與送驗後 append-only Git 歷史原則
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)

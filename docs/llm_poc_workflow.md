@@ -1,228 +1,141 @@
 # LLM POC 工作流程與合作方式
 
-狀態：Authoritative working process  
-最後更新：2026-08-18
+狀態：Authoritative cross-milestone process
+最後更新：2026-08-20
 
-## 1. 目的與權威順序
+## 1. 文件責任與權威順序
 
-本文件定義 LLM POC 從尚未開始 M0 到正式交付的工作方式。所有工作由 M4b
-最終交付反推，每個 work item 都必須回答：
+本文件只定義跨 milestone 長期不變的角色、evidence、Git/Pi、安全與溝通規則；不重複
+目前狀態、個別 milestone scope、entry/exit gate、測試矩陣或 delivery mapping。
 
-1. 它推進哪一個 delivery area 與 milestone exit condition？
-2. 完成後產生什麼可重現 evidence？
-3. 誰有權執行、判定與核准？
-4. 若結果失敗或無法判定，最終目標是否仍可達？
-
-無法回答以上問題的工作不進入目前範圍。
-
-目前 repo 內的權威順序如下：
-
-1. User 已明確給定的範圍、核准與外部限制。
-2. 已正式交付的 PM/Designer Income 文件。
-3. `docs/milestone/README.md` 的 External Gate、Internal Milestone、目前授權與風險。
-4. 本 workflow 的角色、evidence、Git/Pi 與安全規則。
-5. Repo-owned working drafts；它們不得自行降低外部 acceptance gate。
-
-正式 LLM checklist/development guide 尚未交付時，可以維護計畫、schema 與不依賴
-未決契約的 scaffold；不得假裝外部 gate 已批准。收到新 Income 後先做差異分析，
-再更新 milestone/risk/change request。
-
-## 2. 最終交付目標
-
-POC 最終必須交付：
-
-- 固定的 LiteRT-LM runtime、model artifact 與 quantization；若沒有候選達標，提交
-  明確且有證據的 no-go。
-- 固定 checksum、license、來源、strict config，以及 `docs/model_spec.md` 所需 handoff。
-- Versioned child protocol，以及 `docs/protocol.md` 所需 handoff。
-- Raspberry Pi 5 上的 cold READY、cold/hot generation、p50/p95、tokens/s、RSS、
-  disk、CPU、threads/processes 與 thermal 證據。
-- Reasoner/LLM boundary 能產生合法 `speak`、`tool`、`rest` action；model 不執行 tool。
-- Single-turn history isolation、capability/payload validation、P5 fallback 與 log hygiene。
-- Persistent child 的 timeout、cancel、terminate、kill、waitpid、crash/rebuild、shutdown
-  與 orphan=0 證明。
-- 與明確 Accepted 的 M4a Audio HAL 完整 SHA 整合，完成至少 20 個 combined
-  sessions，且 offline/failure injection 後無資源殘留。
-
-提交完整 SHA 只代表 `Ready for internal review`。Tester/Reviewer 關閉 blocking
-findings 且 Designer 核准後，才是 `POC Accepted`。
-
-## 3. 範圍與非目標
-
-本 POC 專注於 LLM runtime/model、prompt/output boundary、child process 與 Pi 5
-可交付性驗證。
-
-不在範圍內：
-
-- 修改產品 composition root 或 StateManager 主體。
-- 重新選型 VAD、ASR、TTS 模型或重新定義 Audio 結果語意（屬 M4a）。
-- 雲端 LLM、RAG、跨 session 記憶、Vision 或 wake daemon。
-- 讓 LLM 模型直接執行 Python 或 tool handler。
-- 未經 review 的 runtime、model、prompt、output schema 或 acceptance gate 變更。
-- 把 POC wrapper、benchmark harness 或 fake 直接視為產品主線實作。
-
-## 4. External Gate and Internal Milestone Lifecycle
-
-活動狀態只由 [milestone index](milestone/README.md) 判定。External Contract Gate 是
-PM/Core 的行政與授權狀態；Internal Milestone 是 POC execution/readiness 狀態，兩者
-不得合併或互相推導。
-
-External Gate lifecycle：
-
-| Gate | POC Team 可做的狀態動作 | 關閉權限 |
-| --- | --- | --- |
-| Gate 0 | 修訂 package 並標記 `SUBMITTED`；不得標記 `COMPLETE` | PM 記錄實際 branch HEAD；Core Designer 登錄 |
-| Gate 1 | 提交 Ubuntu x86完整初篩、不可變max-two預選與產品Pi compatibility evidence | Core Designer 書面確認 finalists 與 Gate 2A授權 |
-| Gate 2A | 提交 Pi 5 LLM-only P1～P8、P10A、P11、P12 evidence | Core Designer 最多發 provisional finalist ACK |
-| Gate 2B | 提交 Accepted Audio P9、P10B 與 2A regression | Core Designer 發 final winner/no-go ACK |
-
-Internal Milestone lifecycle：
-
-| Milestone | Gate purpose |
+| 問題 | 唯一權威文件 |
 | --- | --- |
-| M0 | Environment、exact SHA、remote command control 與 evidence chain readiness |
-| M1 | Freeze contract、protocol、fixtures、metrics/gates；固定 pairing 與 preflight |
-| M2 | Ubuntu x86完整初篩一次預選最多兩名，再以產品Pi compatibility作後置eligibility filter |
-| M3 | Gate 2A：Gate 1 ACK 後驗證 Pi LLM-only P1～P8、P10A、P11、P12 |
-| M4 | Gate 2B：Accepted Audio package 上完成 P9、P10B、2A regression 與 final delivery |
+| 現在做到哪、獲准做什麼、有哪些風險 | [Milestone index](milestone/README.md) |
+| 當前 milestone 的目標、entry/exit、evidence、禁止事項 | 對應的 `docs/milestone/m*.md` |
+| External Gate、M0–M4、D1–D8、P1–P12 映射 | [Traceability crosswalk](milestone/m4b_traceability_crosswalk.md) |
+| Gate 1、2A、2B work package 與 result semantics | [Execution plan](milestone/m4b_execution_plan.md) |
+| 外部 acceptance 與授權邊界 | 已交付的 PM/Core contract 與 ACK |
+| 跨 milestone 工作方法 | 本文件 |
 
-允許的 milestone 狀態為：`NOT_STARTED`、`PLANNED / NEXT`、`IN_PROGRESS`、
-`GATE_REVIEW`、`COMPLETE`、`BLOCKED`、`CHANGE_REQUESTED`。
+權威順序為：User 明確決策、PM/Core Income、milestone index、上述專責文件、repo working
+draft。較低層文件不得自行降低 acceptance gate；收到新 Income 時先做差異分析，再更新
+index、受影響 milestone、risk 與 change request。
 
-撰寫或修正計畫文件不會自動開始 milestone。Milestone 只有在 entry review 完成、
-下一個 test request 已獲准、索引明確改成 `IN_PROGRESS` 後才算開始。
+## 2. 不變的交付邊界
 
-External Gate 變更與 Internal Milestone 變更必須分欄記錄。任何狀態變更，都必須
-同時在索引更新最終交付可達性、已取得 evidence、
-未關閉 exit conditions、risk/blocker/change request，以及唯一下一個獲准工作。
+- 每個 work item 必須推進明確的 delivery area 與 milestone exit condition，並產生可重現
+  evidence；無法說明交付貢獻、判定者與失敗影響的工作不進入範圍。
+- POC 僅處理 LLM runtime/model、prompt/output boundary、child process 與 Pi 5 可交付性；
+  不修改產品 composition root、StateManager 主體或 Audio model selection。
+- POC wrapper、benchmark harness、fake 與 self-test 不等於產品實作或正式 acceptance。
+- 所有 hardware delivery 綁定可取得的完整 commit SHA、packet、artifact/config/fixture ID
+  與 evidence checksum；branch HEAD、聊天摘要或最好一次結果不能替代。
+- 完整 SHA 交付最多表示 `Ready for internal review`。Blocking findings 關閉且所需
+  Tester/Reviewer/Designer approval 到位後，才可依合約標示 accepted outcome。
 
-不得因前一個 Audio POC milestone 名稱相同而轉移其 `COMPLETE` 或 `PASS`。可以引用
-其通用 runbook/evidence 方法，但 LLM milestone 仍需自己的 test request、exact SHA、
-result 與 review decision。
+## 3. Gate 與 Milestone Lifecycle
 
-## 5. 角色與決策權
+External Contract Gate 是 PM/Core 的行政與授權狀態；Internal Milestone 是 POC 的
+execution/readiness 狀態，兩者必須分開記錄，不得互相推導。External Gate 只能由 contract
+指定的 recorder/approver 關閉；POC ACK、self-test 或 Technical Lead review 均不能代替。
 
-| 角色 | 責任與決策權 |
+Internal Milestone 狀態限於 `NOT_STARTED`、`PLANNED / NEXT`、`IN_PROGRESS`、
+`GATE_REVIEW`、`COMPLETE`、`BLOCKED`、`CHANGE_REQUESTED`。計畫或 scaffold 編輯不會
+啟動 milestone；entry review、test request 與所需授權完成，且 index 明確改為
+`IN_PROGRESS` 後才算開始。只有 milestone 文件的 exit conditions、必要 evidence 與所需
+approval 全部成立，index 才能改為 `COMPLETE`。
+
+任何 Gate/Milestone 狀態變更必須同步更新 index 中的 delivery reachability、evidence、
+open exit conditions、risk/blocker/change request 與唯一下一個獲准工作。具體 Gate/M0–M4
+條件只保存在 index、active milestone、crosswalk 與 execution plan，不在本文件複製。
+
+## 4. 角色與交接
+
+| 角色 | 責任與邊界 |
 | --- | --- |
-| Technical Lead（Assistant） | 規劃 work item、定義 test request/packet、review self-test 與 hardware evidence、提出技術 `PASS/FAIL/INCONCLUSIVE` 建議、維護風險與 change request；不能取代 Internal Tester acceptance。 |
-| Developer（agent） | 只在 workstation 修改 POC source/tests/docs；先完成 local/fake tests，交付完整 SHA 與可執行 test request。不得直接宣告 hardware pass，不得在測試中修改 Pi worktree。 |
-| POC Test Controller（agent） | 只對指定 exact SHA 做 Pi clean checkout、pre-test、immutable packet 執行與 evidence 回收；回報 team self-test observation，不改 gate、不挑選較好 run。 |
-| Internal Tester（獨立驗收角色） | 對指定 delivery exact SHA、packet 與 evidence 做正式 confirmation；只有此角色的確認可支撐 POC acceptance，且不能由同一次 Developer self-test 冒充。 |
-| User | 提供/控制目標硬體，核准 Pi 存取、下載/安裝、網路切換、特權、commit/push 與產品層決策。 |
-| Designer | 凍結 Reasoner/prompt/output/protocol 與品質/資源 gate，核准 winner 或 no-go。 |
-| Reviewer | 依 delivery checklist 審查可重現性、finding closure 與 acceptance readiness。 |
+| Technical Lead | 定義 packet、review evidence、提出 `PASS/FAIL/INCONCLUSIVE` 建議、維護 risk/change request；不能取代 Tester acceptance。 |
+| Developer | 僅在 workstation 修改 source/tests/docs，完成 local/fake test，交付 exact SHA；不得宣告 hardware pass。 |
+| POC Test Controller | 在 Pi 對指定 SHA 執行 immutable packet 並回收 evidence；不修改 Pi source、不改 gate、不挑最好 run。 |
+| Internal Tester | 獨立確認 delivery SHA、packet 與 evidence；Developer self-test 不得冒充。 |
+| User | 核准硬體存取、下載/安裝、網路/特權、commit/push/tag 與產品決策。 |
+| Designer | 凍結 boundary 與 gates，依合約核准 finalist、winner 或 no-go。 |
+| Reviewer | 審查重現性、finding closure 與 acceptance readiness。 |
 
-同一個 agent session 可以依序兼任 Developer 與 POC Test Controller，結果只能標記
-`POC Team self-test`，不能標記為 Internal Tester confirmation。必須在以下交接點
-明確切換與留下記錄：
+同一 agent session 可依序兼任 Developer 與 Test Controller，但結果只能標為 POC Team
+self-test。交接順序固定為：Developer 交付 clean exact SHA → Technical Lead 發 immutable
+packet → Test Controller 回收 evidence → Technical Lead review → Internal Tester 獨立確認。
 
-1. Developer 交付 exact full SHA 與 clean local evidence。
-2. Technical Lead 發出 immutable test request/packet。
-3. POC Test Controller 回收 evidence，Technical Lead 另行 review 並提出結果建議。
-4. Internal Tester 對 delivery exact SHA 獨立確認後，才可支撐正式 POC acceptance。
-
-## 6. Work Item and Test Packet
+## 5. Work Item、Packet 與 Evidence
 
 每個實作或測試 work item 至少記錄：
 
-- Work/Test ID、milestone、delivery area、owner 與 approver。
-- Baseline SHA、target full SHA、candidate/artifact/config/fixture/schema IDs。
-- Entry conditions、允許命令、預期 output/exit code、timeout 與資源限制。
-- Success criteria、failure criteria 與 `INCONCLUSIVE` conditions。
-- Cancel/force-abort/cleanup/orphan 檢查與 completion/exit proof。
-- Raw evidence 位置/checksum、sanitized output 與敏感資料規則。
-- 重試規則；environment failure 與 candidate failure 必須分開。
+- Work/Test ID、milestone、delivery area、owner、approver、baseline 與 target SHA。
+- Candidate/artifact/config/fixture/schema IDs、entry conditions 與允許命令。
+- Expected output/exit、timeout、resource limit、success/failure/`INCONCLUSIVE` conditions。
+- Cancel/force-abort/cleanup/orphan proof、raw evidence location/checksum 與 sanitization rule。
+- 重試上限；environment failure 與 candidate failure 必須可區分。
 
-Test packet 發出後不可在 run 中修改。任何會改變 acceptance semantics 的修訂都要
-建立新 packet version，記錄理由並重新執行所有受影響 cases。
+Packet 發出後不得在 run 中修改；acceptance semantics 改變時建立新版並重跑所有受影響
+cases。Hardware result 僅可依完整 evidence 判為：所有 mandatory gate 通過的 `PASS`、
+有效 evidence 證明 gate 未通過的 `FAIL`，或 evidence/environment 不足的 `INCONCLUSIVE`。
+重試必須保留原結果與理由，禁止只發布最好一次。
 
-## 7. Result Semantics and Evidence Review
+Technical Lead review 順序為 SHA/environment/packet、artifact/fixture checksum、exit/cleanup，
+再審查品質與效能。Raw evidence 由 Tester 受控保存；repo 只保存 sanitized index/summary。
 
-Hardware test 只能使用：
+## 6. Git and Pi Workflow
 
-- `PASS`：所有 mandatory cases 由指定 packet 在有效環境下執行，evidence 完整，
-  所有 gate 通過且 cleanup/exit proof 成立。
-- `FAIL`：有效且完整的 evidence 顯示至少一項不可忽略的 gate 未通過。
-- `INCONCLUSIVE`：evidence 缺失/損壞、環境不穩、SHA/fixture 不符、測試未完成，
-  或無法區分 infrastructure failure 與 candidate failure。
+本節承接 [`commit_workflow_update.md`](pm_handoff/commit_workflow_update.md)。POC repo 是
+source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktree，不是開發來源。
 
-`INCONCLUSIVE` 不等於 `PASS`，也不構成 candidate reject，除非 frozen gate 明確把
-不可執行性定義為淘汰條件。重試必須保留原結果、記錄原因，禁止只發布最好一次。
+- 唯一開發、驗證與 milestone 交付 branch 是 `llm`；不得建立或推送其他 POC branch，
+  也不得 force-push `llm`。Workstation/Pi 均從 `origin/llm` 取得指定 exact SHA。
+- Fast loop 原則上使用 working tree。必要的 WIP commit 必須保持 local、未 push、未送驗；
+  在跨平台、硬體或 milestone review 前，將上一個 frozen SHA 之後的 WIP squash 成單一
+  clean Candidate Commit。
+- Candidate SHA 一旦 push 並送驗，其可達歷史永久凍結。Reject、`FAIL`、`INCONCLUSIVE`
+  或後續缺陷只能保留 feedback 並在其上 append 修正；禁止 reset、rebase、amend、history
+  filtering 或 force-push 改寫 frozen Candidate。
+- Commit subject 為 `{work-type}{milestone/stage}: {title}`；body 使用 60–100 words 的
+  英文 bullet list。提交集中於 milestone 或 remote verification，不為小文件頻繁 commit。
+- 未經 User 核准不得 commit/push。未 push、Pi 無法 fetch 的 SHA 不得作 hardware delivery。
 
-Raw evidence 由 Tester 保存；repo 只存 sanitized index/summary。Technical Lead 應先
-檢查 SHA、environment、packet version、exit code、artifact/fixture checksum 與 cleanup，
-再審查 performance/quality result。
+Internal Milestone 正式標為 `COMPLETE` 後，才建立對應的 immutable annotated tag：`m0`、
+`m1`、`m2`，依此類推。Tag 指向 `llm` 上記錄 completion 的已 push exact SHA，message
+記錄 decision 與主要 evidence/approval；push 後不得刪除、覆寫或移動。舊 milestone 補 tag
+前須核對原 completion SHA 與 review record，不得使用目前 HEAD。Commit、branch push 與
+tag push 均須 User 核准。
 
-## 8. Git and Pi Workflow
+Pi 執行時必須 clean checkout exact SHA、先做 pre-test、再執行 immutable packet；不得在 Pi
+臨時修補 source。回收 evidence/checksum 並完成 cleanup 後才進入 review。
 
-POC repo 是 source、tests、harness、schemas、fixtures metadata、sanitized evidence index
-與 delivery manifest 的唯一來源。Pi checkout 是受控 deployment/test worktree，不是
-第二個開發來源。
+## 7. Data、Artifact 與 Offline
 
-日常流程：
+- Model、large raw result、private prompt/perception/output/tool payload、secret、credential、
+  endpoint 與 host fingerprint 不得進 Git 或 sanitized evidence。
+- Repo 只保存 artifact source/version/license/checksum、受控取得方法與 sanitized result；
+  artifact 本體與 raw evidence 依核准位置保存。
+- Offline run 前先固定並驗證所有 artifacts；run 中不得下載或 fallback 到 cloud/其他 model。
+- Artifact transfer、安裝、network switching、reboot、privilege 或影響其他 Pi workload 的
+  動作必須另行取得 User 核准。
 
-1. Workstation edit/test，檢查沒有 model、large result、private content 或 secret。
-2. 向 User/PM 說明 commit scope、tests 與 message，取得明確同意後才 commit。
-3. Push feature branch/Draft PR；需要外部網路或外部狀態改變時依權限取得核准。
-4. Tester 在 Pi `fetch` 並 checkout 指定完整 SHA，執行 clean check 與 pre-test。
-5. 執行 immutable test packet；Pi worktree 不做 source edit 或臨時修補。
-6. 回收 raw evidence/checksum，產出 sanitized index，Technical Lead review。
+## 8. 文件與溝通
 
-Commit subject 格式依 repository `AGENTS.md`：`{work-type}{milestone/stage}: {title}`；
-commit body 使用 60–100 words 的精簡英文 bullet list。Gate 修訂集中在 milestone 或
-remote verification 完成時一次提交，不為每個小文件建立 commit。
+- `docs/pm_handoff/`：外部 Income，嚴格唯讀；完成、取代或不再追蹤時移至 `history/`。
+- `docs/response/`：內部技術 ACK、assessment 與 finding response。
+- `docs/delivery/`：由 PM 轉交外部的正式 delivery。
+- `docs/milestone/`：index、active milestone、crosswalk 與 execution plan。
+- `poc_llm/`：source、tests、tools、fixtures metadata、evidence index 與 delivery package。
+- `docs/DOCUMENT_INDEX.md`：上述文件的索引；不得在 Income 內直接撰寫團隊回覆。
 
-未經 User 同意不得執行 commit。未 push、Pi 無法 fetch 的 local SHA 不得作為正式
-hardware delivery SHA。若測試需要 artifact transfer，artifact checksum 與受控來源
-必須獨立於 Git 記錄。
+產品架構、model baseline、composition root 與產品 protocol 必須引用 Core 指定 SHA/ACK；
+repo-owned architecture 文件只能描述 POC-specific wrapper、protocol、resource 與 evidence。
 
-## 9. Data, Artifact and Offline Rules
+## 9. Change Requests
 
-- Model、大型 raw result、private prompt/perception/output/tool payload、secret、credential、
-  endpoint、host fingerprint 與敏感資料不得進 Git。
-- Repo 只保存 artifact source/version/license/checksum、受控取得方法與 sanitized result。
-- 一般 log 不記錄完整 prompt、private perception、raw model output 或 tool payload。
-- Offline gate 開始前先準備並驗證所有 artifacts；測試中不得 runtime download 或
-  fallback 到 cloud/其他 model。
-- Offline、網路切換、安裝、reboot、privilege 或可能影響其他 Pi workload 的動作
-  必須獨立取得 User 核准。
+Runtime/model 無法滿足 frozen gate、IPC/Reasoner/protocol contract 需改變、M4a/hardware/資源
+dependency 阻擋、或 license/artifact/offline/cleanup 無法證明時，必須提出 change request。
+未獲核准前不得降低 gate、替換 acceptance semantics 或把 `INCONCLUSIVE` 改寫為成功。
 
-## 10. Documents and Communication Channels
-
-- **Income (`docs/pm_handoff/`)**：PM/外部團隊交付的 requirements、contracts 與 handoff messages，對開發團隊**嚴格唯讀 (Read-only)**。本團隊禁止在 `docs/pm_handoff/` 中直接編輯或撰寫回覆。
-- **Income History (`docs/pm_handoff/history/`)**：已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息移至此目錄存檔，代表已完成不必重複追蹤。
-- **Response (`docs/response/`)**：內部技術確認、評估結果或對 Income 的逐 finding
-  回覆。預設命名為 `ACK-{TargetID}.md`；若 Income 明確指定 `RESP-*`，依該要求命名。
-- **Delivery (`docs/delivery/`)**：正式對外交付的文件，供 PM 轉交 Core Team/其他團隊，命名規範 `DELIVERY-{流水號}-{to_who}-{title}.md`。
-- **Working plan (`docs/milestone/`)**：活動 milestone、repo-owned gate draft、風險與 evidence requirements。
-- **POC assets (`poc_llm/`)**：source、tests、tools、fixtures metadata、evidence index 與 POC delivery package。
-- `docs/DOCUMENT_INDEX.md` 追蹤 Income、Income History、Response、Delivery 與 Working Plan。
-
-每次 milestone gate review 必須同步更新：狀態、交付可達性、取得的 evidence、未關閉
-exit conditions、risk/blocker/change request，以及唯一下一個獲准工作。
-
-`docs/arch.md` 只可對 POC-specific wrapper、protocol、resource 與 evidence decision
-具有 repository-local authority。產品架構、model baseline、composition root 與產品
-protocol 必須引用 Core 指定 exact SHA/ACK；POC 文件不得自行宣告為產品權威。
-
-## 11. Dependencies and Change Requests
-
-以下情況必須提出 change request：
-
-- Runtime/model 在 Pi 5 上無法滿足 frozen RSS/CPU/disk/latency/thermal gate。
-- IPC、Reasoner、prompt/output 或 recovery contract 需要改變。
-- Accepted M4a SHA、硬體、時間、人員或外部文件使 delivery gate 無法關閉。
-- License、artifact 固定、aarch64 compatibility、offline 或 cleanup 無法證明。
-
-未獲核准前，不降低 gate、不替換驗收語意、不把 `INCONCLUSIVE` 改寫為成功。
-
-## 12. Session Start Checklist
-
-每次新工作 session、context reset 或 milestone 狀態改變後：
-
-1. 讀 `docs/milestone/README.md`。
-2. 只讀目前活動或 next milestone 文件。
-3. 讀本 workflow；同一 task 中未改變時不重讀。
-4. 確認本次工作對應 delivery area、授權範圍與是否會改變外部狀態。
-5. 若是測試，先確認 test request、exact SHA、artifact/fixture IDs 與 evidence path。
-6. 若 entry review 尚未完成，保持 milestone `NOT_STARTED`，只進行獲准的準備工作。
+Session/context/milestone 切換時的最小閱讀路由由 repository `AGENTS.md` 控制；本 workflow
+只在任務涉及上述跨 milestone 規則或其他文件語意不明時按需讀取。

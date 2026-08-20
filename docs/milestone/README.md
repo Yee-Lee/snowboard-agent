@@ -4,7 +4,7 @@
 風險的唯一狀態入口。External Gate 由合約 owner/recorder 關閉；Internal Milestone
 由 POC workflow 的 entry/exit review 控制，兩者不得共用狀態。
 
-最後更新：2026-08-19
+最後更新：2026-08-20
 
 ## Current Delivery Reachability
 
@@ -20,7 +20,7 @@ Pi run 或 candidate evidence。
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
 | **Gate 0** Contract Receipt | `COMPLETE` | POC Team 提交；PM 收件；Core Designer 已登錄 | `0d415d...` 複驗通過；OUT-M4B-2026-007-A～D 已關閉 | 進行 M0 entry review；不自動啟動 M0 |
-| **Gate 1** Candidate Proposal, x86 Pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | Ubuntu 24.04 x86完整初篩一次預選最多兩名；產品Pi compatibility只保留`PASS`且不補位 | 先回交revision 004 exact SHA供Core intake；另行授權後才執行 |
+| **Gate 1** Candidate Proposal, x86 Pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | Ubuntu 24.04 x86完整初篩一次預選最多兩名；產品Pi compatibility只保留`PASS`且不補位 | Revision 004 已接受；取得 runner/raw path/capacity/Pi/on-site 授權後才執行 |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
 | **Gate 3** Core Production | `OUT_OF_POC_SCOPE` | Core Developer / Tester / Designer | 依 Core contract | POC 僅提供 accepted handoff material |
@@ -49,9 +49,9 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 
 ## Open Dependencies, Risks and Adjustment Requests
 
-- **Milestone status — Internal M1**：Core 已批准 Gate 1 platform split，並授權修訂
-  packet/schema/selector/negative regressions。`G1-X86-PI-COMPAT-004` 正準備 exact-SHA
-  intake；artifact acquisition、真實 x86 run 與 Pi try-run仍未獲授權。
+- **Milestone status — Internal M1**：Core 已於 `a99009fd5378d987411f37686814c84a1cb2a713`
+  接受 `G1-X86-PI-COMPAT-004`；不需再修改 packet/schema/selector/regressions。Artifact
+  acquisition、storage、真實 x86 run、Pi access/transfer/install/network/run 仍未獲授權。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0
@@ -86,6 +86,8 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [Gate 0 R2 Final ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)
 - [Gate 1 Platform Change ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md)
+- [Gate 1 Packet R4 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md)
+- [Commit workflow update](../pm_handoff/commit_workflow_update.md)
 - [LiteRT-LM candidate research reference](../pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md)
 - [PM-OUT-260817-015 (resolved history)](../pm_handoff/history/PM-OUT-260817-015-llm-poc-contract-plan-review.md)
 - [Gate 0 R2 revision request (history)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md)

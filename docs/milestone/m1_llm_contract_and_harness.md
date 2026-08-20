@@ -24,7 +24,8 @@ D1、D2、D3、D4、D8。
 - User confirmed internal review passed；Internal M0 已在 `eeb00e341056ccef77c10ae8ca4bcbbbfa683d39`
   標示為 `COMPLETE`，且 workstation、`origin/llm`、Pi clean checkout 已對齊該 SHA。
 - Core Designer 的 Gate 0 R2 ACK 接受 planning/regression packet；2026-08-19 platform
-  change ACK 另批准以 `G1-X86-PI-COMPAT-004` 取代 packet 003，待新 exact SHA intake。
+  change ACK 另批准以 `G1-X86-PI-COMPAT-004` 取代 packet 003；Core 已於
+  `a99009fd5378d987411f37686814c84a1cb2a713` 完成 exact-SHA intake 並接受 Revision 004。
 - 本次授權只涵蓋 contract/schema/fixture/pairing preflight 與 deterministic fake tests。
   Packet 的真實 Ubuntu candidate execution 仍標示 `EXECUTION NOT AUTHORIZED`；Pi 也不得
   提前執行 Gate 2A。
@@ -73,7 +74,8 @@ D1、D2、D3、D4、D8。
   strict config 與實體 manifest，因此不得執行真實 Gate 1 candidate run。
 - `G1-X86-PI-COMPAT-004`：candidate/acquisition identity、x86/Pi/aggregate schemas、一次
   max-two preselection、Pi eligibility filter、no-backfill與Gate 2 carry-over guard已形成；
-  deterministic revision-004 regressions 9/9通過，待完整回歸與Core exact-SHA intake。
+  Core 已確認 revision-004 regressions 9/9、retained revision-003 regressions 6/6、validator
+  self-test `PASS` 與 Gate 2A/2B plan validation `PLAN_VALID`；packet revision 已完成。
 - Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
   try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
 - Open：PromptBuilder/protocol/strict-config frozen decision record 與 Designer/Tester exit
