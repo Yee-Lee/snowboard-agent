@@ -103,6 +103,17 @@ def validate_namespace_separation(
         raise RuntimeError("offline execution requires an isolated network namespace")
 
 
+def non_loopback_interfaces(proc_net_dev: str) -> list[str]:
+    interfaces = []
+    for line in proc_net_dev.splitlines()[2:]:
+        if ":" not in line:
+            continue
+        interface = line.split(":", 1)[0].strip()
+        if interface and interface != "lo":
+            interfaces.append(interface)
+    return interfaces
+
+
 def assert_network_isolated() -> None:
     current_namespace = Path("/proc/self/ns/net")
     caller_fd_text = os.environ.get(CALLER_NETNS_FD_ENV, "")
@@ -133,16 +144,15 @@ def assert_network_isolated() -> None:
             fields = line.split()
             if len(fields) >= 10 and fields[0] == "0" * 32 and fields[1] == "00" and fields[-1] != "lo":
                 raise RuntimeError("offline build requires removal of the IPv6 default route")
-    network_root = Path("/sys/class/net")
-    if network_root.is_dir():
-        for interface in network_root.iterdir():
-            if interface.name == "lo":
-                continue
-            operstate = interface / "operstate"
-            if operstate.is_file() and operstate.read_text(encoding="ascii").strip() == "up":
-                raise RuntimeError(
-                    f"offline build requires disabling network interface: {interface.name}"
-                )
+    devices = Path("/proc/net/dev")
+    if not devices.is_file():
+        raise RuntimeError("offline build cannot inspect namespace network interfaces")
+    interfaces = non_loopback_interfaces(devices.read_text(encoding="ascii"))
+    if interfaces:
+        raise RuntimeError(
+            "offline build namespace exposes non-loopback interfaces: "
+            + ", ".join(interfaces)
+        )
 
 
 def safe_extract_source(archive: Path, destination: Path) -> Path:

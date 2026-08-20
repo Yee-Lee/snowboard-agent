@@ -25,6 +25,7 @@ from audio_poc.m4a_whispercpp_preflight import (  # noqa: E402
 from audio_poc.m4a_whispercpp_build import (  # noqa: E402
     CMAKE_FLAGS,
     configure_command,
+    non_loopback_interfaces,
     safe_extract_source,
     validate_cmake_cache,
     validate_dynamic_dependencies,
@@ -183,6 +184,18 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             validate_namespace_separation("net:[11]", 11, "net:[11]", 11)
         with self.assertRaisesRegex(RuntimeError, "network namespace file descriptors"):
             validate_namespace_separation("socket:[22]", 22, "net:[11]", 11)
+
+    def test_build_reads_namespace_scoped_proc_network_devices(self) -> None:
+        loopback_only = (
+            "Inter-| Receive | Transmit\n"
+            " face |bytes packets|bytes packets\n"
+            "    lo: 0 0 0 0\n"
+        )
+        self.assertEqual(non_loopback_interfaces(loopback_only), [])
+        self.assertEqual(
+            non_loopback_interfaces(loopback_only + " wlan0: 0 0 0 0\n"),
+            ["wlan0"],
+        )
 
     def test_shell_runners_create_their_own_offline_namespace(self) -> None:
         for relative_path in (

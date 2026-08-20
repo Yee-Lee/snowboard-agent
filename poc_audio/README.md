@@ -202,7 +202,7 @@ bash poc_audio/tools/run_m4a_whispercpp_build.sh \
 The runner preserves a read-only handle to its caller network namespace, creates
 its own user/network namespace, and refuses non-Pi 5/aarch64/Debian 13 hosts, a
 dirty checkout, reused work/output paths, an unchanged network namespace, a non-loopback default route
-or an active non-loopback network interface. It checks isolation before and
+or any non-loopback network interface in the namespace-scoped `/proc` view. It checks isolation before and
 after building only the
 bounded persistent `m4a-whispercpp-worker`, verifies every frozen CMake cache
 flag, rejects prohibited dynamic dependencies, and records toolchain, commands, binary checksum and
