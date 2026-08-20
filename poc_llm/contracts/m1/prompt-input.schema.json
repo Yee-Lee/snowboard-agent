@@ -1,11 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snowboard:llm-poc:m1:prompt-input:1.0",
+  "$id": "urn:snowboard:llm-poc:m1:prompt-input:2.0",
   "type": "object",
   "additionalProperties": false,
-  "required": ["request_id", "perceptions", "pending_message_count", "capabilities"],
+  "required": ["perceptions", "pending_message_count", "capabilities"],
   "properties": {
-    "request_id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9._:-]+$"},
     "perceptions": {
       "type": "array",
       "maxItems": 16,
@@ -34,10 +33,11 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "arguments_schema"],
+            "required": ["name", "description", "input_schema"],
             "properties": {
-              "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"},
-              "arguments_schema": {"type": "object"}
+              "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"},
+              "description": {"type": "string", "minLength": 1},
+              "input_schema": {"type": "object"}
             }
           }
         }

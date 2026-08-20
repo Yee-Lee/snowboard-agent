@@ -7,15 +7,26 @@ import argparse
 import copy
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
-
+from jsonschema import Draft202012Validator, RefResolver
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from poc_llm.harness.m1_contract_boundary import (
+    BoundaryValidationError,
+    normalize_response,
+    project_reasoning_input,
+    validate_identity,
+)
+
 CONTRACT_ROOT = ROOT / "poc_llm/contracts/m1"
 SCHEMAS = {
+    "reasoning": CONTRACT_ROOT / "reasoning-input.schema.json",
     "prompt": CONTRACT_ROOT / "prompt-input.schema.json",
     "response": CONTRACT_ROOT / "response.schema.json",
     "protocol": CONTRACT_ROOT / "protocol-frame.schema.json",
@@ -33,11 +44,31 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def make_validators() -> dict[str, Draft202012Validator]:
+    """Build schema validators with the protocol's external references resolved."""
+    schemas = {name: load(path) for name, path in SCHEMAS.items()}
+    for schema in schemas.values():
+        Draft202012Validator.check_schema(schema)
+    schema_store = {schema["$id"]: schema for schema in schemas.values()}
+    validators = {
+        name: Draft202012Validator(schema)
+        for name, schema in schemas.items()
+        if name != "protocol"
+    }
+    validators["protocol"] = Draft202012Validator(
+        schemas["protocol"],
+        resolver=RefResolver.from_schema(schemas["protocol"], store=schema_store),
+    )
+    return validators
+
+
 def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validator) -> list[str]:
     errors: list[str] = []
     ready = False
     active: str | None = None
     shutting_down = False
+    fatal = False
+    pending_rejection: str | None = None
     terminal_ids: set[str] = set()
     for index, frame in enumerate(frames):
         schema_errors = sorted(protocol.iter_errors(frame), key=lambda error: list(error.path))
@@ -51,7 +82,13 @@ def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validat
                 errors.append(f"frame {index}: unexpected READY")
             ready = True
         elif frame_type == "GENERATE":
-            if not ready or active is not None or shutting_down or request_id in terminal_ids:
+            if fatal or shutting_down or request_id in terminal_ids or request_id == active:
+                errors.append(f"frame {index}: GENERATE not accepted in current state")
+            elif active is not None and pending_rejection is None:
+                pending_rejection = request_id
+            elif active is not None:
+                errors.append(f"frame {index}: prior rejected request has no response")
+            elif not ready:
                 errors.append(f"frame {index}: GENERATE not accepted in current state")
             else:
                 active = request_id
@@ -59,6 +96,18 @@ def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validat
         elif frame_type == "CANCEL":
             if active != request_id:
                 errors.append(f"frame {index}: CANCEL does not target active request")
+        elif frame_type == "ERROR" and frame["code"] in {"BUSY", "INVALID_REQUEST"}:
+            if frame["code"] == "BUSY":
+                if pending_rejection != request_id or active is None or frame["state"] != "GENERATING":
+                    errors.append(f"frame {index}: BUSY must reject only the pending second request")
+                else:
+                    pending_rejection = None
+            else:
+                expected_state = "GENERATING" if active is not None else "READY"
+                if request_id == active or frame["state"] != expected_state:
+                    errors.append(f"frame {index}: INVALID_REQUEST must be non-terminal")
+                if request_id == pending_rejection:
+                    pending_rejection = None
         elif frame_type in {"RESULT", "CANCELLED", "ERROR"}:
             if active != request_id:
                 errors.append(f"frame {index}: terminal frame does not match active request")
@@ -66,8 +115,9 @@ def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validat
                 terminal_ids.add(request_id)
                 active = None
                 ready = frame.get("state", "READY") == "READY"
+                fatal = frame.get("state") == "FATAL"
         elif frame_type == "SHUTDOWN":
-            if not ready or active is not None or shutting_down:
+            if not ready or active is not None or shutting_down or fatal:
                 errors.append(f"frame {index}: SHUTDOWN requires idle READY")
             else:
                 ready = False
@@ -76,14 +126,17 @@ def validate_sequence(frames: list[dict[str, Any]], protocol: Draft202012Validat
             if not shutting_down:
                 errors.append(f"frame {index}: SHUTDOWN_ACK without SHUTDOWN")
             shutting_down = False
+    if pending_rejection is not None:
+        errors.append("rejected request has no BUSY/INVALID_REQUEST response")
+    if active is not None:
+        errors.append("active request has no terminal outcome")
+    if shutting_down:
+        errors.append("SHUTDOWN has no acknowledgement")
     return errors
 
 
 def validate_contract() -> dict[str, Any]:
-    schemas = {name: load(path) for name, path in SCHEMAS.items()}
-    for schema in schemas.values():
-        Draft202012Validator.check_schema(schema)
-    validators = {name: Draft202012Validator(schema) for name, schema in schemas.items()}
+    validators = make_validators()
     fixtures = load(FIXTURES)
     lock = load(LOCK)
     errors: list[str] = []
@@ -95,7 +148,12 @@ def validate_contract() -> dict[str, Any]:
         elif sha256(path) != artifact["sha256"]:
             errors.append(f"lock artifact {name} checksum mismatch")
 
-    prompt = fixtures["valid_prompt"]
+    reasoning_input = fixtures["valid_reasoning_input"]
+    for error in validators["reasoning"].iter_errors(reasoning_input):
+        errors.append(f"valid reasoning input: {error.message}")
+    prompt = project_reasoning_input(reasoning_input)
+    if prompt != fixtures["valid_prompt"]:
+        errors.append("ReasoningInput projection differs from frozen prompt fixture")
     for error in validators["prompt"].iter_errors(prompt):
         errors.append(f"valid prompt: {error.message}")
     for index, response in enumerate(fixtures["valid_responses"]):
@@ -119,25 +177,31 @@ def validate_contract() -> dict[str, Any]:
         if validators[case["target"]].is_valid(value):
             errors.append(f'{case["case_id"]}: negative schema case passed')
 
-    tool_names = {tool["name"] for tool in prompt["capabilities"]["tools"]}
-    perception_names = set(prompt["capabilities"]["perceptions"])
-    action_names = set(prompt["capabilities"]["actions"])
     for response in fixtures["valid_responses"]:
-        if response["action_kind"] not in action_names:
-            errors.append("response action is outside capability view")
-        if not set(response["next_perceptions"]).issubset(perception_names):
-            errors.append("response perception is outside capability view")
-        if response["action_kind"] == "tool" and response["action_payload"]["name"] not in tool_names:
-            errors.append("response tool is outside capability view")
+        normalized, diagnostics = normalize_response(response, prompt)
+        if normalized != response or diagnostics != ("valid",):
+            errors.append("valid response changed or failed through locked normalizer")
+
+    identity = fixtures["valid_identity"]
+    try:
+        validate_identity(
+            fixtures["valid_config"], identity["candidate"], identity["acquisition"], identity["ready"],
+            config_sha256=identity["config_sha256"],
+        )
+    except BoundaryValidationError as error:
+        errors.append(f"valid identity failed: {error}")
 
     for case in fixtures["valid_sequences"]:
-        errors.extend(f'{case["case_id"]}: {error}' for error in validate_sequence(case["frames"], validators["protocol"]))
+        errors.extend(
+            f'{case["case_id"]}: {error}'
+            for error in validate_sequence(case["frames"], validators["protocol"])
+        )
     for case in fixtures["invalid_sequences"]:
         if not validate_sequence(case["frames"], validators["protocol"]):
             errors.append(f'{case["case_id"]}: invalid lifecycle sequence passed')
 
     return {
-        "contract_id": "M1-FROZEN-CONTRACT-001",
+        "contract_id": lock["contract_id"],
         "fixture_id": fixtures["fixture_id"],
         "fixture_sha256": sha256(FIXTURES),
         "lock_sha256": sha256(LOCK),

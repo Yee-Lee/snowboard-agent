@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snowboard:llm-poc:m1:protocol-frame:1.0",
+  "$id": "urn:snowboard:llm-poc:m1:protocol-frame:2.0",
   "oneOf": [
     {"$ref": "#/$defs/ready"},
     {"$ref": "#/$defs/generate"},
@@ -22,8 +22,11 @@
         "type": {"const": "READY"}, "protocol_version": {"$ref": "#/$defs/version"}, "state": {"const": "READY"},
         "identity": {
           "type": "object", "additionalProperties": false,
-          "required": ["runtime_sha256", "model_sha256", "config_sha256"],
+          "required": ["candidate_id", "pairing_revision", "platform", "runtime_sha256", "model_sha256", "config_sha256"],
           "properties": {
+            "candidate_id": {"type": "string", "pattern": "^CAND-[A-Z0-9-]+$"},
+            "pairing_revision": {"type": "string", "minLength": 1},
+            "platform": {"enum": ["ubuntu-x86_64", "pi-debian13-aarch64"]},
             "runtime_sha256": {"$ref": "#/$defs/sha"}, "model_sha256": {"$ref": "#/$defs/sha"},
             "config_sha256": {"$ref": "#/$defs/sha"}
           }
@@ -35,15 +38,18 @@
       "required": ["type", "protocol_version", "request_id", "input"],
       "properties": {
         "type": {"const": "GENERATE"}, "protocol_version": {"$ref": "#/$defs/version"},
-        "request_id": {"$ref": "#/$defs/request_id"}, "input": {"type": "object"}
+        "request_id": {"$ref": "#/$defs/request_id"},
+        "input": {"$ref": "urn:snowboard:llm-poc:m1:prompt-input:2.0"}
       }
     },
     "result": {
       "type": "object", "additionalProperties": false,
-      "required": ["type", "protocol_version", "request_id", "response"],
+      "required": ["type", "protocol_version", "request_id", "response", "state"],
       "properties": {
         "type": {"const": "RESULT"}, "protocol_version": {"$ref": "#/$defs/version"},
-        "request_id": {"$ref": "#/$defs/request_id"}, "response": {"type": "object"}
+        "request_id": {"$ref": "#/$defs/request_id"},
+        "response": {"$ref": "urn:snowboard:llm-poc:m1:response:2.0"},
+        "state": {"const": "READY"}
       }
     },
     "cancel": {
@@ -63,8 +69,14 @@
         "type": {"const": "ERROR"}, "protocol_version": {"$ref": "#/$defs/version"},
         "request_id": {"$ref": "#/$defs/request_id"},
         "code": {"enum": ["BUSY", "INVALID_REQUEST", "TIMEOUT", "GENERATION_FAILED", "CANCEL_FAILED", "PROTOCOL_ERROR"]},
-        "state": {"enum": ["READY", "FATAL"]}
-      }
+        "state": {"enum": ["READY", "GENERATING", "FATAL"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"code": {"const": "BUSY"}}}, "then": {"properties": {"state": {"const": "GENERATING"}}}},
+        {"if": {"properties": {"code": {"const": "INVALID_REQUEST"}}}, "then": {"properties": {"state": {"enum": ["READY", "GENERATING"]}}}},
+        {"if": {"properties": {"code": {"enum": ["TIMEOUT", "GENERATION_FAILED"]}}}, "then": {"properties": {"state": {"const": "READY"}}}},
+        {"if": {"properties": {"code": {"enum": ["CANCEL_FAILED", "PROTOCOL_ERROR"]}}}, "then": {"properties": {"state": {"const": "FATAL"}}}}
+      ]
     },
     "shutdown": {
       "type": "object", "additionalProperties": false,

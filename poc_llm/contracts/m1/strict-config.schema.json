@@ -1,15 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snowboard:llm-poc:m1:strict-config:1.0",
+  "$id": "urn:snowboard:llm-poc:m1:strict-config:2.0",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "protocol_version", "driver", "runtime_path", "model_path", "runtime_sha256", "model_sha256",
+    "candidate_id", "pairing_revision", "platform", "protocol_version", "driver",
+    "runtime_path", "model_path", "runtime_sha256", "model_sha256",
     "max_input_tokens", "max_output_tokens", "temperature", "top_p", "threads",
     "ready_timeout_ms", "generate_timeout_ms", "cancel_timeout_ms", "term_timeout_ms",
     "kill_timeout_ms", "rebuild_timeout_ms", "runtime_download", "network_fallback", "fallback_model"
   ],
   "properties": {
+    "candidate_id": {"type": "string", "pattern": "^CAND-[A-Z0-9-]+$"},
+    "pairing_revision": {"type": "string", "minLength": 1},
+    "platform": {"enum": ["ubuntu-x86_64", "pi-debian13-aarch64"]},
     "protocol_version": {"const": "snowboard.llm/1"},
     "driver": {"const": "litert_lm"},
     "runtime_path": {"type": "string", "pattern": "^/[^\\u0000]+$"},

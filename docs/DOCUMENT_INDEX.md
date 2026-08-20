@@ -9,6 +9,7 @@
 * [`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md) - Core 對 `0d415d...` 的 Final ACK；Gate 0 R2 `COMPLETE`、015 resolved
 * [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Core批准x86完整初篩＋產品Pi compatibility分流；只授權packet revision，真實執行未授權
 * [`DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md) - Core 接受 Gate 1 packet Revision 004 exact SHA；real execution 未授權
+* [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](pm_handoff/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - Core 拒絕 M1 R1 exact candidate，要求四項語意/驗證缺口以單一 append-only replacement 修正
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`commit_workflow_update.md`](pm_handoff/commit_workflow_update.md) - Candidate Commit 收斂與送驗後 append-only Git 歷史原則
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
@@ -35,6 +36,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md) - 007-A～D authenticated fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
 * [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
+* [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - M1 replacement candidate 對 `M1-FREEZE-001～004` 的實作與 executable proof 對照
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 
 ## 4. Delivery (位於 `docs/delivery/`)

@@ -52,6 +52,10 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - **Milestone status — Internal M1**：Core 已於 `a99009fd5378d987411f37686814c84a1cb2a713`
   接受 `G1-X86-PI-COMPAT-004`；不需再修改 packet/schema/selector/regressions。Artifact
   acquisition、storage、真實 x86 run、Pi access/transfer/install/network/run 仍未獲授權。
+- **M1 freeze review**：Core 已拒絕 R1 exact SHA `0b5a92872f8a695b145b389168111420cd2592c5`
+  並一次提出 `M1-FREEZE-001～004`。`M1-FREEZE-CANDIDATE-002` replacement 已完成本地
+  deterministic 修正，等待新 exact-SHA 的 Designer 與 Internal Tester 獨立審查；M1
+  維持 `IN_PROGRESS`，真實執行仍未授權。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0
@@ -87,6 +91,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [Gate 0 R2 Final ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)
 - [Gate 1 Platform Change ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md)
 - [Gate 1 Packet R4 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PACKET-R4-ACK-001.md)
+- [M1 Freeze Revision 001](../pm_handoff/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md)
 - [Commit workflow update](../pm_handoff/commit_workflow_update.md)
 - [LiteRT-LM candidate research reference](../pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md)
 - [PM-OUT-260817-015 (resolved history)](../pm_handoff/history/PM-OUT-260817-015-llm-poc-contract-plan-review.md)

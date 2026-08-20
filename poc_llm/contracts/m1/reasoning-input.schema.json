@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:m1:reasoning-input:2.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["perceptions", "pending_message_ids", "available_perceptions", "available_actions", "tool_schemas"],
+  "properties": {
+    "perceptions": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "status"],
+        "properties": {
+          "kind": {"enum": ["listen", "read", "look"]},
+          "status": {"enum": ["ok", "timeout", "error"]},
+          "text": {"type": "string", "maxLength": 4096}
+        }
+      }
+    },
+    "pending_message_ids": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9._:-]+$"}
+    },
+    "available_perceptions": {"type": "array", "uniqueItems": true, "items": {"enum": ["listen", "read", "look"]}},
+    "available_actions": {"type": "array", "uniqueItems": true, "items": {"enum": ["speak", "tool", "rest"]}},
+    "tool_schemas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description", "input_schema"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"},
+          "description": {"type": "string", "minLength": 1},
+          "input_schema": {"type": "object"}
+        }
+      }
+    }
+  }
+}

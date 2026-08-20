@@ -1,14 +1,16 @@
 {
-  "contract_id": "M1-FROZEN-CONTRACT-001",
-  "revision": "2026-08-20-r1",
-  "status": "FREEZE_CANDIDATE_APPROVAL_PENDING",
+  "contract_id": "M1-FREEZE-CANDIDATE-002",
+  "revision": "2026-08-20-r2",
+  "status": "REPLACEMENT_FREEZE_CANDIDATE_APPROVAL_PENDING",
   "artifacts": {
-    "prompt": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "8353facf7764ea62f7798dba6c8d71f959eb03f25a1fac8672a3d3eaf76a215a"},
-    "response": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "43703f3892977e7e65e841ea7f116e5fd6dd9e7c84774719b2724c9c13df5359"},
-    "protocol": {"path": "poc_llm/contracts/m1/protocol-frame.schema.json", "sha256": "cc863acbe593bbdfbeb305a9b3c6e8564c3762d8d9e7f8e5d382d80795c81343"},
-    "config": {"path": "poc_llm/contracts/m1/strict-config.schema.json", "sha256": "963f5577114d341f472d1914f82e1dedc1d9c999683c95f4b2b12e8b5061579a"},
-    "fixtures": {"path": "poc_llm/contracts/m1/contract-fixtures.json", "sha256": "8e1af7986111fb3500f105bf05c7d34e076c55c689226ecf74a522eb188a61ac"},
-    "validator": {"path": "poc_llm/harness/m1_contract_validator.py", "sha256": "e86aef3eb713981f918eaec09cad2473a72901a5f796198145dfa41e46c95965"},
-    "tests": {"path": "poc_llm/tests/gate1/test_m1_contract.py", "sha256": "5ea41649423c3b52a2ca0648b16dc3c8fd7530fae500cc61adaed0a4bb894890"}
+    "reasoning": {"path": "poc_llm/contracts/m1/reasoning-input.schema.json", "sha256": "c24031e5bf86bddcecc3150c17888f30018c64d9531a3bf3e8f918089126bfaf"},
+    "prompt": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    "response": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    "protocol": {"path": "poc_llm/contracts/m1/protocol-frame.schema.json", "sha256": "4ff8bc687a061607fff45c52a8b4f5f5fa3e433971a83890772d888e8bb9c0f3"},
+    "config": {"path": "poc_llm/contracts/m1/strict-config.schema.json", "sha256": "14c46de1d7979be5e3562d18c7b979749f01c37cb00850d80f5016b1e1fd3945"},
+    "fixtures": {"path": "poc_llm/contracts/m1/contract-fixtures.json", "sha256": "e4a6b02eab4bc0ed6a3fabe43a317974af48cfae3c36a00f8f11966532b71ab4"},
+    "boundary": {"path": "poc_llm/harness/m1_contract_boundary.py", "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
+    "validator": {"path": "poc_llm/harness/m1_contract_validator.py", "sha256": "04683e8308d8ca7dc3fbbab4c05ad0e401f0117d0fe36ebf1b892b30a5025b2f"},
+    "tests": {"path": "poc_llm/tests/gate1/test_m1_contract.py", "sha256": "ee9b7fd685bb933b4ed8136952c691f0c335622e4ce803c09cebae2a65a0c1ca"}
   }
 }

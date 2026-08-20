@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snowboard:llm-poc:m1:response:1.0",
+  "$id": "urn:snowboard:llm-poc:m1:response:2.0",
   "type": "object",
   "additionalProperties": false,
   "required": ["action_kind", "action_payload", "next_perceptions"],
@@ -20,7 +20,7 @@
         "properties": {
           "action_payload": {
             "type": "object", "additionalProperties": false, "required": ["text"],
-            "properties": {"text": {"type": "string", "minLength": 1}}
+            "properties": {"text": {"type": "string", "pattern": "\\S"}}
           },
           "next_perceptions": {"minItems": 1}
         }
@@ -33,7 +33,7 @@
           "action_payload": {
             "type": "object", "additionalProperties": false, "required": ["name", "arguments"],
             "properties": {
-              "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"},
+              "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"},
               "arguments": {"type": "object"}
             }
           },

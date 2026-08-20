@@ -14,8 +14,7 @@ D1、D2、D3、D4、D8。
 - External Gate 0 已由 Core Designer 登錄為 `COMPLETE`。
 - M0 為 `COMPLETE`，Internal Tester confirmation 為 `PASS`。
 - Designer、Internal Tester 與 Technical Lead 的 gate owner/approver 已登錄。
-- 正式 checklist/development guide 已收到；若仍未收到，只有不依賴未定語意的
-  scaffold 工作可執行，milestone 不得關閉。
+- Core 已確認完整 M1 authority set，且沒有缺少額外 standalone development guide。
 - Prompt/output/protocol 與候選 gate 尚未受真實 benchmark 結果影響。
 
 ## Entry Review Record
@@ -29,8 +28,9 @@ D1、D2、D3、D4、D8。
 - 本次授權只涵蓋 contract/schema/fixture/pairing preflight 與 deterministic fake tests。
   Packet 的真實 Ubuntu candidate execution 仍標示 `EXECUTION NOT AUTHORIZED`；Pi 也不得
   提前執行 Gate 2A。
-- 正式 checklist/development guide 若仍未交付，維持為 M1 exit dependency；不得以現有
-  scaffold 關閉 M1。
+- 2026-08-20 Core 以 `DELIVERY-LLM-POC-M1-FREEZE-REVISION-001` 確認完整 authority
+  set，不需再進行 checklist discovery；R1 exact candidate 被拒絕，須以單一 append-only
+  replacement 修正四項 finding。
 
 ## Work Packet
 
@@ -65,13 +65,14 @@ D1、D2、D3、D4、D8。
 
 ## Current Evidence and Open Exit Conditions
 
-- [`M1-FROZEN-CONTRACT-001`](../response/ACK-M1-FROZEN-CONTRACT-001.md)：已將
-  Core-fixed output/P5/capability/lifecycle 語意與 PromptBuilder/wire/strict-config exact
-  Freeze Candidate 收斂成單一 review packet；4 schemas、checksum lock、fixtures、validator
-  與 5 項 contextual/lifecycle regressions已形成，等待一次 Designer/Tester review。
-- 對外 review delivery：[`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE`](../delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md)；
-  commit 後由 PM 或 User-authorized Agent courier 以 `llm` exact SHA 轉交 Core
-  Designer/Internal Tester。
+- R1 [`M1-FROZEN-CONTRACT-001`](../response/ACK-M1-FROZEN-CONTRACT-001.md) 已由 Core 在
+  exact SHA `0b5a92872f8a695b145b389168111420cd2592c5` 拒絕；該 SHA 保持 immutable，且不再是
+  freeze candidate。
+- [`M1-FREEZE-CANDIDATE-002`](../response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md)
+  已以兩層 ReasoningInput/child projection、callable P5 normalizer、per-code lifecycle table
+  及 manifest-bound identity validator 修正 `M1-FREEZE-001～004`；lock 驗證 9 個 executable
+  artifacts，self-test `PASS`，targeted regressions 19/19 `OK`，仍待 replacement exact-SHA
+  Designer/Tester review。
 - `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
   Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。
 - `G1-CANDIDATE-PREFLIGHT-001`：已從官方 metadata 固定 LiteRT-LM v0.16.0 的兩平台
@@ -85,9 +86,9 @@ D1、D2、D3、D4、D8。
   self-test `PASS` 與 Gate 2A/2B plan validation `PLAN_VALID`；packet revision 已完成。
 - Open：workstation x86 owner/raw path、artifact acquisition與real execution尚未批准；Pi
   try-run另需x86 preselection、artifact transfer/install、network-disabled與cleanup授權。
-- Open：`M1-FROZEN-CONTRACT-001` exact candidate 尚待 Designer 整包 approve/reject，並待
-  Internal Tester 核准 locked schemas/fixtures/evidence rules；批准前 M1 不得標示
-  `GATE_REVIEW` 或 `COMPLETE`。
+- Open：`M1-FREEZE-CANDIDATE-002` 尚待 Core Designer 核准 corrected semantics，並待
+  Internal Tester 獨立核准 lock/schemas/fixtures/validator/regressions/evidence completeness；
+  兩者批准前 M1 不得標示 `GATE_REVIEW` 或 `COMPLETE`。
 
 ## Prohibited in M1
 
