@@ -129,9 +129,6 @@ def safe_extract_source(archive: Path, destination: Path) -> Path:
     destination.mkdir(parents=True)
     with tarfile.open(archive, "r:gz") as bundle:
         members = bundle.getmembers()
-        roots = {Path(member.name).parts[0] for member in members if Path(member.name).parts}
-        if len(roots) != 1:
-            raise RuntimeError("source archive must have exactly one top-level directory")
         for member in members:
             parts = Path(member.name).parts
             if not parts or member.name.startswith("/") or ".." in parts:
@@ -139,7 +136,10 @@ def safe_extract_source(archive: Path, destination: Path) -> Path:
             if not (member.isfile() or member.isdir()):
                 raise RuntimeError("source archive contains a non-file entry")
         bundle.extractall(destination, filter="data")
-    source_dir = destination / next(iter(roots))
+    roots = {Path(member.name).parts[0] for member in members if Path(member.name).parts}
+    source_dir = destination
+    if not (source_dir / "CMakeLists.txt").is_file() and len(roots) == 1:
+        source_dir = destination / next(iter(roots))
     if not (source_dir / "CMakeLists.txt").is_file() or not (source_dir / "LICENSE").is_file():
         raise RuntimeError("source archive lacks CMakeLists.txt or LICENSE")
     return source_dir

@@ -25,6 +25,7 @@ from audio_poc.m4a_whispercpp_preflight import (  # noqa: E402
 from audio_poc.m4a_whispercpp_build import (  # noqa: E402
     CMAKE_FLAGS,
     configure_command,
+    safe_extract_source,
     validate_cmake_cache,
     validate_dynamic_dependencies,
 )
@@ -139,6 +140,22 @@ class WhisperCppRecoveryTests(unittest.TestCase):
                 info.size = len(content)
                 bundle.addfile(info, io.BytesIO(content))
             verify_source_license(archive, "LICENSE")
+
+    def test_build_extracts_the_ack_prefixless_git_archive_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "source.tar.gz"
+            with tarfile.open(archive, "w:gz") as bundle:
+                for name, content in (
+                    ("CMakeLists.txt", b"cmake_minimum_required(VERSION 3.16)\n"),
+                    ("LICENSE", b"MIT\n"),
+                    ("include/whisper.h", b"// pinned API\n"),
+                ):
+                    info = tarfile.TarInfo(name)
+                    info.size = len(content)
+                    bundle.addfile(info, io.BytesIO(content))
+            destination = root / "extracted"
+            self.assertEqual(safe_extract_source(archive, destination), destination)
 
     def test_cpu_only_build_command_contains_every_frozen_flag(self) -> None:
         command = configure_command(Path("/wrapper"), Path("/source"), Path("/build"))
