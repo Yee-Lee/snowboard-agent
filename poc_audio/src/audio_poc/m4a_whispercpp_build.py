@@ -64,6 +64,7 @@ PROHIBITED_DYNAMIC_NAMES = (
     "libgomp", "libomp", "avcodec", "avformat", "avutil", "swresample", "sdl2",
     "libasound", "portaudio",
 )
+CALLER_NETNS_FD_ENV = "AUDIO_POC_CALLER_NETNS_FD"
 
 
 def command_output(command: list[str]) -> str:
@@ -90,15 +91,36 @@ def assert_pi_target() -> dict[str, str]:
     }
 
 
+def validate_namespace_separation(
+    current_target: str,
+    current_inode: int,
+    caller_target: str,
+    caller_inode: int,
+) -> None:
+    if not current_target.startswith("net:[") or not caller_target.startswith("net:["):
+        raise RuntimeError("offline execution requires network namespace file descriptors")
+    if current_target == caller_target or current_inode == caller_inode:
+        raise RuntimeError("offline execution requires an isolated network namespace")
+
+
 def assert_network_isolated() -> None:
     current_namespace = Path("/proc/self/ns/net")
-    initial_namespace = Path("/proc/1/ns/net")
-    if (
-        not current_namespace.exists()
-        or not initial_namespace.exists()
-        or current_namespace.stat().st_ino == initial_namespace.stat().st_ino
-    ):
-        raise RuntimeError("offline execution requires an isolated network namespace")
+    caller_fd_text = os.environ.get(CALLER_NETNS_FD_ENV, "")
+    if not caller_fd_text.isdecimal():
+        raise RuntimeError("offline execution requires the caller network namespace handle")
+    caller_fd = int(caller_fd_text)
+    try:
+        current_target = os.readlink(current_namespace)
+        current_inode = current_namespace.stat().st_ino
+        caller_target = os.readlink(f"/proc/self/fd/{caller_fd}")
+        caller_inode = os.fstat(caller_fd).st_ino
+    except (OSError, PermissionError) as error:
+        raise RuntimeError(
+            "offline execution cannot inspect the caller network namespace handle"
+        ) from error
+    validate_namespace_separation(
+        current_target, current_inode, caller_target, caller_inode
+    )
     route = Path("/proc/net/route")
     if route.is_file():
         for line in route.read_text(encoding="ascii").splitlines()[1:]:

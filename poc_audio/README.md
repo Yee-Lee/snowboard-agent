@@ -193,14 +193,15 @@ On the clean Pi Candidate SHA, disconnect network routes and run the separate
 build closure into a new external directory:
 
 ```bash
-unshare --user --map-root-user --net -- bash poc_audio/tools/run_m4a_whispercpp_build.sh \
+bash poc_audio/tools/run_m4a_whispercpp_build.sh \
   --artifact-dir /controlled/audio-poc/gate1b \
   --work-dir /controlled/audio-poc/work/whispercpp-q8-build-001 \
   --output /tmp/m4a-whispercpp-build.json
 ```
 
-The runner refuses non-Pi 5/aarch64/Debian 13 hosts, a dirty checkout, reused
-work/output paths, the initial network namespace, a non-loopback default route
+The runner preserves a read-only handle to its caller network namespace, creates
+its own user/network namespace, and refuses non-Pi 5/aarch64/Debian 13 hosts, a
+dirty checkout, reused work/output paths, an unchanged network namespace, a non-loopback default route
 or an active non-loopback network interface. It checks isolation before and
 after building only the
 bounded persistent `m4a-whispercpp-worker`, verifies every frozen CMake cache
@@ -214,7 +215,7 @@ twenty hot suites. It hashes transcripts instead of storing them and never
 opens capture or playback devices:
 
 ```bash
-unshare --user --map-root-user --net -- bash poc_audio/tools/run_m4a_whispercpp_qualification.sh \
+bash poc_audio/tools/run_m4a_whispercpp_qualification.sh \
   --artifact-dir /controlled/audio-poc/gate1b \
   --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
   --binary /controlled/audio-poc/work/whispercpp-q8-build-001/build/bin/m4a-whispercpp-worker \

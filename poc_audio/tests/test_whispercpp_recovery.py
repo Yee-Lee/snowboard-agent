@@ -28,6 +28,7 @@ from audio_poc.m4a_whispercpp_build import (  # noqa: E402
     safe_extract_source,
     validate_cmake_cache,
     validate_dynamic_dependencies,
+    validate_namespace_separation,
 )
 from audio_poc.m4a_whispercpp_qualification import (  # noqa: E402
     NativeWhisperWorker,
@@ -175,6 +176,23 @@ class WhisperCppRecoveryTests(unittest.TestCase):
         validate_dynamic_dependencies("libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6")
         with self.assertRaisesRegex(RuntimeError, "openblas"):
             validate_dynamic_dependencies("libopenblas.so.0 => /usr/lib/libopenblas.so.0")
+
+    def test_build_requires_a_distinct_inherited_network_namespace(self) -> None:
+        validate_namespace_separation("net:[22]", 22, "net:[11]", 11)
+        with self.assertRaisesRegex(RuntimeError, "isolated network namespace"):
+            validate_namespace_separation("net:[11]", 11, "net:[11]", 11)
+        with self.assertRaisesRegex(RuntimeError, "network namespace file descriptors"):
+            validate_namespace_separation("socket:[22]", 22, "net:[11]", 11)
+
+    def test_shell_runners_create_their_own_offline_namespace(self) -> None:
+        for relative_path in (
+            "poc_audio/tools/run_m4a_whispercpp_build.sh",
+            "poc_audio/tools/run_m4a_whispercpp_qualification.sh",
+        ):
+            source = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+            self.assertIn("exec 9</proc/self/ns/net", source)
+            self.assertIn("AUDIO_POC_CALLER_NETNS_FD=9", source)
+            self.assertIn("unshare --user --map-root-user --net", source)
 
     def test_native_worker_source_freezes_ack_runtime_profile(self) -> None:
         source = (
