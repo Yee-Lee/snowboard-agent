@@ -71,7 +71,9 @@ D1、D2、D3、D4、D8。
 - [`M1-FREEZE-CANDIDATE-002`](../response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md)
   已以兩層 ReasoningInput/child projection、callable P5 normalizer、per-code lifecycle table
   及 manifest-bound identity validator 修正 `M1-FREEZE-001～004`；lock 驗證 9 個 executable
-  artifacts，self-test `PASS`，targeted regressions 19/19 `OK`，仍待 replacement exact-SHA
+  artifacts，self-test `PASS`，targeted regressions 19/19 `OK`。Exact review target 為
+  `llm` / `93b34c14d5ee0f767ee16dd0fbbbb72e18775760`，已由
+  [`DELIVERY-005`](../delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) 請求
   Designer/Tester review。
 - `M1-FAKE-001`：Gate 1 deterministic suite 6/6 與 validator self-test 通過；僅為 POC
   Team fake/regression observation，不是 candidate evidence 或 Internal Tester confirmation。

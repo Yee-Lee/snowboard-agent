@@ -54,8 +54,8 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   acquisition、storage、真實 x86 run、Pi access/transfer/install/network/run 仍未獲授權。
 - **M1 freeze review**：Core 已拒絕 R1 exact SHA `0b5a92872f8a695b145b389168111420cd2592c5`
   並一次提出 `M1-FREEZE-001～004`。`M1-FREEZE-CANDIDATE-002` replacement 已完成本地
-  deterministic 修正，等待新 exact-SHA 的 Designer 與 Internal Tester 獨立審查；M1
-  維持 `IN_PROGRESS`，真實執行仍未授權。
+  deterministic 修正，exact review target 為 `93b34c14d5ee0f767ee16dd0fbbbb72e18775760`，
+  等待 Designer 與 Internal Tester 獨立審查；M1 維持 `IN_PROGRESS`，真實執行仍未授權。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0

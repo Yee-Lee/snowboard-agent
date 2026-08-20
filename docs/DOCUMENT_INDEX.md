@@ -46,6 +46,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md`](delivery/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) - 請 Core 核准 Gate 1 以 Ubuntu x86_64 完整初篩，最多兩個候選再於產品 Debian Pi 執行 bounded compatibility try-run
 * [`DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md`](delivery/DELIVERY-003-PM-LLM-POC-GATE1-PACKET-R4.md) - Revision 004 packet/schema/selector deterministic return；exact SHA於commit後另行提供
 * [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md`](delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) - M1 locked PromptBuilder/response/protocol/strict-config Freeze Candidate；請 Core Designer/Internal Tester 一次整包 review
+* [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md`](delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) - 對 Core 四項 findings 的單一 replacement；review target `llm` / `93b34c14...`
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
