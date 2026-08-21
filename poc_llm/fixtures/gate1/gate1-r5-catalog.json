@@ -1,0 +1,1 @@
+{"catalog_id":"G1-R5-CATALOG-001","revision":"2026-08-21-r5","source_catalog":{"path":"poc_llm/fixtures/gate1/catalog.json","sha256":"e0b23661f225a846d8ad237140aac4196a2cd5ebc15980be33603abd8befe50f"},"case_matrix":"20x3","protocol_version":"snowboard.llm/1","synthetic_only":true}
