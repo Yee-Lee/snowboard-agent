@@ -1,8 +1,8 @@
 # LLM POC Workspace
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
-已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0 已完成，M1 為
-`IN_PROGRESS`。本文件不另行建立狀態；M1 授權只涵蓋 frozen contract/schema/fixture、
+已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0、M1 已完成，M2
+為 `PLANNED`。本文件不另行建立狀態；M1 授權只涵蓋 frozen contract/schema/fixture、
 candidate pairing preflight 與 deterministic fake，不包含真實 candidate benchmark、
 安裝 runtime、下載模型或提前執行 Pi Gate 2A。
 

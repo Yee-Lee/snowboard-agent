@@ -105,8 +105,9 @@ source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktre
   與 active milestone open exit conditions；若沒有未完成項目，必須明確回報「無」。
 - 未經 User 核准不得 commit/push。未 push、Pi 無法 fetch 的 SHA 不得作 hardware delivery。
 
-Internal Milestone 正式標為 `COMPLETE` 後，才建立對應的 immutable annotated tag：`m0`、
-`m1`、`m2`，依此類推。Tag 指向 `llm` 上記錄 completion 的已 push exact SHA，message
+Internal Milestone 正式標為 `COMPLETE` 後，才建立對應的 immutable annotated tag：`llm_m0`、
+`llm_m1`、`llm_m2`，依此類推。Git tag 是 repository-wide namespace，必須以 delivery
+domain 前綴避免與其他 POC 軌道的 milestone tag 衝突。Tag 指向 `llm` 上記錄 completion 的已 push exact SHA，message
 記錄 decision 與主要 evidence/approval；push 後不得刪除、覆寫或移動。舊 milestone 補 tag
 前須核對原 completion SHA 與 review record，不得使用目前 HEAD。Commit、branch push 與
 tag push 均須 User 核准。

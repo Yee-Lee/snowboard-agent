@@ -55,7 +55,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - **M1 completion**：Core repo 的 `DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001` 已接受並
   freeze exact candidate `830d0b4ed2d41406c789bb110ed84b7553f330a4`。Internal Tester
   已完成同一 SHA 的 lock、self-test 與 35/35 回歸測試獨立 sign-off。M1 標示為
-  `COMPLETE` 並建立 `m1` tag；真實執行仍未授權。
+  `COMPLETE` 並建立 `llm_m1` tag；真實執行仍未授權。
 - **Forward risk — Gate 2A swap**：M0 盤點發現 4GB Pi 配置約 2GB swap（未使用）。
   Gate 2A 的 mandatory environment 仍要求 `swap=0`；屆時需獨立授權，不在 M0 修改。
 - **Dependency — Gate 1 candidate proposal**：研究參考建議以 LiteRT-LM v0.16.0
