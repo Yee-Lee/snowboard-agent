@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import wave
 from pathlib import Path
 
@@ -992,8 +993,30 @@ class TrackedDocumentTests(unittest.TestCase):
                 self.assertEqual(derived.getnframes(), 16000)
 
     def test_fixture_delivery_prepares_option_a_delivered_revision(self) -> None:
+        import numpy
         import tempfile
         from audio_poc.fixture_delivery import prepare as prepare_delivered, MANIFEST_NAME as DELIVERED_MANIFEST_NAME
+
+        class DeterministicThirdRateResampler:
+            def __init__(self) -> None:
+                self.remainder = numpy.empty(0, dtype=numpy.float32)
+
+            def process(self, values, ratio, end_of_input=False):
+                self.assert_ratio = ratio
+                combined = numpy.concatenate((self.remainder, values))
+                complete = (combined.size // 3) * 3
+                output = combined[:complete:3].copy()
+                self.remainder = combined[complete:].copy()
+                if end_of_input and self.remainder.size:
+                    raise AssertionError("test input must have an exact 3:1 ratio")
+                return output
+
+        def test_converter() -> OptionAStreamConverter:
+            return OptionAStreamConverter(
+                ValidBitMapping(channel_index=0, valid_bits=24, alignment="left"),
+                numpy_module=numpy,
+                resampler_factory=DeterministicThirdRateResampler,
+            )
 
         plan_path = REPO_ROOT / "poc_audio/fixtures/authorized/recording_plan_v1.json"
         plan = load_plan(plan_path)
@@ -1040,7 +1063,13 @@ class TrackedDocumentTests(unittest.TestCase):
                 encoding="utf-8",
             )
             output_dir = root / "delivered"
-            result = prepare_delivered(plan_path, native_dir, output_dir)
+            with patch.dict(sys.modules, {"samplerate": None}):
+                result = prepare_delivered(
+                    plan_path,
+                    native_dir,
+                    output_dir,
+                    converter_factory=test_converter,
+                )
             self.assertEqual(result["result"], "PASS")
             self.assertEqual(result["valid_files"], 100)
             manifest = json.loads((output_dir / DELIVERED_MANIFEST_NAME).read_text(encoding="utf-8"))

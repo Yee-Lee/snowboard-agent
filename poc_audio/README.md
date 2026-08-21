@@ -120,6 +120,12 @@ PYTHONPATH=poc_audio/src \
   python3 -m unittest discover -s poc_audio/tests -v
 ```
 
+The fixture-delivery unit test uses a deterministic injected resampler, so this
+suite does not depend on a workstation `samplerate` installation. Real fixture
+delivery still runs only through `m1_fixture_delivery.sh`, whose preflight
+requires the separately built and verified Option A runtime containing
+`samplerate 0.2.4`; a test substitute is never selected by the CLI.
+
 After committing the implementation so the worktree is clean and has a full
 test SHA, run the formal fake baseline:
 

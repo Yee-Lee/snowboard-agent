@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Callable
 import wave
 
 from .fixture_recorder import build_capture_items, load_plan, read_manifest, sha256_file
@@ -13,7 +14,19 @@ from .option_a_conversion import OptionAStreamConverter, ValidBitMapping
 MANIFEST_NAME = "delivered_fixture_manifest.json"
 
 
-def prepare(plan_path: Path, source_dir: Path, output_dir: Path) -> dict:
+def _production_converter() -> OptionAStreamConverter:
+    return OptionAStreamConverter(
+        ValidBitMapping(channel_index=0, valid_bits=24, alignment="left")
+    )
+
+
+def prepare(
+    plan_path: Path,
+    source_dir: Path,
+    output_dir: Path,
+    *,
+    converter_factory: Callable[[], OptionAStreamConverter] = _production_converter,
+) -> dict:
     plan = load_plan(plan_path)
     plan["_path"] = str(plan_path)
     native = read_manifest(source_dir / "fixture_manifest.json", plan)
@@ -27,9 +40,7 @@ def prepare(plan_path: Path, source_dir: Path, output_dir: Path) -> dict:
                 raise ValueError(f"invalid native WAV: {item.fixture_id}")
             payload = w.readframes(w.getnframes())
 
-        converter = OptionAStreamConverter(
-            ValidBitMapping(channel_index=0, valid_bits=24, alignment="left")
-        )
+        converter = converter_factory()
         feed_frames = converter.feed(payload)
         flushed = converter.flush()
         pcm = b"".join(feed_frames) + b"".join(flushed.frames) + flushed.partial_pcm

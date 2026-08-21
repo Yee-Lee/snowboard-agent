@@ -83,6 +83,14 @@ must not create an account, accept terms for the User or commit a token. Therefo
 Common Voice acquisition and the exact twelve clip IDs remain an explicit blocker to
 `LOCKED_NOT_EXECUTED`, not an inferred success.
 
+The roughly 3 GB archive and extracted dataset do not need to reside on the
+workstation system disk and must never be placed in this repository. An external
+storage mount is supported: pass absolute paths on that mount for `validated.tsv`
+and `clips/`, keep the mount stable until preselection finishes, and write the
+controlled output outside Git. After the twelve selected MP3 checksums and derived
+PCM lock have been reviewed, later candidate runs need only the locked twelve-clip
+subset; retention of the full extracted tree follows the operator's data policy.
+
 ## Low-cost execution budget
 
 For each standard row and each of the twenty locked fixtures:
@@ -112,7 +120,8 @@ bash poc_audio/tools/run_m4a_m2a_packet.sh --validate-only
 
 After the User/operator has downloaded Common Voice 26.0 through the approved MDC
 account and made the controlled frozen inputs available, create the pre-output
-selection outside Git:
+selection outside Git. The `/controlled/...` examples may be absolute paths on an
+external storage mount:
 
 ```sh
 bash poc_audio/tools/run_m4a_m2a_packet.sh \
