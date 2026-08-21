@@ -3,21 +3,26 @@
 from __future__ import annotations
 
 import argparse
+import codecs
 import csv
 import hashlib
 import json
 import re
+import tarfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
 PACKET_ID = "M4A-M2A-COMMON-PACKET-001"
+COMMON_VOICE_SOURCE_LOCK_ID = "M4A-M2A-COMMON-VOICE-SOURCE-LOCK-001"
 AUTHORITY = "DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003"
 PLAN_SHA256 = "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920"
 LABEL_INDEX_SHA256 = "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74"
 COMMON_VOICE_DATASET_ID = "cmqinooq000x0nr07b4p4ct4q"
 COMMON_VOICE_COUNT = 12
+MAX_COMMON_VOICE_TSV_BYTES = 512 * 1024 * 1024
+MAX_COMMON_VOICE_CLIP_BYTES = 64 * 1024 * 1024
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 EXPECTED_CANDIDATES = (
@@ -125,6 +130,104 @@ def validate_packet(document: dict[str, Any]) -> None:
         raise ValueError("M2A quality/performance thresholds cannot be elimination gates")
     if set(disposition.get("prohibited_labels", [])) != {"PASS", "FAIL", "WINNER", "PRODUCTION_BASELINE"}:
         raise ValueError("M2A prohibited disposition labels mismatch")
+
+
+def validate_common_voice_source_lock(document: dict[str, Any]) -> None:
+    if document.get("schema_version") != "1.0":
+        raise ValueError("Common Voice source lock schema_version must be 1.0")
+    if document.get("index_id") != COMMON_VOICE_SOURCE_LOCK_ID:
+        raise ValueError("Common Voice source lock identity mismatch")
+    if document.get("status") != "SOURCE_CLIPS_LOCKED_DERIVED_PCM_PENDING":
+        raise ValueError("Common Voice source lock status mismatch")
+    dataset = document.get("dataset", {})
+    if (
+        dataset.get("dataset_id") != COMMON_VOICE_DATASET_ID
+        or dataset.get("release") != "26.0"
+        or dataset.get("locale") != "zh-TW"
+        or dataset.get("license") != "CC0-1.0"
+    ):
+        raise ValueError("Common Voice source lock dataset identity mismatch")
+    archive = document.get("source_archive", {})
+    if not str(archive.get("filename", "")).endswith(".tar.gz"):
+        raise ValueError("Common Voice source archive filename mismatch")
+    if not isinstance(archive.get("size_bytes"), int) or archive["size_bytes"] <= 0:
+        raise ValueError("Common Voice source archive size is invalid")
+    if archive.get("sha256") is not None and not SHA256_RE.fullmatch(str(archive["sha256"])):
+        raise ValueError("Common Voice source archive SHA-256 is invalid")
+    selection = document.get("selection", {})
+    records = selection.get("records")
+    if selection.get("count") != COMMON_VOICE_COUNT or not isinstance(records, list):
+        raise ValueError("Common Voice source lock must contain twelve records")
+    if len(records) != COMMON_VOICE_COUNT:
+        raise ValueError("Common Voice source lock record count mismatch")
+    clip_ids: set[str] = set()
+    ranks: list[str] = []
+    total_size = 0
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("invalid Common Voice source-lock record")
+        if any(key in record for key in ("sentence", "reference_text", "transcript")):
+            raise ValueError("tracked Common Voice source lock cannot contain transcript text")
+        clip_id = str(record.get("clip_id", ""))
+        if not clip_id or clip_id in clip_ids or "/" in clip_id or "\\" in clip_id:
+            raise ValueError("invalid or duplicate Common Voice source-lock clip ID")
+        member_path = _safe_archive_member(str(record.get("archive_member_path", "")))
+        if member_path.name != clip_id or member_path.parts[-3:-1] != ("zh-TW", "clips"):
+            raise ValueError(f"Common Voice archive member mismatch: {clip_id}")
+        rank = str(record.get("selection_rank_sha256", ""))
+        if not SHA256_RE.fullmatch(rank):
+            raise ValueError(f"invalid Common Voice selection rank: {clip_id}")
+        for field in ("reference_sha256", "source_mp3_sha256"):
+            if not SHA256_RE.fullmatch(str(record.get(field, ""))):
+                raise ValueError(f"invalid Common Voice {field}: {clip_id}")
+        size = record.get("source_mp3_size_bytes")
+        if not isinstance(size, int) or not 0 < size <= MAX_COMMON_VOICE_CLIP_BYTES:
+            raise ValueError(f"invalid Common Voice clip size: {clip_id}")
+        clip_ids.add(clip_id)
+        ranks.append(rank)
+        total_size += size
+    if ranks != sorted(ranks) or len(set(ranks)) != COMMON_VOICE_COUNT:
+        raise ValueError("Common Voice source-lock selection ranks are not strictly ordered")
+    local = document.get("local_controlled_copy", {})
+    if local.get("file_count") != COMMON_VOICE_COUNT or local.get("total_size_bytes") != total_size:
+        raise ValueError("Common Voice local controlled-copy summary mismatch")
+    controlled_path = PurePosixPath(str(local.get("controlled_selection_relative_path", "")))
+    if controlled_path.is_absolute() or ".." in controlled_path.parts:
+        raise ValueError("Common Voice controlled-selection path is unsafe")
+    if not isinstance(local.get("controlled_selection_size_bytes"), int) or local[
+        "controlled_selection_size_bytes"
+    ] <= 0:
+        raise ValueError("Common Voice controlled-selection size is invalid")
+    if not SHA256_RE.fullmatch(str(local.get("controlled_selection_sha256", ""))):
+        raise ValueError("Common Voice controlled-selection SHA-256 is invalid")
+    handoff = document.get("handoff", {})
+    if handoff.get("per_clip_sha256_is_authoritative") is not True:
+        raise ValueError("Common Voice handoff must make per-clip SHA-256 authoritative")
+    if handoff.get("transcript_in_tracked_index") is not False:
+        raise ValueError("Common Voice tracked handoff cannot contain transcripts")
+
+
+def verify_common_voice_source_files(
+    source_lock: dict[str, Any], clips_dir: Path
+) -> dict[str, Any]:
+    validate_common_voice_source_lock(source_lock)
+    records = source_lock["selection"]["records"]
+    expected_names = {str(record["clip_id"]) for record in records}
+    actual_names = {path.name for path in clips_dir.iterdir() if path.is_file()}
+    if actual_names != expected_names:
+        raise ValueError("controlled Common Voice clip set differs from source lock")
+    for record in records:
+        path = clips_dir / record["clip_id"]
+        if path.stat().st_size != record["source_mp3_size_bytes"]:
+            raise ValueError(f"Common Voice clip size mismatch: {record['clip_id']}")
+        if sha256_file(path) != record["source_mp3_sha256"]:
+            raise ValueError(f"Common Voice clip SHA-256 mismatch: {record['clip_id']}")
+    return {
+        "result": "PASS",
+        "source_lock_id": COMMON_VOICE_SOURCE_LOCK_ID,
+        "verified_files": len(records),
+        "total_size_bytes": sum(record["source_mp3_size_bytes"] for record in records),
+    }
 
 
 def _label_records(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -247,9 +350,84 @@ def select_common_voice_rows(
     } for item in selected]
 
 
+def _safe_archive_member(name: str) -> PurePosixPath:
+    member_path = PurePosixPath(name)
+    if member_path.is_absolute() or ".." in member_path.parts:
+        raise ValueError(f"unsafe Common Voice archive member: {name}")
+    return member_path
+
+
+def _select_archive_rows(archive_path: Path) -> tuple[list[dict[str, str]], PurePosixPath]:
+    with tarfile.open(archive_path, mode="r|*") as archive:
+        for member in archive:
+            member_path = _safe_archive_member(member.name)
+            if member_path.parts[-2:] != ("zh-TW", "validated.tsv"):
+                continue
+            if not member.isfile() or not 0 < member.size <= MAX_COMMON_VOICE_TSV_BYTES:
+                raise ValueError("invalid Common Voice validated.tsv archive member")
+            extracted = archive.extractfile(member)
+            if extracted is None:
+                raise ValueError("unable to read Common Voice validated.tsv")
+            with extracted:
+                text = codecs.getreader("utf-8")(extracted)
+                selected = select_common_voice_rows(csv.DictReader(text, delimiter="\t"))
+            return selected, member_path.parent
+    raise ValueError("Common Voice archive does not contain zh-TW/validated.tsv")
+
+
+def select_common_voice_archive(archive_path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Select and hash twelve clips by streaming a Common Voice archive without extraction."""
+
+    selected, locale_root = _select_archive_rows(archive_path)
+    wanted = {
+        str(locale_root / "clips" / str(item["path"])): item
+        for item in selected
+    }
+    seen: set[str] = set()
+    with tarfile.open(archive_path, mode="r|*") as archive:
+        for member in archive:
+            member_path = _safe_archive_member(member.name)
+            name = str(member_path)
+            item = wanted.get(name)
+            if item is None:
+                continue
+            if name in seen:
+                raise ValueError(f"duplicate selected Common Voice archive member: {name}")
+            if not member.isfile() or not 0 < member.size <= MAX_COMMON_VOICE_CLIP_BYTES:
+                raise ValueError(f"invalid selected Common Voice clip member: {name}")
+            extracted = archive.extractfile(member)
+            if extracted is None:
+                raise ValueError(f"unable to read selected Common Voice clip: {name}")
+            digest = hashlib.sha256()
+            size = 0
+            with extracted:
+                for chunk in iter(lambda: extracted.read(1024 * 1024), b""):
+                    size += len(chunk)
+                    digest.update(chunk)
+            if size != member.size:
+                raise ValueError(f"truncated selected Common Voice clip: {name}")
+            item["source_mp3_sha256"] = digest.hexdigest()
+            item["source_size_bytes"] = size
+            item["archive_member_path"] = name
+            seen.add(name)
+            if len(seen) == len(wanted):
+                break
+    missing = sorted(set(wanted) - seen)
+    if missing:
+        raise ValueError(f"missing selected Common Voice clip in archive: {missing[0]}")
+    return selected, {
+        "mode": "streamed_archive",
+        "archive_filename": archive_path.name,
+        "archive_size_bytes": archive_path.stat().st_size,
+        "archive_sha256": None,
+        "archive_sha256_status": "NOT_REQUIRED_PER_CLIP_SHA256_IS_AUTHORITATIVE",
+    }
+
+
 def build_preselection(
     packet: dict[str, Any], recording_plan_path: Path, label_index_path: Path,
-    validated_tsv_path: Path, clips_dir: Path,
+    validated_tsv_path: Path | None = None, clips_dir: Path | None = None,
+    *, archive_path: Path | None = None,
 ) -> dict[str, Any]:
     validate_packet(packet)
     if sha256_file(recording_plan_path) != PLAN_SHA256:
@@ -257,16 +435,24 @@ def build_preselection(
     if sha256_file(label_index_path) != LABEL_INDEX_SHA256:
         raise ValueError("frozen VAD label index checksum mismatch")
     internal = select_internal_fixtures(load_json(recording_plan_path), load_json(label_index_path))
-    with validated_tsv_path.open("r", encoding="utf-8", newline="") as source:
-        external = select_common_voice_rows(csv.DictReader(source, delimiter="\t"))
-    for item in external:
-        source_path = (clips_dir / item["path"]).resolve()
-        if not source_path.is_relative_to(clips_dir.resolve()):
-            raise ValueError(f"selected Common Voice clip escapes the clip directory: {item['path']}")
-        if not source_path.is_file():
-            raise ValueError(f"missing selected Common Voice clip: {item['path']}")
-        item["source_mp3_sha256"] = sha256_file(source_path)
-        item["source_size_bytes"] = source_path.stat().st_size
+    if archive_path is not None:
+        if validated_tsv_path is not None or clips_dir is not None:
+            raise ValueError("choose either a Common Voice archive or an extracted tree")
+        external, source_identity = select_common_voice_archive(archive_path)
+    else:
+        if validated_tsv_path is None or clips_dir is None:
+            raise ValueError("extracted Common Voice input requires validated.tsv and clips directory")
+        with validated_tsv_path.open("r", encoding="utf-8", newline="") as source:
+            external = select_common_voice_rows(csv.DictReader(source, delimiter="\t"))
+        for item in external:
+            source_path = (clips_dir / item["path"]).resolve()
+            if not source_path.is_relative_to(clips_dir.resolve()):
+                raise ValueError(f"selected Common Voice clip escapes the clip directory: {item['path']}")
+            if not source_path.is_file():
+                raise ValueError(f"missing selected Common Voice clip: {item['path']}")
+            item["source_mp3_sha256"] = sha256_file(source_path)
+            item["source_size_bytes"] = source_path.stat().st_size
+        source_identity = {"mode": "extracted_tree"}
     return {
         "schema_version": "1.0",
         "index_id": "M4A-M2A-FIXTURE-PRESELECTION-001",
@@ -281,6 +467,7 @@ def build_preselection(
             "release": "26.0",
             "locale": "zh-TW",
             "license": "CC0-1.0",
+            "source_identity": source_identity,
             "records": external,
         },
         "remaining_lock_work": [
@@ -298,11 +485,18 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=repo_root() / "poc_audio/manifests/m4a_m2a_common_packet.json",
     )
+    parser.add_argument(
+        "--common-voice-source-lock",
+        type=Path,
+        default=repo_root() / "poc_audio/manifests/m4a_m2a_common_voice_source_lock.json",
+    )
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--verify-common-voice-clips-dir", type=Path)
     parser.add_argument("--recording-plan", type=Path)
     parser.add_argument("--vad-label-index", type=Path)
     parser.add_argument("--common-voice-validated-tsv", type=Path)
     parser.add_argument("--common-voice-clips-dir", type=Path)
+    parser.add_argument("--common-voice-archive", type=Path)
     parser.add_argument("--output", type=Path)
     return parser.parse_args()
 
@@ -311,18 +505,32 @@ def main() -> int:
     args = parse_args()
     packet = load_json(args.packet)
     validate_packet(packet)
+    source_lock = load_json(args.common_voice_source_lock)
+    validate_common_voice_source_lock(source_lock)
+    if args.verify_common_voice_clips_dir is not None:
+        result = verify_common_voice_source_files(
+            source_lock, args.verify_common_voice_clips_dir
+        )
+        print(json.dumps(result, sort_keys=True))
+        return 0
     if args.validate_only:
         print(f"M2A packet valid: {args.packet}")
         return 0
-    required = (
-        args.recording_plan,
-        args.vad_label_index,
-        args.common_voice_validated_tsv,
-        args.common_voice_clips_dir,
-        args.output,
-    )
+    required = (args.recording_plan, args.vad_label_index, args.output)
     if any(value is None for value in required):
         raise ValueError("fixture preselection requires all controlled input and output arguments")
+    archive_mode = args.common_voice_archive is not None
+    extracted_mode = (
+        args.common_voice_validated_tsv is not None
+        and args.common_voice_clips_dir is not None
+    )
+    if archive_mode == extracted_mode:
+        raise ValueError("choose exactly one Common Voice input mode: archive or extracted tree")
+    if not extracted_mode and (
+        args.common_voice_validated_tsv is not None
+        or args.common_voice_clips_dir is not None
+    ):
+        raise ValueError("extracted Common Voice input requires both validated.tsv and clips directory")
     assert args.output is not None
     if args.output.resolve().is_relative_to(repo_root().resolve()):
         raise ValueError("controlled preselection output must stay outside the repository")
@@ -330,14 +538,13 @@ def main() -> int:
         raise ValueError("preselection output already exists")
     assert args.recording_plan is not None
     assert args.vad_label_index is not None
-    assert args.common_voice_validated_tsv is not None
-    assert args.common_voice_clips_dir is not None
     result = build_preselection(
         packet,
         args.recording_plan,
         args.vad_label_index,
         args.common_voice_validated_tsv,
         args.common_voice_clips_dir,
+        archive_path=args.common_voice_archive,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")

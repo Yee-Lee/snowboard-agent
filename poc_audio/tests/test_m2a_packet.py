@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import sys
+import tarfile
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -15,7 +19,9 @@ from audio_poc.m4a_m2a_packet import (  # noqa: E402
     COMMON_VOICE_COUNT,
     EXPECTED_CANDIDATES,
     select_common_voice_rows,
+    select_common_voice_archive,
     select_internal_fixtures,
+    validate_common_voice_source_lock,
     validate_packet,
 )
 
@@ -39,6 +45,25 @@ class M2ACommonPacketTests(unittest.TestCase):
             self.packet["fixture_lock"]["external"]["selection_count"],
             COMMON_VOICE_COUNT,
         )
+
+    def test_tracked_common_voice_source_lock_is_sanitized(self) -> None:
+        source_lock = json.loads(
+            (
+                REPO_ROOT
+                / "poc_audio/manifests/m4a_m2a_common_voice_source_lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        validate_common_voice_source_lock(source_lock)
+        serialized = json.dumps(source_lock, sort_keys=True)
+        self.assertNotIn('"sentence"', serialized)
+        self.assertNotIn('"reference_text"', serialized)
+        self.assertNotIn('"transcript"', serialized)
+        self.assertEqual(len(source_lock["selection"]["records"]), COMMON_VOICE_COUNT)
+
+        changed = json.loads(json.dumps(source_lock))
+        changed["selection"]["records"][0]["source_mp3_sha256"] = "0" * 63
+        with self.assertRaisesRegex(ValueError, "source_mp3_sha256"):
+            validate_common_voice_source_lock(changed)
 
     def test_q5_is_independent_and_m2a_has_no_elimination_gates(self) -> None:
         serialized = json.dumps(self.packet, sort_keys=True)
@@ -121,6 +146,55 @@ class M2ACommonPacketTests(unittest.TestCase):
                 [{"path": "../escape.mp3", "sentence": "句子", "locale": "zh-TW"}],
                 count=1,
             )
+
+    def test_common_voice_archive_streams_selected_clips_without_extraction(self) -> None:
+        rows = [
+            {
+                "path": f"clip-{index:02d}.mp3",
+                "sentence": f"句子 {index}",
+                "locale": "zh-TW",
+            }
+            for index in range(20)
+        ]
+        header = "path\tsentence\tlocale\n"
+        body = "".join(
+            f"{row['path']}\t{row['sentence']}\t{row['locale']}\n" for row in rows
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive_path = root / "common-voice.tar.gz"
+            with tarfile.open(archive_path, "w:gz") as archive:
+                validated = (header + body).encode("utf-8")
+                info = tarfile.TarInfo("cv/zh-TW/validated.tsv")
+                info.size = len(validated)
+                archive.addfile(info, io.BytesIO(validated))
+                for row in rows:
+                    payload = f"audio:{row['path']}".encode("ascii")
+                    info = tarfile.TarInfo(f"cv/zh-TW/clips/{row['path']}")
+                    info.size = len(payload)
+                    archive.addfile(info, io.BytesIO(payload))
+
+            selected, identity = select_common_voice_archive(archive_path)
+            self.assertEqual(len(selected), COMMON_VOICE_COUNT)
+            self.assertEqual(identity["mode"], "streamed_archive")
+            self.assertFalse((root / "cv").exists())
+            for item in selected:
+                payload = f"audio:{item['path']}".encode("ascii")
+                self.assertEqual(item["source_size_bytes"], len(payload))
+                self.assertEqual(
+                    item["source_mp3_sha256"], hashlib.sha256(payload).hexdigest()
+                )
+
+    def test_common_voice_archive_rejects_unsafe_member(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / "unsafe.tar.gz"
+            with tarfile.open(archive_path, "w:gz") as archive:
+                payload = b"unsafe"
+                info = tarfile.TarInfo("../validated.tsv")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+            with self.assertRaisesRegex(ValueError, "unsafe Common Voice archive member"):
+                select_common_voice_archive(archive_path)
 
 
 if __name__ == "__main__":

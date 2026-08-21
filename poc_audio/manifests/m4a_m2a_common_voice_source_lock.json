@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "index_id": "M4A-M2A-COMMON-VOICE-SOURCE-LOCK-001",
+  "status": "SOURCE_CLIPS_LOCKED_DERIVED_PCM_PENDING",
+  "dataset": {
+    "dataset_id": "cmqinooq000x0nr07b4p4ct4q",
+    "title": "Common Voice Scripted Speech 26.0 - Chinese (Taiwan)",
+    "release": "26.0",
+    "locale": "zh-TW",
+    "license": "CC0-1.0",
+    "source_url": "https://mozilladatacollective.com/datasets/cmqinooq000x0nr07b4p4ct4q"
+  },
+  "source_archive": {
+    "filename": "1781716235246-cv-corpus-26.0-2026-06-12-zh-TW.tar.gz",
+    "size_bytes": 3169313467,
+    "sha256": null,
+    "sha256_status": "NOT_CAPTURED_UTM_SHARED_MOUNT_READ_TOO_SLOW"
+  },
+  "selection": {
+    "count": 12,
+    "timing": "BEFORE_ANY_M2A_CANDIDATE_OUTPUT_REVIEW",
+    "algorithm": "ascending SHA-256(dataset_id + NUL + clip path + NUL + sentence), then clip path",
+    "records": [
+      {
+        "clip_id": "common_voice_zh-TW_17452147.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_17452147.mp3",
+        "selection_rank_sha256": "000365c0991d6e3f5f85c5c1f4b8efad74b7802fa3ad92ea8b9438aff98873b8",
+        "reference_sha256": "a57e588ce438c326e86f078095f6c4a44a31cc80009db855504c54a1b2a53655",
+        "source_mp3_size_bytes": 20973,
+        "source_mp3_sha256": "29be1bd04fd1499c44c66fb079e9120aa311adedb1bfd9bc49ffdb13142e1c42"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_17630166.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_17630166.mp3",
+        "selection_rank_sha256": "00048a0a06be4803d34f6ec214e3648c881d2ce7adc7919075090c862be4c667",
+        "reference_sha256": "d54b76ff27a275fd04fce432c5f9842b6fef702be2b3386699f3fd53c34a776d",
+        "source_mp3_size_bytes": 12622,
+        "source_mp3_sha256": "ada3a3190767445572d2c14aa6fb0f5ffd1b6ccc705542346db333b41ec14f5e"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_30584899.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_30584899.mp3",
+        "selection_rank_sha256": "00060aafa4eeae3fa21a5ab04055f5de218a332f16d2a358e10661f5d824615f",
+        "reference_sha256": "39b3211582a2f0f7ee3c858b8f609dd30be0dc537d5fe9e02835ed50d83b6da4",
+        "source_mp3_size_bytes": 24021,
+        "source_mp3_sha256": "2afa719a1c59c4e54967d0813ccbff2bf5de26f6a102d5f6ef05d4ce01dda200"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_19306415.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_19306415.mp3",
+        "selection_rank_sha256": "000618790eba9b6732945b969b703adcc95a96b3b186a59d4b84f38a3ba4e8d5",
+        "reference_sha256": "2f4aa60978c4b295ab37d703cd7b13c36c59e3ad598c8f6a7849702883a1b7d9",
+        "source_mp3_size_bytes": 36814,
+        "source_mp3_sha256": "934a3ffc99867f4408ef07fb07cd29f005d42a3a1fb223767d50db73c4f9c5ec"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_18740696.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_18740696.mp3",
+        "selection_rank_sha256": "00082065c160a7ac342206433b196cb5b82848b87bfa1de7fd6ce066ef46341d",
+        "reference_sha256": "c958bbe8c72a80cb546f6a1bf50b91e4add701b145a1fe2fa8f12055df5aeefa",
+        "source_mp3_size_bytes": 44781,
+        "source_mp3_sha256": "1dfec473f064607104ee78c7c109ce85feb80ef2d32b6ad378eeccbbeb1c5641"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_19057680.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_19057680.mp3",
+        "selection_rank_sha256": "0008680a992f23de2be6fb1fe3550504d461d914276ba8b2cc3aa9cee5517af4",
+        "reference_sha256": "49297043e7a872fdd75d022ca1c18b0f631b0a3b21395496de625f6ef9ed1d89",
+        "source_mp3_size_bytes": 70317,
+        "source_mp3_sha256": "8d659fddd0580788dc9d845dfbbbb09ad9b34e0413803d15317c2fd117b12364"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_31328179.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_31328179.mp3",
+        "selection_rank_sha256": "0008df419587beb4e2a940aff9d652f8488dc6f7adac5406567aa2fde196fa5b",
+        "reference_sha256": "efeec755ac7e52fd3c65471a6661ff174789e32ff6fe52e797721fd4b7667785",
+        "source_mp3_size_bytes": 13005,
+        "source_mp3_sha256": "cf8f823cd618a1cf84bc4732e128dc4006fbe69290097791aba88339c5eba569"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_19313472.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_19313472.mp3",
+        "selection_rank_sha256": "00099a24e95af3e31ca590a4d51a15c67006f5f18967466cc19c7ba8b05ade60",
+        "reference_sha256": "d486a21d357a87511b9c81b52195c62c9bbd3b5cc020148dacd36f55894175c7",
+        "source_mp3_size_bytes": 55149,
+        "source_mp3_sha256": "601d61952ae9402b2fda2cf76d5cd89baa90e588fcbf51bf69b14ac97f50942d"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_20850655.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_20850655.mp3",
+        "selection_rank_sha256": "000a4eb5b6aa6b16263d36c8efa4e17089aa7810c629ebfbc7f3a85f3c41845b",
+        "reference_sha256": "448c7cc72c10a6cd2c4168aab5afcdcef3edc9fa2f668c0d627cee5bf20a0cf2",
+        "source_mp3_size_bytes": 46317,
+        "source_mp3_sha256": "2caa7e099bdd8361e92a05ca8049e788d24106226af31ec36458442bd9ff1558"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_26206663.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_26206663.mp3",
+        "selection_rank_sha256": "000a8c0c289f27b055973304698a50cd93d3cb256fd5f5bc0eb49a4882fb88e6",
+        "reference_sha256": "36c17bde71c99ad48c9ba91834904f6949ad5107e03be1710316e52c9e737787",
+        "source_mp3_size_bytes": 18837,
+        "source_mp3_sha256": "bea6a00117315743822078180b134c925f59733e0c1bde74cedf4b9ed4abbcd7"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_22964558.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_22964558.mp3",
+        "selection_rank_sha256": "000c07692c10a81221d3ee4b8806a09e561933490acf7e94bd5c3b941a25fe05",
+        "reference_sha256": "9c96aff3008bfaeb23503e4a3649043ee128a0fd00de94ea79d7b9dfd2985051",
+        "source_mp3_size_bytes": 32877,
+        "source_mp3_sha256": "3a43ea06b94c2311197d429c5670c05aaa6e699376ca00ace18965df4a6d02b2"
+      },
+      {
+        "clip_id": "common_voice_zh-TW_17414953.mp3",
+        "archive_member_path": "cv-corpus-26.0-2026-06-12/zh-TW/clips/common_voice_zh-TW_17414953.mp3",
+        "selection_rank_sha256": "000e6aab91f4da833f6dad10776ce105df177e7fb9ebbc2474b2119cc6f67517",
+        "reference_sha256": "cd30d050b4b35f4dd4bd403cc4e3667f2cf8977317d98ac71bf391b9126677ae",
+        "source_mp3_size_bytes": 21357,
+        "source_mp3_sha256": "2fd8da77194435466a023140200a7e47b3b82e564c09620b16a52ba381c73c31"
+      }
+    ]
+  },
+  "local_controlled_copy": {
+    "git_policy": "RAW_AUDIO_IGNORED_DO_NOT_COMMIT",
+    "relative_directory": "poc_audio/evidence/m2/20260821T-common-voice-26-source/raw/clips",
+    "file_count": 12,
+    "total_size_bytes": 397070,
+    "controlled_selection_relative_path": "poc_audio/evidence/m2/20260821T-common-voice-26-source/raw/selection.controlled.json",
+    "controlled_selection_size_bytes": 6837,
+    "controlled_selection_sha256": "d889b2a3061a7bdf7bedb517052ab253744648b3599a962d2b518fd6e3f1c78e"
+  },
+  "handoff": {
+    "archive_sha256_required": false,
+    "per_clip_sha256_is_authoritative": true,
+    "transcript_in_tracked_index": false
+  }
+}

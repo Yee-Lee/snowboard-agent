@@ -19,7 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003](DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md) | `ACCEPTED / M2A PACKET IN PROGRESS` | Rows、official identities、budgets 與 selector 已準備；exact fixture lock 等待 controlled labels 與 User-authenticated Common Voice 26.0 acquisition。VAD real-engine row 仍未授權。 |
+| [DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003](DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md) | `ACCEPTED / M2A PACKET IN PROGRESS` | Rows、official identities、budgets 與 selector 已準備；Common Voice exact 12 source clips 已鎖定，exact fixture lock 仍等待 controlled labels 與 derived PCM。VAD real-engine row 仍未授權。 |
 | [POC-AUDIO-PERF-2026-001](POC-AUDIO-PERF-2026-001/feedback.md) | `CLOSED / EVIDENCE PRESERVED` | bounded/native Q8 調查已完成；結果維持原 diagnostic disposition。後續 ASR 比較由 ACK-003 的共同 M2A packet 承接。回覆見 [`RESP-POC-AUDIO-PERF-2026-001`](../../poc_audio/deliveries/RESP-POC-AUDIO-PERF-2026-001.md)。 |
 | [commit_workflow_update](commit_workflow_update.md) | `INTEGRATED` | 已將 unpublished WIP squash、Candidate SHA append-only、單一 `audio` branch 與 immutable milestone tags 整合至 [`docs/audio_poc_workflow.md`](../audio_poc_workflow.md) 與 `AGENTS.md`。 |
 | [DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002](DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) | `SUPERSEDED IN PART / EVIDENCE PRESERVED` | Exact source、artifact/build evidence 與 tested SHAs 保留；conditional Q5 trigger、ASR execution order 與 quality/performance elimination gates 已由 ACK-003 取代。 |

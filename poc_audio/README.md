@@ -172,8 +172,9 @@ The tracked packet pins eight required/optional ASR rows, official artifact and
 runtime identities, deterministic internal/Common Voice selection rules, bounded
 budgets and observation-only dispositions. It remains
 `PREPARED_FIXTURE_LOCK_PENDING`: no candidate may build, load or execute until the
-authenticated Common Voice 26.0 zh-TW download and controlled frozen labels have
-produced the reviewed exact 20-item fixture lock. See
+controlled frozen labels and derived PCM have produced the reviewed exact 20-item
+fixture lock. The authenticated Common Voice 26.0 zh-TW acquisition and exact
+twelve-source lock are complete. See
 [`M4A-M2A-COMMON-PACKET-001`](deliveries/M4A-M2A-COMMON-PACKET-001.md) for the
 controlled preparation command and current blocker.
 

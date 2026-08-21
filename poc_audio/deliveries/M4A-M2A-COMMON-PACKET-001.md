@@ -12,8 +12,9 @@
 This packet fixes the M2A candidate landscape and the deterministic method used to
 lock its fixtures. It does not authorize candidate load or inference yet. Execution
 remains fail closed until the controlled internal labels/audio and authenticated
-Common Voice download have produced one reviewed fixture lock with derived 16 kHz
-mono S16_LE checksums.
+Common Voice sources have produced one reviewed fixture lock with derived 16 kHz
+mono S16_LE checksums. The Common Voice source acquisition is now complete; the
+internal exact eight and derived 8+12 PCM lock remain pending.
 
 M2A metrics are comparative observations. This packet must not emit `PASS`, `FAIL`,
 winner or production-baseline labels. SenseVoice, Matcha and Whisper small-Q8
@@ -77,11 +78,12 @@ not an input to the rank. The controlled index retains reference text outside Gi
 the eventual tracked index records only clip ID, source MP3 checksum, reference hash,
 derived WAV checksum and duration.
 
-Mozilla Data Collective now requires authenticated download and acceptance of the
-dataset terms. No MDC credential is present in the current environment, and Codex
-must not create an account, accept terms for the User or commit a token. Therefore
-Common Voice acquisition and the exact twelve clip IDs remain an explicit blocker to
-`LOCKED_NOT_EXECUTED`, not an inferred success.
+Mozilla Data Collective requires authenticated download and acceptance of the
+dataset terms. Codex did not create an account, accept terms for the User or receive
+a token. The User supplied the downloaded archive; deterministic pre-output
+selection and per-clip checksum review have now locked the exact twelve source MP3s.
+Derived PCM remains pending, so this source lock does not advance the packet to
+`LOCKED_NOT_EXECUTED` by itself.
 
 The roughly 3 GB archive and extracted dataset do not need to reside on the
 workstation system disk and must never be placed in this repository. An external
@@ -118,6 +120,19 @@ The tracked packet can be validated locally without models or audio:
 bash poc_audio/tools/run_m4a_m2a_packet.sh --validate-only
 ```
 
+For the current external-storage archive, no extraction or write access to its
+directory is required. The packet streams `validated.tsv` and the selected twelve
+MP3 members directly from the archive:
+
+```sh
+bash poc_audio/tools/run_m4a_m2a_packet.sh \
+  --recording-plan poc_audio/fixtures/authorized/recording_plan_v1.json \
+  --vad-label-index /controlled/audio-poc/fixtures/review/vad-labels-v1.json \
+  --common-voice-archive \
+    /home/yee/utm/common_voice/1781716235246-cv-corpus-26.0-2026-06-12-zh-TW.tar.gz \
+  --output /home/yee/utm/common_voice/m2a_work/fixture-preselection.json
+```
+
 After the User/operator has downloaded Common Voice 26.0 through the approved MDC
 account and made the controlled frozen inputs available, create the pre-output
 selection outside Git. The `/controlled/...` examples may be absolute paths on an
@@ -137,11 +152,28 @@ Voice text. The next implementation step derives and hashes selected PCM, record
 conversion identity/durations, emits a sanitized tracked index, changes manifest
 status to `LOCKED_NOT_EXECUTED`, and only then prepares Pi execution commands.
 
+The source selection is now recorded without transcript or audio in
+[`m4a_m2a_common_voice_source_lock.json`](../manifests/m4a_m2a_common_voice_source_lock.json).
+The twelve original MP3 files and controlled reference-text selection are retained
+locally under the Git-ignored paths named in that lock. The tracked lock records the
+controlled selection's size and SHA-256 without exposing its text. Verify a local or
+newly downloaded MP3 handoff copy with:
+
+```sh
+bash poc_audio/tools/run_m4a_m2a_packet.sh \
+  --verify-common-voice-clips-dir /controlled/path/to/the-twelve-clips
+```
+
+The UTM shared mount was too slow to finish a whole-archive SHA-256 before storage
+handoff, so the archive filename and exact byte size are advisory. The twelve member
+paths, byte sizes and per-clip SHA-256 values are authoritative and sufficient to
+verify a fresh download even when its outer archive packaging differs.
+
 ## Current disposition
 
 - Candidate/runtime identity: `PREPARED / LOCAL VALIDATION REQUIRED`
 - Internal exact eight: `PENDING CONTROLLED LABEL RESOLUTION`
-- Common Voice exact twelve: `BLOCKED ON USER-AUTHENTICATED ACQUISITION`
+- Common Voice exact twelve source MP3s: `LOCKED / PER-CLIP SHA-256 VERIFIED`
 - Derived PCM checksum lock: `NOT STARTED`
 - Candidate build/load/inference: `PROHIBITED`
 - M2A scorecard/shortlist: `NOT STARTED`
