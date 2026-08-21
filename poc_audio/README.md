@@ -178,6 +178,15 @@ exact artifact/runtime/license preflight. See
 [`M4A-M2A-COMMON-PACKET-001`](deliveries/M4A-M2A-COMMON-PACKET-001.md) for the
 controlled preparation command and current blocker.
 
+After one row's exact artifact and runtime closure has been reviewed on the clean Pi
+candidate SHA, execute it through `run_m2a_survey.sh`. The runner verifies the tracked
+and controlled fixture locks, enters an isolated network namespace, performs one
+warm-up and one scored inference for every item, writes raw transcripts only to the
+controlled output, and emits a separate sanitized row report. It never opens capture
+or playback devices. Each engine uses explicit arguments; for example, a whisper.cpp
+row supplies `--binary`, `--model`, and the identical `--artifact`, while Python rows
+supply `--runtime-python`, `--model-dir`, and the archived `--artifact`.
+
 #### Historical ACK-001 artifact preflight
 
 Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On
