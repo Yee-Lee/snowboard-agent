@@ -82,6 +82,10 @@ class M2ASurveyTests(unittest.TestCase):
             execution_status(True, None, True),
             "M2B_PROBE_OBSERVATIONS_COMPLETE_PENDING_DELTA_REVIEW",
         )
+        self.assertEqual(
+            execution_status(True, None, True, 2),
+            "M2B_DIAGNOSTIC_RECHECK_COMPLETE_NOT_DELTA_TABLE",
+        )
 
     def test_numeric_summary_uses_nearest_rank(self) -> None:
         self.assertEqual(

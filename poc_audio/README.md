@@ -204,6 +204,11 @@ diagnostic/inconclusive rows, dirty cleanup, runtime closure mismatches, duplica
 missing required candidates, and mixed fixture locks. Shortlist review remains a
 separate human decision; generated scorecards contain no winner or threshold verdict.
 
+For an anomalous M2B probe, repeat the same tracked probe manifest and unique output
+paths with `--m2b-diagnostic-recheck 1` and then `2`. The runner marks both reports
+`M2B_DIAGNOSTIC_RECHECK_COMPLETE_NOT_DELTA_TABLE`; only the original formal probe may
+enter the optimization delta table.
+
 #### Historical ACK-001 artifact preflight
 
 Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On

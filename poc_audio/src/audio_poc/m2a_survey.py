@@ -233,16 +233,25 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="run one reviewed-shortlist M2B single-variable probe",
     )
+    parser.add_argument(
+        "--m2b-diagnostic-recheck",
+        type=int,
+        choices=(1, 2),
+        help="mark an M2B probe anomaly recheck 1 or 2, excluded from the delta table",
+    )
     return parser.parse_args()
 
 
 def execution_status(
     complete: bool, diagnostic_recheck: int | None, m2b_probe: bool = False,
+    m2b_diagnostic_recheck: int | None = None,
 ) -> str:
     if not complete:
         return "INCONCLUSIVE_RETAINED"
     if diagnostic_recheck is not None:
         return "DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD"
+    if m2b_diagnostic_recheck is not None:
+        return "M2B_DIAGNOSTIC_RECHECK_COMPLETE_NOT_DELTA_TABLE"
     if m2b_probe:
         return "M2B_PROBE_OBSERVATIONS_COMPLETE_PENDING_DELTA_REVIEW"
     return "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW"
@@ -323,6 +332,8 @@ def main() -> int:
     validate_packet(packet)
     validate_linked_fixture_lock(packet)
     probe = None
+    if args.m2b_diagnostic_recheck is not None and args.m2b_probe_manifest is None:
+        raise ValueError("M2B diagnostic recheck requires --m2b-probe-manifest")
     if args.m2b_probe_manifest is not None:
         expected_probe_path = root / "poc_audio/manifests/m2b_base_q8_probe.json"
         if args.m2b_probe_manifest.resolve() != expected_probe_path:
@@ -401,7 +412,9 @@ def main() -> int:
     cleanup.update({"threads": 0, "iterators": 0, "streams": 0, "device_owners": owners_after})
     cleanup["clean"] = bool(cleanup["clean"] and owners_before == owners_after == 0)
     complete = len(sanitized_results) == 20 and error_code is None and cleanup["clean"]
-    status = execution_status(complete, args.diagnostic_recheck, probe is not None)
+    status = execution_status(
+        complete, args.diagnostic_recheck, probe is not None, args.m2b_diagnostic_recheck,
+    )
     base = {
         "schema_version": "1.0", "report_id": M2B_REPORT_ID if probe is not None else REPORT_ID,
         "generated_at_utc": datetime.now(UTC).isoformat(), "review_status": "UNREVIEWED",
@@ -420,11 +433,14 @@ def main() -> int:
             "scored_inferences_per_item": 1, "per_item_timeout_seconds": 120,
             "row_budget_seconds": 2400, "threads": 4 if args.engine != "vosk" else 1,
             "run_class": (
+                "M2B_DIAGNOSTIC_RECHECK_NOT_DELTA_TABLE" if args.m2b_diagnostic_recheck is not None else
                 "M2B_SINGLE_VARIABLE_PROBE" if probe is not None else
                 "DIAGNOSTIC_RECHECK_NOT_SCORECARD" if args.diagnostic_recheck is not None else
                 "FORMAL_M2A_SCORECARD_ROW"
             ),
-            "diagnostic_recheck_index": args.diagnostic_recheck,
+            "diagnostic_recheck_index": (
+                args.m2b_diagnostic_recheck if probe is not None else args.diagnostic_recheck
+            ),
         },
         "fixture_lock_sha256": FIXTURE_LOCK_SHA256,
         "controlled_manifest_sha256": CONTROLLED_MANIFEST_SHA256,
