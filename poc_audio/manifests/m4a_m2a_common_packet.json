@@ -1,0 +1,304 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "M4A-M2A-COMMON-PACKET-001",
+  "authority": "DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003",
+  "status": "PREPARED_FIXTURE_LOCK_PENDING",
+  "source_binding": {
+    "branch": "audio",
+    "packet_commit": null,
+    "binding_rule": "Use the full Git SHA containing this manifest; do not execute from branch HEAD alone."
+  },
+  "controlled_artifact_policy": {
+    "tracked_in_git": false,
+    "locator_prefix": "controlled://audio-poc/m2a/",
+    "network_policy": "acquire_and_hash_before_offline_execution",
+    "prohibited_git_content": [
+      "models",
+      "runtime wheels",
+      "raw or derived audio",
+      "candidate transcripts",
+      "Common Voice transcript text",
+      "credentials or API tokens"
+    ]
+  },
+  "runtime_identities": {
+    "whispercpp-1.9.2-native-aarch64": {
+      "engine": "whisper.cpp",
+      "version": "1.9.2",
+      "git_commit": "306c88f4d1286aec1bf96e544632897886af5501",
+      "source_filename": "whisper.cpp-v1.9.2.tar.gz",
+      "source_url": "https://github.com/ggml-org/whisper.cpp/commit/306c88f4d1286aec1bf96e544632897886af5501",
+      "source_size_bytes": 9613762,
+      "source_sha256": "988945d81af6abcf52d5e8034f516c74ffc61057c32c3a4b84f3451c2c7e5e47",
+      "license": "MIT",
+      "runtime_profile": {
+        "target": "Raspberry Pi 5 / Debian 13 / aarch64",
+        "cpu_threads": 4,
+        "workers": 1,
+        "build_profile": "native CPU-only; GGML_NATIVE=ON; optional network/server/GPU backends OFF",
+        "decoding": "greedy; language=zh; no context; no timestamps; no internal VAD"
+      }
+    },
+    "sherpa-onnx-1.13.5-cp313-aarch64": {
+      "engine": "sherpa-onnx",
+      "version": "1.13.5",
+      "git_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "source_filename": "sherpa-onnx-v1.13.5.tar.gz",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/commit/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "source_size_bytes": 11458271,
+      "source_sha256": "821a848857d9cb80985841d2197435a3a63f5bc40f7855cd6d958781ed2c31bd",
+      "license": "Apache-2.0",
+      "runtime_artifacts": [
+        {
+          "filename": "sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/5a/77/b36cd40906bef1b3a6593200587eea5c4e7c1e94d29c4fd88a876e1cd6ca/sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+          "size_bytes": 4167203,
+          "sha256": "f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f"
+        },
+        {
+          "filename": "sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/e6/58/505668cedd7036bcba305c1a1f5424a3340f4701297a628de83d61e8ed58/sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+          "size_bytes": 13051193,
+          "sha256": "4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa"
+        }
+      ],
+      "runtime_profile": {
+        "target": "Raspberry Pi 5 / Debian 13 / aarch64 / CPython 3.13",
+        "cpu_threads": 4,
+        "workers": 1,
+        "install": "exact two-wheel closure with pip --no-index"
+      }
+    },
+    "vosk-0.3.45-cp313-aarch64": {
+      "engine": "vosk-api",
+      "version": "0.3.45",
+      "git_commit": "cf2560c9f8a49d3d366b433fdabd78c518231bec",
+      "source_url": "https://github.com/alphacep/vosk-api/commit/cf2560c9f8a49d3d366b433fdabd78c518231bec",
+      "license": "Apache-2.0",
+      "runtime_artifacts": [
+        {
+          "filename": "vosk-0.3.45-py3-none-manylinux2014_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/a4/23/3130a69fa0bf4f5566a52e415c18cd854bf561547bb6505666a6eb1bb625/vosk-0.3.45-py3-none-manylinux2014_aarch64.whl",
+          "size_bytes": 2368543,
+          "sha256": "54efb47dd890e544e9e20f0316413acec7f8680d04ec095c6140ab4e70262704"
+        }
+      ],
+      "runtime_profile": {
+        "target": "Raspberry Pi 5 / Debian 13 / aarch64 / CPython 3.13",
+        "workers": 1,
+        "input": "16 kHz mono S16_LE bounded utterance"
+      }
+    }
+  },
+  "candidate_rows": [
+    {
+      "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+      "required": true,
+      "runtime_id": "whispercpp-1.9.2-native-aarch64",
+      "role": "existing reference",
+      "artifact": {
+        "filename": "ggml-small-q8_0.bin",
+        "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q8_0.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "size_bytes": 264464607,
+        "sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "controlled_locator": "controlled://audio-poc/m2a/models/ggml-small-q8_0.bin"
+      }
+    },
+    {
+      "candidate_id": "asr-whispercpp-small-q5_1-1.9.2",
+      "required": true,
+      "runtime_id": "whispercpp-1.9.2-native-aarch64",
+      "role": "small Q8 quantization trade-off",
+      "artifact": {
+        "filename": "ggml-small-q5_1.bin",
+        "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q5_1.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "size_bytes": 190085487,
+        "sha256": "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "controlled_locator": "controlled://audio-poc/m2a/models/ggml-small-q5_1.bin"
+      }
+    },
+    {
+      "candidate_id": "asr-whispercpp-base-q5_1-1.9.2",
+      "required": true,
+      "runtime_id": "whispercpp-1.9.2-native-aarch64",
+      "role": "low-resource / low-latency reference",
+      "artifact": {
+        "filename": "ggml-base-q5_1.bin",
+        "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base-q5_1.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "size_bytes": 59707625,
+        "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "controlled_locator": "controlled://audio-poc/m2a/models/ggml-base-q5_1.bin"
+      }
+    },
+    {
+      "candidate_id": "asr-whispercpp-medium-q5_0-1.9.2",
+      "required": true,
+      "runtime_id": "whispercpp-1.9.2-native-aarch64",
+      "role": "higher-capacity quality reference",
+      "artifact": {
+        "filename": "ggml-medium-q5_0.bin",
+        "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-medium-q5_0.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "size_bytes": 539212467,
+        "sha256": "19fea4b380c3a618ec4723c3eef2eb785ffba0d0538cf43f8f235e7b3b34220f",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "controlled_locator": "controlled://audio-poc/m2a/models/ggml-medium-q5_0.bin"
+      }
+    },
+    {
+      "candidate_id": "asr-whispercpp-large-v3-turbo-q5_0-1.9.2",
+      "required": false,
+      "runtime_id": "whispercpp-1.9.2-native-aarch64",
+      "role": "optional same-cost-class quality/speed probe",
+      "omission_rule": "Record a resource or schedule reason before execution begins.",
+      "artifact": {
+        "filename": "ggml-large-v3-turbo-q5_0.bin",
+        "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3-turbo-q5_0.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "size_bytes": 574041195,
+        "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "controlled_locator": "controlled://audio-poc/m2a/models/ggml-large-v3-turbo-q5_0.bin"
+      }
+    },
+    {
+      "candidate_id": "asr-sherpa-streaming-zipformer-bilingual-zh-en-int8-2023-02-20",
+      "required": true,
+      "runtime_id": "sherpa-onnx-1.13.5-cp313-aarch64",
+      "role": "non-Whisper streaming and code-switch comparison",
+      "representative_reason": "Official sherpa-onnx bilingual Chinese-English streaming archive with int8 encoder and joiner, official aarch64 runtime, and Apache-2.0 model card.",
+      "artifact": {
+        "filename": "sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2",
+        "immutable_revision": "github-release:asr-models:asset-id-170453803; hf-model-card@98590b7ed6443e77b714204da2757d75e1a642f4",
+        "size_bytes": 511274346,
+        "sha256": "27ffbd9ee24ad186d99acc2f6354d7992b27bcab490812510665fa8f9389c5f8",
+        "license": "Apache-2.0",
+        "controlled_locator": "controlled://audio-poc/m2a/models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2"
+      }
+    },
+    {
+      "candidate_id": "asr-vosk-small-cn-0.22",
+      "required": true,
+      "runtime_id": "vosk-0.3.45-cp313-aarch64",
+      "role": "low-resource Pi and dynamic-vocabulary potential",
+      "representative_reason": "ACK-003 names the official small-cn 0.22 model; the official catalog identifies it as Raspberry Pi capable and Apache-2.0.",
+      "artifact": {
+        "filename": "vosk-model-small-cn-0.22.zip",
+        "source_url": "https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip",
+        "immutable_revision": "vosk-model-small-cn-0.22",
+        "size_bytes": 43898754,
+        "sha256": "3af8b0e7e0f835ae9d414ce5df580237a3cfb08d586c9fbbb0f7ff29ad5b14ba",
+        "license": "Apache-2.0",
+        "controlled_locator": "controlled://audio-poc/m2a/models/vosk-model-small-cn-0.22.zip"
+      }
+    },
+    {
+      "candidate_id": "asr-sherpa-qwen3-asr-0.6b-int8-2026-03-25",
+      "required": false,
+      "runtime_id": "sherpa-onnx-1.13.5-cp313-aarch64",
+      "role": "optional load plus minimal inference feasibility",
+      "execution_mode": "ONE_LONGEST_INTERNAL_ITEM_ONLY_STOP_ON_TIMEOUT_OR_OOM",
+      "representative_reason": "ACK-003 names Qwen3-ASR-0.6B int8; the official sherpa-onnx archive is bound to the official Apache-2.0 Qwen model lineage.",
+      "artifact": {
+        "filename": "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",
+        "immutable_revision": "github-release:asr-models:asset-id-390698077; Qwen/Qwen3-ASR-0.6B@5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+        "size_bytes": 878702423,
+        "sha256": "393f8a14e2f5fb96746aaab342997a40641001fbd5bf9592a080a8329178ee96",
+        "license": "Apache-2.0",
+        "controlled_locator": "controlled://audio-poc/m2a/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2"
+      }
+    }
+  ],
+  "fixture_lock": {
+    "status": "PENDING_CONTROLLED_INPUTS",
+    "internal": {
+      "recording_plan_path": "poc_audio/fixtures/authorized/recording_plan_v1.json",
+      "recording_plan_sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
+      "vad_label_index_sha256": "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
+      "delivered_manifest_sha256": "1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2",
+      "selection_count": 8,
+      "selection_policy": "Select the two longest frozen-label-bounded items in each group before candidate output: taiwan_mandarin, code_switch, number_or_date, product_term. This necessarily includes the globally longest bounded item.",
+      "group_counts": {
+        "taiwan_mandarin": 2,
+        "code_switch": 2,
+        "number_or_date": 2,
+        "product_term": 2
+      }
+    },
+    "external": {
+      "dataset_name": "Common Voice Scripted Speech 26.0 - Chinese (Taiwan)",
+      "dataset_id": "cmqinooq000x0nr07b4p4ct4q",
+      "dataset_slug": "common-voice-scripted-speech-26-0-chines-7e787d3b",
+      "catalog_url": "https://mozilladatacollective.com/datasets/cmqinooq000x0nr07b4p4ct4q",
+      "release": "26.0",
+      "locale": "zh-TW",
+      "license": "CC0-1.0",
+      "release_date_utc": "2026-06-17T22:42:04.968Z",
+      "selection_count": 12,
+      "selection_policy": "Deterministic SHA-256 rank over dataset ID, clip path, and sentence from validated.tsv; resolve and lock before any candidate output is reviewed.",
+      "access_status": "PENDING_AUTHENTICATED_MDC_DOWNLOAD_AND_TERMS_ACCEPTANCE",
+      "derived_format": "16 kHz mono S16_LE WAV",
+      "required_lock_fields": [
+        "clip_id",
+        "source_mp3_sha256",
+        "reference_sha256",
+        "derived_wav_sha256",
+        "duration_seconds"
+      ]
+    }
+  },
+  "execution_budget": {
+    "standard_rows": {
+      "per_item_timeout_seconds": 120,
+      "row_budget_seconds": 2400,
+      "warmups_per_item": 1,
+      "scored_inferences_per_item": 1,
+      "cold_matrix": false,
+      "repetitions": 1,
+      "soak": false,
+      "full_lifecycle_campaign": false
+    },
+    "qwen_optional_feasibility": {
+      "per_item_timeout_seconds": 180,
+      "row_budget_seconds": 600,
+      "max_items": 1,
+      "item": "globally longest frozen-label-bounded internal fixture",
+      "stop_on_timeout_or_oom": true
+    }
+  },
+  "observations": [
+    "raw transcript identity and controlled text",
+    "normalized CER",
+    "exact-sentence diagnostic",
+    "number/date correctness",
+    "product-term correctness",
+    "load time",
+    "latency",
+    "RTF",
+    "peak RSS",
+    "disk/runtime identity",
+    "cleanup"
+  ],
+  "disposition_policy": {
+    "quality_performance_thresholds_are_elimination_gates": false,
+    "m2a_output": "ONE_COMPARATIVE_SCORECARD_AND_TWO_TO_THREE_ROW_SHORTLIST",
+    "prohibited_labels": ["PASS", "FAIL", "WINNER", "PRODUCTION_BASELINE"],
+    "historical_evidence_relabeling": false,
+    "fail_closed_conditions": [
+      "artifact mismatch",
+      "unknown provenance or license",
+      "runtime network access",
+      "OOM",
+      "bounded timeout",
+      "incomplete cleanup"
+    ]
+  }
+}

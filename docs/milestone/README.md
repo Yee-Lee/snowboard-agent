@@ -23,11 +23,13 @@ ACK-003 將 Audio M2 拆成 `M2A Baseline Survey` 與
 與 quality/performance elimination gates。CER、sentence correctness、latency、RTF、
 RSS 在 M2A/M2B 改為 comparative observations；歷史 evidence 不回溯重標。
 
-M2A 已授權但尚未開始。下一個受控工作是先提交共同 packet：八筆事前固定 internal
-fixtures、十至十五筆事前固定 Common Voice `zh-TW` clips、每筆一次 unscored warm-up
-與一次 scored inference，以及固定 row/item budgets、identity/provenance/license、
-metrics 與 cleanup proof。執行後只回傳 comparative scorecard 與 2–3 row shortlist，
-不下 `PASS`、`FAIL`、winner 或 production baseline 判定。
+M2A packet preparation 已開始：八個 authorized/optional ASR rows 的 official artifact、
+runtime identity、budget 與 deterministic fixture-selection rules 已固定並有本地 validator/
+tests。Exact internal eight 仍須用受控 frozen labels 解出；Common Voice 已固定為官方
+26.0 `zh-TW`、CC0-1.0、12 clips，但 Mozilla Data Collective 要求 User-authenticated
+download/terms acceptance，現有環境沒有 token。Fixture lock 完成前不得 build/load/run
+candidate。執行後仍只回傳 comparative scorecard 與 2–3 row shortlist，不下
+`PASS`、`FAIL`、winner 或 production baseline 判定。
 
 M2B 只允許 M2A shortlist 進場，且每次 probe 相對 named baseline 只改一個變因；
 輸出 primary、fallback、exact recipe 與 benefit/cost/regression delta table，交由
@@ -39,7 +41,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A survey 已授權、共同 packet 待提交；M2B 等待 shortlist；Matcha remaining gates 與 VAD scope 未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | M2A packet identities/rules 已準備，exact fixture lock 等待 controlled labels 與 authenticated Common Voice；M2B、Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -47,7 +49,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
-| M2A Baseline Survey | `AUTHORIZED / NEXT` | Common packet、single scorecard、2–3 row shortlist；沒有 PASS/FAIL/winner label |
+| M2A Baseline Survey | `PACKET IN PROGRESS / FIXTURE LOCK BLOCKED` | Candidate identities/budgets/selector 已準備；等待 exact 8+12 fixture lock 後才可執行 |
 | M2B Optimization Feasibility | `PENDING M2A SHORTLIST` | Primary、fallback、exact recipe、single-variable delta table、Core/User review |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
@@ -59,7 +61,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Contract intake SHA | Gate 1 planning/proposal 與既有 ACK intake 可由 committed SHA 追溯；ACK-003 intake 隨本次 milestone 修正提交 |
 | Gate 0：M3 P4 final selection | `PASSED` — Core ACK-004 已接受 Option A 實作基準 |
 | Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
-| M2A：baseline survey | `AUTHORIZED / NOT STARTED` — authorized Whisper/non-Whisper rows 共用一份 low-cost packet；回傳 observations、scorecard 與 shortlist |
+| M2A：baseline survey | `PACKET IN PROGRESS / NOT EXECUTABLE` — rows/identities/budgets 已準備；exact fixture lock 未完成，尚無 candidate execution |
 | M2B：optimization feasibility | `PENDING` — 只對 shortlist 做一變因 probes；回傳 primary/fallback proposal 與 exact recipe，不是 production lock |
 | Gate 2A：POC qualification/selection | `IN PROGRESS` — 歷史 evidence 保留；須完成 M2A/M2B review、TTS disposition、VAD 路徑與 M3 target/HAL qualification，才能形成 qualified selection |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
@@ -67,8 +69,11 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 ## Open risks and next authorized work
 
-- `NEXT`：提交單一 M2A common packet，固定 exact artifact/runtime identities、fixture
-  index、Common Voice subset、budgets、commands、schema 與 cleanup proof。
+- `NEXT`：User/operator 透過 Mozilla Data Collective 帳號接受 Common Voice 26.0
+  `zh-TW` terms 並把 dataset 放入受控位置；再以 frozen labels + `validated.tsv`
+  產生 exact 8+12 pre-output selection、derived PCM checksums 與 sanitized tracked index。
+- `BLOCKER`：目前沒有 MDC token，Codex 不得代 User 建立帳號或接受 dataset terms；
+  在 exact Common Voice subset 與 PCM lock 前 M2A candidate execution fail closed。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。
 - `RISK`：Matcha User quality、offline、lifecycle、resource growth 與 legal conditions

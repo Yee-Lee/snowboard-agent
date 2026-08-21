@@ -152,7 +152,26 @@ internal-only recording authorization. A completed recording set still needs
 checksum/metadata review and the pinned conversion boundary before it becomes a
 candidate fixture.
 
-### M2 Gate 1B authorized artifact preflight
+### M2 ACK-003 comparative packet
+
+ACK-003 supersedes the old ASR execution order and quality/performance
+elimination gates below. The current M2A entry point is the shared comparative
+packet; validate it before resolving any controlled fixture or acquiring a model:
+
+```bash
+bash poc_audio/tools/run_m4a_m2a_packet.sh --validate-only
+```
+
+The tracked packet pins eight required/optional ASR rows, official artifact and
+runtime identities, deterministic internal/Common Voice selection rules, bounded
+budgets and observation-only dispositions. It remains
+`PREPARED_FIXTURE_LOCK_PENDING`: no candidate may build, load or execute until the
+authenticated Common Voice 26.0 zh-TW download and controlled frozen labels have
+produced the reviewed exact 20-item fixture lock. See
+[`M4A-M2A-COMMON-PACKET-001`](deliveries/M4A-M2A-COMMON-PACKET-001.md) for the
+controlled preparation command and current blocker.
+
+#### Historical ACK-001 artifact preflight
 
 Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On
 the Pi, point it at the external controlled artifact directory before any
@@ -165,15 +184,17 @@ bash poc_audio/tools/run_m4a_authorized_preflight.sh \
   --output /tmp/m4a-authorized-preflight.json
 ```
 
-The check is offline and does not install or execute a candidate runtime.
+The check is offline and does not install or execute a candidate runtime. It is
+preserved for the historical ACK-001 evidence path and is not the ACK-003 M2A
+entry point.
 
-#### ACK-002 whisper.cpp recovery
+#### Historical ACK-002 whisper.cpp recovery
 
 The rejected SenseVoice evidence and its historical runner remain unchanged.
-For ACK-002 ASR recovery, the separate runner verifies the exact whisper.cpp
-source archive, selected small model and all required notices. Its default is
-Q8_0; Q5_1 additionally requires a reviewed Q8 result that proves both frozen
-quality gates passed and that latency or RSS triggered fallback:
+For the historical ACK-002 ASR recovery, the separate runner verifies the exact
+whisper.cpp source archive, selected small model and all required notices. Its
+default was Q8_0; its Q5_1 conditional trigger is retained only to reproduce the
+old evidence and has been removed from the current ACK-003 M2A ordering:
 
 ```bash
 bash poc_audio/tools/run_m4a_whispercpp_preflight.sh \
@@ -224,10 +245,11 @@ bash poc_audio/tools/run_m4a_whispercpp_qualification.sh \
   --output /tmp/m4a-whispercpp-q8-qualification.json
 ```
 
-The raw report remains `UNREVIEWED`. Q5 requires a separately reviewed Q8
-report from the same Candidate SHA, and only unlocks when Q8 passes both
-quality gates while latency exceeds 1.5 seconds or peak RSS exceeds 1250 MiB.
-If Q8 fails quality, Q5 remains prohibited.
+The raw report remains `UNREVIEWED`. Under historical ACK-002 only, Q5 required a
+separately reviewed Q8 report from the same Candidate SHA and unlocked only when
+Q8 passed both quality gates while latency exceeded 1.5 seconds or peak RSS
+exceeded 1250 MiB. ACK-003 supersedes that execution rule; do not use this runner
+to decide the current M2A order.
 
 When the operator explicitly chooses an early directional read instead of the
 frozen packet, append `--diagnostic-hot-repetitions 2`. This skips cold suites,
@@ -235,7 +257,7 @@ retains all three warmups, and measures two complete 50-item hot cycles. Its
 report is always marked `PARTIAL_DIAGNOSTIC_NOT_GATE_EVIDENCE`; it cannot pass a
 gate or unlock Q5, and the full 20-repetition run remains pending.
 
-#### VAD-label-bounded Q8 investigation
+#### Historical VAD-label-bounded Q8 investigation
 
 For `POC-AUDIO-PERF-2026-001`, preserve the historical runner above and create
 new generic/native builds with `--build-profile`. Native changes only
@@ -310,7 +332,7 @@ bash poc_audio/tools/run_m4a_candidate_smoke.sh \
 This smoke cannot close the frozen 50-item ASR, 20-prompt TTS, lifecycle,
 resource, User-quality, or Gate 2A requirements.
 
-### M2 full-fixture qualification without playback
+### Historical ACK-001 full-fixture qualification without playback
 
 After the focused smoke passes, use a new work directory and output file to run
 the frozen three cold suites and twenty hot suites for both authorized rows.

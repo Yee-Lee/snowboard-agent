@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M4a M2A common comparative packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "authority",
+    "status",
+    "source_binding",
+    "controlled_artifact_policy",
+    "runtime_identities",
+    "candidate_rows",
+    "fixture_lock",
+    "execution_budget",
+    "observations",
+    "disposition_policy"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "packet_id": {"const": "M4A-M2A-COMMON-PACKET-001"},
+    "authority": {"const": "DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003"},
+    "status": {"enum": ["PREPARED_FIXTURE_LOCK_PENDING", "LOCKED_NOT_EXECUTED"]},
+    "source_binding": {"type": "object"},
+    "controlled_artifact_policy": {"type": "object"},
+    "runtime_identities": {"type": "object", "minProperties": 3},
+    "candidate_rows": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["candidate_id", "required", "runtime_id", "role", "artifact"]
+      }
+    },
+    "fixture_lock": {"type": "object"},
+    "execution_budget": {"type": "object"},
+    "observations": {"type": "array", "minItems": 10, "uniqueItems": true},
+    "disposition_policy": {"type": "object"}
+  }
+}
