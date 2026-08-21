@@ -46,7 +46,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A 六列 scorecard 與三列 shortlist 已 reviewed；M2B base Q5→Q8 單變因 probe、Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | M2A 六列 scorecard/shortlist 與 M2B base Q5→Q8 probe 已 reviewed；其餘 M2B、Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -55,7 +55,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `IN_PROGRESS` | base Q5→base Q8 首個單變因 probe；之後完成 primary、fallback、recipe、delta table 與 Core/User review |
+| M2B Optimization Feasibility | `IN_PROGRESS / FIRST PROBE REVIEWED` | base Q8 相對 base Q5 降低 CER 1.639344 points、p50 43.429%；其餘 probes、primary/fallback、recipe 與 review 待完成 |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 
@@ -74,8 +74,8 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 ## Open risks and next authorized work
 
-- `NEXT`：使用已取得並核對的 base Q8 artifact，相對 shortlisted base Q5 執行只改
-  quantization 的 M2B probe，再形成 delta table。
+- `NEXT`：base Q8 quantization probe 已完成；依三列 shortlist 繼續最少必要的一變因
+  probes，形成 primary/fallback、exact recipe 與完整 delta table。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。

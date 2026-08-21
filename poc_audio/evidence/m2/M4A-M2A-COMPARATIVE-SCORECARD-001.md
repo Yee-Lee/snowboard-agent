@@ -85,6 +85,8 @@ already cover the frozen landscape axes.
 ## Next authorized work
 
 M2B may now run single-variable probes only against the three named shortlist rows.
-The first probe is base Q5_1 versus the already acquired official base Q8_0 artifact,
-changing quantization only. M2 remains open for M2B, TTS remaining qualification,
-VAD scope/finalist disposition, and Core/User provisional-selection review.
+The first probe, base Q5_1 versus official base Q8_0 with quantization as the only
+change, is complete and reviewed in
+[`M4A-M2B-BASE-Q8-QUANTIZATION-PROBE-001`](M4A-M2B-BASE-Q8-QUANTIZATION-PROBE-001.md).
+M2 remains open for the rest of M2B, TTS remaining qualification, VAD scope/finalist
+disposition, and Core/User provisional-selection review.

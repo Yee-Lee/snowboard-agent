@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `IN_PROGRESS` | 只允許三列 shortlist 進場；第一個 probe 為 base Q5→base Q8 量化單變因 |
+| M2B ASR optimization | `IN_PROGRESS / FIRST PROBE REVIEWED` | base Q5→base Q8 量化單變因已完成且兩次重測；其餘 probes、primary/fallback、recipe 與 delta table 尚未關閉 |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
@@ -159,7 +159,8 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 3. **M2A execution/scorecard**：`COMPLETE / REVIEWED`；共同 packet scorecard 與
    small Q8、base Q5、medium Q5 shortlist 已記錄，不下 PASS/FAIL/winner 判定。詳見
    [`M4A-M2A-COMPARATIVE-SCORECARD-001`](../../poc_audio/evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md)。
-4. **M2B optimization**：`IN_PROGRESS`；只對 shortlist 做一變因 probes，完成 primary、
+4. **M2B optimization**：`IN_PROGRESS / FIRST PROBE REVIEWED`；base Q5→base Q8
+   量化單變因與兩次 diagnostic recheck 已完成；只對 shortlist 繼續一變因 probes，完成 primary、
    fallback、recipe 與 delta table，送 Core/User comparative review。
 5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
    scope ACK，不能以 frozen-label endpoint simulation 取代。
