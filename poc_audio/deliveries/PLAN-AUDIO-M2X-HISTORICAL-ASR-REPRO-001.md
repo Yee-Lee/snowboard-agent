@@ -1,6 +1,6 @@
 # PLAN-AUDIO-M2X-HISTORICAL-ASR-REPRO-001 — Pi historical ASR experience reproduction
 
-- **Status**: `PLAN READY — INDEPENDENT EXPERIENCE TRACK / EXECUTION NOT STARTED`
+- **Status**: `PLAN READY / JUNIOR P0-P2 PACKET READY / EXECUTION NOT STARTED`
 - **Raised**: 2026-08-21
 - **Working milestone code**: `M2X`
 - **Track**: Cross-milestone, non-gating Audio POC experience diagnostic
@@ -420,3 +420,8 @@ The recommended first request is Option 1. This independent track does not wait
 for Core review. No historical runtime or microphone execution begins until the
 User requests the corresponding packet depth; microphone recording still uses
 the explicit confirmation in Section 4.
+
+The User has authorized junior implementation and execution of P0-P2. The controlling
+method and acceptance criteria are frozen in
+[`M2X-P0-P2-JUNIOR-EXECUTION-PACKET-001`](M2X-P0-P2-JUNIOR-EXECUTION-PACKET-001.md).
+That packet does not authorize P3/P4, microphone capture or playback.
