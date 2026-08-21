@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowboard.local/schemas/m4a_m2a_fixture_lock.schema.json",
+  "title": "M4A M2A Exact Fixture Lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_lock_id",
+    "status",
+    "packet_id",
+    "source_locks",
+    "pcm",
+    "conversion_runtime",
+    "controlled_manifest",
+    "records",
+    "candidate_execution"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "fixture_lock_id": {"const": "M4A-M2A-FIXTURE-LOCK-001"},
+    "status": {"const": "LOCKED_NOT_EXECUTED"},
+    "packet_id": {"const": "M4A-M2A-COMMON-PACKET-001"},
+    "source_locks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["internal", "common_voice"],
+      "properties": {
+        "internal": {"const": "M4A-M2A-INTERNAL-SOURCE-LOCK-001"},
+        "common_voice": {"const": "M4A-M2A-COMMON-VOICE-SOURCE-LOCK-001"}
+      }
+    },
+    "pcm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_rate_hz", "channels", "sample_format"],
+      "properties": {
+        "sample_rate_hz": {"const": 16000},
+        "channels": {"const": 1},
+        "sample_format": {"const": "S16_LE"}
+      }
+    },
+    "conversion_runtime": {"type": "object"},
+    "controlled_manifest": {
+      "type": "object",
+      "required": ["sha256", "size_bytes", "git_policy"]
+    },
+    "records": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["internal", "common_voice"],
+      "properties": {
+        "internal": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {"$ref": "#/$defs/record"}
+        },
+        "common_voice": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/record"}
+        }
+      }
+    },
+    "candidate_execution": {"const": "NOT_STARTED"}
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": [
+        "reference_sha256",
+        "derived_wav_sha256",
+        "derived_wav_size_bytes",
+        "frames",
+        "duration_seconds",
+        "derivation"
+      ],
+      "properties": {
+        "reference_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "derived_wav_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "derived_wav_size_bytes": {"type": "integer", "minimum": 45},
+        "frames": {"type": "integer", "minimum": 1},
+        "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "derivation": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

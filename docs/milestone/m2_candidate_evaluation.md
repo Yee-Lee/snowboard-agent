@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`M2A PACKET IN PROGRESS — IDENTITIES/BUDGETS/SELECTOR PREPARED, EXACT FIXTURE LOCK BLOCKED / M2B PENDING M2A SHORTLIST / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
+Gate 狀態：`M2A FIXTURE LOCKED / NOT EXECUTED — ROW ARTIFACT/RUNTIME PREFLIGHT NEXT / M2B PENDING M2A SHORTLIST / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
 
 ## 目標
 
@@ -35,7 +35,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
-| M2A ASR baseline survey | `PACKET IN PROGRESS / NOT EXECUTABLE` | Rows、official identities、budgets 與 deterministic selector 已準備；exact controlled 8+12 fixture lock 完成後才能執行 |
+| M2A ASR baseline survey | `FIXTURE LOCKED / NOT EXECUTED` | Rows、official identities、budgets、deterministic selector 與 exact controlled 8+12 PCM 已鎖定；逐 row preflight 後才能執行 |
 | M2B ASR optimization | `PENDING M2A SHORTLIST` | 只允許 shortlist 進場；每次實驗相對 named baseline 只改一個變因，回傳 primary、fallback、exact recipe 與 delta table |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
@@ -148,12 +148,13 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 
 1. **ACK-003 intake**：`COMPLETE`；M2A/M2B 邊界、歷史 evidence preservation 與
    Core implementation release boundary 已記入 milestone。
-2. **M2A packet**：`SOURCE LOCKED / DERIVED PCM LOCK PENDING`；八個 rows 的 official
+2. **M2A packet**：`FIXTURE LOCKED / NOT EXECUTED`；八個 rows 的 official
    artifact/runtime identities、row/item budgets、schema、validator、tests 與 deterministic
    selector 已準備。Common Voice 26.0 `zh-TW` CC0-1.0 exact 12 source clips 已取得，
    sanitized source lock 已記錄 member path、size 與逐檔 SHA-256。Pi 上 frozen labels、
    delivered manifest 與 50 ASR WAV 已傳回驗證，internal exact eight source lock 已固定。
-   Derived 8+12 PCM checksums 與 sanitized exact index 尚未產生。
+   Derived 8+12 PCM、conversion runtime、duration、checksums 與 sanitized exact index
+   已鎖定；尚未 build/load/run candidate。
 3. **M2A execution/scorecard**：`NOT_STARTED`；所有 rows 使用共同 packet，回傳
    observations 與 2–3 row shortlist，不下 PASS/FAIL/winner 判定。
 4. **M2B optimization**：`PENDING`；只對 shortlist 做一變因 probes，完成 primary、
@@ -175,8 +176,8 @@ candidate-specific provisional integration；production dependency lock 必須�
 - ACK-003 已書面授權 M2A rows 與 M2B probe categories。
 - PM relay/ACK path、Core decision owner 與敏感 fixture 受控位置可用。
 - 每個 row 在 first load 前仍須完成 exact identity/provenance/license preflight。
-- Common Voice exact 12 與 internal exact 8 的 source identities/checksums 已完成；derived
-  8+12 PCM lock 尚未完成，此項仍是 execution entry blocker。
+- Common Voice exact 12 與 internal exact 8 的 source identities、derived PCM、runtime 與
+  checksums 已鎖定；每個 row 仍須在 first load 前通過 artifact/runtime/license preflight。
 
 ## Exit Gate
 

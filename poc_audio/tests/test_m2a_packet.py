@@ -23,8 +23,10 @@ from audio_poc.m4a_m2a_packet import (  # noqa: E402
     select_internal_fixtures,
     validate_common_voice_source_lock,
     validate_internal_source_lock,
+    validate_linked_fixture_lock,
     validate_packet,
 )
+from audio_poc.m4a_m2a_fixture_lock import validate_fixture_lock  # noqa: E402
 
 
 class M2ACommonPacketTests(unittest.TestCase):
@@ -85,6 +87,31 @@ class M2ACommonPacketTests(unittest.TestCase):
             ],
             ["asr-pause-042"],
         )
+
+    def test_tracked_exact_fixture_lock_is_sanitized_and_not_executed(self) -> None:
+        fixture_lock = json.loads(
+            (REPO_ROOT / "poc_audio/manifests/m4a_m2a_fixture_lock.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validate_fixture_lock(fixture_lock)
+        validate_linked_fixture_lock(self.packet)
+        serialized = json.dumps(fixture_lock, sort_keys=True)
+        self.assertNotIn('"reference_text"', serialized)
+        self.assertNotIn('"transcript"', serialized)
+        self.assertNotIn('"relative_wav_path"', serialized)
+        self.assertEqual(fixture_lock["status"], "LOCKED_NOT_EXECUTED")
+        self.assertEqual(fixture_lock["candidate_execution"], "NOT_STARTED")
+
+        changed = json.loads(json.dumps(fixture_lock))
+        changed["candidate_execution"] = "STARTED"
+        with self.assertRaisesRegex(ValueError, "cannot claim candidate execution"):
+            validate_fixture_lock(changed)
+
+        changed = json.loads(json.dumps(fixture_lock))
+        changed["pcm"]["sample_rate_hz"] = 48000
+        with self.assertRaisesRegex(ValueError, "PCM identity mismatch"):
+            validate_fixture_lock(changed)
 
     def test_q5_is_independent_and_m2a_has_no_elimination_gates(self) -> None:
         serialized = json.dumps(self.packet, sort_keys=True)

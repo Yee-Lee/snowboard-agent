@@ -101,6 +101,17 @@ def validate_packet(document: dict[str, Any]) -> None:
                 raise ValueError(f"missing artifact {field} for {row.get('candidate_id')}")
 
     fixture_lock = document.get("fixture_lock", {})
+    if document.get("status") == "LOCKED_NOT_EXECUTED":
+        if fixture_lock.get("status") != "LOCKED_NOT_EXECUTED":
+            raise ValueError("locked M2A packet requires a locked fixture set")
+        if fixture_lock.get("fixture_lock_id") != "M4A-M2A-FIXTURE-LOCK-001":
+            raise ValueError("M2A exact fixture-lock identity mismatch")
+        if fixture_lock.get("fixture_lock_manifest_path") != (
+            "poc_audio/manifests/m4a_m2a_fixture_lock.json"
+        ):
+            raise ValueError("M2A exact fixture-lock path mismatch")
+        if not SHA256_RE.fullmatch(str(fixture_lock.get("fixture_lock_manifest_sha256", ""))):
+            raise ValueError("M2A exact fixture-lock checksum mismatch")
     internal = fixture_lock.get("internal", {})
     external = fixture_lock.get("external", {})
     if internal.get("recording_plan_sha256") != PLAN_SHA256:
@@ -120,6 +131,10 @@ def validate_packet(document: dict[str, Any]) -> None:
         raise ValueError("M2A Common Voice locale or license mismatch")
     if external.get("selection_count") != COMMON_VOICE_COUNT:
         raise ValueError("M2A Common Voice selection count mismatch")
+    if document.get("status") == "LOCKED_NOT_EXECUTED" and external.get("access_status") != (
+        "ACQUIRED_EXACT_12_SOURCE_AND_DERIVED_PCM_LOCKED"
+    ):
+        raise ValueError("locked M2A packet requires acquired Common Voice fixtures")
 
     budget = document.get("execution_budget", {}).get("standard_rows", {})
     if budget.get("warmups_per_item") != 1 or budget.get("scored_inferences_per_item") != 1:
@@ -131,6 +146,29 @@ def validate_packet(document: dict[str, Any]) -> None:
         raise ValueError("M2A quality/performance thresholds cannot be elimination gates")
     if set(disposition.get("prohibited_labels", [])) != {"PASS", "FAIL", "WINNER", "PRODUCTION_BASELINE"}:
         raise ValueError("M2A prohibited disposition labels mismatch")
+
+
+def validate_linked_fixture_lock(document: dict[str, Any]) -> None:
+    """Verify that a locked packet is bound to the exact tracked fixture lock."""
+    if document.get("status") != "LOCKED_NOT_EXECUTED":
+        return
+    fixture_lock = document["fixture_lock"]
+    relative_path = PurePosixPath(fixture_lock["fixture_lock_manifest_path"])
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise ValueError("M2A exact fixture-lock path is unsafe")
+    manifest_path = repo_root().joinpath(*relative_path.parts)
+    if not manifest_path.is_file():
+        raise ValueError("M2A exact fixture-lock manifest is missing")
+    if sha256_file(manifest_path) != fixture_lock["fixture_lock_manifest_sha256"]:
+        raise ValueError("M2A exact fixture-lock manifest checksum mismatch")
+    manifest = load_json(manifest_path)
+    if (
+        manifest.get("fixture_lock_id") != fixture_lock["fixture_lock_id"]
+        or manifest.get("packet_id") != document["packet_id"]
+        or manifest.get("status") != "LOCKED_NOT_EXECUTED"
+        or manifest.get("candidate_execution") != "NOT_STARTED"
+    ):
+        raise ValueError("M2A linked fixture-lock state or identity mismatch")
 
 
 def validate_common_voice_source_lock(document: dict[str, Any]) -> None:
@@ -583,6 +621,7 @@ def main() -> int:
     args = parse_args()
     packet = load_json(args.packet)
     validate_packet(packet)
+    validate_linked_fixture_lock(packet)
     source_lock = load_json(args.common_voice_source_lock)
     validate_common_voice_source_lock(source_lock)
     internal_source_lock = load_json(args.internal_source_lock)

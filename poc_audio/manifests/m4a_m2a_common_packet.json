@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "packet_id": "M4A-M2A-COMMON-PACKET-001",
   "authority": "DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003",
-  "status": "PREPARED_FIXTURE_LOCK_PENDING",
+  "status": "LOCKED_NOT_EXECUTED",
   "source_binding": {
     "branch": "audio",
     "packet_commit": null,
@@ -218,7 +218,10 @@
     }
   ],
   "fixture_lock": {
-    "status": "PENDING_CONTROLLED_INPUTS",
+    "status": "LOCKED_NOT_EXECUTED",
+    "fixture_lock_id": "M4A-M2A-FIXTURE-LOCK-001",
+    "fixture_lock_manifest_path": "poc_audio/manifests/m4a_m2a_fixture_lock.json",
+    "fixture_lock_manifest_sha256": "fa3649f2fde77aaaa2132cab81b6d3c562e2b812335d90e846fb6c3f85c943e6",
     "internal": {
       "recording_plan_path": "poc_audio/fixtures/authorized/recording_plan_v1.json",
       "recording_plan_sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
@@ -244,7 +247,7 @@
       "release_date_utc": "2026-06-17T22:42:04.968Z",
       "selection_count": 12,
       "selection_policy": "Deterministic SHA-256 rank over dataset ID, clip path, and sentence from validated.tsv; resolve and lock before any candidate output is reviewed.",
-      "access_status": "PENDING_AUTHENTICATED_MDC_DOWNLOAD_AND_TERMS_ACCEPTANCE",
+      "access_status": "ACQUIRED_EXACT_12_SOURCE_AND_DERIVED_PCM_LOCKED",
       "derived_format": "16 kHz mono S16_LE WAV",
       "required_lock_fields": [
         "clip_id",

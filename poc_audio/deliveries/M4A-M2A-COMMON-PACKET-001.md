@@ -3,7 +3,7 @@
 - **Packet ID**: `M4A-M2A-COMMON-PACKET-001`
 - **Authority**: `DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`
 - **Branch**: `audio`
-- **Status**: `PREPARED — CONTROLLED FIXTURE LOCK PENDING / NOT EXECUTABLE`
+- **Status**: `FIXTURE LOCKED / CANDIDATES NOT EXECUTED`
 - **Delivery contribution**: final checklist candidate identity, shared fixture index,
   bounded comparison method, result-schema and cleanup evidence
 
@@ -11,10 +11,10 @@
 
 This packet fixes the M2A candidate landscape and the deterministic method used to
 lock its fixtures. It does not authorize candidate load or inference yet. Execution
-remains fail closed until the controlled internal labels/audio and authenticated
-Common Voice sources have produced one reviewed fixture lock with derived 16 kHz
-mono S16_LE checksums. The Common Voice source acquisition is now complete; the
-internal exact eight and derived 8+12 PCM lock remain pending.
+remains fail closed per row until the exact artifact/runtime/license preflight passes.
+The controlled internal labels/audio and authenticated Common Voice sources have
+produced one reviewed exact 8+12 fixture lock with derived 16 kHz mono S16_LE
+checksums. No candidate build, load or inference has occurred.
 
 M2A metrics are comparative observations. This packet must not emit `PASS`, `FAIL`,
 winner or production-baseline labels. SenseVoice, Matcha and Whisper small-Q8
@@ -77,15 +77,15 @@ The external sanity subset is pinned to official `Common Voice Scripted Speech 2
 The resolver deterministically ranks eligible `validated.tsv` rows by SHA-256 over
 dataset ID, clip path and sentence, then selects exactly twelve. Candidate output is
 not an input to the rank. The controlled index retains reference text outside Git;
-the eventual tracked index records only clip ID, source MP3 checksum, reference hash,
+the tracked exact fixture lock records only clip ID, source MP3 checksum, reference hash,
 derived WAV checksum and duration.
 
 Mozilla Data Collective requires authenticated download and acceptance of the
 dataset terms. Codex did not create an account, accept terms for the User or receive
 a token. The User supplied the downloaded archive; deterministic pre-output
 selection and per-clip checksum review have now locked the exact twelve source MP3s.
-Derived PCM remains pending, so this source lock does not advance the packet to
-`LOCKED_NOT_EXECUTED` by itself.
+The derived PCM lock is complete; the source lock alone does not confer this state,
+but the reviewed source plus derived lock advances the packet to `LOCKED_NOT_EXECUTED`.
 
 The roughly 3 GB archive and extracted dataset do not need to reside on the
 workstation system disk and must never be placed in this repository. An external
@@ -149,10 +149,11 @@ bash poc_audio/tools/run_m4a_m2a_packet.sh \
   --output /controlled/audio-poc/m2a/fixture-preselection.json
 ```
 
-The preselection is still controlled and not committable because it contains Common
-Voice text. The next implementation step derives and hashes selected PCM, records the
-conversion identity/durations, emits a sanitized tracked index, changes manifest
-status to `LOCKED_NOT_EXECUTED`, and only then prepares Pi execution commands.
+The preselection is controlled and not committable because it contains Common Voice
+text. The derived PCM lock has now recorded conversion identity, durations and
+checksums in
+[`m4a_m2a_fixture_lock.json`](../manifests/m4a_m2a_fixture_lock.json). Its status is
+`LOCKED_NOT_EXECUTED`; Pi row commands remain pending exact artifact/runtime preflight.
 
 The source selection is now recorded without transcript or audio in
 [`m4a_m2a_common_voice_source_lock.json`](../manifests/m4a_m2a_common_voice_source_lock.json).
@@ -176,7 +177,7 @@ verify a fresh download even when its outer archive packaging differs.
 - Candidate/runtime identity: `PREPARED / LOCAL VALIDATION REQUIRED`
 - Internal exact eight source WAVs: `LOCKED / FROZEN LABEL AND WAV SHA-256 VERIFIED`
 - Common Voice exact twelve source MP3s: `LOCKED / PER-CLIP SHA-256 VERIFIED`
-- Derived PCM checksum lock: `NOT STARTED`
+- Derived PCM checksum lock: `LOCKED / 20 WAV IDENTITIES VERIFIED`
 - Candidate build/load/inference: `PROHIBITED`
 - M2A scorecard/shortlist: `NOT STARTED`
 - M2B: `PENDING M2A SHORTLIST`
