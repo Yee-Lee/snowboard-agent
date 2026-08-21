@@ -30,12 +30,26 @@
     "execution_status": {
       "enum": [
         "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW",
+        "DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD",
         "INCONCLUSIVE_RETAINED"
       ]
     },
     "artifact": {"type": "object"},
     "runtime": {"type": "object"},
-    "method": {"type": "object"},
+    "method": {
+      "type": "object",
+      "required": ["run_class", "diagnostic_recheck_index"],
+      "properties": {
+        "run_class": {
+          "enum": ["FORMAL_M2A_SCORECARD_ROW", "DIAGNOSTIC_RECHECK_NOT_SCORECARD"]
+        },
+        "diagnostic_recheck_index": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 2
+        }
+      }
+    },
     "summary": {"type": "object"},
     "cleanup": {"type": "object"},
     "security": {
@@ -74,5 +88,39 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "method": {
+            "properties": {"run_class": {"const": "FORMAL_M2A_SCORECARD_ROW"}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "method": {
+            "properties": {"diagnostic_recheck_index": {"type": "null"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "method": {
+            "properties": {"run_class": {"const": "DIAGNOSTIC_RECHECK_NOT_SCORECARD"}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "method": {
+            "properties": {"diagnostic_recheck_index": {"type": "integer"}}
+          }
+        }
+      }
+    }
+  ]
 }

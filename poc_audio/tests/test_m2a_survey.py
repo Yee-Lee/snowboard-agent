@@ -7,10 +7,21 @@ import wave
 from pathlib import Path
 
 from audio_poc.m2a_asr_worker import _read_wav
-from audio_poc.m2a_survey import numeric_summary, summarize
+from audio_poc.m2a_survey import execution_status, numeric_summary, summarize
 
 
 class M2ASurveyTests(unittest.TestCase):
+    def test_diagnostic_recheck_cannot_be_mistaken_for_scorecard_row(self) -> None:
+        self.assertEqual(
+            execution_status(True, 1),
+            "DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD",
+        )
+        self.assertEqual(
+            execution_status(True, None),
+            "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW",
+        )
+        self.assertEqual(execution_status(False, 2), "INCONCLUSIVE_RETAINED")
+
     def test_numeric_summary_uses_nearest_rank(self) -> None:
         self.assertEqual(
             numeric_summary([4.0, 1.0, 3.0, 2.0]),

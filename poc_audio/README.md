@@ -191,6 +191,11 @@ from the packet before loading a model. The Vosk eleven-wheel closure is pinned 
 internal survey use, while its upstream wheel's missing license notice remains an
 explicit redistribution-review risk.
 
+When a completed formal row needs an anomaly check, use a new work/output path and
+pass `--diagnostic-recheck 1` and then `--diagnostic-recheck 2`. These reports are
+explicitly marked `DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD`; they must not replace
+the immutable formal row or be averaged into the M2A comparative scorecard.
+
 #### Historical ACK-001 artifact preflight
 
 Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On

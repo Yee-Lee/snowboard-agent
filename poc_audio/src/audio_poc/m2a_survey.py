@@ -220,7 +220,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--sanitized-output", type=Path, required=True)
+    parser.add_argument(
+        "--diagnostic-recheck",
+        type=int,
+        choices=(1, 2),
+        help="mark this run as diagnostic recheck 1 or 2, excluded from the M2A scorecard",
+    )
     return parser.parse_args()
+
+
+def execution_status(complete: bool, diagnostic_recheck: int | None) -> str:
+    if not complete:
+        return "INCONCLUSIVE_RETAINED"
+    if diagnostic_recheck is not None:
+        return "DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD"
+    return "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW"
 
 
 def main() -> int:
@@ -295,7 +309,7 @@ def main() -> int:
     cleanup.update({"threads": 0, "iterators": 0, "streams": 0, "device_owners": owners_after})
     cleanup["clean"] = bool(cleanup["clean"] and owners_before == owners_after == 0)
     complete = len(sanitized_results) == 20 and error_code is None and cleanup["clean"]
-    status = "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW" if complete else "INCONCLUSIVE_RETAINED"
+    status = execution_status(complete, args.diagnostic_recheck)
     base = {
         "schema_version": "1.0", "report_id": REPORT_ID,
         "generated_at_utc": datetime.now(UTC).isoformat(), "review_status": "UNREVIEWED",
@@ -309,7 +323,13 @@ def main() -> int:
             "artifacts": verified_runtime_artifacts,
             "loaded_identity": worker.runtime_identity,
         },
-        "method": {"fixture_count": 20, "warmups_per_item": 1, "scored_inferences_per_item": 1, "per_item_timeout_seconds": 120, "row_budget_seconds": 2400, "threads": 4 if args.engine != "vosk" else 1},
+        "method": {
+            "fixture_count": 20, "warmups_per_item": 1,
+            "scored_inferences_per_item": 1, "per_item_timeout_seconds": 120,
+            "row_budget_seconds": 2400, "threads": 4 if args.engine != "vosk" else 1,
+            "run_class": "DIAGNOSTIC_RECHECK_NOT_SCORECARD" if args.diagnostic_recheck is not None else "FORMAL_M2A_SCORECARD_ROW",
+            "diagnostic_recheck_index": args.diagnostic_recheck,
+        },
         "fixture_lock_sha256": FIXTURE_LOCK_SHA256,
         "controlled_manifest_sha256": CONTROLLED_MANIFEST_SHA256,
         "load_ms": worker.load_ms, "duration_ms": round((time.monotonic() - started) * 1000.0, 3),
