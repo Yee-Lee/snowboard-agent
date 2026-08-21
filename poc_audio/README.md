@@ -196,6 +196,14 @@ pass `--diagnostic-recheck 1` and then `--diagnostic-recheck 2`. These reports a
 explicitly marked `DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD`; they must not replace
 the immutable formal row or be averaged into the M2A comparative scorecard.
 
+After all required formal rows are reviewed, assemble the observation-only scorecard
+with `build_m2a_scorecard.sh`. Supply each sanitized formal report with `--report`,
+give every omitted optional row an explicit `--omit-optional CANDIDATE=REASON`, and
+write to a new `--output`. The assembler rejects controlled transcript fields,
+diagnostic/inconclusive rows, dirty cleanup, runtime closure mismatches, duplicate or
+missing required candidates, and mixed fixture locks. Shortlist review remains a
+separate human decision; generated scorecards contain no winner or threshold verdict.
+
 #### Historical ACK-001 artifact preflight
 
 Only the Core-ACKed SenseVoice ASR and Matcha TTS rows may enter this check. On
