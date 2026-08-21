@@ -61,7 +61,7 @@ M1 純軟體核心
 
 * `docs/display_spec.md`：最晚於 **M2 驗收期間**完成。M3 進場 gate 要求 selected profile 已納入 Tester 的 test spec 與 Developer 工作包（§5.2）。M1 / M2 不依賴本文件。
 
-* `docs/model_spec.md`：最晚於 **M3 驗收期間**完成。M4 進場 gate 要求 ASR / TTS / LiteRT-LM 的 M4 baseline 已固定（§6.2）；M6 進場 gate 同樣依賴 M6 baseline（§8.2）。M1 / M2 / M3 不依賴本文件。
+* `docs/model_spec.md`：M3驗收期間先建立schema與未定欄位。M4 generic protocol / fake scaffold不等待runtime baseline；Audio M2B reviewed selection後才可填入candidate-specific provisional設定，Audio M3 target/HAL qualification後才可準備產品exact-SHA acceptance，Gate 2B final handoff後才固定ASR / TTS production baseline。LiteRT-LM依M4b gate另行固定；M6進場仍依賴M6 baseline（§8.2）。M1 / M2 / M3不依賴本文件。
 
 兩份文件均不阻擋 M1 / M2 立即啟動。
 
@@ -74,7 +74,7 @@ M1 純軟體核心
 | **M1** | 基礎契約、事件、Bus、SM、RM、三級收斂、config、logging 的純軟體核心 | 開發機 | `Ch 1 / 2 / 3 / 4 / 5 / 6 / 10 / 11` |
 | **M2** | 使用 mock / null 完成可啟動、可對話、可收斂的垂直切片 | 開發機 | `Ch 2a / 2b / 7 / 9` |
 | **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 selected Display profile | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display_spec.md` selected profile、Core 已採用的 Audio / Display POC contract |
-| **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、`model spec M4 baseline` |
+| **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、M2B後的provisional model recipe與Gate 2B後的final model baseline |
 | **ALPHA** | Voice-only 產品化收斂 Gate：固定 hardware / config / model / dependency / manifest，驗證可重現 session / soak / failure / recovery / shutdown / resource / privacy | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted exact SHA |
 | **M5** | 依 ALPHA Accepted exact SHA 擴充 MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |

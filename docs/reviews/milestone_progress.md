@@ -107,7 +107,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
-| M4a Audio | `G1B FOCUSED SCOPE ACCEPTED — PRIMARY EXECUTION PENDING` | `origin/dev_audio_m2` / `756ded69dd7b4661fcbac272d4d234c387890fc8`已完成exact-SHA intake。`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`只授權SenseVoice ASR與Matcha TTS進offline build / Gate 2A；其餘7列Deferred、3列Rejected。Primary失敗不得自動切換fallback；P9 surrogate仍由Core Designer在WP4 / S4前交付 |
+| M4a Audio | `M2A BASELINE / M2B OPTIMIZATION AUTHORIZED — POC RETURN PENDING` | POC最新reviewed evidence為`audio` / `c30bf8b804d1a0ee3dd612110f8f6e387ffd686f`：SenseVoice與Whisper small Q8舊gate結果保留，但不再阻止比較。`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`授權Whisper Q8 / small Q5 / base Q5 / medium Q5（另可probe large-v3-turbo Q5）、一列sherpa-onnx bilingual、Vosk small-cn及optional Qwen3-ASR feasibility依共同低成本packet建立M2A scorecard；shortlist再進M2B DSP / decoder / number-domain / recovery單變因優化。M2A/M2B不設quality / performance hard gate；P9 surrogate責任不變 |
 | M4b LLM | `GATE 0 R2 ACCEPTED — GATE 1 NOT STARTED` | `origin/llm` / `0d415d174390665ed92793937d30334f01e3df14`已關閉`OUT-M4B-2026-007-A～D`；ACK為`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`。017已收斂為兩份Accepted POC packages完成Core intake後的`M4-REG-001`整合診斷，不新增Gate或POC整合責任；Gate 2B另依Accepted Audio reference跑P9 / P10B，Gate 3做Core product exact-SHA驗收 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
@@ -117,13 +117,16 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 Core Designer (contract owner) [DELIVERY-AUDIO-POC-M4A-CONTRACT-001]
   → committed delivery直接交付Audio POC Team
     Gate 1A: POC committed plan 5d4086d... → Core planning ACK（D01～D05 accepted）
-    Gate 1B: POC exact candidate proposal → Core逐列candidate-scope ACK
-    Gate 2A: POC 執行 standalone P1~P12 → selection ACK（只放行 scaffold）
+    Gate 1B revision: ACK-003授權M2A/M2B comparative funnel
+    M2A: low-cost baseline + Common Voice sanity → scorecard / shortlist（無Pass/Fail）
+    M2B: shortlist單變因優化 → primary / fallback exact recipe
+      → Core provisional selection（放行candidate-specific provisional integration）
+    Gate 2A: Audio M3 target/HAL P1~P12 qualification
     Gate 2B: POC internal M4 → POC Accepted final handoff + conformance kit
     Gate 3: Core product inheritance / delta mapping → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；G1A ACK：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`；G1B focused ACK：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md`。016已Resolved / archived；後續只追蹤兩個primary的Gate 2A evidence及必要fallback change request。
+Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；G1A ACK：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`；最新ASR scope：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md`。016與019仍維持Resolved / archived；後續由ACK-003追蹤M2A/M2B committed return，不重開原handoff。
 
 ### M4b LLM Contract Relay Flow（2026-08-17 修訂）
 

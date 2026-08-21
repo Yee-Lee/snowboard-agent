@@ -19,13 +19,18 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a G1B focused scope accepted / M4b M1 candidate frozen by Designer** | Audio `756ded69...`已完成focused intake。LLM Gate 0 R2與Gate 1 Packet R4仍維持接受；M1 exact candidate `830d0b4...`已由`DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001`完成Designer freeze，僅待Internal Tester對同一SHA獨立sign-off；真實x86 / Pi執行仍未授權。017已收斂為Core Tester可在實測階段重跑的`M4-REG-001`，不新增Gate或POC combined執行責任。 |
+| **M4a / M4b POC進場** | **M4a M2A baseline / M2B optimization authorized / M4b M1 candidate frozen by Designer** | Audio最新reviewed POC SHA為`c30bf8b...`；`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`以comparative funnel取代focused primary順序，授權低成本M2A scorecard及shortlist M2B優化，quality / performance不作初選hard gate。LLM Gate 0 R2與Gate 1 Packet R4仍維持接受；M1 exact candidate `830d0b4...`已完成Designer freeze，僅待Internal Tester sign-off。 |
 | **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM M1 R3已完成Designer freeze，後續只剩Internal Tester gate。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
 Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 / Gate 2A
 追蹤。
+
+2026-08-21 User決策由`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`承接：ACK-002
+的ASR conditional execution順序已被M2A baseline / M2B optimization取代；舊evidence
+與PM-019 closure維持不變，不重開handoff。Core generic scaffold不等待M2B；candidate-specific
+provisional integration等待M2B reviewed selection，production lock仍等待Audio M3與Gate 2B。
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
