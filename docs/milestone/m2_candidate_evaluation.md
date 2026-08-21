@@ -2,238 +2,224 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`GATE 1B ASR RECOVERY ACKED — SMALL Q8 BOUNDED/NATIVE DIAGNOSTIC QUALITY FAIL, FORMAL QUALIFICATION INCOMPLETE / MATCHA REMAINING GATES IN PROGRESS`
+Gate 狀態：`M2A BASELINE SURVEY AUTHORIZED — COMMON PACKET NOT YET COMMITTED OR EXECUTED / M2B PENDING M2A SHORTLIST / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
 
 ## 目標
 
-用 M1 固定的方法比較所有核准候選，淘汰不具交付資格者，為每一類產出可進入真實硬體整合的 finalist；此階段結果仍須通過 M3/M4 才能成為最終 winner。
+以 M1 frozen fixtures 與共同量測方法完成候選比較，先在 M2A 建立 ASR
+landscape scorecard 與二至三列 shortlist，再只對 shortlist 進行 M2B 單變因最佳化，
+提出 primary、fallback 與 exact pipeline recipe。TTS 既有 qualification 同步關閉
+remaining gates；VAD 必須取得獨立 scope 決定。M2 結果仍須通過 M3/M4，才可能成為
+final baseline。
 
-本 milestone 同時承接
-[`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)
-Gate 1：POC 先回交 candidate/version/source hash/license/Pi build proposal，只對
-Core Designer 書面核准的範圍執行比較。M2 結果是 Gate 2 evidence 的累積，
-不是 Core final winner ACK。
+本 milestone 承接
+[`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md)。
+Core/User 已於 2026-08-21 接受把 Audio M2 拆成兩個內部 substage：
+`M2A Baseline Survey` 與 `M2B Optimization Feasibility`。兩者不建立各自的 milestone
+tag；只有整個 M2 的 reviewed outcome 關閉後才能完成 M2。
 
-2026-08-17 revised contract 所要求的 committed executable plan 已由
-[`RESP-AUDIO-M4A-GATE-PLAN-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md)
-提出，且 Core 已在 `dev_agent_m4` commit
-`e3d25d1fc70d726d5bd3162cdcb9571b30937587` 以
-`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001` 接受 Gate 1A、固定 `zh-TW`、
-VAD 範圍與 provenance-only 邊界。POC 已依該邊界準備
-[`RESP-AUDIO-M4A-G1B-CANDIDATES-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-CANDIDATES-001.md)
-exact proposal。Core 已在 `dev_agent_m4` commit
-`790c0f86e12422542ef94cacd3c4dd850e346bca` 以
-[`DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md)
-完成逐列 disposition；只有 SenseVoice ASR 與 Matcha TTS 可在 WP2 完成後
-build、install、import、load、execute 與 isolated benchmark。
+ACK-003 只取代 ACK-001/ACK-002 的 **ASR execution order** 與
+**quality/performance elimination gates**。既有 candidate evidence、artifact identity、
+offline boundary、bounded execution、cleanup requirements 與 immutable tested SHA
+全部保留；歷史結果維持產生當時的 `PASS`、`FAIL`、`REJECT` 或 diagnostic 標籤，
+不得回溯重標。
 
-2026-08-18 已依 User 決定恢復 amendment，將 sherpa-onnx Matcha zh/en
-列為 TTS primary evaluation candidate。完整 archive 與 16 kHz Vocos 的 GitHub
-release asset ID/digest、POC SHA-256、大小及 ModelScope release-time commit/LFS
-OID 已互相核對；amended proposal 現提出六個 `REQUEST_AUTHORIZE` rows。Matcha
-archive 未內附 LICENSE，且 model card 沒有固定混合中英訓練資料的名稱與條款，
-因此 Core legal review 仍是 final-winner blocker。proposal amendment 當時只完成
-provenance review，沒有 build、install、import、load、execute、benchmark 或上 Pi；
-後續 execution scope 以本頁記錄的 Core Gate 1B ACK 為準。
+被部分取代的歷史決策仍可由
+[`ACK-001`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-CANDIDATE-ACK-001.md) 與
+[`ACK-002`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md)
+追溯；未關閉的 real VAD execution boundary 由
+[`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
+持續追蹤。
 
-2026-08-18 Core ACK 已核對 proposal commit
-`756ded69dd7b4661fcbac272d4d234c387890fc8`，並事前固定只執行：
+## Current control boundary
 
-- `asr-sherpa-sensevoice-int8-2025-09-09` — ASR primary。
-- `tts-sherpa-matcha-zh-en-1.13.5` — TTS primary。
+| 工作流 | 狀態 | 現行邊界 |
+| --- | --- | --- |
+| M2A ASR baseline survey | `AUTHORIZED / NOT STARTED` | 先提交一份共同 packet，再執行已授權 rows；回傳 scorecard 與 2–3 row shortlist，不作 `PASS`、`FAIL`、winner 或 production baseline 判定 |
+| M2B ASR optimization | `PENDING M2A SHORTLIST` | 只允許 shortlist 進場；每次實驗相對 named baseline 只改一個變因，回傳 primary、fallback、exact recipe 與 delta table |
+| TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
+| VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
-其餘 10 rows 均為 `DEFERRED` / `REJECTED`，primary 失敗後也不得自動啟用
-fallback。兩個 primary 的五個唯一受控輸入（七個逐列 artifact bindings）已在
-workstation 與 Pi 重新核對大小及 SHA-256，全部匹配 manifest。WP2
-protocol/schema、fake lifecycle 與 validator scaffold 已完成；Pi artifact
-preflight、offline install/import identity 及一筆 ASR/TTS focused smoke 也已通過，見
-[`M4A-G1B-WP3-PREFLIGHT-SMOKE-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-PREFLIGHT-SMOKE-001.md)。
-完整 50-item ASR 與 20-prompt TTS 的三次 cold、三次 warm-up 及二十次 hot
-qualification 已在 Pi SHA `63c2cc179bb3c2525201da0f7a78d2c50b63d759`
-完成。SenseVoice 台灣華語 core CER 41.629%、整體整句正確率 6%，均未達
-frozen 20%/70% hard gates，故該 primary 已 `REJECT`；全 20 hot cycles 對每筆
-fixture 的 hypothesis hash 都穩定重現。Matcha first-buffer p95 285.098 ms、RTF
-p95 0.112776，通過 performance gates，但 User quality、lifecycle、真正斷網、
-resource-growth review 與 legal blockers 仍未關閉。見
-[`M4A-G1B-WP3-FULL-QUALIFICATION-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-FULL-QUALIFICATION-001.md)。
-SenseVoice 失敗後不得自動啟用 fallback，已提出
-[`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md)
-由 Product Team 要求 Core 以 whisper.cpp 1.9.2 multilingual small Q8_0、
-4 threads 及 hot final-transcript p95 <=1.5 s hard gate 回傳 primary exact-row
-ACK；small Q5_1 只在 Q8_0 先通過 frozen quality、但未達 latency 或既有
-1250 MiB peak-RSS advisory ceiling 時才能作為條件式 fallback。SenseVoice 本輪不再調整，
-SenseVoice Large 不納入，既有 Whisper.cpp base 與 faster-whisper small 維持
-deferred；所有新 rows 在 ACK 前均不得執行。Core 本輪沒有授權 VAD execution row，故 M2 的 VAD
-finalist/no-go exit condition 尚無關閉路徑；見
-[`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。
-Core ACK 記錄的既有 `samplerate` advisory 已由 POC 以隔離環境重跑完整 suite
-關閉（32/32 tests `OK`）；它不是 Gate 2A candidate evidence。
+M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
+及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
+runtime network access、OOM、bounded timeout 或 incomplete cleanup 仍須 fail closed，
+並保留實際 observation；它們不得被包裝成 quality rejection。
+
+### M2A authorized ASR rows
+
+所有 row 在第一次 load 前必須固定 exact filename、upstream immutable revision、byte
+size、SHA-256、engine/model license/notice 與受控位置。Whisper rows 共用既有
+whisper.cpp `1.9.2` CPU-only native aarch64 closure：
+
+| Row | Baseline role |
+| --- | --- |
+| `asr-whispercpp-small-q8_0-1.9.2` | 既有 reference；保留舊 evidence，只重跑共同 M2A packet 所需比較 |
+| `asr-whispercpp-small-q5_1-1.9.2` | small Q8 quantization trade-off |
+| `asr-whispercpp-base-q5_1-1.9.2` | low-resource / low-latency reference |
+| `asr-whispercpp-medium-q5_0-1.9.2` | higher-capacity quality reference |
+| `asr-whispercpp-large-v3-turbo-q5_0-1.9.2` | optional same-cost-class probe；只有記錄 resource 或 schedule 理由才可省略 |
+
+ACK-002 的 Q5 conditional trigger 已移除；small Q5、base Q5、medium Q5 可獨立執行，
+不再等待 small Q8 結果。HAT 與 accelerator-specific models 仍在 scope 外。
+
+非 Whisper families 各選一個 exact official representative；只要 family 與 license
+boundary 不變，不需再向 Core 逐列 round-trip：
+
+| Family | Authorized representative | Purpose |
+| --- | --- | --- |
+| sherpa-onnx | 一個 aarch64-compatible int8 streaming bilingual `zh-en` Zipformer 或 Paraformer | streaming 與 code-switch comparison |
+| Vosk | `vosk-model-small-cn-0.22` + official native/runtime API | low-resource Pi 與 dynamic-vocabulary potential |
+| Qwen3-ASR via sherpa-onnx | `Qwen3-ASR-0.6B` int8 | optional load + minimal inference feasibility；bounded timeout/OOM 即停止 |
+
+PocketSphinx、HAT、cloud APIs 與 unpinned community conversions 不在 scope。Fun-ASR
+Nano 或其他大型 runtime 只有在 M2A 證明已授權 families 留下 material capability gap
+後，才能另提書面 scope request。
+
+### M2A common low-cost packet
+
+所有 rows 必須使用同一份先提交、後執行的 packet：
+
+1. 八筆事前固定 internal fixtures：Taiwan Mandarin、code-switch、number/date、
+   product-term 各兩筆，包含一筆最長 bounded item。
+2. 十至十五筆在看到 candidate output 前固定的 Common Voice `zh-TW` clips；記錄
+   dataset version、clip IDs、license 與 derived 16 kHz mono PCM checksums。
+3. 每筆一次 unscored warm-up、一次 scored inference；不執行 cold matrix、20-run
+   repetition、soak 或 full lifecycle campaign。
+4. 事前固定 row-level budget 與 per-item timeout。Timeout/OOM 記 observation 並停止
+   浪費性執行，不重寫成 quality rejection。
+5. 記錄 transcript、normalized CER、exact-sentence diagnostic、number/product-term
+   correctness、load time、latency、RTF、peak RSS、disk/runtime identity 與 cleanup。
+
+M2A 只產出一張 comparative scorecard 與二至三列 shortlist。
+
+### M2B optimization feasibility
+
+只有 M2A shortlist 可以進入 M2B。每個 probe 必須相對 named baseline 只改一個變因，
+並同時保留 raw 與 adjusted transcript/result identity：
+
+| Track | Authorized probes | Required comparison |
+| --- | --- | --- |
+| Front-end / endpoint | raw、DC removal、fixed gain、noise suppression、AGC、frozen-label endpoint/padding；signal audit 支持時才可 dereverb | same WAV + same engine/profile；signal metrics、ASR delta、CPU/RSS/latency cost |
+| Decoder/runtime | greedy/beam、initial prompt、grammar、dynamic vocabulary/keyword boost、context policy、token suppression、supported native/flash-attention/BLAS | 每列一變因；quality categories + latency/RTF/RSS |
+| Number/domain | number/date canonicalization、product alias table、intent/slot parser、engine vocabulary controls | exact numeric/entity value、false correction、unsafe silent correction、latency |
+| Recovery | LLM-assisted correction、low-confidence confirmation | 保留 raw transcript，分別評分 corrected value、invented value、clarification outcome |
+| External sanity | 重用 frozen Common Voice subset | 偵測 internal product phrases 以外的 overfit/regression |
+
+AEC 與 barge-in 不在 scope。DSP 必須是明確的 `perception/listen` front-end stage，
+不得進入 Audio HAL、隱藏 resampling 或改變已接受的 AudioInput stream contract。
+
+M2B 回傳 primary finalist、one fallback、exact pipeline recipe，以及每個保留最佳化的
+benefit/cost/regression delta table。Quality/performance metrics 用來排序，但不會單獨
+阻止 comparative selection；provisional selection 由 Core/User 決定。
+
+## Historical evidence preserved
+
+- Gate 1A planning、Gate 1B initial proposal 與 shared conformance scaffold 已完成；
+  fake success/error/timeout/cancel/force-abort/reopen runner 及 schema evidence 保留。
+- SenseVoice 在 Pi SHA `63c2cc179bb3c2525201da0f7a78d2c50b63d759` 的歷史
+  qualification 為 core CER 41.629%、overall sentence correctness 6%，並依當時
+  frozen gates 標為 `REJECT`；ACK-003 不回溯改寫。
+- Matcha 同一 packet 的 first-buffer p95 285.098 ms、RTF p95 0.112776；performance
+  gates 當時通過，但 remaining gates 尚未關閉。
+- Whisper small Q8 在 Pi SHA `1b29f685de64970f6abbc12a0820a2ef4ec0a444` 的兩次
+  partial diagnostic 為 core CER 9.502262%、sentence correctness 28%、hot p95
+  11.080 s、RTF p95 1.831987、peak RSS 554 MiB；此 packet 仍是 gate-ineligible
+  historical diagnostic，未完成的 20-repetition run 不會補標成 formal evidence。
+- `POC-AUDIO-PERF-2026-001` 的 bounded/native evidence 位於 Pi SHA
+  `fd51a4f36da61fa9af7e210c7dec0170b0cffcbc`：50 fixtures x 2 hot cycles 的
+  latency p50/p95 4.042/4.139 s、RTF p50/p95 1.307/1.933、peak RSS
+  555.438 MiB、overall sentence correctness 34%。small Q8 依當時 rules 未 advance；
+  ACK-003 只要求它為共同 M2A packet 重跑可比較的一次 scored inference。
+
+完整 sanitized historical evidence 分別見
+[`M4A-G1B-WP3-FULL-QUALIFICATION-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-FULL-QUALIFICATION-001.md)、
+[`M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001`](../../poc_audio/evidence/m2/M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001.md)
+與 [`POC-AUDIO-PERF-2026-001`](../../poc_audio/evidence/m2/POC-AUDIO-PERF-2026-001/README.md)。
 
 ## 對最終交付的貢獻
 
-- 完整 candidate manifest、license/checksum/source 與成功或失敗結果。
-- VAD endpoint、ASR 品質、TTS 品質及 latency/resource/lifecycle 比較。
-- `advance`/`reject` 判定和 execution-container 初步建議。
-- M4a Gate 1 授權記錄與 M4A-P2/P3/P6/P10/P11/P12 的隔離驗證索引。
+- 完整 candidate manifest、license/checksum/source、成功與中止結果。
+- M2A comparative scorecard、shortlist reasoning 與 external sanity subset。
+- M2B primary/fallback proposal、exact recipe 與單變因 optimization delta table。
+- TTS remaining qualification，以及 VAD scope/finalist 或 evidence-backed no-go 路徑。
+- M4a authorization、M4A-P2/P3/P6/P10/P11/P12 preliminary evidence 與 M3 重測範圍。
 
-## 工作大綱
+## 受控執行順序
 
-- 先做 license、artifact 可固定、offline、aarch64 安裝進場檢查。
-- Gate 1 proposal 先對齊 Core 起始候選：ASR 為 whisper.cpp、Vosk、
-  PocketSphinx；TTS 為 Piper、espeak-ng、Coqui TTS。每一列仍須固定
-  exact artifact/version/hash/license，不得只交 engine 名稱。
-- 既有 SenseVoice、Paraformer 與 sherpa-onnx voice 以 alternative 列入 proposal，
-  只有 Core Designer 書面核准後才執行，不靜默取代 contract 清單。
-- VAD 維持 Silero VAD ONNX/WebRTC VAD 與相同 endpoint state machine；由於
-  Core contract Gate 1 文字只列 ASR/TTS，M2 entry 前須由 PM/Core 書面確認
-  VAD 仍依 Audio POC frozen gate 執行。
-- 所有候選使用相同 fixture、threads、warm-up、repetitions 與量測工具。
-- 驗證 cold/hot、p50/p95、RTF、RSS、disk、CPU、cancel、force-abort、offline 與 cleanup。
-- 安排 User 對 TTS voice 做受控主觀品質確認。
-- 保留失敗結果，為每個 candidate 記錄 advance/reject 及原因。
-- 以 M4A-P1 至 P12 ID 建立 traceability；M2 只能對隔離 fixture/build/
-  lifecycle/offline 產生 preliminary evidence，HAL playback、Pi resource 與同時常駐的
-  final disposition 留待 M3。
+1. **ACK-003 intake**：`COMPLETE`；M2A/M2B 邊界、歷史 evidence preservation 與
+   Core implementation release boundary 已記入 milestone。
+2. **M2A packet**：`NEXT`；固定 exact artifact identities、八筆 internal fixtures、
+   10–15 筆 Common Voice clips、row/item budgets、commands、schema 與 cleanup proof。
+3. **M2A execution/scorecard**：`NOT_STARTED`；所有 rows 使用共同 packet，回傳
+   observations 與 2–3 row shortlist，不下 PASS/FAIL/winner 判定。
+4. **M2B optimization**：`PENDING`；只對 shortlist 做一變因 probes，完成 primary、
+   fallback、recipe 與 delta table，送 Core/User comparative review。
+5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
+   scope ACK，不能以 frozen-label endpoint simulation 取代。
+6. **M2 gate review**：只在 M2A/M2B reviewed outcome、TTS disposition、VAD
+   finalist/no-go 路徑與 M3 target scope 都可由 committed SHA 追溯時進行。
 
-2026-08-20 Core 以
-[`DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md)
-接受 whisper.cpp `1.9.2` exact source、multilingual small Q8_0 primary 與
-conditional Q5_1 fallback。Q5_1 只在 Q8_0 同時通過 CER/整句正確率 gates、但
-hot final-transcript p95 >1.5 s 或 peak RSS >1250 MiB 時解鎖；Q8 quality fail
-必須停止。四 threads、單 worker、greedy/zh/no-context/no-timestamps/no-internal-VAD
-及既有 frozen gates 不變。ACK intake 不構成 artifact、build、inference 或 Gate 2A
-PASS；recovery manifest、artifact/build preflight 與 persistent qualification
-harness 已在 workstation 完成無模型 compile/fake lifecycle 驗證，但正式 evidence
-已推進至 Pi exact artifact preflight 與隔離 CPU-only build PASS。User 指定的兩次
-hot partial diagnostic 亦已在 SHA
-`1b29f685de64970f6abbc12a0820a2ef4ec0a444` 完成；core CER 9.502262%、整句
-正確率 28%、hot p95 11.080 s、RTF p95 1.831987、peak RSS 554 MiB，呈現
-quality/latency strong no-go signal。見
-[`M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001`](../../poc_audio/evidence/m2/M4A-G1B-ASR-RECOVERY-Q8-PARTIAL-001.md)。
-此 packet 強制 gate-ineligible；原 20-repetition run 依 User 指示中止且沒有 final
-report，故 formal qualification 仍未完成。User 已決定不恢復該 Q8 formal run。
-Small Q8 的 review-only semantic pass 將 raw transcript 留在 repo 外 private
-evidence，並分類為 26/50 可直接使用、12/50 只可在確認下由 context 復原、12/50
-不可安全猜測；台灣華語普通句型明顯優於 code-switch、數字／日期與 technical/control
-terms。這是補充品質風險，不變更 frozen score。使用者要求將 Q5 改為三個 hot cycles
-的無 HAT latency/resource diagnostic，並將 base Q5 亦列為三個 hot cycles 的速度/
-品質觀察；medium Q8 維持一次品質/RSS diagnostic、品質足夠時再評估 AI HAT+ 2 的
-兩階段方向。無 HAT 路線維持 hot final-transcript p95 <=1.5 s 即時邊界；任何品質
-取捨仍須產品裁決、不得默認放寬 frozen quality gate。完整 request 見
-[`CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-DIAGNOSTIC-SCOPE-002.md)。
-現有 ACK 不允許這些例外，故 small Q5、base Q5、medium 與 HAT 均未解鎖且不得執行。
-
-後續收到 high-priority `POC-AUDIO-PERF-2026-001` review：既有 Q8 使用完整固定長度
-WAV、generic `GGML_NATIVE/OPENMP/BLAS=OFF` build，亦未證明四核心實際並行，不能據此
-完成 CPU-only ASR no-go/finalist 判定。User 要求 Q8 先以 frozen VAD label 的第一個
-speech start 至最後一個 speech end 建立單一 contiguous input，保留所有 internal
-pause；以最小成本比較 generic/native 一個編譯變因與 native 1/2/4 thread scaling，
-再對選定 4-thread profile 跑 50 fixtures x 2 hot cycles。完整 test packet 見
-[`RESP-POC-AUDIO-PERF-2026-001`](../../poc_audio/deliveries/RESP-POC-AUDIO-PERF-2026-001.md)。
-Q5、base、medium 與 HAT 在此結果 review 前全部暫停。M2 的 1.5 s absolute latency
-暫列 observation、留待 future integrated VAD-to-ASR frozen timestamps；RTF、品質、
-資源、determinism、offline 與 lifecycle gates 不變。這是待 Product/Core 接受的 scope
-change，不得用來重寫歷史 Q8 結果或事後宣告 PASS。
-
-Clean Pi SHA `fd51a4f36da61fa9af7e210c7dec0170b0cffcbc` 已完成該 review。Frozen
-VAD labels 只用於建立 1.74–4.45 秒的理想 bounded input，並非執行 VAD engine。
-同一個 4.45 秒樣本的 generic/native 4-thread latency 為 11.046/4.031 秒，native
-Cortex-A76 build 的單變因收益為 2.74x，四核心確實以約 99.5–100% 使用；此數字
-不是 VAD 裁切相對舊 6/8 秒 fixture 的收益。新 50 fixtures x 2 hot cycles 的 latency
-p50/p95 為 4.042/4.139 秒、RTF p50/p95 為 1.307/1.933、peak RSS 555.438 MiB。
-舊/new 跨 packet RTF p95 1.832/1.933 沒有改善，absolute latency 下降混合了輸入、
-build 與統計方法差異，不能當整體效率 A/B。
-
-Quality review 為 Taiwan-Mandarin core CER 5.429864%、overall sentence correctness
-34%；後者未達 frozen 70% gate。Taiwan Mandarin sentence correctness 70%，但
-code-switch 10%、number 0%、product term 0%，private semantic spot check 亦確認
-關鍵詞、數字與產品實體不可交由 LLM 猜回。完整 sanitized evidence 見
-[`POC-AUDIO-PERF-2026-001`](../../poc_audio/evidence/m2/POC-AUDIO-PERF-2026-001/README.md)。
-Small Q8 因品質不從此 diagnostic advance，formal 20-repetition qualification 仍未
-執行。下一步建議待 Product/Core 核准 exact medium quantized row 後，只先跑六個
-代表性語意錯誤各一次及最長 bounded fixture 一次；沒有明顯 quality step change 即
-停止，通過 quick screen 才考慮 50 fixtures x 2 hot cycles。Q5、base 與 HAT 維持
-deferred，medium 在 ACK 前亦不得執行。
-
-M2 執行分成四個受控步驟：
-
-1. **Gate 1 planning**：`COMPLETE`；Core Gate 1A ACK 已接受 plan 與 D01–D05。
-2. **Gate 1 candidate proposal**：`COMPLETE`；Core Gate 1B ACK 已逐列 disposition
-   12 rows，只接受 SenseVoice ASR 與 Matcha TTS 兩個 primary execution rows。
-3. **Shared conformance scaffold**：`COMPLETE`；
-   [`m4a_conformance.py`](../../poc_audio/src/audio_poc/m4a_conformance.py)、
-   `m4a_conformance_result` schema 與 fake success/error/timeout/cancel/
-   force-abort/reopen runner 已完成；33/33 local tests 與 schema smoke 通過，未載入
-   candidate runtime。
-4. **Authorized comparison**：`SMALL Q8 BOUNDED DIAGNOSTIC QUALITY FAIL / REMAINING TTS GATES IN PROGRESS`；
-   只執行兩個 primary。SenseVoice 已因 frozen ASR quality hard gates `REJECT`；
-   Matcha latency/RTF 通過，但 User quality、lifecycle、network-disabled、resource
-   growth 與 legal conditions 尚待關閉。ASR recovery exact artifact/notice preflight
-   與 CPU-only build closure 已通過；VAD-label-bounded native 4-thread 兩次 hot
-   diagnostic 的 RTF observation 通過，但 overall sentence correctness 34% 使 frozen
-   quality gate `FAIL`，small Q8 未 advance。User 已明確停止未完成的 Q8
-   20-repetition formal run；medium quick screen、small/base Q5 與 HAT 的任何
-   diagnostic 均待新的 Core ACK。
+M2A 進行期間，Core 只可處理 generic ASR protocol、fake adapter、schema、runner 與
+config placeholder。只有 M2B reviewed selection 後，才可作 named primary/fallback
+candidate-specific provisional integration；production dependency lock 必須等 Audio M4
+`POC Accepted` final handoff。
 
 ## Entry Conditions
 
-- M1 exit gate 通過，gate 與 fixtures 已凍結。
-- M4a contract Gate 0 已以 Core P4 final selection ACK 關閉，且 contract
-  intake 已記錄 POC 完整 SHA。
-- PM relay/ACK 回傳路徑、candidate proposal template 與 Core decision owner 已確認。
-- 敏感 fixture 受控位置可用。
-
-真實 candidate execution 的 Gate 1B 子 gate已對兩個 primary 滿足：proposal
-已列版本、artifact、source SHA-256、dependency、license/notice 與 Pi build
-steps，且 Core Designer 已書面核准 ASR/TTS scope。WP2 exit 已滿足；WP3 的固定
-fixture checksum、乾淨 test SHA、受控 artifact preflight 與 focused smoke 已完成，
-full-fixture quality/performance 已完成；TTS remaining gates 尚未完成，ASR recovery
-執行邊界已由 ACK-002 固定，preflight/build 已完成但 formal qualification 尚未完成；
-partial diagnostic 不能取代 gate evidence。VAD 執行邊界仍待
-`CR-AUDIO-M4A-G1B-VAD-SCOPE-001` 決策。
+- M1 exit gate 已通過，fixtures 與既有量測定義已凍結。
+- M4a Gate 0、Gate 1A、initial Gate 1B 與 shared conformance scaffold 已完成。
+- ACK-003 已書面授權 M2A rows 與 M2B probe categories。
+- PM relay/ACK path、Core decision owner 與敏感 fixture 受控位置可用。
+- 每個 row 在 first load 前仍須完成 exact identity/provenance/license preflight。
 
 ## Exit Gate
 
-- 每個已執行候選都有完整 manifest、結果與判定，失敗沒有被省略。
-- 每一類至少有一個達 M2 gate 的 finalist；否則提出該類 no-go/change request。
-- Finalists 的 artifact/version/checksum/license、format、threads、timeout 與 wrapper lifecycle 明確。
-- TTS finalist 已取得 User 的初步品質回饋。
-- M3 真實 Pi/HAL 重測範圍與必要 fixtures 已明確。
-- Gate 1 ACK、核准 candidate list 與每個 M4A Test ID 的 preliminary/
-  pending 狀態可由固定 SHA 定位；未在 M2 完成的 HAL/Pi 項目不得標為 PASS。
+- M2A 所有實際執行 rows 有完整 identity、command、bounded observation、cleanup proof
+  與單一 comparative scorecard；optional row 的省略理由已記錄。
+- M2A 已提出二至三列 shortlist，沒有使用單項 threshold 作 PASS/FAIL 或 winner 標籤。
+- M2B 只對 shortlist 完成一變因比較，並提出 primary、fallback、exact recipe 與
+  benefit/cost/regression delta table。
+- Core/User 已 review comparative provisional selection；未宣稱 production lock。
+- TTS candidate 有明確 finalist/no-go disposition，且 User quality、offline、lifecycle、
+  resource 與 legal conditions 有 evidence 或 blocking risk。
+- VAD 有已授權 finalist/no-go 路徑；在 ACK-003 未授權 real VAD row 的現況下，此項仍
+  未滿足，M2 不得完成。
+- M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
+  traceability 可由 committed full SHA 定位。
 
 ## 必要 Evidence
 
-- Candidate manifests 與 eligibility decisions。
-- Sanitized per-run results 及 result index。
-- VAD/ASR/TTS 品質與資源比較摘要。
-- Cancel/force-abort/orphan cleanup proof。
-- Offline results、TTS user review 與 rejected-candidate reasons。
-- Core Gate 1 ACK、candidate scope、language/VAD boundary decision 與 M4A-P1–P12
-  traceability matrix。
+- ACK-003 intake、branch 與完整 40-character SHA。
+- Exact artifact/runtime identities、fixture/Common Voice index、license、commands、
+  row/item budgets 與受控 artifact locations。
+- M2A scorecard、M2B optimization delta table、primary/fallback proposal 與 known risks。
+- Sanitized per-run results、timeout/OOM/error records、offline boundary 與 cleanup proof。
+- TTS User review/remaining disposition、VAD scope decision 與 M4A-P1–P12 traceability。
+- 模型、large results、private audio、raw sensitive transcripts 均留在 Git 外，只提交
+  checksum 與受控位置。
 
 ## 不做的工作
 
-- 不接 product composition root、RM 或 SM。
-- 不為淘汰候選做無限調參或產品化。
-- 不因候選表現修改 frozen gate。
-- 不把開發機結果當 Pi 5 驗收。
+- 不建立 M2A/M2B milestone tag，也不默認開始 M3。
+- 不接 product composition root、RM、SM、AEC、barge-in、HAT 或 cloud API。
+- 不 build/load/benchmark 尚未另行授權的 real VAD candidate。
+- 不把 M2A observations 標成 PASS/FAIL/winner，不回溯改寫舊 evidence。
+- 不在 Audio HAL 放入 DSP，不作 hidden resampling。
+- 不把開發機結果當 Pi 5 或 M3 HAL 驗收。
 
 ## 調整觸發點
 
-- 任一類所有候選在 eligibility 或 frozen gate 淘汰。
-- Artifact/license 無法固定，或模型不能合法商用/再散布。
-- Wrapper 無法提供可靠 cancel/force-abort/exit proof。
-- Pi 5 資源預估已明顯無法支撐 M4 同時常駐。
-- Core 不核准 contract 起始候選、現有 alternative 或 VAD 執行邊界。
-- M4A-P3/P6 的 contract 門檻低於 Audio POC frozen gate；此時維持較嚴格的
-  CER/整句正確率與 TTS User 品質 gate，不得因新 contract 放寬。
+- Artifact/license/provenance 無法固定、runtime 需連網、OOM/timeout 無法 bounded，或
+  cleanup proof 不完整。
+- M2A 已授權 families 仍留下 material capability gap，需要 Fun-ASR Nano 或其他
+  large runtime 的新 scope decision。
+- M2B probe 改變 candidate identity、family/license boundary 或超出一變因設計。
+- VAD execution scope 持續未決，使 final VAD baseline/no-go 無法交付。
+- Matcha User quality、offline、lifecycle、resource 或 legal blocker 無法關閉。
+- Pi 5 資源預估明顯無法支撐 M4 同時常駐。
 
 ## Gate Review 問題
 
-M2 結束時必須回答：每類 finalist 是否有合理機會在 pinned M3 HAL、真實 mic/speaker 與三模型同時常駐下達到最終 gate？沒有合理路徑者不得只因單項 demo 成功而 advance。
-
-Gate 1B review 已回答：Core 只接受 SenseVoice ASR 與 Matcha TTS，並正式
-defer/reject 其餘 10 rows。這只解除兩個 exact rows 的 execution prohibition；
-manifest native format 與 build recipe 仍從 `DECLARED_UNVERIFIED_GATE_1B` /
-`NOT_EXECUTED_GATE_1B` 開始，必須由 WP3 evidence 實測，不得因 ACK 標為 PASS。
+M2 結束時必須回答：M2A landscape、M2B recipe、TTS disposition 與 VAD 路徑，是否讓
+primary/fallback 在 pinned M3 HAL、真實 mic/speaker 與三模型同時常駐下仍有合理的
+最終交付路徑？M2A score 高不等於 Gate 2A selection，單項 demo 成功也不構成 advance。

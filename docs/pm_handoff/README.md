@@ -4,7 +4,7 @@
 新文件承接的 transaction record 移至 `history/`。歸檔不代表刪除決策或證據，
 引用仍須指向可追溯的歷史文件。
 
-最後更新：2026-08-20
+最後更新：2026-08-21
 
 ## Authoritative POC Specifications
 
@@ -19,10 +19,11 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
-| [POC-AUDIO-PERF-2026-001](POC-AUDIO-PERF-2026-001/feedback.md) | `OPEN / RESPONSE IN PROGRESS` | 先以 frozen VAD labels 重作 Q8 bounded-input、generic/native 與 thread-scaling 最小調查；Q5/base/medium/HAT 延後。回覆見 [`RESP-POC-AUDIO-PERF-2026-001`](../../poc_audio/deliveries/RESP-POC-AUDIO-PERF-2026-001.md)。 |
+| [DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003](DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md) | `ACCEPTED / INTAKE COMPLETE` | M2 已修訂為 M2A baseline survey 與 M2B optimization feasibility；下一步是提交共同 M2A packet。VAD real-engine row 仍未授權。 |
+| [POC-AUDIO-PERF-2026-001](POC-AUDIO-PERF-2026-001/feedback.md) | `CLOSED / EVIDENCE PRESERVED` | bounded/native Q8 調查已完成；結果維持原 diagnostic disposition。後續 ASR 比較由 ACK-003 的共同 M2A packet 承接。回覆見 [`RESP-POC-AUDIO-PERF-2026-001`](../../poc_audio/deliveries/RESP-POC-AUDIO-PERF-2026-001.md)。 |
 | [commit_workflow_update](commit_workflow_update.md) | `INTEGRATED` | 已將 unpublished WIP squash、Candidate SHA append-only、單一 `audio` branch 與 immutable milestone tags 整合至 [`docs/audio_poc_workflow.md`](../audio_poc_workflow.md) 與 `AGENTS.md`。 |
-| [DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002](DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) | `ACCEPTED / INTAKE IN PROGRESS` | Core 已核准 whisper.cpp small Q8_0 primary 與 conditional Q5_1；下一步是 exact artifact/notice preflight 與 CPU-only build closure。ACK 不代表 build、qualification 或 Gate 2A PASS。 |
-| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1A ACCEPTED / GATE 1B ACCEPTED / ASR RECOVERY ACKED` | SenseVoice 已依 frozen quality gate 拒絕；[`CR-AUDIO-M4A-G1B-ASR-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-ASR-SCOPE-001.md) 已由 ACK-002 接受。VAD 仍由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
+| [DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002](DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002.md) | `SUPERSEDED IN PART / EVIDENCE PRESERVED` | Exact source、artifact/build evidence 與 tested SHAs 保留；conditional Q5 trigger、ASR execution order 與 quality/performance elimination gates 已由 ACK-003 取代。 |
+| [DELIVERY-AUDIO-POC-M4A-CONTRACT-001](DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md) | `GATE 1 ACCEPTED / M2A-M2B SCOPE ACKED` | Gate 1 歷史 planning/proposal 保留；ASR comparative funnel 由 ACK-003 承接。VAD 仍由 [`CR-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) 追蹤。 |
 
 ## History
 
