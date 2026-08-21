@@ -16,6 +16,7 @@ from typing import Any, Iterable
 
 PACKET_ID = "M4A-M2A-COMMON-PACKET-001"
 COMMON_VOICE_SOURCE_LOCK_ID = "M4A-M2A-COMMON-VOICE-SOURCE-LOCK-001"
+INTERNAL_SOURCE_LOCK_ID = "M4A-M2A-INTERNAL-SOURCE-LOCK-001"
 AUTHORITY = "DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003"
 PLAN_SHA256 = "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920"
 LABEL_INDEX_SHA256 = "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74"
@@ -205,6 +206,78 @@ def validate_common_voice_source_lock(document: dict[str, Any]) -> None:
         raise ValueError("Common Voice handoff must make per-clip SHA-256 authoritative")
     if handoff.get("transcript_in_tracked_index") is not False:
         raise ValueError("Common Voice tracked handoff cannot contain transcripts")
+
+
+def validate_internal_source_lock(document: dict[str, Any]) -> None:
+    if document.get("schema_version") != "1.0" or document.get("index_id") != INTERNAL_SOURCE_LOCK_ID:
+        raise ValueError("M2A internal source lock identity mismatch")
+    if document.get("status") != "SOURCE_CLIPS_LOCKED_DERIVED_PCM_PENDING":
+        raise ValueError("M2A internal source lock status mismatch")
+    identities = document.get("source_identities", {})
+    if identities.get("recording_plan_sha256") != PLAN_SHA256:
+        raise ValueError("M2A internal source lock recording-plan mismatch")
+    if identities.get("vad_label_index_sha256") != LABEL_INDEX_SHA256:
+        raise ValueError("M2A internal source lock VAD-label mismatch")
+    if identities.get("delivered_fixture_manifest_sha256") != (
+        "1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2"
+    ):
+        raise ValueError("M2A internal delivered-fixture manifest mismatch")
+    if identities.get("delivered_pcm") != {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "sample_format": "S16_LE",
+    }:
+        raise ValueError("M2A internal delivered PCM identity mismatch")
+    selection = document.get("selection", {})
+    records = selection.get("records")
+    if selection.get("count") != 8 or not isinstance(records, list) or len(records) != 8:
+        raise ValueError("M2A internal source lock must contain eight records")
+    expected_groups = {
+        "taiwan_mandarin": 2,
+        "code_switch": 2,
+        "number_or_date": 2,
+        "product_term": 2,
+    }
+    actual_groups = {group: 0 for group in expected_groups}
+    fixture_ids: set[str] = set()
+    global_longest = []
+    for record in records:
+        if not isinstance(record, dict) or any(
+            key in record for key in ("reference_text", "transcript")
+        ):
+            raise ValueError("invalid or unsafe M2A internal source-lock record")
+        fixture_id = str(record.get("fixture_id", ""))
+        group = str(record.get("group", ""))
+        if not fixture_id or fixture_id in fixture_ids or group not in actual_groups:
+            raise ValueError("invalid or duplicate M2A internal fixture identity")
+        duration = record.get("bounded_duration_ms")
+        size = record.get("source_wav_size_bytes")
+        if not isinstance(duration, int) or duration <= 0:
+            raise ValueError(f"invalid bounded duration: {fixture_id}")
+        if not isinstance(size, int) or size <= 44:
+            raise ValueError(f"invalid source WAV size: {fixture_id}")
+        for field in ("reference_sha256", "source_wav_sha256"):
+            if not SHA256_RE.fullmatch(str(record.get(field, ""))):
+                raise ValueError(f"invalid internal {field}: {fixture_id}")
+        fixture_ids.add(fixture_id)
+        actual_groups[group] += 1
+        if record.get("globally_longest") is True:
+            global_longest.append(record)
+    if actual_groups != expected_groups:
+        raise ValueError("M2A internal source-lock group allocation mismatch")
+    if len(global_longest) != 1 or global_longest[0]["bounded_duration_ms"] != max(
+        record["bounded_duration_ms"] for record in records
+    ):
+        raise ValueError("M2A internal source-lock global-longest marker mismatch")
+    local = document.get("local_controlled_copy", {})
+    path = PurePosixPath(str(local.get("relative_directory", "")))
+    if path.is_absolute() or ".." in path.parts or local.get("source_asr_file_count") != 50:
+        raise ValueError("M2A internal controlled-copy summary mismatch")
+    handoff = document.get("handoff", {})
+    if handoff.get("source_wav_sha256_is_authoritative") is not True:
+        raise ValueError("M2A internal handoff must make source WAV SHA-256 authoritative")
+    if handoff.get("reference_text_in_tracked_index") is not False:
+        raise ValueError("M2A internal tracked handoff cannot contain reference text")
 
 
 def verify_common_voice_source_files(
@@ -490,6 +563,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=repo_root() / "poc_audio/manifests/m4a_m2a_common_voice_source_lock.json",
     )
+    parser.add_argument(
+        "--internal-source-lock",
+        type=Path,
+        default=repo_root() / "poc_audio/manifests/m4a_m2a_internal_source_lock.json",
+    )
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--verify-common-voice-clips-dir", type=Path)
     parser.add_argument("--recording-plan", type=Path)
@@ -507,6 +585,8 @@ def main() -> int:
     validate_packet(packet)
     source_lock = load_json(args.common_voice_source_lock)
     validate_common_voice_source_lock(source_lock)
+    internal_source_lock = load_json(args.internal_source_lock)
+    validate_internal_source_lock(internal_source_lock)
     if args.verify_common_voice_clips_dir is not None:
         result = verify_common_voice_source_files(
             source_lock, args.verify_common_voice_clips_dir

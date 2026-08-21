@@ -27,8 +27,9 @@ M2A packet preparation 已開始：八個 authorized/optional ASR rows 的 offic
 runtime identity、budget 與 deterministic fixture-selection rules 已固定並有本地 validator/
 tests。Common Voice 26.0 `zh-TW` CC0-1.0 已由 User-authenticated download 取得，exact
 12 source clips 已保存於 Git-ignored controlled evidence，且 sanitized source lock 記錄
-member path、size 與逐檔 SHA-256。Exact internal eight 仍須用受控 frozen labels 解出，
-8+12 derived PCM lock 完成前不得 build/load/run candidate。執行後仍只回傳
+member path、size 與逐檔 SHA-256。Pi 上 frozen labels、delivered manifest 與 50 ASR WAV
+已傳回並驗證，exact internal eight source lock 亦已固定。8+12 derived PCM lock 完成前
+不得 build/load/run candidate。執行後仍只回傳
 comparative scorecard 與 2–3 row shortlist，不下
 `PASS`、`FAIL`、winner 或 production baseline 判定。
 
@@ -42,7 +43,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A packet identities/rules 與 Common Voice 12-clip source lock 已準備；exact fixture lock 等待 controlled labels 與 derived PCM；M2B、Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | M2A packet identities/rules 與 internal 8 + Common Voice 12 source locks 已準備；exact fixture lock 等待 derived PCM；M2B、Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -50,7 +51,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
-| M2A Baseline Survey | `PACKET IN PROGRESS / FIXTURE LOCK BLOCKED` | Candidate identities/budgets 與 Common Voice source 12 已鎖定；等待 internal 8 labels 與 derived 8+12 PCM lock 後才可執行 |
+| M2A Baseline Survey | `SOURCE LOCKED / DERIVED PCM LOCK PENDING` | Candidate identities/budgets 與 internal 8 + Common Voice 12 sources 已鎖定；等待 derived 8+12 PCM lock 後才可執行 |
 | M2B Optimization Feasibility | `PENDING M2A SHORTLIST` | Primary、fallback、exact recipe、single-variable delta table、Core/User review |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
@@ -70,11 +71,11 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 ## Open risks and next authorized work
 
-- `NEXT`：取得受控 frozen VAD label index，解出 exact internal eight，並把已鎖定的
-  Common Voice twelve 與 internal eight 衍生成 16 kHz mono S16_LE；記錄 conversion
+- `NEXT`：把已鎖定的 Common Voice twelve 與 internal eight 衍生成 16 kHz mono
+  S16_LE；記錄 conversion
   identity、duration、PCM checksums 與 sanitized exact index。
-- `BLOCKER`：受控 frozen VAD label index 尚未在目前環境可用；在 exact internal eight
-  與完整 8+12 PCM lock 前，M2A candidate execution fail closed。
+- `BLOCKER`：目前沒有外部資料 blocker；derived 8+12 PCM lock 是剩餘工程前置工作。
+  在完整 PCM lock 前，M2A candidate execution 仍 fail closed。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。
 - `RISK`：Matcha User quality、offline、lifecycle、resource growth 與 legal conditions

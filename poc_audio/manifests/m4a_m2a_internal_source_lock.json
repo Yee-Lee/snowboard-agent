@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0",
+  "index_id": "M4A-M2A-INTERNAL-SOURCE-LOCK-001",
+  "status": "SOURCE_CLIPS_LOCKED_DERIVED_PCM_PENDING",
+  "source_identities": {
+    "recording_plan_sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
+    "vad_label_index_sha256": "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
+    "delivered_fixture_manifest_sha256": "1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2",
+    "delivered_pcm": {
+      "sample_rate_hz": 16000,
+      "channels": 1,
+      "sample_format": "S16_LE"
+    }
+  },
+  "selection": {
+    "timing": "BEFORE_ANY_M2A_CANDIDATE_OUTPUT_REVIEW",
+    "rule": "two longest frozen-label-bounded items per group; include global longest",
+    "count": 8,
+    "records": [
+      {
+        "fixture_id": "asr-pause-027",
+        "category": "taiwan_mandarin",
+        "group": "taiwan_mandarin",
+        "bounded_duration_ms": 4410,
+        "reference_sha256": "4153dfe1c84a69f6a05aa1c61e8e21cecbdfbdb12371aeb35e72d783d568a8f7",
+        "globally_longest": false,
+        "source_wav_sha256": "bd0e1225242e050501fa5a5e0ce8d4db650089544aab22607d484e7ba7053a43",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-031",
+        "category": "taiwan_mandarin",
+        "group": "taiwan_mandarin",
+        "bounded_duration_ms": 4170,
+        "reference_sha256": "39dd0b8fd101424c5c6c22076c411b11453178ad5332a65a115cb0cba8982772",
+        "globally_longest": false,
+        "source_wav_sha256": "149bb1a36f08886b3fcc4b696b0f024d5110507dd4d0d28467d53a717b3a0754",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-038",
+        "category": "code_switch",
+        "group": "code_switch",
+        "bounded_duration_ms": 3990,
+        "reference_sha256": "ae5e3d5f6ba3a1d6d2edc387af7ec7fb8c1b9d8167c615f8fbf45dfb963496fa",
+        "globally_longest": false,
+        "source_wav_sha256": "0c9dea04a2c5ccae2ed20b2b21a9a9550d2bef04383b25ff8f4d85823a6113c9",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-040",
+        "category": "code_switch",
+        "group": "code_switch",
+        "bounded_duration_ms": 3900,
+        "reference_sha256": "a2ba95e5703e37de6c65054f2fd1cd51357463224b0726f46e344280e6117462",
+        "globally_longest": false,
+        "source_wav_sha256": "42548ff1ba5ca0df647702a3035ae4e49222214955ff5c469cb554c101233993",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-042",
+        "category": "number",
+        "group": "number_or_date",
+        "bounded_duration_ms": 4450,
+        "reference_sha256": "d2ff448cada6deda5b479fcd4f9d32a17fabf39d5500e27b35f61797114ee9ea",
+        "globally_longest": true,
+        "source_wav_sha256": "d63e613744a4261b329466fc7873eeb936cbba8f642d74a6436222771c800baa",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-045",
+        "category": "date",
+        "group": "number_or_date",
+        "bounded_duration_ms": 4030,
+        "reference_sha256": "0fcd10d8c08d740419e722f985bfc8d8962d63792952cf57eb6a9a0beeefac5a",
+        "globally_longest": false,
+        "source_wav_sha256": "a6590054a5ca863bee9dab6b76ba792bd9fb987dd9536f5d3fd07421acd2be24",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-048",
+        "category": "product_term",
+        "group": "product_term",
+        "bounded_duration_ms": 3830,
+        "reference_sha256": "e0414e55feef9f8452bf0ddaca8fcfe714d0bd9c423d0dcac226334dcc269057",
+        "globally_longest": false,
+        "source_wav_sha256": "76d67cc6cd36bfbe373dd1e33d6b1d7b7572c30c7fd1536b22bc53f52dcdcccf",
+        "source_wav_size_bytes": 256044
+      },
+      {
+        "fixture_id": "asr-pause-050",
+        "category": "product_term",
+        "group": "product_term",
+        "bounded_duration_ms": 3730,
+        "reference_sha256": "03af194e6e4ee9018ceee04359c67f1dfcf5527bed9ba7efb15109228fb50c30",
+        "globally_longest": false,
+        "source_wav_sha256": "1e0288a45d979431a018b95ece43749b8656191b014cb63699f18cb4622e26dd",
+        "source_wav_size_bytes": 256044
+      }
+    ]
+  },
+  "local_controlled_copy": {
+    "git_policy": "PRIVATE_AUDIO_IGNORED_DO_NOT_COMMIT",
+    "relative_directory": "poc_audio/fixtures/artifacts/m1-authorized-zh-tw-v1-pilot-r1/delivered-option-a-v1",
+    "source_asr_file_count": 50
+  },
+  "handoff": {
+    "source_wav_sha256_is_authoritative": true,
+    "reference_text_in_tracked_index": false
+  }
+}

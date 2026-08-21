@@ -148,12 +148,12 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 
 1. **ACK-003 intake**：`COMPLETE`；M2A/M2B 邊界、歷史 evidence preservation 與
    Core implementation release boundary 已記入 milestone。
-2. **M2A packet**：`IN_PROGRESS / FIXTURE LOCK BLOCKED`；八個 rows 的 official
+2. **M2A packet**：`SOURCE LOCKED / DERIVED PCM LOCK PENDING`；八個 rows 的 official
    artifact/runtime identities、row/item budgets、schema、validator、tests 與 deterministic
    selector 已準備。Common Voice 26.0 `zh-TW` CC0-1.0 exact 12 source clips 已取得，
-   sanitized source lock 已記錄 member path、size 與逐檔 SHA-256。Internal exact eight
-   仍等待 controlled frozen labels；derived 8+12 PCM checksums 與 sanitized exact index
-   尚未產生。
+   sanitized source lock 已記錄 member path、size 與逐檔 SHA-256。Pi 上 frozen labels、
+   delivered manifest 與 50 ASR WAV 已傳回驗證，internal exact eight source lock 已固定。
+   Derived 8+12 PCM checksums 與 sanitized exact index 尚未產生。
 3. **M2A execution/scorecard**：`NOT_STARTED`；所有 rows 使用共同 packet，回傳
    observations 與 2–3 row shortlist，不下 PASS/FAIL/winner 判定。
 4. **M2B optimization**：`PENDING`；只對 shortlist 做一變因 probes，完成 primary、
@@ -175,9 +175,8 @@ candidate-specific provisional integration；production dependency lock 必須�
 - ACK-003 已書面授權 M2A rows 與 M2B probe categories。
 - PM relay/ACK path、Core decision owner 與敏感 fixture 受控位置可用。
 - 每個 row 在 first load 前仍須完成 exact identity/provenance/license preflight。
-- Common Voice official dataset identity/license、authenticated acquisition、exact 12 clip IDs
-  與 source checksums 已完成；internal exact eight 與 derived 8+12 PCM lock 尚未完成，
-  此項仍是 execution entry blocker。
+- Common Voice exact 12 與 internal exact 8 的 source identities/checksums 已完成；derived
+  8+12 PCM lock 尚未完成，此項仍是 execution entry blocker。
 
 ## Exit Gate
 

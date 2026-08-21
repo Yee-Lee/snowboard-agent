@@ -173,8 +173,8 @@ runtime identities, deterministic internal/Common Voice selection rules, bounded
 budgets and observation-only dispositions. It remains
 `PREPARED_FIXTURE_LOCK_PENDING`: no candidate may build, load or execute until the
 controlled frozen labels and derived PCM have produced the reviewed exact 20-item
-fixture lock. The authenticated Common Voice 26.0 zh-TW acquisition and exact
-twelve-source lock are complete. See
+fixture lock. The frozen internal exact-eight source lock and authenticated Common
+Voice 26.0 zh-TW exact-twelve source lock are complete; derived PCM remains pending. See
 [`M4A-M2A-COMMON-PACKET-001`](deliveries/M4A-M2A-COMMON-PACKET-001.md) for the
 controlled preparation command and current blocker.
 

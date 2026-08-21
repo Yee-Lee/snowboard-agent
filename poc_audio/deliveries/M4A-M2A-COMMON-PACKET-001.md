@@ -62,8 +62,10 @@ items in each group:
 
 This produces exactly eight unique fixtures and necessarily includes the globally
 longest frozen-label-bounded item. Selection uses only frozen metadata, never model
-output. Exact IDs remain pending because controlled labels and WAVs correctly do not
-exist in Git.
+output. The controlled labels and WAVs do not exist in Git; they have been recovered
+from the controlled Pi revision and verified locally. The exact IDs and source WAV
+checksums are recorded without audio or transcript in
+[`m4a_m2a_internal_source_lock.json`](../manifests/m4a_m2a_internal_source_lock.json).
 
 ### Common Voice twelve
 
@@ -172,7 +174,7 @@ verify a fresh download even when its outer archive packaging differs.
 ## Current disposition
 
 - Candidate/runtime identity: `PREPARED / LOCAL VALIDATION REQUIRED`
-- Internal exact eight: `PENDING CONTROLLED LABEL RESOLUTION`
+- Internal exact eight source WAVs: `LOCKED / FROZEN LABEL AND WAV SHA-256 VERIFIED`
 - Common Voice exact twelve source MP3s: `LOCKED / PER-CLIP SHA-256 VERIFIED`
 - Derived PCM checksum lock: `NOT STARTED`
 - Candidate build/load/inference: `PROHIBITED`

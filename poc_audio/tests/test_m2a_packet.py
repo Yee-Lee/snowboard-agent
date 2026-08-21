@@ -22,6 +22,7 @@ from audio_poc.m4a_m2a_packet import (  # noqa: E402
     select_common_voice_archive,
     select_internal_fixtures,
     validate_common_voice_source_lock,
+    validate_internal_source_lock,
     validate_packet,
 )
 
@@ -64,6 +65,26 @@ class M2ACommonPacketTests(unittest.TestCase):
         changed["selection"]["records"][0]["source_mp3_sha256"] = "0" * 63
         with self.assertRaisesRegex(ValueError, "source_mp3_sha256"):
             validate_common_voice_source_lock(changed)
+
+    def test_tracked_internal_source_lock_is_sanitized(self) -> None:
+        source_lock = json.loads(
+            (
+                REPO_ROOT / "poc_audio/manifests/m4a_m2a_internal_source_lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        validate_internal_source_lock(source_lock)
+        serialized = json.dumps(source_lock, sort_keys=True)
+        self.assertNotIn('"reference_text"', serialized)
+        self.assertNotIn('"transcript"', serialized)
+        self.assertEqual(len(source_lock["selection"]["records"]), 8)
+        self.assertEqual(
+            [
+                record["fixture_id"]
+                for record in source_lock["selection"]["records"]
+                if record["globally_longest"]
+            ],
+            ["asr-pause-042"],
+        )
 
     def test_q5_is_independent_and_m2a_has_no_elimination_gates(self) -> None:
         serialized = json.dumps(self.packet, sort_keys=True)
