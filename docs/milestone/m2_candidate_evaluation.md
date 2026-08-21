@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`M2A FIXTURE LOCKED / NOT EXECUTED — ROW ARTIFACT/RUNTIME PREFLIGHT NEXT / M2B PENDING M2A SHORTLIST / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
+Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
 
 ## 目標
 
@@ -35,8 +35,8 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
-| M2A ASR baseline survey | `FIXTURE LOCKED / NOT EXECUTED` | Rows、official identities、budgets、deterministic selector 與 exact controlled 8+12 PCM 已鎖定；逐 row preflight 後才能執行 |
-| M2B ASR optimization | `PENDING M2A SHORTLIST` | 只允許 shortlist 進場；每次實驗相對 named baseline 只改一個變因，回傳 primary、fallback、exact recipe 與 delta table |
+| M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
+| M2B ASR optimization | `IN_PROGRESS` | 只允許三列 shortlist 進場；第一個 probe 為 base Q5→base Q8 量化單變因 |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
@@ -148,16 +148,18 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 
 1. **ACK-003 intake**：`COMPLETE`；M2A/M2B 邊界、歷史 evidence preservation 與
    Core implementation release boundary 已記入 milestone。
-2. **M2A packet**：`FIXTURE LOCKED / NOT EXECUTED`；八個 rows 的 official
+2. **M2A packet**：`COMPLETE`；八個 rows 的 official
    artifact/runtime identities、row/item budgets、schema、validator、tests 與 deterministic
    selector 已準備。Common Voice 26.0 `zh-TW` CC0-1.0 exact 12 source clips 已取得，
    sanitized source lock 已記錄 member path、size 與逐檔 SHA-256。Pi 上 frozen labels、
    delivered manifest 與 50 ASR WAV 已傳回驗證，internal exact eight source lock 已固定。
    Derived 8+12 PCM、conversion runtime、duration、checksums 與 sanitized exact index
-   已鎖定；尚未 build/load/run candidate。
-3. **M2A execution/scorecard**：`NOT_STARTED`；所有 rows 使用共同 packet，回傳
-   observations 與 2–3 row shortlist，不下 PASS/FAIL/winner 判定。
-4. **M2B optimization**：`PENDING`；只對 shortlist 做一變因 probes，完成 primary、
+   已鎖定；六個 required rows 已完成 exact artifact/runtime preflight 與執行，兩個
+   optional rows 以 resource/scope 理由省略。
+3. **M2A execution/scorecard**：`COMPLETE / REVIEWED`；共同 packet scorecard 與
+   small Q8、base Q5、medium Q5 shortlist 已記錄，不下 PASS/FAIL/winner 判定。詳見
+   [`M4A-M2A-COMPARATIVE-SCORECARD-001`](../../poc_audio/evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md)。
+4. **M2B optimization**：`IN_PROGRESS`；只對 shortlist 做一變因 probes，完成 primary、
    fallback、recipe 與 delta table，送 Core/User comparative review。
 5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
    scope ACK，不能以 frozen-label endpoint simulation 取代。

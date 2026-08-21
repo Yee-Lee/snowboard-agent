@@ -3,7 +3,7 @@
 - **Packet ID**: `M4A-M2A-COMMON-PACKET-001`
 - **Authority**: `DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`
 - **Branch**: `audio`
-- **Status**: `FIXTURE LOCKED / CANDIDATES NOT EXECUTED`
+- **Status**: `EXECUTED / SCORECARD REVIEWED / M2B HANDOFF`
 - **Delivery contribution**: final checklist candidate identity, shared fixture index,
   bounded comparison method, result-schema and cleanup evidence
 
@@ -85,7 +85,8 @@ dataset terms. Codex did not create an account, accept terms for the User or rec
 a token. The User supplied the downloaded archive; deterministic pre-output
 selection and per-clip checksum review have now locked the exact twelve source MP3s.
 The derived PCM lock is complete; the source lock alone does not confer this state,
-but the reviewed source plus derived lock advances the packet to `LOCKED_NOT_EXECUTED`.
+and the reviewed source plus derived lock advanced the packet to
+`LOCKED_NOT_EXECUTED` before candidate execution began.
 
 The roughly 3 GB archive and extracted dataset do not need to reside on the
 workstation system disk and must never be placed in this repository. An external
@@ -152,8 +153,10 @@ bash poc_audio/tools/run_m4a_m2a_packet.sh \
 The preselection is controlled and not committable because it contains Common Voice
 text. The derived PCM lock has now recorded conversion identity, durations and
 checksums in
-[`m4a_m2a_fixture_lock.json`](../manifests/m4a_m2a_fixture_lock.json). Its status is
-`LOCKED_NOT_EXECUTED`; Pi row commands remain pending exact artifact/runtime preflight.
+[`m4a_m2a_fixture_lock.json`](../manifests/m4a_m2a_fixture_lock.json). Its immutable
+status remains `LOCKED_NOT_EXECUTED` because that field describes the pre-execution
+lock artifact; later row execution and scorecard review are recorded below without
+rewriting the frozen lock.
 
 The source selection is now recorded without transcript or audio in
 [`m4a_m2a_common_voice_source_lock.json`](../manifests/m4a_m2a_common_voice_source_lock.json).
@@ -178,6 +181,7 @@ verify a fresh download even when its outer archive packaging differs.
 - Internal exact eight source WAVs: `LOCKED / FROZEN LABEL AND WAV SHA-256 VERIFIED`
 - Common Voice exact twelve source MP3s: `LOCKED / PER-CLIP SHA-256 VERIFIED`
 - Derived PCM checksum lock: `LOCKED / 20 WAV IDENTITIES VERIFIED`
-- Candidate build/load/inference: `PROHIBITED`
-- M2A scorecard/shortlist: `NOT STARTED`
-- M2B: `PENDING M2A SHORTLIST`
+- Candidate build/load/inference: `SIX REQUIRED ROWS EXECUTED / TWO OPTIONAL ROWS OMITTED WITH REASONS`
+- M2A scorecard/shortlist: `COMPLETE / OBSERVATIONS REVIEWED` — see
+  [`M4A-M2A-COMPARATIVE-SCORECARD-001`](../evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md)
+- M2B: `IN_PROGRESS / THREE-ROW SHORTLIST ONLY`

@@ -170,11 +170,11 @@ bash poc_audio/tools/run_m4a_m2a_packet.sh --validate-only
 
 The tracked packet pins eight required/optional ASR rows, official artifact and
 runtime identities, deterministic internal/Common Voice selection rules, bounded
-budgets and observation-only dispositions. It remains
-`LOCKED_NOT_EXECUTED`: the frozen internal exact-eight and authenticated Common Voice
-26.0 zh-TW exact-twelve sources have produced the reviewed 20-item 16 kHz mono S16_LE
-fixture lock. No candidate has built, loaded or executed; each row still requires its
-exact artifact/runtime/license preflight. See
+budgets and observation-only dispositions. The frozen internal exact-eight and
+authenticated Common Voice 26.0 zh-TW exact-twelve sources produced the reviewed
+20-item 16 kHz mono S16_LE fixture lock. Six required rows have since completed exact
+artifact/runtime/license preflight and bounded execution; see the reviewed scorecard
+in `poc_audio/evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md`. See
 [`M4A-M2A-COMMON-PACKET-001`](deliveries/M4A-M2A-COMMON-PACKET-001.md) for the
 controlled preparation command and current blocker.
 

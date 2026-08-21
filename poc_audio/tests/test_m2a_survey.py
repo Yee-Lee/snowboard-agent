@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import tempfile
 import unittest
@@ -11,12 +12,40 @@ from audio_poc.m2a_survey import (
     executable_path_preserving_venv,
     execution_status,
     expected_wheel_packages,
+    load_m2b_probe,
     numeric_summary,
     summarize,
 )
 
 
 class M2ASurveyTests(unittest.TestCase):
+    def test_tracked_base_q8_probe_is_one_variable_only(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        packet = json.loads(
+            (root / "poc_audio/manifests/m4a_m2a_common_packet.json").read_text(encoding="utf-8")
+        )
+        row, probe = load_m2b_probe(
+            root / "poc_audio/manifests/m2b_base_q8_probe.json", packet,
+        )
+        self.assertEqual(row["artifact"]["filename"], "ggml-base-q8_0.bin")
+        self.assertEqual(probe["single_variable"]["name"], "model_quantization")
+
+    def test_base_q8_probe_rejects_changed_frozen_control(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        packet = json.loads(
+            (root / "poc_audio/manifests/m4a_m2a_common_packet.json").read_text(encoding="utf-8")
+        )
+        probe = json.loads(
+            (root / "poc_audio/manifests/m2b_base_q8_probe.json").read_text(encoding="utf-8")
+        )
+        changed = copy.deepcopy(probe)
+        changed["fixed_controls"]["threads"] = 3
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "changed.json"
+            path.write_text(json.dumps(changed), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "frozen control"):
+                load_m2b_probe(path, packet)
+
     def test_runtime_python_path_preserves_venv_symlink(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "python-target"
@@ -49,6 +78,10 @@ class M2ASurveyTests(unittest.TestCase):
             "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW",
         )
         self.assertEqual(execution_status(False, 2), "INCONCLUSIVE_RETAINED")
+        self.assertEqual(
+            execution_status(True, None, True),
+            "M2B_PROBE_OBSERVATIONS_COMPLETE_PENDING_DELTA_REVIEW",
+        )
 
     def test_numeric_summary_uses_nearest_rank(self) -> None:
         self.assertEqual(

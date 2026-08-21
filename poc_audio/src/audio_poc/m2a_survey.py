@@ -22,6 +22,7 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 
 
 REPORT_ID = "M4A-M2A-BASELINE-SURVEY-ROW-001"
+M2B_REPORT_ID = "M4A-M2B-SINGLE-VARIABLE-PROBE-ROW-001"
 FIXTURE_LOCK_SHA256 = "fa3649f2fde77aaaa2132cab81b6d3c562e2b812335d90e846fb6c3f85c943e6"
 CONTROLLED_MANIFEST_SHA256 = "24d3747cbcec7b5a22c7842ac92851a672dcdbe8b256e616c0abf1195dd42a9a"
 
@@ -220,20 +221,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--sanitized-output", type=Path, required=True)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--diagnostic-recheck",
         type=int,
         choices=(1, 2),
         help="mark this run as diagnostic recheck 1 or 2, excluded from the M2A scorecard",
     )
+    mode.add_argument(
+        "--m2b-probe-manifest",
+        type=Path,
+        help="run one reviewed-shortlist M2B single-variable probe",
+    )
     return parser.parse_args()
 
 
-def execution_status(complete: bool, diagnostic_recheck: int | None) -> str:
+def execution_status(
+    complete: bool, diagnostic_recheck: int | None, m2b_probe: bool = False,
+) -> str:
     if not complete:
         return "INCONCLUSIVE_RETAINED"
     if diagnostic_recheck is not None:
         return "DIAGNOSTIC_RECHECK_COMPLETE_NOT_SCORECARD"
+    if m2b_probe:
+        return "M2B_PROBE_OBSERVATIONS_COMPLETE_PENDING_DELTA_REVIEW"
     return "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW"
 
 
@@ -260,6 +271,48 @@ def expected_wheel_packages(runtime: dict[str, Any]) -> dict[str, str]:
     return packages
 
 
+def load_m2b_probe(path: Path, packet: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    probe = load_json(path)
+    if probe.get("status") != "AUTHORIZED_BY_REVIEWED_M2A_SHORTLIST":
+        raise ValueError("M2B probe is not authorized by reviewed M2A shortlist")
+    baseline_id = probe.get("baseline_candidate_id")
+    baseline = next(
+        (row for row in packet["candidate_rows"] if row["candidate_id"] == baseline_id), None,
+    )
+    if baseline is None or baseline_id not in probe.get("shortlist", []):
+        raise ValueError("M2B baseline is not in the reviewed shortlist")
+    if probe.get("runtime_id") != baseline["runtime_id"]:
+        raise ValueError("M2B probe changes the baseline runtime")
+    variable = probe.get("single_variable", {})
+    if variable != {
+        "name": "model_quantization", "baseline_value": "Q5_1", "probe_value": "Q8_0",
+    }:
+        raise ValueError("M2B probe is not the reviewed quantization-only change")
+    controls = probe.get("fixed_controls", {})
+    expected_controls = {
+        "fixture_lock_sha256": FIXTURE_LOCK_SHA256,
+        "controlled_manifest_sha256": CONTROLLED_MANIFEST_SHA256,
+        "fixture_count": 20, "warmups_per_item": 1, "scored_inferences_per_item": 1,
+        "per_item_timeout_seconds": 120, "row_budget_seconds": 2400, "threads": 4,
+        "platform": "Raspberry Pi 5 / Debian 13 / aarch64",
+        "network": "isolated namespace", "audio_capture": False, "audio_playback": False,
+    }
+    if controls != expected_controls:
+        raise ValueError("M2B probe changes a frozen control")
+    artifact = probe.get("artifact", {})
+    required_artifact = {
+        "filename", "immutable_revision", "license", "sha256", "size_bytes", "source_url",
+    }
+    if set(artifact) != required_artifact or len(str(artifact["sha256"])) != 64:
+        raise ValueError("M2B probe artifact identity is incomplete")
+    row = {
+        "candidate_id": probe["probe_candidate_id"],
+        "artifact": artifact,
+        "runtime_id": probe["runtime_id"],
+    }
+    return row, probe
+
+
 def main() -> int:
     args = parse_args()
     root = repo_root().resolve()
@@ -269,9 +322,20 @@ def main() -> int:
     packet = load_json(root / "poc_audio/manifests/m4a_m2a_common_packet.json")
     validate_packet(packet)
     validate_linked_fixture_lock(packet)
-    row = next((item for item in packet["candidate_rows"] if item["candidate_id"] == args.candidate), None)
-    if row is None:
-        raise ValueError("candidate is not authorized by ACK-003")
+    probe = None
+    if args.m2b_probe_manifest is not None:
+        expected_probe_path = root / "poc_audio/manifests/m2b_base_q8_probe.json"
+        if args.m2b_probe_manifest.resolve() != expected_probe_path:
+            raise ValueError("M2B probe must use the tracked manifest from the clean candidate SHA")
+        row, probe = load_m2b_probe(args.m2b_probe_manifest, packet)
+        if args.candidate != row["candidate_id"]:
+            raise ValueError("candidate does not match M2B probe manifest")
+        if args.engine != "whisper":
+            raise ValueError("reviewed base Q8 M2B probe requires whisper engine")
+    else:
+        row = next((item for item in packet["candidate_rows"] if item["candidate_id"] == args.candidate), None)
+        if row is None:
+            raise ValueError("candidate is not authorized by ACK-003")
     artifact = row["artifact"]
     if args.artifact.name != artifact["filename"] or args.artifact.stat().st_size != artifact["size_bytes"] \
             or sha256_file(args.artifact) != artifact["sha256"]:
@@ -337,9 +401,9 @@ def main() -> int:
     cleanup.update({"threads": 0, "iterators": 0, "streams": 0, "device_owners": owners_after})
     cleanup["clean"] = bool(cleanup["clean"] and owners_before == owners_after == 0)
     complete = len(sanitized_results) == 20 and error_code is None and cleanup["clean"]
-    status = execution_status(complete, args.diagnostic_recheck)
+    status = execution_status(complete, args.diagnostic_recheck, probe is not None)
     base = {
-        "schema_version": "1.0", "report_id": REPORT_ID,
+        "schema_version": "1.0", "report_id": M2B_REPORT_ID if probe is not None else REPORT_ID,
         "generated_at_utc": datetime.now(UTC).isoformat(), "review_status": "UNREVIEWED",
         "poc_source_sha": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
         "candidate_id": args.candidate, "engine": args.engine, "platform": target,
@@ -355,7 +419,11 @@ def main() -> int:
             "fixture_count": 20, "warmups_per_item": 1,
             "scored_inferences_per_item": 1, "per_item_timeout_seconds": 120,
             "row_budget_seconds": 2400, "threads": 4 if args.engine != "vosk" else 1,
-            "run_class": "DIAGNOSTIC_RECHECK_NOT_SCORECARD" if args.diagnostic_recheck is not None else "FORMAL_M2A_SCORECARD_ROW",
+            "run_class": (
+                "M2B_SINGLE_VARIABLE_PROBE" if probe is not None else
+                "DIAGNOSTIC_RECHECK_NOT_SCORECARD" if args.diagnostic_recheck is not None else
+                "FORMAL_M2A_SCORECARD_ROW"
+            ),
             "diagnostic_recheck_index": args.diagnostic_recheck,
         },
         "fixture_lock_sha256": FIXTURE_LOCK_SHA256,
@@ -366,6 +434,13 @@ def main() -> int:
         "network_evidence": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_SURVEY",
         "security": {"audio_device_opened": False, "speaker_playback": False, "pcm_emitted_to_report": False},
     }
+    if probe is not None:
+        base["m2b_probe"] = {
+            "probe_id": probe["probe_id"],
+            "baseline_candidate_id": probe["baseline_candidate_id"],
+            "single_variable": probe["single_variable"],
+            "review_evidence": probe["review_evidence"],
+        }
     raw = {
         **base, "git_safety": "CONTROLLED_TRANSCRIPTS_AND_PATHS_DO_NOT_COMMIT",
         "runtime_command": command, "results": raw_results,
@@ -375,7 +450,8 @@ def main() -> int:
     args.sanitized_output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(raw, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     args.sanitized_output.write_text(json.dumps(sanitized, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"M2A row report: {args.sanitized_output} ({status})")
+    stage = "M2B probe" if probe is not None else "M2A row"
+    print(f"{stage} report: {args.sanitized_output} ({status})")
     return 0 if complete else 1
 
 
