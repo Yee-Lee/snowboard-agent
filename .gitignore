@@ -40,6 +40,7 @@ htmlcov/
 # Operator-specific remote access and raw hardware-test evidence
 # Keep connection endpoints, account/key selection, and unsanitized run output
 # outside version control. Publish only reviewed, sanitized summaries.
+poc_llm/.artifacts/
 poc_audio/ssh/*.conf
 poc_audio/evidence/m0/[0-9]*/
 poc_audio/evidence/m1/[0-9]*/

@@ -52,6 +52,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md`](delivery/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) - M1 locked PromptBuilder/response/protocol/strict-config Freeze Candidate；請 Core Designer/Internal Tester 一次整包 review
 * [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md`](delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) - 對 Core 四項 findings 的單一 replacement；review target `llm` / `93b34c14...`
 * [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md`](delivery/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) - locked-scope FATAL replacement；review target `llm` / `830d0b4e...`
+* [`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md`](delivery/DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md) - Gate 1 x86/Pi strict-config identity finding；請 Core 發出 replacement schema/lock/runner packet
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

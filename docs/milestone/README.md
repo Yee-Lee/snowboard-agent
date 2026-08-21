@@ -63,6 +63,9 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   已固定官方 revision、artifact/wheel SHA-256 與 Apache-2.0 metadata。Artifact/dependency
   bundle、source/archive checksum、adapter、strict config 與實體 manifest 尚未完成，
   candidate 仍只是 proposal。
+- **Blocking finding — Gate 1 platform strict config**：`M2-G1-PLATFORM-CONFIG-001` 已確認
+  frozen single-config manifest 無法同時真實綁定 x86 與 Pi 所需的 strict platform identity；
+  在 Core 發出 schema/lock/runner revision 前不得發行 candidate manifest 或執行真實 Gate 1 run。
 - **Platform decision — Gate 1**：native Ubuntu aarch64 runner 需求已由 Core 移除。
   Ubuntu 24.04 x86_64 完整初篩後一次預選最多兩名，再於產品 Debian 13 Pi 執行 bounded
   compatibility；Pi `FAIL/INCONCLUSIVE` 同 cycle 不得補測第三名。
