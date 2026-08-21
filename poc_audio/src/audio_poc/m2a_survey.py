@@ -237,6 +237,29 @@ def execution_status(complete: bool, diagnostic_recheck: int | None) -> str:
     return "OBSERVATIONS_COMPLETE_PENDING_COMPARATIVE_REVIEW"
 
 
+def executable_path_preserving_venv(path: Path) -> Path:
+    """Make an executable path absolute without resolving a virtualenv symlink."""
+    absolute = Path(os.path.abspath(path))
+    if not absolute.is_file() or not os.access(absolute, os.X_OK):
+        raise ValueError("runtime Python is not an executable file")
+    return absolute
+
+
+def expected_wheel_packages(runtime: dict[str, Any]) -> dict[str, str]:
+    packages: dict[str, str] = {}
+    for artifact in runtime.get("runtime_artifacts", []):
+        filename = str(artifact["filename"])
+        if not filename.endswith(".whl"):
+            continue
+        fields = filename.removesuffix(".whl").split("-")
+        if len(fields) < 5:
+            raise ValueError(f"invalid runtime wheel filename: {filename}")
+        packages[fields[0].replace("_", "-")] = fields[1]
+    if not packages:
+        raise ValueError("Python runtime has no pinned wheel package identities")
+    return packages
+
+
 def main() -> int:
     args = parse_args()
     root = repo_root().resolve()
@@ -284,7 +307,8 @@ def main() -> int:
     else:
         if args.model_dir is None:
             raise ValueError("Python ASR row requires --model-dir")
-        command = [str(args.runtime_python.resolve()), "-m", "audio_poc.m2a_asr_worker", "--engine", args.engine, "--model-dir", str(args.model_dir.resolve())]
+        runtime_python = executable_path_preserving_venv(args.runtime_python)
+        command = [str(runtime_python), "-m", "audio_poc.m2a_asr_worker", "--engine", args.engine, "--model-dir", str(args.model_dir.resolve())]
         worker = JsonWorker(command, args.work_dir / "worker.stderr.log")
     owners_before = audio_device_owner_count()
     started = time.monotonic()
@@ -293,6 +317,10 @@ def main() -> int:
     error_code = None
     try:
         worker.start()
+        if args.engine != "whisper" and worker.runtime_identity != {
+            "packages": expected_wheel_packages(runtime),
+        }:
+            raise RuntimeError("loaded runtime package identity mismatch")
         for item in items:
             worker.transcribe(item["wav_path"], 120.0)
             metrics = worker.transcribe(item["wav_path"], 120.0)

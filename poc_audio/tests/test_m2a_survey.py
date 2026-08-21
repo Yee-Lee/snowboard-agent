@@ -7,10 +7,38 @@ import wave
 from pathlib import Path
 
 from audio_poc.m2a_asr_worker import _read_wav
-from audio_poc.m2a_survey import execution_status, numeric_summary, summarize
+from audio_poc.m2a_survey import (
+    executable_path_preserving_venv,
+    execution_status,
+    expected_wheel_packages,
+    numeric_summary,
+    summarize,
+)
 
 
 class M2ASurveyTests(unittest.TestCase):
+    def test_runtime_python_path_preserves_venv_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "python-target"
+            target.write_text("executable", encoding="utf-8")
+            target.chmod(0o755)
+            venv_python = Path(directory) / "python"
+            venv_python.symlink_to(target)
+            self.assertEqual(executable_path_preserving_venv(venv_python), venv_python)
+            self.assertNotEqual(executable_path_preserving_venv(venv_python), target)
+
+    def test_expected_wheel_packages_covers_exact_closure(self) -> None:
+        runtime = {
+            "runtime_artifacts": [
+                {"filename": "sherpa_onnx-1.13.5-cp313-cp313-manylinux_aarch64.whl"},
+                {"filename": "sherpa_onnx_core-1.13.5-py3-none-manylinux_aarch64.whl"},
+            ]
+        }
+        self.assertEqual(
+            expected_wheel_packages(runtime),
+            {"sherpa-onnx": "1.13.5", "sherpa-onnx-core": "1.13.5"},
+        )
+
     def test_diagnostic_recheck_cannot_be_mistaken_for_scorecard_row(self) -> None:
         self.assertEqual(
             execution_status(True, 1),
