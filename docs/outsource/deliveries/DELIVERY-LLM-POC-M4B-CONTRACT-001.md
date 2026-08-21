@@ -2,9 +2,9 @@
 
 - **Delivery ID**: `DELIVERY-LLM-POC-M4B-CONTRACT-001`
 - **Finding ID**: `OUT-M4B-2026-001`、`OUT-M4B-2026-002` ～ `OUT-M4B-2026-006`
-- **References**: `PM-OUT-260814-011-m4b-llm-poc-contract-gate`、`PM-OUT-260805-002-m3-m4-poc-planning`、`PM-OUT-260817-015-llm-poc-contract-plan-review`、`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST`、`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`docs/milestones/M4.md §6.1–6.2`
-- **Revision**: `2026-08-19 / Gate 1 platform split approved`
-- **Status**: `GATE 0 R2 COMPLETE — GATE 1 PACKET REVISION AUTHORIZED / REAL EXECUTION NOT AUTHORIZED`
+- **References**: `PM-OUT-260814-011-m4b-llm-poc-contract-gate`、`PM-OUT-260805-002-m3-m4-poc-planning`、`PM-OUT-260817-015-llm-poc-contract-plan-review`、`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST`、`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST`、`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`、`docs/milestones/M4.md §6.1–6.2`
+- **Revision**: `2026-08-21 / Gate 1 R5 platform-config identity revision authorized`
+- **Status**: `GATE 0 R2 COMPLETE — GATE 1 R5 REPOSITORY REVISION AUTHORIZED / REAL EXECUTION BLOCKED`
 - **Contract owner**: Core Team Designer
 - **Relay owner**: PM (轉交 LLM POC Team)
 - **Date**: 2026-08-15
@@ -67,7 +67,7 @@ M4b Local LLM 是以 Core production 架構中的 Resource Manager、Reasoner �
 | Exit | Candidate eligibility / provenance / license完整；x86完整初篩依凍結fixture與decision table完成；依x86排序預選最多兩個candidate並完成產品Pi compatibility try-run；只有Pi `PASS`者可成為Gate 1 proposed finalist；Core Designer書面確認後才可進入Gate 2A |
 | Owner | POC 提交；Core Designer 核准範圍 |
 | Blocking scope | 未取得Core書面Gate 1 ACK前，不得將候選視為已核准，不得開始Gate 2A或在Core production引用；Pi try-run只是Gate 1 compatibility evidence，不得標記為M4B-P1～P12、performance、resource、thermal、offline-product或winner evidence |
-| 下一動作 | POC先回交新frozen packet / schema / selector revision的單一commit供Core intake；另取得artifact acquisition與real execution授權後才可執行 |
+| 下一動作 | POC依`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`回交R5 platform-config packet單一commit；Core intake前不得發行candidate manifest或執行真實x86 / Pi Gate 1 run |
 
 #### Gate 1 平台分流與選擇規則
 
@@ -75,7 +75,7 @@ M4b Local LLM 是以 Core production 架構中的 Resource Manager、Reasoner �
 2. **最多兩名預選**：selector只使用authenticated x86 evidence排序，在Pi執行前一次選出最多兩名。同一selection cycle不得因Pi `FAIL`或`INCONCLUSIVE`改測第三名；若需補位，必須提出新cycle / revision並取得書面授權。
 3. **Pi compatibility try-run**：只對上述預選者，在Raspberry Pi 5 4GB / Debian 13 aarch64的隔離環境驗證pinned aarch64 runtime/dependency bundle checksum、offline install/import、exact runtime/model/config identity、bounded model load、READY/PING、一次minimal deterministic generation、SHUTDOWN ACK、exit `0`與orphan `0`。
 4. **結果語意**：候選相容只可為`PASS`、`FAIL`或`INCONCLUSIVE`；有效不相容為`FAIL`，環境、identity或evidence無法判定為`INCONCLUSIVE`。只有authenticated x86 evidence與Pi `PASS`同時成立者才可進Gate 1提案。
-5. **Identity與污染邊界**：candidate ID、pairing revision、model artifact、config、protocol與fixture identity必須一致；platform-native runtime wheels / dependency bundles可有不同SHA-256，但必須在acquisition lock與evidence中逐平台明列。Try-run必須記錄Git clean check、approved raw path、bounded timeout、network-disabled proof、cleanup與隔離環境處置。
+5. **Identity與污染邊界**：candidate ID、pairing revision、logical runtime、model bytes、protocol與fixture identity跨平台一致；strict config必須以`configs.ubuntu-x86_64` / `configs.pi-debian13-aarch64`逐平台綁定path與SHA-256。Platform-native runtime、dependency、adapter/binding與deployed model path在acquisition identity逐平台明列；runner只可投影自己平台的config並使READY / result身份一致。Try-run另記錄Git clean check、approved raw path、bounded timeout、network-disabled proof、cleanup與隔離環境處置。
 6. **不可繼承**：Gate 2A必須在`swap=0`、獨立核准packet與新run/evidence namespace下完整重跑 §5 / §7.1 mandatory matrix；Gate 1 Pi try-run不可複製、改名或引用為Gate 2A credit。
 
 ### Gate 2 ── M4b Pi 5 驗證（POC 執行，分 2A / 2B）
@@ -217,11 +217,11 @@ Core Designer (contract owner)
 
 ## 10. POC 本輪回覆 packet（由 User / PM 交付後回傳）
 
-LLM POC Team收到本revision後，可修訂不依賴候選下載的plan / schema / selector / negative regression，但本交付只授權產生新frozen packet revision。Artifact acquisition、runtime/model install、真x86 candidate run、Pi try-run、network切換或Gate 2A執行均須另行授權。請在POC repo一次commit以下內容並回覆：
+LLM POC Team收到本revision後，可依最新platform-config ACK修訂Gate 1-owned plan / schema / lock / runner / selector / negative regression，但本交付只授權產生R5 frozen packet revision。既有User-authorized controlled acquisition可保留；candidate manifest、runtime/model install、真x86 candidate run、Pi try-run、network切換或Gate 2A執行仍須通過各自entry與授權。請在POC repo一次commit以下內容並回覆：
 
 1. authoritative milestone index與External Gate→Internal Milestone→Delivery Area→P1～P12→evidence path唯一crosswalk；
 2. Gate 0 receipt與真實Initial Manifest；
-3. 新Gate 1可執行packet：candidate eligibility / provenance / license、Ubuntu 24.04 x86_64完整pre-screen、frozen harness / fixture catalog / validator、command、timeout、x86 result schema、Pi compatibility test ID / schema / evidence path與最多2 finalist decision；
+3. `G1-X86-PI-COMPAT-005`：platform-keyed configs、逐平台runtime / dependency / adapter / deployed-model acquisition identity、Ubuntu 24.04 x86_64完整pre-screen、frozen harness / fixture catalog / validator、command、timeout、x86 result schema、Pi compatibility test ID / schema / evidence path與最多2 finalist decision；
 4. selector依x86 authenticated evidence一次預選最多2名、Pi結果只作後置eligibility filter、同cycle不補位，並有missing / forged identity、Pi `FAIL`、Pi `INCONCLUSIVE`、evidence carry-over與cleanup failure的negative regressions；
 5. candidate / acquisition schema分別記錄邏輯runtime version與x86 / Pi platform-native artifact SHA-256；Pi try-run記錄exact POC SHA、approved raw path、offline bundle、network-disabled proof、bounded timeout、exit / orphan與隔離環境cleanup；
 6. Gate 2A / 2B work packages：owner、dependency、platform、entry / exit、estimate、re-estimation trigger、runner、cleanup、failure / no-go及evidence path；明列Gate 2A使用`swap=0`、獨立packet / run / namespace完整重跑，並拒絕Gate 1 evidence carry-over；
@@ -235,8 +235,8 @@ LLM POC Team收到本revision後，可修訂不依賴候選下載的plan / schem
 | 阻擋項目 | 解除條件 |
 | :--- | :--- |
 | LLM POC 工作視為已正式授權 | Gate 0 POC Receipt + Gate 1 Core 書面確認 |
-| 新Gate 1 packet / schema / selector revision | 本2026-08-19 contract revision授權進行；POC以單一commit回交exact SHA供Core intake |
-| Gate 1 artifact acquisition / real x86 execution | 新frozen packet已完成Core intake，且User對下載、安裝、容量、owner與raw path另行核准 |
+| 新Gate 1 packet / schema / selector revision | 2026-08-21 platform-config ACK授權R5 Gate 1-owned revision；不得修改frozen M1 protected paths；POC以單一commit回交exact SHA供Core intake |
+| Gate 1 candidate manifest / real x86 execution | R5 frozen packet已完成Core intake，且User對artifact、安裝、容量、owner與raw path授權完整；既有controlled acquisition本身不是candidate evidence |
 | Gate 1 Pi compatibility try-run | 已有authenticated x86排序與當次預選最多2名，且User核准Pi存取、offline/network切換、artifact transfer / install與隔離cleanup |
 | Gate 1 finalist ACK | 每個proposed finalist的authenticated x86 evidence與Pi compatibility `PASS`完整；`FAIL` / `INCONCLUSIVE`不得補位或進入ACK |
 | Gate 2A execution | Gate 1 finalist ACK + 獨立核准Gate 2A packet + Pi 5 4GB / Debian 13 aarch64 `swap=0`；不繼承Gate 1 evidence |

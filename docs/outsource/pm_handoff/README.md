@@ -12,14 +12,14 @@
 
 ---
 
-### Milestone gate 判讀（Core Team，2026-08-20）
+### Milestone gate 判讀（Core Team，2026-08-21）
 
 | Gate | 目前狀態 | 外部 contract 影響 |
 | :--- | :--- | :--- |
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a M2A baseline / M2B optimization authorized / M4b M1 candidate frozen by Designer** | Audio最新reviewed POC SHA為`c30bf8b...`；`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`以comparative funnel取代focused primary順序，授權低成本M2A scorecard及shortlist M2B優化，quality / performance不作初選hard gate。LLM Gate 0 R2與Gate 1 Packet R4仍維持接受；M1 exact candidate `830d0b4...`已完成Designer freeze，僅待Internal Tester sign-off。 |
+| **M4a / M4b POC進場** | **M4a M2A/M2B authorized / M4b Gate 1 R5 revision authorized** | Audio維持ACK-003 comparative funnel。LLM `M2-G1-PLATFORM-CONFIG-001`已在`341ccc0...`複驗成立；`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`授權R5 platform-keyed config/schema/lock/runner deterministic revision，保留M1 freeze。R5 intake前真實x86/Pi執行仍Blocked。 |
 | **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM M1 R3已完成Designer freeze，後續只剩Internal Tester gate。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
@@ -31,6 +31,11 @@ Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 
 的ASR conditional execution順序已被M2A baseline / M2B optimization取代；舊evidence
 與PM-019 closure維持不變，不重開handoff。Core generic scaffold不等待M2B；candidate-specific
 provisional integration等待M2B reviewed selection，production lock仍等待Audio M3與Gate 2B。
+
+2026-08-21 `DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST`
+已由`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受並歸檔。
+R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。Candidate manifest、
+真實x86/Pi Gate 1 execution與Gate 2A仍未放行。
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
@@ -66,6 +71,7 @@ provisional integration等待M2B reviewed selection，production lock仍等待Au
 | [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE`](history/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) | LLM POC M1 Prompt/Response/Protocol/Config freeze candidate | 無 | **Resolved — Designer revision required at `0b5a928...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) |
 | [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2`](history/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) | LLM POC M1 freeze replacement R2 | 無 | **Resolved — three findings closed, one localized revision at `93b34c1...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) |
 | [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3`](history/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) | LLM POC M1 freeze replacement R3 | 無 | **Resolved — Designer frozen at `830d0b4...`; Internal Tester sign-off pending** | ACK: [`DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md) |
+| [`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST`](history/DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md) | LLM Gate 1 x86/Pi strict-config identity revision | `M2-G1-PLATFORM-CONFIG-001` | **Resolved — R5 repository revision authorized / real execution blocked** | ACK: [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md) |
 | [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW`](history/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) | LLM POC M2 Gate 1 R5 Exact-SHA Review Request | 無 | **Superseded by DELIVERY-009** | Held for Dual-UTM preflight |
 | [`DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT`](history/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md) | LLM POC M2 Dual-UTM Environment Preflight Change Request | 無 | **Resolved — preflight authorized** | ACK: [`ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md`](../responses/ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md) |
 | [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW`](history/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) | LLM POC M2 ARM64 UTM Preflight Acceptance Request | 無 | **Resolved — exception accepted** | ACK: [`ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](../responses/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) |
@@ -84,6 +90,7 @@ docs/outsource/pm_handoff/
     ├── DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md
     ├── DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md
     ├── DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md
+    ├── DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md
     ├── DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md
     ├── DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md
     ├── DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md

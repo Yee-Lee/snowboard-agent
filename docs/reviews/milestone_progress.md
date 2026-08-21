@@ -108,7 +108,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | :--- | :--- | :--- |
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
 | M4a Audio | `M2A BASELINE / M2B OPTIMIZATION AUTHORIZED — POC RETURN PENDING` | POC最新reviewed evidence為`audio` / `c30bf8b804d1a0ee3dd612110f8f6e387ffd686f`：SenseVoice與Whisper small Q8舊gate結果保留，但不再阻止比較。`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`授權Whisper Q8 / small Q5 / base Q5 / medium Q5（另可probe large-v3-turbo Q5）、一列sherpa-onnx bilingual、Vosk small-cn及optional Qwen3-ASR feasibility依共同低成本packet建立M2A scorecard；shortlist再進M2B DSP / decoder / number-domain / recovery單變因優化。M2A/M2B不設quality / performance hard gate；P9 surrogate責任不變 |
-| M4b LLM | `GATE 0 R2 ACCEPTED — GATE 1 NOT STARTED` | `origin/llm` / `0d415d174390665ed92793937d30334f01e3df14`已關閉`OUT-M4B-2026-007-A～D`；ACK為`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`。017已收斂為兩份Accepted POC packages完成Core intake後的`M4-REG-001`整合診斷，不新增Gate或POC整合責任；Gate 2B另依Accepted Audio reference跑P9 / P10B，Gate 3做Core product exact-SHA驗收 |
+| M4b LLM | `GATE 1 R5 PLATFORM-CONFIG REVISION AUTHORIZED — REAL EXECUTION BLOCKED` | 已複驗`llm` / `341ccc012d87847fed1d3a68e5ef7cc68eb872ba`的`M2-G1-PLATFORM-CONFIG-001`：R4 candidate只有單一config，無法同時驗證x86與Pi strict identity。`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受finding並授權Gate 1-owned R5 platform-keyed config/schema/lock/runner regression；frozen M1 protected paths不得修改。R5 exact-SHA intake前不得發行candidate manifest或跑真實x86/Pi；Gate 2A/2B及017整合診斷邊界不變 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -134,13 +134,16 @@ Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evi
 Core Designer (contract owner) [DELIVERY-LLM-POC-M4B-CONTRACT-001]
   → User / PM relay revised contract → LLM POC Team
     Gate 0: POC 回交 revision receipt + initial manifest + committed planning packet
-    Gate 1: frozen harness + candidate / license + Ubuntu pre-screen → Core written ACK
+    Gate 1 R4: x86 full pre-screen + Pi compatibility packet（歷史接受；config identity finding後不得真實執行）
+      → Gate 1 R5: platform-keyed config/acquisition identity + frozen runner/lock regression
+        → Core R5 exact-SHA intake後，才可依環境／operator授權進行candidate manifest與真實Gate 1 run
+          → authenticated x86 pre-screen + 最多兩名Pi compatibility → Core Gate 1 finalist ACK
     Gate 2A: LLM-only P1~P8 / P10A / P11 / P12 → provisional finalist ACK
     Gate 2B: Accepted Audio reference + P9 / P10B combined → final winner ACK
     Gate 3: Core product implementation → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；LLM POC `0d415d1...`已完成exact-SHA複驗並由`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`接受Gate 0 R2。Gate 1尚未開始；017已實作為可包住既有smoke command的Core test-stage preflight，不作Pi Gate 2A的獨立授權Gate。
+Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。最新Gate 1 scope ACK為`docs/outsource/deliveries/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`；R5 repository revision待POC回交，真實Gate 1尚未開始。017仍只作Core test-stage preflight，不作Pi Gate 2A的獨立授權Gate。
 
 ---
 
