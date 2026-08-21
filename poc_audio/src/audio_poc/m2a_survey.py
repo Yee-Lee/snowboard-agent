@@ -33,6 +33,7 @@ class JsonWorker:
         self.process: subprocess.Popen[str] | None = None
         self.stderr_file = None
         self.load_ms: float | None = None
+        self.runtime_identity: dict[str, Any] = {}
         self.force_abort_used = False
 
     def _read(self, timeout_seconds: float) -> dict[str, Any]:
@@ -61,6 +62,10 @@ class JsonWorker:
             self.terminate()
             raise RuntimeError("worker READY identity mismatch")
         self.load_ms = float(ready["load_ms"])
+        runtime = ready.get("runtime", {})
+        if not isinstance(runtime, dict):
+            raise RuntimeError("worker runtime identity mismatch")
+        self.runtime_identity = runtime
 
     def transcribe(self, wav_path: Path, timeout_seconds: float) -> dict[str, Any]:
         if self.process is None or self.process.stdin is None:
@@ -209,6 +214,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-dir", type=Path)
     parser.add_argument("--binary", type=Path)
     parser.add_argument("--runtime-python", type=Path, default=Path("/usr/bin/python3"))
+    parser.add_argument("--runtime-artifact-dir", type=Path, required=True)
     parser.add_argument("--fixtures-dir", type=Path, required=True)
     parser.add_argument("--controlled-manifest", type=Path, required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
@@ -233,6 +239,23 @@ def main() -> int:
     if args.artifact.name != artifact["filename"] or args.artifact.stat().st_size != artifact["size_bytes"] \
             or sha256_file(args.artifact) != artifact["sha256"]:
         raise ValueError("candidate artifact identity mismatch")
+    runtime = packet["runtime_identities"][row["runtime_id"]]
+    runtime_artifacts = runtime.get("runtime_artifacts")
+    if runtime_artifacts is None:
+        runtime_artifacts = [{
+            "filename": runtime["source_filename"],
+            "size_bytes": runtime["source_size_bytes"],
+            "sha256": runtime["source_sha256"],
+        }]
+    verified_runtime_artifacts = []
+    for expected in runtime_artifacts:
+        path = args.runtime_artifact_dir / expected["filename"]
+        if path.stat().st_size != expected["size_bytes"] or sha256_file(path) != expected["sha256"]:
+            raise ValueError(f"runtime artifact identity mismatch: {expected['filename']}")
+        verified_runtime_artifacts.append({
+            "filename": expected["filename"], "size_bytes": expected["size_bytes"],
+            "sha256": expected["sha256"],
+        })
     target = target_platform()
     assert_target(target)
     assert_network_isolated()
@@ -243,6 +266,7 @@ def main() -> int:
             raise ValueError("whisper row requires matching --model and --artifact plus --binary")
         command = [str(args.binary.resolve()), "--model", str(args.model.resolve()), "--threads", "4"]
         worker: Any = NativeWhisperWorker(command, args.work_dir / "worker.stderr.log")
+        worker.runtime_identity = {"engine_version": runtime["version"]}
     else:
         if args.model_dir is None:
             raise ValueError("Python ASR row requires --model-dir")
@@ -282,6 +306,8 @@ def main() -> int:
             "engine": args.engine,
             "runtime_executable_sha256": sha256_file(Path(command[0]).resolve()),
             "command_sha256": hashlib.sha256(json.dumps(command).encode()).hexdigest(),
+            "artifacts": verified_runtime_artifacts,
+            "loaded_identity": worker.runtime_identity,
         },
         "method": {"fixture_count": 20, "warmups_per_item": 1, "scored_inferences_per_item": 1, "per_item_timeout_seconds": 120, "row_budget_seconds": 2400, "threads": 4 if args.engine != "vosk" else 1},
         "fixture_lock_sha256": FIXTURE_LOCK_SHA256,

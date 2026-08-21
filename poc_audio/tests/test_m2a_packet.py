@@ -39,6 +39,12 @@ class M2ACommonPacketTests(unittest.TestCase):
 
     def test_tracked_packet_matches_ack003(self) -> None:
         validate_packet(self.packet)
+
+    def test_vosk_runtime_closure_is_complete_and_license_risk_is_retained(self) -> None:
+        runtime = self.packet["runtime_identities"]["vosk-0.3.45-cp313-aarch64"]
+        self.assertEqual(len(runtime["runtime_artifacts"]), 11)
+        self.assertIn("redistribution review remains required", runtime["runtime_profile"]["license_note"])
+        self.assertTrue(all("license" in item for item in runtime["runtime_artifacts"]))
         self.assertEqual(
             tuple(row["candidate_id"] for row in self.packet["candidate_rows"]),
             EXPECTED_CANDIDATES,

@@ -83,6 +83,9 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
   尚未關閉。
 - `RISK`：大型/optional rows 可能受 Pi resource 或 schedule 限制；省略必須留下
   evidence-backed reason。
+- `RISK`：Vosk upstream source/model 為 Apache-2.0，但官方 0.3.45 aarch64 wheel
+  METADATA 標示 license `UNKNOWN` 且未附 notice；完整 dependency closure 已固定，僅供
+  internal survey，若進入 shortlist 仍須在再散布或產品採用前完成 legal review。
 - `BOUNDARY`：M2A observations 不得標成 PASS/FAIL/winner；歷史 results 不得重標。
 - `BOUNDARY`：Artifact mismatch、unknown provenance/license、runtime network access、
   OOM、bounded timeout 或 incomplete cleanup 仍 fail closed 並保留 observation。

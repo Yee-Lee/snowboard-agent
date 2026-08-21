@@ -185,7 +185,11 @@ warm-up and one scored inference for every item, writes raw transcripts only to 
 controlled output, and emits a separate sanitized row report. It never opens capture
 or playback devices. Each engine uses explicit arguments; for example, a whisper.cpp
 row supplies `--binary`, `--model`, and the identical `--artifact`, while Python rows
-supply `--runtime-python`, `--model-dir`, and the archived `--artifact`.
+supply `--runtime-python`, `--model-dir`, and the archived `--artifact`. Every row also
+supplies `--runtime-artifact-dir`; the runner checks every source/wheel byte identity
+from the packet before loading a model. The Vosk eleven-wheel closure is pinned for
+internal survey use, while its upstream wheel's missing license notice remains an
+explicit redistribution-review risk.
 
 #### Historical ACK-001 artifact preflight
 

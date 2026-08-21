@@ -80,13 +80,86 @@
           "filename": "vosk-0.3.45-py3-none-manylinux2014_aarch64.whl",
           "source_url": "https://files.pythonhosted.org/packages/a4/23/3130a69fa0bf4f5566a52e415c18cd854bf561547bb6505666a6eb1bb625/vosk-0.3.45-py3-none-manylinux2014_aarch64.whl",
           "size_bytes": 2368543,
-          "sha256": "54efb47dd890e544e9e20f0316413acec7f8680d04ec095c6140ab4e70262704"
+          "sha256": "54efb47dd890e544e9e20f0316413acec7f8680d04ec095c6140ab4e70262704",
+          "license": "Apache-2.0 upstream source; wheel METADATA reports UNKNOWN and contains no license file"
+        },
+        {
+          "filename": "cffi-2.1.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/37/6f/3b5ce4c3b2192d250f04908f2bfd91ef34552ec8f7716a5d4abdb8d67bb2/cffi-2.1.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+          "size_bytes": 222369,
+          "sha256": "f16c709686a78c727bbbf059f92b0bf41c6fc60deec706d2dc19f529175a6125",
+          "license": "MIT-0"
+        },
+        {
+          "filename": "pycparser-3.0-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/pycparser/pycparser-3.0-py3-none-any.whl",
+          "size_bytes": 48173,
+          "sha256": "5f6f9dbccdbe23d54fab1c279cc6efccd43286749517d2d88b2ecb00a2ed8673",
+          "license": "BSD-3-Clause"
+        },
+        {
+          "filename": "requests-2.34.2-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/requests/requests-2.34.2-py3-none-any.whl",
+          "size_bytes": 73075,
+          "sha256": "e9adb7992624fe111ddbd07653f8791c60bd716dfe21309ee0e34d55391be90f",
+          "license": "Apache-2.0"
+        },
+        {
+          "filename": "charset_normalizer-3.5.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/31/e7/1d994be1b93d41e9502b8b0460eaa88a1dd8df335df415db87d6c3e91ab2/charset_normalizer-3.5.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+          "size_bytes": 240156,
+          "sha256": "94d78ecec2605a8d0398b0f365d5f12a63248438516f5dac536a5eff7337df4a",
+          "license": "MIT"
+        },
+        {
+          "filename": "idna-3.19-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/idna/idna-3.19-py3-none-any.whl",
+          "size_bytes": 68550,
+          "sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+          "license": "BSD-3-Clause"
+        },
+        {
+          "filename": "urllib3-2.7.0-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/urllib3/urllib3-2.7.0-py3-none-any.whl",
+          "size_bytes": 131087,
+          "sha256": "1dfb38b581ddf14b3c463eaed62970ac6d620fc3a2bcf9a82c132ab1c8ffc941",
+          "license": "MIT"
+        },
+        {
+          "filename": "certifi-2026.7.22-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/certifi/certifi-2026.7.22-py3-none-any.whl",
+          "size_bytes": 136983,
+          "sha256": "9de65d0980dfad0fe9dcf13df12e8109d6f4a746b526bfb206d00126648c6c0f",
+          "license": "MPL-2.0"
+        },
+        {
+          "filename": "srt-3.5.3-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/srt/srt-3.5.3-py3-none-any.whl",
+          "size_bytes": 22428,
+          "sha256": "73bc9976691ed55efa7fb1e4747bfcb9b7029ffe9e49f81cd79236c5fb88b978",
+          "license": "MIT"
+        },
+        {
+          "filename": "tqdm-4.70.0-py3-none-any.whl",
+          "source_url": "https://www.piwheels.org/simple/tqdm/tqdm-4.70.0-py3-none-any.whl",
+          "size_bytes": 80184,
+          "sha256": "93f339ec6271a7eac7d4fc9a824d2c34b2dfbc4dc46525e3f8f13d039eee0b13",
+          "license": "MPL-2.0 AND MIT"
+        },
+        {
+          "filename": "websockets-17.0.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+          "source_url": "https://files.pythonhosted.org/packages/15/56/10ed4bc4dd75f204e3c62bd4898e44a8742a27773c80b188cfa7888aad2d/websockets-17.0.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+          "size_bytes": 221445,
+          "sha256": "c1bec5d6a19f5fbe87e4940739cfc65e7bb53d8b353e1029b8037a1653b321bc",
+          "license": "BSD-3-Clause"
         }
       ],
       "runtime_profile": {
         "target": "Raspberry Pi 5 / Debian 13 / aarch64 / CPython 3.13",
         "workers": 1,
-        "input": "16 kHz mono S16_LE bounded utterance"
+        "input": "16 kHz mono S16_LE bounded utterance",
+        "install": "exact eleven-wheel closure with pip --no-index --no-deps",
+        "license_note": "Internal survey use accepted from pinned upstream Apache-2.0 source; redistribution review remains required because the Vosk wheel omits a license notice."
       }
     }
   },

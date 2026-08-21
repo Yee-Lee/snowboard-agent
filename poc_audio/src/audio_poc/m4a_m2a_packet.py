@@ -75,6 +75,29 @@ def validate_packet(document: dict[str, Any]) -> None:
     runtimes = document.get("runtime_identities")
     if not isinstance(runtimes, dict) or len(runtimes) < 3:
         raise ValueError("M2A packet must pin all runtime families")
+    for runtime_id, runtime in runtimes.items():
+        if not isinstance(runtime, dict) or not all(
+            str(runtime.get(field, "")).strip() for field in ("engine", "version", "license")
+        ):
+            raise ValueError(f"M2A runtime identity is incomplete: {runtime_id}")
+        artifacts = runtime.get("runtime_artifacts")
+        if artifacts is not None:
+            if not isinstance(artifacts, list) or not artifacts:
+                raise ValueError(f"M2A runtime artifacts are invalid: {runtime_id}")
+            filenames: set[str] = set()
+            for artifact in artifacts:
+                if not isinstance(artifact, dict):
+                    raise ValueError(f"M2A runtime artifact is invalid: {runtime_id}")
+                filename = str(artifact.get("filename", ""))
+                if not filename or filename in filenames or "/" in filename or "\\" in filename:
+                    raise ValueError(f"M2A runtime artifact filename is invalid: {runtime_id}")
+                if not str(artifact.get("source_url", "")).startswith("https://"):
+                    raise ValueError(f"M2A runtime artifact source is invalid: {runtime_id}")
+                if not isinstance(artifact.get("size_bytes"), int) or artifact["size_bytes"] <= 0:
+                    raise ValueError(f"M2A runtime artifact size is invalid: {runtime_id}")
+                if not SHA256_RE.fullmatch(str(artifact.get("sha256", ""))):
+                    raise ValueError(f"M2A runtime artifact checksum is invalid: {runtime_id}")
+                filenames.add(filename)
     rows = document.get("candidate_rows")
     if not isinstance(rows, list):
         raise ValueError("M2A candidate_rows must be an array")

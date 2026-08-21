@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import array
+import importlib.metadata
 import json
 import os
 import resource
@@ -40,7 +41,7 @@ class SherpaZipformer:
             return matches[0]
 
         encoder = one("*encoder*.int8.onnx")
-        decoder = one("*decoder*.onnx")
+        decoder = one("*decoder*.int8.onnx")
         joiner = one("*joiner*.int8.onnx")
         tokens = one("tokens.txt")
         self.recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(
@@ -90,9 +91,21 @@ def main() -> int:
     started = time.monotonic()
     engine = SherpaZipformer(args.model_dir) if args.engine == "sherpa-zipformer" \
         else VoskSmallCn(args.model_dir)
+    packages = (
+        {name: importlib.metadata.version(name) for name in ("sherpa-onnx", "sherpa-onnx-core")}
+        if args.engine == "sherpa-zipformer"
+        else {
+            name: importlib.metadata.version(name)
+            for name in (
+                "vosk", "cffi", "pycparser", "requests", "certifi",
+                "charset-normalizer", "idna", "urllib3", "tqdm", "srt", "websockets",
+            )
+        }
+    )
     _emit({
         "event": "ready", "protocol": 1, "pid": os.getpid(),
         "load_ms": round((time.monotonic() - started) * 1000.0, 3),
+        "runtime": {"packages": packages},
     })
     for line in iter(input, ""):
         request = json.loads(line)
