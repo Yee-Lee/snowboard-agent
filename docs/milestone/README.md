@@ -13,14 +13,15 @@
 Core Designer 已複驗 `llm` / `0d415d174390665ed92793937d30334f01e3df14`，
 關閉 `OUT-M4B-2026-007-A～D`，並正式登錄 Gate 0 R2 `COMPLETE`。PM handoff 015
 已解決；此 ACK 僅接受 planning/regression packet，不代表已執行 Ubuntu benchmark、
-Pi run 或 candidate evidence。
+Pi run 或 candidate evidence。R5 exact-SHA review request 因實際可用 runner 均為 UTM，
+已暫緩並改請 Core 先核准雙 UTM bounded environment preflight。
 
 ## External Contract Gates
 
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
 | **Gate 0** Contract Receipt | `COMPLETE` | POC Team 提交；PM 收件；Core Designer 已登錄 | `0d415d...` 複驗通過；OUT-M4B-2026-007-A～D 已關閉 | 進行 M0 entry review；不自動啟動 M0 |
-| **Gate 1** Candidate Proposal, x86 Pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | Ubuntu 24.04 x86完整初篩一次預選最多兩名；產品Pi compatibility只保留`PASS`且不補位 | R5 exact SHA `190a827b4c82279e4300af6075e2eeb52b91cd54` 已提交 review；真實執行仍需 Core acceptance 及 runner/raw path/capacity/Pi/on-site 授權 |
+| **Gate 1** Candidate Proposal, environment preflight, pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | Pending change：先比較 native-ISA ARM64/x86_64 UTM 的 offline package viability；再凍結 Ubuntu pre-screen 平台，產品Pi compatibility只保留`PASS`且不補位 | 等待 Core 核准 `G1-DUAL-UTM-PREFLIGHT-001`；preflight 與任何真實 candidate execution 均未授權 |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
 | **Gate 3** Core Production | `OUT_OF_POC_SCOPE` | Core Developer / Tester / Designer | 依 Core contract | POC 僅提供 accepted handoff material |
@@ -53,8 +54,9 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001` 接受
   `M2-G1-PLATFORM-CONFIG-001` 並授權 append-only `G1-X86-PI-COMPAT-005`。R5 已維持
   M1 freeze、完成 deterministic/R4/M1 retained regressions，並以 committed exact SHA
-  `190a827b4c82279e4300af6075e2eeb52b91cd54` 送 Core review；在 Core 接受該 SHA 前，
-  candidate manifest、x86/Pi real execution 和 Gate 2 仍封鎖。
+  `190a827b4c82279e4300af6075e2eeb52b91cd54` 建立 review target。因兩台可用 Ubuntu 24.04
+  workstation 都是 UTM，該 review request 已暫緩，先請 Core 核准雙環境 preflight；在 Core
+  裁決平台與後續 packet 前，candidate manifest、真實 execution 和 Gate 2 仍封鎖。
 - **M1 completion**：Core repo 的 `DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001` 已接受並
   freeze exact candidate `830d0b4ed2d41406c789bb110ed84b7553f330a4`。Internal Tester
   已完成同一 SHA 的 lock、self-test 與 35/35 回歸測試獨立 sign-off。M1 標示為
@@ -66,10 +68,14 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   已固定官方 revision、artifact/wheel SHA-256 與 Apache-2.0 metadata。Artifact/dependency
   bundle、source/archive checksum、adapter、strict config 與實體 manifest 尚未完成，
   candidate 仍只是 proposal。
-- **Blocking finding — Gate 1 platform strict config**：`M2-G1-PLATFORM-CONFIG-001` 的 R5
-  repository revision 已 commit/push，正等待 Core 接受 exact SHA；R4 仍不得作為 real candidate
-  evidence。Core 接受 R5 exact SHA 與另行提供 execution authority 前，禁止 candidate manifest
-  與真實 Gate 1 run。
+- **Blocking finding — Gate 1 runner representativeness**：實際可用環境為 macOS ARM64 host /
+  Ubuntu 24.04 ARM64 UTM guest，以及 macOS x86_64 host / Ubuntu 24.04 x86_64 UTM guest。
+  尚無 evidence 證明任一環境的 LiteRT-LM offline package viability；不得因既有 schema 或
+  推測效能先選平台。
+- **Adjustment request — dual UTM preflight**：提議只用 pinned LiteRT-LM API wheel、dependency
+  bundle 與 adapter/fake-child lifecycle 做 bounded offline preflight，不下載或載入模型、不做
+  generation/performance ranking。兩邊都通過時因產品 ISA 對齊選 ARM64；ARM64 不成立而 x86_64
+  通過時才選 x86_64；兩邊都無法判定則回交 `INCONCLUSIVE`。
 - **Platform decision — Gate 1**：native Ubuntu aarch64 runner 需求已由 Core 移除。
   Ubuntu 24.04 x86_64 完整初篩後一次預選最多兩名，再於產品 Debian 13 Pi 執行 bounded
   compatibility；Pi `FAIL/INCONCLUSIVE` 同 cycle 不得補測第三名。
@@ -91,6 +97,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [OUT-M4B-2026-007-A～D response](../response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md)
 - [Gate 1 R5 replacement packet](../../poc_llm/tests/gate1/GATE1-PACKET-005.md)
 - [Gate 1 R5 exact-SHA review request](../delivery/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md)
+- [Dual UTM preflight adjustment request](../delivery/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md)
 - [M0 test request](../../poc_llm/tests/m0/M0-TEST-REQUEST-001.md)
 
 ## Governing Documents

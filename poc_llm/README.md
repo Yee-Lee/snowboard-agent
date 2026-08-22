@@ -48,6 +48,14 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 
 Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不是 candidate evidence。
 
+## Proposed Dual-UTM Environment Preflight
+
+兩台可用 Ubuntu 24.04 環境分別是 native-ISA ARM64 UTM 與 x86_64 UTM。現階段不依 schema
+慣性或 VM 效能推測先選平台；`tests/gate1/GATE1-ENV-PREFLIGHT-001.md` 提議以 pinned API
+wheel、offline dependency closure、native binding import與fake-child lifecycle做 bounded 比較。
+它不下載/載入模型、不執行 generation、不產生 candidate evidence，且須先取得 Core 與 User
+對 artifacts、operators、controlled paths及commands的書面授權。
+
 ## Before Any M0 Run
 
 1. 確認 [milestone index](../docs/milestone/README.md) 已在 entry review 後把 M0 改成

@@ -1,8 +1,8 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`COMMITTED PLANNING PACKET / EXECUTION NOT AUTHORIZED`
+狀態：`DUAL-UTM PREFLIGHT CHANGE REQUEST PENDING / EXECUTION NOT AUTHORIZED`
 
-Revision：`2026-08-19-r4`
+Revision：`2026-08-22-preflight-proposal`
 
 Owner：POC Technical Lead
 
@@ -30,16 +30,35 @@ benchmark、Pi run 或 candidate evidence。
 
 ## Gate 1 Work Package
 
+### Proposed pre-entry environment package
+
+`G1-DUAL-UTM-PREFLIGHT-001` is an adjustment proposal pending Core approval. It compares only
+offline package and lifecycle viability on two native-ISA virtualized environments:
+
+- macOS ARM64 host / Ubuntu 24.04 ARM64 UTM guest;
+- macOS x86_64 host / Ubuntu 24.04 x86_64 UTM guest.
+
+It does not download or load a model, generate output, rank candidates, measure decision-bearing
+performance or produce Gate 1/Gate 2 evidence. Both environments use their pinned LiteRT-LM v0.16.0
+API wheel and the same predeclared checks. Three clean import/lifecycle repetitions are required;
+one controlled rerun is allowed only for an identified environment failure.
+
+The decision rule is frozen before execution: if both pass, select ARM64 because it matches the
+product ISA; if ARM64 fails or remains inconclusive while x86_64 passes, select x86_64; if neither
+passes, return `INCONCLUSIVE` and a change request. Core must approve the preflight, its controlled
+artifact paths and both operators before execution, then approve the resulting platform and affected
+append-only packet revision before M2 entry.
+
 | Field | Definition |
 | --- | --- |
-| Package | `G1-X86-PI-COMPAT-004` |
+| Package | Current R5 target `G1-X86-PI-COMPAT-005`; platform disposition pending preflight decision |
 | Owner / approver | Developer + POC Test Controller / Technical Lead review / Core Designer ACK |
-| Dependency | Gate 0 recorded complete；M0 confirmed；packet 004 Core intake；artifact acquisition與x86/Pi執行分別核准 |
+| Dependency | Gate 0 recorded complete；M1 complete；dual-UTM preflight、resulting platform及affected packet revision取得Core ACK；artifact acquisition與pre-screen/Pi執行分別核准 |
 | Platform | Ubuntu 24.04 x86_64完整初篩；產品Pi 5 4GB / Debian 13 aarch64 bounded compatibility |
 | Entry / exit | Frozen lock + candidate/acquisition manifests → x86一次預選最多2名 → Pi PASS後置filter → Core written ACK |
 | Estimate | 3–5 working days after artifacts and both runners are available |
 | Re-estimation trigger | Candidate count/pairing/cycle changes、Pi預選者需補位、artifact/storage delta >25%、license或Pi incompatibility |
-| Runner / command | Authenticated x86 runner + immutable preselection + Pi compatibility + final filter；見 `GATE1-PACKET-004.md` |
+| Runner / command | Authenticated selected-platform runner + immutable preselection + Pi compatibility + final filter；current R5見 `GATE1-PACKET-005.md`，後續版本依Core裁決 |
 | Evidence | Raw outside Git；x86/Pi/aggregate分離schemas與namespace，Gate 1 Pi evidence不得進2A |
 | Cleanup | Success requires SHUTDOWN ACK, exit 0 and absent process group; failure uses bounded group TERM→KILL→wait and records proof; unique raw dir |
 | Failure / no-go | x86 identity/gate/cleanup failure拒絕preselection；Pi FAIL/INCONCLUSIVE移除但不補第三名；zero retained產生no-go/change request |
@@ -53,9 +72,9 @@ and freezes at most two preselected candidates. Only those candidates may run th
 compatibility packet；Pi PASS is a later eligibility filter and never changes the x86 ranking or
 backfills a third candidate. Protocol/fake regressions are test-only and do not start Gate 1.
 
-Revision r4 preserves r3 log/P4/process-group/authentication controls and adds platform-native
-acquisition identity、separate x86/Pi/aggregate schemas、immutable preselection、no-backfill、
-Pi cleanup filtering and Gate 2 evidence carry-over rejection.
+Revision R5 preserves R4 log/P4/process-group/authentication controls and adds exact platform-keyed
+config projection. It remains an immutable review target; the pending preflight proposal does not
+rewrite it or authorize its real runners.
 
 ## Gate 2A Work Packages — LLM-only Pi 5
 
@@ -118,6 +137,10 @@ Gate 2 evidence; implementation of the real hardware adapter is an explicit pack
 
 ## Currently Unresolved Core Decisions
 
+- Whether to authorize `G1-DUAL-UTM-PREFLIGHT-001`, its two UTM operators and controlled offline
+  wheel/dependency paths, and to hold R5 exact-SHA acceptance until platform evidence is reviewed.
+- Which Ubuntu pre-screen platform and affected append-only packet revision are accepted after the
+  preflight result.
 - P4 actual Pi measurements may require Core threshold disposition; method is frozen, acceptance is not.
 - A 4GB miss with valid 8GB results cannot become winner without an explicit Core contract exception.
 - Exact Accepted Audio final handoff ID/SHA/kit is pending and blocks Gate 2B.
