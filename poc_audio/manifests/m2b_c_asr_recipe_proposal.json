@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "proposal_id": "M2B-C-ASR-PRIMARY-FALLBACK-001",
-  "status": "PROVISIONAL_LABEL_AUDIT_PENDING_NOT_FOR_EXTERNAL_CITATION",
+  "status": "PROVISIONAL_REVIEW_READY_BOUNDED_SCORECARD_CITABLE_NOT_PRODUCTION_LOCK",
   "source_results": [
     {
       "path": "poc_audio/manifests/m2b_c_base_q8_prompt_dev_result.json",
@@ -26,6 +26,10 @@
     {
       "path": "poc_audio/manifests/m2b_c_reference_erratum.json",
       "sha256": "06eaee2ff5b1310cae404bab2f5bf3ecd0126c47b8459bcf160ecc2ff0f808b3"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_label_audit_result.json",
+      "sha256": "85e407b4ef9cebf40634a7a2d125e86d679574fccbe7b44e2165067dd9424e96"
     }
   ],
   "shared_recipe": {
@@ -164,13 +168,14 @@
     "task_adjusted_status": "FORMAL_BOUNDED_C_V1_COMPLETE_SEPARATE_FROM_RAW_CER",
     "task_adjusted_result_sha256": "ddfd371c62f0c4f189aaaa98d6113a7c1bb322bd9ba011c3243b73cd516dab2b",
     "controlled_result_sha256": "63deea111b82b212687cfca82f5ba3259102d38cf8519422b07b80629f7702ad",
-    "reference_erratum_status": "APPLIED_PENDING_COMPLETE_24_ITEM_LABEL_AUDIT",
+    "reference_erratum_status": "APPLIED_AND_COMPLETE_24_ITEM_LABEL_AUDIT_REVIEWED",
     "reference_erratum_sha256": "06eaee2ff5b1310cae404bab2f5bf3ecd0126c47b8459bcf160ecc2ff0f808b3",
+    "label_audit_result_sha256": "85e407b4ef9cebf40634a7a2d125e86d679574fccbe7b44e2165067dd9424e96",
     "numeric_equivalence": "CHINESE_INTEGER_0_TO_9999_AND_PERCENT_OF_ONLY",
     "simplified_traditional_equivalence": "BOUNDED_C_V1_CHARACTER_MAP_ONLY",
     "homophone_and_domain_alias_equivalence": "NOT_ACCEPTED",
     "runtime_postprocessing": "NOT_ADDED_BY_THIS_PROPOSAL",
     "reviewed_example": "十五_AND_15_ARE_TASK_EQUIVALENT"
   },
-  "next_decision": "COMPLETE_24_ITEM_LABEL_AUDIT_THEN_CORE_USER_COMPARATIVE_REVIEW"
+  "next_decision": "CORE_USER_COMPARATIVE_REVIEW_BEFORE_NAMED_PROVISIONAL_INTEGRATION"
 }

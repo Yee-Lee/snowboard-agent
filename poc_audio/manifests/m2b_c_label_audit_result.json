@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "audit_id": "M2B-C-LABEL-AUDIT-001",
+  "status": "COMPLETE",
+  "selection_id": "M2B-C-SOURCE-SELECTION-001",
+  "method": "USER_BLIND_FIRST_AUDIO_REFERENCE_REVIEW",
+  "counts": {
+    "total": 24,
+    "label_ok": 23,
+    "label_erratum": 1,
+    "audio_quality": 0,
+    "speaker_slip": 0,
+    "needs_review": 0
+  },
+  "controlled_evidence": {
+    "location": "WORKSTATION_CONTROLLED_GIT_IGNORED",
+    "sha256": "62688941c3bdd5b03389ecfe2d7bb7065507f23ea9ba6c652dc124b9d323a36b",
+    "file_mode": "0600"
+  },
+  "applied_erratum": {
+    "erratum_id": "M2B-C-REFERENCE-ERRATUM-001",
+    "sanitized_path": "poc_audio/manifests/m2b_c_reference_erratum.json",
+    "sanitized_sha256": "06eaee2ff5b1310cae404bab2f5bf3ecd0126c47b8459bcf160ecc2ff0f808b3"
+  },
+  "privacy": {
+    "audio_in_git": false,
+    "reference_text_in_git": false,
+    "hypothesis_in_git": false,
+    "user_comment_in_git": false
+  },
+  "publication_disposition": "LABEL_AUDIT_COMPLETE_BOUNDED_SCORECARD_READY_FOR_CITATION"
+}

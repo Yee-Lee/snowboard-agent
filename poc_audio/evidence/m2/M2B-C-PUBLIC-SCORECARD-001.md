@@ -1,22 +1,21 @@
-# M2B C ASR public scorecard draft
+# M2B C ASR public scorecard
 
-Date: 2026-08-22  
-Status: `SUPERSEDED BY REVIEWED SCORECARD`
+Date: 2026-08-22
+Status: `BOUNDED SCORECARD READY FOR EXTERNAL CITATION / NOT A POPULATION BENCHMARK`
 
-The complete 24-item label audit closed this draft. Use
-[`M2B-C-PUBLIC-SCORECARD-001`](M2B-C-PUBLIC-SCORECARD-001.md) for citation.
+## Scope and review
 
-## Scope
-
-This is a bounded Raspberry Pi 5 optimization observation. C is designed as a
-product-representative curated set for Snowboard, not a Taiwan Mandarin
+C is a product-representative curated set for Snowboard, not a Taiwan Mandarin
 population benchmark. It contains 16 controlled Internal items, balanced
 across Taiwan Mandarin, code-switch, number/date, and product-term categories,
-plus 8 Common Voice 26.0 `zh-TW` CC0-1.0 external-sanity items.
-Dev/holdout each contain 12 items. Prompt selection used dev before the frozen
-holdout was opened. One User-confirmed reference erratum is applied; all 24
-audio/reference pairs still required audit when this draft was issued. That
-audit is now complete in the reviewed scorecard linked above.
+plus 8 Common Voice 26.0 `zh-TW` CC0-1.0 external-sanity items. Dev/holdout each
+contain 12 items; prompt selection used dev before the frozen holdout opened.
+
+User blind-first audio/reference review completed all 24 items: 23 labels were
+confirmed and one append-only reference erratum was applied. There were no
+remaining review, audio-quality, or speaker-slip findings. The sanitized audit
+is [`m2b_c_label_audit_result.json`](../../manifests/m2b_c_label_audit_result.json),
+SHA-256 `85e407b4ef9cebf40634a7a2d125e86d679574fccbe7b44e2165067dd9424e96`.
 
 ## Frozen recipe
 
@@ -65,15 +64,6 @@ Against each model's no-prompt baseline, the fixed prompt changes adjusted
 Internal edits by -13 (base) and -2 (small), but Common Voice edits by +1 for
 both. It is a domain tradeoff, not a universal quality improvement.
 
-## Citation boundary
-
-This draft was not citable. The reviewed scorecard may describe these exact
-models, recipe, hardware, and curated set. It must not shorten the result to a
-general claim such as “Taiwan Mandarin CER is 8.47%.” Speaker, recording,
-selection, dataset, sample-size, scoring, and holdout limitations remain part
-of the result. Private audio, controlled transcripts, hypotheses, and User
-comments are not published.
-
 ## Historical consistency context
 
 The separate immutable `POC-AUDIO-PERF-2026-001` packet ran Small Q8 on 50
@@ -82,3 +72,10 @@ Internal fixtures for two hot cycles. It observed latency p50/p95
 recipe, and scoring differ, so its quality result is not pooled with C. Its
 cost observations independently support C's roughly 4.1 s and 574 MiB Small
 Q8 result.
+
+## Citation boundary
+
+An accurate citation must name these exact models, recipe, Pi hardware, curated
+set, sample size, scoring rules, and holdout design. It must not shorten the
+result to a general claim such as “Taiwan Mandarin CER is 8.47%.” Private audio,
+controlled transcripts, hypotheses, and User comments are not published.

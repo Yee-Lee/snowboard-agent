@@ -41,8 +41,10 @@ M2B 只允許 M2A shortlist 進場，且每次 probe 相對 named baseline 只�
 Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完成，raw CER
 保留；固定 prompt 改善 Internal，但兩個模型的 Common Voice adjusted edits 均增加 1，
 此 external regression 不隱藏。User audio review 發現一筆 frozen reference mismatch；
-append-only erratum 已套用，目前須完成 24 筆 label audit 才可對外引用。VAD real-engine
-row 仍未獲授權；ACK-003 只允許以 frozen
+append-only erratum 已套用且原始 evidence 保留。24 筆 blind-first audit 已完成：23 筆
+label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending findings；
+bounded scorecard 已可在完整限制下對外引用。VAD real-engine row 仍未獲授權；
+ACK-003 只允許以 frozen
 labels 比較 endpoint/padding effects，不能取代 VAD finalist/no-go evidence。因此即使
 ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前開始。
 
@@ -59,7 +61,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `GATE_REVIEW / LABEL AUDIT PENDING` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；erratum-corrected raw/adjusted scorecard、RTF 與 exact recipe 已齊，完整 label audit 後才可對外引用 |
+| M2B Optimization Feasibility | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；24-item audit、erratum-corrected raw/adjusted scorecard、RTF 與 exact recipe 已齊，可在 bounded scope 下引用 |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 
@@ -82,8 +84,6 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
   fallback、exact prompt recipe、formal bounded C-v1 task-scoring boundary，以及保留
   Common Voice prompt regression 的完整 delta table。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
-- `RISK`：C 已發現一筆 reference transcription mismatch；erratum 已保留原始 evidence
-  並修正比較分數，但完整 24 筆 label audit 未完成前不得對外引用 scorecard。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。
 - `RISK`：Matcha User quality、offline、lifecycle、resource growth 與 legal conditions

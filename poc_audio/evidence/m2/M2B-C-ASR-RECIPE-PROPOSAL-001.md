@@ -1,12 +1,11 @@
 # M2B C ASR primary/fallback proposal
 
 Date: 2026-08-22  
-Status: `PROVISIONAL / COMPLETE LABEL AUDIT PENDING / NOT FOR EXTERNAL CITATION`
+Status: `PROVISIONAL REVIEW READY / BOUNDED SCORECARD CITABLE / NOT PRODUCTION LOCK`
 
-User audio review found one frozen reference transcription mismatch. The
-append-only erratum is applied below without rewriting original inference
-evidence. A complete 24-item audio/reference audit is required before external
-citation.
+User blind-first audio/reference review completed all 24 items: 23 labels were
+confirmed and one frozen reference transcription mismatch was corrected by an
+append-only erratum without rewriting original inference evidence.
 
 Both recipes use P0, greedy, four threads, `language=zh`, no context/timestamps/
 internal VAD, and the reviewed fixed domain prompt. Raw CER is preserved beside
@@ -42,3 +41,5 @@ Task rules, Pi execution identity, and all raw-to-adjusted aggregates are in
 The correction is documented in
 [`M2B-C-REFERENCE-ERRATUM-001`](M2B-C-REFERENCE-ERRATUM-001.md); original
 results remain immutable.
+The externally citable bounded report is
+[`M2B-C-PUBLIC-SCORECARD-001`](M2B-C-PUBLIC-SCORECARD-001.md).

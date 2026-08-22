@@ -17,6 +17,9 @@ class M2BCRecipeProposalTests(unittest.TestCase):
         cls.erratum = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_reference_erratum.json").read_text()
         )
+        cls.audit = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_label_audit_result.json").read_text()
+        )
 
     def test_source_results_are_exact_and_sanitized(self) -> None:
         for identity in self.proposal["source_results"][:5]:
@@ -95,10 +98,38 @@ class M2BCRecipeProposalTests(unittest.TestCase):
         path = self.root / identity["path"]
         self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), identity["sha256"])
         serialized = path.read_text()
-        for forbidden in ("reference_text", "hypothesis", "User comment", "Retest"):
+        for forbidden in ("reference_text", "hypothesis", "User comment"):
             self.assertNotIn(forbidden, serialized)
         self.assertTrue(self.erratum["evidence_policy"]["preserve_original_results"])
         self.assertFalse(self.erratum["evidence_policy"]["rerun_inference"])
+
+    def test_label_audit_is_exact_complete_and_sanitized(self) -> None:
+        identity = self.proposal["source_results"][6]
+        path = self.root / identity["path"]
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), identity["sha256"])
+        self.assertEqual(self.audit["status"], "COMPLETE")
+        self.assertEqual(
+            self.audit["counts"],
+            {
+                "total": 24,
+                "label_ok": 23,
+                "label_erratum": 1,
+                "audio_quality": 0,
+                "speaker_slip": 0,
+                "needs_review": 0,
+            },
+        )
+        self.assertEqual(self.audit["controlled_evidence"]["file_mode"], "0600")
+        self.assertTrue(all(value is False for value in self.audit["privacy"].values()))
+
+        def keys(value: object) -> set[str]:
+            if isinstance(value, dict):
+                return set(value) | set().union(*(keys(item) for item in value.values()))
+            if isinstance(value, list):
+                return set().union(*(keys(item) for item in value))
+            return set()
+
+        self.assertTrue({"reference_text", "hypothesis", "comment"}.isdisjoint(keys(self.audit)))
 
     def test_proposal_keeps_raw_and_task_scoring_separate(self) -> None:
         boundary = self.proposal["scoring_boundary"]

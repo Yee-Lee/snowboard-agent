@@ -1,7 +1,7 @@
 # M2B C reference erratum
 
 Date: 2026-08-22  
-Status: `APPLIED / COMPLETE 24-ITEM LABEL AUDIT PENDING`
+Status: `APPLIED / COMPLETE 24-ITEM LABEL AUDIT REVIEWED`
 
 User audio review identified a transcription mismatch in one frozen Internal
 holdout reference. Existing inference and scoring artifacts remain immutable;
@@ -19,5 +19,5 @@ The audio identity, old/corrected reference hashes, controlled erratum hash,
 row deltas, and corrected aggregates are frozen in
 [`m2b_c_reference_erratum.json`](../../manifests/m2b_c_reference_erratum.json).
 This correction does not authorize general label changes after observing model
-output. The remaining 23 references require the same audio review before this
-scorecard may be externally cited.
+output. Blind-first review subsequently confirmed the remaining 23 references;
+the bounded scorecard may now be cited with its stated scope and limitations.
