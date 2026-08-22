@@ -1,4 +1,4 @@
-"""Run the dev-only M2B C Internal endpoint-padding probe."""
+"""Run reviewed M2B C Internal endpoint-padding probes."""
 
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 from .m2b_c_fixture_lock import load_json, sha256_file
 
 
-REPORT_ID = "M2B-C-INTERNAL-PADDING-PROBE-001"
+DEV_REPORT_ID = "M2B-C-INTERNAL-PADDING-PROBE-001"
+HOLDOUT_REPORT_ID = "M2B-C-INTERNAL-PADDING-HOLDOUT-001"
 PROFILES = ("p0", "p300", "p500")
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
 WORKER_SHA256 = "ad71dd80efbac7d346a99b776ade2e0e2b849d9dc389e690120b7b592ba31210"
@@ -29,11 +30,7 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def validate_probe(document: dict[str, Any]) -> None:
-    if document.get("probe_id") != REPORT_ID:
-        raise ValueError("padding probe identity mismatch")
-    if document.get("status") != "AUTHORIZED_BY_USER_REVIEWED_C_LOCK":
-        raise ValueError("padding probe is not authorized")
+def _validate_candidate_controls(document: dict[str, Any]) -> None:
     if document.get("candidate_id") != "asr-whispercpp-base-q8_0-1.9.2-m2b":
         raise ValueError("padding probe candidate mismatch")
     if document.get("artifact") != {
@@ -52,6 +49,14 @@ def validate_probe(document: dict[str, Any]) -> None:
         or any(runtime.get(key) is not False for key in ("context", "timestamps", "internal_vad"))
     ):
         raise ValueError("padding probe runtime control mismatch")
+
+
+def validate_probe(document: dict[str, Any]) -> None:
+    if document.get("probe_id") != DEV_REPORT_ID:
+        raise ValueError("padding probe identity mismatch")
+    if document.get("status") != "AUTHORIZED_BY_USER_REVIEWED_C_LOCK":
+        raise ValueError("padding probe is not authorized")
+    _validate_candidate_controls(document)
     variable = document.get("single_variable")
     if variable != {
         "name": "frozen_label_padding_ms_each_side",
@@ -93,6 +98,51 @@ def validate_probe(document: dict[str, Any]) -> None:
             raise ValueError(f"padding probe execution control mismatch: {key}")
 
 
+def validate_holdout_probe(document: dict[str, Any]) -> None:
+    if document.get("probe_id") != HOLDOUT_REPORT_ID:
+        raise ValueError("padding holdout identity mismatch")
+    if document.get("status") != "P300_FROZEN_FROM_REVIEWED_DEV_BEFORE_HOLDOUT":
+        raise ValueError("padding holdout selection is not frozen")
+    _validate_candidate_controls(document)
+    review = document.get("dev_review", {})
+    if review.get("sanitized_result_sha256") != "73132c6dcf8c029105ec3ca298b9f4a5234f6cd625c4992d654d0c2cc9d75c90" \
+            or review.get("selection") != "p300":
+        raise ValueError("padding holdout dev-review identity mismatch")
+    if document.get("single_variable") != {
+        "name": "frozen_label_padding_ms_each_side",
+        "baseline": "p0",
+        "probe_arms": ["p300"],
+    }:
+        raise ValueError("padding holdout changes more than the frozen variable")
+    scope = document.get("scope", {})
+    fixtures = scope.get("fixture_ids")
+    if (
+        scope.get("family") != "internal"
+        or scope.get("split") != "holdout"
+        or not isinstance(fixtures, list)
+        or len(fixtures) != 8
+        or len(set(fixtures)) != 8
+        or scope.get("common_voice_execution") != "NOT_PART_OF_PADDING_PROBE"
+    ):
+        raise ValueError("padding holdout scope mismatch")
+    execution = document.get("execution", {})
+    if execution.get("profile_orders") != [["p0", "p300"], ["p300", "p0"]]:
+        raise ValueError("padding holdout order mismatch")
+    expected = {
+        "warmups_per_fixture_profile": 1,
+        "scored_inferences_per_fixture_profile": 1,
+        "scored_observations": 16,
+        "per_item_timeout_seconds": 120,
+        "row_budget_seconds": 900,
+        "network": "isolated_namespace",
+        "audio_capture": False,
+        "audio_playback": False,
+    }
+    for key, value in expected.items():
+        if execution.get(key) != value:
+            raise ValueError(f"padding holdout execution control mismatch: {key}")
+
+
 def verify_inputs(
     probe: dict[str, Any], tracked_path: Path, controlled_path: Path,
     fixtures_root: Path,
@@ -110,11 +160,15 @@ def verify_inputs(
         raise ValueError("controlled C PCM lock identity mismatch")
     sanitized_by_id = {item["fixture_id"]: item for item in tracked["records"]["internal"]}
     private_by_id = {item["fixture_id"]: item for item in controlled["records"]["internal"]}
+    selected_profiles = {
+        probe["single_variable"]["baseline"], *probe["single_variable"]["probe_arms"]
+    }
+    selected_split = probe["scope"]["split"]
     items = []
     for fixture_id in probe["scope"]["fixture_ids"]:
         sanitized, private = sanitized_by_id.get(fixture_id), private_by_id.get(fixture_id)
-        if sanitized is None or private is None or private.get("split") != "dev":
-            raise ValueError(f"missing dev Internal fixture: {fixture_id}")
+        if sanitized is None or private is None or private.get("split") != selected_split:
+            raise ValueError(f"missing {selected_split} Internal fixture: {fixture_id}")
         for field in ("review_id", "split", "fixture_id", "category", "reference_sha256", "source_sha256"):
             if private.get(field) != sanitized.get(field):
                 raise ValueError(f"controlled C fixture identity mismatch: {fixture_id}")
@@ -136,7 +190,7 @@ def verify_inputs(
             ):
                 raise ValueError(f"C PCM file mismatch: {fixture_id}/{expected['profile']}")
             variants[expected["profile"]] = {**raw, "wav_path": wav}
-        if set(variants) != set(PROFILES):
+        if not selected_profiles.issubset(variants):
             raise ValueError(f"C padding profiles mismatch: {fixture_id}")
         items.append({**private, "variants_by_profile": variants})
     return items
@@ -155,7 +209,7 @@ def _score(
         "review_id": item["review_id"],
         "fixture_id": item["fixture_id"],
         "family": "internal",
-        "split": "dev",
+        "split": item["split"],
         "category": item["category"],
         "profile": profile,
         "requested_padding_ms_each_side": variant["requested_padding_ms_each_side"],
@@ -191,8 +245,13 @@ def _summary(selected: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
-    profiles = {profile: _summary([item for item in results if item["profile"] == profile]) for profile in PROFILES}
+def summarize(
+    results: list[dict[str, Any]], profiles_to_score: tuple[str, ...] = PROFILES,
+) -> dict[str, Any]:
+    profiles = {
+        profile: _summary([item for item in results if item["profile"] == profile])
+        for profile in profiles_to_score
+    }
     categories = {
         profile: {
             category: _summary([
@@ -201,14 +260,15 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             ])
             for category in sorted({str(item["category"]) for item in results})
         }
-        for profile in PROFILES
+        for profile in profiles_to_score
     }
     by_pair = {(item["fixture_id"], item["profile"]): item for item in results}
     paired = {}
-    for profile in ("p300", "p500"):
+    baseline_profile = profiles_to_score[0]
+    for profile in profiles_to_score[1:]:
         rows = []
         for fixture_id in sorted({str(item["fixture_id"]) for item in results}):
-            baseline, probe = by_pair[(fixture_id, "p0")], by_pair[(fixture_id, profile)]
+            baseline, probe = by_pair[(fixture_id, baseline_profile)], by_pair[(fixture_id, profile)]
             rows.append({
                 "fixture_id": fixture_id,
                 "edit_distance_delta": int(probe["edit_distance"]) - int(baseline["edit_distance"]),
@@ -217,7 +277,8 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
                 "rtf_delta": round(float(probe["rtf"]) - float(baseline["rtf"]), 6),
             })
         paired[profile] = rows
-    return {"family": "internal", "split": "dev", "profiles": profiles, "profile_categories": categories, "paired_fixture_delta_from_p0": paired}
+    split = str(results[0]["split"]) if results else None
+    return {"family": "internal", "split": split, "profiles": profiles, "profile_categories": categories, "paired_fixture_delta_from_p0": paired}
 
 
 def parse_args() -> argparse.Namespace:
@@ -241,10 +302,15 @@ def main() -> int:
     for path in (args.work_dir, args.output, args.sanitized_output):
         if path.exists() or path.resolve().is_relative_to(root):
             raise ValueError("padding probe outputs must be new paths outside the repository")
-    if args.probe.resolve() != root / "poc_audio/manifests/m2b_c_padding_probe.json":
+    probe_paths = {
+        root / "poc_audio/manifests/m2b_c_padding_probe.json": validate_probe,
+        root / "poc_audio/manifests/m2b_c_padding_holdout.json": validate_holdout_probe,
+    }
+    validator = probe_paths.get(args.probe.resolve())
+    if validator is None:
         raise ValueError("padding probe must use the tracked packet")
     probe = load_json(args.probe)
-    validate_probe(probe)
+    validator(probe)
     artifact = probe["artifact"]
     if (
         args.model.name != artifact["filename"]
@@ -265,18 +331,24 @@ def main() -> int:
     started = time.monotonic()
     raw_results, sanitized_results = [], []
     error_code = None
+    timeout_seconds = float(probe["execution"]["per_item_timeout_seconds"])
+    row_budget_seconds = float(probe["execution"]["row_budget_seconds"])
+    expected_observations = int(probe["execution"]["scored_observations"])
+    profiles_to_score = (
+        probe["single_variable"]["baseline"], *probe["single_variable"]["probe_arms"]
+    )
     try:
         worker.start()
         orders = probe["execution"]["profile_orders"]
         for index, item in enumerate(items):
             for profile in orders[index % len(orders)]:
                 wav = item["variants_by_profile"][profile]["wav_path"]
-                worker.transcribe(wav, 120.0)
-                metrics = worker.transcribe(wav, 120.0)
+                worker.transcribe(wav, timeout_seconds)
+                metrics = worker.transcribe(wav, timeout_seconds)
                 raw, sanitized = _score(item, profile, metrics)
                 raw_results.append(raw)
                 sanitized_results.append(sanitized)
-                if time.monotonic() - started > 1200:
+                if time.monotonic() - started > row_budget_seconds:
                     raise TimeoutError("padding probe row budget exceeded")
     except Exception as error:
         error_code = type(error).__name__
@@ -285,10 +357,10 @@ def main() -> int:
     owners_after = audio_device_owner_count()
     cleanup.update({"threads": 0, "iterators": 0, "streams": 0, "device_owners": owners_after})
     cleanup["clean"] = bool(cleanup["clean"] and owners_before == owners_after == 0)
-    complete = len(sanitized_results) == 24 and error_code is None and cleanup["clean"]
+    complete = len(sanitized_results) == expected_observations and error_code is None and cleanup["clean"]
     base = {
         "schema_version": "1.0",
-        "report_id": REPORT_ID,
+        "report_id": probe["probe_id"],
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "review_status": "UNREVIEWED",
         "execution_status": "OBSERVATIONS_COMPLETE_PENDING_REVIEW" if complete else "INCONCLUSIVE_RETAINED",
@@ -307,7 +379,7 @@ def main() -> int:
         "single_variable": probe["single_variable"],
         "load_ms": worker.load_ms,
         "duration_ms": round((time.monotonic() - started) * 1000.0, 3),
-        "summary": summarize(sanitized_results) if complete else None,
+        "summary": summarize(sanitized_results, profiles_to_score) if complete else None,
         "error_code": error_code,
         "cleanup": cleanup,
         "network_evidence": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_PROBE",

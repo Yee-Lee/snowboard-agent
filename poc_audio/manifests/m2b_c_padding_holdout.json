@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "probe_id": "M2B-C-INTERNAL-PADDING-HOLDOUT-001",
+  "status": "P300_FROZEN_FROM_REVIEWED_DEV_BEFORE_HOLDOUT",
+  "dev_review": {
+    "evidence": "poc_audio/evidence/m2/M2B-C-INTERNAL-PADDING-DEV-001.md",
+    "sanitized_result_sha256": "73132c6dcf8c029105ec3ca298b9f4a5234f6cd625c4992d654d0c2cc9d75c90",
+    "selection": "p300"
+  },
+  "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+  "artifact": {
+    "filename": "ggml-base-q8_0.bin",
+    "size_bytes": 81768585,
+    "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
+  },
+  "runtime": {
+    "id": "whispercpp-1.9.2-native-aarch64",
+    "native_worker_sha256": "ad71dd80efbac7d346a99b776ade2e0e2b849d9dc389e690120b7b592ba31210",
+    "threads": 4,
+    "decoder": "greedy",
+    "language": "zh",
+    "context": false,
+    "timestamps": false,
+    "internal_vad": false
+  },
+  "fixture_lock": {
+    "id": "M2B-C-PCM-LOCK-001",
+    "tracked_manifest_sha256": "3b748708ee9989223f26429f0c23d06161dc74dc84b83c9b2206bcf248dfb48a",
+    "controlled_manifest_sha256": "6282a3c9285b4f1e0040952cb6d5b8756e22101a4eab871436a6e8294ea93819"
+  },
+  "scope": {
+    "family": "internal",
+    "split": "holdout",
+    "fixture_ids": [
+      "asr-clear-008",
+      "asr-pause-034",
+      "asr-clear-014",
+      "asr-pause-039",
+      "asr-clear-017",
+      "asr-clear-022",
+      "asr-clear-024",
+      "asr-clear-025"
+    ],
+    "common_voice_execution": "NOT_PART_OF_PADDING_PROBE"
+  },
+  "single_variable": {
+    "name": "frozen_label_padding_ms_each_side",
+    "baseline": "p0",
+    "probe_arms": ["p300"]
+  },
+  "execution": {
+    "profile_order": "ALTERNATING_BY_FIXTURE_INDEX",
+    "profile_orders": [["p0", "p300"], ["p300", "p0"]],
+    "warmups_per_fixture_profile": 1,
+    "scored_inferences_per_fixture_profile": 1,
+    "scored_observations": 16,
+    "per_item_timeout_seconds": 120,
+    "row_budget_seconds": 900,
+    "network": "isolated_namespace",
+    "audio_capture": false,
+    "audio_playback": false
+  },
+  "reporting": {
+    "separate_families": true,
+    "summaries": ["profile", "profile_category", "paired_fixture_delta"],
+    "controlled_transcripts": "DO_NOT_COMMIT",
+    "decision_rule": "RETAIN_P300_ONLY_IF_HOLDOUT_QUALITY_DELTA_IS_USEFUL_WITHOUT_MATERIAL_REGRESSION"
+  }
+}
