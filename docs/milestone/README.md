@@ -46,7 +46,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A scorecard/shortlist 與首個 M2B probe 已 reviewed；C 來源與 PCM 已鎖定、尚未 inference；其餘 M2B、Matcha、VAD 未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | M2A scorecard/shortlist 已 reviewed；C dev padding、Common Voice baseline 與 base decoder probes 已完成，其餘 M2B、Matcha、VAD 未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -55,7 +55,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `IN_PROGRESS / DECODER PROBE REVIEWED` | base beam 在 Internal dev 品質較差且成本較高，不進 holdout；base 保留 P0+greedy，後續 probes/recipe 尚未關閉 |
+| M2B Optimization Feasibility | `IN_PROGRESS / DECODER PROBES REVIEWED` | beam=3 無 CER gain 且少一個正確句；beam=5 CER 較差，兩者成本均較高，不進 holdout；base 保留 P0+greedy |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 

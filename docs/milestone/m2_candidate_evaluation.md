@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `IN_PROGRESS / DECODER PROBE REVIEWED` | base beam dev CER 18.75% 高於 greedy 17.708333%，且增加約 106 ms p50/44 MiB RSS；不進 holdout，保留 P0+greedy |
+| M2B ASR optimization | `IN_PROGRESS / DECODER PROBES REVIEWED` | base beam=3 無 CER gain、少一個正確句且增加約 51 ms/29 MiB；beam=5 CER 較差且增加約 106 ms/44 MiB；不進 holdout，保留 P0+greedy |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
@@ -159,11 +159,12 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 3. **M2A execution/scorecard**：`COMPLETE / REVIEWED`；共同 packet scorecard 與
    small Q8、base Q5、medium Q5 shortlist 已記錄，不下 PASS/FAIL/winner 判定。詳見
    [`M4A-M2A-COMPARATIVE-SCORECARD-001`](../../poc_audio/evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md)。
-4. **M2B optimization**：`IN_PROGRESS / C PCM LOCKED`；首個量化 probe 已
+4. **M2B optimization**：`IN_PROGRESS / C DEV PROBES REVIEWED`；首個量化 probe 已
    reviewed。C 已事前確認 16 筆 Internal 與 8 筆 Common Voice，dev/holdout 各 12
    筆且與 M2A 無 fixture/speaker 重疊；Pi exact SHA 已分開建立 Internal
-   P0/P300/P500 與 Common Voice full-clip PCM lock，尚未執行 C inference。下一步只對
-   shortlist 繼續一變因 probes，完成 primary、fallback、recipe
+   P0/P300/P500 與 Common Voice full-clip PCM lock。Internal padding、Common Voice
+   dev baseline、base Q8 beam=3/5 probes 已執行；base 保留 P0+greedy，holdout 仍封存。
+   下一步只對 shortlist 繼續一變因 probes，完成 primary、fallback、recipe
    與 delta table，送 Core/User comparative review。詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
 5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
