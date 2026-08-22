@@ -14,9 +14,12 @@ class M2BCRecipeProposalTests(unittest.TestCase):
         cls.proposal = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_asr_recipe_proposal.json").read_text()
         )
+        cls.erratum = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_reference_erratum.json").read_text()
+        )
 
     def test_source_results_are_exact_and_sanitized(self) -> None:
-        for identity in self.proposal["source_results"]:
+        for identity in self.proposal["source_results"][:5]:
             path = self.root / identity["path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), identity["sha256"])
             result = json.loads(path.read_text())
@@ -38,10 +41,19 @@ class M2BCRecipeProposalTests(unittest.TestCase):
                 expected = self.proposal["combined_c_observations"][role][family]
                 edits = sum(item["edit_distance"] for item in selected)
                 reference = sum(item["reference_length"] for item in selected)
+                correct = sum(item["sentence_correct"] for item in selected)
+                if family == "internal":
+                    corrected = self.erratum["corrected_internal_combined"][
+                        self.proposal[role]["candidate_id"]
+                    ]["domain_prompt"]["raw"]
+                    edits = corrected["edits"]
+                    reference = corrected["reference_chars"]
+                    correct = corrected["correct_sentences"]
                 self.assertEqual((len(selected), edits, reference), (
                     expected["items"], expected["edits"], expected["reference_chars"],
                 ))
                 self.assertEqual(round(edits / reference * 100.0, 6), expected["cer_percent"])
+                self.assertEqual(correct, expected["correct_sentences"])
                 latencies = sorted(item["latency_ms"] for item in selected)
                 p50 = latencies[math.ceil(len(latencies) * 0.5) - 1]
                 p95 = latencies[math.ceil(len(latencies) * 0.95) - 1]
@@ -56,9 +68,14 @@ class M2BCRecipeProposalTests(unittest.TestCase):
         }
         for candidate_id, role in candidate_roles.items():
             for family in ("internal", "common_voice"):
-                actual = result["summary"][candidate_id]["domain_prompt"]["combined"][family][
-                    "task_adjusted"
-                ]
+                if family == "internal":
+                    actual = self.erratum["corrected_internal_combined"][candidate_id][
+                        "domain_prompt"
+                    ]["task_adjusted"]
+                else:
+                    actual = result["summary"][candidate_id]["domain_prompt"]["combined"][family][
+                        "task_adjusted"
+                    ]
                 expected = self.proposal["combined_c_task_adjusted_observations"][role][family]
                 self.assertEqual(actual["edits"], expected["edits"])
                 self.assertEqual(actual["reference_chars"], expected["reference_chars"])
@@ -72,6 +89,16 @@ class M2BCRecipeProposalTests(unittest.TestCase):
         forbidden = {"reference_text", "hypothesis", "task_reference", "task_hypothesis"}
         self.assertTrue(all(forbidden.isdisjoint(row) for row in result["results"]))
         self.assertFalse(result["raw_text_emitted"])
+
+    def test_reference_erratum_is_exact_and_contains_no_transcript(self) -> None:
+        identity = self.proposal["source_results"][5]
+        path = self.root / identity["path"]
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), identity["sha256"])
+        serialized = path.read_text()
+        for forbidden in ("reference_text", "hypothesis", "User comment", "Retest"):
+            self.assertNotIn(forbidden, serialized)
+        self.assertTrue(self.erratum["evidence_policy"]["preserve_original_results"])
+        self.assertFalse(self.erratum["evidence_policy"]["rerun_inference"])
 
     def test_proposal_keeps_raw_and_task_scoring_separate(self) -> None:
         boundary = self.proposal["scoring_boundary"]

@@ -3,6 +3,11 @@
 Date: 2026-08-22  
 Status: `OBSERVATIONS COMPLETE / PENDING COMPARATIVE REVIEW`
 
+This is the immutable pre-erratum scoring record. Current comparative totals
+must apply
+[`M2B-C-REFERENCE-ERRATUM-001`](M2B-C-REFERENCE-ERRATUM-001.md). The original
+Pi result and hashes below are intentionally preserved.
+
 The formal Pi run scored 96 controlled rows at clean source SHA
 `7fae7f318e3543ae05a1f7abd1ce2e7ef7a8c6b6`. It performed no inference,
 model load, or audio access. The committed result contains metrics and text

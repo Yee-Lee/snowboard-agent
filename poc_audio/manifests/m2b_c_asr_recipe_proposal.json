@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "proposal_id": "M2B-C-ASR-PRIMARY-FALLBACK-001",
-  "status": "PROVISIONAL_REVIEW_READY_NOT_PRODUCTION_LOCK",
+  "status": "PROVISIONAL_LABEL_AUDIT_PENDING_NOT_FOR_EXTERNAL_CITATION",
   "source_results": [
     {
       "path": "poc_audio/manifests/m2b_c_base_q8_prompt_dev_result.json",
@@ -22,6 +22,10 @@
     {
       "path": "poc_audio/manifests/m2b_c_task_adjusted_result.json",
       "sha256": "ddfd371c62f0c4f189aaaa98d6113a7c1bb322bd9ba011c3243b73cd516dab2b"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_reference_erratum.json",
+      "sha256": "06eaee2ff5b1310cae404bab2f5bf3ecd0126c47b8459bcf160ecc2ff0f808b3"
     }
   ],
   "shared_recipe": {
@@ -63,7 +67,7 @@
   "combined_c_observations": {
     "primary": {
       "internal": {
-        "items": 16, "edits": 31, "reference_chars": 189, "cer_percent": 16.402116,
+        "items": 16, "edits": 29, "reference_chars": 191, "cer_percent": 15.183246,
         "correct_sentences": 7, "sentence_correctness_percent": 43.75,
         "latency_p50_ms": 1333.562, "latency_p95_ms": 1379.408,
         "rtf_p50": 0.459241, "rtf_p95": 0.529825, "peak_rss_mib": 285.016
@@ -77,7 +81,7 @@
     },
     "fallback": {
       "internal": {
-        "items": 16, "edits": 25, "reference_chars": 189, "cer_percent": 13.227513,
+        "items": 16, "edits": 23, "reference_chars": 191, "cer_percent": 12.041885,
         "correct_sentences": 9, "sentence_correctness_percent": 56.25,
         "latency_p50_ms": 4129.642, "latency_p95_ms": 4253.405,
         "rtf_p50": 1.419121, "rtf_p95": 1.64124, "peak_rss_mib": 573.922
@@ -93,7 +97,7 @@
   "combined_c_task_adjusted_observations": {
     "primary": {
       "internal": {
-        "items": 16, "edits": 24, "reference_chars": 187, "cer_percent": 12.834225,
+        "items": 16, "edits": 22, "reference_chars": 189, "cer_percent": 11.640212,
         "correct_sentences": 8, "sentence_correctness_percent": 50.0
       },
       "common_voice": {
@@ -103,7 +107,7 @@
     },
     "fallback": {
       "internal": {
-        "items": 16, "edits": 18, "reference_chars": 187, "cer_percent": 9.625668,
+        "items": 16, "edits": 16, "reference_chars": 189, "cer_percent": 8.465608,
         "correct_sentences": 11, "sentence_correctness_percent": 68.75
       },
       "common_voice": {
@@ -114,7 +118,7 @@
   },
   "fallback_minus_primary_delta": {
     "internal": {
-      "edits": -6, "cer_percentage_points": -3.174603,
+      "edits": -6, "cer_percentage_points": -3.141361,
       "sentence_correctness_percentage_points": 12.5,
       "latency_p50_ms": 2796.08, "latency_p95_ms": 2873.997,
       "peak_rss_mib": 288.906
@@ -129,7 +133,7 @@
   },
   "task_adjusted_fallback_minus_primary_delta": {
     "internal": {
-      "edits": -6, "cer_percentage_points": -3.208557,
+      "edits": -6, "cer_percentage_points": -3.174603,
       "sentence_correctness_percentage_points": 18.75
     },
     "common_voice": {
@@ -145,7 +149,7 @@
         "common_voice": {"edits": 1, "correct_sentences": 0}
       },
       "fallback": {
-        "internal": {"edits": -2, "correct_sentences": 4},
+        "internal": {"edits": -2, "correct_sentences": 3},
         "common_voice": {"edits": 1, "correct_sentences": 0}
       }
     },
@@ -160,11 +164,13 @@
     "task_adjusted_status": "FORMAL_BOUNDED_C_V1_COMPLETE_SEPARATE_FROM_RAW_CER",
     "task_adjusted_result_sha256": "ddfd371c62f0c4f189aaaa98d6113a7c1bb322bd9ba011c3243b73cd516dab2b",
     "controlled_result_sha256": "63deea111b82b212687cfca82f5ba3259102d38cf8519422b07b80629f7702ad",
+    "reference_erratum_status": "APPLIED_PENDING_COMPLETE_24_ITEM_LABEL_AUDIT",
+    "reference_erratum_sha256": "06eaee2ff5b1310cae404bab2f5bf3ecd0126c47b8459bcf160ecc2ff0f808b3",
     "numeric_equivalence": "CHINESE_INTEGER_0_TO_9999_AND_PERCENT_OF_ONLY",
     "simplified_traditional_equivalence": "BOUNDED_C_V1_CHARACTER_MAP_ONLY",
     "homophone_and_domain_alias_equivalence": "NOT_ACCEPTED",
     "runtime_postprocessing": "NOT_ADDED_BY_THIS_PROPOSAL",
     "reviewed_example": "十五_AND_15_ARE_TASK_EQUIVALENT"
   },
-  "next_decision": "CORE_USER_COMPARATIVE_REVIEW_BEFORE_NAMED_PROVISIONAL_INTEGRATION"
+  "next_decision": "COMPLETE_24_ITEM_LABEL_AUDIT_THEN_CORE_USER_COMPARATIVE_REVIEW"
 }
