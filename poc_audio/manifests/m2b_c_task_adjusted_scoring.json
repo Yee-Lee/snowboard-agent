@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "scoring_id": "M2B-C-TASK-ADJUSTED-SCORING-001",
+  "status": "FROZEN_BEFORE_TASK_ADJUSTED_SCORING",
+  "purpose": "ADD_SEPARATE_TASK_ADJUSTED_METRICS_WITHOUT_OVERWRITING_RAW_CER",
+  "sources": [
+    {
+      "source_id": "base_dev",
+      "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+      "split": "dev",
+      "sanitized_path": "poc_audio/manifests/m2b_c_base_q8_prompt_dev_result.json",
+      "sanitized_sha256": "33e0e875a976c211015f659714d5c2ad7e23ad064a06a34de3d0876d80c44595",
+      "controlled_sha256": "58a7a570dd0b88d1ca5ba5827f8ef3fe087932c091a8b4c44b75564c1b8b236d"
+    },
+    {
+      "source_id": "base_holdout",
+      "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+      "split": "holdout",
+      "sanitized_path": "poc_audio/manifests/m2b_c_base_q8_prompt_holdout_result.json",
+      "sanitized_sha256": "cd04bde138ae030abdb9f70c078b5d264f6403f0e1ff25d234abd3905ce82169",
+      "controlled_sha256": "e98df81ad5d1cd59b9f01c27ad2c6a030728fbcf0ea29517d708f85902a2fe0a"
+    },
+    {
+      "source_id": "small_dev",
+      "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+      "split": "dev",
+      "sanitized_path": "poc_audio/manifests/m2b_c_small_q8_prompt_dev_result.json",
+      "sanitized_sha256": "b81dfc8187968fd8247eb3a57379d3f49766074fe1b7e58e67f3d1e0cf6a1a22",
+      "controlled_sha256": "197a46687ea8c501ac6a13d5966d73db2fa2dea4b9bb841a760e925d76aa0087"
+    },
+    {
+      "source_id": "small_holdout",
+      "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+      "split": "holdout",
+      "sanitized_path": "poc_audio/manifests/m2b_c_small_q8_prompt_holdout_result.json",
+      "sanitized_sha256": "daff6156d44dcf652d719d050923b91a4446ef5b3a1eee58219176cc5a95279b",
+      "controlled_sha256": "937174e27478e5fb0167050b040c613eeb1c5409e7f226331d9ac5c25829b3bb"
+    }
+  ],
+  "profiles": ["baseline", "domain_prompt"],
+  "families": ["internal", "common_voice"],
+  "expected_controlled_rows": 96,
+  "normalization": {
+    "base": "NFKC_LOWER_KEEP_DECIMAL_LATIN_CJK_PERCENT",
+    "script_policy": "BOUNDED_C_V1_TRADITIONAL_TO_SIMPLIFIED_CHARACTER_MAP",
+    "script_map_provenance": {
+      "generator": "opencc-python-reimplemented",
+      "version": "0.1.7",
+      "config": "t2s",
+      "runtime_dependency": false,
+      "scope": "NON_IDENTITY_SINGLE_CHARACTER_CONVERSIONS_PRESENT_IN_CONTROLLED_C_RESULTS"
+    },
+    "traditional_to_simplified": {
+      "來":"来", "個":"个", "們":"们", "偵":"侦", "兩":"两", "創":"创",
+      "動":"动", "問":"问", "啟":"启", "執":"执", "夠":"够", "寫":"写",
+      "後":"后", "態":"态", "換":"换", "據":"据", "敗":"败", "數":"数",
+      "時":"时", "書":"书", "業":"业", "樹":"树", "機":"机", "檢":"检",
+      "沒":"没", "測":"测", "營":"营", "狀":"状", "確":"确", "結":"结",
+      "絕":"绝", "絨":"绒", "經":"经", "線":"线", "義":"义", "與":"与",
+      "裝":"装", "親":"亲", "計":"计", "訊":"讯", "記":"记", "設":"设",
+      "試":"试", "話":"话", "認":"认", "語":"语", "說":"说", "調":"调",
+      "請":"请", "證":"证", "資":"资", "這":"这", "週":"周", "進":"进",
+      "運":"运", "過":"过", "選":"选", "錄":"录", "鐘":"钟", "間":"间",
+      "陰":"阴", "雙":"双", "離":"离", "雲":"云", "須":"须", "題":"题",
+      "額":"额", "館":"馆", "驗":"验", "魚":"鱼", "點":"点"
+    },
+    "numeric_policy": "CHINESE_DIGIT_SEQUENCE_AND_UNIT_INTEGER_0_TO_9999_PLUS_PERCENT_OF",
+    "numeric_characters": "零〇一二兩两三四五六七八九十百千",
+    "percent_pattern": "百分之<CHINESE_INTEGER>_EQUALS_<ARABIC_INTEGER>%"
+  },
+  "invariants": {
+    "raw_metrics_must_match_source": true,
+    "raw_transcript_or_cer_overwrite": false,
+    "homophone_equivalence": false,
+    "domain_alias_equivalence": false,
+    "runtime_postprocessing": false,
+    "controlled_text_in_git": false
+  },
+  "execution": {
+    "network": "isolated_namespace",
+    "audio_capture": false,
+    "audio_playback": false,
+    "model_load": false,
+    "inference": false
+  }
+}
