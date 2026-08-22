@@ -9,6 +9,7 @@ from audio_poc.m2b_c_padding_probe import (
     summarize,
     validate_holdout_probe,
     validate_probe,
+    validate_small_probe,
 )
 
 
@@ -21,6 +22,9 @@ class M2BCPaddingProbeTests(unittest.TestCase):
         )
         cls.holdout = json.loads(
             (root / "poc_audio/manifests/m2b_c_padding_holdout.json").read_text()
+        )
+        cls.small_probe = json.loads(
+            (root / "poc_audio/manifests/m2b_c_small_q8_padding_probe.json").read_text()
         )
 
     def test_tracked_probe_is_dev_only_and_one_variable(self) -> None:
@@ -39,6 +43,11 @@ class M2BCPaddingProbeTests(unittest.TestCase):
         self.assertEqual(self.holdout["dev_review"]["selection"], "p300")
         self.assertEqual(self.holdout["scope"]["split"], "holdout")
         self.assertEqual(self.holdout["single_variable"]["probe_arms"], ["p300"])
+
+    def test_small_q8_starts_with_dev_only(self) -> None:
+        validate_small_probe(self.small_probe)
+        self.assertEqual(self.small_probe["scope"]["split"], "dev")
+        self.assertEqual(self.small_probe["scope"]["holdout_execution"], "SEALED")
 
     def test_summary_keeps_profiles_and_categories_separate(self) -> None:
         results = []

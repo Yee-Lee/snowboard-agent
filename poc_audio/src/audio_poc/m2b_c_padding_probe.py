@@ -21,9 +21,21 @@ from .m2b_c_fixture_lock import load_json, sha256_file
 
 DEV_REPORT_ID = "M2B-C-INTERNAL-PADDING-PROBE-001"
 HOLDOUT_REPORT_ID = "M2B-C-INTERNAL-PADDING-HOLDOUT-001"
+SMALL_DEV_REPORT_ID = "M2B-C-SMALL-Q8-INTERNAL-PADDING-PROBE-001"
 PROFILES = ("p0", "p300", "p500")
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
+SMALL_MODEL_SHA256 = "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f"
 WORKER_SHA256 = "ad71dd80efbac7d346a99b776ade2e0e2b849d9dc389e690120b7b592ba31210"
+CANDIDATES = {
+    "asr-whispercpp-base-q8_0-1.9.2-m2b": {
+        "filename": "ggml-base-q8_0.bin", "size_bytes": 81768585,
+        "sha256": MODEL_SHA256,
+    },
+    "asr-whispercpp-small-q8_0-1.9.2": {
+        "filename": "ggml-small-q8_0.bin", "size_bytes": 264464607,
+        "sha256": SMALL_MODEL_SHA256,
+    },
+}
 
 
 def repo_root() -> Path:
@@ -31,13 +43,10 @@ def repo_root() -> Path:
 
 
 def _validate_candidate_controls(document: dict[str, Any]) -> None:
-    if document.get("candidate_id") != "asr-whispercpp-base-q8_0-1.9.2-m2b":
+    artifact = CANDIDATES.get(str(document.get("candidate_id")))
+    if artifact is None:
         raise ValueError("padding probe candidate mismatch")
-    if document.get("artifact") != {
-        "filename": "ggml-base-q8_0.bin",
-        "size_bytes": 81768585,
-        "sha256": MODEL_SHA256,
-    }:
+    if document.get("artifact") != artifact:
         raise ValueError("padding probe artifact mismatch")
     runtime = document.get("runtime", {})
     if (
@@ -96,6 +105,21 @@ def validate_probe(document: dict[str, Any]) -> None:
     for key, value in expected.items():
         if execution.get(key) != value:
             raise ValueError(f"padding probe execution control mismatch: {key}")
+
+
+def validate_small_probe(document: dict[str, Any]) -> None:
+    if document.get("probe_id") != SMALL_DEV_REPORT_ID:
+        raise ValueError("small Q8 padding probe identity mismatch")
+    if document.get("status") != "AUTHORIZED_BY_REVIEWED_M2A_SHORTLIST_AND_C_LOCK":
+        raise ValueError("small Q8 padding probe is not authorized")
+    if document.get("candidate_id") != "asr-whispercpp-small-q8_0-1.9.2":
+        raise ValueError("small Q8 padding candidate mismatch")
+    adapted = {
+        **document,
+        "probe_id": DEV_REPORT_ID,
+        "status": "AUTHORIZED_BY_USER_REVIEWED_C_LOCK",
+    }
+    validate_probe(adapted)
 
 
 def validate_holdout_probe(document: dict[str, Any]) -> None:
@@ -305,6 +329,7 @@ def main() -> int:
     probe_paths = {
         root / "poc_audio/manifests/m2b_c_padding_probe.json": validate_probe,
         root / "poc_audio/manifests/m2b_c_padding_holdout.json": validate_holdout_probe,
+        root / "poc_audio/manifests/m2b_c_small_q8_padding_probe.json": validate_small_probe,
     }
     validator = probe_paths.get(args.probe.resolve())
     if validator is None:
