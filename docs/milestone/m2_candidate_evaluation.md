@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `IN_PROGRESS / DECODER PROBE PREPARING` | 兩個 Q8 recipes 保留 P0；Common Voice dev 顯示 small CER 較低但成本較高，holdout sealed；準備 base greedy→beam 單變因 probe |
+| M2B ASR optimization | `IN_PROGRESS / DECODER PROBE REVIEWED` | base beam dev CER 18.75% 高於 greedy 17.708333%，且增加約 106 ms p50/44 MiB RSS；不進 holdout，保留 P0+greedy |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 

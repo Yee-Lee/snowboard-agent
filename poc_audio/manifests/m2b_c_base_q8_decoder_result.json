@@ -1,0 +1,680 @@
+{
+  "artifact": {
+    "filename": "ggml-base-q8_0.bin",
+    "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+    "size_bytes": 81768585
+  },
+  "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+  "cleanup": {
+    "beam": {
+      "child_processes": 0,
+      "clean": true,
+      "device_owners": 0,
+      "force_abort_used": false,
+      "iterators": 0,
+      "streams": 0,
+      "threads": 0
+    },
+    "greedy": {
+      "child_processes": 0,
+      "clean": true,
+      "device_owners": 0,
+      "force_abort_used": false,
+      "iterators": 0,
+      "streams": 0,
+      "threads": 0
+    }
+  },
+  "duration_ms": 42733.007,
+  "error_code": null,
+  "execution_status": "OBSERVATIONS_COMPLETE_PENDING_REVIEW",
+  "fixture_lock": {
+    "controlled_manifest_sha256": "6282a3c9285b4f1e0040952cb6d5b8756e22101a4eab871436a6e8294ea93819",
+    "id": "M2B-C-PCM-LOCK-001",
+    "tracked_manifest_sha256": "3b748708ee9989223f26429f0c23d06161dc74dc84b83c9b2206bcf248dfb48a"
+  },
+  "generated_at_utc": "2026-08-22T10:27:14.770796+00:00",
+  "greedy_predecessor_hypothesis_hash_match": true,
+  "method": {
+    "audio_capture": false,
+    "audio_playback": false,
+    "decoder_budget_seconds": 900,
+    "decoder_order": [
+      "greedy",
+      "beam"
+    ],
+    "network": "isolated_namespace",
+    "per_item_timeout_seconds": 120,
+    "scored_inferences_per_item": 1,
+    "scored_observations": 16,
+    "warmups_per_item": 1
+  },
+  "network_evidence": "ISOLATED_NETWORK_NAMESPACE_NO_ROUTE_OR_ACTIVE_INTERFACE_BEFORE_AND_AFTER_PROBE",
+  "poc_source_sha": "063304fc434242dd7b06528a52f93c541f8e9a3e",
+  "raw_transcript_emitted": false,
+  "report_id": "M2B-C-BASE-Q8-DECODER-PROBE-001",
+  "results": [
+    {
+      "audio_duration_seconds": 2.66,
+      "category": "taiwan_mandarin",
+      "cpu_ms": 4954.321,
+      "decoder": "greedy",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-clear-002",
+      "hypothesis_length": 11,
+      "hypothesis_sha256": "473e99be15309ac45ed12709a8bb065f9f7f90b57ee5a3ce301abfece2035a3a",
+      "latency_ms": 1252.16,
+      "native_inference_ms": 1251.979,
+      "peak_rss_mib": 264.859,
+      "reference_length": 11,
+      "review_id": "I01",
+      "rtf": 0.470737,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.84,
+      "category": "taiwan_mandarin",
+      "cpu_ms": 5123.216,
+      "decoder": "greedy",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-pause-028",
+      "hypothesis_length": 13,
+      "hypothesis_sha256": "e530d196a19b108358fe524b879ba64506c29b1dad811eeaece73d21a324b1e1",
+      "latency_ms": 1300.108,
+      "native_inference_ms": 1299.897,
+      "peak_rss_mib": 267.188,
+      "reference_length": 13,
+      "review_id": "I04",
+      "rtf": 0.33857,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.89,
+      "category": "code_switch",
+      "cpu_ms": 4960.139,
+      "decoder": "greedy",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-clear-012",
+      "hypothesis_length": 9,
+      "hypothesis_sha256": "68ffbc2f7edc024926221eedc9c1918b5c08632ec23e55ad0dde768777b58a35",
+      "latency_ms": 1253.445,
+      "native_inference_ms": 1253.245,
+      "peak_rss_mib": 267.188,
+      "reference_length": 9,
+      "review_id": "I07",
+      "rtf": 0.433718,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.57,
+      "category": "code_switch",
+      "cpu_ms": 4925.596,
+      "decoder": "greedy",
+      "edit_distance": 4,
+      "family": "internal",
+      "fixture_id": "asr-pause-036",
+      "hypothesis_length": 21,
+      "hypothesis_sha256": "cf049185bad09f3b511e93ac12a7962be83f2acea37f90ade10ea789d6168e69",
+      "latency_ms": 1244.073,
+      "native_inference_ms": 1243.879,
+      "peak_rss_mib": 267.188,
+      "reference_length": 20,
+      "review_id": "I09",
+      "rtf": 0.34848,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.68,
+      "category": "number_or_date",
+      "cpu_ms": 4901.305,
+      "decoder": "greedy",
+      "edit_distance": 2,
+      "family": "internal",
+      "fixture_id": "asr-clear-016",
+      "hypothesis_length": 10,
+      "hypothesis_sha256": "694a5080e155eae5eaad14886a0ce0da7f82844f7980b7d0e5666f3cd2e8fb9d",
+      "latency_ms": 1237.158,
+      "native_inference_ms": 1236.982,
+      "peak_rss_mib": 267.188,
+      "reference_length": 10,
+      "review_id": "I11",
+      "rtf": 0.461626,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.33,
+      "category": "number_or_date",
+      "cpu_ms": 4988.911,
+      "decoder": "greedy",
+      "edit_distance": 4,
+      "family": "internal",
+      "fixture_id": "asr-pause-046",
+      "hypothesis_length": 10,
+      "hypothesis_sha256": "801412d6c1fce37049750b7ada89f37a3388704c570a525a0e759be4be632828",
+      "latency_ms": 1261.861,
+      "native_inference_ms": 1261.65,
+      "peak_rss_mib": 267.188,
+      "reference_length": 11,
+      "review_id": "I15",
+      "rtf": 0.378937,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.91,
+      "category": "product_term",
+      "cpu_ms": 4986.339,
+      "decoder": "greedy",
+      "edit_distance": 1,
+      "family": "internal",
+      "fixture_id": "asr-clear-023",
+      "hypothesis_length": 8,
+      "hypothesis_sha256": "e6fcb34c45fee479e3e289121580c36599894d871d30aa5753f833c757d49c65",
+      "latency_ms": 1261.363,
+      "native_inference_ms": 1261.184,
+      "peak_rss_mib": 267.188,
+      "reference_length": 8,
+      "review_id": "I16",
+      "rtf": 0.433458,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.36,
+      "category": "product_term",
+      "cpu_ms": 5150.626,
+      "decoder": "greedy",
+      "edit_distance": 6,
+      "family": "internal",
+      "fixture_id": "asr-pause-049",
+      "hypothesis_length": 14,
+      "hypothesis_sha256": "7ea498c6c39184b665311946159a070b6d40d988af9b41e75320147af1ad9f45",
+      "latency_ms": 1307.906,
+      "native_inference_ms": 1307.72,
+      "peak_rss_mib": 267.188,
+      "reference_length": 14,
+      "review_id": "I19",
+      "rtf": 0.389258,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.66,
+      "category": "taiwan_mandarin",
+      "cpu_ms": 5340.074,
+      "decoder": "beam",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-clear-002",
+      "hypothesis_length": 11,
+      "hypothesis_sha256": "473e99be15309ac45ed12709a8bb065f9f7f90b57ee5a3ce301abfece2035a3a",
+      "latency_ms": 1359.466,
+      "native_inference_ms": 1359.264,
+      "peak_rss_mib": 310.047,
+      "reference_length": 11,
+      "review_id": "I01",
+      "rtf": 0.511077,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.84,
+      "category": "taiwan_mandarin",
+      "cpu_ms": 5653.296,
+      "decoder": "beam",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-pause-028",
+      "hypothesis_length": 13,
+      "hypothesis_sha256": "e530d196a19b108358fe524b879ba64506c29b1dad811eeaece73d21a324b1e1",
+      "latency_ms": 1447.036,
+      "native_inference_ms": 1446.81,
+      "peak_rss_mib": 311.047,
+      "reference_length": 13,
+      "review_id": "I04",
+      "rtf": 0.376832,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.89,
+      "category": "code_switch",
+      "cpu_ms": 5317.588,
+      "decoder": "beam",
+      "edit_distance": 0,
+      "family": "internal",
+      "fixture_id": "asr-clear-012",
+      "hypothesis_length": 9,
+      "hypothesis_sha256": "68ffbc2f7edc024926221eedc9c1918b5c08632ec23e55ad0dde768777b58a35",
+      "latency_ms": 1353.276,
+      "native_inference_ms": 1353.06,
+      "peak_rss_mib": 311.047,
+      "reference_length": 9,
+      "review_id": "I07",
+      "rtf": 0.468262,
+      "sentence_correct": true,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.57,
+      "category": "code_switch",
+      "cpu_ms": 5289.628,
+      "decoder": "beam",
+      "edit_distance": 4,
+      "family": "internal",
+      "fixture_id": "asr-pause-036",
+      "hypothesis_length": 21,
+      "hypothesis_sha256": "89e92abf5f5e9cb7d2f1ad86994513a66afaecab3b1ef1adc049af0c94c60c05",
+      "latency_ms": 1347.289,
+      "native_inference_ms": 1347.078,
+      "peak_rss_mib": 311.047,
+      "reference_length": 20,
+      "review_id": "I09",
+      "rtf": 0.377392,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.68,
+      "category": "number_or_date",
+      "cpu_ms": 5211.35,
+      "decoder": "beam",
+      "edit_distance": 2,
+      "family": "internal",
+      "fixture_id": "asr-clear-016",
+      "hypothesis_length": 10,
+      "hypothesis_sha256": "694a5080e155eae5eaad14886a0ce0da7f82844f7980b7d0e5666f3cd2e8fb9d",
+      "latency_ms": 1324.381,
+      "native_inference_ms": 1324.166,
+      "peak_rss_mib": 311.047,
+      "reference_length": 10,
+      "review_id": "I11",
+      "rtf": 0.494172,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.33,
+      "category": "number_or_date",
+      "cpu_ms": 5423.762,
+      "decoder": "beam",
+      "edit_distance": 4,
+      "family": "internal",
+      "fixture_id": "asr-pause-046",
+      "hypothesis_length": 10,
+      "hypothesis_sha256": "801412d6c1fce37049750b7ada89f37a3388704c570a525a0e759be4be632828",
+      "latency_ms": 1383.891,
+      "native_inference_ms": 1383.672,
+      "peak_rss_mib": 311.047,
+      "reference_length": 11,
+      "review_id": "I15",
+      "rtf": 0.415583,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 2.91,
+      "category": "product_term",
+      "cpu_ms": 5381.943,
+      "decoder": "beam",
+      "edit_distance": 3,
+      "family": "internal",
+      "fixture_id": "asr-clear-023",
+      "hypothesis_length": 8,
+      "hypothesis_sha256": "871ea021c51ce1e8165b3923eb1e79e4a8fa467dc979bdbb4e9ede3084b6a022",
+      "latency_ms": 1370.988,
+      "native_inference_ms": 1370.774,
+      "peak_rss_mib": 311.047,
+      "reference_length": 8,
+      "review_id": "I16",
+      "rtf": 0.47113,
+      "sentence_correct": false,
+      "split": "dev"
+    },
+    {
+      "audio_duration_seconds": 3.36,
+      "category": "product_term",
+      "cpu_ms": 5685.434,
+      "decoder": "beam",
+      "edit_distance": 5,
+      "family": "internal",
+      "fixture_id": "asr-pause-049",
+      "hypothesis_length": 14,
+      "hypothesis_sha256": "fb63c143c0bd4b9c507e398c01757599af09e7f8bcb8a979dfe15697c40350cf",
+      "latency_ms": 1456.455,
+      "native_inference_ms": 1456.245,
+      "peak_rss_mib": 311.047,
+      "reference_length": 14,
+      "review_id": "I19",
+      "rtf": 0.433469,
+      "sentence_correct": false,
+      "split": "dev"
+    }
+  ],
+  "review_status": "UNREVIEWED",
+  "runtime": {
+    "beam": {
+      "command_sha256": "2d310635d2bc318db81ff60f901f0f63ef3dbc5eef79b55c6dcdf55f4dee479a",
+      "load_ms": 126.839,
+      "runtime_executable_sha256": "8c0b67f4ca54576691c25ee3d20427e7f62f951c9499df8c50c90dacc4dcf93b"
+    },
+    "greedy": {
+      "command_sha256": "6127a9770a1ff279bfa48d1713c2b19514a502cd1d2e96b7eec046c1463ad1f5",
+      "load_ms": 127.581,
+      "runtime_executable_sha256": "8c0b67f4ca54576691c25ee3d20427e7f62f951c9499df8c50c90dacc4dcf93b"
+    }
+  },
+  "schema_version": "1.0",
+  "scope": {
+    "common_voice_execution": "NOT_PART_OF_DECODER_PROBE",
+    "family": "internal",
+    "fixture_ids": [
+      "asr-clear-002",
+      "asr-pause-028",
+      "asr-clear-012",
+      "asr-pause-036",
+      "asr-clear-016",
+      "asr-pause-046",
+      "asr-clear-023",
+      "asr-pause-049"
+    ],
+    "holdout_execution": "SEALED",
+    "pcm_profile": "p0",
+    "split": "dev"
+  },
+  "security": {
+    "audio_device_opened": false,
+    "pcm_emitted_to_report": false,
+    "speaker_playback": false
+  },
+  "single_variable": {
+    "baseline": {
+      "best_of": 1,
+      "strategy": "greedy"
+    },
+    "name": "decoder",
+    "probe": {
+      "beam_size": 5,
+      "patience": 1.0,
+      "strategy": "beam"
+    }
+  },
+  "summary": {
+    "decoder_categories": {
+      "beam": {
+        "code_switch": {
+          "cer_percent": 13.793103,
+          "edit_distance": 4,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1353.276,
+            "min": 1347.289,
+            "p50": 1347.289,
+            "p95": 1353.276
+          },
+          "peak_rss_mib": 311.047,
+          "reference_length": 29,
+          "rtf": {
+            "max": 0.468262,
+            "min": 0.377392,
+            "p50": 0.377392,
+            "p95": 0.468262
+          },
+          "sentence_correctness_percent": 50.0
+        },
+        "number_or_date": {
+          "cer_percent": 28.571429,
+          "edit_distance": 6,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1383.891,
+            "min": 1324.381,
+            "p50": 1324.381,
+            "p95": 1383.891
+          },
+          "peak_rss_mib": 311.047,
+          "reference_length": 21,
+          "rtf": {
+            "max": 0.494172,
+            "min": 0.415583,
+            "p50": 0.415583,
+            "p95": 0.494172
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "product_term": {
+          "cer_percent": 36.363636,
+          "edit_distance": 8,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1456.455,
+            "min": 1370.988,
+            "p50": 1370.988,
+            "p95": 1456.455
+          },
+          "peak_rss_mib": 311.047,
+          "reference_length": 22,
+          "rtf": {
+            "max": 0.47113,
+            "min": 0.433469,
+            "p50": 0.433469,
+            "p95": 0.47113
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "taiwan_mandarin": {
+          "cer_percent": 0.0,
+          "edit_distance": 0,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1447.036,
+            "min": 1359.466,
+            "p50": 1359.466,
+            "p95": 1447.036
+          },
+          "peak_rss_mib": 311.047,
+          "reference_length": 24,
+          "rtf": {
+            "max": 0.511077,
+            "min": 0.376832,
+            "p50": 0.376832,
+            "p95": 0.511077
+          },
+          "sentence_correctness_percent": 100.0
+        }
+      },
+      "greedy": {
+        "code_switch": {
+          "cer_percent": 13.793103,
+          "edit_distance": 4,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1253.445,
+            "min": 1244.073,
+            "p50": 1244.073,
+            "p95": 1253.445
+          },
+          "peak_rss_mib": 267.188,
+          "reference_length": 29,
+          "rtf": {
+            "max": 0.433718,
+            "min": 0.34848,
+            "p50": 0.34848,
+            "p95": 0.433718
+          },
+          "sentence_correctness_percent": 50.0
+        },
+        "number_or_date": {
+          "cer_percent": 28.571429,
+          "edit_distance": 6,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1261.861,
+            "min": 1237.158,
+            "p50": 1237.158,
+            "p95": 1261.861
+          },
+          "peak_rss_mib": 267.188,
+          "reference_length": 21,
+          "rtf": {
+            "max": 0.461626,
+            "min": 0.378937,
+            "p50": 0.378937,
+            "p95": 0.461626
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "product_term": {
+          "cer_percent": 31.818182,
+          "edit_distance": 7,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1307.906,
+            "min": 1261.363,
+            "p50": 1261.363,
+            "p95": 1307.906
+          },
+          "peak_rss_mib": 267.188,
+          "reference_length": 22,
+          "rtf": {
+            "max": 0.433458,
+            "min": 0.389258,
+            "p50": 0.389258,
+            "p95": 0.433458
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "taiwan_mandarin": {
+          "cer_percent": 0.0,
+          "edit_distance": 0,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1300.108,
+            "min": 1252.16,
+            "p50": 1252.16,
+            "p95": 1300.108
+          },
+          "peak_rss_mib": 267.188,
+          "reference_length": 24,
+          "rtf": {
+            "max": 0.470737,
+            "min": 0.33857,
+            "p50": 0.33857,
+            "p95": 0.470737
+          },
+          "sentence_correctness_percent": 100.0
+        }
+      }
+    },
+    "decoders": {
+      "beam": {
+        "cer_percent": 18.75,
+        "edit_distance": 18,
+        "item_count": 8,
+        "latency_ms": {
+          "max": 1456.455,
+          "min": 1324.381,
+          "p50": 1359.466,
+          "p95": 1456.455
+        },
+        "peak_rss_mib": 311.047,
+        "reference_length": 96,
+        "rtf": {
+          "max": 0.511077,
+          "min": 0.376832,
+          "p50": 0.433469,
+          "p95": 0.511077
+        },
+        "sentence_correctness_percent": 37.5
+      },
+      "greedy": {
+        "cer_percent": 17.708333,
+        "edit_distance": 17,
+        "item_count": 8,
+        "latency_ms": {
+          "max": 1307.906,
+          "min": 1237.158,
+          "p50": 1253.445,
+          "p95": 1307.906
+        },
+        "peak_rss_mib": 267.188,
+        "reference_length": 96,
+        "rtf": {
+          "max": 0.470737,
+          "min": 0.33857,
+          "p50": 0.389258,
+          "p95": 0.470737
+        },
+        "sentence_correctness_percent": 37.5
+      }
+    },
+    "family": "internal",
+    "paired_decoder_delta": [
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-clear-002",
+        "latency_ms_delta_beam_minus_greedy": 107.306,
+        "rss_mib_delta_beam_minus_greedy": 45.188,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-clear-012",
+        "latency_ms_delta_beam_minus_greedy": 99.831,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-clear-016",
+        "latency_ms_delta_beam_minus_greedy": 87.223,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 2,
+        "fixture_id": "asr-clear-023",
+        "latency_ms_delta_beam_minus_greedy": 109.625,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-pause-028",
+        "latency_ms_delta_beam_minus_greedy": 146.928,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-pause-036",
+        "latency_ms_delta_beam_minus_greedy": 103.216,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": 0,
+        "fixture_id": "asr-pause-046",
+        "latency_ms_delta_beam_minus_greedy": 122.03,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      },
+      {
+        "edit_distance_delta_beam_minus_greedy": -1,
+        "fixture_id": "asr-pause-049",
+        "latency_ms_delta_beam_minus_greedy": 148.549,
+        "rss_mib_delta_beam_minus_greedy": 43.859,
+        "sentence_correctness_delta_beam_minus_greedy": 0
+      }
+    ],
+    "split": "dev"
+  }
+}
