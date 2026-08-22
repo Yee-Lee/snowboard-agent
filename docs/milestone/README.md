@@ -14,15 +14,16 @@ Core Designer 已複驗 `llm` / `0d415d174390665ed92793937d30334f01e3df14`，
 關閉 `OUT-M4B-2026-007-A～D`，並正式登錄 Gate 0 R2 `COMPLETE`。PM handoff 015
 已解決；此 ACK 僅接受 planning/regression packet，不代表已執行 Ubuntu benchmark、
 Pi run 或 candidate evidence。R5 exact-SHA review request 因實際可用 runner 均為 UTM，
-已暫緩。Core 已核准雙 UTM bounded environment preflight 設計與 packet preparation；
-真實 preflight execution 仍封鎖，須先回交 exact commands/operators/raw paths。
+已暫緩。Core 已核准雙 UTM bounded environment preflight 設計與 packet preparation。
+User-authorized ARM64 isolated diagnostic 已完成三輪並為 `PASS`；兩次先前 runner-defect
+`INCONCLUSIVE` 仍保留，formal change review與獨立x86_64 executable request/execution尚待核准。
 
 ## External Contract Gates
 
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
 | **Gate 0** Contract Receipt | `COMPLETE` | POC Team 提交；PM 收件；Core Designer 已登錄 | `0d415d...` 複驗通過；OUT-M4B-2026-007-A～D 已關閉 | 進行 M0 entry review；不自動啟動 M0 |
-| **Gate 1** Candidate Proposal, environment preflight, pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 先比較 native-ISA ARM64/x86_64 UTM 的 offline package viability；再凍結 Ubuntu pre-screen 平台，產品Pi compatibility只保留`PASS`且不補位 | 準備 `G1-DUAL-UTM-PREFLIGHT-001` exact executable request；preflight 與任何真實 candidate execution 均未授權 |
+| **Gate 1** Candidate Proposal, environment preflight, pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 先比較 native-ISA ARM64/x86_64 UTM 的 offline package viability；再凍結 Ubuntu pre-screen 平台，產品Pi compatibility只保留`PASS`且不補位 | 回交 ARM64 diagnostic/change record；準備獨立 x86_64 executable request，等待 execution approval |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
 | **Gate 3** Core Production | `OUT_OF_POC_SCOPE` | Core Developer / Tester / Designer | 依 Core contract | POC 僅提供 accepted handoff material |
@@ -72,13 +73,16 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   candidate 仍只是 proposal。
 - **Blocking finding — Gate 1 runner representativeness**：實際可用環境為 macOS ARM64 host /
   Ubuntu 24.04 ARM64 UTM guest，以及 macOS x86_64 host / Ubuntu 24.04 x86_64 UTM guest。
-  尚無 evidence 證明任一環境的 LiteRT-LM offline package viability；不得因既有 schema 或
-  推測效能先選平台。
+  ARM64 已取得 User-authorized diagnostic `PASS`：pinned wheel、offline namespace、native
+  linkage、三輪 import/lifecycle與cleanup皆通過；兩次 runner-defect `INCONCLUSIVE` 及額外
+  diagnostic authorization均保留。x86_64尚無結果，且Core尚未審核ARM64 change record；
+  因此不得先做平台裁決。
 - **Approved preparation — dual UTM preflight**：Core 已核准只用 pinned LiteRT-LM API wheel、dependency
   bundle 與 adapter/fake-child lifecycle 做 bounded offline preflight，不下載或載入模型、不做
   generation/performance ranking。兩邊都通過時因產品 ISA 對齊選 ARM64；ARM64 不成立而 x86_64
   通過時才選 x86_64；兩邊都無法判定則回交 `INCONCLUSIVE`。目前只可準備/檢查 artifacts、
-  dependency closure、adapter/binding bundle 與 immutable test request，不可執行 preflight。
+  dependency closure、adapter/binding bundle 與 immutable test request。ARM64 user-authorized
+  diagnostic已完成但不取代Core review；x86_64仍只可準備，取得新approval前不可執行。
 - **Platform decision — Gate 1**：native Ubuntu aarch64 runner 需求已由 Core 移除。
   Ubuntu 24.04 x86_64 完整初篩後一次預選最多兩名，再於產品 Debian 13 Pi 執行 bounded
   compatibility；Pi `FAIL/INCONCLUSIVE` 同 cycle 不得補測第三名。
