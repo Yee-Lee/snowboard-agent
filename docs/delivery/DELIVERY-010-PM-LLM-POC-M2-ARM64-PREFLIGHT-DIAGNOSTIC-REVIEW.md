@@ -1,4 +1,4 @@
-# LLM POC M2 ARM64 UTM Preflight Diagnostic Review Request
+# LLM POC M2 ARM64 UTM Preflight Acceptance and Direct-Continuation Request
 
 - **Delivery ID**: `DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW`
 - **From / via**: LLM POC Team / User-authorized Agent courier via PM
@@ -7,24 +7,46 @@
 - **Parent packet**: `G1-DUAL-UTM-PREFLIGHT-001`
 - **Environment**: `ENV-UTM-ARM64-001`
 - **Review target**: `wip/m2-arm64-preflight` / `265db05776b6bf5fadca5b3c3ab41345aa68819e`
-- **Status**: `CORE DISPOSITION REQUESTED / FORMAL ARM64 RESULT NOT YET ACCEPTED`
+- **Status**: `CORE EXCEPTION ACCEPTANCE AND BOUNDED CONTINUATION REQUESTED`
 - **Architecture change**: `No product architecture change`
 - **Date**: 2026-08-22
 
 ## Decisions requested
 
-Please accept the exact review target as a complete sanitized ARM64 diagnostic/change record, then
-choose one formal disposition:
+Please:
 
-1. **Exception acceptance**: explicitly waive the missing pre-execution Core authorization, exhausted
-   rerun budget and baseline/runner binding deviation, and accept the diagnostic `PASS` as the formal
-   ARM64 environment-preflight result; or
-2. **Corrective rerun (POC recommendation)**: authorize an append-only ARM64 request revision that
-   freezes the runner, lock, exact artifact paths/checksums, commands, operator and raw path before
-   execution, and grant one new controlled rerun after separate exact-SHA review.
+1. accept the exact review target as the complete sanitized ARM64 diagnostic/change record;
+2. explicitly waive the missing pre-execution Core authorization, exhausted rerun budget and
+   baseline/runner binding deviation, and accept the diagnostic `PASS` as the formal ARM64
+   environment-preflight result without another corrective ARM64 rerun;
+3. revise the dual-UTM disposition so an ARM64 `PASS` is sufficient to select ARM64 as the primary
+   Ubuntu pre-screen track; x86_64 remains an independent portability/fallback track and does not
+   block ARM64 progress;
+4. authorize the bounded ARM64 and x86_64 WIP branch workflow below through completion of their
+   approved workstation scopes, without a new Core round trip for every preparation step; and
+5. permit a reviewed, sanitized integration commit back to `llm` only after both branch owners report
+   their results and the Technical Lead confirms the merge boundary.
 
-Neither disposition selects the final Ubuntu pre-screen platform. The x86_64 environment remains
-unexecuted, so the approved dual-UTM platform rule is not yet complete.
+This request asks Core to accept disclosed deviations rather than hide or rewrite them. The original
+two `INCONCLUSIVE` attempts remain permanent evidence history.
+
+## Requested bounded direct-continuation scope
+
+| Track | Branch | Requested authority | Completion boundary |
+| --- | --- | --- | --- |
+| ARM64 primary | `wip/m2-arm64-preflight` | append-only runner/lock/config/adapter refinement; controlled runtime/model artifact preparation; immutable ARM64 Ubuntu candidate pre-screen execution under predeclared commands and stop conditions | sanitized environment/candidate result, raw checksums, cleanup proof and Technical Lead review |
+| x86_64 portability/fallback | `wip/m2-x86_64-preflight` | independent x86_64 environment packet, controlled artifacts and bounded portability/pre-screen execution using the same logical candidate identities | sanitized x86_64 result, raw checksums, cleanup proof and Technical Lead review |
+
+Each track must remain based on `llm` SHA `98a854a91f514efa12c3904576c2b652629e0bbd` or a later
+Core-accepted common baseline, preserve append-only attempt history, keep artifacts/raw evidence
+outside Git and stop on identity drift, missing authorization, dirty/reused paths, unbounded process,
+network fallback or cleanup failure. A branch result may be `PASS`, `FAIL` or `INCONCLUSIVE`; no
+branch may suppress an unsuccessful attempt or alter the other track's evidence.
+
+The later integration into `llm` must contain only reviewed source, locks, packets and sanitized
+evidence. It must not merge model/runtime binaries, raw logs, private paths, credentials or host
+identity. Branch completion and merge do not themselves start M2 or close External Gate 1; milestone
+and gate status still require their named reviews.
 
 ## Attempt history and diagnostic result
 
@@ -65,9 +87,9 @@ evidence or x86_64 artifact was used.
 
 ## Required corrective revision properties
 
-If Core selects the recommended corrective path, the returned append-only request will:
+For direct continuation, the append-only branch work will:
 
-- bind a clean baseline SHA containing the runner, schema/lock and all result semantics;
+- bind each subsequent run to a clean branch SHA containing the runner, schema/lock and all result semantics;
 - freeze sanitized operator identity, approved wheel/bundle locations, fresh raw/install paths,
   canonical argv and checksums before execution;
 - authenticate Ubuntu/kernel/glibc/Python/UTM acceleration and capacity inputs;
@@ -91,5 +113,7 @@ If Core selects the recommended corrective path, the returned append-only reques
 ## Unchanged boundaries
 
 M2 remains `NOT_STARTED`. R5 exact-SHA acceptance remains held. This delivery does not authorize a
-new ARM64 run, x86_64 execution, model acquisition/load, candidate manifest, Gate 1 candidate run,
-Pi access, Gate 2 evidence, finalist selection or product integration.
+new ARM64 run, x86_64 execution, model acquisition/load or Gate 1 candidate run unless Core explicitly
+accepts the bounded direct-continuation scope above. Pi access, Pi compatibility execution, Gate 2
+evidence, finalist selection and product integration remain excluded even if direct continuation is
+approved.
