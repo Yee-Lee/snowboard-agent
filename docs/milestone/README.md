@@ -55,7 +55,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `IN_PROGRESS / DECODER PROBES REVIEWED` | beam=3 無 CER gain 且少一個正確句；beam=5 CER 較差，兩者成本均較高，不進 holdout；base 保留 P0+greedy |
+| M2B Optimization Feasibility | `IN_PROGRESS / BASE PROMPT REVIEWED` | beam 不保留；base Q8 保留 P0+greedy+固定 domain prompt，dev/holdout 無誤插但有一般華語 regression；fallback/final delta 尚待關閉 |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 
