@@ -24,6 +24,10 @@ verified candidate/artifact identities, the common fixture lock, 20 observations
 clean teardown, no-audio security evidence, and the exact loaded Python wheel closure.
 Diagnostic reruns and controlled transcripts were rejected from scorecard input.
 
+Post-review fixture-quality observations are intentionally separated in the compact
+[`M4A-M2A-FIXTURE-SENSITIVITY-SUPPLEMENT-001`](M4A-M2A-FIXTURE-SENSITIVITY-SUPPLEMENT-001.md);
+they do not alter this frozen scorecard.
+
 ## Comparative observations
 
 | Candidate | CER % | Sentence % | p50 ms | p95 ms | RTF p50 | RSS MiB | Sanitized report SHA-256 |

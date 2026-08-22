@@ -45,6 +45,8 @@ links from the active milestone only when the current task needs that detail.
 - Use `audio` as the only persistent development branch. Local WIP commits may
   be squashed before a candidate is published, but a published or submitted
   candidate SHA is immutable and must never be rewritten with reset or rebase.
+- Write commit subjects and bodies in English, include a bullet-list body, and
+  keep the complete commit message to roughly 60 words or fewer.
 - Record rejected validation evidence and append fixes on top of the rejected
   candidate. Converge those new fixes into the next candidate without altering
   any previously submitted SHA.

@@ -216,9 +216,9 @@ Every POC commit uses this subject format:
 ```
 
 Use a lowercase `work_type` such as `feat`, `fix`, `test`, `docs`, `refactor`,
-or `chore`, and an active milestone such as `M0` through `M4`. The optional
-body is English bullet points only, explains the work or the reason for a fix,
-and contains no more than 60 words. Do not include secrets, endpoints,
+or `chore`, and an active milestone such as `M0` through `M4`. Write the subject
+and body in English, include a bullet-list body, and keep the complete commit
+message to roughly 60 words or fewer. Do not include secrets, endpoints,
 credentials, raw evidence, or private audio/transcript data.
 
 ```text
