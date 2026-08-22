@@ -53,10 +53,10 @@ Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不�
 兩台可用 Ubuntu 24.04 環境分別是 native-ISA ARM64 UTM 與 x86_64 UTM。現階段不依 schema
 慣性或 VM 效能推測先選平台；`tests/gate1/GATE1-ENV-PREFLIGHT-001.md` 提議以 pinned API
 wheel、offline dependency closure、native binding import與fake-child lifecycle做 bounded 比較。
-它不下載/載入模型、不執行 generation、不產生 candidate evidence。Core 已核准 packet
-preparation。隔離的 ARM64 package 現保留為 User-authorized diagnostic `PASS`，並同時保留
-前兩次 runner-defect `INCONCLUSIVE`。這不關閉 formal dual-UTM decision；Core change review
-與獨立 x86_64 executable request/execution仍待處理。
+Core 已例外接受隔離的 ARM64 diagnostic SHA `265db057...` 為 formal environment `PASS`，
+並保留前兩次 runner-defect `INCONCLUSIVE`。ARM64 是 primary track；x86_64為獨立
+portability/fallback且不阻擋 ARM64。兩個 WIP branches可在 immutable commands與stop conditions
+下完成 approved workstation scope；Pi、Gate 2、finalist與product integration仍未授權。
 
 ## Before Any M0 Run
 

@@ -8,7 +8,7 @@
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md) - Core 接受 M2-G1-PLATFORM-CONFIG-001，授權 append-only R5 repository revision；真實執行仍封鎖
-* [`ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md`](pm_handoff/ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md) - Core 核准 dual-UTM preflight design與packet preparation；real execution仍封鎖
+* [`ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](pm_handoff/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) - Core 例外接受 ARM64 formal environment PASS、選定primary並授權兩個bounded WIP tracks
 * [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
@@ -28,6 +28,7 @@
 * `commit_workflow_update.md` - (已納入) Candidate Commit 與 append-only 原則已整合至 repo workflow
 * `DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md` - (已取代) R1 四項 finding 已由 Revision 002 收斂為單一 FATAL blocker
 * `DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md` - (已關閉) R3 exact SHA 已獲 Core Designer freeze approval
+* `ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md` - (已承接) design/preparation授權已由 ARM64 diagnostic ACK推進為bounded continuation
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -40,6 +41,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
 * [`ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md`](response/ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md) - Core R5 platform-config ACK intake、scope mapping與exact-SHA review status
 * [`RESP-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md`](response/RESP-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md) - ARM64/x86_64 UTM bounded offline preflight內部評估、固定平台裁決與執行邊界
+* [`RESP-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](response/RESP-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) - Core ARM64 exception acceptance與bounded WIP continuation intake
 * [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - M1 replacement candidate 對 `M1-FREEZE-001～004` 的實作與 executable proof 對照
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - FATAL child-wire terminal guard、六類 direct regression 與 R3 exact candidate 回覆
@@ -59,7 +61,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md`](delivery/DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md) - Gate 1 x86/Pi strict-config identity finding；請 Core 發出 replacement schema/lock/runner packet
 * [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md`](delivery/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) - R5 immutable SHA review request；因實際 runner topology 新發現，由 DELIVERY-009 要求暫緩裁決
 * [`DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md`](delivery/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md) - 請 Core 先核准 ARM64/x86_64 UTM bounded preflight與固定平台選擇規則
-* [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md`](delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) - 回交 ARM64 attempt history與diagnostic PASS，請 Core 例外接受並授權 ARM64/x86_64 WIP tracks bounded direct continuation
+* [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md`](delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) - (已核准) ARM64 diagnostic exception acceptance與 ARM64/x86_64 bounded WIP continuation
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

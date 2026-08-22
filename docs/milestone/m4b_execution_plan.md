@@ -1,6 +1,6 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`DUAL-UTM PREFLIGHT PACKET PREPARATION AUTHORIZED / EXECUTION NOT AUTHORIZED`
+狀態：`ARM64 PRIMARY + X86_64 FALLBACK WIP CONTINUATION AUTHORIZED / M2 NOT_STARTED`
 
 Revision：`2026-08-22-preflight-proposal`
 
@@ -32,7 +32,9 @@ benchmark、Pi run 或 candidate evidence。
 
 ### Proposed pre-entry environment package
 
-`G1-DUAL-UTM-PREFLIGHT-001` design and packet preparation are approved by Core. It compares only
+`G1-DUAL-UTM-PREFLIGHT-001` design was approved by Core. ARM64 diagnostic target `265db057...` is
+accepted as the formal ARM64 environment `PASS`; ARM64 is primary and x86_64 is an independent
+portability/fallback track. The two bounded tracks compare only
 offline package and lifecycle viability on two native-ISA virtualized environments:
 
 - macOS ARM64 host / Ubuntu 24.04 ARM64 UTM guest;
@@ -43,12 +45,12 @@ performance or produce Gate 1/Gate 2 evidence. Both environments use their pinne
 API wheel and the same predeclared checks. Three clean import/lifecycle repetitions are required;
 one controlled rerun is allowed only for an identified environment failure.
 
-The decision rule is frozen before execution: if both pass, select ARM64 because it matches the
-product ISA; if ARM64 fails or remains inconclusive while x86_64 passes, select x86_64; if neither
-passes, return `INCONCLUSIVE` and a change request. Core has authorized artifact/dependency/binding
-preparation; the User must approve controlled paths and operators, then Core must accept the returned
-exact executable request before execution. Core separately approves the resulting platform and
-affected append-only packet revision before M2 entry.
+The revised disposition accepts ARM64 `PASS` as sufficient for primary progress; x86_64 does not
+block it. Both owners may continue through approved workstation scopes using immutable predeclared
+commands and stop conditions without a Core round trip for each preparation step. Identity drift,
+missing authority, dirty/reused path, network fallback, unbounded process or cleanup failure stops
+that track. Both owners report before Technical Lead confirms a sanitized merge boundary back to
+`llm`; this does not itself start M2.
 
 | Field | Definition |
 | --- | --- |
@@ -138,9 +140,8 @@ Gate 2 evidence; implementation of the real hardware adapter is an explicit pack
 
 ## Currently Unresolved Core Decisions
 
-- Exact dual-UTM operators, User-approved controlled offline wheel/dependency paths, immutable
-  commands and raw paths must be returned for separate Core execution authorization; R5 exact-SHA
-  acceptance remains held until platform evidence is reviewed.
+- ARM64 and x86_64 WIP owners must complete their bounded workstation results and Technical Lead must
+  confirm the sanitized integration boundary; R5 exact-SHA acceptance remains held until then.
 - Which Ubuntu pre-screen platform and affected append-only packet revision are accepted after the
   preflight result.
 - P4 actual Pi measurements may require Core threshold disposition; method is frozen, acceptance is not.
