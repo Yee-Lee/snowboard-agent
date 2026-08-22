@@ -61,6 +61,9 @@ Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 
 | [`DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE`](history/DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md) | LLM POC M1 Prompt/Response/Protocol/Config freeze candidate | 無 | **Resolved — Designer revision required at `0b5a928...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) |
 | [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2`](history/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) | LLM POC M1 freeze replacement R2 | 無 | **Resolved — three findings closed, one localized revision at `93b34c1...`** | Revision: [`DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) |
 | [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3`](history/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) | LLM POC M1 freeze replacement R3 | 無 | **Resolved — Designer frozen at `830d0b4...`; Internal Tester sign-off pending** | ACK: [`DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M1-FREEZE-R3-ACK-001.md) |
+| [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW`](history/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) | LLM POC M2 Gate 1 R5 Exact-SHA Review Request | 無 | **Superseded by DELIVERY-009** | Held for Dual-UTM preflight |
+| [`DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT`](history/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md) | LLM POC M2 Dual-UTM Environment Preflight Change Request | 無 | **Resolved — preflight authorized** | ACK: [`ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md`](../responses/ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md) |
+| [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW`](history/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) | LLM POC M2 ARM64 UTM Preflight Acceptance Request | 無 | **Resolved — exception accepted** | ACK: [`ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](../responses/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) |
 
 ---
 
@@ -76,6 +79,9 @@ docs/outsource/pm_handoff/
     ├── DELIVERY-004-PM-LLM-POC-M1-FREEZE-CANDIDATE.md
     ├── DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md
     ├── DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md
+    ├── DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md
+    ├── DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md
+    ├── DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md
     ├── PM-OUT-260805-001-m1-carryover-feedback/
     ├── PM-OUT-260805-002-m3-m4-poc-planning/
     ├── PM-OUT-260806-003-m1-test-platform-scope/
