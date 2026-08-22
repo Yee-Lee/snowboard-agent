@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `IN_PROGRESS / BASE Q8 PADDING REVIEWED` | C Internal dev+holdout 的 P0/P300 都是 44/189 edits；P300 改善 number/date、惡化 Mandarin/product-term，base Q8 不保留 padding |
+| M2B ASR optimization | `IN_PROGRESS / Q8 PADDING REVIEWED` | base Q8 P0/P300 合併 CER 相同；small Q8 dev 的 P300/P500 均惡化，因此兩個 Q8 recipes 都保留 P0 |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
