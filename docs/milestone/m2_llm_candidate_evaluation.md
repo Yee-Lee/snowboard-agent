@@ -22,8 +22,9 @@ x86與Gate 1 Pi compatibility只用於Gate 1 selection，不得取代任何Gate 
 
 ## Work Packet
 
-Authoritative executable packet：`poc_llm/tests/gate1/GATE1-PACKET-004.md`。Frozen catalog、
-validator、runners、schemas 與 checksums 由 `poc_llm/harness/gate1-lock-v4.json` 控制。
+Authoritative repository packet：`poc_llm/tests/gate1/GATE1-PACKET-005.md`。Frozen catalog、
+validator、platform-projection runners、schemas 與 checksums 由
+`poc_llm/harness/gate1-lock-v5.json` 控制。真實執行須待 Core 接受 R5 exact SHA 並另行授權。
 
 - 在x86對每個有效pairing執行完整portable packet，依固定排序一次預選最多兩名；只對
   預選者執行產品Pi compatibility，`FAIL/INCONCLUSIVE`同cycle不得以第三名補位。
@@ -66,7 +67,8 @@ validator、runners、schemas 與 checksums 由 `poc_llm/harness/gate1-lock-v4.j
 
 ## Prohibited in M2
 
-- 不在 Gate 1 ACK 前開始 Raspberry Pi 5 candidate benchmark 或 Gate 2A 測試。
+- 不在 R5 exact-SHA acceptance 與 execution authorization 前開始真實 x86/Pi Gate 1 run；
+  不在 Gate 1 finalist ACK 前開始 Raspberry Pi 5 Gate 2A benchmark。
 - 不以 Ubuntu 結果宣告 Pi M4B-P1～P12 `PASS`、Gate 2A provisional finalist 或 final winner。
 - 不提交模型、大型 raw result、private prompt/output、endpoint、credential 或 secret。
 - 不因結果不佳更改 pairing ID、fixture、metric、淘汰規則或只發布最好一次。

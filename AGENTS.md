@@ -24,6 +24,22 @@ Read these only when the task needs them:
 Do not reread unchanged documents during the same task merely by habit. Follow
 links from the active milestone only when the current task needs that detail.
 
+## Local Workstation Context
+
+At the beginning of every work session, before interpreting milestone readiness:
+
+1. Check whether `.workstation-context.md` exists.
+2. If it exists, read it before assessing local artifact or runner availability.
+3. If it does not exist, create it as an ignored local-only file and record the
+   current OS, architecture, workstation role, model/runtime artifact availability,
+   Ubuntu runner availability and Pi access/authorization state. Unknown facts must
+   be written as `unknown` or `not authorized`, never inferred from repository history.
+
+This ignored file describes only the current checkout's local environment. It is not
+milestone evidence or execution authorization. Never infer that artifacts or runner
+capabilities recorded on another workstation are present locally, and never commit
+the local context file.
+
 ## Document Handling & Communication Rules
 
 - **`docs/pm_handoff/` is Read-Only**: Incoming requirements, contracts, and handoff messages from PM / Core Team are strictly read-only.

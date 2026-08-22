@@ -4,7 +4,7 @@
 - **Incoming ACK**: `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`
 - **Incoming SHA-256**: `41040791fce1c92f6eaa495dbd961378fee49bc98f8247eebee589ebd8bf6247`
 - **Finding**: `M2-G1-PLATFORM-CONFIG-001`
-- **Status**: `R5 REPOSITORY REVISION IN PRE-COMMIT VERIFICATION / REAL EXECUTION BLOCKED`
+- **Status**: `R5 EXACT SHA SUBMITTED FOR CORE REVIEW / REAL EXECUTION BLOCKED`
 - **Date**: 2026-08-21
 
 ## Authority mapping
@@ -38,7 +38,13 @@ Gate 1-to-Gate 2 carry-over.  All returned exit code 0.
 
 ## Remaining blockers
 
-1. Obtain the User's explicit commit authorization, then create the required single milestone commit
-   and report its immutable 40-character SHA to Core for R5 review.
-2. Core must accept that exact R5 SHA.  Real Gate 1 still additionally needs capacity, controlled
+1. Core must accept exact R5 SHA `190a827b4c82279e4300af6075e2eeb52b91cd54`.
+2. Real Gate 1 still additionally needs capacity, controlled
    paths, operator/runner authorization, Pi access and execution authorization.
+
+## Committed review target
+
+- Branch: `llm`
+- Exact commit: `190a827b4c82279e4300af6075e2eeb52b91cd54`
+- Remote state at submission: `origin/llm` resolves to the same exact commit.
+- No real x86/Pi execution or Gate 2 evidence occurred.

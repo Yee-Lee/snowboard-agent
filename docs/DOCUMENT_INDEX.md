@@ -37,7 +37,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-002.md) - 007-A～D authenticated fail-closed packet 修正與複驗回覆
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001.md) - Gate 1 platform ACK intake、requirement mapping與revision-004 verification
-* [`ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md`](response/ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md) - Core R5 platform-config ACK intake、scope mapping與pre-commit verification status
+* [`ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md`](response/ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md) - Core R5 platform-config ACK intake、scope mapping與exact-SHA review status
 * [`ACK-M1-FROZEN-CONTRACT-001.md`](response/ACK-M1-FROZEN-CONTRACT-001.md) - M1 locked PromptBuilder、wire protocol、strict-config Freeze Candidate；單次 Designer/Tester review pending
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md) - M1 replacement candidate 對 `M1-FREEZE-001～004` 的實作與 executable proof 對照
 * [`RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md`](response/RESP-DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md) - FATAL child-wire terminal guard、六類 direct regression 與 R3 exact candidate 回覆
@@ -55,6 +55,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md`](delivery/DELIVERY-005-PM-LLM-POC-M1-FREEZE-CANDIDATE-R2.md) - 對 Core 四項 findings 的單一 replacement；review target `llm` / `93b34c14...`
 * [`DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md`](delivery/DELIVERY-006-PM-LLM-POC-M1-FREEZE-CANDIDATE-R3.md) - locked-scope FATAL replacement；review target `llm` / `830d0b4e...`
 * [`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md`](delivery/DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md) - Gate 1 x86/Pi strict-config identity finding；請 Core 發出 replacement schema/lock/runner packet
+* [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md`](delivery/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) - 提交 R5 immutable SHA、changed paths、deterministic regression 與 remaining execution blockers，請 Core review
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
