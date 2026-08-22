@@ -22,6 +22,7 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 
 
 PROBE_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-001"
+HOLDOUT_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-HOLDOUT-001"
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
 WORKER_SHA256 = "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"
 PROMPT = "繁體中文。常用技術詞彙：Wi-Fi、audio frame、音訊基線、候選語音模型、離線執行。"
@@ -101,6 +102,79 @@ def validate_probe(probe: dict[str, Any]) -> None:
         raise ValueError("prompt probe predecessor identity mismatch")
 
 
+def validate_holdout_probe(probe: dict[str, Any]) -> None:
+    if probe.get("probe_id") != HOLDOUT_ID or probe.get("status") != "FROZEN_BEFORE_PROMPT_HOLDOUT_INFERENCE":
+        raise ValueError("prompt holdout identity mismatch")
+    authorization = probe.get("dev_authorization")
+    if authorization != {
+        "result_path": "poc_audio/manifests/m2b_c_base_q8_prompt_dev_result.json",
+        "result_sha256": "33e0e875a976c211015f659714d5c2ad7e23ad064a06a34de3d0876d80c44595",
+        "evidence_path": "poc_audio/evidence/m2/M2B-C-BASE-Q8-PROMPT-DEV-001.md",
+        "disposition": "REVIEWED_ADVANCE_TO_PRE_FROZEN_C_HOLDOUT",
+    }:
+        raise ValueError("prompt holdout dev authorization mismatch")
+    adapted = {
+        **probe,
+        "probe_id": PROBE_ID,
+        "status": "FROZEN_BEFORE_PROMPT_INFERENCE",
+        "scope": {
+            "internal": {
+                "family": "internal", "split": "dev", "pcm_profile": "p0",
+                "fixture_ids": [
+                    "asr-clear-002", "asr-pause-028", "asr-clear-012", "asr-pause-036",
+                    "asr-clear-016", "asr-pause-046", "asr-clear-023", "asr-pause-049",
+                ],
+            },
+            "common_voice": {
+                "family": "common_voice", "split": "dev",
+                "review_ids": ["D02", "D05", "N03", "L03"],
+            },
+            "internal_holdout_execution": "SEALED",
+            "common_voice_holdout_execution": "SEALED",
+        },
+        "predecessors": {
+            "internal": {
+                "path": "poc_audio/manifests/m2b_c_padding_dev_result.json",
+                "sha256": "73132c6dcf8c029105ec3ca298b9f4a5234f6cd625c4992d654d0c2cc9d75c90",
+                "profile": "p0",
+            },
+            "common_voice": {
+                "path": "poc_audio/manifests/m2b_c_common_voice_dev_result.json",
+                "sha256": "2552595f91f231206933cc5836b73ae3174aca174d442a54712812fd5293d58f",
+                "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+            },
+            "required_baseline_hypothesis_hash_match": True,
+        },
+        "expected_internal_terms": {
+            "asr-clear-012": ["wifi"], "asr-pause-036": ["audio_frame"],
+            "asr-clear-023": ["audio_baseline"],
+            "asr-pause-049": ["speech_model", "offline_execution"],
+        },
+    }
+    adapted.pop("dev_authorization", None)
+    validate_probe(adapted)
+    scope = probe["scope"]
+    if scope != {
+        "internal": {
+            "family": "internal", "split": "holdout", "pcm_profile": "p0",
+            "fixture_ids": [
+                "asr-clear-008", "asr-pause-034", "asr-clear-014", "asr-pause-039",
+                "asr-clear-017", "asr-clear-022", "asr-clear-024", "asr-clear-025",
+            ],
+        },
+        "common_voice": {
+            "family": "common_voice", "split": "holdout",
+            "review_ids": ["H02", "H03", "H04", "N06"],
+        },
+        "dev_execution": "REVIEWED_COMPLETE",
+    }:
+        raise ValueError("prompt holdout scope mismatch")
+    if probe.get("expected_internal_terms") != {
+        fixture_id: [] for fixture_id in scope["internal"]["fixture_ids"]
+    }:
+        raise ValueError("prompt holdout expected-term lock mismatch")
+
+
 def load_items(
     probe: dict[str, Any], tracked_lock: Path, controlled_lock: Path, fixtures_root: Path,
 ) -> list[dict[str, Any]]:
@@ -112,14 +186,20 @@ def load_items(
         "fixture_lock": probe["fixture_lock"],
         "scope": {"review_ids": probe["scope"]["common_voice"]["review_ids"]},
     }
+    internal_split = probe["scope"]["internal"]["split"]
+    common_split = probe["scope"]["common_voice"]["split"]
     internal = [
         {**item, "family": "internal", "item_id": item["fixture_id"],
-         "duration_seconds": item["p0"]["duration_seconds"]}
-        for item in verify_internal(internal_packet, tracked_lock, controlled_lock, fixtures_root)
+         "split": internal_split, "duration_seconds": item["p0"]["duration_seconds"]}
+        for item in verify_internal(
+            internal_packet, tracked_lock, controlled_lock, fixtures_root, internal_split
+        )
     ]
     common = [
-        {**item, "family": "common_voice", "item_id": item["review_id"]}
-        for item in verify_common_voice(common_packet, tracked_lock, controlled_lock, fixtures_root)
+        {**item, "family": "common_voice", "item_id": item["review_id"], "split": common_split}
+        for item in verify_common_voice(
+            common_packet, tracked_lock, controlled_lock, fixtures_root, common_split
+        )
     ]
     return internal + common
 
@@ -137,7 +217,7 @@ def score(
     expected = probe["expected_internal_terms"].get(item["fixture_id"], []) \
         if item["family"] == "internal" else []
     common = {
-        "profile": profile, "family": item["family"], "split": "dev",
+        "profile": profile, "family": item["family"], "split": item["split"],
         "item_id": item["item_id"], "fixture_id": item["fixture_id"],
         "category": item["category"], "audio_duration_seconds": duration,
         "latency_ms": round(latency, 3), "native_inference_ms": float(metrics["native_inference_ms"]),
@@ -230,10 +310,19 @@ def main() -> int:
     for path in (args.work_dir, args.output, args.sanitized_output):
         if path.exists() or path.resolve().is_relative_to(root):
             raise ValueError("prompt probe outputs must be new and outside Git")
-    if args.probe.resolve() != root / "poc_audio/manifests/m2b_c_base_q8_prompt_probe.json":
+    validators = {
+        root / "poc_audio/manifests/m2b_c_base_q8_prompt_probe.json": validate_probe,
+        root / "poc_audio/manifests/m2b_c_base_q8_prompt_holdout.json": validate_holdout_probe,
+    }
+    validator = validators.get(args.probe.resolve())
+    if validator is None:
         raise ValueError("prompt probe must use the tracked packet")
     probe = load_json(args.probe)
-    validate_probe(probe)
+    validator(probe)
+    if probe["probe_id"] == HOLDOUT_ID:
+        authorization = probe["dev_authorization"]
+        if sha256_file(root / authorization["result_path"]) != authorization["result_sha256"]:
+            raise ValueError("prompt holdout tracked dev result mismatch")
     artifact = probe["artifact"]
     if args.model.name != artifact["filename"] or args.model.stat().st_size != artifact["size_bytes"] \
             or sha256_file(args.model) != artifact["sha256"]:
@@ -284,13 +373,17 @@ def main() -> int:
     except Exception as error:
         error_code = type(error).__name__
     assert_network_isolated()
-    baseline_matches = predecessor_match(probe, sanitized_results, root) if len(sanitized_results) == 24 else False
-    if error_code is None and not baseline_matches:
+    is_holdout = probe["probe_id"] == HOLDOUT_ID
+    baseline_matches = (
+        None if is_holdout else
+        predecessor_match(probe, sanitized_results, root) if len(sanitized_results) == 24 else False
+    )
+    if error_code is None and baseline_matches is False:
         error_code = "BASELINE_PREDECESSOR_MISMATCH"
     complete = len(sanitized_results) == 24 and error_code is None \
         and len(cleanups) == 2 and all(item["clean"] for item in cleanups.values())
     base = {
-        "schema_version": "1.0", "report_id": PROBE_ID,
+        "schema_version": "1.0", "report_id": probe["probe_id"],
         "generated_at_utc": datetime.now(UTC).isoformat(), "review_status": "UNREVIEWED",
         "execution_status": "OBSERVATIONS_COMPLETE_PENDING_REVIEW" if complete else "INCONCLUSIVE_RETAINED",
         "poc_source_sha": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),

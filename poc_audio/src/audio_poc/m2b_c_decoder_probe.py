@@ -118,7 +118,7 @@ def validate_beam3_probe(probe: dict[str, Any]) -> None:
 
 def verify_inputs(
     probe: dict[str, Any], tracked_path: Path, controlled_path: Path,
-    fixtures_root: Path,
+    fixtures_root: Path, expected_split: str = "dev",
 ) -> list[dict[str, Any]]:
     identity = probe["fixture_lock"]
     if sha256_file(tracked_path) != identity["tracked_manifest_sha256"] \
@@ -130,8 +130,8 @@ def verify_inputs(
     items = []
     for fixture_id in probe["scope"]["fixture_ids"]:
         expected, raw = sanitized.get(fixture_id), private.get(fixture_id)
-        if expected is None or raw is None or raw.get("split") != "dev":
-            raise ValueError(f"missing decoder dev fixture: {fixture_id}")
+        if expected is None or raw is None or raw.get("split") != expected_split:
+            raise ValueError(f"missing decoder {expected_split} fixture: {fixture_id}")
         reference = str(raw.get("reference_text", ""))
         if hashlib.sha256(reference.encode()).hexdigest() != expected["reference_sha256"]:
             raise ValueError(f"decoder reference mismatch: {fixture_id}")

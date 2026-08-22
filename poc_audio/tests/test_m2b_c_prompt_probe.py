@@ -5,7 +5,13 @@ import json
 from pathlib import Path
 import unittest
 
-from audio_poc.m2b_c_prompt_probe import PROMPT, predecessor_match, summarize, validate_probe
+from audio_poc.m2b_c_prompt_probe import (
+    PROMPT,
+    predecessor_match,
+    summarize,
+    validate_holdout_probe,
+    validate_probe,
+)
 
 
 class M2BCPromptProbeTests(unittest.TestCase):
@@ -14,6 +20,9 @@ class M2BCPromptProbeTests(unittest.TestCase):
         cls.root = Path(__file__).resolve().parents[2]
         cls.probe = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_base_q8_prompt_probe.json").read_text()
+        )
+        cls.holdout = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_base_q8_prompt_holdout.json").read_text()
         )
 
     def test_probe_is_one_variable_and_keeps_both_holdouts_sealed(self) -> None:
@@ -27,6 +36,17 @@ class M2BCPromptProbeTests(unittest.TestCase):
         changed["single_variable"]["probe"] += "測試句"
         with self.assertRaisesRegex(ValueError, "only the frozen initial prompt"):
             validate_probe(changed)
+
+    def test_holdout_is_pre_frozen_and_has_no_prompt_term_overlap(self) -> None:
+        validate_holdout_probe(self.holdout)
+        self.assertEqual(self.holdout["scope"]["internal"]["split"], "holdout")
+        self.assertTrue(all(not terms for terms in self.holdout["expected_internal_terms"].values()))
+
+    def test_holdout_rejects_fixture_replacement(self) -> None:
+        changed = copy.deepcopy(self.holdout)
+        changed["scope"]["common_voice"]["review_ids"][0] = "D02"
+        with self.assertRaisesRegex(ValueError, "holdout scope mismatch"):
+            validate_holdout_probe(changed)
 
     def test_predecessor_hashes_cover_internal_and_common_voice(self) -> None:
         results = []
