@@ -240,8 +240,21 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             "params.greedy.best_of = 1;",
             "params.beam_search.beam_size = beam_size;",
             "params.beam_search.patience = 1.0F;",
+            "params.initial_prompt = initial_prompt.empty() ? nullptr : initial_prompt.c_str();",
             "params.vad = false;",
             "context_params.use_gpu = false;",
+        ):
+            self.assertIn(statement, source)
+
+    def test_native_worker_bounds_optional_initial_prompt(self) -> None:
+        source = (
+            REPO_ROOT / "poc_audio/native/whispercpp_worker/worker.cpp"
+        ).read_text(encoding="utf-8")
+        for statement in (
+            "constexpr std::size_t kMaxPromptBytes = 512U;",
+            '} else if (option == "--initial-prompt") {',
+            "initial_prompt.size() > kMaxPromptBytes",
+            "prompt_has_control",
         ):
             self.assertIn(statement, source)
 

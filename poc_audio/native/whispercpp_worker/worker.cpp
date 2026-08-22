@@ -20,6 +20,7 @@ namespace {
 constexpr int kSampleRate = 16000;
 constexpr int kMaxThreads = 4;
 constexpr std::size_t kMaxSamples = 60U * kSampleRate;
+constexpr std::size_t kMaxPromptBytes = 512U;
 
 uint16_t read_u16(std::istream & input) {
     unsigned char bytes[2] = {};
@@ -154,7 +155,8 @@ enum class Decoder {
 };
 
 std::string transcribe(whisper_context * context, const std::vector<float> & samples,
-                       int threads, Decoder decoder, int beam_size) {
+                       int threads, Decoder decoder, int beam_size,
+                       const std::string & initial_prompt) {
     const auto strategy = decoder == Decoder::Greedy
         ? WHISPER_SAMPLING_GREEDY : WHISPER_SAMPLING_BEAM_SEARCH;
     whisper_full_params params = whisper_full_default_params(strategy);
@@ -175,7 +177,7 @@ std::string transcribe(whisper_context * context, const std::vector<float> & sam
     params.greedy.best_of = 1;
     params.beam_search.beam_size = beam_size;
     params.beam_search.patience = 1.0F;
-    params.initial_prompt = nullptr;
+    params.initial_prompt = initial_prompt.empty() ? nullptr : initial_prompt.c_str();
     params.carry_initial_prompt = false;
     params.prompt_tokens = nullptr;
     params.prompt_n_tokens = 0;
@@ -204,6 +206,8 @@ int main(int argc, char ** argv) {
     Decoder decoder = Decoder::Greedy;
     int beam_size = 5;
     bool beam_size_seen = false;
+    std::string initial_prompt;
+    bool initial_prompt_seen = false;
     for (int index = 1; index < argc; index += 2) {
         if (index + 1 >= argc) {
             std::cerr << "missing option value" << std::endl;
@@ -227,12 +231,14 @@ int main(int argc, char ** argv) {
             } else if (option == "--beam-size") {
                 beam_size = std::stoi(value);
                 beam_size_seen = true;
+            } else if (option == "--initial-prompt") {
+                initial_prompt = value;
+                initial_prompt_seen = true;
             } else {
                 throw std::invalid_argument("option");
             }
         } catch (const std::exception &) {
             std::cerr << "invalid worker option" << std::endl;
-            return 2;
         }
     }
     if (model_path.empty() || threads < 1 || threads > kMaxThreads) {
@@ -241,6 +247,18 @@ int main(int argc, char ** argv) {
     }
     if (beam_size < 1 || beam_size > 16 || (decoder == Decoder::Greedy && beam_size_seen)) {
         std::cerr << "beam size is valid only for beam decoder and must be between 1 and 16" << std::endl;
+        return 2;
+    }
+    bool prompt_has_control = false;
+    for (const unsigned char byte : initial_prompt) {
+        if (byte < 0x20U || byte == 0x7fU) {
+            prompt_has_control = true;
+        }
+    }
+    if ((initial_prompt_seen && initial_prompt.empty()) ||
+            initial_prompt.size() > kMaxPromptBytes || prompt_has_control) {
+        std::cerr << "initial prompt must be 1 to 512 UTF-8 bytes without control characters"
+                  << std::endl;
         return 2;
     }
     if (std::string(whisper_version()) != "1.9.2") {
@@ -275,7 +293,8 @@ int main(int argc, char ** argv) {
             const auto samples = read_pcm16_mono_wav(line.substr(sizeof(prefix) - 1U));
             const uint64_t wall_started = monotonic_us();
             const uint64_t cpu_started = process_cpu_us();
-            const std::string transcript = transcribe(context, samples, threads, decoder, beam_size);
+            const std::string transcript = transcribe(
+                context, samples, threads, decoder, beam_size, initial_prompt);
             const uint64_t cpu_us = process_cpu_us() - cpu_started;
             const uint64_t wall_us = monotonic_us() - wall_started;
             std::cout << "RESULT\t" << hex_encode(transcript) << "\t" << wall_us << "\t"
