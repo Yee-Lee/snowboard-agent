@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "probe_id": "M2B-C-BASE-Q8-DOMAIN-PROMPT-001",
+  "status": "FROZEN_BEFORE_PROMPT_INFERENCE",
+  "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+  "artifact": {
+    "filename": "ggml-base-q8_0.bin",
+    "size_bytes": 81768585,
+    "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
+  },
+  "runtime": {
+    "id": "whispercpp-1.9.2-native-aarch64-prompt-capable",
+    "source_sha": "62aac01389d06f7f218db0e45acf3de30b4476af",
+    "native_worker_sha256": "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b",
+    "build_report_sha256": "5539acd951a09169f140181264506f4a4cee0035b7f5ad917bdf4c838175dd0c",
+    "threads": 4,
+    "decoder": "greedy",
+    "language": "zh",
+    "context": false,
+    "timestamps": false,
+    "internal_vad": false
+  },
+  "fixture_lock": {
+    "id": "M2B-C-PCM-LOCK-001",
+    "tracked_manifest_sha256": "3b748708ee9989223f26429f0c23d06161dc74dc84b83c9b2206bcf248dfb48a",
+    "controlled_manifest_sha256": "6282a3c9285b4f1e0040952cb6d5b8756e22101a4eab871436a6e8294ea93819"
+  },
+  "predecessors": {
+    "internal": {
+      "path": "poc_audio/manifests/m2b_c_padding_dev_result.json",
+      "sha256": "73132c6dcf8c029105ec3ca298b9f4a5234f6cd625c4992d654d0c2cc9d75c90",
+      "profile": "p0"
+    },
+    "common_voice": {
+      "path": "poc_audio/manifests/m2b_c_common_voice_dev_result.json",
+      "sha256": "2552595f91f231206933cc5836b73ae3174aca174d442a54712812fd5293d58f",
+      "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b"
+    },
+    "required_baseline_hypothesis_hash_match": true
+  },
+  "scope": {
+    "internal": {
+      "family": "internal",
+      "split": "dev",
+      "pcm_profile": "p0",
+      "fixture_ids": [
+        "asr-clear-002", "asr-pause-028", "asr-clear-012", "asr-pause-036",
+        "asr-clear-016", "asr-pause-046", "asr-clear-023", "asr-pause-049"
+      ]
+    },
+    "common_voice": {
+      "family": "common_voice",
+      "split": "dev",
+      "review_ids": ["D02", "D05", "N03", "L03"]
+    },
+    "internal_holdout_execution": "SEALED",
+    "common_voice_holdout_execution": "SEALED"
+  },
+  "single_variable": {
+    "name": "initial_prompt",
+    "baseline": null,
+    "probe": "繁體中文。常用技術詞彙：Wi-Fi、audio frame、音訊基線、候選語音模型、離線執行。",
+    "probe_sha256": "e3b2606c90009ce609aa23183c2229619619cf1173dc17d2ecd2308bfe4fe8ef",
+    "probe_utf8_bytes": 109,
+    "full_test_sentences_included": false
+  },
+  "domain_terms": {
+    "wifi": "Wi-Fi",
+    "audio_frame": "audio frame",
+    "audio_baseline": "音訊基線",
+    "speech_model": "語音模型",
+    "offline_execution": "離線執行"
+  },
+  "expected_internal_terms": {
+    "asr-clear-012": ["wifi"],
+    "asr-pause-036": ["audio_frame"],
+    "asr-clear-023": ["audio_baseline"],
+    "asr-pause-049": ["speech_model", "offline_execution"]
+  },
+  "execution": {
+    "profile_order": ["domain_prompt", "baseline"],
+    "family_order": ["internal", "common_voice"],
+    "warmups_per_item": 1,
+    "scored_inferences_per_item": 1,
+    "scored_observations": 24,
+    "per_item_timeout_seconds": 120,
+    "profile_budget_seconds": 1200,
+    "network": "isolated_namespace",
+    "audio_capture": false,
+    "audio_playback": false
+  },
+  "decision_rule": "ADVANCE_ONLY_FOR_INTERNAL_TERM_OR_QUALITY_GAIN_WITHOUT_COMMON_VOICE_FALSE_INSERTION_OR_MATERIAL_COST"
+}
