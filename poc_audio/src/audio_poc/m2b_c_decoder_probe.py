@@ -20,6 +20,7 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 
 
 PROBE_ID = "M2B-C-BASE-Q8-DECODER-PROBE-001"
+BEAM3_PROBE_ID = "M2B-C-BASE-Q8-BEAM3-PROBE-001"
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
 WORKER_SHA256 = "8c0b67f4ca54576691c25ee3d20427e7f62f951c9499df8c50c90dacc4dcf93b"
 
@@ -42,6 +43,7 @@ def validate_probe(probe: dict[str, Any]) -> None:
         runtime.get("native_worker_sha256") != WORKER_SHA256
         or runtime.get("source_sha") != "3403b4b1bd970d81754ae4aed34dd12f7ebdb4fd"
         or runtime.get("threads") != 4
+        or runtime.get("language") != "zh"
         or any(runtime.get(key) is not False for key in ("context", "timestamps", "internal_vad"))
     ):
         raise ValueError("decoder probe runtime mismatch")
@@ -70,6 +72,48 @@ def validate_probe(probe: dict[str, Any]) -> None:
     }
     if any(execution.get(key) != value for key, value in expected.items()):
         raise ValueError("decoder probe execution controls mismatch")
+
+
+def validate_beam3_probe(probe: dict[str, Any]) -> None:
+    if probe.get("probe_id") != BEAM3_PROBE_ID \
+            or probe.get("status") != "FROZEN_BEFORE_BEAM3_INFERENCE":
+        raise ValueError("beam3 probe identity mismatch")
+    formal = probe.get("formal_result", {})
+    if formal != {
+        "path": "poc_audio/manifests/m2b_c_base_q8_decoder_result.json",
+        "sha256": "4bd9c9a517355aae6a3eecf12e1e528a142b6b9290c005f552bd0c13a42b2ea5",
+    }:
+        raise ValueError("beam3 probe formal-result identity mismatch")
+    adapted = {
+        **probe,
+        "probe_id": PROBE_ID,
+        "status": "FROZEN_BEFORE_DECODER_INFERENCE",
+        "single_variable": {
+            **probe["single_variable"],
+            "probe": {"strategy": "beam", "beam_size": 5, "patience": 1.0},
+        },
+        "execution": {
+            **probe["execution"],
+            "decoder_order": ["greedy", "beam"],
+        },
+    }
+    adapted["execution"].pop("run_class", None)
+    validate_probe(adapted)
+    if probe.get("single_variable", {}).get("probe") != {
+        "strategy": "beam", "beam_size": 3, "patience": 1.0,
+    }:
+        raise ValueError("beam3 probe must isolate beam size 3")
+    if probe.get("execution", {}).get("run_class") != "M2X_BEAM3_ALIGNMENT_PROBE":
+        raise ValueError("beam3 probe run class mismatch")
+    if probe.get("historical_alignment") != {
+        "profile": "M2X_D1_BEAM3_ONLY",
+        "language": "zh",
+        "beam_size": 3,
+        "initial_prompt": None,
+        "internal_vad": False,
+        "equivalence_limit": "WHISPERCPP_BEAM3_DOES_NOT_REPRODUCE_FASTER_WHISPER_BEAM3",
+    }:
+        raise ValueError("beam3 historical-alignment boundary mismatch")
 
 
 def verify_inputs(
@@ -187,10 +231,19 @@ def main() -> int:
     for path in (args.work_dir, args.output, args.sanitized_output):
         if path.exists() or path.resolve().is_relative_to(root):
             raise ValueError("decoder probe outputs must be new and outside Git")
-    if args.probe.resolve() != root / "poc_audio/manifests/m2b_c_base_q8_decoder_probe.json":
+    validators = {
+        root / "poc_audio/manifests/m2b_c_base_q8_decoder_probe.json": validate_probe,
+        root / "poc_audio/manifests/m2b_c_base_q8_beam3_probe.json": validate_beam3_probe,
+    }
+    validator = validators.get(args.probe.resolve())
+    if validator is None:
         raise ValueError("decoder probe must use the tracked packet")
     probe = load_json(args.probe)
-    validate_probe(probe)
+    validator(probe)
+    if "formal_result" in probe:
+        formal = probe["formal_result"]
+        if sha256_file(root / formal["path"]) != formal["sha256"]:
+            raise ValueError("beam3 probe tracked formal result mismatch")
     artifact = probe["artifact"]
     if args.model.name != artifact["filename"] or args.model.stat().st_size != artifact["size_bytes"] \
             or sha256_file(args.model) != artifact["sha256"]:
@@ -210,19 +263,22 @@ def main() -> int:
         for decoder in probe["execution"]["decoder_order"]:
             command = [str(args.binary.resolve()), "--model", str(args.model.resolve()), "--threads", "4", "--decoder", decoder]
             if decoder == "beam":
-                command += ["--beam-size", "5"]
+                command += ["--beam-size", str(probe["single_variable"]["probe"]["beam_size"])]
             worker = NativeWhisperWorker(command, args.work_dir / f"{decoder}.stderr.log")
             owners_before = audio_device_owner_count()
             decoder_started = time.monotonic()
             try:
                 worker.start()
                 for item in items:
-                    worker.transcribe(item["wav_path"], 120.0)
-                    metrics = worker.transcribe(item["wav_path"], 120.0)
+                    timeout = float(probe["execution"]["per_item_timeout_seconds"])
+                    worker.transcribe(item["wav_path"], timeout)
+                    metrics = worker.transcribe(item["wav_path"], timeout)
                     raw, sanitized = score(decoder, item, metrics)
                     raw_results.append(raw)
                     sanitized_results.append(sanitized)
-                    if time.monotonic() - decoder_started > 900:
+                    if time.monotonic() - decoder_started > float(
+                        probe["execution"]["decoder_budget_seconds"]
+                    ):
                         raise TimeoutError("decoder budget exceeded")
             finally:
                 cleanup = worker.stop()
@@ -243,9 +299,11 @@ def main() -> int:
     complete = len(sanitized_results) == 16 and error_code is None \
         and len(cleanups) == 2 and all(item["clean"] for item in cleanups.values())
     base = {
-        "schema_version": "1.0", "report_id": PROBE_ID,
+        "schema_version": "1.0", "report_id": probe["probe_id"],
         "generated_at_utc": datetime.now(UTC).isoformat(), "review_status": "UNREVIEWED",
-        "execution_status": "OBSERVATIONS_COMPLETE_PENDING_REVIEW" if complete else "INCONCLUSIVE_RETAINED",
+        "execution_status": (
+            "OBSERVATIONS_COMPLETE_PENDING_REVIEW" if complete else "INCONCLUSIVE_RETAINED"
+        ),
         "poc_source_sha": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
         "candidate_id": probe["candidate_id"], "artifact": artifact,
         "runtime": runtimes, "fixture_lock": probe["fixture_lock"], "scope": probe["scope"],

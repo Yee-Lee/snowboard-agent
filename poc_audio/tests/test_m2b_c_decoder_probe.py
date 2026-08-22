@@ -5,7 +5,12 @@ import json
 from pathlib import Path
 import unittest
 
-from audio_poc.m2b_c_decoder_probe import predecessor_match, summarize, validate_probe
+from audio_poc.m2b_c_decoder_probe import (
+    predecessor_match,
+    summarize,
+    validate_beam3_probe,
+    validate_probe,
+)
 
 
 class M2BCDecoderProbeTests(unittest.TestCase):
@@ -14,6 +19,9 @@ class M2BCDecoderProbeTests(unittest.TestCase):
         cls.root = Path(__file__).resolve().parents[2]
         cls.probe = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_base_q8_decoder_probe.json").read_text()
+        )
+        cls.beam3_probe = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_base_q8_beam3_probe.json").read_text()
         )
 
     def test_probe_changes_only_decoder_on_internal_dev(self) -> None:
@@ -26,6 +34,25 @@ class M2BCDecoderProbeTests(unittest.TestCase):
         changed["single_variable"]["probe"]["beam_size"] = 8
         with self.assertRaisesRegex(ValueError, "more than decoder"):
             validate_probe(changed)
+
+    def test_probe_rejects_language_drift(self) -> None:
+        changed = copy.deepcopy(self.probe)
+        changed["runtime"]["language"] = "auto"
+        with self.assertRaisesRegex(ValueError, "runtime mismatch"):
+            validate_probe(changed)
+
+    def test_beam3_probe_aligns_with_m2x_isolated_profile(self) -> None:
+        validate_beam3_probe(self.beam3_probe)
+        self.assertEqual(self.beam3_probe["runtime"]["language"], "zh")
+        self.assertEqual(self.beam3_probe["single_variable"]["probe"]["beam_size"], 3)
+        self.assertEqual(self.beam3_probe["execution"]["decoder_order"], ["beam", "greedy"])
+        self.assertEqual(self.beam3_probe["scope"]["holdout_execution"], "SEALED")
+
+    def test_beam3_probe_rejects_beam_size_drift(self) -> None:
+        changed = copy.deepcopy(self.beam3_probe)
+        changed["single_variable"]["probe"]["beam_size"] = 5
+        with self.assertRaisesRegex(ValueError, "beam size 3"):
+            validate_beam3_probe(changed)
 
     def test_predecessor_hashes_bind_new_greedy_baseline(self) -> None:
         previous = json.loads(
