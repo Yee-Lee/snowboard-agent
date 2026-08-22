@@ -12,6 +12,7 @@ from audio_poc.m2b_c_prompt_probe import (
     validate_holdout_probe,
     validate_probe,
     validate_small_probe,
+    validate_small_holdout_probe,
 )
 
 
@@ -27,6 +28,9 @@ class M2BCPromptProbeTests(unittest.TestCase):
         )
         cls.small = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_small_q8_prompt_probe.json").read_text()
+        )
+        cls.small_holdout = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_small_q8_prompt_holdout.json").read_text()
         )
 
     def test_probe_is_one_variable_and_keeps_both_holdouts_sealed(self) -> None:
@@ -61,6 +65,16 @@ class M2BCPromptProbeTests(unittest.TestCase):
         changed["artifact"]["filename"] = "ggml-base-q8_0.bin"
         with self.assertRaisesRegex(ValueError, "small prompt artifact mismatch"):
             validate_small_probe(changed)
+
+    def test_small_holdout_binds_reviewed_dev_result(self) -> None:
+        validate_small_holdout_probe(self.small_holdout)
+        self.assertEqual(self.small_holdout["scope"]["internal"]["split"], "holdout")
+
+    def test_small_holdout_rejects_expected_term_leakage(self) -> None:
+        changed = copy.deepcopy(self.small_holdout)
+        changed["expected_internal_terms"]["asr-clear-025"] = ["speech_model"]
+        with self.assertRaisesRegex(ValueError, "expected-term lock mismatch"):
+            validate_small_holdout_probe(changed)
 
     def test_predecessor_hashes_cover_internal_and_common_voice(self) -> None:
         results = []

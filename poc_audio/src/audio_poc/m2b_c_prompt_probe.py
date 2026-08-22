@@ -24,6 +24,7 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 PROBE_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-001"
 HOLDOUT_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-HOLDOUT-001"
 SMALL_PROBE_ID = "M2B-C-SMALL-Q8-DOMAIN-PROMPT-001"
+SMALL_HOLDOUT_ID = "M2B-C-SMALL-Q8-DOMAIN-PROMPT-HOLDOUT-001"
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
 WORKER_SHA256 = "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"
 PROMPT = "繁體中文。常用技術詞彙：Wi-Fi、audio frame、音訊基線、候選語音模型、離線執行。"
@@ -224,6 +225,79 @@ def validate_holdout_probe(probe: dict[str, Any]) -> None:
         raise ValueError("prompt holdout expected-term lock mismatch")
 
 
+def validate_small_holdout_probe(probe: dict[str, Any]) -> None:
+    if probe.get("probe_id") != SMALL_HOLDOUT_ID \
+            or probe.get("status") != "FROZEN_BEFORE_SMALL_PROMPT_HOLDOUT_INFERENCE":
+        raise ValueError("small prompt holdout identity mismatch")
+    if probe.get("dev_authorization") != {
+        "result_path": "poc_audio/manifests/m2b_c_small_q8_prompt_dev_result.json",
+        "result_sha256": "b81dfc8187968fd8247eb3a57379d3f49766074fe1b7e58e67f3d1e0cf6a1a22",
+        "evidence_path": "poc_audio/evidence/m2/M2B-C-SMALL-Q8-PROMPT-DEV-001.md",
+        "disposition": "REVIEWED_ADVANCE_TO_PRE_FROZEN_C_HOLDOUT",
+    }:
+        raise ValueError("small prompt holdout dev authorization mismatch")
+    adapted = {
+        **probe,
+        "probe_id": SMALL_PROBE_ID,
+        "status": "FROZEN_BEFORE_SMALL_PROMPT_INFERENCE",
+        "scope": {
+            "internal": {
+                "family": "internal", "split": "dev", "pcm_profile": "p0",
+                "fixture_ids": [
+                    "asr-clear-002", "asr-pause-028", "asr-clear-012", "asr-pause-036",
+                    "asr-clear-016", "asr-pause-046", "asr-clear-023", "asr-pause-049",
+                ],
+            },
+            "common_voice": {
+                "family": "common_voice", "split": "dev",
+                "review_ids": ["D02", "D05", "N03", "L03"],
+            },
+            "internal_holdout_execution": "SEALED",
+            "common_voice_holdout_execution": "SEALED",
+        },
+        "predecessors": {
+            "internal": {
+                "path": "poc_audio/manifests/m2b_c_small_q8_padding_dev_result.json",
+                "sha256": "1bfc956c1d789e7be2e7fcaa93d079653ed90a0d37e88e42aa28e93ca0bf9de9",
+                "profile": "p0",
+            },
+            "common_voice": {
+                "path": "poc_audio/manifests/m2b_c_common_voice_dev_result.json",
+                "sha256": "2552595f91f231206933cc5836b73ae3174aca174d442a54712812fd5293d58f",
+                "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+            },
+            "required_baseline_hypothesis_hash_match": True,
+        },
+        "expected_internal_terms": {
+            "asr-clear-012": ["wifi"], "asr-pause-036": ["audio_frame"],
+            "asr-clear-023": ["audio_baseline"],
+            "asr-pause-049": ["speech_model", "offline_execution"],
+        },
+    }
+    adapted.pop("dev_authorization", None)
+    validate_small_probe(adapted)
+    scope = probe["scope"]
+    if scope != {
+        "internal": {
+            "family": "internal", "split": "holdout", "pcm_profile": "p0",
+            "fixture_ids": [
+                "asr-clear-008", "asr-pause-034", "asr-clear-014", "asr-pause-039",
+                "asr-clear-017", "asr-clear-022", "asr-clear-024", "asr-clear-025",
+            ],
+        },
+        "common_voice": {
+            "family": "common_voice", "split": "holdout",
+            "review_ids": ["H02", "H03", "H04", "N06"],
+        },
+        "dev_execution": "REVIEWED_COMPLETE",
+    }:
+        raise ValueError("small prompt holdout scope mismatch")
+    if probe.get("expected_internal_terms") != {
+        fixture_id: [] for fixture_id in scope["internal"]["fixture_ids"]
+    }:
+        raise ValueError("small prompt holdout expected-term lock mismatch")
+
+
 def load_items(
     probe: dict[str, Any], tracked_lock: Path, controlled_lock: Path, fixtures_root: Path,
 ) -> list[dict[str, Any]]:
@@ -363,13 +437,14 @@ def main() -> int:
         root / "poc_audio/manifests/m2b_c_base_q8_prompt_probe.json": validate_probe,
         root / "poc_audio/manifests/m2b_c_base_q8_prompt_holdout.json": validate_holdout_probe,
         root / "poc_audio/manifests/m2b_c_small_q8_prompt_probe.json": validate_small_probe,
+        root / "poc_audio/manifests/m2b_c_small_q8_prompt_holdout.json": validate_small_holdout_probe,
     }
     validator = validators.get(args.probe.resolve())
     if validator is None:
         raise ValueError("prompt probe must use the tracked packet")
     probe = load_json(args.probe)
     validator(probe)
-    if probe["probe_id"] == HOLDOUT_ID:
+    if probe["probe_id"] in (HOLDOUT_ID, SMALL_HOLDOUT_ID):
         authorization = probe["dev_authorization"]
         if sha256_file(root / authorization["result_path"]) != authorization["result_sha256"]:
             raise ValueError("prompt holdout tracked dev result mismatch")
@@ -423,7 +498,7 @@ def main() -> int:
     except Exception as error:
         error_code = type(error).__name__
     assert_network_isolated()
-    is_holdout = probe["probe_id"] == HOLDOUT_ID
+    is_holdout = probe["probe_id"] in (HOLDOUT_ID, SMALL_HOLDOUT_ID)
     baseline_matches = (
         None if is_holdout else
         predecessor_match(probe, sanitized_results, root) if len(sanitized_results) == 24 else False
