@@ -59,6 +59,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md`](delivery/DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST.md) - Gate 1 x86/Pi strict-config identity finding；請 Core 發出 replacement schema/lock/runner packet
 * [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md`](delivery/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) - R5 immutable SHA review request；因實際 runner topology 新發現，由 DELIVERY-009 要求暫緩裁決
 * [`DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md`](delivery/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md) - 請 Core 先核准 ARM64/x86_64 UTM bounded preflight與固定平台選擇規則
+* [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md`](delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) - 回交 ARM64 attempt history、diagnostic PASS 與 formal evidence deviations，請 Core 裁決例外接受或 corrective rerun
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

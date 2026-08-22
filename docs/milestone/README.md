@@ -23,7 +23,7 @@ User-authorized ARM64 isolated diagnostic 已完成三輪並為 `PASS`；兩次�
 | Gate | 狀態 | Owner / recorder or approver | 關閉條件 | 下一個允許動作 |
 | --- | --- | --- | --- | --- |
 | **Gate 0** Contract Receipt | `COMPLETE` | POC Team 提交；PM 收件；Core Designer 已登錄 | `0d415d...` 複驗通過；OUT-M4B-2026-007-A～D 已關閉 | 進行 M0 entry review；不自動啟動 M0 |
-| **Gate 1** Candidate Proposal, environment preflight, pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 先比較 native-ISA ARM64/x86_64 UTM 的 offline package viability；再凍結 Ubuntu pre-screen 平台，產品Pi compatibility只保留`PASS`且不補位 | 回交 ARM64 diagnostic/change record；準備獨立 x86_64 executable request，等待 execution approval |
+| **Gate 1** Candidate Proposal, environment preflight, pre-screen & Pi Compatibility | `NOT_STARTED / BLOCKED` | POC Team 提交；Core Designer 書面確認 | 先比較 native-ISA ARM64/x86_64 UTM 的 offline package viability；再凍結 Ubuntu pre-screen 平台，產品Pi compatibility只保留`PASS`且不補位 | 以 DELIVERY-010 請 Core 裁決 ARM64 diagnostic/formal deviation；準備獨立 x86_64 executable request |
 | **Gate 2A** Pi 5 LLM-only | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | P1～P8、P10A、P11、P12 依 matrix 完成 | 只能產生 provisional finalist ACK |
 | **Gate 2B** Audio+LLM combined | `NOT_STARTED / BLOCKED` | POC Team 執行；Core Designer 審核 | Accepted Audio package、P9、P10B 及固定 2A regression 全部通過 | Core Designer 才可發 final winner ACK |
 | **Gate 3** Core Production | `OUT_OF_POC_SCOPE` | Core Developer / Tester / Designer | 依 Core contract | POC 僅提供 accepted handoff material |
@@ -77,6 +77,11 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   linkage、三輪 import/lifecycle與cleanup皆通過；兩次 runner-defect `INCONCLUSIVE` 及額外
   diagnostic authorization均保留。x86_64尚無結果，且Core尚未審核ARM64 change record；
   因此不得先做平台裁決。
+- **Core review request — ARM64 diagnostic disposition**：review target
+  `265db05776b6bf5fadca5b3c3ab41345aa68819e` 保留兩次 runner-defect `INCONCLUSIVE` 與一次
+  User-authorized diagnostic `PASS`。由於 Core 未事前授權 execution、retry budget 已耗盡，且
+  runner/exact argv 未存在於宣告的 baseline SHA，DELIVERY-010 請 Core 明確裁決例外接受，或
+  核准 append-only corrective packet與一次新 rerun；在裁決前 formal ARM64 result仍未關閉。
 - **Approved preparation — dual UTM preflight**：Core 已核准只用 pinned LiteRT-LM API wheel、dependency
   bundle 與 adapter/fake-child lifecycle 做 bounded offline preflight，不下載或載入模型、不做
   generation/performance ranking。兩邊都通過時因產品 ISA 對齊選 ARM64；ARM64 不成立而 x86_64
@@ -105,6 +110,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [Gate 1 R5 replacement packet](../../poc_llm/tests/gate1/GATE1-PACKET-005.md)
 - [Gate 1 R5 exact-SHA review request](../delivery/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md)
 - [Dual UTM preflight adjustment request](../delivery/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md)
+- [ARM64 preflight diagnostic review](../delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md)
 - [Core dual UTM preflight plan ACK](../pm_handoff/ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md)
 - [M0 test request](../../poc_llm/tests/m0/M0-TEST-REQUEST-001.md)
 
