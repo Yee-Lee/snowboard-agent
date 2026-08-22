@@ -26,7 +26,7 @@ class M2BCRecipeProposalTests(unittest.TestCase):
     def test_combined_metrics_recompute_from_prompt_profiles(self) -> None:
         sources = {
             "primary": self.proposal["source_results"][:2],
-            "fallback": self.proposal["source_results"][2:],
+            "fallback": self.proposal["source_results"][2:4],
         }
         for role, identities in sources.items():
             rows = []
@@ -47,10 +47,40 @@ class M2BCRecipeProposalTests(unittest.TestCase):
                 p95 = latencies[math.ceil(len(latencies) * 0.95) - 1]
                 self.assertEqual((p50, p95), (expected["latency_p50_ms"], expected["latency_p95_ms"]))
 
+    def test_task_adjusted_metrics_match_formal_result(self) -> None:
+        identity = self.proposal["source_results"][4]
+        result = json.loads((self.root / identity["path"]).read_text())
+        candidate_roles = {
+            self.proposal["primary"]["candidate_id"]: "primary",
+            self.proposal["fallback"]["candidate_id"]: "fallback",
+        }
+        for candidate_id, role in candidate_roles.items():
+            for family in ("internal", "common_voice"):
+                actual = result["summary"][candidate_id]["domain_prompt"]["combined"][family][
+                    "task_adjusted"
+                ]
+                expected = self.proposal["combined_c_task_adjusted_observations"][role][family]
+                self.assertEqual(actual["edits"], expected["edits"])
+                self.assertEqual(actual["reference_chars"], expected["reference_chars"])
+                self.assertEqual(actual["cer_percent"], expected["cer_percent"])
+                self.assertEqual(actual["correct_sentences"], expected["correct_sentences"])
+
+    def test_task_adjusted_result_is_metadata_only(self) -> None:
+        result_path = self.root / self.proposal["source_results"][4]["path"]
+        result = json.loads(result_path.read_text())
+        self.assertEqual(len(result["results"]), 96)
+        forbidden = {"reference_text", "hypothesis", "task_reference", "task_hypothesis"}
+        self.assertTrue(all(forbidden.isdisjoint(row) for row in result["results"]))
+        self.assertFalse(result["raw_text_emitted"])
+
     def test_proposal_keeps_raw_and_task_scoring_separate(self) -> None:
         boundary = self.proposal["scoring_boundary"]
         self.assertEqual(boundary["runtime_postprocessing"], "NOT_ADDED_BY_THIS_PROPOSAL")
-        self.assertIn("DO_NOT_OVERWRITE_RAW_CER", boundary["numeric_equivalence"])
+        self.assertEqual(
+            boundary["task_adjusted_status"],
+            "FORMAL_BOUNDED_C_V1_COMPLETE_SEPARATE_FROM_RAW_CER",
+        )
+        self.assertEqual(boundary["homophone_and_domain_alias_equivalence"], "NOT_ACCEPTED")
         self.assertEqual(
             self.proposal["prompt_observations"]["unexpected_domain_term_hits_all_dev_and_holdout"],
             0,

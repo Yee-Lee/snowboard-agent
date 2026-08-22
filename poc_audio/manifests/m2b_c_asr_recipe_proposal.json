@@ -18,6 +18,10 @@
     {
       "path": "poc_audio/manifests/m2b_c_small_q8_prompt_holdout_result.json",
       "sha256": "daff6156d44dcf652d719d050923b91a4446ef5b3a1eee58219176cc5a95279b"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_task_adjusted_result.json",
+      "sha256": "ddfd371c62f0c4f189aaaa98d6113a7c1bb322bd9ba011c3243b73cd516dab2b"
     }
   ],
   "shared_recipe": {
@@ -86,6 +90,28 @@
       }
     }
   },
+  "combined_c_task_adjusted_observations": {
+    "primary": {
+      "internal": {
+        "items": 16, "edits": 24, "reference_chars": 187, "cer_percent": 12.834225,
+        "correct_sentences": 8, "sentence_correctness_percent": 50.0
+      },
+      "common_voice": {
+        "items": 8, "edits": 8, "reference_chars": 87, "cer_percent": 9.195402,
+        "correct_sentences": 5, "sentence_correctness_percent": 62.5
+      }
+    },
+    "fallback": {
+      "internal": {
+        "items": 16, "edits": 18, "reference_chars": 187, "cer_percent": 9.625668,
+        "correct_sentences": 11, "sentence_correctness_percent": 68.75
+      },
+      "common_voice": {
+        "items": 8, "edits": 5, "reference_chars": 87, "cer_percent": 5.747126,
+        "correct_sentences": 5, "sentence_correctness_percent": 62.5
+      }
+    }
+  },
   "fallback_minus_primary_delta": {
     "internal": {
       "edits": -6, "cer_percentage_points": -3.174603,
@@ -101,8 +127,28 @@
     },
     "artifact_size_bytes": 182696022
   },
+  "task_adjusted_fallback_minus_primary_delta": {
+    "internal": {
+      "edits": -6, "cer_percentage_points": -3.208557,
+      "sentence_correctness_percentage_points": 18.75
+    },
+    "common_voice": {
+      "edits": -3, "cer_percentage_points": -3.448276,
+      "sentence_correctness_percentage_points": 0.0
+    }
+  },
   "prompt_observations": {
     "unexpected_domain_term_hits_all_dev_and_holdout": 0,
+    "task_adjusted_prompt_minus_baseline": {
+      "primary": {
+        "internal": {"edits": -13, "correct_sentences": 4},
+        "common_voice": {"edits": 1, "correct_sentences": 0}
+      },
+      "fallback": {
+        "internal": {"edits": -2, "correct_sentences": 4},
+        "common_voice": {"edits": 1, "correct_sentences": 0}
+      }
+    },
     "known_regressions": [
       "BASE_INTERNAL_HOLDOUT_ONE_TAIWAN_MANDARIN_ITEM_PLUS_2_EDITS",
       "SMALL_INTERNAL_HOLDOUT_NET_PLUS_2_EDITS",
@@ -111,8 +157,12 @@
   },
   "scoring_boundary": {
     "raw_cer": "PRESERVED_WITH_EXISTING_NFKC_LOWER_ALNUM_CJK_RULE",
-    "numeric_equivalence": "REPORT_SEPARATELY_AS_TASK_VALUE_CORRECTNESS_DO_NOT_OVERWRITE_RAW_CER",
-    "simplified_traditional_equivalence": "REPORT_SEPARATELY_AS_SCRIPT_DIAGNOSTIC_DO_NOT_OVERWRITE_RAW_CER",
+    "task_adjusted_status": "FORMAL_BOUNDED_C_V1_COMPLETE_SEPARATE_FROM_RAW_CER",
+    "task_adjusted_result_sha256": "ddfd371c62f0c4f189aaaa98d6113a7c1bb322bd9ba011c3243b73cd516dab2b",
+    "controlled_result_sha256": "63deea111b82b212687cfca82f5ba3259102d38cf8519422b07b80629f7702ad",
+    "numeric_equivalence": "CHINESE_INTEGER_0_TO_9999_AND_PERCENT_OF_ONLY",
+    "simplified_traditional_equivalence": "BOUNDED_C_V1_CHARACTER_MAP_ONLY",
+    "homophone_and_domain_alias_equivalence": "NOT_ACCEPTED",
     "runtime_postprocessing": "NOT_ADDED_BY_THIS_PROPOSAL",
     "reviewed_example": "十五_AND_15_ARE_TASK_EQUIVALENT"
   },

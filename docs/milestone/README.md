@@ -6,7 +6,7 @@ completion commit。M2A/M2B 是 M2 內部 substages，不建立獨立 milestone 
 
 ## Current Status
 
-最後更新：2026-08-21
+最後更新：2026-08-22
 
 最終交付可達性：`AT_RISK`
 
@@ -38,7 +38,9 @@ production baseline 判定。small Q5 與其他反直覺結果均保留兩次 di
 
 M2B 只允許 M2A shortlist 進場，且每次 probe 相對 named baseline 只改一個變因；
 輸出 primary、fallback、exact recipe 與 benefit/cost/regression delta table，交由
-Core/User comparative review。VAD real-engine row 仍未獲授權；ACK-003 只允許以 frozen
+Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完成，raw CER
+保留；固定 prompt 改善 Internal，但兩個模型的 Common Voice adjusted edits 均增加 1，
+此 external regression 不隱藏。VAD real-engine row 仍未獲授權；ACK-003 只允許以 frozen
 labels 比較 endpoint/padding effects，不能取代 VAD finalist/no-go evidence。因此即使
 ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前開始。
 
@@ -55,7 +57,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；C dev/holdout、delta、regression 與 exact recipe 已齊，等待 Core/User review |
+| M2B Optimization Feasibility | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；raw 與 formal C-v1 adjusted delta/regression、exact recipe 已齊，等待 Core/User review |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 
@@ -75,7 +77,8 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 ## Open risks and next authorized work
 
 - `NEXT`：ASR M2B execution matrix 已停止；Core/User review base Q8 primary、small Q8
-  fallback、exact prompt recipe、task-scoring boundary 與完整 delta/regression table。
+  fallback、exact prompt recipe、formal bounded C-v1 task-scoring boundary，以及保留
+  Common Voice prompt regression 的完整 delta table。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。

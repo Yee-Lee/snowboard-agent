@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、raw/task scoring boundary、成本與 regressions 已形成 exact recipe/delta，等待 Core/User review |
+| M2B ASR optimization | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、raw 與 formal bounded C-v1 adjusted scoring、成本與 regressions 已形成 exact recipe/delta，等待 Core/User review |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
@@ -165,8 +165,10 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
    full-clip PCM lock。Padding、Common Voice baseline、beam=3/5、base/small fixed-domain
    prompt 均已完成一變因 dev 比較；prompt 依 reviewed dev disposition 才開 pre-frozen
    holdout。現提 base Q8 primary、small Q8 fallback，兩者均為 P0+greedy+固定 prompt；
-   raw/task scoring boundary、成本、零 prompt 詞誤插與個別 regression 已形成 exact
-   recipe/delta table，等待 Core/User comparative review，不再展開 ASR inference matrix。
+   raw CER 與 formal bounded C-v1 task-adjusted scoring、成本、零 prompt 詞誤插與個別
+   regression 已形成 exact recipe/delta table。Adjusted scoring 顯示 prompt 改善 Internal，
+   但 base/small 的 Common Voice 均增加 1 edit；此 tradeoff 保留並等待 Core/User
+   comparative review，不再展開 ASR inference matrix。
    C fixture lock 詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
 5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
