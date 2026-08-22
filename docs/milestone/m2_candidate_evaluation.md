@@ -36,7 +36,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `IN_PROGRESS / BASE PROMPT REVIEWED` | beam 不保留；base Q8 固定 domain prompt 在 dev 回復目標詞，holdout 無誤插且淨少 1 edit，但一筆一般華語退步；暫列 P0+greedy+prompt primary recipe |
+| M2B ASR optimization | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、raw/task scoring boundary、成本與 regressions 已形成 exact recipe/delta，等待 Core/User review |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
 
@@ -159,13 +159,15 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 3. **M2A execution/scorecard**：`COMPLETE / REVIEWED`；共同 packet scorecard 與
    small Q8、base Q5、medium Q5 shortlist 已記錄，不下 PASS/FAIL/winner 判定。詳見
    [`M4A-M2A-COMPARATIVE-SCORECARD-001`](../../poc_audio/evidence/m2/M4A-M2A-COMPARATIVE-SCORECARD-001.md)。
-4. **M2B optimization**：`IN_PROGRESS / C DEV PROBES REVIEWED`；首個量化 probe 已
-   reviewed。C 已事前確認 16 筆 Internal 與 8 筆 Common Voice，dev/holdout 各 12
-   筆且與 M2A 無 fixture/speaker 重疊；Pi exact SHA 已分開建立 Internal
-   P0/P300/P500 與 Common Voice full-clip PCM lock。Internal padding、Common Voice
-   dev baseline、base Q8 beam=3/5 probes 已執行；base 保留 P0+greedy，holdout 仍封存。
-   下一步只對 shortlist 繼續一變因 probes，完成 primary、fallback、recipe
-   與 delta table，送 Core/User comparative review。詳見
+4. **M2B optimization**：`GATE_REVIEW / PRIMARY-FALLBACK PROPOSED`。C 已事前確認
+   16 筆 Internal 與 8 筆 Common Voice，dev/holdout 各 12 筆且與 M2A 無
+   fixture/speaker 重疊；Pi exact SHA 已建立 Internal P0/P300/P500 與 Common Voice
+   full-clip PCM lock。Padding、Common Voice baseline、beam=3/5、base/small fixed-domain
+   prompt 均已完成一變因 dev 比較；prompt 依 reviewed dev disposition 才開 pre-frozen
+   holdout。現提 base Q8 primary、small Q8 fallback，兩者均為 P0+greedy+固定 prompt；
+   raw/task scoring boundary、成本、零 prompt 詞誤插與個別 regression 已形成 exact
+   recipe/delta table，等待 Core/User comparative review，不再展開 ASR inference matrix。
+   C fixture lock 詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
 5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
    scope ACK，不能以 frozen-label endpoint simulation 取代。

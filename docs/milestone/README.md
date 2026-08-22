@@ -46,7 +46,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A scorecard/shortlist 已 reviewed；C dev padding、Common Voice baseline 與 base decoder probes 已完成，其餘 M2B、Matcha、VAD 未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `IN_PROGRESS` | M2A 已 reviewed；M2B ASR primary/fallback、C dev/holdout 與 exact recipe 已送 gate review，Matcha、VAD 仍未關閉 | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -55,7 +55,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
-| M2B Optimization Feasibility | `IN_PROGRESS / BASE PROMPT REVIEWED` | beam 不保留；base Q8 保留 P0+greedy+固定 domain prompt，dev/holdout 無誤插但有一般華語 regression；fallback/final delta 尚待關閉 |
+| M2B Optimization Feasibility | `GATE_REVIEW / PRIMARY-FALLBACK PROPOSED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；C dev/holdout、delta、regression 與 exact recipe 已齊，等待 Core/User review |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
 
@@ -67,15 +67,15 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 | Gate 0：M3 P4 final selection | `PASSED` — Core ACK-004 已接受 Option A 實作基準 |
 | Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
 | M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
-| M2B：optimization feasibility | `IN PROGRESS` — 只對 shortlist 做一變因 probes；回傳 primary/fallback proposal 與 exact recipe，不是 production lock |
+| M2B：optimization feasibility | `GATE REVIEW` — base Q8 primary、small Q8 fallback、prompt recipe 與完整 delta/regression 已提出；不是 production lock |
 | Gate 2A：POC qualification/selection | `IN PROGRESS` — 歷史 evidence 保留；須完成 M2A/M2B review、TTS disposition、VAD 路徑與 M3 target/HAL qualification，才能形成 qualified selection |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
 
-- `NEXT`：base Q8 quantization probe 已完成；依三列 shortlist 繼續最少必要的一變因
-  probes，形成 primary/fallback、exact recipe 與完整 delta table。
+- `NEXT`：ASR M2B execution matrix 已停止；Core/User review base Q8 primary、small Q8
+  fallback、exact prompt recipe、task-scoring boundary 與完整 delta/regression table。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
 - `RISK`：VAD real-engine execution scope 未獲授權，M2 與最終 VAD baseline/no-go
   仍無關閉路徑。

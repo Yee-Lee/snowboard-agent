@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "proposal_id": "M2B-C-ASR-PRIMARY-FALLBACK-001",
+  "status": "PROVISIONAL_REVIEW_READY_NOT_PRODUCTION_LOCK",
+  "source_results": [
+    {
+      "path": "poc_audio/manifests/m2b_c_base_q8_prompt_dev_result.json",
+      "sha256": "33e0e875a976c211015f659714d5c2ad7e23ad064a06a34de3d0876d80c44595"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_base_q8_prompt_holdout_result.json",
+      "sha256": "cd04bde138ae030abdb9f70c078b5d264f6403f0e1ff25d234abd3905ce82169"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_small_q8_prompt_dev_result.json",
+      "sha256": "b81dfc8187968fd8247eb3a57379d3f49766074fe1b7e58e67f3d1e0cf6a1a22"
+    },
+    {
+      "path": "poc_audio/manifests/m2b_c_small_q8_prompt_holdout_result.json",
+      "sha256": "daff6156d44dcf652d719d050923b91a4446ef5b3a1eee58219176cc5a95279b"
+    }
+  ],
+  "shared_recipe": {
+    "pcm": "16000_HZ_MONO_S16_LE",
+    "endpoint": "FROZEN_LABEL_P0_NO_ADDED_PADDING",
+    "threads": 4,
+    "language": "zh",
+    "decoder": "greedy_best_of_1",
+    "context": false,
+    "timestamps": false,
+    "internal_vad": false,
+    "initial_prompt": "繁體中文。常用技術詞彙：Wi-Fi、audio frame、音訊基線、候選語音模型、離線執行。",
+    "initial_prompt_sha256": "e3b2606c90009ce609aa23183c2229619619cf1173dc17d2ecd2308bfe4fe8ef",
+    "prompt_policy": "FIXED_REVIEWED_DOMAIN_TERMS_NO_COMPLETE_TEST_SENTENCE",
+    "worker": {
+      "source_sha": "62aac01389d06f7f218db0e45acf3de30b4476af",
+      "binary_sha256": "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b",
+      "build_report_sha256": "5539acd951a09169f140181264506f4a4cee0035b7f5ad917bdf4c838175dd0c"
+    }
+  },
+  "primary": {
+    "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+    "artifact": {
+      "filename": "ggml-base-q8_0.bin",
+      "size_bytes": 81768585,
+      "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
+    },
+    "reason": "BOUNDED_LATENCY_AND_RSS_WITH_DOMAIN_TERM_GAIN_AND_ZERO_PROMPT_TERM_INSERTION"
+  },
+  "fallback": {
+    "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+    "artifact": {
+      "filename": "ggml-small-q8_0.bin",
+      "size_bytes": 264464607,
+      "sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f"
+    },
+    "reason": "QUALITY_PRIORITY_AT_ABOUT_THREE_TIMES_PRIMARY_LATENCY_AND_TWICE_RSS"
+  },
+  "combined_c_observations": {
+    "primary": {
+      "internal": {
+        "items": 16, "edits": 31, "reference_chars": 189, "cer_percent": 16.402116,
+        "correct_sentences": 7, "sentence_correctness_percent": 43.75,
+        "latency_p50_ms": 1333.562, "latency_p95_ms": 1379.408,
+        "rtf_p50": 0.459241, "rtf_p95": 0.529825, "peak_rss_mib": 285.016
+      },
+      "common_voice": {
+        "items": 8, "edits": 12, "reference_chars": 87, "cer_percent": 13.793103,
+        "correct_sentences": 4, "sentence_correctness_percent": 50.0,
+        "latency_p50_ms": 1325.026, "latency_p95_ms": 1335.073,
+        "rtf_p50": 0.328784, "rtf_p95": 0.427668, "peak_rss_mib": 285.484
+      }
+    },
+    "fallback": {
+      "internal": {
+        "items": 16, "edits": 25, "reference_chars": 189, "cer_percent": 13.227513,
+        "correct_sentences": 9, "sentence_correctness_percent": 56.25,
+        "latency_p50_ms": 4129.642, "latency_p95_ms": 4253.405,
+        "rtf_p50": 1.419121, "rtf_p95": 1.64124, "peak_rss_mib": 573.922
+      },
+      "common_voice": {
+        "items": 8, "edits": 10, "reference_chars": 87, "cer_percent": 11.494253,
+        "correct_sentences": 4, "sentence_correctness_percent": 50.0,
+        "latency_p50_ms": 4112.031, "latency_p95_ms": 4194.336,
+        "rtf_p50": 1.018527, "rtf_p95": 1.328977, "peak_rss_mib": 573.922
+      }
+    }
+  },
+  "fallback_minus_primary_delta": {
+    "internal": {
+      "edits": -6, "cer_percentage_points": -3.174603,
+      "sentence_correctness_percentage_points": 12.5,
+      "latency_p50_ms": 2796.08, "latency_p95_ms": 2873.997,
+      "peak_rss_mib": 288.906
+    },
+    "common_voice": {
+      "edits": -2, "cer_percentage_points": -2.29885,
+      "sentence_correctness_percentage_points": 0.0,
+      "latency_p50_ms": 2787.005, "latency_p95_ms": 2859.263,
+      "peak_rss_mib": 288.438
+    },
+    "artifact_size_bytes": 182696022
+  },
+  "prompt_observations": {
+    "unexpected_domain_term_hits_all_dev_and_holdout": 0,
+    "known_regressions": [
+      "BASE_INTERNAL_HOLDOUT_ONE_TAIWAN_MANDARIN_ITEM_PLUS_2_EDITS",
+      "SMALL_INTERNAL_HOLDOUT_NET_PLUS_2_EDITS",
+      "COMMON_VOICE_DEV_L03_PLUS_1_RAW_EDIT_FOR_BOTH_MODELS"
+    ]
+  },
+  "scoring_boundary": {
+    "raw_cer": "PRESERVED_WITH_EXISTING_NFKC_LOWER_ALNUM_CJK_RULE",
+    "numeric_equivalence": "REPORT_SEPARATELY_AS_TASK_VALUE_CORRECTNESS_DO_NOT_OVERWRITE_RAW_CER",
+    "simplified_traditional_equivalence": "REPORT_SEPARATELY_AS_SCRIPT_DIAGNOSTIC_DO_NOT_OVERWRITE_RAW_CER",
+    "runtime_postprocessing": "NOT_ADDED_BY_THIS_PROPOSAL",
+    "reviewed_example": "十五_AND_15_ARE_TASK_EQUIVALENT"
+  },
+  "next_decision": "CORE_USER_COMPARATIVE_REVIEW_BEFORE_NAMED_PROVISIONAL_INTEGRATION"
+}
