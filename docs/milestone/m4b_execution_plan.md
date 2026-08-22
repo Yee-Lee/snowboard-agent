@@ -1,6 +1,6 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`DUAL-UTM PREFLIGHT CHANGE REQUEST PENDING / EXECUTION NOT AUTHORIZED`
+狀態：`DUAL-UTM PREFLIGHT PACKET PREPARATION AUTHORIZED / EXECUTION NOT AUTHORIZED`
 
 Revision：`2026-08-22-preflight-proposal`
 
@@ -32,7 +32,7 @@ benchmark、Pi run 或 candidate evidence。
 
 ### Proposed pre-entry environment package
 
-`G1-DUAL-UTM-PREFLIGHT-001` is an adjustment proposal pending Core approval. It compares only
+`G1-DUAL-UTM-PREFLIGHT-001` design and packet preparation are approved by Core. It compares only
 offline package and lifecycle viability on two native-ISA virtualized environments:
 
 - macOS ARM64 host / Ubuntu 24.04 ARM64 UTM guest;
@@ -45,9 +45,10 @@ one controlled rerun is allowed only for an identified environment failure.
 
 The decision rule is frozen before execution: if both pass, select ARM64 because it matches the
 product ISA; if ARM64 fails or remains inconclusive while x86_64 passes, select x86_64; if neither
-passes, return `INCONCLUSIVE` and a change request. Core must approve the preflight, its controlled
-artifact paths and both operators before execution, then approve the resulting platform and affected
-append-only packet revision before M2 entry.
+passes, return `INCONCLUSIVE` and a change request. Core has authorized artifact/dependency/binding
+preparation; the User must approve controlled paths and operators, then Core must accept the returned
+exact executable request before execution. Core separately approves the resulting platform and
+affected append-only packet revision before M2 entry.
 
 | Field | Definition |
 | --- | --- |
@@ -137,8 +138,9 @@ Gate 2 evidence; implementation of the real hardware adapter is an explicit pack
 
 ## Currently Unresolved Core Decisions
 
-- Whether to authorize `G1-DUAL-UTM-PREFLIGHT-001`, its two UTM operators and controlled offline
-  wheel/dependency paths, and to hold R5 exact-SHA acceptance until platform evidence is reviewed.
+- Exact dual-UTM operators, User-approved controlled offline wheel/dependency paths, immutable
+  commands and raw paths must be returned for separate Core execution authorization; R5 exact-SHA
+  acceptance remains held until platform evidence is reviewed.
 - Which Ubuntu pre-screen platform and affected append-only packet revision are accepted after the
   preflight result.
 - P4 actual Pi measurements may require Core threshold disposition; method is frozen, acceptance is not.

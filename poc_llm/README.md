@@ -53,8 +53,9 @@ Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不�
 兩台可用 Ubuntu 24.04 環境分別是 native-ISA ARM64 UTM 與 x86_64 UTM。現階段不依 schema
 慣性或 VM 效能推測先選平台；`tests/gate1/GATE1-ENV-PREFLIGHT-001.md` 提議以 pinned API
 wheel、offline dependency closure、native binding import與fake-child lifecycle做 bounded 比較。
-它不下載/載入模型、不執行 generation、不產生 candidate evidence，且須先取得 Core 與 User
-對 artifacts、operators、controlled paths及commands的書面授權。
+它不下載/載入模型、不執行 generation、不產生 candidate evidence。Core 已核准 packet
+preparation；須先完成 exact artifacts、operators、controlled paths、raw paths及commands並
+回交 immutable executable request，取得 Core 書面 execution authorization 後才可執行。
 
 ## Before Any M0 Run
 

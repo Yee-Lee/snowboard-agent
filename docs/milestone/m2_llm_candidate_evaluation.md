@@ -27,7 +27,9 @@ x86與Gate 1 Pi compatibility只用於Gate 1 selection，不得取代任何Gate 
 效能推測選擇 runner。`G1-DUAL-UTM-PREFLIGHT-001` 提議先驗證兩邊 pinned offline package、
 native binding 與 lifecycle viability；它不載入模型、不執行 generation，也不是 M2 entry 或
 candidate evidence。Core 書面核准、preflight evidence review 與平台裁決完成前，本節只是
-adjustment proposal，現行 contract 仍具約束力。
+approved preparation plan。Core 已授權準備/檢查 exact wheels、offline dependency closures、
+adapter/binding bundles與 immutable executable request；尚未授權 preflight execution，現行
+contract 仍具約束力。
 
 ## Work Packet
 
@@ -35,8 +37,9 @@ Authoritative repository packet：`poc_llm/tests/gate1/GATE1-PACKET-005.md`。Fr
 validator、platform-projection runners、schemas 與 checksums 由
 `poc_llm/harness/gate1-lock-v5.json` 控制。真實執行須待 Core 接受 R5 exact SHA 並另行授權。
 
-Proposed pre-entry packet：`poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-001.md`。若 Core 核准，
-其結果只裁決後續 Ubuntu pre-screen platform，不選 candidate、finalist 或 model baseline。
+Approved-for-preparation pre-entry packet：`poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-001.md`。
+Core 尚須另行接受 exact commands/operators/raw paths 才可執行；其結果只裁決後續 Ubuntu
+pre-screen platform，不選 candidate、finalist 或 model baseline。
 
 - 在x86對每個有效pairing執行完整portable packet，依固定排序一次預選最多兩名；只對
   預選者執行產品Pi compatibility，`FAIL/INCONCLUSIVE`同cycle不得以第三名補位。
