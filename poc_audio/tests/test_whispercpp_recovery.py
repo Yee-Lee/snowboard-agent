@@ -238,6 +238,8 @@ class WhisperCppRecoveryTests(unittest.TestCase):
             "params.temperature = 0.0F;",
             "params.temperature_inc = 0.0F;",
             "params.greedy.best_of = 1;",
+            "params.beam_search.beam_size = beam_size;",
+            "params.beam_search.patience = 1.0F;",
             "params.vad = false;",
             "context_params.use_gpu = false;",
         ):

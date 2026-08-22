@@ -148,8 +148,16 @@ std::string hex_encode(const std::string & value) {
     return output.str();
 }
 
-std::string transcribe(whisper_context * context, const std::vector<float> & samples, int threads) {
-    whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+enum class Decoder {
+    Greedy,
+    Beam,
+};
+
+std::string transcribe(whisper_context * context, const std::vector<float> & samples,
+                       int threads, Decoder decoder, int beam_size) {
+    const auto strategy = decoder == Decoder::Greedy
+        ? WHISPER_SAMPLING_GREEDY : WHISPER_SAMPLING_BEAM_SEARCH;
+    whisper_full_params params = whisper_full_default_params(strategy);
     params.n_threads = threads;
     params.translate = false;
     params.no_context = true;
@@ -165,6 +173,8 @@ std::string transcribe(whisper_context * context, const std::vector<float> & sam
     params.temperature = 0.0F;
     params.temperature_inc = 0.0F;
     params.greedy.best_of = 1;
+    params.beam_search.beam_size = beam_size;
+    params.beam_search.patience = 1.0F;
     params.initial_prompt = nullptr;
     params.carry_initial_prompt = false;
     params.prompt_tokens = nullptr;
@@ -189,20 +199,48 @@ std::string transcribe(whisper_context * context, const std::vector<float> & sam
 }  // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 5 || std::string(argv[1]) != "--model" ||
-            std::string(argv[3]) != "--threads") {
-        std::cerr << "usage: m4a-whispercpp-worker --model MODEL --threads N" << std::endl;
-        return 2;
-    }
+    std::string model_path;
     int threads = 0;
-    try {
-        threads = std::stoi(argv[4]);
-    } catch (const std::exception &) {
-        std::cerr << "invalid thread count" << std::endl;
+    Decoder decoder = Decoder::Greedy;
+    int beam_size = 5;
+    bool beam_size_seen = false;
+    for (int index = 1; index < argc; index += 2) {
+        if (index + 1 >= argc) {
+            std::cerr << "missing option value" << std::endl;
+            return 2;
+        }
+        const std::string option = argv[index];
+        const std::string value = argv[index + 1];
+        try {
+            if (option == "--model") {
+                model_path = value;
+            } else if (option == "--threads") {
+                threads = std::stoi(value);
+            } else if (option == "--decoder") {
+                if (value == "greedy") {
+                    decoder = Decoder::Greedy;
+                } else if (value == "beam") {
+                    decoder = Decoder::Beam;
+                } else {
+                    throw std::invalid_argument("decoder");
+                }
+            } else if (option == "--beam-size") {
+                beam_size = std::stoi(value);
+                beam_size_seen = true;
+            } else {
+                throw std::invalid_argument("option");
+            }
+        } catch (const std::exception &) {
+            std::cerr << "invalid worker option" << std::endl;
+            return 2;
+        }
+    }
+    if (model_path.empty() || threads < 1 || threads > kMaxThreads) {
+        std::cerr << "thread count must be between 1 and 4" << std::endl;
         return 2;
     }
-    if (threads < 1 || threads > kMaxThreads) {
-        std::cerr << "thread count must be between 1 and 4" << std::endl;
+    if (beam_size < 1 || beam_size > 16 || (decoder == Decoder::Greedy && beam_size_seen)) {
+        std::cerr << "beam size is valid only for beam decoder and must be between 1 and 16" << std::endl;
         return 2;
     }
     if (std::string(whisper_version()) != "1.9.2") {
@@ -213,7 +251,7 @@ int main(int argc, char ** argv) {
     context_params.use_gpu = false;
     context_params.flash_attn = false;
     const uint64_t load_started = monotonic_us();
-    whisper_context * context = whisper_init_from_file_with_params(argv[2], context_params);
+    whisper_context * context = whisper_init_from_file_with_params(model_path.c_str(), context_params);
     if (context == nullptr) {
         std::cerr << "model load failed" << std::endl;
         return 4;
@@ -237,7 +275,7 @@ int main(int argc, char ** argv) {
             const auto samples = read_pcm16_mono_wav(line.substr(sizeof(prefix) - 1U));
             const uint64_t wall_started = monotonic_us();
             const uint64_t cpu_started = process_cpu_us();
-            const std::string transcript = transcribe(context, samples, threads);
+            const std::string transcript = transcribe(context, samples, threads, decoder, beam_size);
             const uint64_t cpu_us = process_cpu_us() - cpu_started;
             const uint64_t wall_us = monotonic_us() - wall_started;
             std::cout << "RESULT\t" << hex_encode(transcript) << "\t" << wall_us << "\t"
