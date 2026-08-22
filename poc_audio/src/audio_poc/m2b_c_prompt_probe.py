@@ -23,6 +23,7 @@ from .m4a_whispercpp_qualification import NativeWhisperWorker
 
 PROBE_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-001"
 HOLDOUT_ID = "M2B-C-BASE-Q8-DOMAIN-PROMPT-HOLDOUT-001"
+SMALL_PROBE_ID = "M2B-C-SMALL-Q8-DOMAIN-PROMPT-001"
 MODEL_SHA256 = "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"
 WORKER_SHA256 = "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"
 PROMPT = "繁體中文。常用技術詞彙：Wi-Fi、audio frame、音訊基線、候選語音模型、離線執行。"
@@ -35,7 +36,7 @@ def repo_root() -> Path:
 def validate_probe(probe: dict[str, Any]) -> None:
     if probe.get("probe_id") != PROBE_ID or probe.get("status") != "FROZEN_BEFORE_PROMPT_INFERENCE":
         raise ValueError("prompt probe identity mismatch")
-    if probe.get("artifact") != {
+    if probe.get("candidate_id") != "asr-whispercpp-base-q8_0-1.9.2-m2b" or probe.get("artifact") != {
         "filename": "ggml-base-q8_0.bin", "size_bytes": 81768585, "sha256": MODEL_SHA256,
     }:
         raise ValueError("prompt probe artifact mismatch")
@@ -100,6 +101,54 @@ def validate_probe(probe: dict[str, Any]) -> None:
         "required_baseline_hypothesis_hash_match": True,
     }:
         raise ValueError("prompt probe predecessor identity mismatch")
+
+
+def validate_small_probe(probe: dict[str, Any]) -> None:
+    if probe.get("probe_id") != SMALL_PROBE_ID or probe.get("status") != "FROZEN_BEFORE_SMALL_PROMPT_INFERENCE":
+        raise ValueError("small prompt probe identity mismatch")
+    if probe.get("candidate_id") != "asr-whispercpp-small-q8_0-1.9.2" or probe.get("artifact") != {
+        "filename": "ggml-small-q8_0.bin", "size_bytes": 264464607,
+        "sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+    }:
+        raise ValueError("small prompt artifact mismatch")
+    expected_predecessors = {
+        "internal": {
+            "path": "poc_audio/manifests/m2b_c_small_q8_padding_dev_result.json",
+            "sha256": "1bfc956c1d789e7be2e7fcaa93d079653ed90a0d37e88e42aa28e93ca0bf9de9",
+            "profile": "p0",
+        },
+        "common_voice": {
+            "path": "poc_audio/manifests/m2b_c_common_voice_dev_result.json",
+            "sha256": "2552595f91f231206933cc5836b73ae3174aca174d442a54712812fd5293d58f",
+            "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+        },
+        "required_baseline_hypothesis_hash_match": True,
+    }
+    if probe.get("predecessors") != expected_predecessors:
+        raise ValueError("small prompt predecessor mismatch")
+    adapted = {
+        **probe,
+        "probe_id": PROBE_ID,
+        "status": "FROZEN_BEFORE_PROMPT_INFERENCE",
+        "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+        "artifact": {
+            "filename": "ggml-base-q8_0.bin", "size_bytes": 81768585, "sha256": MODEL_SHA256,
+        },
+        "predecessors": {
+            "internal": {
+                "path": "poc_audio/manifests/m2b_c_padding_dev_result.json",
+                "sha256": "73132c6dcf8c029105ec3ca298b9f4a5234f6cd625c4992d654d0c2cc9d75c90",
+                "profile": "p0",
+            },
+            "common_voice": {
+                "path": "poc_audio/manifests/m2b_c_common_voice_dev_result.json",
+                "sha256": "2552595f91f231206933cc5836b73ae3174aca174d442a54712812fd5293d58f",
+                "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+            },
+            "required_baseline_hypothesis_hash_match": True,
+        },
+    }
+    validate_probe(adapted)
 
 
 def validate_holdout_probe(probe: dict[str, Any]) -> None:
@@ -313,6 +362,7 @@ def main() -> int:
     validators = {
         root / "poc_audio/manifests/m2b_c_base_q8_prompt_probe.json": validate_probe,
         root / "poc_audio/manifests/m2b_c_base_q8_prompt_holdout.json": validate_holdout_probe,
+        root / "poc_audio/manifests/m2b_c_small_q8_prompt_probe.json": validate_small_probe,
     }
     validator = validators.get(args.probe.resolve())
     if validator is None:

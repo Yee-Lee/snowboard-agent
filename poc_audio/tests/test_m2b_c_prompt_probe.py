@@ -11,6 +11,7 @@ from audio_poc.m2b_c_prompt_probe import (
     summarize,
     validate_holdout_probe,
     validate_probe,
+    validate_small_probe,
 )
 
 
@@ -23,6 +24,9 @@ class M2BCPromptProbeTests(unittest.TestCase):
         )
         cls.holdout = json.loads(
             (cls.root / "poc_audio/manifests/m2b_c_base_q8_prompt_holdout.json").read_text()
+        )
+        cls.small = json.loads(
+            (cls.root / "poc_audio/manifests/m2b_c_small_q8_prompt_probe.json").read_text()
         )
 
     def test_probe_is_one_variable_and_keeps_both_holdouts_sealed(self) -> None:
@@ -47,6 +51,16 @@ class M2BCPromptProbeTests(unittest.TestCase):
         changed["scope"]["common_voice"]["review_ids"][0] = "D02"
         with self.assertRaisesRegex(ValueError, "holdout scope mismatch"):
             validate_holdout_probe(changed)
+
+    def test_small_probe_binds_small_predecessors(self) -> None:
+        validate_small_probe(self.small)
+        self.assertEqual(self.small["artifact"]["filename"], "ggml-small-q8_0.bin")
+
+    def test_small_probe_rejects_model_drift(self) -> None:
+        changed = copy.deepcopy(self.small)
+        changed["artifact"]["filename"] = "ggml-base-q8_0.bin"
+        with self.assertRaisesRegex(ValueError, "small prompt artifact mismatch"):
+            validate_small_probe(changed)
 
     def test_predecessor_hashes_cover_internal_and_common_voice(self) -> None:
         results = []
