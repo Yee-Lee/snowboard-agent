@@ -1,6 +1,6 @@
 # M2B C source selection
 
-Status: `USER_REVIEWED / PCM LOCK PENDING / NO C INFERENCE`
+Status: `USER_REVIEWED / PCM LOCKED / NO C INFERENCE`
 
 The reviewed C source set contains 24 items: 16 internal and 8 Common Voice
 `zh-TW` 26.0 clips. Dev and holdout contain 12 items each.
@@ -16,7 +16,11 @@ The reviewed C source set contains 24 items: 16 internal and 8 Common Voice
   is 24,807 bytes with SHA-256
   `b25b19742b1272a38a0960b276e46aca266fa6ef81d91294e7a70df3aeb96973`.
 
-The sanitized identity is
+The sanitized source identity is
 [`m2b_c_source_selection.json`](../manifests/m2b_c_source_selection.json).
-Next, pin the Pi derivation runtime and create the 16 kHz mono S16_LE PCM lock
-before any C candidate inference.
+Pi SHA `23567864c5dc6d5b11f9f9591e167f4f2215e919` produced the reviewed
+[`m2b_c_pcm_lock.json`](../manifests/m2b_c_pcm_lock.json): 48 Internal PCM
+variants (P0/P300/P500) and 8 full-clip Common Voice PCM files, all 16 kHz mono
+S16_LE. The sanitized lock SHA-256 is
+`3b748708ee9989223f26429f0c23d06161dc74dc84b83c9b2206bcf248dfb48a`.
+Candidate inference remains `NOT_STARTED`.

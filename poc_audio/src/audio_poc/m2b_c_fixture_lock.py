@@ -88,14 +88,14 @@ def _wav_identity(path: Path) -> tuple[int, int]:
 
 
 def _validate_sources(
-    tracked: dict[str, Any], controlled: dict[str, Any], selection_root: Path,
+    tracked: dict[str, Any], controlled: dict[str, Any], controlled_path: Path,
+    selection_root: Path,
 ) -> list[dict[str, Any]]:
     if tracked.get("selection_id") != SELECTION_ID:
         raise ValueError("tracked C selection identity mismatch")
     if controlled.get("selection_id") != SELECTION_ID:
         raise ValueError("controlled C selection identity mismatch")
     expected_controlled = tracked.get("controlled_manifest", {})
-    controlled_path = selection_root / "selection.controlled.json"
     if (
         controlled_path.stat().st_size != expected_controlled.get("size_bytes")
         or sha256_file(controlled_path) != expected_controlled.get("sha256")
@@ -257,7 +257,7 @@ def build_lock(
         raise ValueError("C fixture-lock outputs must be new")
     producer = _git_identity(repo)
     tracked, controlled = load_json(tracked_path), load_json(controlled_path)
-    records = _validate_sources(tracked, controlled, selection_root)
+    records = _validate_sources(tracked, controlled, controlled_path, selection_root)
     runtime = _ffmpeg_identity()
     output_root.mkdir(parents=True)
     internal, internal_controlled = [], []
