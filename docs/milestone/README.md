@@ -6,7 +6,7 @@ completion commit。M2A/M2B 是 M2 內部 substages，不建立獨立 milestone 
 
 ## Current Status
 
-最後更新：2026-08-22
+最後更新：2026-08-23
 
 最終交付可達性：`AT_RISK`
 
@@ -36,6 +36,13 @@ small Q8、base Q5、medium Q5 三列 shortlist；沒有下 `PASS`、`FAIL`、wi
 production baseline 判定。small Q5 與其他反直覺結果均保留兩次 diagnostic recheck，
 且 diagnostic 不會混入正式 scorecard。
 
+後續 A/B grouping handoff 已從 immutable small Q8 與 base Q8 sanitized formal rows
+完成 40-record 可重算 packet，沒有新 inference 或 retrospective filtering。small Q8
+在 B 相對 A 的整句率增加 50 percentage points、CER 改善 16.952227 points；base Q8
+整句率無 A/B gap、CER 改善 3.675334 points。A 的 exact outcomes 集中在兩筆一般
+Taiwan Mandarin，domain categories 皆未 exact；這只形成 domain-handling 假設，不宣稱
+語料、講者或錄音品質因果，也不改 M2A frozen scorecard/shortlist。
+
 M2B 只允許 M2A shortlist 進場，且每次 probe 相對 named baseline 只改一個變因；
 輸出 primary、fallback、exact recipe 與 benefit/cost/regression delta table，交由
 Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完成，raw CER
@@ -60,7 +67,7 @@ ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前�
 
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
-| M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist |
+| M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
 | M2B Optimization Feasibility | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；24-item audit、erratum-corrected raw/adjusted scorecard、RTF 與 exact recipe 已齊，可在 bounded scope 下引用 |
 | Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | Real VAD finalist 或 evidence-backed no-go；目前未獲 execution row |
