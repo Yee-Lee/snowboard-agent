@@ -3,7 +3,7 @@
 **Milestone**: M3 (HAL append-only revision)
 **Designer ref**: `RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001`
 **CR source**: `CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001` (Audio POC)
-**Status**: `OPEN`
+**Status**: `IMPLEMENTED — awaiting Designer review / candidate decision`
 
 ---
 
@@ -174,3 +174,18 @@ All tests must be portable (no `rpi` marker). Use `_FakePCM` pattern from
 When complete, Developer reports back to Designer with:
 - Commit SHA on `core`
 - `pytest -q -m "not rpi"` exit code and summary
+
+## Developer verification (2026-08-23)
+
+- Implemented `StreamFormatAdapter` with lazy `samplerate` / `numpy` imports,
+  stateful `sinc_best` 1:3 conversion, mono-to-stereo expansion, S32_LE
+  packing, end-of-input flush and session reset.
+- Updated `AlsaAudioOutput` to validate either exact native passthrough or the
+  selected 16 kHz mono S16_LE to 48 kHz stereo S32_LE route; its one-worker
+  operation now uses the same polling pattern as ALSA input to avoid the
+  supported Python 3.12 second-bridge hang.
+- `PYTHONPATH=src python3 -m pytest -q tests/test_m3_audo_001_002_003_004_005_006_007.py tests/test_m3_aud_001_002_003_004.py::test_m3_aud_002 tests/test_m3_aud_001_002_003_004.py::test_m3_aud_003 tests/test_m3_aud_001_002_003_004.py::test_m3_aud_004 tests/test_m3_cfg_001_002.py` → `12 passed`.
+- The full portable command is blocked only at existing `test_m3_aud_001`:
+  this host lacks the declared optional `samplerate==0.2.4` dependency, so its
+  existing input anti-aliasing check cannot import the package. New output
+  tests use deterministic resampler seams and do not hide that dependency.

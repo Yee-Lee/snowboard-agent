@@ -318,7 +318,11 @@ def _validate_alsa_option_a(audio) -> None:
         raise ConfigValueError("core.audio.input.valid_bits_alignment must be msb")
     if input_config.resampler != "samplerate.sinc_best":
         raise ConfigValueError("core.audio.input.resampler must be samplerate.sinc_best")
-    if fields(output_config.native_format) != native or fields(output_config.stream_format) != native:
+    if fields(output_config.native_format) != native:
         raise ConfigValueError(
-            "core.audio.output native_format and stream_format must be 48000/2/s32_le"
+            "core.audio.output.native_format must be 48000/2/s32_le"
+        )
+    if fields(output_config.stream_format) not in {native, stream}:
+        raise ConfigValueError(
+            "core.audio.output.stream_format must be 48000/2/s32_le or 16000/1/s16_le"
         )

@@ -125,7 +125,7 @@ def test_m3_cfg_002(tmp_path: Path) -> None:
         "valid-bits": _alsa_yaml().replace("valid_bits: 24", "valid_bits: 16"),
         "alignment": _alsa_yaml().replace("valid_bits_alignment: msb", "valid_bits_alignment: lsb"),
         "resampler": _alsa_yaml().replace("samplerate.sinc_best", "drop-every-third"),
-        "output": _alsa_yaml().replace("stream_format: {sample_rate: 48000, channels: 2, sample_format: s32_le}", "stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}"),
+        "output": _alsa_yaml().replace("stream_format: {sample_rate: 48000, channels: 2, sample_format: s32_le}", "stream_format: {sample_rate: 44100, channels: 2, sample_format: s32_le}"),
         "missing": _alsa_yaml().replace("      resampler: samplerate.sinc_best\n", ""),
     }
     for name, payload in mutations.items():
