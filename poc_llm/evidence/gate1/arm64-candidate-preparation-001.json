@@ -1,0 +1,72 @@
+{
+  "baseline_sha": "bda47427cb17075caf74a22feaa61b556a2c04d7",
+  "candidate_evidence": false,
+  "capacity_blocked": false,
+  "free_space_at_safe_stop_bytes": 15963127808,
+  "models": [
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "filename": "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+      "sha256": "e608953f169aeb1bd7b9155fec2559825e08453fc209b84eda3a781ed0452fd2",
+      "size_bytes": 546660344,
+      "status": "AUTHENTICATED",
+      "upstream_revision": "6c237a59eedeb06a821b21f0a59b03d346ac8bc3"
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+      "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
+      "size_bytes": 1597931520,
+      "status": "AUTHENTICATED",
+      "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
+    },
+    {
+      "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+      "filename": "gemma-4-E2B-it.litertlm",
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "size_bytes": 2588147712,
+      "status": "AUTHENTICATED",
+      "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
+    }
+  ],
+  "model_execution_performed": false,
+  "offline_install": {
+    "exit_code": 0,
+    "installer_id": "G1-ARM64-WHEEL-INSTALLER-001",
+    "ipv4_routes_present": false,
+    "ipv6_non_loopback_routes_present": false,
+    "log_sha256": "d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff",
+    "namespace": "net:[4026532352]",
+    "native_elf": "ELF 64-bit LSB shared object, ARM aarch64",
+    "native_import": "PASS",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+    "native_link_dependencies_resolved": true,
+    "result": "PASS",
+    "runtime_version": "0.16.0"
+  },
+  "offline_install_performed": true,
+  "partial_acquisitions": [],
+  "projection_scaffold": {
+    "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
+    "platform": "ubuntu-aarch64",
+    "real_adapter_implemented": true,
+    "retained_and_arm64_tests": "44/44 PASS",
+    "smoke_runner_implemented": true,
+    "synthetic_only": true
+  },
+  "provenance": {
+    "model_license_metadata_record": "G1-ARM64-MODEL-LICENSE-METADATA-001",
+    "runtime_bundle_id": "LRT-ARM64-RUNTIME-BUNDLE-0160-001",
+    "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
+    "source_archive_size_bytes": 451258203
+  },
+  "result": "OFFLINE_INSTALL_PRESCREEN_PASS",
+  "wip_lock_sha256": "bc7b59c722bfcf5e2f55e9c79bbd8e87189502d2c28e1f085c83512a98992654",
+  "wip_manifest_projections": {
+    "authenticated": 3,
+    "failed": 0,
+    "staging_root": "/tmp/llm-poc-g1-arm64-001"
+  },
+  "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+  "scope": "ARM64_PRIMARY"
+}

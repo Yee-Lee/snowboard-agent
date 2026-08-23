@@ -1,0 +1,31 @@
+{
+  "packet_id":"G1-ARM64-PRESCREEN-WIP-001",
+  "revision":"2026-08-23-arm64-wip-v1",
+  "validator_version":"arm64-wip-1.0.0",
+  "artifacts":{
+    "candidate_schema":{"path":"poc_llm/fixtures/gate1/candidate-arm64-v1.schema.json","sha256":"69f22ef18d907e6c49b391a655b1a0f9df647f0946ca3c02c94ab1a8b3108c6b"},
+    "acquisition_schema":{"path":"poc_llm/fixtures/gate1/acquisition-arm64-v1.schema.json","sha256":"577b3f1354824fa6d91dfabc79c22700d0dad43e02c3a78d4142f9effc0db036"},
+    "strict_config_schema":{"path":"poc_llm/contracts/m1/strict-config-arm64.schema.json","sha256":"9c328bb46c7a5a8a1a4a982ef022be8157a817213a3a863bf854de0cbf87347e"},
+    "projection":{"path":"poc_llm/harness/gate1_arm64_projection.py","sha256":"70a439a24b8cb24bbec8ee1afc017d767a683dca065370279847eaf60788226f"},
+    "runtime_bundle":{"path":"poc_llm/fixtures/gate1/arm64-runtime-bundle-v1.json","sha256":"3db299c9bdfdb8e0660428efd8f5a187138287f9a67d28f11839fe808b7fe01d"},
+    "offline_installer":{"path":"poc_llm/tools/install_gate1_arm64_wheel.py","sha256":"7c6f62a74ec73bcb705ffae5f5264a267b1005ffb5ac33b15bbc28ecd3bc34a5"},
+    "offline_install_wrapper":{"path":"poc_llm/tools/run_gate1_arm64_offline_install.sh","sha256":"5979c5aab54f5e3aeca953fb4962890bbc552b9b65eed071196e83f486150400"},
+    "adapter_binding_bundle":{"path":"poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json","sha256":"f0061c3af0e2df14e9b3d2cbe65398923e237516b950ac385d578bb952547d0b"},
+    "model_license_metadata":{"path":"poc_llm/fixtures/gate1/arm64-model-license-metadata-v1.json","sha256":"49fefcf9d1986ff316c525b11ce6e0602885da61059fdf7e265897bc796fffef"},
+    "adapter":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"534ed1b91436b8789408903f64e4cc523ba4474db2ca9a4c681115327b2a1a38"},
+    "smoke_runner":{"path":"poc_llm/tools/run_gate1_arm64_smoke.py","sha256":"73f08f214b2440fdd9d45f680eba20e67e4ec9e3bdc48d2625e8de13bd068421"},
+    "boundary":{"path":"poc_llm/harness/m1_contract_boundary.py","sha256":"f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
+    "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    "response_schema":{"path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    "protocol_schema":{"path":"poc_llm/contracts/m1/protocol-frame-arm64.schema.json","sha256":"12f5a9120a7f481c106a2096c17a5b4d4dd28a060dda15d8fa9bb35aafa51b20"},
+    "config_gemma":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-G4E2B-MOBILE-R1.json","sha256":"b921cde451ee59713cc2478d56292bbb326acea032c59ea3bbb66adb9653d38a"},
+    "config_qwen05":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-05B-Q8-R1.json","sha256":"59f2ab60c83afa0115f5a8976b4824725456c8d602211b8480948ceb43754f64"},
+    "config_qwen15":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-15B-Q8-R1.json","sha256":"80ada6d80e6322e362484b855c99f4bf51c7b6e8e281ec1cb0e32b58d5559f4b"},
+    "acquisition_gemma":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-G4E2B-MOBILE-R1.json","sha256":"a061a9b67c07ad9977b1928db41a6ff627a9b584c11fe96ce600e8cb10379cda"},
+    "acquisition_qwen05":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-05B-Q8-R1.json","sha256":"546053640902a9a03726c2dc747d1ebf8ecfe0236eead718b4386002cbf67373"},
+    "acquisition_qwen15":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-15B-Q8-R1.json","sha256":"8abe432bc2c3793a62442f97314028861dfcc75adb85cc2f01edfe3484b74439"},
+    "candidate_gemma":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-G4E2B-MOBILE-R1.json","sha256":"e3f614bf23fc197433d104fdbe06da82e991534e78904c21afde43fda486a7c3"},
+    "candidate_qwen05":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-05B-Q8-R1.json","sha256":"7dd33a717df13b9a238ea04fe2994d4e9c947c84bb58ec9b4552709845ff390a"},
+    "candidate_qwen15":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-15B-Q8-R1.json","sha256":"e01695c935881f33fb4e677cbd9dae85417e6ef4a967b5c6b01827abcbf18193"}
+  }
+}
