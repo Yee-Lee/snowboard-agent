@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA REMAINING GATES IN PROGRESS / VAD ROW NOT AUTHORIZED`
+Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA REMAINING GATES IN PROGRESS / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
 
 ## 目標
 
@@ -38,7 +38,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
 | M2B ASR optimization | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、24-item audit、erratum-corrected raw/adjusted scoring、RTF、成本與 regressions 已形成 exact recipe/delta，可在 bounded scope 下引用 |
 | TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
-| VAD candidate evaluation | `CHANGE_REQUESTED` | ACK-003 未授權 real VAD engine row；只可用 frozen labels 比較 endpoint/padding，不得 build/load/benchmark Silero、WebRTC VAD 或其他 VAD candidate |
+| VAD candidate evaluation | `CHANGE_REQUESTED` | User 已選 WebRTC 2.0.10 primary、Silero 6.2.1 conditional fallback；Core ACK、exact profile 與 aggregate recall gate 未固定前，不得 build/load/benchmark real VAD candidate |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
 及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
@@ -174,8 +174,10 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
    可在完整 scope/limitation 下對外引用。
    C fixture lock 詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
-5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；real VAD row 等待獨立
-   scope ACK，不能以 frozen-label endpoint simulation 取代。
+5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；VAD User strategy 已由
+   [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
+   記錄。Core ACK、WebRTC aggressiveness/shared endpoint profile 與 aggregate start/end
+   recall gate 未 committed 前不得執行；frozen-label endpoint simulation 不能取代。
 6. **M2 gate review**：只在 M2A/M2B reviewed outcome、TTS disposition、VAD
    finalist/no-go 路徑與 M3 target scope 都可由 committed SHA 追溯時進行。
 
@@ -204,8 +206,8 @@ candidate-specific provisional integration；production dependency lock 必須�
 - Core/User 已 review comparative provisional selection；未宣稱 production lock。
 - TTS candidate 有明確 finalist/no-go disposition，且 User quality、offline、lifecycle、
   resource 與 legal conditions 有 evidence 或 blocking risk。
-- VAD 有已授權 finalist/no-go 路徑；在 ACK-003 未授權 real VAD row 的現況下，此項仍
-  未滿足，M2 不得完成。
+- VAD 有已授權 finalist/no-go 路徑；目前只有 User primary/fallback strategy，Core ACK、
+  exact profile 與 aggregate recall gate 仍未完成，此項未滿足，M2 不得完成。
 - M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
   traceability 可由 committed full SHA 定位。
 
