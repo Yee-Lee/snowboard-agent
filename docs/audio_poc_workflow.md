@@ -211,7 +211,8 @@ checkout 後 `git status --porcelain` 必須無輸出；該 SHA 必須記入 tes
 與 evidence index。
 
 Candidate/正式 gate 的 source SHA 以 `audio` 上的不可改寫 commit 固定。
-相同 SHA 若通過 milestone gate，再建立 annotated tag `m0`、`m1`、……。
+相同 SHA 若通過 milestone gate，再建立 annotated tag `audio_m0`、
+`audio_m1`、……；`audio_` prefix 用來避免與其他團隊的 milestone tag 混用。
 tag 只能在對應 readiness gate / milestone 正式 `COMPLETE` 後建立，必須
 指向完成記錄的 exact commit，且不得刪除、重建或移動。M4 delivery
 manifest 仍同時記錄完整 SHA，不只依賴 tag 名稱。

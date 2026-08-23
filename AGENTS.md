@@ -50,8 +50,9 @@ links from the active milestone only when the current task needs that detail.
 - Record rejected validation evidence and append fixes on top of the rejected
   candidate. Converge those new fixes into the next candidate without altering
   any previously submitted SHA.
-- Create immutable annotated tags `m0`, `m1`, and so on only when the matching
-  milestone or readiness gate is formally complete. Never move an existing
+- Create immutable annotated tags `audio_m0`, `audio_m1`, and so on only when
+  the matching milestone or readiness gate is formally complete. The
+  `audio_` prefix prevents collisions with other teams. Never move an existing
   milestone tag.
 - An agent may place a PM-authorized delivery or handoff file at the exact path
   requested in another repository. This is a delivery-only exception: do not

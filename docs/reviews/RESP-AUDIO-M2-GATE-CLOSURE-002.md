@@ -11,7 +11,7 @@
 3. **M3 Target-Mic Blocker**: `ACCEPTED`. The low-volume leading-syllable retention risk is confirmed as a blocking gate for M3 real-hardware validation.
 4. **M3 Entry Lock**: `ACCEPTED`. `M3-ENTRY-LOCK-002` correctly binds the exact HAL SHA, Pi 5 topology, and prevents unauthorized threshold tuning matrices.
 5. **ASR & TTS Dispositions**: `CONFIRMED`. The previously accepted M2B ASR recipe (base Q8 primary, small Q8 fallback) and Matcha TTS 1.13.5 (with its risk-focused lifecycle pass and legal M4 blocker) remain unchanged and authorized for M3.
-6. **Milestone Status**: `M2 COMPLETE`. All blocking findings (`FND-M2-001`, `FND-M2-002`) are successfully closed by this packet. 
+6. **Milestone Status**: `M2 COMPLETE`. All blocking findings (`FND-M2-001`, `FND-M2-002`) are successfully closed by this packet.
 
 ## 2. Findings Update
 

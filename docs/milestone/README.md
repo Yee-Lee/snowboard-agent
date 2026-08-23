@@ -1,8 +1,9 @@
 # Audio POC Milestone Index
 
 本檔是 milestone 狀態的唯一入口。M0 是 readiness gate，M1–M4 是四個正式交付 milestone。
-唯一永久開發分支為 `audio`；已完成 gate 以不可移動的 annotated tag 對應其 exact
-completion commit。M2A/M2B 是 M2 內部 substages，不建立獨立 milestone tag。
+唯一永久開發分支為 `audio`；已完成 gate 以不可移動的 `audio_mN` annotated tag
+對應其 exact completion commit，避免與其他團隊 tag 混用。M2A/M2B 是 M2 內部
+substages，不建立獨立 milestone tag。
 
 ## Current Status
 
@@ -52,7 +53,7 @@ Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完�
 此 external regression 不隱藏。User audio review 發現一筆 frozen reference mismatch；
 append-only erratum 已套用且原始 evidence 保留。24 筆 blind-first audit 已完成：23 筆
 label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending findings；
- bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
+bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
 small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
 conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
 boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 triggered Silero

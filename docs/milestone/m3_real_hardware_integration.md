@@ -1,6 +1,6 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
-狀態：`NOT_STARTED`
+狀態：`PLANNED`
 
 ## 目標
 
@@ -12,6 +12,12 @@ Gate 2A 的完整執行與回交階段：M2 的隔離結果必須用 accepted M3
 與 Pi 資源重跑，再以完整 40-character SHA 回交 P1–P12 manifest，
 等待 Core Gate 2A selection ACK。該 ACK 可放行 artifact-independent Core
 adapter scaffold，不是 final reference、model baseline lock 或 `POC Accepted`。
+
+M2 已由
+[`RESP-AUDIO-M2-GATE-CLOSURE-002`](../reviews/RESP-AUDIO-M2-GATE-CLOSURE-002.md)
+正式關閉；M3 依
+[`M3-ENTRY-LOCK-002`](../../poc_audio/deliveries/M3-ENTRY-LOCK-002.md)
+規劃，但尚未開始 hardware execution。
 
 ## 對最終交付的貢獻
 
