@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `TWO LITERTLM P7 PASS / P6 CONDITIONAL / QWEN 0.5B DEFERRED`
+- **Status**: `TWO LITERTLM P4 + P7 PASS / P6 CONDITIONAL / QWEN 0.5B DEFERRED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -136,14 +136,26 @@ Both active candidates now pass the bounded workstation P7 proof and retain elig
 P6 conditional risk; Gemma additionally has one prior native-cancel PASS, but that success cannot
 override the later timeout.
 
-## Formal P4 Packet Preparation
+## Formal P4 Results
 
-The locked P4 packet follows the frozen Gate1 method: one persistent authenticated process per
+The locked P4 packet followed the frozen Gate1 method: one persistent authenticated process per
 candidate, three discarded warm-ups, three cold samples and twenty hot samples using the fixed
 128-input/16-output, temperature-zero envelope. It retains every sanitized native LiteRT metric
 sample, calculates P50/P95 for wall time, TTFT, prefill and decode throughput, samples peak process
 RSS, records model/runtime disk bytes, enforces the contract's 2.5 s TTFT P95 and 4 tok/s decode P50
 decision rule, and proves clean shutdown. Qwen 0.5B and x86 inputs are excluded from the batch.
+
+Both results validate against the locked schema and pass the P4 decision rule under execution SHA
+`629f6136404366afc2db4b0e496bb261e2a920d6`.
+
+| Candidate | Hot TTFT P50 / P95 | Hot decode P50 / P95 | Hot wall P50 / P95 | Peak RSS | Result SHA-256 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Qwen2.5 1.5B | `812.486 / 846.984 ms` | `16.930 / 17.190 tok/s` | `1703.930 / 1920.652 ms` | `2052192 KiB` | `9745a6091e000a97e07961609fb63454673adac1d0c7fdfeeccd264f52ef6634` |
+| Gemma 4 E2B | `349.678 / 356.481 ms` | `22.301 / 22.574 tok/s` | `1025.415 / 1063.333 ms` | `2072316 KiB` | `a39aadef00aadae5b494898a88666caac93f05dcd12e5f4d2f09d1679fb072bf` |
+
+Gemma is materially faster in TTFT, total wall time and decode throughput while measured process
+peak RSS is nearly equal. Qwen's combined model/runtime artifacts are smaller
+(`1644017274` vs `2634233466` bytes). These are UTM comparison results, not Pi acceptance.
 
 ## Provenance and License Preparation
 
@@ -157,7 +169,6 @@ decision rule, and proves clean shutdown. Qwen 0.5B and x86 inputs are excluded 
 
 ## Remaining Gate1 Work
 
-- Execute and review the locked formal P4 repetitions for Qwen 1.5B and Gemma.
 - Longer fixed prompt, timeout and broader failure-recovery probes.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
@@ -180,6 +191,6 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next bounded hardware work is formal P4 preparation/execution. The reviewed workstation
-measurements and P7 proofs must not be promoted to complete Gate1 candidate `PASS`, P4 `PASS`,
-or Gate2 evidence.
+The next bounded hardware work is long-prompt and timeout/failure-recovery coverage, followed by the
+ARM64 finalist comparison. The reviewed workstation P4/P7 proofs must not be promoted to Pi or
+Gate2 evidence.

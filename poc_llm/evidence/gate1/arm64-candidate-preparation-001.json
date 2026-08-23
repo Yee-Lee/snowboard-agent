@@ -17,7 +17,7 @@
       "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
       "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
       "size_bytes": 1597931520,
-      "status": "MEASUREMENT_COMPLETE_P6_CONDITIONAL_P7_PASS",
+      "status": "P4_PASS_P6_CONDITIONAL_P7_PASS",
       "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
     },
     {
@@ -25,7 +25,7 @@
       "filename": "gemma-4-E2B-it.litertlm",
       "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
       "size_bytes": 2588147712,
-      "status": "MEASUREMENT_COMPLETE_P6_NONDETERMINISTIC_P7_PASS",
+      "status": "P4_PASS_P6_NONDETERMINISTIC_P7_PASS",
       "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
     }
   ],
@@ -132,6 +132,50 @@
       "stderr_rebuild_sha256": "78ace490438f3cf0d15a1ebeb2c580e21a38c4a902ed7f0746f7e01eeb0a55c",
       "violations": []
     }
+  },
+  "p4_review": {
+    "execution_sha": "629f6136404366afc2db4b0e496bb261e2a920d6",
+    "gemma": {
+      "cold_decode_tps_p50": 21.509,
+      "cold_ttft_ms_p50": 351.857,
+      "cold_ttft_ms_p95": 353.081,
+      "combined_artifact_bytes": 2634233466,
+      "hot_decode_tps_p50": 22.301,
+      "hot_decode_tps_p95": 22.574,
+      "hot_ttft_ms_p50": 349.678,
+      "hot_ttft_ms_p95": 356.481,
+      "hot_wall_ms_p50": 1025.415,
+      "hot_wall_ms_p95": 1063.333,
+      "peak_rss_kib": 2072316,
+      "result": "PASS",
+      "result_sha256": "a39aadef00aadae5b494898a88666caac93f05dcd12e5f4d2f09d1679fb072bf",
+      "stderr_sha256": "9868d73cba7f9de0af3a89a06fa1cd77d51313e7a35287a60a33bf0d6299b7e4"
+    },
+    "method": {
+      "cold": 3,
+      "hot": 20,
+      "input_tokens": 128,
+      "max_output_tokens": 16,
+      "temperature": 0,
+      "warmup": 3
+    },
+    "qwen15": {
+      "cold_decode_tps_p50": 16.984,
+      "cold_ttft_ms_p50": 807.482,
+      "cold_ttft_ms_p95": 807.76,
+      "combined_artifact_bytes": 1644017274,
+      "hot_decode_tps_p50": 16.93,
+      "hot_decode_tps_p95": 17.19,
+      "hot_ttft_ms_p50": 812.486,
+      "hot_ttft_ms_p95": 846.984,
+      "hot_wall_ms_p50": 1703.93,
+      "hot_wall_ms_p95": 1920.652,
+      "peak_rss_kib": 2052192,
+      "result": "PASS",
+      "result_sha256": "9745a6091e000a97e07961609fb63454673adac1d0c7fdfeeccd264f52ef6634",
+      "stderr_sha256": "2f3876a7096c13e4731c517a00f2bb1ccab9d0e383f39295b30a509ba00a7774"
+    },
+    "schema_validation": "PASS"
   },
   "model_execution_performed": true,
   "model_smoke_attempts": [
@@ -257,7 +301,7 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "TWO_LITERTLM_P7_PASS_P6_CONDITIONAL_QWEN05_DEFERRED",
+  "result": "TWO_LITERTLM_P4_P7_PASS_P6_CONDITIONAL_QWEN05_DEFERRED",
   "wip_lock_sha256": "deb21c4704892bc2805e66b1f3cb9b94a3b8e60daba62997ea13948dc0960145",
   "wip_manifest_projections": {
     "authenticated": 3,
