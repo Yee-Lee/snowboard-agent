@@ -95,6 +95,35 @@ def offline_environment() -> dict[str, Any]:
     }
 
 
+def throttle_preflight() -> str:
+    probe = subprocess.run(
+        ["vcgencmd", "get_throttled"], text=True, capture_output=True, check=False,
+    )
+    state = probe.stdout.strip()
+    if probe.returncode != 0 or state != "throttled=0x0":
+        raise PiPacketFailure("Pi prelaunch throttling state is not clean")
+    return state
+
+
+def native_library_preflight(path: Path, expected_sha256: str) -> dict[str, str]:
+    """Authenticate the installed native library and reject wrong ELF/linkage early."""
+    if not path.is_file() or digest(path) != expected_sha256:
+        raise PiPacketFailure("installed native library identity mismatch")
+    header = subprocess.run(
+        ["readelf", "-h", str(path)], text=True, capture_output=True, check=False,
+    )
+    if (header.returncode != 0 or "Class:" not in header.stdout
+            or "ELF64" not in header.stdout or "Machine:" not in header.stdout
+            or "AArch64" not in header.stdout):
+        raise PiPacketFailure("installed native library ELF identity mismatch")
+    linkage = subprocess.run(
+        ["ldd", str(path)], text=True, capture_output=True, check=False,
+    )
+    if linkage.returncode != 0 or "not found" in linkage.stdout:
+        raise PiPacketFailure("installed native library linkage mismatch")
+    return {"native_library_sha256": expected_sha256, "elf_machine": "AArch64", "linkage": "resolved"}
+
+
 def target_preflight(expected_sha: str) -> dict[str, Any]:
     release = os_release()
     memory = meminfo()
@@ -107,6 +136,7 @@ def target_preflight(expected_sha: str) -> dict[str, Any]:
     ):
         raise PiPacketFailure("Pi target preflight identity mismatch")
     network = offline_environment()
+    throttled = throttle_preflight()
     return {
         "git_sha": head,
         "os_id": release["ID"],
@@ -115,6 +145,7 @@ def target_preflight(expected_sha: str) -> dict[str, Any]:
         "mem_total_bytes": memory["MemTotal"],
         "swap_total_bytes": memory["SwapTotal"],
         "network": network,
+        "throttled_prelaunch": throttled,
     }
 
 

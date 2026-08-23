@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
 
 from poc_llm.harness.m1_contract_boundary import normalize_response
 from poc_llm.harness.pi_runtime import (
-    PiPacketFailure, digest, launch, load, meminfo, protocol_validator, read_frame,
+    PiPacketFailure, digest, launch, load, meminfo, native_library_preflight, protocol_validator, read_frame,
     require_ready, send, stop, target_preflight,
 )
 
@@ -177,8 +177,11 @@ def main() -> int:
         raw_dir.mkdir(parents=True, exist_ok=False)
         install_report = subprocess.run(["python3", "poc_llm/tools/install_gate1_arm64_wheel.py", "--wheel", str(wheel), "--wheel-sha256", runtime["wheel_sha256"], "--target", str(install)], cwd=ROOT, capture_output=True, text=True, check=False, timeout=300)
         (raw_dir / "install.stderr").write_text(install_report.stderr, encoding="utf-8")
-        if install_report.returncode != 0 or digest(install / "litert_lm/liblitert-lm.so") != runtime["native_library_sha256"]:
+        if install_report.returncode != 0:
             raise PiPacketFailure("P11 offline runtime installation failed")
+        result["native_library"] = native_library_preflight(
+            install / "litert_lm/liblitert-lm.so", runtime["native_library_sha256"],
+        )
         result["results"]["P11"] = "PASS"
 
         stderr_path = raw_dir / "candidate.stderr"

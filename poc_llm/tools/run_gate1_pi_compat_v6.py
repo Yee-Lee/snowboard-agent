@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from poc_llm.harness.pi_runtime import (
-    PiPacketFailure, digest, launch, load, protocol_validator, read_frame,
+    PiPacketFailure, digest, launch, load, native_library_preflight, protocol_validator, read_frame,
     require_ready, send, stop, target_preflight,
 )
 
@@ -109,8 +109,7 @@ def main() -> int:
         if install.returncode != 0:
             raise PiPacketFailure("offline runtime installation failed")
         native = install_root / "litert_lm/liblitert-lm.so"
-        if not native.is_file() or digest(native) != runtime["native_library_sha256"]:
-            raise PiPacketFailure("installed native library identity mismatch")
+        aggregate["native_library"] = native_library_preflight(native, runtime["native_library_sha256"])
         protocol = _repo_file(lock["artifacts"]["protocol_schema"]["path"], lock["artifacts"]["protocol_schema"]["sha256"])
         config_schema = _repo_file(lock["artifacts"]["config_schema"]["path"], lock["artifacts"]["config_schema"]["sha256"])
         prompt_schema = _repo_file(lock["artifacts"]["prompt_schema"]["path"], lock["artifacts"]["prompt_schema"]["sha256"])

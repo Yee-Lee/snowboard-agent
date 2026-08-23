@@ -17,9 +17,9 @@
     "protocol_schema": {"path": "poc_llm/contracts/m1/protocol-frame-pi.schema.json", "sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
     "prompt_schema": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
     "response_schema": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
-    "runtime_helpers": {"path": "poc_llm/harness/pi_runtime.py", "sha256": "e7825d9db71280e3f01ba3d3ecd0edfd073b9540720dac95ca336d3259aaf227"},
+    "runtime_helpers": {"path": "poc_llm/harness/pi_runtime.py", "sha256": "9ddc1ae9070794454b01ecf65b2d3de8cf3fffcab4f41a59ed7194977d07919e"},
     "installer": {"path": "poc_llm/tools/install_gate1_arm64_wheel.py", "sha256": "7c6f62a74ec73bcb705ffae5f5264a267b1005ffb5ac33b15bbc28ecd3bc34a5"},
-    "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v6.py", "sha256": "fadd14eb85ef90f102bab79a1f0ecc57661463dda1221182c84c8ae902770153"},
+    "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v6.py", "sha256": "91266a7ce931f9bef7340868cf8b76a5eec2f85968e21cdd7148f15279c8f7bc"},
     "result_schema": {"path": "poc_llm/evidence/gate1/gate1-pi-compat-v6-result.schema.json", "sha256": "c378b8ec81078a4c7caeed4268ab3674f16a0450b30543595f1b2279f11f1446"}
   }
 }

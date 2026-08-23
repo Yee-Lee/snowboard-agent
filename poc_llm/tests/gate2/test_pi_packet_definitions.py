@@ -6,11 +6,13 @@ import json
 from pathlib import Path
 import sys
 import subprocess
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from poc_llm.harness.litert_lm_child_adapter import Generation
 from poc_llm.harness.litert_lm_pi_child_adapter import PiChild
-from poc_llm.harness.pi_runtime import protocol_validator
+from poc_llm.harness.pi_runtime import native_library_preflight, protocol_validator
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -100,6 +102,20 @@ class PiPacketDefinitionTests(unittest.TestCase):
             cwd=ROOT, check=False, capture_output=True, text=True,
         )
         self.assertEqual(completed.returncode, 4)
+
+    def test_native_library_preflight_requires_aarch64_elf_and_resolved_linkage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            native = Path(directory) / "liblitert-lm.so"
+            native.write_bytes(b"locked-native")
+            expected = hashlib.sha256(native.read_bytes()).hexdigest()
+            calls = [
+                subprocess.CompletedProcess(["readelf"], 0, "  Class: ELF64\n  Machine: AArch64\n", ""),
+                subprocess.CompletedProcess(["ldd"], 0, "libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6\n", ""),
+            ]
+            with patch("poc_llm.harness.pi_runtime.subprocess.run", side_effect=calls):
+                report = native_library_preflight(native, expected)
+            self.assertEqual(report["elf_machine"], "AArch64")
+            self.assertEqual(report["linkage"], "resolved")
 
 
 if __name__ == "__main__":
