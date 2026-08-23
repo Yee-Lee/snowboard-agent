@@ -1,8 +1,8 @@
 # M2：VAD、ASR、TTS 隔離候選比較
 
-狀態：`IN_PROGRESS`
+狀態：`BLOCKED`
 
-Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B GATE REVIEW / MATCHA M3 FINALIST / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
+Gate 狀態：`ASR ACCEPTED FOR M3 / MATCHA M3 FINALIST / VAD AUTHORIZED, SCORECARD PENDING / M3 ENTRY LOCKS PENDING`
 
 ## 目標
 
@@ -36,9 +36,9 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、24-item audit、erratum-corrected raw/adjusted scoring、RTF、成本與 regressions 已形成 exact recipe/delta，可在 bounded scope 下引用 |
+| M2B ASR optimization | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback 與固定 prompt recipe；C dev/holdout、audit、raw/adjusted scoring、成本及 Common Voice regression 均保留 |
 | TTS Matcha qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；legal limitation 阻擋 redistribution/product/final-winner，不阻擋 internal POC advance |
-| VAD candidate evaluation | `CHANGE_REQUESTED` | User 已選 WebRTC 2.0.10 primary、Silero 6.2.1 conditional fallback；Core ACK、exact profile 與 aggregate recall gate 未固定前，不得 build/load/benchmark real VAD candidate |
+| VAD candidate evaluation | `AUTHORIZED / EXECUTION PENDING` | WebRTC 2.0.10 level 3、shared 300/500 ms endpoint padding、start/end recall 95%/90% 與既有 boundary/false-start gates 已固定；Silero 6.2.1 只在品質或 hard failure 觸發 |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
 及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
@@ -202,8 +202,10 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
 5. **Parallel TTS/VAD closure**：Matcha risk-focused screen 已完成並列為 M3 TTS
    finalist；不再展開 resource 微量差異或 tuning matrix。VAD User strategy 已由
    [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
-   記錄。Core ACK、WebRTC aggressiveness/shared endpoint profile 與 aggregate start/end
-   recall gate 未 committed 前不得執行；frozen-label endpoint simulation 不能取代。
+   記錄，Reviewer 再由
+   [`RESP-AUDIO-M2-GATE-REVIEW-001`](../../docs/reviews/RESP-AUDIO-M2-GATE-REVIEW-001.md)
+   正式授權 exact rows 並固定 WebRTC/endpoint/recall gates。現在只允許單一 bounded
+   WebRTC scorecard；Silero 依 frozen trigger 才執行，simulation 不能取代 real evidence。
 6. **M2 gate review**：只在 M2A/M2B reviewed outcome、TTS disposition、VAD
    finalist/no-go 路徑與 M3 target scope 都可由 committed SHA 追溯時進行。
 
@@ -233,8 +235,8 @@ candidate-specific provisional integration；production dependency lock 必須�
 - TTS candidate 有明確 finalist/no-go disposition；M2 risk-focused User quality、offline、
   lifecycle 與高風險 resource observations 齊全，legal limitation 已明列。完整 20-prompt
   與 combined resource validation 留給 M3/M4 finalist。
-- VAD 有已授權 finalist/no-go 路徑；目前只有 User primary/fallback strategy，Core ACK、
-  exact profile 與 aggregate recall gate 仍未完成，此項未滿足，M2 不得完成。
+- VAD 已有 authorized finalist/no-go 路徑與 exact profile/gates，但 bounded execution、
+  reviewed scorecard 及 finalist/no-go disposition 尚未完成，此項仍未滿足。
 - M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
   traceability 可由 committed full SHA 定位。
 
@@ -254,7 +256,7 @@ candidate-specific provisional integration；production dependency lock 必須�
 
 - 不建立 M2A/M2B milestone tag，也不默認開始 M3。
 - 不接 product composition root、RM、SM、AEC、barge-in、HAT 或 cloud API。
-- 不 build/load/benchmark 尚未另行授權的 real VAD candidate。
+- 不執行 authorized WebRTC/Silero rows 以外的 real VAD candidate，不增加 tuning matrix。
 - 不把 M2A observations 標成 PASS/FAIL/winner，不回溯改寫舊 evidence。
 - 不在 Audio HAL 放入 DSP，不作 hidden resampling。
 - 不把開發機結果當 Pi 5 或 M3 HAL 驗收。
@@ -266,7 +268,7 @@ candidate-specific provisional integration；production dependency lock 必須�
 - M2A 已授權 families 仍留下 material capability gap，需要 Fun-ASR Nano 或其他
   large runtime 的新 scope decision。
 - M2B probe 改變 candidate identity、family/license boundary 或超出一變因設計。
-- VAD execution scope 持續未決，使 final VAD baseline/no-go 無法交付。
+- WebRTC 或 conditional Silero 無法產生可 review 的 finalist/no-go evidence。
 - Matcha 在 M3/M4 full finalist validation 出現 critical quality、offline、lifecycle、
   resource blocker，或 redistribution/product adoption 前 legal limitation 無法關閉。
 - Pi 5 資源預估明顯無法支撐 M4 同時常駐。

@@ -52,17 +52,17 @@ Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完�
 此 external regression 不隱藏。User audio review 發現一筆 frozen reference mismatch；
 append-only erratum 已套用且原始 evidence 保留。24 筆 blind-first audit 已完成：23 筆
 label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending findings；
-bounded scorecard 已可在完整限制下對外引用。User 已選定 WebRTC 2.0.10 primary、
-Silero 6.2.1 conditional fallback；但 Core ACK、exact WebRTC/endpoint profile 與
-aggregate start/end recall gate 尚未固定，故 real-engine execution hold 仍有效。
-ACK-003 的 frozen-label endpoint/padding 比較不能取代 VAD finalist/no-go evidence。
-因此即使 ASR funnel 已有新路徑，最終交付仍維持 `AT_RISK`，M3 不得提前開始。
+bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
+small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
+conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
+boundary 與 false-start gates 已在任何 real result 前固定。M2 現因 VAD scorecard 與
+M3 HAL SHA/test packet 尚缺而為 `BLOCKED`；最終交付維持 `AT_RISK`，M3 不得開始。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `IN_PROGRESS` | M2A 已 reviewed；M2B ASR recipe 已送 gate review；Matcha TTS 已 advance，VAD 授權/profile/recall gate 仍未關閉 | [M2](m2_candidate_evaluation.md) |
+| M2 | `BLOCKED` | ASR/TTS 已獲 M3 disposition；VAD 已授權且 gate 已固定，等待 bounded scorecard 與 M3 HAL SHA/test packet | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -71,9 +71,9 @@ ACK-003 的 frozen-label endpoint/padding 比較不能取代 VAD finalist/no-go 
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
-| M2B Optimization Feasibility | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；24-item audit、erratum-corrected raw/adjusted scorecard、RTF 與 exact recipe 已齊，可在 bounded scope 下引用 |
+| M2B Optimization Feasibility | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
 | Matcha TTS qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
-| VAD scope and evaluation | `CHANGE_REQUESTED` | User primary/fallback strategy 已記錄；Core ACK、exact profile 與 recall gate 尚待補齊，未獲 execution row |
+| VAD scope and evaluation | `AUTHORIZED / EXECUTION PENDING` | WebRTC level 3 + 300/500 ms padding 為 primary；start/end recall 95%/90% 與既有 boundary/false-start gates 已固定；Silero 僅由品質或 hard failure 觸發 |
 
 ## Core M4a Contract Mapping
 
@@ -83,19 +83,18 @@ ACK-003 的 frozen-label endpoint/padding 比較不能取代 VAD finalist/no-go 
 | Gate 0：M3 P4 final selection | `PASSED` — Core ACK-004 已接受 Option A 實作基準 |
 | Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
 | M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
-| M2B：optimization feasibility | `GATE REVIEW` — base Q8 primary、small Q8 fallback、prompt recipe 與完整 delta/regression 已提出；不是 production lock |
+| M2B：optimization feasibility | `ACCEPTED FOR M3` — Reviewer 接受 base Q8 primary、small Q8 fallback 與 prompt recipe；完整 delta/regression 保留，不是 production lock |
 | Gate 2A：POC qualification/selection | `IN PROGRESS` — Matcha TTS 已有 M3 finalist disposition；仍須完成 M2A/M2B review、VAD 路徑與 M3 target/HAL qualification，才能形成完整 qualified selection |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
 
-- `NEXT`：ASR M2B execution matrix 已停止；Core/User review base Q8 primary、small Q8
-  fallback、exact prompt recipe、formal bounded C-v1 task-scoring boundary，以及保留
-  Common Voice prompt regression 的完整 delta table。
+- `NEXT`：依已固定 profile 對 WebRTC 執行單一 bounded VAD scorecard；只有品質 gate
+  或 crash/OOM/bounded-timeout/incomplete-cleanup hard failure 才啟動 Silero，不作 tuning matrix。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
-- `RISK`：VAD User strategy 已記錄，但 Core ACK、exact WebRTC/endpoint profile 與
-  aggregate start/end recall gate 未關閉；real-engine execution 仍未獲完整授權。
+- `BLOCKER`：VAD execution 已授權但尚無 reviewed scorecard/finalist-no-go disposition；
+  M3 exact Audio HAL SHA 與 lifecycle retest packet 亦尚未固定。
 - `RISK`：Matcha risk-focused screen 已通過；`tts-013` 的 `start` 有輕微發音瑕疵，
   User 給 4 分且未判 critical。Legal lineage 仍須在 redistribution、product adoption
   或 Gate 2B final-winner approval 前關閉。
