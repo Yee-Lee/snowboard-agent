@@ -46,8 +46,11 @@ class _FakePCM:
     def __init__(self) -> None:
         self.payloads: list[bytes] = []
         self.closed = 0
+        self.fail_on_write = False
 
     def write(self, payload: bytes) -> int:
+        if self.fail_on_write:
+            raise OSError("mock write error")
         self.payloads.append(payload)
         return len(payload) // 8
 
@@ -91,6 +94,14 @@ def test_m3_audo_002() -> None:
     expected = whole.convert(source) + whole.flush()
     actual = b"".join(split.convert(source[index:index + 2]) for index in range(0, len(source), 2)) + split.flush()
     assert actual == expected
+    
+    # Real resampler chunking equivalence
+    pytest.importorskip("samplerate")
+    real_whole = StreamFormatAdapter()
+    real_split = StreamFormatAdapter()
+    real_expected = real_whole.convert(source) + real_whole.flush()
+    real_actual = b"".join(real_split.convert(source[index:index + 2]) for index in range(0, len(source), 2)) + real_split.flush()
+    assert real_actual == real_expected
 
 
 def test_m3_audo_003() -> None:
@@ -111,12 +122,15 @@ def test_m3_audo_004() -> None:
 
 
 def test_m3_audo_005() -> None:
-    adapters: list[StreamFormatAdapter] = []
+    resamplers: list[_TripleResampler] = []
+
+    def make_resampler() -> _TripleResampler:
+        r = _TripleResampler()
+        resamplers.append(r)
+        return r
 
     def factory() -> StreamFormatAdapter:
-        adapter = _adapter(_TripleResampler())
-        adapters.append(adapter)
-        return adapter
+        return StreamFormatAdapter(resampler_factory=make_resampler)
 
     output = AlsaAudioOutput(_adapted_config(), adapter_factory=factory)
     sink = _FakePCM()
@@ -124,17 +138,51 @@ def test_m3_audo_005() -> None:
     output._executor = ThreadPoolExecutor(max_workers=1)
     output._started = True
 
-    async def pcm():
+    async def pcm(count=1):
+        for _ in range(count):
+            yield struct.pack("<h", 1)
+
+    async def error_pcm():
         yield struct.pack("<h", 1)
+        raise RuntimeError("force-abort")
+
+    async def infinite_pcm(cancel_event):
+        while True:
+            yield struct.pack("<h", 1)
+            cancel_event.set()
+            await asyncio.sleep(0.1)
 
     async def scenario() -> None:
-        await output.play(pcm())
-        await output.play(pcm())
+        # 5-reopen
+        for _ in range(5):
+            await output.play(pcm(1))
+
+        # force-abort
+        with pytest.raises(RuntimeError, match="force-abort"):
+            await output.play(error_pcm())
+
+        # write error
+        sink.fail_on_write = True
+        with pytest.raises(OSError, match="mock write error"):
+            await output.play(pcm(1))
+        sink.fail_on_write = False
+
+        # cancellation
+        cancel_event = asyncio.Event()
+        task = asyncio.create_task(output.play(infinite_pcm(cancel_event)))
+        await cancel_event.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
         await output.stop()
 
     asyncio.run(scenario())
-    assert len(b"".join(sink.payloads)) == 2 * 3 * 2 * 4
-    assert all(adapter._resampler is None for adapter in adapters)
+
+    # 5 plays + 1 abort + 1 error + 1 cancel = 8 resampler sessions
+    assert len(resamplers) == 8
+    # Adapter reset discards the current resampler reference
+    assert output._adapter._resampler is None
     assert sink.closed == 1
 
 

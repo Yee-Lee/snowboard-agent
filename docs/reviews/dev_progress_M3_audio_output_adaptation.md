@@ -3,7 +3,7 @@
 **Milestone**: M3 (HAL append-only revision)
 **Designer ref**: `RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001`
 **CR source**: `CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001` (Audio POC)
-**Status**: `IMPLEMENTED — awaiting Designer review / candidate decision`
+**Status**: `ACCEPTED — M3 HAL adaptation delivered`
 
 ---
 

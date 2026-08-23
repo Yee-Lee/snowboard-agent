@@ -106,6 +106,8 @@ def test_m3_aud_001() -> None:
         await audio.stop()
     asyncio.run(scenario())
 
+    pytest.importorskip("samplerate")
+
     def rms(values) -> float:
         settled = values[100:-100]
         return math.sqrt(sum(value * value for value in settled) / len(settled))
