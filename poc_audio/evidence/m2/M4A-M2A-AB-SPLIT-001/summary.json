@@ -1,0 +1,369 @@
+{
+  "candidates": {
+    "asr-whispercpp-base-q8_0-1.9.2-m2b": {
+      "A": {
+        "cer_percent": 27.642276,
+        "correct_count": 2,
+        "edit_distance_total": 34,
+        "item_count": 8,
+        "latency_ms": {
+          "max": 1337.773,
+          "min": 1251.354,
+          "p50": 1265.213,
+          "p95": 1337.773
+        },
+        "peak_rss_mib": 266.062,
+        "reference_length_total": 123,
+        "rtf": {
+          "max": 0.349288,
+          "min": 0.28274,
+          "p50": 0.31051,
+          "p95": 0.349288
+        },
+        "sentence_correctness_percent": 25.0
+      },
+      "A_categories": {
+        "code_switch": {
+          "cer_percent": 29.545455,
+          "correct_count": 0,
+          "edit_distance_total": 13,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1282.933,
+            "min": 1265.213,
+            "p50": 1265.213,
+            "p95": 1282.933
+          },
+          "peak_rss_mib": 265.062,
+          "reference_length_total": 44,
+          "rtf": {
+            "max": 0.328957,
+            "min": 0.317096,
+            "p50": 0.317096,
+            "p95": 0.328957
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "number_or_date": {
+          "cer_percent": 50.0,
+          "correct_count": 0,
+          "edit_distance_total": 13,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1258.191,
+            "min": 1251.354,
+            "p50": 1251.354,
+            "p95": 1258.191
+          },
+          "peak_rss_mib": 266.062,
+          "reference_length_total": 26,
+          "rtf": {
+            "max": 0.31051,
+            "min": 0.28274,
+            "p50": 0.28274,
+            "p95": 0.31051
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "product_term": {
+          "cer_percent": 30.769231,
+          "correct_count": 0,
+          "edit_distance_total": 8,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1337.773,
+            "min": 1299.629,
+            "p50": 1299.629,
+            "p95": 1337.773
+          },
+          "peak_rss_mib": 266.062,
+          "reference_length_total": 26,
+          "rtf": {
+            "max": 0.349288,
+            "min": 0.348426,
+            "p50": 0.348426,
+            "p95": 0.349288
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "taiwan_mandarin": {
+          "cer_percent": 0.0,
+          "correct_count": 2,
+          "edit_distance_total": 0,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 1274.288,
+            "min": 1257.861,
+            "p50": 1257.861,
+            "p95": 1274.288
+          },
+          "peak_rss_mib": 265.062,
+          "reference_length_total": 27,
+          "rtf": {
+            "max": 0.305585,
+            "min": 0.285229,
+            "p50": 0.285229,
+            "p95": 0.305585
+          },
+          "sentence_correctness_percent": 100.0
+        }
+      },
+      "A_plus_B": {
+        "cer_percent": 25.819672,
+        "correct_count": 5,
+        "edit_distance_total": 63,
+        "item_count": 20,
+        "latency_ms": {
+          "max": 1337.773,
+          "min": 1205.178,
+          "p50": 1258.191,
+          "p95": 1299.629
+        },
+        "peak_rss_mib": 266.062,
+        "reference_length_total": 244,
+        "rtf": {
+          "max": 0.788097,
+          "min": 0.144166,
+          "p50": 0.309818,
+          "p95": 0.557953
+        },
+        "sentence_correctness_percent": 25.0
+      },
+      "A_vs_B_delta": {
+        "cer_improvement_a_minus_b_percentage_points": 3.675334,
+        "sentence_gap_b_minus_a_percentage_points": 0.0
+      },
+      "B": {
+        "cer_percent": 23.966942,
+        "correct_count": 3,
+        "edit_distance_total": 29,
+        "item_count": 12,
+        "latency_ms": {
+          "max": 1292.475,
+          "min": 1205.178,
+          "p50": 1252.175,
+          "p95": 1292.475
+        },
+        "peak_rss_mib": 266.062,
+        "reference_length_total": 121,
+        "rtf": {
+          "max": 0.788097,
+          "min": 0.144166,
+          "p50": 0.305111,
+          "p95": 0.788097
+        },
+        "sentence_correctness_percent": 25.0
+      }
+    },
+    "asr-whispercpp-small-q8_0-1.9.2": {
+      "A": {
+        "cer_percent": 24.390244,
+        "correct_count": 2,
+        "edit_distance_total": 30,
+        "item_count": 8,
+        "latency_ms": {
+          "max": 4140.442,
+          "min": 3922.376,
+          "p50": 3993.081,
+          "p95": 4140.442
+        },
+        "peak_rss_mib": 555.406,
+        "reference_length_total": 123,
+        "rtf": {
+          "max": 1.093594,
+          "min": 0.884569,
+          "p50": 0.981711,
+          "p95": 1.093594
+        },
+        "sentence_correctness_percent": 25.0
+      },
+      "A_categories": {
+        "code_switch": {
+          "cer_percent": 31.818182,
+          "correct_count": 0,
+          "edit_distance_total": 14,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 4036.409,
+            "min": 3993.081,
+            "p50": 3993.081,
+            "p95": 4036.409
+          },
+          "peak_rss_mib": 554.406,
+          "reference_length_total": 44,
+          "rtf": {
+            "max": 1.034977,
+            "min": 1.000772,
+            "p50": 1.000772,
+            "p95": 1.034977
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "number_or_date": {
+          "cer_percent": 30.769231,
+          "correct_count": 0,
+          "edit_distance_total": 8,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 3956.296,
+            "min": 3936.332,
+            "p50": 3936.332,
+            "p95": 3956.296
+          },
+          "peak_rss_mib": 555.406,
+          "reference_length_total": 26,
+          "rtf": {
+            "max": 0.981711,
+            "min": 0.884569,
+            "p50": 0.884569,
+            "p95": 0.981711
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "product_term": {
+          "cer_percent": 30.769231,
+          "correct_count": 0,
+          "edit_distance_total": 8,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 4140.442,
+            "min": 4079.104,
+            "p50": 4079.104,
+            "p95": 4140.442
+          },
+          "peak_rss_mib": 555.406,
+          "reference_length_total": 26,
+          "rtf": {
+            "max": 1.093594,
+            "min": 1.081055,
+            "p50": 1.081055,
+            "p95": 1.093594
+          },
+          "sentence_correctness_percent": 0.0
+        },
+        "taiwan_mandarin": {
+          "cer_percent": 0.0,
+          "correct_count": 2,
+          "edit_distance_total": 0,
+          "item_count": 2,
+          "latency_ms": {
+            "max": 4012.122,
+            "min": 3922.376,
+            "p50": 3922.376,
+            "p95": 4012.122
+          },
+          "peak_rss_mib": 554.406,
+          "reference_length_total": 27,
+          "rtf": {
+            "max": 0.96214,
+            "min": 0.889428,
+            "p50": 0.889428,
+            "p95": 0.96214
+          },
+          "sentence_correctness_percent": 100.0
+        }
+      },
+      "A_plus_B": {
+        "cer_percent": 15.983607,
+        "correct_count": 11,
+        "edit_distance_total": 39,
+        "item_count": 20,
+        "latency_ms": {
+          "max": 4140.442,
+          "min": 3812.79,
+          "p50": 3956.296,
+          "p95": 4079.104
+        },
+        "peak_rss_mib": 555.906,
+        "reference_length_total": 244,
+        "rtf": {
+          "max": 2.482635,
+          "min": 0.450643,
+          "p50": 0.979032,
+          "p95": 1.765181
+        },
+        "sentence_correctness_percent": 55.0
+      },
+      "A_vs_B_delta": {
+        "cer_improvement_a_minus_b_percentage_points": 16.952227,
+        "sentence_gap_b_minus_a_percentage_points": 50.0
+      },
+      "B": {
+        "cer_percent": 7.438017,
+        "correct_count": 9,
+        "edit_distance_total": 9,
+        "item_count": 12,
+        "latency_ms": {
+          "max": 4041.509,
+          "min": 3812.79,
+          "p50": 3932.979,
+          "p95": 4041.509
+        },
+        "peak_rss_mib": 555.906,
+        "reference_length_total": 121,
+        "rtf": {
+          "max": 2.482635,
+          "min": 0.450643,
+          "p50": 0.959036,
+          "p95": 2.482635
+        },
+        "sentence_correctness_percent": 75.0
+      }
+    }
+  },
+  "controlled_manifest_sha256": "24d3747cbcec7b5a22c7842ac92851a672dcdbe8b256e616c0abf1195dd42a9a",
+  "fixture_lock_sha256": "fa3649f2fde77aaaa2132cab81b6d3c562e2b812335d90e846fb6c3f85c943e6",
+  "group_definition": {
+    "A": "internal recordings (8)",
+    "B": "Common Voice 26.0 zh-TW (12)"
+  },
+  "interpretation_boundary": "A/B are different corpora and speakers; grouped observations do not establish recording-quality causation",
+  "method": "RECOMPUTED_FROM_IMMUTABLE_SANITIZED_FORMAL_ROWS_NO_NEW_INFERENCE",
+  "packet_id": "M4A-M2A-AB-SPLIT-001",
+  "paired_sentence_outcomes": {
+    "A": {
+      "base_only_correct": 0,
+      "both_correct": 2,
+      "both_wrong": 6,
+      "small_only_correct": 0
+    },
+    "B": {
+      "base_only_correct": 0,
+      "both_correct": 3,
+      "both_wrong": 3,
+      "small_only_correct": 6
+    }
+  },
+  "reproduction_command": "PYTHONPATH=poc_audio/src python3 -m audio_poc.m2a_ab_split --small-q8-report <small-q8-sanitized-report> --base-q8-report <base-q8-sanitized-report> --output-dir <new-output-dir>",
+  "schema_version": "1.0",
+  "source_reports": [
+    {
+      "artifact": {
+        "filename": "ggml-small-q8_0.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+        "size_bytes": 264464607
+      },
+      "candidate_id": "asr-whispercpp-small-q8_0-1.9.2",
+      "formal_row_sha256": "610bcce6949a0f5728c2f6a307bd17acf4968ccf3018f9009e235ad8da6e465a",
+      "poc_source_sha": "629784f09f0700e7653cee4789cab8caf6d760a3"
+    },
+    {
+      "artifact": {
+        "filename": "ggml-base-q8_0.bin",
+        "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "license": "MIT repository notice; final model-lineage notice review retained",
+        "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+        "size_bytes": 81768585
+      },
+      "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+      "formal_row_sha256": "bb6cacc53d09c26f3bcb5d832dd374b155e3696ef5c9c6daa035d0a6cfcb81eb",
+      "poc_source_sha": "f41a3cde6cc5d362579aae90e642356f8cbfc721"
+    }
+  ],
+  "unavailable_observations": {
+    "insertion_deletion_substitution_totals": "NOT_AVAILABLE_IN_SANITIZED_FORMAL_ROWS",
+    "signal_features": "NOT_COMPUTED_NO_FROZEN_SIGNAL_DEFINITION_IN_HANDOFF"
+  }
+}
