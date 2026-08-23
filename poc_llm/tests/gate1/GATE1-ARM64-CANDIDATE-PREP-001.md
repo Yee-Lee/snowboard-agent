@@ -39,7 +39,7 @@ records no model text. A locked measurement runner now schedules exactly 10 sess
 and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
 model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
 single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
-pass (61/61). This scaffold does not alter frozen R5 or create candidate evidence.
+pass (66/66). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -157,6 +157,22 @@ Gemma is materially faster in TTFT, total wall time and decode throughput while 
 peak RSS is nearly equal. Qwen's combined model/runtime artifacts are smaller
 (`1644017274` vs `2634233466` bytes). These are UTM comparison results, not Pi acceptance.
 
+## Long-Prompt, P5 and P8 Packet Preparation
+
+The locked `G1-ARM64-LONG-P8-001` packet is ready for both active `.litertlm` candidates. It runs a
+baseline and a longer fixed schema-valid prompt, requires a bounded increase in native prefill
+tokens, then sends the same prompt through five independent conversations in one persistent engine.
+P8 passes only when response hashes and prefill/decode/KV token counts remain stable across all five
+turns. The report retains hashes and native metrics, never prompt or model text, and requires clean
+shutdown plus process-group absence. Qwen 0.5B and x86 inputs remain excluded.
+
+The frozen strict config permits only 16 output tokens and the observed model generations complete
+far below the 15-second generation timeout. This packet therefore records P5 as
+`INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE` unless a real timeout occurs; it does not manufacture a
+timeout or weaken the frozen config. The batch result is consequently expected to be overall
+`INCONCLUSIVE` while long-prompt and P8 can independently pass. Hardware execution has not yet
+occurred for this packet.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -169,7 +185,9 @@ peak RSS is nearly equal. Qwen's combined model/runtime artifacts are smaller
 
 ## Remaining Gate1 Work
 
-- Longer fixed prompt, timeout and broader failure-recovery probes.
+- Execute and review the locked long-prompt/P8 batch for both active candidates.
+- P5 timeout remains inconclusive under the frozen 16-output-token envelope; resolving it requires
+  an approved test envelope or another naturally slow preapproved fixture.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
 
@@ -179,7 +197,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`deb21c4704892bc2805e66b1f3cb9b94a3b8e60daba62997ea13948dc0960145`.
+`b2a0d0b7fe503acc654e9a6fcc716ee3ce8e843503a03e8518ac45b51ca3fc6d`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
@@ -191,6 +209,6 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next bounded hardware work is long-prompt and timeout/failure-recovery coverage, followed by the
-ARM64 finalist comparison. The reviewed workstation P4/P7 proofs must not be promoted to Pi or
-Gate2 evidence.
+The next bounded hardware work is the prepared long-prompt/P8 batch, followed by the ARM64 finalist
+comparison. P5 remains explicitly inconclusive under the frozen envelope. The reviewed workstation
+proofs must not be promoted to Pi or Gate2 evidence.

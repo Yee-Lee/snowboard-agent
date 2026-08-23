@@ -288,10 +288,14 @@
       "max_output_tokens": 16,
       "warmup": 3
     },
+    "long_p8_packet_prepared": true,
+    "long_prompt_comparison_planned": true,
+    "p5_planned_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+    "p8_history_isolation_turns": 5,
     "p7_gemma_wrapper_prepared": true,
     "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "61/61 PASS",
+    "retained_and_arm64_tests": "66/66 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -302,7 +306,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "TWO_LITERTLM_P4_P7_PASS_P6_CONDITIONAL_QWEN05_DEFERRED",
-  "wip_lock_sha256": "deb21c4704892bc2805e66b1f3cb9b94a3b8e60daba62997ea13948dc0960145",
+  "wip_lock_sha256": "b2a0d0b7fe503acc654e9a6fcc716ee3ce8e843503a03e8518ac45b51ca3fc6d",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,
