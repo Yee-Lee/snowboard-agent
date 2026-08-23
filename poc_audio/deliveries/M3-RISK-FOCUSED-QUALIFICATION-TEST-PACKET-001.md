@@ -1,6 +1,6 @@
 # M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001
 
-Status: `USER APPROVED / RUNNER LOCALLY VERIFIED AT 655e80ec4ed287708ed0a47f383b645d88650b18 / CORE SIGN-OFF PENDING / NO EXECUTION AUTHORITY`
+Status: `USER APPROVED / RUNNER LOCALLY VERIFIED AT 655e80ec4ed287708ed0a47f383b645d88650b18 / CORE SIGNED OFF / FORMAL PI EXECUTION AUTHORIZED`
 
 ## Purpose and authority
 
@@ -15,6 +15,12 @@ one exact POC execution SHA and then signed off by Core Designer before any form
 M3 qualification run. A
 sanity capture/playback may be performed after acknowledgment, but it must use a
 separate output directory and must never be promoted into formal evidence.
+
+Core completed the required one-time sign-off in
+`RESP-AUDIO-M3-PACKET-SIGNOFF-001`, commit
+`e63884451368079a9c876c2994c982627aa7d766`. Audio owns all remaining Pi execution,
+evidence, draft disposition and User-confirmation work; no intermediate Core action
+is required.
 
 ## Fixed identities
 

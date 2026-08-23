@@ -1,6 +1,6 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
-狀態：`PLANNED`
+狀態：`IN_PROGRESS / PREFLIGHT NEXT`
 
 ## 目標
 
@@ -25,8 +25,10 @@ M2 已由
 User 已核准 packet，Core output adaptation 已固定為
 `ff09199583644a8f0822153e371589f52ae821a0`。formal backend、offline enforcement、
 candidate lifecycle 與 draft summary 已完成本地驗證。packet/runner candidate 已固定為
-`655e80ec4ed287708ed0a47f383b645d88650b18`；在獲 Core Designer sign-off 前不執行
-formal qualification。
+`655e80ec4ed287708ed0a47f383b645d88650b18`；Core Designer 已以
+[`RESP-AUDIO-M3-PACKET-SIGNOFF-001`](../pm_handoff/RESP-AUDIO-M3-PACKET-SIGNOFF-001.md)
+在 commit `e63884451368079a9c876c2994c982627aa7d766` 一次性 ACK。M3 現由 Audio 主導
+Pi preflight 與 formal qualification，Core 無中間執行待辦。
 
 ## 對最終交付的貢獻
 

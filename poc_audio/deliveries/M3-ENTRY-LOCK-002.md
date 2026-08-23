@@ -1,6 +1,6 @@
 # M3-ENTRY-LOCK-002
 
-Status: `CORE OUTPUT ADAPTATION DELIVERED / PACKET SIGN-OFF PENDING / M3 NOT STARTED`
+Status: `CORE OUTPUT ADAPTATION DELIVERED / PACKET SIGNED OFF / M3 PREFLIGHT NEXT`
 
 This packet supersedes the VAD no-go disposition and step 6 in
 `M3-ENTRY-LOCK-001`. Its Core identities, topology and other candidate locks
@@ -61,5 +61,6 @@ Retain steps 1–5 from `M3-ENTRY-LOCK-001`. Replace its VAD no-go step with:
    A provisional M2 advance is not an M3 hardware `PASS`.
 
 Reviewer/Designer 已關閉 M2 並接受本 entry lock。M3 formal hardware execution
-仍維持 `NOT_STARTED`，直到 locally verified packet/runner 取得 exact candidate SHA
-與 Core Designer packet sign-off。
+已由 Core commit `e63884451368079a9c876c2994c982627aa7d766` 授權；Audio 以 exact
+candidate SHA `655e80ec4ed287708ed0a47f383b645d88650b18` 進入 controlled sign-off
+與 Pi preflight。

@@ -71,7 +71,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
-| M3 | `PLANNED` | Pi 5/M3 Audio HAL qualification；根據 M3-ENTRY-LOCK-002 準備開始實機驗證 | [M3](m3_real_hardware_integration.md) |
+| M3 | `IN_PROGRESS` | Core 已一次性 ACK exact packet；Audio 進入 Pi 5/M3 HAL preflight 與正式 qualification | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
@@ -100,8 +100,9 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 - `NEXT`：User 已核准 `M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001`；runner/local
   validation 已完成並固定 candidate SHA
-  `655e80ec4ed287708ed0a47f383b645d88650b18`。`REQ-AUDIO-M3-PACKET-SIGNOFF-001`
-  正提交 Core Designer；sign-off 前不得執行 formal M3 hardware qualification。
+  `655e80ec4ed287708ed0a47f383b645d88650b18`。Core 已在
+  `e63884451368079a9c876c2994c982627aa7d766` 一次性 ACK 並授權 formal Pi execution；
+  下一步由 Audio 建立 controlled sign-off、部署 exact checkouts 並執行 preflight。
 - `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
   HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
   portable suite 176 項通過。Core output adaptation 已固定為
