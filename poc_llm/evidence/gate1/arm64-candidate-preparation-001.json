@@ -29,7 +29,20 @@
       "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
     }
   ],
-  "model_execution_performed": false,
+  "model_execution_performed": true,
+  "model_smoke_attempts": [
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "execution_sha": "ee8dbd06e6db25b9337b54a3c510035fff79f665",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "b0871a4a69911655fa97fbe5537b9fa4a2b52f1204235a0d86f6085e6ea237f6",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "da603e863cc6bbf849aab3628b15a6d6fce951b25a1895570a9e4bf8e5e867de",
+      "startup_ms": 1448.577
+    }
+  ],
   "offline_install": {
     "exit_code": 0,
     "installer_id": "G1-ARM64-WHEEL-INSTALLER-001",
@@ -50,7 +63,7 @@
     "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
     "platform": "ubuntu-aarch64",
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "44/44 PASS",
+    "retained_and_arm64_tests": "45/45 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": true
   },
@@ -60,8 +73,8 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "OFFLINE_INSTALL_PRESCREEN_PASS",
-  "wip_lock_sha256": "be70735aeb1a2cac289380ad39f7e9b0e23541803996f45a42c6230a05d3a4b4",
+  "result": "ADAPTER_DEFECT_CORRECTION_PREPARED",
+  "wip_lock_sha256": "619fcf3150a5ff7f84a33f62bf02b581ade4e10dd6cf1095022cac81c2c67be0",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

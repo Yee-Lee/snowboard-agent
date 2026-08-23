@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import io, json, threading, unittest
+import io, json, sys, threading, types, unittest
+from unittest import mock
 
-from poc_llm.harness.litert_lm_child_adapter import Cancelled, Child
+from poc_llm.harness.litert_lm_child_adapter import Cancelled, Child, LiteRtBackend
 
 PROMPT = {
     "perceptions":[],
@@ -102,6 +103,35 @@ class ChildAdapterTest(unittest.TestCase):
         self.assertEqual(terminal["code"], "TIMEOUT")
         self.assertEqual(terminal["request_id"], "req-timeout")
         child.close()
+
+    def test_engine_uses_model_kv_cache_default(self):
+        captured = {}
+
+        class Engine:
+            def __init__(self, model_path, **kwargs):
+                captured["model_path"] = model_path
+                captured["kwargs"] = kwargs
+            def close(self):
+                pass
+
+        fake = types.SimpleNamespace(
+            Engine=Engine,
+            Backend=types.SimpleNamespace(CPU=lambda **kwargs: ("CPU", kwargs)),
+            SamplerConfig=lambda **kwargs: ("SAMPLER", kwargs),
+        )
+        config = {
+            **CONFIG,
+            "model_path": "/tmp/model.litertlm",
+            "threads": 4,
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "max_input_tokens": 128,
+        }
+        with mock.patch.dict(sys.modules, {"litert_lm": fake}):
+            backend = LiteRtBackend(config)
+        self.assertEqual(captured["model_path"], config["model_path"])
+        self.assertNotIn("max_num_tokens", captured["kwargs"])
+        backend.close()
 
 if __name__ == "__main__":
     unittest.main()

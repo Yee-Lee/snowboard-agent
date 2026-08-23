@@ -19,7 +19,7 @@
   "quantization": "Q8 dynamic INT8 family",
   "license": "Apache-2.0",
   "offline": true,
-  "acquisition_manifest": {"path": "poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-05B-Q8-R1.json", "sha256": "a6d35979d9e0b16d937971a3486128647ccc1287a7e1f8282302f363c43e7270"},
+  "acquisition_manifest": {"path": "poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-05B-Q8-R1.json", "sha256": "50f1cd7cdf8759968839b0a0bacbf69af9c80c492fa408b31fa5a57316b275a2"},
   "commands": {
     "ubuntu-aarch64": {
       "argv": ["env", "PYTHONPATH=/tmp/llm-poc-g1-arm64-001/install", "python3", "poc_llm/harness/litert_lm_child_adapter.py", "--config", "poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-05B-Q8-R1.json", "--config-sha256", "59f2ab60c83afa0115f5a8976b4824725456c8d602211b8480948ceb43754f64"],

@@ -81,7 +81,6 @@ class LiteRtBackend:
         self._engine = litert_lm.Engine(
             config["model_path"],
             backend=litert_lm.Backend.CPU(thread_count=config["threads"]),
-            max_num_tokens=config["max_input_tokens"] + config["max_output_tokens"],
         )
         self._conversation = None
         self._lock = threading.Lock()
