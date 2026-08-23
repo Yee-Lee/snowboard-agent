@@ -1,0 +1,28 @@
+{
+  "catalog_id": "M4B-G2A-P2P3-001",
+  "repetitions": 3,
+  "valid_cases": [
+    {"id": "P2-001", "expected_kind": "speak", "text": "請用繁體中文簡短說明今天的天氣。", "actions": ["speak"], "tools": []},
+    {"id": "P2-002", "expected_kind": "speak", "text": "Please give a short greeting.", "actions": ["speak"], "tools": []},
+    {"id": "P2-003", "expected_kind": "tool", "tool": "device.light.on", "text": "請開燈。", "actions": ["tool"], "tools": ["device.light.on"]},
+    {"id": "P2-004", "expected_kind": "tool", "tool": "device.light.off", "text": "請關燈。", "actions": ["tool"], "tools": ["device.light.off"]},
+    {"id": "P2-005", "expected_kind": "rest", "text": "目前不需要任何動作。", "actions": ["rest"], "tools": []},
+    {"id": "P2-006", "expected_kind": "speak", "text": "請回覆收到。", "actions": ["speak"], "tools": []},
+    {"id": "P2-007", "expected_kind": "speak", "text": "請讀出一個提醒。", "actions": ["speak"], "tools": []},
+    {"id": "P2-008", "expected_kind": "speak", "text": "請描述眼前物件。", "actions": ["speak"], "tools": []},
+    {"id": "P2-009", "expected_kind": "speak", "text": "請給一個簡短建議。", "actions": ["speak"], "tools": []},
+    {"id": "P2-010", "expected_kind": "speak", "text": "請確認下一步。", "actions": ["speak"], "tools": []}
+  ],
+  "failure_raw_outputs": [
+    {"id": "P3-011", "raw": ""},
+    {"id": "P3-012", "raw": "not-json"},
+    {"id": "P3-013", "raw": "{\"action_kind\":\"unknown\"}"},
+    {"id": "P3-014", "raw": "{\"action_kind\":\"tool\",\"action_payload\":{\"name\":\"unknown.tool\",\"arguments\":{}},\"next_perceptions\":[\"listen\"]}"},
+    {"id": "P3-015", "raw": "{\"action_kind\":\"speak\",\"action_payload\":{\"text\":\"\"},\"next_perceptions\":[\"listen\"]}"},
+    {"id": "P3-016", "raw": "{\"action_kind\":\"speak\"}"},
+    {"id": "P3-017", "raw": "{\"action_kind\":\"rest\",\"action_payload\":{},\"next_perceptions\":[\"illegal\"]}"},
+    {"id": "P3-018", "raw": "{\"action_kind\":\"refuse\",\"action_payload\":{},\"next_perceptions\":[]}"},
+    {"id": "P3-019", "raw": "{\"action_kind\":\"rest\",\"action_payload\":{},\"next_perceptions\":[],\"extra\":true}"},
+    {"id": "P3-020", "raw": "{\"action_kind\":\"speak\",\"action_payload\":{\"text\":\"LEAK_MARKER\"},\"next_perceptions\":[\"listen\"]}"}
+  ]
+}

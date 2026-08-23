@@ -67,6 +67,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md`](delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) - (已核准) ARM64 diagnostic exception acceptance與 ARM64/x86_64 bounded WIP continuation
 * [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md`](delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) - (已核准) ARM64 UTM sanitized experience kit、x86 waiver與後續移轉產品Pi的scope adjustment
 * [`DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md`](delivery/DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) - 修正 Core P9 範例缺少CPU trigger的缺陷；交付locked executable、protocol schema、process-group cleanup與Audio integration sequence
+* [`DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md`](delivery/DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md) - Gate 1 Pi compatibility與獨立Gate 2A Pi packet的可執行review candidate；請Core一次審核packet、保留Gate 1 finalist ACK邊界
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
@@ -84,4 +85,6 @@ Repo-owned 內部執行工作文件：
 * [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
 * [`GATE1-ENV-PREFLIGHT-ARM64-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001.md) - ARM64-only UTM executable request；與 x86_64 package/evidence 隔離
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
+* [`GATE1-PI-COMPAT-PACKET-006.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-006.md) - 兩個frozen candidates的Pi 5 compatibility executable packet；無Gate 2 credit
+* [`GATE2A-PI-PACKET-001.md`](../poc_llm/tests/gate2/GATE2A-PI-PACKET-001.md) - Gate 1 finalist ACK後的獨立Pi 5 P1–P8/P10A/P11/P12 packet
 * [`env-preflight-arm64-001.json`](../poc_llm/evidence/gate1/env-preflight-arm64-001.json) - ARM64 sanitized attempt history、checksums與結果範圍

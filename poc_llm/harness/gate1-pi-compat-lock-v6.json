@@ -1,0 +1,25 @@
+{
+  "packet_id": "G1-PI-COMPAT-006",
+  "revision": "2026-08-23-r1",
+  "candidate_order": [
+    "CAND-LRT-G4E2B-MOBILE-R1",
+    "CAND-LRT-Q25-15B-Q8-R1"
+  ],
+  "candidate_set_sha256": "56bd353794479b26df602813cb80550f97541f9c8fc85d7369b530abe5e916c3",
+  "runtime": {
+    "wheel_path": "/tmp/llm-poc-pi-artifacts-v1/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
+    "wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+  },
+  "artifacts": {
+    "adapter": {"path": "poc_llm/harness/litert_lm_pi_child_adapter.py", "sha256": "345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
+    "config_schema": {"path": "poc_llm/contracts/m1/strict-config-pi.schema.json", "sha256": "2a43a5ec692c52de1b75e8c4e8efe3e36ae000e10e810b978df0699441efd9db"},
+    "protocol_schema": {"path": "poc_llm/contracts/m1/protocol-frame-pi.schema.json", "sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
+    "prompt_schema": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    "response_schema": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    "runtime_helpers": {"path": "poc_llm/harness/pi_runtime.py", "sha256": "e7825d9db71280e3f01ba3d3ecd0edfd073b9540720dac95ca336d3259aaf227"},
+    "installer": {"path": "poc_llm/tools/install_gate1_arm64_wheel.py", "sha256": "7c6f62a74ec73bcb705ffae5f5264a267b1005ffb5ac33b15bbc28ecd3bc34a5"},
+    "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v6.py", "sha256": "fadd14eb85ef90f102bab79a1f0ecc57661463dda1221182c84c8ae902770153"},
+    "result_schema": {"path": "poc_llm/evidence/gate1/gate1-pi-compat-v6-result.schema.json", "sha256": "c378b8ec81078a4c7caeed4268ab3674f16a0450b30543595f1b2279f11f1446"}
+  }
+}

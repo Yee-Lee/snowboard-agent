@@ -1,0 +1,24 @@
+{
+  "fixture_id": "M4B-P5-EXTREME-GENERATION-001",
+  "revision": "2026-08-23-r1",
+  "max_input_tokens": 128,
+  "max_output_tokens": 512,
+  "timeout_ms": 15000,
+  "input": {
+    "perceptions": [
+      {
+        "kind": "read",
+        "status": "ok",
+        "text": "請使用繁體中文回答。請以完整句子說明一個日常安全主題，回答至少三百個中文字，保持內容具體且不要使用工具。"
+      }
+    ],
+    "pending_message_count": 0,
+    "capabilities": {
+      "perceptions": ["listen"],
+      "actions": ["speak"],
+      "tools": []
+    }
+  },
+  "early_completion_disposition": "INCONCLUSIVE",
+  "timeout_pass_window_ms": [15000, 17000]
+}

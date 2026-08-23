@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:m1:strict-config:pi:1.0",
+  "type":"object","additionalProperties":false,
+  "required":["candidate_id","pairing_revision","platform","protocol_version","driver","runtime_path","model_path","runtime_sha256","model_sha256","test_profile","max_input_tokens","max_output_tokens","temperature","top_p","threads","ready_timeout_ms","generate_timeout_ms","cancel_timeout_ms","term_timeout_ms","kill_timeout_ms","rebuild_timeout_ms","runtime_download","network_fallback","fallback_model"],
+  "properties":{
+    "candidate_id":{"type":"string","pattern":"^CAND-[A-Z0-9-]+$"},"pairing_revision":{"type":"string","minLength":1},
+    "platform":{"const":"pi-debian13-aarch64"},"protocol_version":{"const":"snowboard.llm/1"},"driver":{"const":"litert_lm"},
+    "runtime_path":{"type":"string","pattern":"^/[^\\u0000]+$"},"model_path":{"type":"string","pattern":"^/[^\\u0000]+$"},
+    "runtime_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"model_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "test_profile":{"enum":["standard","p5-extreme-512"]},"max_input_tokens":{"const":128},"max_output_tokens":{"enum":[16,512]},"temperature":{"const":0.0},"top_p":{"const":1.0},"threads":{"const":4},
+    "ready_timeout_ms":{"const":10000},"generate_timeout_ms":{"const":15000},"cancel_timeout_ms":{"const":500},"term_timeout_ms":{"const":2000},"kill_timeout_ms":{"const":1000},"rebuild_timeout_ms":{"const":10000},
+    "runtime_download":{"const":false},"network_fallback":{"const":false},"fallback_model":{"type":"null"}
+  },
+  "allOf":[
+    {"if":{"properties":{"test_profile":{"const":"standard"}}},"then":{"properties":{"max_output_tokens":{"const":16}}}},
+    {"if":{"properties":{"test_profile":{"const":"p5-extreme-512"}}},"then":{"properties":{"max_output_tokens":{"const":512}}}}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_id", "core_ack_id", "candidate_id", "evidence_manifest_sha256"],
+  "properties": {
+    "packet_id": {"const": "G1-PI-COMPAT-006"},
+    "core_ack_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"enum": ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"]},
+    "evidence_manifest_sha256": {"pattern": "^[0-9a-f]{64}$"}
+  }
+}

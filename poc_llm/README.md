@@ -43,6 +43,9 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 - `tools/run_p9_residency_surrogate.py`、`harness/p9-residency-surrogate-lock-v1.json`：
   Audio M4A-P9 使用的 locked 2304 MiB／4-worker executable surrogate；`--self-test`只作
   小型protocol regression，不是Pi、M4A-P9或LLM Gate 2B evidence。
+- `tools/run_gate1_pi_compat_v6.py`與`tools/run_gate2a_pi.py`：已凍結的Pi 5 executable
+  packet controllers；只可在Core review/ACK、clean Pi 5 4GB/Debian 13/swap=0和operator
+  authorization都到位後執行。workstation只允許其deterministic fake regressions。
 - Revision 005 以 `candidate-v5.schema.json`、`acquisition-v5.schema.json` 與平台投影固定
   logical candidate 及各平台 config/runtime/model/dependency/adapter identity。
 - `tests/gate1/test_gate1_packet.py`保留revision-003回歸；`test_gate1_packet_v4.py`覆蓋

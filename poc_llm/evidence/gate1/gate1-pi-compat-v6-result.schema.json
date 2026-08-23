@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidate_id", "result", "checks", "timing_ms", "cleanup", "violations"],
+  "properties": {
+    "candidate_id": {"pattern": "^CAND-[A-Z0-9-]+$"},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "checks": {"type": "object"},
+    "timing_ms": {"type": "object"},
+    "cleanup": {"type": "object"},
+    "violations": {"type": "array", "items": {"type": "string"}}
+  }
+}

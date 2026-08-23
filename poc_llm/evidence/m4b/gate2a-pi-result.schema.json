@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_id", "run_id", "candidate_id", "execution_sha", "results", "samples", "violations", "result"],
+  "properties": {
+    "packet_id": {"const": "G2A-PI-LLM-001"},
+    "run_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"enum": ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"]},
+    "execution_sha": {"pattern": "^[0-9a-f]{40}$"},
+    "environment": {"type": "object"},
+    "environment_post": {"type": "object"},
+    "results": {"type": "object"},
+    "samples": {"type": "object"},
+    "violations": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]}
+  }
+}
