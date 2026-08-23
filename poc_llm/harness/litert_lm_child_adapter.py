@@ -108,13 +108,13 @@ class LiteRtBackend:
         with self._lock:
             self._conversation = conversation
         try:
-            return "".join(_text_content(chunk) for chunk in conversation.send_message_async(prompt))
+            return _text_content(conversation.send_message(prompt))
         except RuntimeError as error:
             if "CANCELLED" in str(error):
                 raise Cancelled("generation cancelled") from error
-            raise BackendFailure("send_message_async", error) from error
+            raise BackendFailure("send_message", error) from error
         except Exception as error:
-            raise BackendFailure("send_message_async", error) from error
+            raise BackendFailure("send_message", error) from error
         finally:
             with self._lock:
                 self._conversation = None

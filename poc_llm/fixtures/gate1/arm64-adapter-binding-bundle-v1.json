@@ -6,7 +6,7 @@
   "artifacts": {
     "adapter": {
       "path": "poc_llm/harness/litert_lm_child_adapter.py",
-      "sha256": "45a9d4d737164cc7b2a25040004afb8fbea6d93ccf7a34875a837a14dc09b465"
+      "sha256": "5d7639782a9b65d3b696e8167e9e38d463f8ea47e55ab6f4ab6371085a1039af"
     },
     "boundary": {
       "path": "poc_llm/harness/m1_contract_boundary.py",

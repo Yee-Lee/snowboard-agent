@@ -52,6 +52,20 @@
       "result": "FAIL",
       "sanitized_result_sha256": "5fe4826ecdfb6b8a93ade55020bbd823947137c2afa3ab53a760c3a7c7695c82",
       "startup_ms": 641.592
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "diagnostic_cause_class": "RuntimeError",
+      "diagnostic_message_sha256": "38495c0f8b88d89e77061ab14f56583a1081936d9ea24396cbe74a18d539bd58",
+      "diagnostic_stage": "send_message_async",
+      "execution_sha": "d94d13a0a23dfdd32f25c91edca4ed4103c4eeed",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "ced9657943daca103086f4fad93d26380765c0b1f79ee37faa9a0bc08f3a99d2",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "64dd9206c26893bafbf264846f60e42a7b94faf955fa929fddbff802ac97fdb3",
+      "startup_ms": 647.817
     }
   ],
   "offline_install": {
@@ -84,8 +98,8 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "SANITIZED_FAILURE_DIAGNOSTIC_PREPARED",
-  "wip_lock_sha256": "4b8b87165e4290a3d1227730f43834c60f802f0759722f7adacd5cce05a92474",
+  "result": "SYNC_API_CORRECTION_PREPARED",
+  "wip_lock_sha256": "b869e1279364cedba088458182bd2699783955d626abbbf29c1001e08673384f",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

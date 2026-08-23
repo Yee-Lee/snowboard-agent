@@ -107,10 +107,24 @@ class ChildAdapterTest(unittest.TestCase):
     def test_engine_uses_model_kv_cache_default(self):
         captured = {}
 
+        class Conversation:
+            def send_message(self, prompt):
+                captured["prompt_type"] = type(prompt).__name__
+                return {"content": [{"type": "text", "text": "ok"}]}
+            def send_message_async(self, prompt):
+                raise AssertionError("async stream must not be used")
+            def cancel_process(self):
+                pass
+            def close(self):
+                pass
+
         class Engine:
             def __init__(self, model_path, **kwargs):
                 captured["model_path"] = model_path
                 captured["kwargs"] = kwargs
+            def create_conversation(self, **kwargs):
+                captured["conversation_kwargs"] = kwargs
+                return Conversation()
             def close(self):
                 pass
 
@@ -131,6 +145,9 @@ class ChildAdapterTest(unittest.TestCase):
             backend = LiteRtBackend(config)
         self.assertEqual(captured["model_path"], config["model_path"])
         self.assertNotIn("max_num_tokens", captured["kwargs"])
+        self.assertEqual(backend.generate("hello", max_output_tokens=16), "ok")
+        self.assertEqual(captured["prompt_type"], "str")
+        self.assertEqual(captured["conversation_kwargs"]["max_output_tokens"], 16)
         backend.close()
 
     def test_backend_failure_diagnostic_redacts_message(self):

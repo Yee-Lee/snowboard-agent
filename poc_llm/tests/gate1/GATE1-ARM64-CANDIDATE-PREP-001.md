@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `TWO MODEL SMOKES FAIL / SANITIZED DIAGNOSTIC PREPARED`
+- **Status**: `THREE MODEL SMOKES FAIL / SYNC API CORRECTION PREPARED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -56,7 +56,16 @@ root cause. Both failed runs remain recorded and must not be reclassified.
 
 The adapter now emits a sanitized failure diagnostic containing only failure stage, exception class,
 and SHA-256 of the exception message. It never emits the exception message, prompt, or model output.
-A fresh-path diagnostic rerun is required before any further correction is selected.
+The third fresh-path run localized the failure to `send_message_async`, with cause class
+`RuntimeError` and message SHA-256
+`38495c0f8b88d89e77061ab14f56583a1081936d9ea24396cbe74a18d539bd58`. The message hash matched
+neither Python binding fixed errors nor static native-library strings, identifying a dynamically
+composed native streaming callback error.
+
+The pinned LiteRT-LM v0.16.0 official Python example uses synchronous `send_message()`. The adapter
+now follows that API while retaining generation in its worker thread and control-thread
+`cancel_process()` for cancellation and timeout. A regression test rejects accidental async-stream
+use. This correction requires a fresh-path rerun under a new immutable execution SHA.
 
 ## Provenance and License Preparation
 
@@ -79,7 +88,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`4b8b87165e4290a3d1227730f43834c60f802f0759722f7adacd5cce05a92474`.
+`b869e1279364cedba088458182bd2699783955d626abbbf29c1001e08673384f`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
