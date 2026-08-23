@@ -55,14 +55,16 @@ label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending f
 bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
 small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
 conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
-boundary 與 false-start gates 已在任何 real result 前固定。M2 現因 VAD scorecard 與
-M3 HAL SHA/test packet 尚缺而為 `BLOCKED`；最終交付維持 `AT_RISK`，M3 不得開始。
+boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 triggered Silero
+均在 exact Pi SHA 完成 bounded scorecard 並失敗，現提出 evidence-backed VAD no-go。
+M3 exact HAL SHA/topology/lifecycle packet 亦已提出，等待 closure review；最終交付維持
+`AT_RISK`，M3 不得開始。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `BLOCKED` | ASR/TTS 已獲 M3 disposition；VAD 已授權且 gate 已固定，等待 bounded scorecard 與 M3 HAL SHA/test packet | [M2](m2_candidate_evaluation.md) |
+| M2 | `GATE_REVIEW` | ASR/TTS 已接受；WebRTC/Silero 均失敗並提出 VAD no-go；M3 entry lock 已提交，等待 closure review | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -73,7 +75,7 @@ M3 HAL SHA/test packet 尚缺而為 `BLOCKED`；最終交付維持 `AT_RISK`，M
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
 | M2B Optimization Feasibility | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
 | Matcha TTS qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
-| VAD scope and evaluation | `AUTHORIZED / EXECUTION PENDING` | WebRTC level 3 + 300/500 ms padding 為 primary；start/end recall 95%/90% 與既有 boundary/false-start gates 已固定；Silero 僅由品質或 hard failure 觸發 |
+| VAD scope and evaluation | `GATE_REVIEW / NO-GO RECOMMENDED` | WebRTC start/end recall 81.33%/54.67%、false starts 93/10 min；Silero start/end recall 0%/0%；均 clean/bounded，無 tuning 或第三列 |
 
 ## Core M4a Contract Mapping
 
@@ -90,11 +92,11 @@ M3 HAL SHA/test packet 尚缺而為 `BLOCKED`；最終交付維持 `AT_RISK`，M
 
 ## Open risks and next authorized work
 
-- `NEXT`：依已固定 profile 對 WebRTC 執行單一 bounded VAD scorecard；只有品質 gate
-  或 crash/OOM/bounded-timeout/incomplete-cleanup hard failure 才啟動 Silero，不作 tuning matrix。
+- `NEXT`：Reviewer/Designer 審查 VAD evidence-backed no-go 與 M3 entry lock；不再執行
+  VAD row，不默認開始 M3。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
-- `BLOCKER`：VAD execution 已授權但尚無 reviewed scorecard/finalist-no-go disposition；
-  M3 exact Audio HAL SHA 與 lifecycle retest packet 亦尚未固定。
+- `BLOCKER`：VAD no-go 與 M3 exact HAL SHA/lifecycle retest packet 已提交，但尚未取得
+  closure response；M2 不能標為 complete，M3 維持 not started。
 - `RISK`：Matcha risk-focused screen 已通過；`tts-013` 的 `start` 有輕微發音瑕疵，
   User 給 4 分且未判 critical。Legal lineage 仍須在 redistribution、product adoption
   或 Gate 2B final-winner approval 前關閉。
