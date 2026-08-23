@@ -1,6 +1,6 @@
 # M2-VAD-METHOD-CORRECTION-RERUN-PACKET-001
 
-Status: `DRAFT / USER EXECUTION AUTHORIZED / RESULT PUBLICATION PENDING`
+Status: `EXECUTED / USER RESULT PUBLICATION CONFIRMED`
 
 ## Purpose and authority
 
@@ -75,3 +75,12 @@ recurrent state and context for every fixture, start at probability `>=0.5`,
 begin exit hysteresis below `0.35`, reject speech shorter than 250 ms, close
 after 500 ms silence, and apply the product 500/600 ms capture padding. No
 threshold or endpoint matrix is authorized.
+
+## Executed outcome
+
+The User authorized the corrected WebRTC run, reviewed its detailed result,
+authorized the corrected Silero sanity/full runs, audited the risk-focused exact
+captures, and confirmed publication. The sanitized disposition is published in
+[`M2-VAD-METHOD-CORRECTED-QUALIFICATION-002`](../evidence/m2/M2-VAD-METHOD-CORRECTED-QUALIFICATION-002.md).
+This packet does not itself mark M2 complete; Reviewer/Designer closure remains
+required.

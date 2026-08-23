@@ -30,6 +30,11 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - 建立 portable conformance kit：candidate lock/provenance/license index、shared protocol/
   schema/vector/validator、lifecycle/offline/resource method、20-session result 與 known risks。
 - 準備 delivery manifest、evidence index、winner/no-go、已知風險與產品化 integration 工作包。
+- 依 Reviewer 的 ASR post-correction note，在 delivery package §7 彙整 M2A/M2B
+  systematic semantic-mishearing patterns 與頻率；排除 LLM 可直接理解的數字、日期、
+  百分比等格式差異。保留 raw baseline 與 fixed-prompt 的 Internal benefit/Common Voice
+  regression，建議 Core 後續評估 decoder bias 或 context-aware post-decoder correction；
+  不在 POC 實作/驗證 static lexicon 或新增 milestone。
 - 進行 internal review，追蹤並關閉 blocking findings。
 
 ## Entry Conditions
@@ -63,6 +68,9 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - Final candidate comparison、winner/no-go decisions、TTS User confirmation。
 - Delivery manifest、evidence index、license/checksum/source index。
 - Productization boundary、integration estimate、known risks 與 rejected candidates。
+- ASR semantic-mishearing pattern/frequency report、prompt-bias 已知效果與 regression，
+  以及由 Core 接手的 decoder/context correction 建議；format normalization 不列為
+  acoustic recognition error。
 - Review findings 及 closure evidence。
 - M4a contract intake/Gate 1/Gate 2A ACK chain、Gate 2B final handoff SHA、
   portable conformance kit 與 Core Gate 3 handoff 索引。

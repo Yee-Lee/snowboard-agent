@@ -1,6 +1,6 @@
 # CR-AUDIO-M2-VAD-METHOD-CORRECTION-001
 
-Status: `DRAFT / USER METHOD APPROVED / REVIEWER CONFIRMATION REQUIRED`
+Status: `USER METHOD APPROVED / EXECUTED / REVIEWER CONFIRMATION REQUIRED`
 
 ## Trigger
 
@@ -55,12 +55,13 @@ later impact noise as real false-positive risk.
 This correction changes the interpretation of frozen endpoint and boundary
 evidence after an invalid run. It does not retrospectively turn the old result
 into a pass. The old WebRTC and Silero JSON files remain immutable rejected test
-evidence, but their `FAIL` and no-go disposition is withdrawn pending a single
-corrected bounded run.
+evidence, but their `FAIL` and no-go disposition is withdrawn. The corrected
+bounded runs and User capture audit are published in
+[`M2-VAD-METHOD-CORRECTED-QUALIFICATION-002`](../evidence/m2/M2-VAD-METHOD-CORRECTED-QUALIFICATION-002.md).
 
-Reviewer confirmation is required before the corrected run becomes formal M2
-evidence. Until then, VAD is `INCONCLUSIVE / METHOD CORRECTION PENDING`, M2
-remains blocked, and M3 must not start.
+Reviewer confirmation is required before the corrected disposition closes M2.
+Until then, VAD is `GATE_REVIEW / SILERO CONDITIONAL FINALIST PROPOSED`, M2
+remains open, and M3 must not start.
 
 ## Proposed bounded recovery
 

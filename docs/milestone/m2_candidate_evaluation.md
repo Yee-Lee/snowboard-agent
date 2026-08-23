@@ -2,7 +2,7 @@
 
 狀態：`GATE_REVIEW`
 
-Gate 狀態：`ASR/TTS ACCEPTED FOR M3 / VAD NO-GO RECOMMENDED / M3 ENTRY LOCK SUBMITTED / CLOSURE REVIEW PENDING`
+Gate 狀態：`ASR/TTS ACCEPTED FOR M3 / SILERO CONDITIONAL FINALIST PROPOSED / CORRECTED M3 ENTRY LOCK SUBMITTED / CLOSURE REVIEW PENDING`
 
 ## 目標
 
@@ -38,7 +38,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
 | M2B ASR optimization | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback 與固定 prompt recipe；C dev/holdout、audit、raw/adjusted scoring、成本及 Common Voice regression 均保留 |
 | TTS Matcha qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；legal limitation 阻擋 redistribution/product/final-winner，不阻擋 internal POC advance |
-| VAD candidate evaluation | `GATE_REVIEW / NO-GO RECOMMENDED` | WebRTC 失敗 start/end recall 與 false-start gates；conditional Silero 隨即執行但 0%/0% recall；兩列 identity/bounded/cleanup 完整，不作 tuning |
+| VAD candidate evaluation | `GATE_REVIEW / SILERO CONDITIONAL FINALIST PROPOSED` | 舊 no-go 因方法缺陷撤回；corrected WebRTC 不前進，corrected Silero end/noise/cleanup bounded，但低音量句首 retention 留為 M3 target-mic blocker，不作 tuning matrix |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
 及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
@@ -204,10 +204,13 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
    [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
    記錄，Reviewer 再由
    [`RESP-AUDIO-M2-GATE-REVIEW-001`](../../docs/reviews/RESP-AUDIO-M2-GATE-REVIEW-001.md)
-   正式授權 exact rows 並固定 WebRTC/endpoint/recall gates。WebRTC scorecard 失敗後依
-   frozen trigger 執行 Silero；兩列均未達 gate，完整結果見
-   [`M2-VAD-BOUNDED-SCORECARD-001`](../../poc_audio/evidence/m2/M2-VAD-BOUNDED-SCORECARD-001.md)，
-   現提交 evidence-backed no-go，不追加 tuning 或第三列。
+   正式授權 exact rows 並固定 WebRTC/endpoint/recall gates。初次 scorecard 後發現
+   WebRTC engine state/scoring 與 Silero official-context 方法缺陷，舊 no-go 撤回但
+   immutable evidence 保留。依 User 確認的 startup mask、capture padding 與
+   pause-one-utterance 語意完成各一次 corrected run；WebRTC 不前進，Silero 提為
+   conditional M3 finalist，完整結果與人工 capture audit 見
+   [`M2-VAD-METHOD-CORRECTED-QUALIFICATION-002`](../../poc_audio/evidence/m2/M2-VAD-METHOD-CORRECTED-QUALIFICATION-002.md)。
+   低音量句首 retention 留作 M3 target-mic blocker，不追加 M2 tuning 或第三列。
 6. **M2 gate review**：只在 M2A/M2B reviewed outcome、TTS disposition、VAD
    finalist/no-go 路徑與 M3 target scope 都可由 committed SHA 追溯時進行。
 
@@ -237,8 +240,9 @@ candidate-specific provisional integration；production dependency lock 必須�
 - TTS candidate 有明確 finalist/no-go disposition；M2 risk-focused User quality、offline、
   lifecycle 與高風險 resource observations 齊全，legal limitation 已明列。完整 20-prompt
   與 combined resource validation 留給 M3/M4 finalist。
-- VAD authorized rows、exact profile/gates 與 bounded scorecard 已完成；兩列均失敗，
-  evidence-backed no-go 已提交但尚待 Reviewer/Designer 接受。
+- VAD authorized rows、corrected method、exact profile 與 bounded scorecard 已完成；
+  WebRTC 不前進，Silero conditional finalist 與低音量 M3 blocker 已提交，但尚待
+  Reviewer/Designer 接受，未將 frozen start gate 回溯重標為 `PASS`。
 - M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
   traceability 可由 committed full SHA 定位。
 

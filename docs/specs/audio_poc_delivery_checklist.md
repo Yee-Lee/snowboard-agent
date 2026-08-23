@@ -66,6 +66,9 @@ License 不明、artifact 無法固定、aarch64 無法安裝或不能離線者�
 - [ ] 固定 winner 的 artifact、license、PCM format、VAD endpoint、language / normalization、threads 與 timeout。
 - [ ] 列出 rejected candidates、已知風險及不可採用原因。
 - [ ] 說明可產品化的 wrapper / protocol、execution-container 建議與待辦工作。
+- [ ] ASR 產品化建議須從 M2 evidence 列出 systematic semantic-mishearing patterns 與
+  頻率、fixed-prompt benefit/regression，以及 decoder bias 或 context-aware correction
+  方向；排除 LLM 可理解的純格式 normalization，且 POC 不實作 static lexicon。
 - [ ] 明確區分可重用 source 與不可進入主線的 benchmark / demo code。
 
 ## 8. 資料安全

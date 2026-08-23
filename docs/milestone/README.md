@@ -56,15 +56,19 @@ bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接
 small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
 conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
 boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 triggered Silero
-均在 exact Pi SHA 完成 bounded scorecard 並失敗，現提出 evidence-backed VAD no-go。
-M3 exact HAL SHA/topology/lifecycle packet 亦已提出，等待 closure review；最終交付維持
-`AT_RISK`，M3 不得開始。
+初次 run 後查明 WebRTC engine state/scoring 不符產品語意，且 Silero adapter 漏掉官方
+64-sample context；舊 no-go 已撤回，immutable SHA/evidence 保留。User 確認 160 ms
+startup mask、500/600 ms capture padding 與 pause-one-utterance 語意後，corrected WebRTC
+fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/noise activation
+為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
+現提出 Silero conditional M3 finalist 與 target-mic blocker。Corrected M3 entry lock 已提交，
+等待 closure review；最終交付維持 `AT_RISK`，M3 不得開始。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `GATE_REVIEW` | ASR/TTS 已接受；WebRTC/Silero 均失敗並提出 VAD no-go；M3 entry lock 已提交，等待 closure review | [M2](m2_candidate_evaluation.md) |
+| M2 | `GATE_REVIEW` | ASR/TTS 已接受；舊 VAD no-go 撤回，Silero conditional finalist 與 corrected M3 entry lock 已提交，等待 closure review | [M2](m2_candidate_evaluation.md) |
 | M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
@@ -75,7 +79,7 @@ M3 exact HAL SHA/topology/lifecycle packet 亦已提出，等待 closure review�
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
 | M2B Optimization Feasibility | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
 | Matcha TTS qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
-| VAD scope and evaluation | `GATE_REVIEW / NO-GO RECOMMENDED` | WebRTC start/end recall 81.33%/54.67%、false starts 93/10 min；Silero start/end recall 0%/0%；均 clean/bounded，無 tuning 或第三列 |
+| VAD scope and evaluation | `GATE_REVIEW / SILERO CONDITIONAL FINALIST PROPOSED` | Corrected Silero start/end retention 78%/98%、silence/noise activation 1/10 分鐘；低音量句首漏字保留為 M3 target-mic blocker，不增加 tuning matrix |
 
 ## Core M4a Contract Mapping
 
@@ -92,11 +96,15 @@ M3 exact HAL SHA/topology/lifecycle packet 亦已提出，等待 closure review�
 
 ## Open risks and next authorized work
 
-- `NEXT`：Reviewer/Designer 審查 VAD evidence-backed no-go 與 M3 entry lock；不再執行
-  VAD row，不默認開始 M3。
+- `NEXT`：Reviewer/Designer 審查 corrected VAD method/evidence、Silero conditional
+  finalist 與 `M3-ENTRY-LOCK-002`；不再執行 M2 VAD row，不默認開始 M3。
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
-- `BLOCKER`：VAD no-go 與 M3 exact HAL SHA/lifecycle retest packet 已提交，但尚未取得
-  closure response；M2 不能標為 complete，M3 維持 not started。
+- `BLOCKER`：corrected VAD method、Silero conditional advance 與 M3 exact HAL
+  SHA/lifecycle retest packet 已提交，但尚未取得 closure response；M2 不能標為
+  complete，M3 維持 not started。
+- `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
+  M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
+  clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。
 - `RISK`：Matcha risk-focused screen 已通過；`tts-013` 的 `start` 有輕微發音瑕疵，
   User 給 4 分且未判 critical。Legal lineage 仍須在 redistribution、product adoption
   或 Gate 2B final-winner approval 前關閉。
