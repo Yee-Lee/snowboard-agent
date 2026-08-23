@@ -218,6 +218,24 @@
       "result": "FAIL",
       "root_cause": "RUNNER_DROPPED_AUTHENTICATED_PYTHONPATH_PREFIX",
       "stderr_sha256": "4434432479b753cc9cffdc2c410583011cc194380b9a3ef5cb5b8f86d7c7d291"
+    },
+    {
+      "contract_p5_disposition": "INCONCLUSIVE",
+      "execution_sha": "108d95441da1f70740ce4c5b4070aeabf5c50aec",
+      "gemma": {
+        "elapsed_ms": 1437.165,
+        "log_hygiene": "PASS",
+        "result_sha256": "639ac42fd2fbb9f2c2d210f7381abd8e97442959e9f18783e896baf5626fea6f",
+        "stderr_sha256": "8b40d7ba1e9bc4c18ef79496cece205f18dad5d2fee3e7b97916e7d3bf6ccdbe"
+      },
+      "qwen15": {
+        "elapsed_ms": 1610.816,
+        "log_hygiene": "PASS",
+        "result_sha256": "358e4a23af3cbfba5a2708a5498931778a964783dd6c9bdc3a50696207b470b3",
+        "stderr_sha256": "f3eb917db6ff02ccfbbddf7ceafa275645f2449139cf3e518cc65bc4e969c5a7"
+      },
+      "result": "WORKAROUND_OBSERVATION_PASS",
+      "schema_validation": "2/2 PASS"
     }
   ],
   "arm64_prescreen_comparison": {

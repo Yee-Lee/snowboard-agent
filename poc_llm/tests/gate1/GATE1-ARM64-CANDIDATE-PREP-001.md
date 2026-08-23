@@ -223,6 +223,15 @@ hashes are `1a6b8ccb754423e42b223b5aeabb65695e8c3309696aa6ae32bf5a626921a913` an
 candidate finding, and remains recorded. The corrected runner now reuses and validates the locked
 `env PYTHONPATH=... python3` prefix; the batch uses fresh path `002`.
 
+The corrected execution under SHA `108d95441da1f70740ce4c5b4070aeabf5c50aec` completed both
+candidates. Qwen returned `ERROR/TIMEOUT` in READY state after `1610.816 ms`; Gemma did so after
+`1437.165 ms`. Both acknowledged shutdown, exited 0 without TERM/KILL, left no process group and
+validated against the strict workaround schema. Result SHA-256 values are
+`358e4a23af3cbfba5a2708a5498931778a964783dd6c9bdc3a50696207b470b3` for Qwen and
+`639ac42fd2fbb9f2c2d210f7381abd8e97442959e9f18783e896baf5626fea6f` for Gemma. The frozen log
+scanner found no forbidden sentinel in either stderr. The workaround observation is `PASS`; contract
+P5 remains `INCONCLUSIVE` pending Core disposition.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -237,7 +246,7 @@ candidate finding, and remains recorded. The corrected runner now reuses and val
 
 - P5 timeout remains inconclusive under the frozen 16-output-token envelope; resolving it requires
   an approved test envelope or another naturally slow preapproved fixture.
-- Execute and review the bounded user-approved P5 workaround; then request Core disposition.
+- Request Core disposition for the successful bounded P5 workaround observation.
 - Pi compatibility is not authorized or executed; no Gate 1 finalist ACK exists.
 - The bounded external handoff remains open.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
