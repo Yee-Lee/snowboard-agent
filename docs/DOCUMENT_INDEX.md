@@ -29,6 +29,7 @@
 * `DELIVERY-LLM-POC-M1-FREEZE-REVISION-001.md` - (已取代) R1 四項 finding 已由 Revision 002 收斂為單一 FATAL blocker
 * `DELIVERY-LLM-POC-M1-FREEZE-REVISION-002.md` - (已關閉) R3 exact SHA 已獲 Core Designer freeze approval
 * `ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md` - (已承接) design/preparation授權已由 ARM64 diagnostic ACK推進為bounded continuation
+* `REQUEST-LLM-POC-P9-SURROGATE-ENVELOPE-001.md` - (已回覆) Core Designer 要求提供 M4A-P9 資源保留 surrogate envelope
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -48,6 +49,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001.md`](response/ACK-DELIVERY-LLM-POC-M1-FREEZE-R3-001.md) - Core repo Designer freeze ACK intake；同一 SHA Internal Tester sign-off pending
 * [`ACK-INTERNAL-TESTER-M1-SIGNOFF-001.md`](response/ACK-INTERNAL-TESTER-M1-SIGNOFF-001.md) - Internal Tester M1 exact candidate/deterministic evidence sign-off
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
+* [`RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md`](response/RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md) - M4A-P9 資源保留 surrogate envelope 估算回覆
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
