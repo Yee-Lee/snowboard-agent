@@ -113,8 +113,13 @@ def main() -> int:
         kill_timeout = base_config["kill_timeout_ms"] / 1000
         args.raw_dir.mkdir(parents=True, exist_ok=False)
         stderr_path = args.raw_dir / "candidate.stderr"
+        manifest_argv = value["manifest"]["commands"]["ubuntu-aarch64"]["argv"]
+        if (len(manifest_argv) < 3 or manifest_argv[0] != "env"
+                or not manifest_argv[1].startswith("PYTHONPATH=")
+                or manifest_argv[2] != "python3"):
+            raise SmokeFailure("authenticated runtime command prefix is unavailable")
         argv = [
-            sys.executable, str(paths["p5_workaround_child"]),
+            *manifest_argv[:3], str(paths["p5_workaround_child"]),
             "--base-config", str(config_path),
             "--base-config-sha256", value["config_sha256"],
         ]

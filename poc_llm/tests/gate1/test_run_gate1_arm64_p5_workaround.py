@@ -45,6 +45,13 @@ class Arm64P5WorkaroundTest(unittest.TestCase):
         self.assertIn('"contract_p5_disposition": "INCONCLUSIVE"', source)
         self.assertIn('"result": "INCONCLUSIVE"', source)
 
+    def test_runner_preserves_authenticated_runtime_prefix(self) -> None:
+        source = Path(
+            "poc_llm/tools/run_gate1_arm64_p5_workaround.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("*manifest_argv[:3]", source)
+        self.assertIn('manifest_argv[1].startswith("PYTHONPATH=")', source)
+
     def test_batch_is_two_candidate_arm64_only(self) -> None:
         source = Path(
             "poc_llm/tools/run_gate1_arm64_p5_workaround_batch.sh"

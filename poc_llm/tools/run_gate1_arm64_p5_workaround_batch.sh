@@ -12,7 +12,7 @@ repo_root="$(git -c safe.directory="$PWD" rev-parse --show-toplevel)"
 lock="poc_llm/harness/gate1-lock-arm64-wip-v1.json"
 execution_sha="$(git -c safe.directory="$repo_root" -C "$repo_root" rev-parse HEAD)"
 lock_sha="$(sha256sum "$repo_root/$lock" | awk '{print $1}')"
-raw_root="/tmp/llm-poc-g1-arm64-p5-workaround-001"
+raw_root="/tmp/llm-poc-g1-arm64-p5-workaround-002"
 for path in "$raw_root" "$raw_root-qwen15-result.json" "$raw_root-gemma-result.json"; do
   [[ ! -e "$path" ]] || { echo "fresh-path requirement failed: $path already exists" >&2; exit 2; }
 done

@@ -210,6 +210,16 @@
     "log_hygiene_scanner_version": "1.0.0",
     "schema_validation": "2/2 PASS"
   },
+  "p5_workaround_attempts": [
+    {
+      "execution_sha": "b61d7179b5f1e8391caf2b301a2a0c384298d845",
+      "gemma_result_sha256": "1b487872111f66440d5ce6b964fae2674564dca01849e75f1a1f37321fa45b41",
+      "qwen15_result_sha256": "1a6b8ccb754423e42b223b5aeabb65695e8c3309696aa6ae32bf5a626921a913",
+      "result": "FAIL",
+      "root_cause": "RUNNER_DROPPED_AUTHENTICATED_PYTHONPATH_PREFIX",
+      "stderr_sha256": "4434432479b753cc9cffdc2c410583011cc194380b9a3ef5cb5b8f86d7c7d291"
+    }
+  ],
   "arm64_prescreen_comparison": {
     "disposition": "UTM_RANKING_ONLY_NOT_GATE1_FINALIST",
     "primary_for_next_authorized_evaluation": "CAND-LRT-G4E2B-MOBILE-R1",
@@ -344,7 +354,7 @@
     "p7_gemma_wrapper_prepared": true,
     "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "72/72 PASS",
+    "retained_and_arm64_tests": "73/73 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -355,7 +365,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "TWO_LITERTLM_P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL_QWEN05_DEFERRED",
-  "wip_lock_sha256": "699666a4a69e8c7dd252d96a730a494922adf66773bd90c2cc2b4eff9ecd7467",
+  "wip_lock_sha256": "153326f8f2301a9e0e8826bc98d521c7f44108c347d894a5215b8a60685c68de",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

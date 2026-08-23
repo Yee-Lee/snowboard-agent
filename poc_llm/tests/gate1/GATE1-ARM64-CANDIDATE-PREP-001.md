@@ -39,7 +39,7 @@ records no model text. A locked measurement runner now schedules exactly 10 sess
 and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
 model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
 single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
-pass (72/72). This scaffold does not alter frozen R5 or create candidate evidence.
+pass (73/73). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -213,6 +213,16 @@ workaround observation may be `PASS`. Authority is recorded as
 `USER_APPROVED_WORKAROUND_CORE_APPROVAL_PENDING`. This packet cannot be promoted without Core's
 written acceptance or a formal 15-second rerun.
 
+The first execution under SHA `b61d7179b5f1e8391caf2b301a2a0c384298d845` failed before READY
+for both candidates because the workaround runner did not preserve the authenticated manifest's
+`PYTHONPATH` runtime prefix. Both children exited 2, left no process group, and emitted the same
+sanitized 47-byte stderr (SHA-256
+`4434432479b753cc9cffdc2c410583011cc194380b9a3ef5cb5b8f86d7c7d291`). The Qwen and Gemma result
+hashes are `1a6b8ccb754423e42b223b5aeabb65695e8c3309696aa6ae32bf5a626921a913` and
+`1b487872111f66440d5ce6b964fae2674564dca01849e75f1a1f37321fa45b41`. This is a runner FAIL, not a
+candidate finding, and remains recorded. The corrected runner now reuses and validates the locked
+`env PYTHONPATH=... python3` prefix; the batch uses fresh path `002`.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -238,7 +248,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`699666a4a69e8c7dd252d96a730a494922adf66773bd90c2cc2b4eff9ecd7467`.
+`153326f8f2301a9e0e8826bc98d521c7f44108c347d894a5215b8a60685c68de`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
