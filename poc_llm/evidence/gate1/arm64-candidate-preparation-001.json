@@ -17,7 +17,7 @@
       "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
       "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
       "size_bytes": 1597931520,
-      "status": "MODEL_SMOKE_PASS",
+      "status": "MEASUREMENT_COMPLETE_P6_CONDITIONAL_ESCALATION",
       "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
     },
     {
@@ -25,10 +25,50 @@
       "filename": "gemma-4-E2B-it.litertlm",
       "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
       "size_bytes": 2588147712,
-      "status": "MODEL_SMOKE_PASS",
+      "status": "MODEL_MEASUREMENT_PASS",
       "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
     }
   ],
+  "measurement_review": {
+    "combined_sessions": 20,
+    "execution_sha": "19aca08a83caacb19ce1fab10fa9961fe188dab2",
+    "gemma": {
+      "busy": "PASS",
+      "cancel_ms": 139.839,
+      "cleanup": "PASS",
+      "hot_decode_tokens_mean": 16.0,
+      "hot_decode_tps_p50": 19.657,
+      "hot_prefill_tps_p50": 241.121,
+      "hot_ttft_ms_p50": 386.952,
+      "hot_ttft_ms_p95": 397.822,
+      "hot_wall_ms_p50": 1154.295,
+      "hot_wall_ms_p95": 1171.501,
+      "peak_rss_kib": 2071472,
+      "p6_disposition": "PASS",
+      "result": "PASS",
+      "result_sha256": "25c426cb685487cf38d6f9def3cfec7de6a490f3ddd32b34d303f0489e8d0ddf",
+      "sessions": 10,
+      "stderr_sha256": "62a11462e3b961bc7021b9ae3597f6f62ca5e639508415e74917f4745dc2678f"
+    },
+    "qwen15": {
+      "busy": "PASS",
+      "cleanup_after_timeout": "PASS",
+      "hot_decode_tokens_mean": 16.0,
+      "hot_decode_tps_p50": 16.879,
+      "hot_prefill_tps_p50": 129.613,
+      "hot_ttft_ms_p50": 814.259,
+      "hot_ttft_ms_p95": 928.259,
+      "hot_wall_ms_p50": 1702.121,
+      "hot_wall_ms_p95": 1919.596,
+      "p6_disposition": "CONDITIONAL_ESCALATION",
+      "peak_rss_kib": "UNAVAILABLE_RUNNER_EARLY_FINALIZATION",
+      "raw_runner_result": "FAIL",
+      "result_sha256": "0f55e6b6e71cee7b2d55b00c57224a83436ba7a424fa95a33bf6d75d3de82cfc",
+      "sessions": 10,
+      "stderr_sha256": "bfaf624fb30fac47ab192e17688b98a03ada697d2e03a94ce86cdea1661be173"
+    },
+    "reviewed": true
+  },
   "model_execution_performed": true,
   "model_smoke_attempts": [
     {
@@ -132,8 +172,9 @@
     "platform": "ubuntu-aarch64",
     "measurement_runner_implemented": true,
     "measurement_sessions_planned": 20,
+    "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "52/52 PASS",
+    "retained_and_arm64_tests": "57/57 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -143,8 +184,8 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "TWO_LITERTLM_MODEL_SMOKES_PASS_QWEN05_DEFERRED",
-  "wip_lock_sha256": "69bc1b057864fdde8b9f7d83f38214f8d03a725f4cf92ace486429034112451a",
+  "result": "GEMMA_MEASUREMENT_PASS_QWEN15_P6_CONDITIONAL_QWEN05_DEFERRED",
+  "wip_lock_sha256": "9d50f17f88493bf01875775ce351999b9d92757e6a96fe909cfdf11b758eefea",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `TWO LITERTLM MODEL SMOKES PASS / QWEN 0.5B DEFERRED`
+- **Status**: `GEMMA MEASUREMENT PASS / QWEN 1.5B P6 CONDITIONAL / QWEN 0.5B DEFERRED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -39,7 +39,7 @@ records no model text. A locked measurement runner now schedules exactly 10 sess
 and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
 model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
 single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
-pass (52/52). This scaffold does not alter frozen R5 or create candidate evidence.
+pass (57/57). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -84,6 +84,31 @@ deferred until a native `.litertlm` artifact or approved conversion flow is avai
 These wall-clock smoke timings are promising feasibility signals on the 4-vCPU/4-GB UTM guest.
 They do not establish TTFT, tokens/second, output-token count, peak RSS, long-input behavior or P4.
 
+## Reviewed 20-Session ARM64 Measurement
+
+Execution SHA `19aca08a83caacb19ce1fab10fa9961fe188dab2` completed 10 bounded sessions
+for each active `.litertlm` candidate in the offline namespace. The frozen sanitized result hashes
+are `0f55e6b6e71cee7b2d55b00c57224a83436ba7a424fa95a33bf6d75d3de82cfc`
+for Qwen 1.5B and
+`25c426cb685487cf38d6f9def3cfec7de6a490f3ddd32b34d303f0489e8d0ddf`
+for Gemma.
+
+| Candidate | Hot TTFT P50 / P95 | Hot decode P50 | Hot wall P50 / P95 | Peak RSS | P6 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Qwen2.5 1.5B | `814.259 / 928.259 ms` | `16.879 tok/s` | `1702.121 / 1919.596 ms` | unavailable because the original runner finalized early | `Conditional escalation`: no terminal frame within 500 ms |
+| Gemma 4 E2B | `386.952 / 397.822 ms` | `19.657 tok/s` | `1154.295 / 1171.501 ms` | `2071472 KiB` | `PASS`: CANCELLED in `139.839 ms` |
+
+Both candidates returned 16 output tokens in every measured session and passed the model-backed
+BUSY probe. Gemma also proved clean shutdown with exit 0 and no TERM/KILL. Qwen's runner preserved
+all 10 samples and proved bounded SIGTERM/wait cleanup with no process-group residue, but its raw
+packet remains `FAIL`; review maps only the P6 finding to the contract-defined
+`Conditional escalation` and does not rewrite that result. The measurement runner now retains
+summary and RSS on this failure path and emits the explicit P6 disposition. A separate locked P7
+packet is prepared to prove terminate/wait/rebuild/READY and post-rebuild generation.
+
+This is a workstation pre-screen. It is not formal P4 because the contract's three warm-ups,
+three cold samples and twenty hot samples were not executed, and it is not Pi/Gate 2 evidence.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -96,9 +121,10 @@ They do not establish TTFT, tokens/second, output-token count, peak RSS, long-in
 
 ## Remaining Gate1 Work
 
-- Execute and review the prepared model-backed cold/hot TTFT, tokens/second, output-token count,
-  peak RSS, BUSY, cancel and cleanup measurements (20 combined sessions).
-- Longer fixed prompt, disk measurement, timeout, failure recovery and rebuild probes.
+- Execute and review the prepared Qwen P7 terminate/wait/rebuild packet; Qwen remains eligible only
+  if the full P7 proof passes.
+- Formal P4 repetitions, Qwen peak RSS, longer fixed prompt, disk measurement, timeout, failure
+  recovery and Gemma P7 simulation.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
 
@@ -108,7 +134,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`69bc1b057864fdde8b9f7d83f38214f8d03a725f4cf92ace486429034112451a`.
+`9d50f17f88493bf01875775ce351999b9d92757e6a96fe909cfdf11b758eefea`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
@@ -120,5 +146,5 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next round advances only Qwen 1.5B and Gemma into bounded Gate1 measurement. These model-smoke
-passes must not be promoted to complete Gate1 candidate `PASS`, P4 `PASS`, or Gate2 evidence.
+The next authorized hardware action is the Qwen 1.5B P7 recovery packet. The reviewed workstation
+measurements must not be promoted to complete Gate1 candidate `PASS`, P4 `PASS`, or Gate2 evidence.

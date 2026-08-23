@@ -233,7 +233,16 @@ def main() -> int:
                 cancelled_at = time.monotonic()
                 send(process, {"type": "CANCEL", "protocol_version": PROTOCOL_VERSION,
                                "request_id": cancel_id})
-                cancelled = read_frame(process.stdout, CANCEL_BOUND_MS / 1000, validator)
+                try:
+                    cancelled = read_frame(
+                        process.stdout, config["cancel_timeout_ms"] / 1000, validator)
+                except SmokeFailure as error:
+                    if str(error) == "candidate frame timeout":
+                        raise SmokeFailure(
+                            "P6 cooperative cancel exceeded 500 ms; "
+                            "Conditional escalation requires P7"
+                        ) from error
+                    raise
                 cancel_ms = (time.monotonic() - cancelled_at) * 1000
                 report["probes"]["cancel_ms"] = round(cancel_ms, 3)
                 report["probes"]["cancelled"] = (
@@ -268,6 +277,10 @@ def main() -> int:
         report["violations"].append(str(error))
         report["result"], exit_code = "FAIL", 1
     finally:
+        if len(report["sessions"]) == SESSION_COUNT and not report["summary"]:
+            report["summary"] = measurement_summary(report["sessions"])
+        if "rss" in locals():
+            report["resources"]["peak_rss_kib"] = rss.peak_kib
         if not report["cleanup"]["waited"]:
             try:
                 report["cleanup"] = stop(process, term_timeout, kill_timeout)
