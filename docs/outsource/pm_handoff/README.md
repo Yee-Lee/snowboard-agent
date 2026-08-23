@@ -8,8 +8,7 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-001`（待建立） | AudioOutput adaptation 實作 SHA 交付 Audio POC | `CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001` | Audio M3 | `OPEN — AWAITING DEVELOPER IMPLEMENTATION` | 無；Developer 完成後 Designer 審查並建立 SHA delivery 文件交付 Audio |
-
+| 目前無待處理專案 | - | - | - | - | - |
 
 ---
 
@@ -78,7 +77,7 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 | [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW`](history/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) | LLM POC M2 ARM64 UTM Preflight Acceptance Request | 無 | **Resolved — exception accepted** | ACK: [`ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](../responses/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) |
 | [`CR-AUDIO-M3-RISK-FOCUSED-GATES-001`](history/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md) | Audio M3 Risk-Focused Qualification Gates | 無 | **Resolved — accepted with conditions; test packet pending on POC side** | Response: [`RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md`](../responses/RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md)；delivered to POC `pm_handoff/` |
 | [`PROPOSAL_AUDIO_001_M3_1_REMEDIATION`](history/PROPOSAL_AUDIO_001_M3_1_REMEDIATION.md) | Audio M3.1 Conditional Remediation Stage | 無 | **Resolved — framework conditionally accepted; activates only on confirmed M3 blocker** | Response: [`RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md`](../responses/RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md)；delivered to POC `pm_handoff/` |
-| [`CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001`](history/CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md) | Core AudioOutput 16kHz→48kHz adaptation（供 Audio POC M3 TTS playback） | 無 | **Response issued — Developer implementation in progress** | Response: [`RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md`](../responses/RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md)；SHA delivery pending |
+| [`CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001`](history/CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md) | Core AudioOutput 16kHz→48kHz adaptation（供 Audio POC M3 TTS playback） | 無 | **Resolved — implementation SHA delivered** | Response: [`RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md`](../responses/RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md)；Delivery: [`DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-001.md`](../deliveries/DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-001.md) |
 | [`RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001`](history/RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md) | LLM POC M4b conservative resource envelope | `M4A-G1-D04` | **Resolved — surrogate spec delivered to Audio POC** | Delivery: [`DELIVERY-P9-SURROGATE-SPEC-001.md`](../deliveries/DELIVERY-P9-SURROGATE-SPEC-001.md) |
 | [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`](history/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) | LLM POC M2 ARM64 UTM to Product Pi Transition Request | 無 | **Resolved — accepted with conditions; Pi transition authorized** | Response: [`ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md`](../responses/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md) |
 
