@@ -337,11 +337,14 @@
     "long_p8_packet_prepared": true,
     "long_prompt_comparison_planned": true,
     "p5_planned_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+    "p5_workaround_authority": "USER_APPROVED_CORE_APPROVAL_PENDING",
+    "p5_workaround_effective_timeout_ms": 1000,
+    "p5_workaround_packet_prepared": true,
     "p8_history_isolation_turns": 5,
     "p7_gemma_wrapper_prepared": true,
     "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "66/66 PASS",
+    "retained_and_arm64_tests": "72/72 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -352,7 +355,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "TWO_LITERTLM_P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL_QWEN05_DEFERRED",
-  "wip_lock_sha256": "b2a0d0b7fe503acc654e9a6fcc716ee3ce8e843503a03e8518ac45b51ca3fc6d",
+  "wip_lock_sha256": "699666a4a69e8c7dd252d96a730a494922adf66773bd90c2cc2b4eff9ecd7467",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

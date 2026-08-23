@@ -39,7 +39,7 @@ records no model text. A locked measurement runner now schedules exactly 10 sess
 and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
 model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
 single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
-pass (66/66). This scaffold does not alter frozen R5 or create candidate evidence.
+pass (72/72). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -198,6 +198,21 @@ This is an UTM-only ordering, not a Gate 1 proposed-finalist decision. Neither c
 called a finalist until mandatory P5 is resolved, Pi compatibility passes, and Core supplies the
 required written ACK. No third candidate is introduced; Qwen 0.5B remains deferred.
 
+## User-Approved P5 Workaround Preparation
+
+The user authorized a bounded workaround observation before Core review. The locked workaround
+authenticates the original 15-second strict config, runtime, model and canonical adapter, then uses
+an independent child that reuses the same `LiteRtBackend` and `Child` implementation while changing
+only `generate_timeout_ms` from `15000` to `1000`. The original config and canonical adapter are not
+modified. The timeout value is compiled into the workaround child and is not operator-selectable.
+
+Success requires a real LiteRT generation to return protocol `ERROR/TIMEOUT` in READY state between
+1000 and 6000 ms, followed by shutdown ACK, exit 0, no TERM/KILL and process-group absence. Even on
+success, the strict schema forces overall `INCONCLUSIVE` and contract P5 `INCONCLUSIVE`; only the
+workaround observation may be `PASS`. Authority is recorded as
+`USER_APPROVED_WORKAROUND_CORE_APPROVAL_PENDING`. This packet cannot be promoted without Core's
+written acceptance or a formal 15-second rerun.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -212,6 +227,7 @@ required written ACK. No third candidate is introduced; Qwen 0.5B remains deferr
 
 - P5 timeout remains inconclusive under the frozen 16-output-token envelope; resolving it requires
   an approved test envelope or another naturally slow preapproved fixture.
+- Execute and review the bounded user-approved P5 workaround; then request Core disposition.
 - Pi compatibility is not authorized or executed; no Gate 1 finalist ACK exists.
 - The bounded external handoff remains open.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
@@ -222,7 +238,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`b2a0d0b7fe503acc654e9a6fcc716ee3ce8e843503a03e8518ac45b51ca3fc6d`.
+`699666a4a69e8c7dd252d96a730a494922adf66773bd90c2cc2b4eff9ecd7467`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
