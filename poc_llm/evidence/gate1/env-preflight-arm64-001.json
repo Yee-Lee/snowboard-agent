@@ -1,0 +1,66 @@
+{
+  "attempts": [
+    {
+      "attempt_id": "ENV-UTM-ARM64-001-ATTEMPT-001",
+      "result": "INCONCLUSIVE",
+      "result_sha256": "4ada1894b6888d361384ff2c0ce0657c48133ae1302d617da358286cff3f1c0f",
+      "reason": "runner required loopback-only sysfs despite an isolated namespace with an empty route table"
+    },
+    {
+      "attempt_id": "ENV-UTM-ARM64-001-RERUN-001",
+      "result": "INCONCLUSIVE",
+      "result_sha256": "273b07c5667da5103006d878eb95f73e22fad32f96eb3e267c0b7459dc7c4272",
+      "reason": "runner rejected a completely empty /proc/net/route because it expected one header line"
+    },
+    {
+      "attempt_id": "ENV-UTM-ARM64-001-DIAGNOSTIC-001",
+      "authorization_scope": "USER_AUTHORIZED_DIAGNOSTIC",
+      "result": "PASS",
+      "result_sha256": "85102c8d88eaf3db89ecd8a01f931e15aca1720d6f3809c156569881b4e3212b",
+      "raw_log_sha256": "9662b7a5f92bb791d239c9a714ca0849e1ac018e95fff4fddaa043cb4ba684ce"
+    }
+  ],
+  "baseline_sha": "98a854a91f514efa12c3904576c2b652629e0bbd",
+  "candidate_evidence": false,
+  "environment": {
+    "glibc": "2.39",
+    "hardware_acceleration_authenticated": true,
+    "kernel_release": "6.8.0-117-generic",
+    "machine": "aarch64",
+    "os": "Ubuntu 24.04.4 LTS",
+    "python": "3.12.3",
+    "virtualization": "qemu"
+  },
+  "environment_digest_sha256": "54296b5f525ecff2447692ffd30483e40575dc61a686139af5fb1c34fd2172f9",
+  "environment_id": "ENV-UTM-ARM64-001",
+  "inputs": {
+    "adapter_binding_bundle": "native binding is embedded in the authenticated wheel; diagnostic lifecycle passed three repetitions",
+    "dependency_bundle": "empty Python Requires-Dist closure; system native linkage inspection passed during preparation",
+    "litert_lm_api_wheel": "authenticated",
+    "wheel_expected_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"
+  },
+  "network_used": false,
+  "packet_id": "GATE1-ENV-PREFLIGHT-ARM64-001",
+  "raw_path_created": true,
+  "retry_budget_remaining": 0,
+  "formal_packet_disposition": "CHANGE_REQUESTED",
+  "result": "PASS",
+  "result_scope": "USER_AUTHORIZED_DIAGNOSTIC",
+  "scope": "ARM64_ONLY",
+  "stages_executed": [
+    "environment_admission",
+    "artifact_presence_check",
+    "network_namespace_admission",
+    "offline_install",
+    "native_import_and_link_inspection",
+    "adapter_initialization",
+    "lifecycle_repetitions",
+    "run_owned_cleanup"
+  ],
+  "stages_not_executed": [
+    "model_load",
+    "generation",
+    "candidate_ranking"
+  ],
+  "violations": []
+}

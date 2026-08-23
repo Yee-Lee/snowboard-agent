@@ -88,8 +88,11 @@ Technical Lead review 順序為 SHA/environment/packet、artifact/fixture checks
 本節承接已歸檔的 [`commit_workflow_update.md`](pm_handoff/history/commit_workflow_update.md)。POC repo 是
 source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktree，不是開發來源。
 
-- 唯一開發、驗證與 milestone 交付 branch 是 `llm`；不得建立或推送其他 POC branch，
-  也不得 force-push `llm`。Workstation/Pi 均從 `origin/llm` 取得指定 exact SHA。
+- 預設唯一開發、驗證與 milestone 交付 branch 是 `llm`；不得 force-push。Core 以
+  `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001` 例外核准兩個 bounded remote tracks：
+  `wip/m2-arm64-preflight` 與 `wip/m2-x86_64-preflight`。只允許各自的 workstation scope，
+  不得 force-push、互相改寫 evidence或擴張至Pi/Gate 2。兩位owner回報且Technical Lead確認
+  sanitized merge boundary後，才可依User授權整合回`llm`；其他POC branch仍禁止。
 - Fast loop 原則上使用 working tree。必要的 WIP commit 必須保持 local、未 push、未送驗；
   在跨平台、硬體或 milestone review 前，將上一個 frozen SHA 之後的 WIP squash 成單一
   clean Candidate Commit。
