@@ -27,6 +27,7 @@ credit.
 | Packet manifest SHA-256 | `ebadd62016dcffe2f231d35d2bb505d76bcd67512640cf6e8e21e0ad30465c55` |
 | Core HAL execution SHA | `ff09199583644a8f0822153e371589f52ae821a0` |
 | Core HAL delivery | `DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002` |
+| Core P9 surrogate ACK SHA | `caf4f7ba867e4ebc1972df0ade86c605a873a286` |
 
 The submitted POC candidate SHA is immutable. Later Audio documentation commits do
 not replace it as the formal execution identity.
@@ -59,8 +60,9 @@ One ACK confirms all of the following, with no separate follow-up ACK required:
    `ff09199583644a8f0822153e371589f52ae821a0`.
 4. Audio may begin the packet's formal Pi execution; all gates, stop rules, User
    publication confirmation and M3.1 boundaries remain unchanged.
-5. P9 corrected ACK remains a separate non-blocking intake and is not needed for this
-   Audio M3 start authorization.
+5. Core P9 corrected ACK is already committed at
+   `caf4f7ba867e4ebc1972df0ade86c605a873a286`; no further P9 input is requested.
+   P9 remains outside this 22-result start packet and does not block M3 execution.
 
 Please commit exactly one response named `RESP-AUDIO-M3-PACKET-SIGNOFF-001.md` with
 status `ACKNOWLEDGED — FORMAL PI EXECUTION AUTHORIZED`, the packet/POC/Core identities
@@ -86,6 +88,12 @@ will remain stopped until the single ACK is committed and the Audio-created JSON
 passes the runner authorization guard. If Core cannot issue the ACK, return one
 consolidated response containing every blocking finding and its exact packet section;
 do not split findings across iterative handoffs.
+
+The immutable candidate manifest records the P9 intake state that existed when
+`655e80e...` was cut. Core's later `caf4f7b...` ACK closes that external prerequisite
+without changing the candidate source, packet gates or 22-result set. The exact P9
+artifact was already vendored and checksum-verified in the candidate; Audio owns its
+subsequent bounded execution and does not need another Core response.
 
 ## Responsibilities after ACK
 
