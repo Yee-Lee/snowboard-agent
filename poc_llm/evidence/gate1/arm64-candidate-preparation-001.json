@@ -17,7 +17,7 @@
       "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
       "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
       "size_bytes": 1597931520,
-      "status": "P4_PASS_P6_CONDITIONAL_P7_PASS",
+      "status": "P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL",
       "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
     },
     {
@@ -25,7 +25,7 @@
       "filename": "gemma-4-E2B-it.litertlm",
       "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
       "size_bytes": 2588147712,
-      "status": "P4_PASS_P6_NONDETERMINISTIC_P7_PASS",
+      "status": "P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_NONDETERMINISTIC",
       "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
     }
   ],
@@ -177,6 +177,52 @@
     },
     "schema_validation": "PASS"
   },
+  "long_p8_review": {
+    "execution_sha": "46de889dc4e0f9b04d0d76d6b3065f4ef586532a",
+    "gemma": {
+      "cleanup": "PASS",
+      "log_hygiene": "PASS",
+      "long_prefill_tokens": 106,
+      "long_prompt": "PASS",
+      "maximum_observed_wall_ms": 2220.974,
+      "p5_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+      "p8": "PASS",
+      "p8_decode_tps_p50": 22.425,
+      "p8_ttft_ms_p50": 352.371,
+      "p8_wall_ms_p50": 1025.431,
+      "result_sha256": "5b78ea1b30fd450ccec49305b75d174989943612b660139eb6c2e9a0779c23ee",
+      "stderr_sha256": "797cfedf5b15334c46ace710f98d2ef0bce5ef3c72fd92c35bac106486b7931b"
+    },
+    "qwen15": {
+      "cleanup": "PASS",
+      "log_hygiene": "PASS",
+      "long_prefill_tokens": 127,
+      "long_prompt": "PASS",
+      "maximum_observed_wall_ms": 2764.336,
+      "p5_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+      "p8": "PASS",
+      "p8_decode_tps_p50": 17.008,
+      "p8_ttft_ms_p50": 809.418,
+      "p8_wall_ms_p50": 1694.476,
+      "result_sha256": "c80f0dd520a88547bd98dfff1ef82ca449ddc28c62a45fa9a470eeb529801acb",
+      "stderr_sha256": "a1fbd00253a4b22a323c2a3b7aba7c45bec54e6267eb80cb8c5a772d29bc2d2e"
+    },
+    "log_hygiene_scanner_version": "1.0.0",
+    "schema_validation": "2/2 PASS"
+  },
+  "arm64_prescreen_comparison": {
+    "disposition": "UTM_RANKING_ONLY_NOT_GATE1_FINALIST",
+    "primary_for_next_authorized_evaluation": "CAND-LRT-G4E2B-MOBILE-R1",
+    "primary_reason": "LOWER_TTFT_AND_WALL_TIME_HIGHER_DECODE_THROUGHPUT",
+    "secondary_for_next_authorized_evaluation": "CAND-LRT-Q25-15B-Q8-R1",
+    "secondary_reason": "SMALLER_COMBINED_ARTIFACT",
+    "shared_blockers": [
+      "P5_INCONCLUSIVE",
+      "P6_CONDITIONAL_ESCALATION",
+      "NO_PI_COMPATIBILITY_PASS",
+      "NO_CORE_FINALIST_ACK"
+    ]
+  },
   "model_execution_performed": true,
   "model_smoke_attempts": [
     {
@@ -305,7 +351,7 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "TWO_LITERTLM_P4_P7_PASS_P6_CONDITIONAL_QWEN05_DEFERRED",
+  "result": "TWO_LITERTLM_P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL_QWEN05_DEFERRED",
   "wip_lock_sha256": "b2a0d0b7fe503acc654e9a6fcc716ee3ce8e843503a03e8518ac45b51ca3fc6d",
   "wip_manifest_projections": {
     "authenticated": 3,

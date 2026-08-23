@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `TWO LITERTLM P4 + P7 PASS / P6 CONDITIONAL / QWEN 0.5B DEFERRED`
+- **Status**: `TWO LITERTLM P4 + P7 + P8 PASS / P5 INCONCLUSIVE / P6 CONDITIONAL / QWEN 0.5B DEFERRED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -169,9 +169,34 @@ shutdown plus process-group absence. Qwen 0.5B and x86 inputs remain excluded.
 The frozen strict config permits only 16 output tokens and the observed model generations complete
 far below the 15-second generation timeout. This packet therefore records P5 as
 `INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE` unless a real timeout occurs; it does not manufacture a
-timeout or weaken the frozen config. The batch result is consequently expected to be overall
-`INCONCLUSIVE` while long-prompt and P8 can independently pass. Hardware execution has not yet
-occurred for this packet.
+timeout or weaken the frozen config. The batch result is consequently overall `INCONCLUSIVE` while
+long-prompt and P8 independently pass.
+
+Execution SHA `46de889dc4e0f9b04d0d76d6b3065f4ef586532a` completed both candidates in the
+offline namespace. Both strict results validate, returned exit 0, passed long-prompt and all P8
+stability invariants, acknowledged shutdown, exited without TERM/KILL and left no process group.
+The frozen runner-owned log scanner reviewed `10643` Qwen stderr bytes and `13480` Gemma stderr
+bytes with no forbidden sentinel hits; candidate hygiene claims were not trusted.
+
+| Candidate | Long prefill | P8 TTFT P50 | P8 decode P50 | P8 wall P50 | Result SHA-256 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Qwen2.5 1.5B | `127` | `809.418 ms` | `17.008 tok/s` | `1694.476 ms` | `c80f0dd520a88547bd98dfff1ef82ca449ddc28c62a45fa9a470eeb529801acb` |
+| Gemma 4 E2B | `106` | `352.371 ms` | `22.425 tok/s` | `1025.431 ms` | `5b78ea1b30fd450ccec49305b75d174989943612b660139eb6c2e9a0779c23ee` |
+
+P5 remains `INCONCLUSIVE`: the maximum observed wall time was `2764.336 ms` for Qwen and
+`2220.974 ms` for Gemma, far below the frozen 15-second timeout. This is a missing mandatory proof,
+not a candidate runtime failure.
+
+## ARM64 UTM Pre-Screen Comparison
+
+Gemma ranks first for the next authorized evaluation because it has substantially lower TTFT and
+wall time and higher decode throughput across both P4 and P8. Qwen ranks second and retains value as
+the smaller deployment artifact (`1644017274` versus `2634233466` combined bytes). Their measured
+peak process RSS is nearly equal, and both carry P6 conditional escalation backed by P7 recovery.
+
+This is an UTM-only ordering, not a Gate 1 proposed-finalist decision. Neither candidate may be
+called a finalist until mandatory P5 is resolved, Pi compatibility passes, and Core supplies the
+required written ACK. No third candidate is introduced; Qwen 0.5B remains deferred.
 
 ## Provenance and License Preparation
 
@@ -185,10 +210,10 @@ occurred for this packet.
 
 ## Remaining Gate1 Work
 
-- Execute and review the locked long-prompt/P8 batch for both active candidates.
 - P5 timeout remains inconclusive under the frozen 16-output-token envelope; resolving it requires
   an approved test envelope or another naturally slow preapproved fixture.
-- Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
+- Pi compatibility is not authorized or executed; no Gate 1 finalist ACK exists.
+- The bounded external handoff remains open.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
 
 ## Immutable WIP Candidate Inputs
@@ -209,6 +234,6 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next bounded hardware work is the prepared long-prompt/P8 batch, followed by the ARM64 finalist
-comparison. P5 remains explicitly inconclusive under the frozen envelope. The reviewed workstation
-proofs must not be promoted to Pi or Gate2 evidence.
+The next bounded work is to resolve P5 through an approved envelope or fixture and prepare the
+bounded ARM64 pre-screen handoff. Pi compatibility still requires separate authorization. The
+reviewed workstation proofs must not be promoted to Pi or Gate2 evidence.
