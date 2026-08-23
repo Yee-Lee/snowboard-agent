@@ -8,7 +8,8 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| — | 目前無 Open task / request | — | — | — | — |
+| [`REQUEST-LLM-POC-P9-SURROGATE-ENVELOPE-001`](../deliveries/REQUEST-LLM-POC-P9-SURROGATE-ENVELOPE-001.md) | LLM POC M4b Pi 5 resource envelope（供 Core 建立 P9 surrogate） | `M4A-G1-D04` | Audio M4 / M4A-P9 | `OPEN — AWAITING LLM POC RESPONSE` | 無；Core 收到回覆後建立 `DELIVERY-P9-SURROGATE-SPEC-001` 交付 Audio |
+
 
 ---
 
@@ -75,6 +76,8 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 | [`DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW`](history/DELIVERY-008-PM-LLM-POC-M2-GATE1-R5-REVIEW.md) | LLM POC M2 Gate 1 R5 Exact-SHA Review Request | 無 | **Superseded by DELIVERY-009** | Held for Dual-UTM preflight |
 | [`DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT`](history/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md) | LLM POC M2 Dual-UTM Environment Preflight Change Request | 無 | **Resolved — preflight authorized** | ACK: [`ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md`](../responses/ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md) |
 | [`DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW`](history/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md) | LLM POC M2 ARM64 UTM Preflight Acceptance Request | 無 | **Resolved — exception accepted** | ACK: [`ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md`](../responses/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md) |
+| [`CR-AUDIO-M3-RISK-FOCUSED-GATES-001`](history/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md) | Audio M3 Risk-Focused Qualification Gates | 無 | **Resolved — accepted with conditions; test packet pending on POC side** | Response: [`RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md`](../responses/RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md)；delivered to POC `pm_handoff/` |
+| [`PROPOSAL_AUDIO_001_M3_1_REMEDIATION`](history/PROPOSAL_AUDIO_001_M3_1_REMEDIATION.md) | Audio M3.1 Conditional Remediation Stage | 無 | **Resolved — framework conditionally accepted; activates only on confirmed M3 blocker** | Response: [`RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md`](../responses/RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md)；delivered to POC `pm_handoff/` |
 
 ---
 
@@ -111,5 +114,7 @@ docs/outsource/pm_handoff/
     ├── PM-OUT-260817-014-local-hardware-test-gate-reform/
     ├── PM-OUT-260818-017-m4b-early-memory-preflight/
     ├── PM-OUT-260818-018-m4-portable-gate-cost-correction/
-    └── PM-OUT-260819-019-audio-asr-recovery-gate/
+    ├── PM-OUT-260819-019-audio-asr-recovery-gate/
+    ├── CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md
+    └── PROPOSAL_AUDIO_001_M3_1_REMEDIATION.md
 ```
