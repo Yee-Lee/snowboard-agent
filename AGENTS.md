@@ -56,6 +56,7 @@ the local context file.
 - M4b is the target LLM delivery milestone. Treat `docs/milestone/README.md` as the single source of truth.
 - Before doing work, identify which final checklist item it advances. Do not do work with no delivery contribution.
 - Hardware results are `PASS`, `FAIL`, or `INCONCLUSIVE` only after evidence is reviewed.
+- **Before publishing any benchmark results or candidate proposals, they MUST be reviewed and approved by the User.**
 - Keep POC orchestration out of the product composition root. Do not add unrelated product features.
 - Do not commit models, large results, private prompts, secrets, or sensitive data.
 - At every milestone gate, update the milestone index, risks, and adjustment requests.
