@@ -4,7 +4,7 @@
 風險的唯一狀態入口。External Gate 由合約 owner/recorder 關閉；Internal Milestone
 由 POC workflow 的 entry/exit review 控制，兩者不得共用狀態。
 
-最後更新：2026-08-22
+最後更新：2026-08-23
 
 ## Current Delivery Reachability
 
@@ -95,6 +95,11 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
   `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CHANGE-ACK-001` 批准；只授權 repository packet
   revision 與 deterministic regressions。Gate 1 Pi try-run 不計 Gate 2A credit，Gate 2A
   仍須 `swap=0`、新 packet/run/namespace 完整重跑。
+- **Pending adjustment — ARM64 to product Pi transition**：User要求以已完成的ARM64 UTM
+  candidate pre-screen作為主要workstation工程輸入，waive未完成的x86_64 WIP與雙branch merge
+  boundary，固定Gemma/Qwen 1.5B最多兩名後把其餘mandatory gates移至產品Pi獨立重跑。
+  `DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`已記錄完整identity、結果、runner lessons
+  與Pi entry checklist。Core尚未核准，因此現有M2/Gate 1狀態、Pi execution block及R5 hold不變。
 
 ## Gate 0 R2 Submission Package
 
@@ -111,6 +116,7 @@ M4B-P1～P12、owner、delivery item 與 evidence 狀態的唯一 crosswalk 見
 - [Dual UTM preflight adjustment request](../delivery/DELIVERY-009-PM-LLM-POC-M2-DUAL-UTM-PREFLIGHT.md)
 - [ARM64 preflight diagnostic review](../delivery/DELIVERY-010-PM-LLM-POC-M2-ARM64-PREFLIGHT-DIAGNOSTIC-REVIEW.md)
 - [Core ARM64 diagnostic and continuation ACK](../pm_handoff/ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md)
+- [ARM64 UTM to product Pi transition request and experience handoff](../delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md)
 - [M0 test request](../../poc_llm/tests/m0/M0-TEST-REQUEST-001.md)
 
 ## Governing Documents

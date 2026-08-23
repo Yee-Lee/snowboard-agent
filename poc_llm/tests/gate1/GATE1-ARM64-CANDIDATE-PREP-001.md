@@ -248,8 +248,13 @@ P5 remains `INCONCLUSIVE` pending Core disposition.
   an approved test envelope or another naturally slow preapproved fixture.
 - Request Core disposition for the successful bounded P5 workaround observation.
 - Pi compatibility is not authorized or executed; no Gate 1 finalist ACK exists.
-- The bounded external handoff remains open.
+- The bounded external handoff is prepared and pending Core disposition.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
+
+The handoff is `DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`. It requests the x86/merge-boundary
+waiver, freezes Gemma and Qwen 1.5B as the maximum-two Pi compatibility inputs, and carries all
+identities, sanitized result hashes, API/runner lessons and Pi entry checks needed without UTM
+raw-history lookup. It does not authorize Pi execution.
 
 ## Immutable WIP Candidate Inputs
 
@@ -269,6 +274,6 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next bounded work is to resolve P5 through an approved envelope or fixture and prepare the
-bounded ARM64 pre-screen handoff. Pi compatibility still requires separate authorization. The
-reviewed workstation proofs must not be promoted to Pi or Gate2 evidence.
+The next bounded work is to submit the prepared transition handoff for Core disposition, resolve P5
+through an approved envelope/fixture or written exception, and obtain separate Pi compatibility
+authorization. The reviewed workstation proofs must not be promoted to Pi or Gate2 evidence.

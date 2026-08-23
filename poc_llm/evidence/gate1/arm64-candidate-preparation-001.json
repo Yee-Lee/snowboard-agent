@@ -251,6 +251,17 @@
       "NO_CORE_FINALIST_ACK"
     ]
   },
+  "pi_transition_handoff": {
+    "delivery_id": "DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION",
+    "gate2_evidence_carry_over": false,
+    "maximum_two_pi_inputs": [
+      "CAND-LRT-G4E2B-MOBILE-R1",
+      "CAND-LRT-Q25-15B-Q8-R1"
+    ],
+    "pi_execution_authorized": false,
+    "requested_scope": "WAIVE_X86_WIP_AND_MOVE_REMAINING_MANDATORY_GATES_TO_PI",
+    "status": "PENDING_CORE_DISPOSITION"
+  },
   "model_execution_performed": true,
   "model_smoke_attempts": [
     {
