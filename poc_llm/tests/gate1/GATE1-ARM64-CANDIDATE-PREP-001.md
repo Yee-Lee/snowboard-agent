@@ -3,19 +3,20 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `THREE MODEL SMOKES FAIL / SYNC API CORRECTION PREPARED`
+- **Status**: `TWO LITERTLM MODEL SMOKES PASS / QWEN 0.5B DEFERRED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
 
 The controlled Git-ignored bundle contains all three proposed models and the previously
-authenticated LiteRT-LM ARM64 API wheel. No model was loaded and no candidate result was produced.
+authenticated LiteRT-LM ARM64 API wheel. Model smoke execution has occurred, but no complete Gate1
+candidate result has been produced.
 
 | Item | Frozen identity | Preparation result |
 | --- | --- | --- |
-| Model | `CAND-LRT-Q25-05B-Q8-R1`; upstream revision `6c237a59eedeb06a821b21f0a59b03d346ac8bc3`; `Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task` | size `546660344`; SHA-256 `e608953f169aeb1bd7b9155fec2559825e08453fc209b84eda3a781ed0452fd2` authenticated |
-| Model | `CAND-LRT-Q25-15B-Q8-R1`; upstream revision `19edb84c69a0212f29a6ef17ba0d6f278b6a1614`; `Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm` | size `1597931520`; SHA-256 `faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9` authenticated |
-| Model | `CAND-LRT-G4E2B-MOBILE-R1`; upstream revision `6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94`; `gemma-4-E2B-it.litertlm` | size `2588147712`; SHA-256 `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` authenticated |
+| Model | `CAND-LRT-Q25-05B-Q8-R1`; upstream revision `6c237a59eedeb06a821b21f0a59b03d346ac8bc3`; `Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task` | authenticated; `DEFERRED` because the MediaPipe `.task` container is not generation-compatible with LiteRT-LM v0.16 Engine/Conversation |
+| Model | `CAND-LRT-Q25-15B-Q8-R1`; upstream revision `19edb84c69a0212f29a6ef17ba0d6f278b6a1614`; `Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm` | authenticated; model smoke `PASS` |
+| Model | `CAND-LRT-G4E2B-MOBILE-R1`; upstream revision `6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94`; `gemma-4-E2B-it.litertlm` | authenticated; model smoke `PASS` |
 | Runtime | `litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl` | SHA-256 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` authenticated by accepted preflight |
 
 ## Capacity and Resumable Acquisition Checkpoint
@@ -65,7 +66,20 @@ composed native streaming callback error.
 The pinned LiteRT-LM v0.16.0 official Python example uses synchronous `send_message()`. The adapter
 now follows that API while retaining generation in its worker thread and control-thread
 `cancel_process()` for cancellation and timeout. A regression test rejects accidental async-stream
-use. This correction requires a fresh-path rerun under a new immutable execution SHA.
+use. A fourth Qwen 0.5B run reached READY but the synchronous C API returned its fixed
+`litert_lm_conversation_send_message failed` error. The `.task` begins with a ZIP container marker,
+whereas both successful candidates carry the `LITERTLM` container magic. Qwen 0.5B is therefore
+deferred until a native `.litertlm` artifact or approved conversion flow is available.
+
+## Successful Native `.litertlm` Smokes
+
+| Candidate | Startup to READY | Generation | Shutdown and cleanup | Result |
+| --- | ---: | ---: | --- | --- |
+| Qwen2.5 1.5B | `6673.523 ms` | `1790.669 ms` | ACK; exit 0; no TERM/KILL; process group absent | `PASS` |
+| Gemma 4 E2B | `8584.138 ms` | `1754.206 ms` | ACK; exit 0; no TERM/KILL; process group absent | `PASS` |
+
+These wall-clock smoke timings are promising feasibility signals on the 4-vCPU/4-GB UTM guest.
+They do not establish TTFT, tokens/second, output-token count, peak RSS, long-input behavior or P4.
 
 ## Provenance and License Preparation
 
@@ -77,10 +91,13 @@ use. This correction requires a fresh-path rerun under a new immutable execution
   cards declare `license: apache-2.0`; sanitized hashes and base-model identities are recorded in
   `arm64-model-license-metadata-v1.json`.
 
-## Missing Immutable Inputs
+## Remaining Gate1 Work
 
-- Fresh raw path, operator binding and immutable execution SHA for model-backed execution.
-- Model-backed adapter lifecycle evidence; current adapter tests are synthetic only.
+- Model-backed cold/hot TTFT, tokens/second, output-token count, peak RSS and disk measurements.
+- Longer fixed prompt, timeout, cancel, BUSY, failure recovery and rebuild probes.
+- At least 20 combined sessions across the two active `.litertlm` candidates.
+- Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
+- Qwen 0.5B remains deferred and does not block the two active candidates.
 
 ## Immutable WIP Candidate Inputs
 
@@ -100,6 +117,5 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-Until these inputs are committed and self-tested, model load, generation, performance measurement
-and candidate evidence are prohibited. The next session resumes from this checkpoint; it must not
-silently treat artifact acquisition or the accepted environment preflight as a candidate `PASS`.
+The next round advances only Qwen 1.5B and Gemma into bounded Gate1 measurement. These model-smoke
+passes must not be promoted to complete Gate1 candidate `PASS`, P4 `PASS`, or Gate2 evidence.
