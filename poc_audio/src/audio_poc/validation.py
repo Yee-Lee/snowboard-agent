@@ -375,6 +375,54 @@ def validate_m4a_tts_lifecycle(document: dict[str, Any]) -> None:
         raise ValueError("M4a TTS lifecycle cleanup flag disagrees with counters")
 
 
+def validate_m4a_tts_offline(document: dict[str, Any]) -> None:
+    """Validate a Matcha inference executed with networking actually disabled."""
+
+    required = {
+        "schema_version", "report_id", "generated_at_utc", "poc_source_sha",
+        "candidate_id", "platform", "scope", "prompt_identity", "offline_run",
+        "network_evidence", "security", "execution_status", "cleanup",
+    }
+    _require_keys(document, required, "M4a TTS offline")
+    if document["schema_version"] != "1.0" or document["report_id"] != "M4A-G1B-WP3-MATCHA-OFFLINE":
+        raise ValueError("M4a TTS offline identity is invalid")
+    if not GIT_SHA_RE.fullmatch(str(document["poc_source_sha"])):
+        raise ValueError("M4a TTS offline source SHA is invalid")
+    if document["candidate_id"] != "tts-sherpa-matcha-zh-en-1.13.5":
+        raise ValueError("M4a TTS offline candidate scope is invalid")
+    if document["scope"] != "MATCHA_NETWORK_DISABLED_INFERENCE_NO_PLAYBACK":
+        raise ValueError("M4a TTS offline scope is invalid")
+    if document["execution_status"] not in {"P12_PASS", "P12_FAIL_RETAINED"}:
+        raise ValueError("M4a TTS offline execution status is invalid")
+    run = document["offline_run"]
+    network = document["network_evidence"]
+    interfaces = network.get("interfaces")
+    topology_disabled = (
+        isinstance(interfaces, list)
+        and len(interfaces) == 1
+        and interfaces[0].get("ifname") == "lo"
+        and interfaces[0].get("operstate") != "UP"
+    )
+    if document["execution_status"] == "P12_PASS" and (
+        run.get("terminal_status") != "SUCCESS"
+        or run.get("cleanup", {}).get("clean") is not True
+        or network.get("network_disabled") is not True
+        or network.get("zero_network_syscalls") is not True
+        or network.get("network_syscall_line_count") != 0
+        or not topology_disabled
+    ):
+        raise ValueError("M4a TTS P12 PASS disagrees with disabled-network evidence")
+    if document["security"] != {"pcm_emitted": False, "audio_device_opened": False, "speaker_playback": False}:
+        raise ValueError("M4a TTS offline no-playback boundary is invalid")
+    cleanup = document["cleanup"]
+    _require_keys(cleanup, {"child_processes", "threads", "iterators", "streams", "device_owners", "clean"}, "M4a TTS offline cleanup")
+    counters_clean = all(cleanup[name] == 0 for name in (
+        "child_processes", "threads", "iterators", "streams", "device_owners"
+    ))
+    if cleanup["clean"] != counters_clean:
+        raise ValueError("M4a TTS offline cleanup flag disagrees with counters")
+
+
 def validate_candidate_manifest(document: dict[str, Any], repo_root: Path) -> None:
     _require_keys(
         document,

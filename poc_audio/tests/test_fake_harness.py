@@ -77,6 +77,7 @@ from audio_poc.validation import (  # noqa: E402
     validate_m4a_candidate_smoke,
     validate_m4a_qualification,
     validate_m4a_tts_lifecycle,
+    validate_m4a_tts_offline,
     validate_m4a_runtime_preflight,
     validate_m4a_conformance_result,
     validate_run_result,
@@ -375,6 +376,32 @@ class TrackedDocumentTests(unittest.TestCase):
         self.assertTrue(stop_group(stubborn, grace_seconds=0.05))
         stubborn.stdout.close()
         self.assertFalse(process_group_alive(stubborn.pid))
+
+    def test_tts_offline_validator_requires_disabled_topology_and_zero_syscalls(self) -> None:
+        report = {
+            "schema_version": "1.0",
+            "report_id": "M4A-G1B-WP3-MATCHA-OFFLINE",
+            "generated_at_utc": "2026-08-23T00:00:00Z",
+            "poc_source_sha": "0" * 40,
+            "candidate_id": "tts-sherpa-matcha-zh-en-1.13.5",
+            "platform": {},
+            "scope": "MATCHA_NETWORK_DISABLED_INFERENCE_NO_PLAYBACK",
+            "prompt_identity": {"fixture_id": "tts-001", "prompts_sha256": "1" * 64},
+            "offline_run": {"terminal_status": "SUCCESS", "cleanup": {"clean": True}},
+            "network_evidence": {
+                "network_disabled": True,
+                "zero_network_syscalls": True,
+                "network_syscall_line_count": 0,
+                "interfaces": [{"ifname": "lo", "operstate": "DOWN", "flags": ["LOOPBACK"]}],
+            },
+            "security": {"pcm_emitted": False, "audio_device_opened": False, "speaker_playback": False},
+            "execution_status": "P12_PASS",
+            "cleanup": {"child_processes": 0, "threads": 0, "iterators": 0, "streams": 0, "device_owners": 0, "clean": True},
+        }
+        validate_m4a_tts_offline(report)
+        report["network_evidence"]["interfaces"][0]["operstate"] = "UP"
+        with self.assertRaisesRegex(ValueError, "disabled-network evidence"):
+            validate_m4a_tts_offline(report)
 
     def test_runtime_preflight_validator_rejects_inference_claim(self) -> None:
         report = {
