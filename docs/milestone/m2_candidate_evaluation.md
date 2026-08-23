@@ -1,8 +1,8 @@
 # M2：VAD、ASR、TTS 隔離候選比較
 
-狀態：`GATE_REVIEW`
+狀態：`COMPLETE`
 
-Gate 狀態：`ASR/TTS ACCEPTED FOR M3 / SILERO CONDITIONAL FINALIST PROPOSED / CORRECTED M3 ENTRY LOCK SUBMITTED / CLOSURE REVIEW PENDING`
+Gate 狀態：`ASR/TTS/VAD ACCEPTED FOR M3 / M3 ENTRY LOCK CONFIRMED / M2 CLOSED`
 
 ## 目標
 
@@ -36,9 +36,9 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | 工作流 | 狀態 | 現行邊界 |
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
-| M2B ASR optimization | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback 與固定 prompt recipe；C dev/holdout、audit、raw/adjusted scoring、成本及 Common Voice regression 均保留 |
-| TTS Matcha qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；legal limitation 阻擋 redistribution/product/final-winner，不阻擋 internal POC advance |
-| VAD candidate evaluation | `GATE_REVIEW / SILERO CONDITIONAL FINALIST PROPOSED` | 舊 no-go 因方法缺陷撤回；corrected WebRTC 不前進，corrected Silero end/noise/cleanup bounded，但低音量句首 retention 留為 M3 target-mic blocker，不作 tuning matrix |
+| M2B ASR optimization | `COMPLETE / ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback 與固定 prompt recipe；C dev/holdout、audit、raw/adjusted scoring、成本及 Common Voice regression 均保留 |
+| TTS Matcha qualification | `COMPLETE / M3 FINALIST` | lifecycle、network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；legal limitation 阻擋 redistribution/product/final-winner，不阻擋 internal POC advance |
+| VAD candidate evaluation | `COMPLETE / SILERO CONDITIONAL FINALIST` | 舊 no-go 因方法缺陷撤回；corrected WebRTC 不前進，corrected Silero end/noise/cleanup bounded，但低音量句首 retention 留為 M3 target-mic blocker，不作 tuning matrix |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
 及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
@@ -241,8 +241,7 @@ candidate-specific provisional integration；production dependency lock 必須�
   lifecycle 與高風險 resource observations 齊全，legal limitation 已明列。完整 20-prompt
   與 combined resource validation 留給 M3/M4 finalist。
 - VAD authorized rows、corrected method、exact profile 與 bounded scorecard 已完成；
-  WebRTC 不前進，Silero conditional finalist 與低音量 M3 blocker 已提交，但尚待
-  Reviewer/Designer 接受，未將 frozen start gate 回溯重標為 `PASS`。
+  WebRTC 不前進，Silero conditional finalist 與低音量 M3 blocker 已提交並獲 Reviewer/Designer 接受。未將 frozen start gate 回溯重標為 `PASS`。
 - M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
   traceability 可由 committed full SHA 定位。
 

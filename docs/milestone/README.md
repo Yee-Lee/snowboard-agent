@@ -52,7 +52,7 @@ Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完�
 此 external regression 不隱藏。User audio review 發現一筆 frozen reference mismatch；
 append-only erratum 已套用且原始 evidence 保留。24 筆 blind-first audit 已完成：23 筆
 label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending findings；
-bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
+ bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
 small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
 conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
 boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 triggered Silero
@@ -61,15 +61,16 @@ boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 t
 startup mask、500/600 ms capture padding 與 pause-one-utterance 語意後，corrected WebRTC
 fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/noise activation
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
-現提出 Silero conditional M3 finalist 與 target-mic blocker。Corrected M3 entry lock 已提交，
-等待 closure review；最終交付維持 `AT_RISK`，M3 不得開始。
+提出 Silero conditional M3 finalist 與 target-mic blocker。
+
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。最終交付維持 `AT_RISK`（Matcha legal 與 Silero target-mic start-retention risk 尚未關閉），M3 轉為 `PLANNED`。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `GATE_REVIEW` | ASR/TTS 已接受；舊 VAD no-go 撤回，Silero conditional finalist 與 corrected M3 entry lock 已提交，等待 closure review | [M2](m2_candidate_evaluation.md) |
-| M3 | `NOT_STARTED` | Pi 5/M3 Audio HAL qualification；等待 M2 comparative provisional selection 與完整進場條件 | [M3](m3_real_hardware_integration.md) |
+| M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
+| M3 | `PLANNED` | Pi 5/M3 Audio HAL qualification；根據 M3-ENTRY-LOCK-002 準備開始實機驗證 | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
@@ -77,9 +78,9 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 | Substage / parallel track | 狀態 | Exit contribution |
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
-| M2B Optimization Feasibility | `ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
-| Matcha TTS qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
-| VAD scope and evaluation | `GATE_REVIEW / SILERO CONDITIONAL FINALIST PROPOSED` | Corrected Silero start/end retention 78%/98%、silence/noise activation 1/10 分鐘；低音量句首漏字保留為 M3 target-mic blocker，不增加 tuning matrix |
+| M2B Optimization Feasibility | `COMPLETE / ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
+| Matcha TTS qualification | `COMPLETE / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
+| VAD scope and evaluation | `COMPLETE / SILERO CONDITIONAL FINALIST` | Corrected Silero start/end retention 78%/98%、silence/noise activation 1/10 分鐘；低音量句首漏字保留為 M3 target-mic blocker，不增加 tuning matrix |
 
 ## Core M4a Contract Mapping
 
@@ -90,18 +91,14 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 | Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
 | M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
 | M2B：optimization feasibility | `ACCEPTED FOR M3` — Reviewer 接受 base Q8 primary、small Q8 fallback 與 prompt recipe；完整 delta/regression 保留，不是 production lock |
-| Gate 2A：POC qualification/selection | `IN PROGRESS` — Matcha TTS 已有 M3 finalist disposition；仍須完成 M2A/M2B review、VAD 路徑與 M3 target/HAL qualification，才能形成完整 qualified selection |
+| Gate 2A：POC qualification/selection | `COMPLETE FOR M3` — ASR, TTS, VAD 皆已完成評估並指定 M3 finalist；完整 qualified selection 仍待 M3 target/HAL qualification 完成。 |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
 
-- `NEXT`：Reviewer/Designer 審查 corrected VAD method/evidence、Silero conditional
-  finalist 與 `M3-ENTRY-LOCK-002`；不再執行 M2 VAD row，不默認開始 M3。
-- `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
-- `BLOCKER`：corrected VAD method、Silero conditional advance 與 M3 exact HAL
-  SHA/lifecycle retest packet 已提交，但尚未取得 closure response；M2 不能標為
-  complete，M3 維持 not started。
+- `NEXT`：根據 `M3-ENTRY-LOCK-002`，開始 M3 (Pi 5 + pinned M3 Audio HAL) 實機驗證。
+- `BLOCKER`：目前沒有 M3 entry blocker。M2 已正式關閉。
 - `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
   M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
   clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。
