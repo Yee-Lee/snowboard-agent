@@ -64,7 +64,7 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。最終交付維持 `AT_RISK`（Matcha legal 與 Silero target-mic start-retention risk 尚未關閉），M3 轉為 `PLANNED`。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有 M3 發現 evidence-backed blocker 後才可另行啟動。最終交付維持 `AT_RISK`（Matcha legal 與 Silero target-mic start-retention risk 尚未關閉），M3 維持 `PLANNED`。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
@@ -98,11 +98,22 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `NEXT`：Core/Designer 審查
-  `CR-AUDIO-M3-RISK-FOCUSED-GATES-001`；核准並固定 exact M3 test packet 後，才依
-  `M3-ENTRY-LOCK-002` 開始 Pi 5 + pinned M3 Audio HAL 實機驗證。
-- `BLOCKER`：M2 已正式關閉；M3 qualification gate 修正尚待 Core/Designer 書面
-  disposition，回覆前不得執行 formal M3 hardware qualification。
+- `NEXT`：User 已核准 `M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001`；完成 runner、
+  local fake validation 與 exact candidate SHA 後提交 Core Designer sign-off。sign-off
+  前不得執行 formal M3 hardware qualification。
+- `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
+  HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
+  portable suite 176 項通過。Core output adaptation 已固定為
+  `ff09199583644a8f0822153e371589f52ae821a0`；下一步切 POC execution SHA 並送 Core
+  packet sign-off。
+- `CLOSED BLOCKER`：Core 已在 AudioOutput 內完成 16 kHz mono S16_LE → 48 kHz
+  stereo S32_LE adaptation；User 接受剩餘 Core test coverage 為非阻塞風險。POC 不增加
+  自有 resampler，formal hardware execution 仍等待 packet sign-off。
+- `ARTIFACT RECEIVED / CORE ACK PENDING / NON-BLOCKING FOR AUDIO M3`：已收到固定
+  `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum，附件 regression
+  6 項通過。等待 Core corrected ACK 後才整合/執行 P9；不阻擋 M3，也不產生 LLM credit。
+- `CONTINGENCY`：M3.1 framework 已條件式接受；只有可重現 hard-gate finding、明確
+  root-cause evidence 與 Core 事前核准的一個 minimal remediation 同時具備才啟動。
 - `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
   M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
   clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。

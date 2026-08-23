@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001",
+  "status": "USER_APPROVED_CORE_SIGNOFF_PENDING",
+  "authority": {
+    "core_response": "RESP-AUDIO-M3-RISK-FOCUSED-GATES-001",
+    "entry_lock": "M3-ENTRY-LOCK-002",
+    "user_approved_date": "2026-08-23",
+    "formal_execution_authorized": false
+  },
+  "source": {
+    "branch": "audio",
+    "parent_sha": "7b674f50dcd581298613d947b874f7b6c5da332d",
+    "execution_sha": null,
+    "poc_option_a_validation_sha": "de3b0bab4daaf47f62956d4b27f6697b3d4fa823",
+    "core_hal_previous_accepted_sha": "5c9e5aac47e7f4f0dd168d8c75541438ee74f858",
+    "core_hal_previous_acceptance_sha": "2fb2e18f934c3d06392074adba3c4518402101e9",
+    "core_hal_execution_sha": "ff09199583644a8f0822153e371589f52ae821a0",
+    "core_hal_change_request": "CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001"
+  },
+  "fixtures": {
+    "recording_plan_sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
+    "tts_prompt_sha256": "1f9699344394e718fa0d30fb24df3219407680268340418e564c70cc13007739",
+    "vad": [
+      ["M3-VAD-01", "normal_conversational_start", "asr-clear-002"],
+      ["M3-VAD-02", "low_volume_start", "asr-clear-003"],
+      ["M3-VAD-03", "natural_pause", "asr-pause-031"],
+      ["M3-VAD-04", "steady_silence", "controlled-silence-60s"],
+      ["M3-VAD-05", "mechanical_device_start", "controlled-device-start-10s"],
+      ["M3-VAD-06", "object_impact", "controlled-impact-10s"],
+      ["M3-VAD-07", "cough", "controlled-cough-10s"],
+      ["M3-VAD-08", "playback_speech", "tts-003"]
+    ],
+    "asr": [
+      ["M3-ASR-01", "normal_taiwan_mandarin", "asr-clear-002"],
+      ["M3-ASR-02", "low_volume_start", "asr-clear-003"],
+      ["M3-ASR-03", "natural_pause", "asr-pause-031"],
+      ["M3-ASR-04", "code_switch", "asr-clear-012"],
+      ["M3-ASR-05", "domain_term", "asr-clear-023"]
+    ],
+    "tts": [
+      ["M3-TTS-01", "tts-001"],
+      ["M3-TTS-02", "tts-005"],
+      ["M3-TTS-03", "tts-009"],
+      ["M3-TTS-04", "tts-013"],
+      ["M3-TTS-05", "tts-014"],
+      ["M3-TTS-06", "tts-017"]
+    ]
+  },
+  "candidates": {
+    "vad": {
+      "id": "vad-silero-onnx-6.2.1",
+      "implementation_sha": "5188e3af360ba3b63f5eedb16288d39bc849cacc",
+      "model_sha256": "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"
+    },
+    "asr_primary": {
+      "id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+      "model_sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+      "worker_source_sha": "62aac01389d06f7f218db0e45acf3de30b4476af",
+      "worker_binary_sha256": "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"
+    },
+    "asr_fallback": {
+      "id": "asr-whispercpp-small-q8_0-1.9.2",
+      "model_sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+      "automatic_execution": false
+    },
+    "asr_recipe": {
+      "pcm": "16000_HZ_MONO_S16_LE",
+      "endpoint": "FROZEN_LABEL_P0_NO_ADDED_PADDING",
+      "threads": 4,
+      "language": "zh",
+      "decoder": "greedy_best_of_1",
+      "initial_prompt_sha256": "e3b2606c90009ce609aa23183c2229619619cf1173dc17d2ecd2308bfe4fe8ef"
+    },
+    "tts": {
+      "id": "tts-sherpa-matcha-zh-en-1.13.5",
+      "archive_sha256": "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",
+      "vocoder_sha256": "b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"
+    }
+  },
+  "lifecycle": [
+    ["M3-LIFE-01", "start_stop"],
+    ["M3-LIFE-02", "reopen_5"],
+    ["M3-LIFE-03", "invalid_input"],
+    ["M3-LIFE-04", "invalid_output"],
+    ["M3-LIFE-05", "bounded_cancel_asr_tts"],
+    ["M3-LIFE-06", "force_abort"]
+  ],
+  "capture_cases": [
+    {"test_id": "M3-VAD-01", "filename": "asr-clear-002.wav", "frames_20ms": 300},
+    {"test_id": "M3-VAD-02", "filename": "asr-clear-003.wav", "frames_20ms": 300},
+    {"test_id": "M3-VAD-03", "filename": "asr-pause-031.wav", "frames_20ms": 400},
+    {"test_id": "M3-VAD-04", "filename": "m3-steady-silence-60s.wav", "frames_20ms": 3000},
+    {"test_id": "M3-VAD-05", "filename": "m3-device-start-10s.wav", "frames_20ms": 500},
+    {"test_id": "M3-VAD-06", "filename": "m3-impact-10s.wav", "frames_20ms": 500},
+    {"test_id": "M3-VAD-07", "filename": "m3-cough-10s.wav", "frames_20ms": 500},
+    {"test_id": "M3-VAD-08", "filename": "m3-playback-speech-10s.wav", "frames_20ms": 500},
+    {"test_id": "M3-ASR-04", "filename": "asr-clear-012.wav", "frames_20ms": 300},
+    {"test_id": "M3-ASR-05", "filename": "asr-clear-023.wav", "frames_20ms": 300}
+  ],
+  "timeouts_seconds": {
+    "ready": 10,
+    "operation": 10,
+    "asr_item": 120,
+    "preflight_capture_phase": 600,
+    "direct_pcm_phase": 900,
+    "vad_asr_phase": 900,
+    "tts_phase": 1200,
+    "lifecycle_phase": 900,
+    "offline_phase": 1200
+  },
+  "p9": {
+    "status": "ARTIFACT_RECEIVED_CORE_ACK_PENDING_NON_BLOCKING_FOR_AUDIO_M3",
+    "artifact_id": "M4B-P9-RESIDENCY-SURROGATE-001",
+    "source_sha": "f18f823146727b50cb3ef15e9e14b51983643406",
+    "protocol_version": "1.0",
+    "sha256": {
+      "runner": "311466f963bce806b2c89a1c4f5b3275134312e307386c35631eabfb3d21be76",
+      "schema": "d5de8fe4144a6c759445f7e45e8867a6bad928177cb28f96d908bbcd59ddb8fe",
+      "lock": "d8310132072e822a316521e3bd1cd21e7f0c8396dd49d82c1c6a64a247b7f7f0"
+    },
+    "core_ack_required_before_p9_integration": true,
+    "allow_poc_substitute": false
+  }
+}

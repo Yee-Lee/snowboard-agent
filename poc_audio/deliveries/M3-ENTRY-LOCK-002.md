@@ -1,6 +1,6 @@
 # M3-ENTRY-LOCK-002
 
-Status: `CORRECTED PROPOSAL / M2 CLOSURE REVIEW PENDING / M3 NOT STARTED`
+Status: `CORE OUTPUT ADAPTATION DELIVERED / PACKET SIGN-OFF PENDING / M3 NOT STARTED`
 
 This packet supersedes the VAD no-go disposition and step 6 in
 `M3-ENTRY-LOCK-001`. Its Core identities, topology and other candidate locks
@@ -10,8 +10,15 @@ remain unchanged.
 
 - Core accepted Option A POC delivery:
   `882e2b6ff571eb9d54ec96bae7d3b63338c5965c`.
-- Core Audio HAL implementation/test SHA:
+- Audio POC Option A implementation/test validation SHA:
   `de3b0bab4daaf47f62956d4b27f6697b3d4fa823`.
+- Existing Core M3 accepted Audio HAL implementation SHA:
+  `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`; acceptance commit/tag
+  `2fb2e18f934c3d06392074adba3c4518402101e9` / `core_m3`.
+- M3 formal execution Core HAL SHA:
+  `ff09199583644a8f0822153e371589f52ae821a0`, delivered by
+  `DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002`; it includes the accepted 16 kHz
+  mono S16_LE stream to 48 kHz stereo S32_LE native output adaptation.
 - Target topology: Raspberry Pi 5 + INMP441 input + MAX98357A output using the
   accepted VoiceHAT overlay and explicit 48 kHz-to-16 kHz Option A conversion.
 - ASR: base Q8 primary, small Q8 fallback, P0 + greedy + fixed domain prompt.
@@ -37,6 +44,13 @@ The M3 mic packet must include normal speech, low-volume starts, natural pause,
 silence, object impacts, cough and playback-speech observations. Playback source
 rejection/AEC remains outside the basic VAD and current POC scope.
 
+## Core output adaptation disposition
+
+Core SHA `ff09199583644a8f0822153e371589f52ae821a0` closes the output-format gap
+inside `AudioOutput`; Matcha remains a native 16 kHz mono producer and POC must not
+insert a TTS/Speak resampler. This blocker is closed. Formal M3 execution remains
+stopped only until the committed POC packet receives Core Designer sign-off.
+
 ## Bounded lifecycle retest
 
 Retain steps 1–5 from `M3-ENTRY-LOCK-001`. Replace its VAD no-go step with:
@@ -46,5 +60,6 @@ Retain steps 1–5 from `M3-ENTRY-LOCK-001`. Replace its VAD no-go step with:
    diagnostics in the controlled store, and publish only sanitized evidence.
    A provisional M2 advance is not an M3 hardware `PASS`.
 
-M3 remains `NOT_STARTED` until Reviewer/Designer closes M2 and accepts this
-entry lock.
+Reviewer/Designer 已關閉 M2 並接受本 entry lock。M3 formal hardware execution
+仍維持 `NOT_STARTED`，直到 locally verified packet/runner 取得 exact candidate SHA
+與 Core Designer packet sign-off。

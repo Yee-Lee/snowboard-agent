@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b:p9-residency-surrogate:protocol:1.0",
+  "title": "M4B P9 Residency Surrogate Protocol",
+  "type": "object",
+  "oneOf": [
+    {"$ref": "#/$defs/command"},
+    {"$ref": "#/$defs/event"}
+  ],
+  "$defs": {
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {"op": {"const": "PING"}},
+          "required": ["op"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {"const": "INFER"},
+            "request_id": {"type": "string", "minLength": 1}
+          },
+          "required": ["op", "request_id"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {"op": {"const": "SHUTDOWN"}},
+          "required": ["op"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "artifact_id": {"const": "M4B-P9-RESIDENCY-SURROGATE-001"},
+        "protocol_version": {"const": "1.0"},
+        "event": {
+          "enum": [
+            "READY",
+            "PONG",
+            "INFERENCE_STARTED",
+            "INFERENCE_COMPLETE",
+            "ERROR",
+            "SHUTDOWN_ACK"
+          ]
+        },
+        "monotonic_s": {"type": "number", "minimum": 0}
+      },
+      "required": ["artifact_id", "protocol_version", "event", "monotonic_s"]
+    }
+  }
+}

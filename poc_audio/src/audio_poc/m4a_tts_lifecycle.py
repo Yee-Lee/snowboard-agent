@@ -93,6 +93,9 @@ def run_scenario(
     scenario: str,
     prompt: dict[str, Any],
     trace_path: Path | None = None,
+    ready_timeout: float = 15,
+    operation_timeout: float = 30,
+    stop_timeout: float = 5,
 ) -> dict[str, Any]:
     command = list(base_command)
     if scenario == "force_abort":
@@ -115,7 +118,7 @@ def run_scenario(
     result: dict[str, Any] | None = None
     error_code: str | None = None
     try:
-        ready = read_event(process, 15)
+        ready = read_event(process, ready_timeout)
         if ready.get("event") != "ready":
             raise RuntimeError("worker did not become READY")
         events.append("ready")
@@ -127,11 +130,11 @@ def run_scenario(
             "command": "run", "session_id": session_id, "mode": mode,
             "fixture_id": prompt["fixture_id"], "text": prompt["text"],
         })
-        started_event = read_event(process, 5)
+        started_event = read_event(process, stop_timeout)
         if started_event.get("event") != "started":
             raise RuntimeError("worker did not acknowledge RUN")
         events.append("started")
-        terminal = read_event(process, 30)
+        terminal = read_event(process, operation_timeout)
         events.append(str(terminal.get("event")))
         if scenario in {"timeout", "cancel", "force_abort"}:
             if terminal.get("event") != "generated":
@@ -155,11 +158,11 @@ def run_scenario(
                 result = terminal.get("result")
                 terminal_status = "SUCCESS"
             send(process, {"command": "shutdown", "session_id": session_id})
-            stopped = read_event(process, 5)
+            stopped = read_event(process, stop_timeout)
             if stopped.get("event") != "stopped":
                 raise RuntimeError("worker did not confirm shutdown")
             events.append("stopped")
-            process.wait(timeout=5)
+            process.wait(timeout=stop_timeout)
     except Exception as error:  # Preserve an unexpected lifecycle failure in the packet.
         terminal_status = "ERROR"
         error_code = type(error).__name__

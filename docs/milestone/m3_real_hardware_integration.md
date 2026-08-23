@@ -19,8 +19,13 @@ M2 已由
 [`M3-ENTRY-LOCK-002`](../../poc_audio/deliveries/M3-ENTRY-LOCK-002.md)
 規劃，但尚未開始 hardware execution。User 已提交
 [`CR-AUDIO-M3-RISK-FOCUSED-GATES-001`](../../poc_audio/deliveries/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md)
-供 Core/Designer 審查；其 disposition 與 exact test packet 固定前，不執行 formal
-qualification。
+供 Core/Designer 審查。Core 已以
+[`RESP-AUDIO-M3-RISK-FOCUSED-GATES-001`](../pm_handoff/RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md)
+`ACCEPTED WITH CONDITIONS` 核准判定框架與 packet minimum，並授權準備 test packet。
+User 已核准 packet，Core output adaptation 已固定為
+`ff09199583644a8f0822153e371589f52ae821a0`。formal backend、offline enforcement、
+candidate lifecycle 與 draft summary 已完成本地驗證；在 packet/runner 以 exact SHA
+commit 且獲 Core Designer sign-off 前，不執行 formal qualification。
 
 ## 對最終交付的貢獻
 
@@ -42,9 +47,10 @@ qualification。
 - 若固定 fixture winner 在真實裝置失敗，回到 finalist 比較，不降低 gate。
 - 執行 M4A-P1–P8：ASR HAL frame 對齊/品質、TTS native PCM 與完整播放、
   ASR/TTS 個別 Pi resource/thermal。
-- 執行 M4A-P9：使用 Core 核准且 versioned/checksummed 的 deterministic
-  M4b residency surrogate 進行 co-residency 資源量測。本項只是 CPU/RSS/thermal
-  budget evidence，不在 Audio POC 實作、選型或驗收 LiteRT-LM。
+- M4A-P9 已收到 LLM POC 提供的 versioned/checksummed deterministic M4b residency
+  surrogate 與 executable protocol，附件 regression 已通過；等待 Core corrected ACK
+  後才整合。依 User 決定，本項不阻擋 Audio M3 hardware qualification，且不產生
+  LLM Gate 2 credit。
 - 在 accepted HAL/Pi 重跑 M4A-P10–P12 lifecycle、clean build/license 與 offline，
   並沿用較嚴格的 Audio POC ASR/TTS frozen quality gate。
 - 完成 contract 規定的 decision table、manifest 與 return delivery，回交完整
@@ -58,9 +64,9 @@ qualification。
 - M3 Audio HAL 已通過其產品驗收並提供 source/tests/docs/完整 SHA。
 - 目標 Pi、mic、speaker、外殼及真實測試環境可用。
 - User 可進行現場距離、噪音與聲音確認。
-- M4A-P9 使用的 versioned deterministic M4b residency surrogate 身份、
-  checksum、命令、RSS/thread/CPU envelope 與 decision rule 已由 Core/PM
-  確認，且不導入 Audio 產品程式。
+- M4A-P9 surrogate 不作為 Audio M3 hardware qualification entry condition。固定 artifact、
+  checksum、protocol、process-group topology 與 decision rule 已收到；Core corrected ACK
+  前不整合或宣稱 P9，但可進行已 sign-off 的其他 M3 測項。
 
 ## Exit Gate
 
@@ -70,8 +76,9 @@ qualification。
 - Pi performance/resource/thermal evidence 完整，未以 Ubuntu/開發機結果取代。
 - 每類產生一個 hardware-qualified winner；任何 no-go 或 fallback 都有正式決策。
 - M4 組合所需 format、endpoint、threads、timeout 與 execution-container 已固定。
-- M4A-P1–P12 每項的 PASS/FAIL/INCONCLUSIVE、raw evidence path、cleanup 與
-  reproduction command 已由 return SHA 定位。
+- M4A-P1–P8、P10–P12 每項的 PASS/FAIL/INCONCLUSIVE、raw evidence path、cleanup
+  與 reproduction command 已由 return SHA 定位。P9 另列 `PENDING CORE INPUT`，
+  不得冒充已執行；其對 Gate 2A 的影響等待 Core 書面 disposition。
 - Core Designer 已發 Gate 2A selection ACK，或明確發出
   evidence-backed no-go/補件要求；未取得 ACK 時 M3 不得標為 `COMPLETE`。
   Final reference 與 `POC Accepted` 仍由 M4 Gate 2B 關閉。
@@ -84,6 +91,26 @@ qualification。
 - Playback sequence、xrun/backpressure、device lifecycle 與 cleanup proof。
 - Latency/resource/thermal summary 與 rejected finalist reasons。
 - M4a Gate 2A manifest/decision table/return SHA 與 Core selection ACK。
+
+## 條件式 M3.1 remediation 規劃
+
+依
+[`PROPOSAL_AUDIO_001_M3_1_REMEDIATION`](../pm_handoff/PROPOSAL_AUDIO_001_M3_1_REMEDIATION.md)
+及 Core 的
+[`RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001`](../pm_handoff/RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md)，
+M3.1 是 contingency stage，不是固定 milestone，也沒有預先 execution authority。
+
+只有以下三項同時成立才可提出啟動：
+
+1. M3 在 named hard gate 產生可重現 `FAIL` 或 `INCONCLUSIVE`。
+2. signal、waveform 或 diagnostic evidence 指向一個可處理 root cause。
+3. POC 提交單一 minimal remediation，並在套用前取得 Core Designer 書面核准。
+
+每次 activation 只允許一個 fixed gain、一個 fixed pre-roll，或一個有文件依據的
+必要 minimal front-end step；不得做 gain/threshold/padding/front-end matrix。啟動時
+立即停止 M3 formal execution，保存 controlled raw evidence，另建 committed M3.1
+re-qualification packet 並取得 Core review。M3.1 未關閉時不得進 M4 acceptance；若單一
+修正無法關閉 blocker，停止並提交正式 change request。
 
 ## 不做的工作
 
