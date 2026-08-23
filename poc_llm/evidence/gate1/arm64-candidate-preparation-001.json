@@ -41,6 +41,17 @@
       "result": "FAIL",
       "sanitized_result_sha256": "da603e863cc6bbf849aab3628b15a6d6fce951b25a1895570a9e4bf8e5e867de",
       "startup_ms": 1448.577
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "execution_sha": "e2f71a5ddbe28adaba2b4ac8c9617fcfa222a477",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "107a1ce15eec2f551d5362d5637c48113a4f769b1efe7437be444209f7130b52",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "5fe4826ecdfb6b8a93ade55020bbd823947137c2afa3ab53a760c3a7c7695c82",
+      "startup_ms": 641.592
     }
   ],
   "offline_install": {
@@ -63,7 +74,7 @@
     "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
     "platform": "ubuntu-aarch64",
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "45/45 PASS",
+    "retained_and_arm64_tests": "46/46 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": true
   },
@@ -73,8 +84,8 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "ADAPTER_DEFECT_CORRECTION_PREPARED",
-  "wip_lock_sha256": "619fcf3150a5ff7f84a33f62bf02b581ade4e10dd6cf1095022cac81c2c67be0",
+  "result": "SANITIZED_FAILURE_DIAGNOSTIC_PREPARED",
+  "wip_lock_sha256": "4b8b87165e4290a3d1227730f43834c60f802f0759722f7adacd5cce05a92474",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

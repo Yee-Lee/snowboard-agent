@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `FIRST MODEL SMOKE FAIL / ADAPTER CORRECTION PREPARED`
+- **Status**: `TWO MODEL SMOKES FAIL / SANITIZED DIAGNOSTIC PREPARED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -34,7 +34,7 @@ LiteRT-LM adapter implements persistent engine lifecycle, single active generati
 cooperative cancel, timeout, result normalization and shutdown; tests inject a fake backend and do
 not load a model. A fail-closed smoke runner authenticates the execution SHA and ARM64 projection,
 requires route isolation, owns the candidate process group, bounds READY/generation/TERM/KILL, and
-records no model text. ARM64 synthetic tests plus retained R5/M1 regressions pass (45/45). This scaffold
+records no model text. ARM64 synthetic tests plus retained R5/M1 regressions pass (46/46). This scaffold
 does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
@@ -46,11 +46,17 @@ runner bounded cleanup with SIGTERM, wait, and proof that the process group was 
 result is `FAIL`; raw stderr SHA-256 is
 `b0871a4a69911655fa97fbe5537b9fa4a2b52f1204235a0d86f6085e6ea237f6`.
 
-Review found the adapter had mapped the 128-input/16-output request envelope onto LiteRT Engine's
-`max_num_tokens`, which the pinned API defines as total KV-cache capacity. The correction leaves the
-model artifact's KV-cache default intact and continues to enforce 16 output tokens per conversation.
-A regression test locks this boundary. The failed run remains recorded and must not be reclassified;
-the corrected adapter requires a fresh-path rerun under its new immutable execution SHA.
+Review identified that the adapter had mapped the 128-input/16-output request envelope onto LiteRT
+Engine's `max_num_tokens`, which the pinned API defines as total KV-cache capacity. The correction
+left the model artifact's KV-cache default intact and continued to enforce 16 output tokens per
+conversation. A regression test locks this boundary. A fresh-path rerun under execution SHA
+`e2f71a5ddbe28adaba2b4ac8c9617fcfa222a477` nevertheless returned the same immediate protocol
+`ERROR` after READY, so the KV-cache override was a real adapter defect but not the observed failure's
+root cause. Both failed runs remain recorded and must not be reclassified.
+
+The adapter now emits a sanitized failure diagnostic containing only failure stage, exception class,
+and SHA-256 of the exception message. It never emits the exception message, prompt, or model output.
+A fresh-path diagnostic rerun is required before any further correction is selected.
 
 ## Provenance and License Preparation
 
@@ -73,7 +79,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`619fcf3150a5ff7f84a33f62bf02b581ade4e10dd6cf1095022cac81c2c67be0`.
+`4b8b87165e4290a3d1227730f43834c60f802f0759722f7adacd5cce05a92474`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer

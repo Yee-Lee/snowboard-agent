@@ -27,6 +27,14 @@ class Cancelled(RuntimeError):
     pass
 
 
+class BackendFailure(RuntimeError):
+    def __init__(self, stage: str, error: Exception):
+        super().__init__(f"{stage} failed")
+        self.stage = stage
+        self.error_class = type(error).__name__
+        self.message_sha256 = hashlib.sha256(str(error).encode("utf-8")).hexdigest()
+
+
 class Backend(Protocol):
     def generate(self, prompt: str, *, max_output_tokens: int) -> str: ...
     def cancel(self) -> None: ...
@@ -89,11 +97,14 @@ class LiteRtBackend:
         )
 
     def generate(self, prompt: str, *, max_output_tokens: int) -> str:
-        conversation = self._engine.create_conversation(
-            sampler_config=self._sampler,
-            max_output_tokens=max_output_tokens,
-            automatic_tool_calling=False,
-        )
+        try:
+            conversation = self._engine.create_conversation(
+                sampler_config=self._sampler,
+                max_output_tokens=max_output_tokens,
+                automatic_tool_calling=False,
+            )
+        except Exception as error:
+            raise BackendFailure("create_conversation", error) from error
         with self._lock:
             self._conversation = conversation
         try:
@@ -101,7 +112,9 @@ class LiteRtBackend:
         except RuntimeError as error:
             if "CANCELLED" in str(error):
                 raise Cancelled("generation cancelled") from error
-            raise
+            raise BackendFailure("send_message_async", error) from error
+        except Exception as error:
+            raise BackendFailure("send_message_async", error) from error
         finally:
             with self._lock:
                 self._conversation = None
@@ -173,6 +186,22 @@ class Child:
         elif cancelled or isinstance(error, Cancelled):
             frame = {"type":"CANCELLED","protocol_version":PROTOCOL_VERSION,"request_id":request_id,"state":"READY"}
         elif error is not None:
+            diagnostic = {
+                "error_class": type(error).__name__,
+                "stage": "backend",
+            }
+            if isinstance(error, BackendFailure):
+                diagnostic.update({
+                    "cause_class": error.error_class,
+                    "message_sha256": error.message_sha256,
+                    "stage": error.stage,
+                })
+            print(
+                "ADAPTER_DIAGNOSTIC "
+                + json.dumps(diagnostic, sort_keys=True, separators=(",", ":")),
+                file=sys.stderr,
+                flush=True,
+            )
             frame = {"type":"ERROR","protocol_version":PROTOCOL_VERSION,"request_id":request_id,"code":"GENERATION_FAILED","state":"READY"}
         else:
             response, _diagnostics = normalize_response(raw_output, self._active_input)

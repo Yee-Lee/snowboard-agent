@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import io, json, sys, threading, types, unittest
+import contextlib, io, json, sys, threading, types, unittest
 from unittest import mock
 
-from poc_llm.harness.litert_lm_child_adapter import Cancelled, Child, LiteRtBackend
+from poc_llm.harness.litert_lm_child_adapter import BackendFailure, Cancelled, Child, LiteRtBackend
 
 PROMPT = {
     "perceptions":[],
@@ -132,6 +132,23 @@ class ChildAdapterTest(unittest.TestCase):
         self.assertEqual(captured["model_path"], config["model_path"])
         self.assertNotIn("max_num_tokens", captured["kwargs"])
         backend.close()
+
+    def test_backend_failure_diagnostic_redacts_message(self):
+        secret = "sensitive backend detail"
+        failure = BackendFailure("send_message_async", RuntimeError(secret))
+        backend = FakeBackend()
+        child, output = self.make_child(backend)
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            child._active_input = PROMPT
+            child.active_request = "req-failed"
+            child._terminal("req-failed", None, failure)
+        diagnostic = stderr.getvalue()
+        self.assertIn('"stage":"send_message_async"', diagnostic)
+        self.assertIn('"cause_class":"RuntimeError"', diagnostic)
+        self.assertNotIn(secret, diagnostic)
+        self.assertEqual(self.frames(output)[0]["code"], "GENERATION_FAILED")
+        child.close()
 
 if __name__ == "__main__":
     unittest.main()
