@@ -19,6 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
+| [M3 risk-focused qualification gates](../../poc_audio/deliveries/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md) | `READY FOR CORE REVIEW / USER APPROVED` | 請 Core/Designer 審查 risk-focused hard/quality gates、M2 RSS regression baselines、ASR/VAD/TTS 判定與 minimal packet boundary；書面回覆前不執行 formal M3 qualification。 |
 | [Corrected M2 Gate closure request](../../poc_audio/deliveries/REQ-AUDIO-M2-GATE-CLOSURE-002.md) | `REVIEWED / ACCEPTED / M2 COMPLETE` | Reviewer 已接受 method correction、Silero conditional M3 finalist、低音量 target-mic blocker 與 `M3-ENTRY-LOCK-002`；blocking findings 已關閉。見 [`RESP-AUDIO-M2-GATE-CLOSURE-002`](../reviews/RESP-AUDIO-M2-GATE-CLOSURE-002.md)。 |
 | [M2 Gate closure request 001](../../poc_audio/deliveries/REQ-AUDIO-M2-GATE-CLOSURE-001.md) | `SUPERSEDED / HISTORY PRESERVED` | 原 VAD no-go disposition 由 closure 002 取代；immutable old run evidence 保留，不再作 candidate rejection 依據。 |
 | [M2 Gate review request](../../poc_audio/deliveries/REQ-AUDIO-M2-GATE-REVIEW-001.md) | `CLOSED / RESPONSE ACTIONED` | Reviewer 接受 ASR/TTS 並授權的 VAD 路徑已由 closure 002 完成；原 response 見 [`RESP-AUDIO-M2-GATE-REVIEW-001`](../reviews/RESP-AUDIO-M2-GATE-REVIEW-001.md)。 |

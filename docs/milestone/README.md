@@ -98,8 +98,11 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `NEXT`：根據 `M3-ENTRY-LOCK-002`，開始 M3 (Pi 5 + pinned M3 Audio HAL) 實機驗證。
-- `BLOCKER`：目前沒有 M3 entry blocker。M2 已正式關閉。
+- `NEXT`：Core/Designer 審查
+  `CR-AUDIO-M3-RISK-FOCUSED-GATES-001`；核准並固定 exact M3 test packet 後，才依
+  `M3-ENTRY-LOCK-002` 開始 Pi 5 + pinned M3 Audio HAL 實機驗證。
+- `BLOCKER`：M2 已正式關閉；M3 qualification gate 修正尚待 Core/Designer 書面
+  disposition，回覆前不得執行 formal M3 hardware qualification。
 - `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
   M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
   clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。

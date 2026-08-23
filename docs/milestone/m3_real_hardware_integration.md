@@ -17,7 +17,10 @@ M2 已由
 [`RESP-AUDIO-M2-GATE-CLOSURE-002`](../reviews/RESP-AUDIO-M2-GATE-CLOSURE-002.md)
 正式關閉；M3 依
 [`M3-ENTRY-LOCK-002`](../../poc_audio/deliveries/M3-ENTRY-LOCK-002.md)
-規劃，但尚未開始 hardware execution。
+規劃，但尚未開始 hardware execution。User 已提交
+[`CR-AUDIO-M3-RISK-FOCUSED-GATES-001`](../../poc_audio/deliveries/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md)
+供 Core/Designer 審查；其 disposition 與 exact test packet 固定前，不執行 formal
+qualification。
 
 ## 對最終交付的貢獻
 
