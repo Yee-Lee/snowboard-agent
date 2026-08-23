@@ -130,8 +130,10 @@
   "projection_scaffold": {
     "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
     "platform": "ubuntu-aarch64",
+    "measurement_runner_implemented": true,
+    "measurement_sessions_planned": 20,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "46/46 PASS",
+    "retained_and_arm64_tests": "52/52 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -142,7 +144,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "TWO_LITERTLM_MODEL_SMOKES_PASS_QWEN05_DEFERRED",
-  "wip_lock_sha256": "b869e1279364cedba088458182bd2699783955d626abbbf29c1001e08673384f",
+  "wip_lock_sha256": "69bc1b057864fdde8b9f7d83f38214f8d03a725f4cf92ace486429034112451a",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

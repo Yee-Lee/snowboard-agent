@@ -6,7 +6,7 @@
   "artifacts": {
     "adapter": {
       "path": "poc_llm/harness/litert_lm_child_adapter.py",
-      "sha256": "5d7639782a9b65d3b696e8167e9e38d463f8ea47e55ab6f4ab6371085a1039af"
+      "sha256": "d17c225a8d358275e6ce2b992f670ba7d8d73e35d73dc3da32b3a20a574f27ff"
     },
     "boundary": {
       "path": "poc_llm/harness/m1_contract_boundary.py",
@@ -22,7 +22,7 @@
     },
     "protocol_schema": {
       "path": "poc_llm/contracts/m1/protocol-frame-arm64.schema.json",
-      "sha256": "12f5a9120a7f481c106a2096c17a5b4d4dd28a060dda15d8fa9bb35aafa51b20"
+      "sha256": "d0dac5df0d9092f14340a050da8c744ce574fa30f3ed8931c9150755b6a90f90"
     },
     "strict_config_schema": {
       "path": "poc_llm/contracts/m1/strict-config-arm64.schema.json",

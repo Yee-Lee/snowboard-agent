@@ -35,8 +35,11 @@ LiteRT-LM adapter implements persistent engine lifecycle, single active generati
 cooperative cancel, timeout, result normalization and shutdown; tests inject a fake backend and do
 not load a model. A fail-closed smoke runner authenticates the execution SHA and ARM64 projection,
 requires route isolation, owns the candidate process group, bounds READY/generation/TERM/KILL, and
-records no model text. ARM64 synthetic tests plus retained R5/M1 regressions pass (46/46). This scaffold
-does not alter frozen R5 or create candidate evidence.
+records no model text. A locked measurement runner now schedules exactly 10 sessions for Qwen 1.5B
+and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
+model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
+single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
+pass (52/52). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -93,9 +96,9 @@ They do not establish TTFT, tokens/second, output-token count, peak RSS, long-in
 
 ## Remaining Gate1 Work
 
-- Model-backed cold/hot TTFT, tokens/second, output-token count, peak RSS and disk measurements.
-- Longer fixed prompt, timeout, cancel, BUSY, failure recovery and rebuild probes.
-- At least 20 combined sessions across the two active `.litertlm` candidates.
+- Execute and review the prepared model-backed cold/hot TTFT, tokens/second, output-token count,
+  peak RSS, BUSY, cancel and cleanup measurements (20 combined sessions).
+- Longer fixed prompt, disk measurement, timeout, failure recovery and rebuild probes.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
 
@@ -105,7 +108,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`b869e1279364cedba088458182bd2699783955d626abbbf29c1001e08673384f`.
+`69bc1b057864fdde8b9f7d83f38214f8d03a725f4cf92ace486429034112451a`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer

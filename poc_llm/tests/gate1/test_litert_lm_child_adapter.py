@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib, io, json, sys, threading, types, unittest
 from unittest import mock
 
-from poc_llm.harness.litert_lm_child_adapter import BackendFailure, Cancelled, Child, LiteRtBackend
+from poc_llm.harness.litert_lm_child_adapter import BackendFailure, Cancelled, Child, Generation, LiteRtBackend
 
 PROMPT = {
     "perceptions":[],
@@ -23,13 +23,16 @@ class FakeBackend:
         self.release = threading.Event()
         self.cancelled = False
         self.closed = False
-    def generate(self, prompt: str, *, max_output_tokens: int) -> str:
+    def generate(self, prompt: str, *, max_output_tokens: int) -> Generation:
         self.started.set()
         if self.block:
             self.release.wait(2)
         if self.cancelled:
             raise Cancelled("cancelled")
-        return '{"action_kind":"rest","action_payload":{},"next_perceptions":[]}'
+        return Generation(
+            text='{"action_kind":"rest","action_payload":{},"next_perceptions":[]}',
+            metrics={"init_ms":1.0,"ttft_ms":2.0,"prefill_tokens":3,"prefill_tokens_per_second":4.0,"decode_tokens":5,"decode_tokens_per_second":6.0,"kv_tokens":8},
+        )
     def cancel(self) -> None:
         self.cancelled = True
         self.release.set()
@@ -115,6 +118,18 @@ class ChildAdapterTest(unittest.TestCase):
                 raise AssertionError("async stream must not be used")
             def cancel_process(self):
                 pass
+            def get_benchmark_info(self):
+                return types.SimpleNamespace(
+                    init_time_in_second=0.1,
+                    time_to_first_token_in_second=0.2,
+                    last_prefill_token_count=3,
+                    last_prefill_tokens_per_second=4.0,
+                    last_decode_token_count=5,
+                    last_decode_tokens_per_second=6.0,
+                )
+            @property
+            def token_count(self):
+                return 8
             def close(self):
                 pass
 
@@ -145,7 +160,9 @@ class ChildAdapterTest(unittest.TestCase):
             backend = LiteRtBackend(config)
         self.assertEqual(captured["model_path"], config["model_path"])
         self.assertNotIn("max_num_tokens", captured["kwargs"])
-        self.assertEqual(backend.generate("hello", max_output_tokens=16), "ok")
+        generation = backend.generate("hello", max_output_tokens=16)
+        self.assertEqual(generation.text, "ok")
+        self.assertEqual(generation.metrics["ttft_ms"], 200.0)
         self.assertEqual(captured["prompt_type"], "str")
         self.assertEqual(captured["conversation_kwargs"]["max_output_tokens"], 16)
         backend.close()

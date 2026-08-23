@@ -36,8 +36,9 @@
     "result":{
       "type":"object","additionalProperties":false,
       "required":["type","protocol_version","request_id","response","state"],
-      "properties":{"type":{"const":"RESULT"},"protocol_version":{"$ref":"#/$defs/version"},"request_id":{"$ref":"#/$defs/request_id"},"response":{"$ref":"urn:snowboard:llm-poc:m1:response:2.0"},"state":{"const":"READY"}}
+      "properties":{"type":{"const":"RESULT"},"protocol_version":{"$ref":"#/$defs/version"},"request_id":{"$ref":"#/$defs/request_id"},"response":{"$ref":"urn:snowboard:llm-poc:m1:response:2.0"},"metrics":{"$ref":"#/$defs/metrics"},"state":{"const":"READY"}}
     },
+    "metrics":{"type":"object","additionalProperties":false,"required":["init_ms","ttft_ms","prefill_tokens","prefill_tokens_per_second","decode_tokens","decode_tokens_per_second","kv_tokens"],"properties":{"init_ms":{"type":"number","minimum":0},"ttft_ms":{"type":"number","minimum":0},"prefill_tokens":{"type":"integer","minimum":0},"prefill_tokens_per_second":{"type":"number","minimum":0},"decode_tokens":{"type":"integer","minimum":0},"decode_tokens_per_second":{"type":"number","minimum":0},"kv_tokens":{"type":"integer","minimum":0}}},
     "cancel":{
       "type":"object","additionalProperties":false,
       "required":["type","protocol_version","request_id"],

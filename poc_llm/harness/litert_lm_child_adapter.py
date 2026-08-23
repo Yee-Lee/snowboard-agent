@@ -7,6 +7,7 @@ model output, host identity, or private paths.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
@@ -35,8 +36,14 @@ class BackendFailure(RuntimeError):
         self.message_sha256 = hashlib.sha256(str(error).encode("utf-8")).hexdigest()
 
 
+@dataclass(frozen=True)
+class Generation:
+    text: str
+    metrics: dict[str, int | float]
+
+
 class Backend(Protocol):
-    def generate(self, prompt: str, *, max_output_tokens: int) -> str: ...
+    def generate(self, prompt: str, *, max_output_tokens: int) -> Generation: ...
     def cancel(self) -> None: ...
     def close(self) -> None: ...
 
@@ -89,6 +96,7 @@ class LiteRtBackend:
         self._engine = litert_lm.Engine(
             config["model_path"],
             backend=litert_lm.Backend.CPU(thread_count=config["threads"]),
+            enable_benchmark=True,
         )
         self._conversation = None
         self._lock = threading.Lock()
@@ -96,7 +104,7 @@ class LiteRtBackend:
             temperature=config["temperature"], top_p=config["top_p"]
         )
 
-    def generate(self, prompt: str, *, max_output_tokens: int) -> str:
+    def generate(self, prompt: str, *, max_output_tokens: int) -> Generation:
         try:
             conversation = self._engine.create_conversation(
                 sampler_config=self._sampler,
@@ -108,16 +116,32 @@ class LiteRtBackend:
         with self._lock:
             self._conversation = conversation
         try:
-            return _text_content(conversation.send_message(prompt))
-        except RuntimeError as error:
-            if "CANCELLED" in str(error):
-                raise Cancelled("generation cancelled") from error
-            raise BackendFailure("send_message", error) from error
-        except Exception as error:
-            raise BackendFailure("send_message", error) from error
+            try:
+                text = _text_content(conversation.send_message(prompt))
+            except RuntimeError as error:
+                if "CANCELLED" in str(error):
+                    raise Cancelled("generation cancelled") from error
+                raise BackendFailure("send_message", error) from error
+            except Exception as error:
+                raise BackendFailure("send_message", error) from error
+            try:
+                benchmark = conversation.get_benchmark_info()
+                metrics = {
+                    "init_ms": benchmark.init_time_in_second * 1000,
+                    "ttft_ms": benchmark.time_to_first_token_in_second * 1000,
+                    "prefill_tokens": benchmark.last_prefill_token_count,
+                    "prefill_tokens_per_second": benchmark.last_prefill_tokens_per_second,
+                    "decode_tokens": benchmark.last_decode_token_count,
+                    "decode_tokens_per_second": benchmark.last_decode_tokens_per_second,
+                    "kv_tokens": conversation.token_count,
+                }
+                return Generation(text=text, metrics=metrics)
+            except Exception as error:
+                raise BackendFailure("benchmark_info", error) from error
         finally:
             with self._lock:
-                self._conversation = None
+                if self._conversation is conversation:
+                    self._conversation = None
             conversation.close()
 
     def cancel(self) -> None:
@@ -171,7 +195,7 @@ class Child:
             },
         })
 
-    def _terminal(self, request_id: str, raw_output: str | None, error: Exception | None) -> None:
+    def _terminal(self, request_id: str, generation: Generation | None, error: Exception | None) -> None:
         from poc_llm.harness.m1_contract_boundary import normalize_response
 
         with self.lock:
@@ -204,8 +228,8 @@ class Child:
             )
             frame = {"type":"ERROR","protocol_version":PROTOCOL_VERSION,"request_id":request_id,"code":"GENERATION_FAILED","state":"READY"}
         else:
-            response, _diagnostics = normalize_response(raw_output, self._active_input)
-            frame = {"type":"RESULT","protocol_version":PROTOCOL_VERSION,"request_id":request_id,"response":response,"state":"READY"}
+            response, _diagnostics = normalize_response(generation.text, self._active_input)
+            frame = {"type":"RESULT","protocol_version":PROTOCOL_VERSION,"request_id":request_id,"response":response,"metrics":generation.metrics,"state":"READY"}
         with self.lock:
             self.active_request = None
             self.cancel_requested = False
@@ -220,15 +244,15 @@ class Child:
         self.backend.cancel()
 
     def _generate(self, request_id: str, value: dict[str, Any]) -> None:
-        raw_output = None
+        generation = None
         error = None
         try:
-            raw_output = self.backend.generate(
+            generation = self.backend.generate(
                 _prompt(value), max_output_tokens=self.config["max_output_tokens"]
             )
         except Exception as caught:  # Sanitized at the protocol boundary.
             error = caught
-        self._terminal(request_id, raw_output, error)
+        self._terminal(request_id, generation, error)
 
     def handle(self, frame: dict[str, Any]) -> bool:
         errors = list(self.protocol.iter_errors(frame))
