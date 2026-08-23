@@ -19,6 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
+| [M2 Gate review request](../../poc_audio/deliveries/REQ-AUDIO-M2-GATE-REVIEW-001.md) | `READY FOR REVIEW` | 請 Reviewer 同時審查 ASR primary/fallback、Matcha M3 finalist、M2 內 VAD 授權與實測缺口，以及 M3 entry；回覆須列出 bounded findings 與 exact closure work，不在 VAD evidence 完成前誤標 M2 complete。 |
 | [Matcha M2 risk-focused review](../../poc_audio/evidence/m2/M4A-G1B-WP3-MATCHA-RISK-REVIEW-001.md) | `REVIEWED / M3 TTS FINALIST` | Lifecycle、true network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；中位數 5，`tts-013` 為 4 分非 critical 瑕疵。Legal lineage 仍阻擋 redistribution/product/final-winner approval。 |
 | [VAD execution scope change request](../../poc_audio/deliveries/CR-AUDIO-M4A-G1B-VAD-SCOPE-001.md) | `USER AUTHORIZATION RECORDED / CORE ACK PENDING` | User 已選定 WebRTC 2.0.10 primary、Silero 6.2.1 conditional fallback；faster-whisper bundled Silero 僅為 diagnostic context。Core 須在任何 real result 前 ACK exact rows/profile 並凍結 aggregate recall gate。見 [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)。 |
 | [Audio POC A / B 分組觀察計畫](Audio_POC_AB_experiement.md) | `RESPONSE READY / DATA PACKET COMPLETE` | 40-record sanitized data、A/B/A+B summary、paired outcomes、README 與 reproduction command 已提交；無新 inference，不改 frozen scorecard。見 [`RESP-AUDIO-M2A-AB-SPLIT-001`](../../poc_audio/deliveries/RESP-AUDIO-M2A-AB-SPLIT-001.md)。 |
