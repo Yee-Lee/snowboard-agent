@@ -236,10 +236,18 @@
     "platform": "ubuntu-aarch64",
     "measurement_runner_implemented": true,
     "measurement_sessions_planned": 20,
+    "p4_formal_packet_prepared": true,
+    "p4_method": {
+      "cold": 3,
+      "hot": 20,
+      "input_tokens": 128,
+      "max_output_tokens": 16,
+      "warmup": 3
+    },
     "p7_gemma_wrapper_prepared": true,
     "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
-    "retained_and_arm64_tests": "57/57 PASS",
+    "retained_and_arm64_tests": "61/61 PASS",
     "smoke_runner_implemented": true,
     "synthetic_only": false
   },
@@ -250,7 +258,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "TWO_LITERTLM_P7_PASS_P6_CONDITIONAL_QWEN05_DEFERRED",
-  "wip_lock_sha256": "b6a564e0bab50c467fa0382d8cdaae1ebc959708bdf6c8028cdaef6d96e7098e",
+  "wip_lock_sha256": "deb21c4704892bc2805e66b1f3cb9b94a3b8e60daba62997ea13948dc0960145",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

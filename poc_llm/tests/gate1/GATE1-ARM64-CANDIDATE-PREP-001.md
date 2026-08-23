@@ -39,7 +39,7 @@ records no model text. A locked measurement runner now schedules exactly 10 sess
 and 10 for Gemma, records native LiteRT benchmark metrics and peak RSS without retaining prompts or
 model text, and adds model-backed BUSY, bounded cancellation, shutdown, and cleanup probes. Its
 single batch wrapper keeps Qwen 0.5B excluded. ARM64 synthetic tests plus retained R5/M1 regressions
-pass (57/57). This scaffold does not alter frozen R5 or create candidate evidence.
+pass (61/61). This scaffold does not alter frozen R5 or create candidate evidence.
 
 ## First Model-Backed Smoke Finding
 
@@ -136,6 +136,15 @@ Both active candidates now pass the bounded workstation P7 proof and retain elig
 P6 conditional risk; Gemma additionally has one prior native-cancel PASS, but that success cannot
 override the later timeout.
 
+## Formal P4 Packet Preparation
+
+The locked P4 packet follows the frozen Gate1 method: one persistent authenticated process per
+candidate, three discarded warm-ups, three cold samples and twenty hot samples using the fixed
+128-input/16-output, temperature-zero envelope. It retains every sanitized native LiteRT metric
+sample, calculates P50/P95 for wall time, TTFT, prefill and decode throughput, samples peak process
+RSS, records model/runtime disk bytes, enforces the contract's 2.5 s TTFT P95 and 4 tok/s decode P50
+decision rule, and proves clean shutdown. Qwen 0.5B and x86 inputs are excluded from the batch.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -148,8 +157,8 @@ override the later timeout.
 
 ## Remaining Gate1 Work
 
-- Formal P4 repetitions, Qwen peak RSS, longer fixed prompt, disk measurement, timeout and broader
-  failure-recovery probes.
+- Execute and review the locked formal P4 repetitions for Qwen 1.5B and Gemma.
+- Longer fixed prompt, timeout and broader failure-recovery probes.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
 - Qwen 0.5B remains deferred and does not block the two active candidates.
 
@@ -159,7 +168,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`b6a564e0bab50c467fa0382d8cdaae1ebc959708bdf6c8028cdaef6d96e7098e`.
+`deb21c4704892bc2805e66b1f3cb9b94a3b8e60daba62997ea13948dc0960145`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
