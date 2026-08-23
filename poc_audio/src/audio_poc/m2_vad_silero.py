@@ -6,6 +6,7 @@ import argparse
 import gc
 import importlib.metadata
 import json
+import math
 import resource
 import threading
 import time
@@ -17,8 +18,12 @@ from typing import Any, Iterable
 from .m2_vad_webrtc import (
     LABEL_INDEX_SHA256,
     PLAN_SHA256,
+    POST_PADDING_MS,
+    PRE_PADDING_MS,
+    STARTUP_MASK_MS,
     child_pids,
     load_inputs,
+    padded_and_merged_events,
     score_records,
     sha256_file,
 )
@@ -29,31 +34,45 @@ MANIFEST_PATH = "poc_audio/manifests/m2_vad_silero_fallback.json"
 WINDOW_SAMPLES = 512
 WINDOW_MS = 32
 THRESHOLD = 0.5
-PRE_PADDING_MS = 300
-POST_PADDING_MS = 500
+CONTEXT_SAMPLES = 64
+ONSET_WINDOW_COUNT = math.ceil(300 / WINDOW_MS)
+ONSET_POSITIVE_COUNT = math.ceil(ONSET_WINDOW_COUNT * 0.9)
+END_SILENCE_MS = 500
 
 
 def detect_probability_windows(
-    probabilities: Iterable[float], duration_ms: int,
+    probabilities: Iterable[float], duration_ms: int, start_offset_ms: int = STARTUP_MASK_MS,
 ) -> tuple[list[tuple[int, int]], int]:
     events: list[tuple[int, int]] = []
     event_start: int | None = None
     last_speech_end: int | None = None
+    onset: list[tuple[int, int, bool]] = []
+    triggered = False
     positives = 0
     for index, probability in enumerate(probabilities):
-        start_ms = index * WINDOW_MS
+        start_ms = start_offset_ms + index * WINDOW_MS
         end_ms = min(duration_ms, start_ms + WINDOW_MS)
-        if probability >= THRESHOLD:
+        speech = probability >= THRESHOLD
+        if speech:
             positives += 1
-            if event_start is None:
-                event_start = start_ms
+        if not triggered:
+            onset.append((start_ms, end_ms, speech))
+            onset = onset[-ONSET_WINDOW_COUNT:]
+            if len(onset) == ONSET_WINDOW_COUNT and sum(item[2] for item in onset) >= ONSET_POSITIVE_COUNT:
+                event_start = next(item[0] for item in onset if item[2])
+                last_speech_end = max(item[1] for item in onset if item[2])
+                triggered = True
+                onset.clear()
+        elif speech:
             last_speech_end = end_ms
         elif event_start is not None and last_speech_end is not None:
-            if end_ms - last_speech_end >= POST_PADDING_MS:
+            if end_ms - last_speech_end >= END_SILENCE_MS:
                 events.append((event_start, last_speech_end))
                 event_start = None
                 last_speech_end = None
-    if event_start is not None and last_speech_end is not None:
+                triggered = False
+                onset.clear()
+    if triggered and event_start is not None and last_speech_end is not None:
         events.append((event_start, last_speech_end))
     return events, positives
 
@@ -151,15 +170,18 @@ def main() -> int:
         samples = np.frombuffer(pcm, dtype="<i2").astype(np.float32) / 32768.0
         duration_ms = round(len(samples) / 16)
         state = np.zeros((2, 1, 128), dtype=np.float32)
+        context = np.zeros((1, CONTEXT_SAMPLES), dtype=np.float32)
         probabilities: list[float] = []
-        for start in range(0, len(samples), WINDOW_SAMPLES):
+        for start in range(STARTUP_MASK_MS * 16, len(samples), WINDOW_SAMPLES):
             window = samples[start:start + WINDOW_SAMPLES]
             if len(window) < WINDOW_SAMPLES:
                 window = np.pad(window, (0, WINDOW_SAMPLES - len(window)))
+            model_input = np.concatenate((context, window.reshape(1, -1)), axis=1)
             output, state = session.run(None, {
-                "input": window.reshape(1, -1), "state": state,
+                "input": model_input, "state": state,
                 "sr": np.array(16000, dtype=np.int64),
             })
+            context = model_input[:, -CONTEXT_SAMPLES:]
             probabilities.append(float(output.reshape(-1)[0]))
         events, positives = detect_probability_windows(probabilities, duration_ms)
         duration_seconds = len(samples) / 16000
@@ -173,10 +195,7 @@ def main() -> int:
             "duration_seconds": duration_seconds,
             "reference_intervals_ms": label["speech_intervals_ms"] if label else [],
             "candidate_events_ms": [list(event) for event in events],
-            "padded_utterance_intervals_ms": [
-                [max(0, start - PRE_PADDING_MS), min(duration_ms, end + POST_PADDING_MS)]
-                for start, end in events
-            ],
+            "capture_intervals_ms": padded_and_merged_events(events, duration_ms),
             "positive_windows": positives,
             "total_windows": len(probabilities),
         })
@@ -217,6 +236,7 @@ def main() -> int:
             "inputs": input_names,
             "outputs": output_names,
             "providers": ["CPUExecutionProvider"],
+            "official_context_samples": CONTEXT_SAMPLES,
         },
         "score": {**scoring, "gates": gates, "quality_pass": passed},
         "observations": {
@@ -229,7 +249,7 @@ def main() -> int:
         },
         "cleanup": {"before": before, "after": after, "pass": cleanup_pass},
         "records": records,
-        "status": "SILERO_PASS" if passed else "SILERO_FAIL_NO_GO",
+        "status": "DRAFT_SILERO_GATE_MET_USER_CONFIRMATION_PENDING" if passed else "DRAFT_SILERO_GATE_NOT_MET_USER_CONFIRMATION_PENDING",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

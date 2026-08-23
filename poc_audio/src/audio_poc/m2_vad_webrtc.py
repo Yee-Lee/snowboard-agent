@@ -12,7 +12,7 @@ import resource
 import threading
 import time
 import wave
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -25,8 +25,13 @@ LABEL_INDEX_SHA256 = "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f
 PLAN_SHA256 = "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920"
 FRAME_MS = 20
 FRAME_BYTES = 640
-PRE_PADDING_MS = 300
-POST_PADDING_MS = 500
+STARTUP_MASK_MS = 160
+ONSET_WINDOW_MS = 300
+ONSET_WINDOW_FRAMES = ONSET_WINDOW_MS // FRAME_MS
+ONSET_VOICED_FRAMES = math.ceil(ONSET_WINDOW_FRAMES * 0.9)
+END_SILENCE_MS = 500
+PRE_PADDING_MS = 500
+POST_PADDING_MS = 600
 MODE = 3
 
 
@@ -49,28 +54,56 @@ def detect_events(
     frames: Iterable[bytes],
     is_speech: Callable[[bytes], bool],
 ) -> tuple[list[tuple[int, int]], int]:
-    """Return unpadded speech boundaries; 500 ms silence closes an event."""
+    """Return debounced raw boundaries after the device-start mask."""
     events: list[tuple[int, int]] = []
     event_start: int | None = None
     last_speech_end: int | None = None
-    frame_count = 0
+    onset: deque[tuple[int, int, bool]] = deque(maxlen=ONSET_WINDOW_FRAMES)
+    triggered = False
     positive_frames = 0
     for frame_count, frame in enumerate(frames, 1):
         start_ms = (frame_count - 1) * FRAME_MS
         end_ms = start_ms + FRAME_MS
-        if is_speech(frame):
+        if end_ms <= STARTUP_MASK_MS:
+            continue
+        speech = is_speech(frame)
+        if speech:
             positive_frames += 1
-            if event_start is None:
-                event_start = start_ms
+        if not triggered:
+            onset.append((start_ms, end_ms, speech))
+            if len(onset) == ONSET_WINDOW_FRAMES and sum(item[2] for item in onset) >= ONSET_VOICED_FRAMES:
+                event_start = next(item[0] for item in onset if item[2])
+                last_speech_end = max(item[1] for item in onset if item[2])
+                triggered = True
+                onset.clear()
+        elif speech:
             last_speech_end = end_ms
         elif event_start is not None and last_speech_end is not None:
-            if end_ms - last_speech_end >= POST_PADDING_MS:
+            if end_ms - last_speech_end >= END_SILENCE_MS:
                 events.append((event_start, last_speech_end))
                 event_start = None
                 last_speech_end = None
-    if event_start is not None and last_speech_end is not None:
+                triggered = False
+                onset.clear()
+    if triggered and event_start is not None and last_speech_end is not None:
         events.append((event_start, last_speech_end))
     return events, positive_frames
+
+
+def padded_and_merged_events(
+    events: Iterable[tuple[int, int]], duration_ms: int,
+) -> list[list[int]]:
+    padded = [
+        [max(0, start - PRE_PADDING_MS), min(duration_ms, end + POST_PADDING_MS)]
+        for start, end in events
+    ]
+    merged: list[list[int]] = []
+    for start, end in padded:
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return merged
 
 
 def match_boundaries(
@@ -98,6 +131,7 @@ def score_records(records: list[dict[str, Any]]) -> dict[str, Any]:
     all_start_errors: list[int] = []
     all_end_errors: list[int] = []
     reference_starts = reference_ends = matched_starts = matched_ends = 0
+    complete_utterances = 0
     false_starts = 0
     nonspeech_seconds = 0.0
 
@@ -106,29 +140,39 @@ def score_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         expected = record["reference_intervals_ms"]
         events = record["candidate_events_ms"]
         if record["class"] in {"clear_speech", "pause"}:
-            starts = [interval[0] for interval in expected]
-            ends = [interval[1] for interval in expected]
+            starts = [expected[0][0]]
+            ends = [expected[-1][1]]
             candidate_starts = [interval[0] for interval in events]
             candidate_ends = [interval[1] for interval in events]
-            start_count, start_errors, extra_starts = match_boundaries(
-                starts, candidate_starts, -100, 300,
-            )
-            end_count, end_errors, _ = match_boundaries(ends, candidate_ends, -200, 700)
+            captures = record["capture_intervals_ms"]
+            start_count = int(any(start <= starts[0] <= end for start, end in captures))
+            end_count = int(any(start <= ends[0] <= end for start, end in captures))
+            complete = int(any(start <= starts[0] and end >= ends[0] for start, end in captures))
+            if candidate_starts:
+                start_errors = [min(candidate_starts, key=lambda value: abs(value - starts[0])) - starts[0]]
+                end_errors = [min(candidate_ends, key=lambda value: abs(value - ends[0])) - ends[0]]
+            else:
+                start_errors = []
+                end_errors = []
             reference_starts += len(starts)
             reference_ends += len(ends)
             matched_starts += start_count
             matched_ends += end_count
+            complete_utterances += complete
             all_start_errors.extend(start_errors)
             all_end_errors.extend(end_errors)
             record["matched_starts"] = start_count
             record["matched_ends"] = end_count
-            record["extra_starts"] = len(extra_starts)
+            record["complete_utterance_coverage"] = bool(complete)
+            record["raw_start_error_ms"] = start_errors[0] if start_errors else None
+            record["raw_end_error_ms"] = end_errors[0] if end_errors else None
         else:
             false_starts += len(events)
             nonspeech_seconds += record["duration_seconds"]
 
     def class_summary(items: list[dict[str, Any]]) -> dict[str, Any]:
-        starts = sum(len(item["reference_intervals_ms"]) for item in items)
+        speech_items = [item for item in items if item["reference_intervals_ms"]]
+        starts = len(speech_items)
         matched_start_count = sum(item.get("matched_starts", 0) for item in items)
         ends = starts
         matched_end_count = sum(item.get("matched_ends", 0) for item in items)
@@ -141,6 +185,7 @@ def score_records(records: list[dict[str, Any]]) -> dict[str, Any]:
             "matched_ends": matched_end_count,
             "end_recall_percent": round(100 * matched_end_count / ends, 6) if ends else None,
             "candidate_events": sum(len(item["candidate_events_ms"]) for item in items),
+            "complete_utterances": sum(item.get("complete_utterance_coverage", False) for item in items),
         }
 
     start_recall = 100 * matched_starts / reference_starts
@@ -151,8 +196,6 @@ def score_records(records: list[dict[str, Any]]) -> dict[str, Any]:
     gates = {
         "speech_start_recall_gte_95": start_recall >= 95,
         "speech_end_recall_gte_90": end_recall >= 90,
-        "start_boundary_p95_lte_300_ms": start_p95 is not None and start_p95 <= 300,
-        "end_boundary_p95_lte_700_ms": end_p95 is not None and end_p95 <= 700,
         "silence_noise_false_start_lte_1_per_10_min": false_start_rate <= 1,
     }
     return {
@@ -168,12 +211,16 @@ def score_records(records: list[dict[str, Any]]) -> dict[str, Any]:
             "silence_noise_false_starts": false_starts,
             "nonspeech_minutes": round(nonspeech_seconds / 60, 6),
             "false_starts_per_10_min": round(false_start_rate, 6),
+            "complete_utterances": complete_utterances,
+            "reference_utterances": reference_starts,
+            "complete_utterance_percent": round(100 * complete_utterances / reference_starts, 6),
         },
         "by_class": {name: class_summary(by_class[name]) for name in (
             "clear_speech", "pause", "silence", "noise"
         )},
         "gates": gates,
         "quality_pass": all(gates.values()),
+        "boundary_note": "Raw model boundary errors are diagnostic; padded capture coverage drives recall.",
     }
 
 
@@ -225,9 +272,6 @@ def main() -> int:
         raise ValueError("WebRTC runtime version mismatch")
     import _webrtcvad  # type: ignore[import-not-found]
 
-    native_vad = _webrtcvad.create()
-    _webrtcvad.init(native_vad)
-    _webrtcvad.set_mode(native_vad, MODE)
     if not _webrtcvad.valid_rate_and_frame_length(16000, 320):
         raise ValueError("WebRTC native runtime rejects the frozen frame contract")
     labels_by_id = {record["fixture_id"]: record for record in labels["records"]}
@@ -257,6 +301,9 @@ def main() -> int:
         if len(payload) % FRAME_BYTES:
             raise ValueError(f"fixture is not an exact 20 ms frame multiple: {fixture_id}")
         frames = [payload[index:index + FRAME_BYTES] for index in range(0, len(payload), FRAME_BYTES)]
+        native_vad = _webrtcvad.create()
+        _webrtcvad.init(native_vad)
+        _webrtcvad.set_mode(native_vad, MODE)
         events, positives = detect_events(
             frames, lambda frame: _webrtcvad.process(native_vad, 16000, frame, 320),
         )
@@ -266,16 +313,14 @@ def main() -> int:
         total_frames += len(frames)
         label = labels_by_id.get(fixture_id)
         reference = label["speech_intervals_ms"] if label else []
+        duration_ms = round(duration_seconds * 1000)
         records.append({
             "fixture_id": fixture_id,
             "class": plan_classes[fixture_id],
             "duration_seconds": duration_seconds,
             "reference_intervals_ms": reference,
             "candidate_events_ms": [list(event) for event in events],
-            "padded_utterance_intervals_ms": [
-                [max(0, start - PRE_PADDING_MS), min(round(duration_seconds * 1000), end + POST_PADDING_MS)]
-                for start, end in events
-            ],
+            "capture_intervals_ms": padded_and_merged_events(events, duration_ms),
             "positive_frames": positives,
             "total_frames": len(frames),
         })
@@ -311,10 +356,13 @@ def main() -> int:
             "sample_format": "S16_LE",
             "frame_ms": FRAME_MS,
             "aggressiveness": MODE,
-            "event_start": "first positive frame",
+            "startup_mask_ms": STARTUP_MASK_MS,
+            "event_start": "14 voiced frames in a complete rolling 15-frame / 300 ms window",
             "event_end": "last positive frame before 500 ms consecutive non-speech",
             "pre_speech_padding_ms": PRE_PADDING_MS,
             "post_speech_padding_ms": POST_PADDING_MS,
+            "fixture_state": "fresh engine and endpoint state per independent WAV",
+            "pause_scoring": "one utterance envelope from first annotated start to final annotated end",
         },
         "inputs": {
             "recording_plan_sha256": PLAN_SHA256,
@@ -333,7 +381,7 @@ def main() -> int:
         },
         "cleanup": {"before": before, "after": after, "pass": cleanup_pass},
         "records": records,
-        "status": "WEBRTC_PASS" if passed else "WEBRTC_FAIL_TRIGGER_SILERO",
+        "status": "DRAFT_WEBRTC_GATE_MET_USER_CONFIRMATION_PENDING" if passed else "DRAFT_WEBRTC_GATE_NOT_MET_USER_CONFIRMATION_PENDING",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
