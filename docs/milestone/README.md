@@ -110,9 +110,11 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 - `CLOSED BLOCKER`：Core 已在 AudioOutput 內完成 16 kHz mono S16_LE → 48 kHz
   stereo S32_LE adaptation；User 接受剩餘 Core test coverage 為非阻塞風險。POC 不增加
   自有 resampler，formal hardware execution 仍等待 packet sign-off。
-- `ARTIFACT RECEIVED / CORE ACK PENDING / NON-BLOCKING FOR AUDIO M3`：已收到固定
-  `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum，附件 regression
-  6 項通過。等待 Core corrected ACK 後才整合/執行 P9；不阻擋 M3，也不產生 LLM credit。
+- `CORE ACCEPTED / AUDIO INTEGRATION UNBLOCKED / NOT EXECUTED`：固定
+  `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum 已收到，附件
+  regression 6 項通過；Core ACK 已固定於
+  `caf4f7ba867e4ebc1972df0ade86c605a873a286`。Audio 後續自行執行，不再向 Core
+  要 P9 補件；未執行前不產生 P9 PASS 或 LLM credit。
 - `CONTINGENCY`：M3.1 framework 已條件式接受；只有可重現 hard-gate finding、明確
   root-cause evidence 與 Core 事前核准的一個 minimal remediation 同時具備才啟動。
 - `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；

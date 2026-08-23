@@ -49,9 +49,9 @@ formal qualification。
 - 執行 M4A-P1–P8：ASR HAL frame 對齊/品質、TTS native PCM 與完整播放、
   ASR/TTS 個別 Pi resource/thermal。
 - M4A-P9 已收到 LLM POC 提供的 versioned/checksummed deterministic M4b residency
-  surrogate 與 executable protocol，附件 regression 已通過；等待 Core corrected ACK
-  後才整合。依 User 決定，本項不阻擋 Audio M3 hardware qualification，且不產生
-  LLM Gate 2 credit。
+  surrogate 與 executable protocol，附件 regression 已通過；Core corrected ACK
+  `caf4f7ba867e4ebc1972df0ade86c605a873a286` 已解除 Audio integration 前置。Audio
+  自行安排 bounded execution，不阻擋本 M3 start packet，且不產生 LLM Gate 2 credit。
 - 在 accepted HAL/Pi 重跑 M4A-P10–P12 lifecycle、clean build/license 與 offline，
   並沿用較嚴格的 Audio POC ASR/TTS frozen quality gate。
 - 完成 contract 規定的 decision table、manifest 與 return delivery，回交完整
@@ -66,8 +66,8 @@ formal qualification。
 - 目標 Pi、mic、speaker、外殼及真實測試環境可用。
 - User 可進行現場距離、噪音與聲音確認。
 - M4A-P9 surrogate 不作為 Audio M3 hardware qualification entry condition。固定 artifact、
-  checksum、protocol、process-group topology 與 decision rule 已收到；Core corrected ACK
-  前不整合或宣稱 P9，但可進行已 sign-off 的其他 M3 測項。
+  checksum、protocol、process-group topology、decision rule 與 Core corrected ACK 已收到；
+  Audio 可自行安排 P9，但未執行前不得宣稱 P9 PASS。
 
 ## Exit Gate
 
@@ -78,8 +78,9 @@ formal qualification。
 - 每類產生一個 hardware-qualified winner；任何 no-go 或 fallback 都有正式決策。
 - M4 組合所需 format、endpoint、threads、timeout 與 execution-container 已固定。
 - M4A-P1–P8、P10–P12 每項的 PASS/FAIL/INCONCLUSIVE、raw evidence path、cleanup
-  與 reproduction command 已由 return SHA 定位。P9 另列 `PENDING CORE INPUT`，
-  不得冒充已執行；其對 Gate 2A 的影響等待 Core 書面 disposition。
+  與 reproduction command 已由 return SHA 定位。P9 另列
+  `CORE ACCEPTED / AUDIO INTEGRATION UNBLOCKED / NOT EXECUTED`，不得冒充已執行；
+  Audio 依 accepted protocol 自行執行並保留與本 22-result start packet 的邊界。
 - Core Designer 已發 Gate 2A selection ACK，或明確發出
   evidence-backed no-go/補件要求；未取得 ACK 時 M3 不得標為 `COMPLETE`。
   Final reference 與 `POC Accepted` 仍由 M4 Gate 2B 關閉。

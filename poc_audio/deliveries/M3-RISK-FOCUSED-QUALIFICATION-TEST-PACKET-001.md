@@ -367,7 +367,8 @@ root-cause evidence and a separately approved single-action proposal are all req
 before a new M3.1 packet can be prepared.
 
 The exact `M4B-P9-RESIDENCY-SURROGATE-001` artifact, protocol and source identity were
-received from LLM POC and passed their six-test deterministic regression. Its corrected
-Core ACK remains pending, so Audio does not yet integrate or execute P9. This is
-`ARTIFACT RECEIVED / CORE ACK PENDING / NON-BLOCKING FOR THIS AUDIO M3 QUALIFICATION
-PACKET`; do not claim P9 complete or grant LLM Gate 2 credit.
+received from LLM POC and passed their six-test deterministic regression. After the
+immutable execution candidate was cut, Core accepted the executable at
+`caf4f7ba867e4ebc1972df0ade86c605a873a286`. Audio integration is therefore unblocked
+without changing this packet's 22-result set or M3 start authorization. P9 remains
+`CORE ACCEPTED / NOT EXECUTED`; do not claim P9 complete or grant LLM Gate 2 credit.
