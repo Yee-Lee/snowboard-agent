@@ -10,9 +10,9 @@
     "runtime_bundle":{"path":"poc_llm/fixtures/gate1/arm64-runtime-bundle-v1.json","sha256":"3db299c9bdfdb8e0660428efd8f5a187138287f9a67d28f11839fe808b7fe01d"},
     "offline_installer":{"path":"poc_llm/tools/install_gate1_arm64_wheel.py","sha256":"7c6f62a74ec73bcb705ffae5f5264a267b1005ffb5ac33b15bbc28ecd3bc34a5"},
     "offline_install_wrapper":{"path":"poc_llm/tools/run_gate1_arm64_offline_install.sh","sha256":"5979c5aab54f5e3aeca953fb4962890bbc552b9b65eed071196e83f486150400"},
-    "adapter_binding_bundle":{"path":"poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json","sha256":"f0061c3af0e2df14e9b3d2cbe65398923e237516b950ac385d578bb952547d0b"},
+    "adapter_binding_bundle":{"path":"poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json","sha256":"38a537469859b7a67a98669604917dcb5592b43ec3887f5edcb2a443e8f6596e"},
     "model_license_metadata":{"path":"poc_llm/fixtures/gate1/arm64-model-license-metadata-v1.json","sha256":"49fefcf9d1986ff316c525b11ce6e0602885da61059fdf7e265897bc796fffef"},
-    "adapter":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"534ed1b91436b8789408903f64e4cc523ba4474db2ca9a4c681115327b2a1a38"},
+    "adapter":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"dc2c243fb5b11d56906b1bec175fc89968dee6443a9584356346227865a12d7f"},
     "smoke_runner":{"path":"poc_llm/tools/run_gate1_arm64_smoke.py","sha256":"73f08f214b2440fdd9d45f680eba20e67e4ec9e3bdc48d2625e8de13bd068421"},
     "boundary":{"path":"poc_llm/harness/m1_contract_boundary.py","sha256":"f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
     "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
@@ -21,11 +21,11 @@
     "config_gemma":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-G4E2B-MOBILE-R1.json","sha256":"b921cde451ee59713cc2478d56292bbb326acea032c59ea3bbb66adb9653d38a"},
     "config_qwen05":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-05B-Q8-R1.json","sha256":"59f2ab60c83afa0115f5a8976b4824725456c8d602211b8480948ceb43754f64"},
     "config_qwen15":{"path":"poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-15B-Q8-R1.json","sha256":"80ada6d80e6322e362484b855c99f4bf51c7b6e8e281ec1cb0e32b58d5559f4b"},
-    "acquisition_gemma":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-G4E2B-MOBILE-R1.json","sha256":"a061a9b67c07ad9977b1928db41a6ff627a9b584c11fe96ce600e8cb10379cda"},
-    "acquisition_qwen05":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-05B-Q8-R1.json","sha256":"546053640902a9a03726c2dc747d1ebf8ecfe0236eead718b4386002cbf67373"},
-    "acquisition_qwen15":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-15B-Q8-R1.json","sha256":"8abe432bc2c3793a62442f97314028861dfcc75adb85cc2f01edfe3484b74439"},
-    "candidate_gemma":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-G4E2B-MOBILE-R1.json","sha256":"e3f614bf23fc197433d104fdbe06da82e991534e78904c21afde43fda486a7c3"},
-    "candidate_qwen05":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-05B-Q8-R1.json","sha256":"7dd33a717df13b9a238ea04fe2994d4e9c947c84bb58ec9b4552709845ff390a"},
-    "candidate_qwen15":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-15B-Q8-R1.json","sha256":"e01695c935881f33fb4e677cbd9dae85417e6ef4a967b5c6b01827abcbf18193"}
+    "acquisition_gemma":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-G4E2B-MOBILE-R1.json","sha256":"cf12123080dab077dbf9d3b4367fa7796418347b684ac3f0f1861a24e67462ea"},
+    "acquisition_qwen05":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-05B-Q8-R1.json","sha256":"a6d35979d9e0b16d937971a3486128647ccc1287a7e1f8282302f363c43e7270"},
+    "acquisition_qwen15":{"path":"poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-15B-Q8-R1.json","sha256":"2c59ef98b1273c604b66c131fc5916e987608f7f2741d91e5f7ec7abe58c82cb"},
+    "candidate_gemma":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-G4E2B-MOBILE-R1.json","sha256":"374be61a7d4cc047e7f34db556e7e25362e74d7a469bf4370d011c36d7d13056"},
+    "candidate_qwen05":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-05B-Q8-R1.json","sha256":"57c2562b71147bd33e48d766558319f6ff3fcf434826fcd1ed99677e6d99726f"},
+    "candidate_qwen15":{"path":"poc_llm/fixtures/gate1/candidates-arm64/CAND-LRT-Q25-15B-Q8-R1.json","sha256":"c2586be7ff96cbb538fc4701aace5fa2a6bee5e08d8e6ea8dd6e3514051a22b4"}
   }
 }

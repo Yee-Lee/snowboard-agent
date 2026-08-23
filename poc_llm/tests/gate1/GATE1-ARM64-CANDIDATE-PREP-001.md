@@ -58,7 +58,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`bc7b59c722bfcf5e2f55e9c79bbd8e87189502d2c28e1f085c83512a98992654`.
+`be70735aeb1a2cac289380ad39f7e9b0e23541803996f45a42c6230a05d3a4b4`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer

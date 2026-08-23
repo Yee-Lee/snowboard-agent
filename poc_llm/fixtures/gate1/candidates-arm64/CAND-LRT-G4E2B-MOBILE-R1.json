@@ -19,7 +19,7 @@
   "quantization": "embedded mobile 2/4/8-bit mixture",
   "license": "Apache-2.0",
   "offline": true,
-  "acquisition_manifest": {"path": "poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-G4E2B-MOBILE-R1.json", "sha256": "a061a9b67c07ad9977b1928db41a6ff627a9b584c11fe96ce600e8cb10379cda"},
+  "acquisition_manifest": {"path": "poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-G4E2B-MOBILE-R1.json", "sha256": "cf12123080dab077dbf9d3b4367fa7796418347b684ac3f0f1861a24e67462ea"},
   "commands": {
     "ubuntu-aarch64": {
       "argv": ["env", "PYTHONPATH=/tmp/llm-poc-g1-arm64-001/install", "python3", "poc_llm/harness/litert_lm_child_adapter.py", "--config", "poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-G4E2B-MOBILE-R1.json", "--config-sha256", "b921cde451ee59713cc2478d56292bbb326acea032c59ea3bbb66adb9653d38a"],

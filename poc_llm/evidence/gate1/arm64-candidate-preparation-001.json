@@ -61,7 +61,7 @@
     "source_archive_size_bytes": 451258203
   },
   "result": "OFFLINE_INSTALL_PRESCREEN_PASS",
-  "wip_lock_sha256": "bc7b59c722bfcf5e2f55e9c79bbd8e87189502d2c28e1f085c83512a98992654",
+  "wip_lock_sha256": "be70735aeb1a2cac289380ad39f7e9b0e23541803996f45a42c6230a05d3a4b4",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

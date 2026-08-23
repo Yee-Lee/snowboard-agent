@@ -12,7 +12,7 @@
     "ubuntu-aarch64": {
       "runtime_artifact": {"path": "/tmp/llm-poc-g1-arm64-001/bundle/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl", "sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"},
       "dependency_bundle": {"path": "poc_llm/fixtures/gate1/arm64-runtime-bundle-v1.json", "sha256": "3db299c9bdfdb8e0660428efd8f5a187138287f9a67d28f11839fe808b7fe01d"},
-      "adapter_binding_bundle": {"path": "poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json", "sha256": "f0061c3af0e2df14e9b3d2cbe65398923e237516b950ac385d578bb952547d0b"},
+      "adapter_binding_bundle": {"path": "poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json", "sha256": "38a537469859b7a67a98669604917dcb5592b43ec3887f5edcb2a443e8f6596e"},
       "deployed_model": {"path": "/tmp/llm-poc-g1-arm64-001/bundle/CAND-LRT-G4E2B-MOBILE-R1/gemma-4-E2B-it.litertlm", "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"},
       "install_argv": ["python3", "poc_llm/tools/install_gate1_arm64_wheel.py", "--wheel", "/tmp/llm-poc-g1-arm64-001/bundle/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl", "--wheel-sha256", "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00", "--target", "/tmp/llm-poc-g1-arm64-001/install"],
       "install_argv_sha256": "1a5518f5f235a082ee13ce03cf446377c1dd9e75fa658ccef8acf5b31e2997a5"

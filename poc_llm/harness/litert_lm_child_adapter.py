@@ -17,6 +17,8 @@ from typing import Any, Protocol, TextIO
 from jsonschema import Draft202012Validator, RefResolver
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 CONTRACT_ROOT = ROOT / "poc_llm/contracts/m1"
 PROTOCOL_VERSION = "snowboard.llm/1"
 
