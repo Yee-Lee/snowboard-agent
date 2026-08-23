@@ -21,6 +21,7 @@ below fires.
 | Label index | SHA-256 `85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74` |
 | Input | 16 kHz, mono, S16_LE, exact 20 ms / 320-sample frames |
 | Candidate profile | WebRTC aggressiveness level 3 |
+| Runtime API | Exact wheel's official `_webrtcvad` native extension; the legacy `webrtcvad.py` wrapper is not used because its version-only `pkg_resources` import is absent from the declared dependency closure |
 | Shared endpoint | First positive frame starts an event; 500 ms consecutive non-speech closes it at the last positive-frame end |
 | Utterance padding | 300 ms before event start, 500 ms after event end; padding is reported separately and does not rewrite scored event boundaries |
 | Repetition | One pass over 100 fixtures; no warm-up matrix, tuning, or alternate profile |
@@ -61,6 +62,10 @@ timeout 600 bash poc_audio/tools/run_m2_vad_webrtc.sh \
   --label-index <controlled-vad-labels-v1.json> \
   --output <new-controlled-result.json>
 ```
+
+The direct native API does not replace or patch engine code: it is the compiled
+extension invoked by the upstream wrapper. Candidate version is verified from
+installed wheel metadata before the extension is loaded.
 
 Before execution, record the full POC SHA, runtime wheel SHA-256, Pi platform,
 temperature/throttle state, fixture-manifest SHA-256 and clean worktree. After

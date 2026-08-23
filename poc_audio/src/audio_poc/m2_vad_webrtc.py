@@ -223,9 +223,13 @@ def main() -> int:
     labels, plan, manifest = load_inputs(args.fixture_dir, args.label_index, args.recording_plan)
     if importlib.metadata.version("webrtcvad") != "2.0.10":
         raise ValueError("WebRTC runtime version mismatch")
-    import webrtcvad  # type: ignore[import-not-found]
+    import _webrtcvad  # type: ignore[import-not-found]
 
-    vad = webrtcvad.Vad(MODE)
+    native_vad = _webrtcvad.create()
+    _webrtcvad.init(native_vad)
+    _webrtcvad.set_mode(native_vad, MODE)
+    if not _webrtcvad.valid_rate_and_frame_length(16000, 320):
+        raise ValueError("WebRTC native runtime rejects the frozen frame contract")
     labels_by_id = {record["fixture_id"]: record for record in labels["records"]}
     plan_classes = {item["fixture_id"]: item["vad_class"] for item in plan["utterances"]}
     for vad_class in ("silence", "noise"):
@@ -253,7 +257,9 @@ def main() -> int:
         if len(payload) % FRAME_BYTES:
             raise ValueError(f"fixture is not an exact 20 ms frame multiple: {fixture_id}")
         frames = [payload[index:index + FRAME_BYTES] for index in range(0, len(payload), FRAME_BYTES)]
-        events, positives = detect_events(frames, lambda frame: vad.is_speech(frame, 16000))
+        events, positives = detect_events(
+            frames, lambda frame: _webrtcvad.process(native_vad, 16000, frame, 320),
+        )
         duration_seconds = len(payload) / 2 / 16000
         total_audio_seconds += duration_seconds
         positive_frames += positives
@@ -294,6 +300,7 @@ def main() -> int:
         "candidate": {
             "engine": "py-webrtcvad",
             "version": "2.0.10",
+            "runtime_api": "official wheel native _webrtcvad extension",
             "source_size_bytes": SOURCE_SIZE_BYTES,
             "source_sha256": SOURCE_SHA256,
             "runtime_wheel_sha256": sha256_file(args.runtime_wheel),
