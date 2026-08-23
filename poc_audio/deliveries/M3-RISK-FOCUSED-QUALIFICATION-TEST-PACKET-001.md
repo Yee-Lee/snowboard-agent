@@ -1,6 +1,6 @@
 # M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001
 
-Status: `USER APPROVED / RUNNER LOCALLY VERIFIED / CANDIDATE SHA PENDING / CORE SIGN-OFF PENDING / NO EXECUTION AUTHORITY`
+Status: `USER APPROVED / RUNNER LOCALLY VERIFIED AT 655e80ec4ed287708ed0a47f383b645d88650b18 / CORE SIGN-OFF PENDING / NO EXECUTION AUTHORITY`
 
 ## Purpose and authority
 
@@ -22,7 +22,7 @@ separate output directory and must never be promoted into formal evidence.
 | --- | --- |
 | POC branch | `audio` |
 | POC packet parent SHA | `7b674f50dcd581298613d947b874f7b6c5da332d` |
-| POC execution SHA | `PENDING_PACKET_AND_RUNNER_COMMIT`; must be one clean 40-character SHA before Core sign-off |
+| POC execution SHA | `655e80ec4ed287708ed0a47f383b645d88650b18` |
 | Core accepted Option A delivery | `882e2b6ff571eb9d54ec96bae7d3b63338c5965c` |
 | Audio POC Option A validation SHA | `de3b0bab4daaf47f62956d4b27f6697b3d4fa823` |
 | Existing Core accepted HAL implementation | `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`; acceptance `2fb2e18f934c3d06392074adba3c4518402101e9` / `core_m3` |

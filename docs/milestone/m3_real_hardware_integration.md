@@ -24,8 +24,9 @@ M2 已由
 `ACCEPTED WITH CONDITIONS` 核准判定框架與 packet minimum，並授權準備 test packet。
 User 已核准 packet，Core output adaptation 已固定為
 `ff09199583644a8f0822153e371589f52ae821a0`。formal backend、offline enforcement、
-candidate lifecycle 與 draft summary 已完成本地驗證；在 packet/runner 以 exact SHA
-commit 且獲 Core Designer sign-off 前，不執行 formal qualification。
+candidate lifecycle 與 draft summary 已完成本地驗證。packet/runner candidate 已固定為
+`655e80ec4ed287708ed0a47f383b645d88650b18`；在獲 Core Designer sign-off 前不執行
+formal qualification。
 
 ## 對最終交付的貢獻
 

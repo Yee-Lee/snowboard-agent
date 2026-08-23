@@ -98,14 +98,15 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `NEXT`：User 已核准 `M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001`；完成 runner、
-  local fake validation 與 exact candidate SHA 後提交 Core Designer sign-off。sign-off
-  前不得執行 formal M3 hardware qualification。
+- `NEXT`：User 已核准 `M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001`；runner/local
+  validation 已完成並固定 candidate SHA
+  `655e80ec4ed287708ed0a47f383b645d88650b18`。`REQ-AUDIO-M3-PACKET-SIGNOFF-001`
+  正提交 Core Designer；sign-off 前不得執行 formal M3 hardware qualification。
 - `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
   HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
   portable suite 176 項通過。Core output adaptation 已固定為
-  `ff09199583644a8f0822153e371589f52ae821a0`；下一步切 POC execution SHA 並送 Core
-  packet sign-off。
+  `ff09199583644a8f0822153e371589f52ae821a0`；POC execution SHA 已切定，下一步取得
+  Core packet sign-off。
 - `CLOSED BLOCKER`：Core 已在 AudioOutput 內完成 16 kHz mono S16_LE → 48 kHz
   stereo S32_LE adaptation；User 接受剩餘 Core test coverage 為非阻塞風險。POC 不增加
   自有 resampler，formal hardware execution 仍等待 packet sign-off。
