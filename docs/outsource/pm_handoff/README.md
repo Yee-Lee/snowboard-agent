@@ -80,6 +80,8 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 | [`CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001`](history/CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md) | Core AudioOutput 16kHz→48kHz adaptation（供 Audio POC M3 TTS playback） | 無 | **Resolved — implementation SHA delivered** | Response: [`RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md`](../responses/RESP-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md)；Delivery: [`DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002.md`](../deliveries/DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002.md) |
 | [`RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001`](history/RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md) | LLM POC M4b conservative resource envelope | `M4A-G1-D04` | **Resolved — surrogate spec delivered to Audio POC** | Delivery: [`DELIVERY-P9-SURROGATE-SPEC-001.md`](../deliveries/DELIVERY-P9-SURROGATE-SPEC-001.md) |
 | [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`](history/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) | LLM POC M2 ARM64 UTM to Product Pi Transition Request | 無 | **Resolved — accepted with conditions; Pi transition authorized** | Response: [`ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md`](../responses/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md) |
+| [`DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE`](history/DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) | LLM POC P9 Surrogate Executable Delivery | 無 | **Resolved — accepted; M4A-P9 audio integration unblocked** | ACK: [`RESP-LLM-POC-P9-SURROGATE-EXECUTABLE-001.md`](../responses/RESP-LLM-POC-P9-SURROGATE-EXECUTABLE-001.md) |
+| [`DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW`](history/DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md) | LLM POC Gate 1 & Gate 2A Pi Execution Packets Review | 無 | **Resolved — G1 accepted for execution; G2A frozen pending finalist ACK** | ACK: [`RESP-LLM-POC-PI-EXECUTION-PACKETS-001.md`](../responses/RESP-LLM-POC-PI-EXECUTION-PACKETS-001.md) |
 
 ---
 
@@ -122,5 +124,11 @@ docs/outsource/pm_handoff/
     ├── PROPOSAL_AUDIO_001_M3_1_REMEDIATION.md
     ├── CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md
     ├── RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md
-    └── DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md
+    ├── DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md
+    ├── DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md
+    ├── DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md
+    ├── DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-SOURCE-IDENTITY.md
+    ├── GATE1-PI-COMPAT-PACKET-006.md
+    ├── GATE2A-PI-PACKET-001.md
+    └── P9-SURROGATE-SOURCE-IDENTITY-001.md
 ```
