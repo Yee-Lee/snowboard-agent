@@ -1,0 +1,29 @@
+{
+  "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+  "pairing_revision": "litert-lm-v0.16.0-arm64-wip-r1",
+  "logical_runtime": {
+    "name": "litert-lm-api",
+    "version": "0.16.0",
+    "source_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
+    "license": "Apache-2.0"
+  },
+  "model": {
+    "name": "Qwen2.5-1.5B-Instruct",
+    "version": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614",
+    "path": "/tmp/llm-poc-g1-arm64-001/bundle/CAND-LRT-Q25-15B-Q8-R1/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+    "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9"
+  },
+  "configs": {
+    "ubuntu-aarch64": {"path": "poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-15B-Q8-R1.json", "sha256": "80ada6d80e6322e362484b855c99f4bf51c7b6e8e281ec1cb0e32b58d5559f4b"}
+  },
+  "quantization": "Q8 dynamic INT8 family",
+  "license": "Apache-2.0",
+  "offline": true,
+  "acquisition_manifest": {"path": "poc_llm/fixtures/gate1/acquisitions-arm64/ACQ-LRT-Q25-15B-Q8-R1.json", "sha256": "2307439eaa4e66e24aaee72f250656c79fa1e0e6af22d214dd71487dcc73ce55"},
+  "commands": {
+    "ubuntu-aarch64": {
+      "argv": ["env", "PYTHONPATH=/tmp/llm-poc-g1-arm64-001/install", "python3", "poc_llm/harness/litert_lm_child_adapter.py", "--config", "poc_llm/fixtures/gate1/configs-arm64/CAND-LRT-Q25-15B-Q8-R1.json", "--config-sha256", "80ada6d80e6322e362484b855c99f4bf51c7b6e8e281ec1cb0e32b58d5559f4b"],
+      "sha256": "245867cb248b6071c4b9e125108eec11a537a7daa1661c74ad9cccde7ae1be53"
+    }
+  }
+}

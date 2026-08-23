@@ -72,6 +72,12 @@ portability/fallback且不阻擋 ARM64。兩個 WIP branches可在 immutable com
 
 ## Pi Worktree Policy
 
+ARM64 UTM到產品Pi的可攜identity、sanitized results、API/runner陷阱、Gate 1 compatibility與
+Gate 2A重新執行邊界，集中在
+[`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`](../docs/delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md)。
+Pi operator應先讀該文件，不需回查UTM `/tmp` raw history；但它是pending scope request，不是
+Pi execution authorization或Gate 2 evidence。
+
 Pi checkout 是 clean deployment/test worktree，不是開發來源。Tester 只能 checkout
 test request 指定的完整 SHA、執行 pre-test 與 immutable packet、回收 evidence；
 不得在 Pi 修改 source 或調整 gate。

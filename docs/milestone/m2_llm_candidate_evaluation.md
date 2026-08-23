@@ -28,6 +28,14 @@ x86與Gate 1 Pi compatibility只用於Gate 1 selection，不得取代任何Gate 
 為獨立 portability/fallback track，不阻擋 ARM64。兩個命名 WIP branches 可在 predeclared
 commands與stop conditions下完成各自 workstation scope，但此授權不啟動 M2、不授權Pi或Gate 2。
 
+## Pending ARM-first Pi Transition Adjustment
+
+User已要求以完成的ARM64 UTM pre-screen取代後續x86_64 WIP completion/merge dependency，固定
+Gemma與Qwen 1.5B最多兩名，將其餘P1/P2/P3與mandatory acceptance移至產品Pi獨立packet。
+`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`保留完整可攜identity、sanitized result
+provenance、API/runner lessons與Pi checklist。此項尚待Core核准；在ACK前不得視為已修改本
+milestone entry/exit gate，不得執行Pi或跳過Gate 1 compatibility。
+
 ## Work Packet
 
 Authoritative repository packet：`poc_llm/tests/gate1/GATE1-PACKET-005.md`。Frozen catalog、

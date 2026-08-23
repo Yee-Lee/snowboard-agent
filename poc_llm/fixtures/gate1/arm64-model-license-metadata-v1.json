@@ -1,0 +1,26 @@
+{
+  "record_id": "G1-ARM64-MODEL-LICENSE-METADATA-001",
+  "candidates": {
+    "CAND-LRT-G4E2B-MOBILE-R1": {
+      "revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94",
+      "license": "apache-2.0",
+      "base_model": "google/gemma-4-E2B-it",
+      "metadata_filename": "README.md",
+      "metadata_sha256": "175391634f4fb0a633d150b7845ac315485263d59d420133b5e42c0c08e7160d"
+    },
+    "CAND-LRT-Q25-15B-Q8-R1": {
+      "revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614",
+      "license": "apache-2.0",
+      "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "metadata_filename": "README.md",
+      "metadata_sha256": "f52ccb61379a5a4e7379f7977e67574e9583a81873517603e2adfb2c61ae6216"
+    },
+    "CAND-LRT-Q25-05B-Q8-R1": {
+      "revision": "6c237a59eedeb06a821b21f0a59b03d346ac8bc3",
+      "license": "apache-2.0",
+      "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "metadata_filename": "README.md",
+      "metadata_sha256": "f338874fb914f48fb6b151488ec0189c2e77bd7ce3f80f7c81b9ea837b6c059b"
+    }
+  }
+}

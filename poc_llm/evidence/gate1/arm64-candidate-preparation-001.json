@@ -1,0 +1,405 @@
+{
+  "baseline_sha": "bda47427cb17075caf74a22feaa61b556a2c04d7",
+  "candidate_evidence": false,
+  "capacity_blocked": false,
+  "free_space_at_safe_stop_bytes": 15963127808,
+  "models": [
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "filename": "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+      "sha256": "e608953f169aeb1bd7b9155fec2559825e08453fc209b84eda3a781ed0452fd2",
+      "size_bytes": 546660344,
+      "status": "DEFERRED_RUNTIME_FORMAT_INCOMPATIBLE",
+      "upstream_revision": "6c237a59eedeb06a821b21f0a59b03d346ac8bc3"
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+      "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
+      "size_bytes": 1597931520,
+      "status": "P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL",
+      "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
+    },
+    {
+      "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+      "filename": "gemma-4-E2B-it.litertlm",
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "size_bytes": 2588147712,
+      "status": "P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_NONDETERMINISTIC",
+      "upstream_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94"
+    }
+  ],
+  "measurement_review": {
+    "combined_sessions": 20,
+    "execution_sha": "19aca08a83caacb19ce1fab10fa9961fe188dab2",
+    "gemma": {
+      "busy": "PASS",
+      "cancel_ms": 139.839,
+      "cleanup": "PASS",
+      "hot_decode_tokens_mean": 16.0,
+      "hot_decode_tps_p50": 19.657,
+      "hot_prefill_tps_p50": 241.121,
+      "hot_ttft_ms_p50": 386.952,
+      "hot_ttft_ms_p95": 397.822,
+      "hot_wall_ms_p50": 1154.295,
+      "hot_wall_ms_p95": 1171.501,
+      "peak_rss_kib": 2071472,
+      "p6_disposition": "PASS",
+      "result": "PASS",
+      "result_sha256": "25c426cb685487cf38d6f9def3cfec7de6a490f3ddd32b34d303f0489e8d0ddf",
+      "sessions": 10,
+      "stderr_sha256": "62a11462e3b961bc7021b9ae3597f6f62ca5e639508415e74917f4745dc2678f"
+    },
+    "qwen15": {
+      "busy": "PASS",
+      "cleanup_after_timeout": "PASS",
+      "hot_decode_tokens_mean": 16.0,
+      "hot_decode_tps_p50": 16.879,
+      "hot_prefill_tps_p50": 129.613,
+      "hot_ttft_ms_p50": 814.259,
+      "hot_ttft_ms_p95": 928.259,
+      "hot_wall_ms_p50": 1702.121,
+      "hot_wall_ms_p95": 1919.596,
+      "p6_disposition": "CONDITIONAL_ESCALATION",
+      "peak_rss_kib": "UNAVAILABLE_RUNNER_EARLY_FINALIZATION",
+      "raw_runner_result": "FAIL",
+      "result_sha256": "0f55e6b6e71cee7b2d55b00c57224a83436ba7a424fa95a33bf6d75d3de82cfc",
+      "sessions": 10,
+      "stderr_sha256": "bfaf624fb30fac47ab192e17688b98a03ada697d2e03a94ce86cdea1661be173"
+    },
+    "reviewed": true
+  },
+  "p7_recovery_review": {
+    "gemma": {
+      "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+      "execution_sha": "2d5b1e9ad59258272a1f4581e733456261101bf2",
+      "level2": {
+        "exit_code": -15,
+        "kill_sent": false,
+        "process_group_absent": true,
+        "term_sent": true,
+        "waited": true
+      },
+      "network_namespace": "net:[4026532420]",
+      "p6": {
+        "disposition": "CONDITIONAL_ESCALATION",
+        "elapsed_ms": 500,
+        "prior_measurement_cancel_ms": 139.839,
+        "review_disposition": "NONDETERMINISTIC_CONDITIONAL_ESCALATION",
+        "terminal": "TIMEOUT"
+      },
+      "rebuild": {
+        "cleanup": "PASS",
+        "generate_terminal": "RESULT",
+        "ready": true,
+        "shutdown_ack": true,
+        "startup_ms": 5727.829
+      },
+      "result": "PASS",
+      "result_sha256": "7d28f5fd539a1f236bc5e14ede2d42d54a1c523b7079612b6dc3bf807d7671dc",
+      "schema_validation": "PASS",
+      "stderr_original_sha256": "a41b81202c3fec68c3cef558db8c146881ee650cc2cafee1cc80b48ab8a20ffb",
+      "stderr_rebuild_sha256": "b5ee767928e86d210a7c9a72c50d4d19aaef51b400e0031b0758abd4b9f5dc14",
+      "violations": []
+    },
+    "qwen15": {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "execution_sha": "9b6c2a20f95695c26c6bb727f72d63be5c6b3860",
+      "level2": {
+        "exit_code": -15,
+        "kill_sent": false,
+        "process_group_absent": true,
+        "term_sent": true,
+        "waited": true
+      },
+      "network_namespace": "net:[4026532420]",
+      "p6": {
+        "disposition": "CONDITIONAL_ESCALATION",
+        "elapsed_ms": 500,
+        "terminal": "TIMEOUT"
+      },
+      "rebuild": {
+        "cleanup": "PASS",
+        "generate_terminal": "RESULT",
+        "ready": true,
+        "shutdown_ack": true,
+        "startup_ms": 4081.878
+      },
+      "result": "PASS",
+      "result_sha256": "96cef6bd2f2fa776cf986747770e9463cbea1d9d216bf157eb3d385ccba9322e",
+      "schema_validation": "PASS",
+      "stderr_original_sha256": "afdddcb3b81468fabbd55692c0458020489160b39820396aa6868298b4280f4b",
+      "stderr_rebuild_sha256": "78ace490438f3cf0d15a1ebeb2c580e21a38c4a902ed7f0746f7e01eeb0a55c",
+      "violations": []
+    }
+  },
+  "p4_review": {
+    "execution_sha": "629f6136404366afc2db4b0e496bb261e2a920d6",
+    "gemma": {
+      "cold_decode_tps_p50": 21.509,
+      "cold_ttft_ms_p50": 351.857,
+      "cold_ttft_ms_p95": 353.081,
+      "combined_artifact_bytes": 2634233466,
+      "hot_decode_tps_p50": 22.301,
+      "hot_decode_tps_p95": 22.574,
+      "hot_ttft_ms_p50": 349.678,
+      "hot_ttft_ms_p95": 356.481,
+      "hot_wall_ms_p50": 1025.415,
+      "hot_wall_ms_p95": 1063.333,
+      "peak_rss_kib": 2072316,
+      "result": "PASS",
+      "result_sha256": "a39aadef00aadae5b494898a88666caac93f05dcd12e5f4d2f09d1679fb072bf",
+      "stderr_sha256": "9868d73cba7f9de0af3a89a06fa1cd77d51313e7a35287a60a33bf0d6299b7e4"
+    },
+    "method": {
+      "cold": 3,
+      "hot": 20,
+      "input_tokens": 128,
+      "max_output_tokens": 16,
+      "temperature": 0,
+      "warmup": 3
+    },
+    "qwen15": {
+      "cold_decode_tps_p50": 16.984,
+      "cold_ttft_ms_p50": 807.482,
+      "cold_ttft_ms_p95": 807.76,
+      "combined_artifact_bytes": 1644017274,
+      "hot_decode_tps_p50": 16.93,
+      "hot_decode_tps_p95": 17.19,
+      "hot_ttft_ms_p50": 812.486,
+      "hot_ttft_ms_p95": 846.984,
+      "hot_wall_ms_p50": 1703.93,
+      "hot_wall_ms_p95": 1920.652,
+      "peak_rss_kib": 2052192,
+      "result": "PASS",
+      "result_sha256": "9745a6091e000a97e07961609fb63454673adac1d0c7fdfeeccd264f52ef6634",
+      "stderr_sha256": "2f3876a7096c13e4731c517a00f2bb1ccab9d0e383f39295b30a509ba00a7774"
+    },
+    "schema_validation": "PASS"
+  },
+  "long_p8_review": {
+    "execution_sha": "46de889dc4e0f9b04d0d76d6b3065f4ef586532a",
+    "gemma": {
+      "cleanup": "PASS",
+      "log_hygiene": "PASS",
+      "long_prefill_tokens": 106,
+      "long_prompt": "PASS",
+      "maximum_observed_wall_ms": 2220.974,
+      "p5_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+      "p8": "PASS",
+      "p8_decode_tps_p50": 22.425,
+      "p8_ttft_ms_p50": 352.371,
+      "p8_wall_ms_p50": 1025.431,
+      "result_sha256": "5b78ea1b30fd450ccec49305b75d174989943612b660139eb6c2e9a0779c23ee",
+      "stderr_sha256": "797cfedf5b15334c46ace710f98d2ef0bce5ef3c72fd92c35bac106486b7931b"
+    },
+    "qwen15": {
+      "cleanup": "PASS",
+      "log_hygiene": "PASS",
+      "long_prefill_tokens": 127,
+      "long_prompt": "PASS",
+      "maximum_observed_wall_ms": 2764.336,
+      "p5_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+      "p8": "PASS",
+      "p8_decode_tps_p50": 17.008,
+      "p8_ttft_ms_p50": 809.418,
+      "p8_wall_ms_p50": 1694.476,
+      "result_sha256": "c80f0dd520a88547bd98dfff1ef82ca449ddc28c62a45fa9a470eeb529801acb",
+      "stderr_sha256": "a1fbd00253a4b22a323c2a3b7aba7c45bec54e6267eb80cb8c5a772d29bc2d2e"
+    },
+    "log_hygiene_scanner_version": "1.0.0",
+    "schema_validation": "2/2 PASS"
+  },
+  "p5_workaround_attempts": [
+    {
+      "execution_sha": "b61d7179b5f1e8391caf2b301a2a0c384298d845",
+      "gemma_result_sha256": "1b487872111f66440d5ce6b964fae2674564dca01849e75f1a1f37321fa45b41",
+      "qwen15_result_sha256": "1a6b8ccb754423e42b223b5aeabb65695e8c3309696aa6ae32bf5a626921a913",
+      "result": "FAIL",
+      "root_cause": "RUNNER_DROPPED_AUTHENTICATED_PYTHONPATH_PREFIX",
+      "stderr_sha256": "4434432479b753cc9cffdc2c410583011cc194380b9a3ef5cb5b8f86d7c7d291"
+    },
+    {
+      "contract_p5_disposition": "INCONCLUSIVE",
+      "execution_sha": "108d95441da1f70740ce4c5b4070aeabf5c50aec",
+      "gemma": {
+        "elapsed_ms": 1437.165,
+        "log_hygiene": "PASS",
+        "result_sha256": "639ac42fd2fbb9f2c2d210f7381abd8e97442959e9f18783e896baf5626fea6f",
+        "stderr_sha256": "8b40d7ba1e9bc4c18ef79496cece205f18dad5d2fee3e7b97916e7d3bf6ccdbe"
+      },
+      "qwen15": {
+        "elapsed_ms": 1610.816,
+        "log_hygiene": "PASS",
+        "result_sha256": "358e4a23af3cbfba5a2708a5498931778a964783dd6c9bdc3a50696207b470b3",
+        "stderr_sha256": "f3eb917db6ff02ccfbbddf7ceafa275645f2449139cf3e518cc65bc4e969c5a7"
+      },
+      "result": "WORKAROUND_OBSERVATION_PASS",
+      "schema_validation": "2/2 PASS"
+    }
+  ],
+  "arm64_prescreen_comparison": {
+    "disposition": "UTM_RANKING_ONLY_NOT_GATE1_FINALIST",
+    "primary_for_next_authorized_evaluation": "CAND-LRT-G4E2B-MOBILE-R1",
+    "primary_reason": "LOWER_TTFT_AND_WALL_TIME_HIGHER_DECODE_THROUGHPUT",
+    "secondary_for_next_authorized_evaluation": "CAND-LRT-Q25-15B-Q8-R1",
+    "secondary_reason": "SMALLER_COMBINED_ARTIFACT",
+    "shared_blockers": [
+      "P5_INCONCLUSIVE",
+      "P6_CONDITIONAL_ESCALATION",
+      "NO_PI_COMPATIBILITY_PASS",
+      "NO_CORE_FINALIST_ACK"
+    ]
+  },
+  "pi_transition_handoff": {
+    "delivery_id": "DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION",
+    "gate2_evidence_carry_over": false,
+    "maximum_two_pi_inputs": [
+      "CAND-LRT-G4E2B-MOBILE-R1",
+      "CAND-LRT-Q25-15B-Q8-R1"
+    ],
+    "pi_execution_authorized": false,
+    "requested_scope": "WAIVE_X86_WIP_AND_MOVE_REMAINING_MANDATORY_GATES_TO_PI",
+    "status": "PENDING_CORE_DISPOSITION"
+  },
+  "model_execution_performed": true,
+  "model_smoke_attempts": [
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "execution_sha": "ee8dbd06e6db25b9337b54a3c510035fff79f665",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "b0871a4a69911655fa97fbe5537b9fa4a2b52f1204235a0d86f6085e6ea237f6",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "da603e863cc6bbf849aab3628b15a6d6fce951b25a1895570a9e4bf8e5e867de",
+      "startup_ms": 1448.577
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "execution_sha": "e2f71a5ddbe28adaba2b4ac8c9617fcfa222a477",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "107a1ce15eec2f551d5362d5637c48113a4f769b1efe7437be444209f7130b52",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "5fe4826ecdfb6b8a93ade55020bbd823947137c2afa3ab53a760c3a7c7695c82",
+      "startup_ms": 641.592
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "diagnostic_cause_class": "RuntimeError",
+      "diagnostic_message_sha256": "38495c0f8b88d89e77061ab14f56583a1081936d9ea24396cbe74a18d539bd58",
+      "diagnostic_stage": "send_message_async",
+      "execution_sha": "d94d13a0a23dfdd32f25c91edca4ed4103c4eeed",
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "ced9657943daca103086f4fad93d26380765c0b1f79ee37faa9a0bc08f3a99d2",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "64dd9206c26893bafbf264846f60e42a7b94faf955fa929fddbff802ac97fdb3",
+      "startup_ms": 647.817
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-05B-Q8-R1",
+      "cleanup_process_group_absent": true,
+      "diagnostic_cause_class": "RuntimeError",
+      "diagnostic_message_sha256": "52bca09e765593e56cdfd456ff325402b9b7fffe895295253ccd8b59fffce840",
+      "diagnostic_stage": "send_message",
+      "execution_sha": "a8ce1f2779f23e8b6429ce6c50a1278adcd1ed35",
+      "generate_ms": 17.459,
+      "generate_terminal": "ERROR",
+      "raw_stderr_sha256": "ea645ee17844c989a1767ef85d82552eb3eca6268b77e64285e962bd9a277ce5",
+      "ready": true,
+      "result": "FAIL",
+      "sanitized_result_sha256": "41c10be5b99e21662ea122c83c890ab40655742f082b99774886617343b11365",
+      "startup_ms": 674.135
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "cleanup_exit_code": 0,
+      "cleanup_process_group_absent": true,
+      "execution_sha": "a8ce1f2779f23e8b6429ce6c50a1278adcd1ed35",
+      "generate_ms": 1790.669,
+      "generate_terminal": "RESULT",
+      "raw_stderr_sha256": "32c1ae1c1e584420decccce6e3d762068ce4a0fc0033960b177c578fe580d089",
+      "ready": true,
+      "result": "PASS",
+      "sanitized_result_sha256": "f4c77e7eab903e6640f8e20cc05dfd92f3d058f0a9329595e45a1f376a2c3010",
+      "shutdown_ack": true,
+      "startup_ms": 6673.523
+    },
+    {
+      "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+      "cleanup_exit_code": 0,
+      "cleanup_process_group_absent": true,
+      "execution_sha": "a8ce1f2779f23e8b6429ce6c50a1278adcd1ed35",
+      "generate_ms": 1754.206,
+      "generate_terminal": "RESULT",
+      "raw_stderr_sha256": "cb99872cb5a264c4fe0faad37eb62970af542ed58839595f0b289d75e0b19c3c",
+      "ready": true,
+      "result": "PASS",
+      "sanitized_result_sha256": "84c2dfa4e48e9b954af0f10ba84ca615cb1bd3ceb5f9271508c6daa71efe07ed",
+      "shutdown_ack": true,
+      "startup_ms": 8584.138
+    }
+  ],
+  "offline_install": {
+    "exit_code": 0,
+    "installer_id": "G1-ARM64-WHEEL-INSTALLER-001",
+    "ipv4_routes_present": false,
+    "ipv6_non_loopback_routes_present": false,
+    "log_sha256": "d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff",
+    "namespace": "net:[4026532352]",
+    "native_elf": "ELF 64-bit LSB shared object, ARM aarch64",
+    "native_import": "PASS",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+    "native_link_dependencies_resolved": true,
+    "result": "PASS",
+    "runtime_version": "0.16.0"
+  },
+  "offline_install_performed": true,
+  "partial_acquisitions": [],
+  "projection_scaffold": {
+    "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
+    "platform": "ubuntu-aarch64",
+    "measurement_runner_implemented": true,
+    "measurement_sessions_planned": 20,
+    "p4_formal_packet_prepared": true,
+    "p4_method": {
+      "cold": 3,
+      "hot": 20,
+      "input_tokens": 128,
+      "max_output_tokens": 16,
+      "warmup": 3
+    },
+    "long_p8_packet_prepared": true,
+    "long_prompt_comparison_planned": true,
+    "p5_planned_disposition": "INCONCLUSIVE_FIXED_16_OUTPUT_ENVELOPE",
+    "p5_workaround_authority": "USER_APPROVED_CORE_APPROVAL_PENDING",
+    "p5_workaround_effective_timeout_ms": 1000,
+    "p5_workaround_packet_prepared": true,
+    "p8_history_isolation_turns": 5,
+    "p7_gemma_wrapper_prepared": true,
+    "p7_recovery_runner_implemented": true,
+    "real_adapter_implemented": true,
+    "retained_and_arm64_tests": "73/73 PASS",
+    "smoke_runner_implemented": true,
+    "synthetic_only": false
+  },
+  "provenance": {
+    "model_license_metadata_record": "G1-ARM64-MODEL-LICENSE-METADATA-001",
+    "runtime_bundle_id": "LRT-ARM64-RUNTIME-BUNDLE-0160-001",
+    "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
+    "source_archive_size_bytes": 451258203
+  },
+  "result": "TWO_LITERTLM_P4_P7_P8_PASS_P5_INCONCLUSIVE_P6_CONDITIONAL_QWEN05_DEFERRED",
+  "wip_lock_sha256": "153326f8f2301a9e0e8826bc98d521c7f44108c347d894a5215b8a60685c68de",
+  "wip_manifest_projections": {
+    "authenticated": 3,
+    "failed": 0,
+    "staging_root": "/tmp/llm-poc-g1-arm64-001"
+  },
+  "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+  "scope": "ARM64_PRIMARY"
+}

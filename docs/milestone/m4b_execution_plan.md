@@ -140,6 +140,12 @@ Gate 2 evidence; implementation of the real hardware adapter is an explicit pack
 
 ## Currently Unresolved Core Decisions
 
+- User已提出ARM-first Pi transition：waive x86_64 WIP completion及原雙branch merge boundary，
+  以Gemma/Qwen 1.5B最多兩名進入獨立產品Pi compatibility，後續P1～P8/P10A/P11/P12只在
+  新Gate 2A Pi packet重跑。完整scope request與可攜工程經驗見
+  `DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`；Core核准前本計畫原流程仍有效。
+- P5 1000ms workaround只證明timeout mechanism；正式15秒fixture/disposition仍待Core裁決，
+  必須在Pi Gate 2A packet凍結前解決。
 - ARM64 and x86_64 WIP owners must complete their bounded workstation results and Technical Lead must
   confirm the sanitized integration boundary; R5 exact-SHA acceptance remains held until then.
 - Which Ubuntu pre-screen platform and affected append-only packet revision are accepted after the

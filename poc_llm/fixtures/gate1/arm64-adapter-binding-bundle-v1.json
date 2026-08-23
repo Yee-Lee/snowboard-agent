@@ -1,0 +1,32 @@
+{
+  "bundle_id": "LRT-ARM64-ADAPTER-BINDING-001",
+  "packet_id": "G1-ARM64-PRESCREEN-WIP-001",
+  "platform": "ubuntu-aarch64",
+  "protocol_version": "snowboard.llm/1",
+  "artifacts": {
+    "adapter": {
+      "path": "poc_llm/harness/litert_lm_child_adapter.py",
+      "sha256": "d17c225a8d358275e6ce2b992f670ba7d8d73e35d73dc3da32b3a20a574f27ff"
+    },
+    "boundary": {
+      "path": "poc_llm/harness/m1_contract_boundary.py",
+      "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"
+    },
+    "prompt_schema": {
+      "path": "poc_llm/contracts/m1/prompt-input.schema.json",
+      "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"
+    },
+    "response_schema": {
+      "path": "poc_llm/contracts/m1/response.schema.json",
+      "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"
+    },
+    "protocol_schema": {
+      "path": "poc_llm/contracts/m1/protocol-frame-arm64.schema.json",
+      "sha256": "d0dac5df0d9092f14340a050da8c744ce574fa30f3ed8931c9150755b6a90f90"
+    },
+    "strict_config_schema": {
+      "path": "poc_llm/contracts/m1/strict-config-arm64.schema.json",
+      "sha256": "9c328bb46c7a5a8a1a4a982ef022be8157a817213a3a863bf854de0cbf87347e"
+    }
+  }
+}
