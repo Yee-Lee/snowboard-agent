@@ -6,7 +6,6 @@ import argparse
 import gc
 import importlib.metadata
 import json
-import math
 import resource
 import threading
 import time
@@ -35,8 +34,8 @@ WINDOW_SAMPLES = 512
 WINDOW_MS = 32
 THRESHOLD = 0.5
 CONTEXT_SAMPLES = 64
-ONSET_WINDOW_COUNT = math.ceil(300 / WINDOW_MS)
-ONSET_POSITIVE_COUNT = math.ceil(ONSET_WINDOW_COUNT * 0.9)
+NEG_THRESHOLD = 0.35
+MIN_SPEECH_MS = 250
 END_SILENCE_MS = 500
 
 
@@ -45,8 +44,7 @@ def detect_probability_windows(
 ) -> tuple[list[tuple[int, int]], int]:
     events: list[tuple[int, int]] = []
     event_start: int | None = None
-    last_speech_end: int | None = None
-    onset: list[tuple[int, int, bool]] = []
+    possible_end: int | None = None
     triggered = False
     positives = 0
     for index, probability in enumerate(probabilities):
@@ -55,25 +53,23 @@ def detect_probability_windows(
         speech = probability >= THRESHOLD
         if speech:
             positives += 1
-        if not triggered:
-            onset.append((start_ms, end_ms, speech))
-            onset = onset[-ONSET_WINDOW_COUNT:]
-            if len(onset) == ONSET_WINDOW_COUNT and sum(item[2] for item in onset) >= ONSET_POSITIVE_COUNT:
-                event_start = next(item[0] for item in onset if item[2])
-                last_speech_end = max(item[1] for item in onset if item[2])
+            if possible_end is not None:
+                possible_end = None
+            if not triggered:
+                event_start = start_ms
                 triggered = True
-                onset.clear()
-        elif speech:
-            last_speech_end = end_ms
-        elif event_start is not None and last_speech_end is not None:
-            if end_ms - last_speech_end >= END_SILENCE_MS:
-                events.append((event_start, last_speech_end))
+            continue
+        if triggered and probability < NEG_THRESHOLD:
+            if possible_end is None:
+                possible_end = start_ms
+            if start_ms - possible_end >= END_SILENCE_MS:
+                if event_start is not None and possible_end - event_start > MIN_SPEECH_MS:
+                    events.append((event_start, possible_end))
                 event_start = None
-                last_speech_end = None
+                possible_end = None
                 triggered = False
-                onset.clear()
-    if triggered and event_start is not None and last_speech_end is not None:
-        events.append((event_start, last_speech_end))
+    if triggered and event_start is not None and duration_ms - event_start > MIN_SPEECH_MS:
+        events.append((event_start, duration_ms))
     return events, positives
 
 

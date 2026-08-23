@@ -69,6 +69,9 @@ to Reviewer, or execute Silero based on the draft result until the User
 explicitly confirms the result and next action.
 
 If the User authorizes Silero after reviewing WebRTC, use the same corrected
-utterance semantics and endpoint profile. Silero must prepend the official
-64-sample context to each 512-sample model window and reset recurrent state and
-context for every fixture.
+utterance semantics without the failed WebRTC 90% onset debounce. Silero must
+prepend the official 64-sample context to each 512-sample model window, reset
+recurrent state and context for every fixture, start at probability `>=0.5`,
+begin exit hysteresis below `0.35`, reject speech shorter than 250 ms, close
+after 500 ms silence, and apply the product 500/600 ms capture padding. No
+threshold or endpoint matrix is authorized.
