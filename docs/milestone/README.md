@@ -102,7 +102,11 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
   validation 已完成並固定 candidate SHA
   `655e80ec4ed287708ed0a47f383b645d88650b18`。Core 已在
   `e63884451368079a9c876c2994c982627aa7d766` 一次性 ACK 並授權 formal Pi execution；
-  下一步由 Audio 建立 controlled sign-off、部署 exact checkouts 並執行 preflight。
+  controlled sign-off 已在 Git 外產生並通過 schema guard；下一步由 Audio 部署 exact
+  checkouts 並執行 preflight。
+- `SCHEDULE`：User 已將 Pi formal session 排至 2026-08-24；狀態為
+  `SCHEDULED / NOT EXECUTED`。預留連續 3 小時、排程 buffer 4 小時，User/operator
+  預計參與 30–45 分鐘。2026-08-23 未連 Pi、未產生 hardware result 或 disposition。
 - `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
   HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
   portable suite 176 項通過。Core output adaptation 已固定為

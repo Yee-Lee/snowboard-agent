@@ -2,6 +2,10 @@
 
 狀態：`IN_PROGRESS / PREFLIGHT NEXT`
 
+Pi formal session 已依 User 指示排至 2026-08-24，詳見
+[`M3-PI-SESSION-SCHEDULE-001`](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md)。
+目前為 `SCHEDULED / NOT EXECUTED`；2026-08-23 未連 Pi，也沒有 hardware result。
+
 ## 目標
 
 使用完整 SHA 固定的產品 M3 Audio HAL 與目標 Pi 5/I2S 硬體重跑 finalists，證明固定 WAV/text 結果能在真實 capture/playback、外殼與環境中成立。

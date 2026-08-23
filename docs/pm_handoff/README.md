@@ -19,6 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
+| [M3 Pi session schedule](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md) | `SCHEDULED 2026-08-24 / NOT EXECUTED` | 預留 Pi 連續 3 小時、排程 buffer 4 小時；先做 exact-SHA/environment/authorization preflight，通過後才 capture。 |
 | [M3 packet sign-off request](../../poc_audio/deliveries/REQ-AUDIO-M3-PACKET-SIGNOFF-001.md) / [Core ACK](RESP-AUDIO-M3-PACKET-SIGNOFF-001.md) | `ACKNOWLEDGED / FORMAL PI EXECUTION AUTHORIZED` | runner candidate 固定為 `655e80ec4ed287708ed0a47f383b645d88650b18`，packet manifest SHA-256 為 `ebadd620...65c55`，Core ACK commit 為 `e63884451368079a9c876c2994c982627aa7d766`。Core 無後續待辦；Audio 建立 controlled sign-off 後主導 Pi 執行。 |
 | [Core HAL output adaptation SHA-002](DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002.md) / [original request](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md) | `ACCEPTED / PACKET PINNED / SIGN-OFF PENDING` | Core HAL execution identity 固定為 `ff09199583644a8f0822153e371589f52ae821a0`；User 接受剩餘測試缺口為非阻塞風險。POC 不增加自有 resampler；formal backend 已本地驗證，切 candidate SHA 後送 packet sign-off。 |
 | [P9 executable correction](DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) / [source identity](P9-SURROGATE-SOURCE-IDENTITY-001.md) / [Core ACK](DELIVERY-015-CORE-P9-SURROGATE-ACK.md) | `CORE ACCEPTED / AUDIO INTEGRATION UNBLOCKED / NOT EXECUTED` | Core ACK commit `caf4f7ba867e4ebc1972df0ade86c605a873a286` 已關閉外部前置；exact artifact 已 vendored/checksum verified。Audio 自行安排 bounded execution，不需再向 Core 要 P9 回覆；尚不得宣稱 P9 PASS 或 LLM Gate 2 credit。 |
