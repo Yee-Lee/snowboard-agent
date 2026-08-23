@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA RISK-FOCUSED CLOSURE / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
+Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B GATE REVIEW / MATCHA M3 FINALIST / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
 
 ## 目標
 
@@ -37,7 +37,7 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
 | M2B ASR optimization | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、24-item audit、erratum-corrected raw/adjusted scoring、RTF、成本與 regressions 已形成 exact recipe/delta，可在 bounded scope 下引用 |
-| TTS Matcha qualification | `IN_PROGRESS / RISK-FOCUSED` | 重用既有 performance/resource observations；只補高風險 lifecycle、P12、10-prompt User quality 與 legal-risk 記錄，不做 allocator/page 級微調 |
+| TTS Matcha qualification | `GATE_REVIEW / M3 FINALIST` | lifecycle、network-disabled P12、material resource risk 與 User 10-prompt quality 均通過；legal limitation 阻擋 redistribution/product/final-winner，不阻擋 internal POC advance |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | User 已選 WebRTC 2.0.10 primary、Silero 6.2.1 conditional fallback；Core ACK、exact profile 與 aggregate recall gate 未固定前，不得 build/load/benchmark real VAD candidate |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
@@ -144,7 +144,8 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
   qualification 為 core CER 41.629%、overall sentence correctness 6%，並依當時
   frozen gates 標為 `REJECT`；ACK-003 不回溯改寫。
 - Matcha 同一 packet 的 first-buffer p95 285.098 ms、RTF p95 0.112776；performance
-  gates 當時通過，但 remaining gates 尚未關閉。
+  gates 當時通過。後續 risk-focused lifecycle、P12 及 User quality 均通過；完整結果見
+  [`M4A-G1B-WP3-MATCHA-RISK-REVIEW-001`](../../poc_audio/evidence/m2/M4A-G1B-WP3-MATCHA-RISK-REVIEW-001.md)。
 - Whisper small Q8 在 Pi SHA `1b29f685de64970f6abbc12a0820a2ef4ec0a444` 的兩次
   partial diagnostic 為 core CER 9.502262%、sentence correctness 28%、hot p95
   11.080 s、RTF p95 1.831987、peak RSS 554 MiB；此 packet 仍是 gate-ineligible
@@ -198,8 +199,8 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
    可在完整 scope/limitation 下對外引用。
    C fixture lock 詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
-5. **Parallel TTS/VAD closure**：Matcha 依本文件的 risk-focused closure 執行，不再
-   展開 resource 微量差異或 tuning matrix；VAD User strategy 已由
+5. **Parallel TTS/VAD closure**：Matcha risk-focused screen 已完成並列為 M3 TTS
+   finalist；不再展開 resource 微量差異或 tuning matrix。VAD User strategy 已由
    [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
    記錄。Core ACK、WebRTC aggressiveness/shared endpoint profile 與 aggregate start/end
    recall gate 未 committed 前不得執行；frozen-label endpoint simulation 不能取代。
@@ -266,7 +267,8 @@ candidate-specific provisional integration；production dependency lock 必須�
   large runtime 的新 scope decision。
 - M2B probe 改變 candidate identity、family/license boundary 或超出一變因設計。
 - VAD execution scope 持續未決，使 final VAD baseline/no-go 無法交付。
-- Matcha User quality、offline、lifecycle、resource 或 legal blocker 無法關閉。
+- Matcha 在 M3/M4 full finalist validation 出現 critical quality、offline、lifecycle、
+  resource blocker，或 redistribution/product adoption 前 legal limitation 無法關閉。
 - Pi 5 資源預估明顯無法支撐 M4 同時常駐。
 
 ## Gate Review 問題

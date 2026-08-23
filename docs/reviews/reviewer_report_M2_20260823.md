@@ -2,7 +2,7 @@
 
 **審查日期**：2026-08-23  
 **審查角色**：Reviewer（依 `audio_poc_workflow.md` §7 定義）  
-**審查依據 SHA**：`2deefc20443caccaf941fa0304bfa1219b1b9e36`（`audio` branch HEAD）  
+**審查依據 SHA**：TTS risk scope `8a2ce01e2fdb120cff3be6a416ca6021ddb57fed`；quality packet `cfba8165ca379d0bbb04e345c198f6f67886c601`
 **資料來源**：`docs/milestone/README.md`、`docs/audio_poc_workflow.md`、`docs/milestone/m2_candidate_evaluation.md`、`docs/specs/audio_poc_delivery_checklist.md`
 
 ---
@@ -41,7 +41,7 @@ M4  ░░░░░░░░░░  NOT_STARTED
 |---|---|---|
 | M2A ASR Baseline Survey | COMPLETE / REVIEWED | 6 required rows 完成；shortlist：small Q8、base Q5、medium Q5 |
 | M2B ASR Optimization | GATE_REVIEW | base Q8 primary + small Q8 fallback；24-item blind audit（23 confirmed / 1 erratum）；等待 Core/User review |
-| Matcha TTS Qualification | IN_PROGRESS | Performance evidence 取得；User quality、lifecycle、network-disabled、resource growth、legal 五項尚未關閉 |
+| Matcha TTS Qualification | GATE_REVIEW / M3 FINALIST | Lifecycle、network-disabled P12、material resource risk、User 10-prompt quality 均通過；legal limitation 保留 |
 | VAD Candidate Evaluation | CHANGE_REQUESTED | ACK-003 未授權 real VAD engine row；目前無關閉路徑 |
 
 ---
@@ -56,6 +56,14 @@ M4  ░░░░░░░░░░  NOT_STARTED
 - M2B C dev/holdout 12+12 fixture split（與 M2A 無重疊）；Pi exact SHA 已建立
 - P0 + greedy + 固定 domain prompt recipe 提出；prompt 改善 Internal 但 Common Voice +1 edit regression 已揭露（未隱藏）
 - Erratum append-only 套用（frozen reference mismatch），原始 results 未改寫
+
+### TTS（Matcha）
+
+- 重用 reviewed 20-prompt performance/resource evidence，不重跑微量 resource matrix
+- Bounded lifecycle 覆蓋 error、timeout、cancel、force-abort 與五次 reopen，cleanup 全為零
+- True network-disabled P12 inference 成功，network syscall 與 cleanup residue 均為零
+- User 固定十段品質評分為九個 5 分、一個 4 分，中位數 5，無 critical misread
+- `tts-013` 的 `start` 發音瑕疵保留至 M3/M4 full finalist review，不觸發本輪 tuning
 
 ### 流程遵守
 
@@ -76,11 +84,6 @@ M4  ░░░░░░░░░░  NOT_STARTED
 - **需要**：Core/User 另立書面授權（或 evidence-backed no-go 決策）
 - 若持續未決，最終交付可達性將從 `AT_RISK` 降為 `NOT_REACHABLE`
 
-### BLK-002：Matcha TTS 五項 gate 未關閉
-
-- 尚缺：User quality review（需人工聆聽）、lifecycle 驗證、network-disabled 驗證、resource growth 量測、legal disposition
-- 若 Matcha 最終無法通過且無備用 TTS candidate，須提 no-go
-
 ---
 
 ## 六、活躍風險
@@ -92,6 +95,7 @@ M4  ░░░░░░░░░░  NOT_STARTED
 | RISK-03 | Vosk wheel license `UNKNOWN`，legal review 未完成，若進 shortlist 須先解決 |
 | RISK-04 | 2 optional rows 省略，material capability gap 未知 |
 | RISK-05 | M4 三模型同時常駐的 Pi resource 能否支撐，仍無實機數據 |
+| RISK-06 | Matcha training-data lineage 與 archive notice 未關閉，阻擋 redistribution、product adoption 與 final-winner approval |
 
 ---
 
@@ -107,9 +111,8 @@ M4  ░░░░░░░░░░  NOT_STARTED
 ### 待決策
 
 1. **VAD**：需 Core/User 給出書面決策（最高優先）
-2. **Matcha**：需 User 實際聆聽確認 quality，不能由 agent 代勞
-3. **M2B**：Core/User 的正式 comparative review 決策尚待完成
-4. **M3 entry conditions**：Pi/HAL SHA、target device scope 應在 M2 gate review 時一併確認
+2. **M2B**：Core/User 的正式 comparative review 決策尚待完成
+3. **M3 entry conditions**：Pi/HAL SHA、target device scope 應在 M2 gate review 時一併確認
 
 ---
 
@@ -118,7 +121,7 @@ M4  ░░░░░░░░░░  NOT_STARTED
 | 交付領域 | 目前狀態 | 到最終關閉的路徑 |
 |---|---|---|
 | ASR baseline | 有路徑 | M2B gate review → M3 實機 → M4 combined |
-| TTS baseline | AT_RISK | Matcha 需完成剩餘 5 項 qualification |
+| TTS baseline | M3 FINALIST | Matcha 通過 M2 risk-focused screen；M3/M4 full validation 與 final legal decision 尚待完成 |
 | VAD baseline | AT_RISK / 目前無授權路徑 | 需獨立書面授權才可繼續 |
 | Pi 5 + M3 HAL | NOT_STARTED | 等 M2 close → M3 |
 | 20-session combined | NOT_STARTED | 等 M3 close → M4 |
