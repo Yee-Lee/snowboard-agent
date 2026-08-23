@@ -12,8 +12,9 @@ completion commit。M2A/M2B 是 M2 內部 substages，不建立獨立 milestone 
 
 M0 readiness 與 M1 frozen baseline 已完成。M2 的 SenseVoice、Matcha 及 Whisper
 small Q8 歷史 evidence 均保留原產生時的 disposition 與 immutable tested SHA。
-SenseVoice 歷史結果為 `REJECT`；Matcha performance evidence 已取得，但 User quality、
-lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉；small Q8
+SenseVoice 歷史結果為 `REJECT`；Matcha performance/resource observations 已取得，
+後續依 User 核准的 risk-focused scope 只補 lifecycle、network-disabled P12、10-prompt
+quality 與 legal-risk 記錄，不做 allocator/page 級微調。small Q8
 舊 diagnostic 不構成 formal qualification 或 selection。
 
 Core/User 已於 2026-08-21 接受
@@ -70,7 +71,7 @@ ACK-003 的 frozen-label endpoint/padding 比較不能取代 VAD finalist/no-go 
 | --- | --- | --- |
 | M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
 | M2B Optimization Feasibility | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 均為 P0+greedy+固定 prompt；24-item audit、erratum-corrected raw/adjusted scorecard、RTF 與 exact recipe 已齊，可在 bounded scope 下引用 |
-| Matcha TTS remaining qualification | `IN_PROGRESS` | User quality、offline、lifecycle、resource growth、legal disposition |
+| Matcha TTS remaining qualification | `IN_PROGRESS / RISK-FOCUSED` | 重用既有 performance/resource；只補 lifecycle、P12、10-prompt quality 與 legal-risk report |
 | VAD scope and evaluation | `CHANGE_REQUESTED` | User primary/fallback strategy 已記錄；Core ACK、exact profile 與 recall gate 尚待補齊，未獲 execution row |
 
 ## Core M4a Contract Mapping
@@ -94,8 +95,8 @@ ACK-003 的 frozen-label endpoint/padding 比較不能取代 VAD finalist/no-go 
 - `BLOCKER`：目前沒有 ASR fixture、required artifact 或 runtime blocker。
 - `RISK`：VAD User strategy 已記錄，但 Core ACK、exact WebRTC/endpoint profile 與
   aggregate start/end recall gate 未關閉；real-engine execution 仍未獲完整授權。
-- `RISK`：Matcha User quality、offline、lifecycle、resource growth 與 legal conditions
-  尚未關閉。
+- `RISK`：Matcha 尚待 risk-focused lifecycle、P12 與 10-prompt User quality；legal
+  lineage 以 internal POC limitation 記錄，redistribution/product adoption 前仍須關閉。
 - `RISK`：大型/optional rows 可能受 Pi resource 或 schedule 限制；省略必須留下
   evidence-backed reason。
 - `RISK`：Vosk upstream source/model 為 Apache-2.0，但官方 0.3.45 aarch64 wheel

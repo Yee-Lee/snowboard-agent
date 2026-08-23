@@ -2,7 +2,7 @@
 
 狀態：`IN_PROGRESS`
 
-Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA REMAINING GATES IN PROGRESS / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
+Gate 狀態：`M2A COMPLETE / OBSERVATIONS REVIEWED / THREE-ROW SHORTLIST — M2B IN PROGRESS / MATCHA RISK-FOCUSED CLOSURE / VAD USER STRATEGY RECORDED, CORE ACK PENDING`
 
 ## 目標
 
@@ -37,13 +37,37 @@ offline boundary、bounded execution、cleanup requirements 與 immutable tested
 | --- | --- | --- |
 | M2A ASR baseline survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows 已形成單一 scorecard；small Q8、base Q5、medium Q5 為三列 shortlist，沒有 PASS/FAIL/winner 判定 |
 | M2B ASR optimization | `GATE_REVIEW / SCORECARD REVIEWED` | base Q8 primary、small Q8 fallback 的 C dev/holdout、固定 prompt、24-item audit、erratum-corrected raw/adjusted scoring、RTF、成本與 regressions 已形成 exact recipe/delta，可在 bounded scope 下引用 |
-| TTS Matcha qualification | `IN_PROGRESS` | 既有 performance evidence 保留；User quality、lifecycle、network-disabled、resource growth 與 legal conditions 尚未關閉 |
+| TTS Matcha qualification | `IN_PROGRESS / RISK-FOCUSED` | 重用既有 performance/resource observations；只補高風險 lifecycle、P12、10-prompt User quality 與 legal-risk 記錄，不做 allocator/page 級微調 |
 | VAD candidate evaluation | `CHANGE_REQUESTED` | User 已選 WebRTC 2.0.10 primary、Silero 6.2.1 conditional fallback；Core ACK、exact profile 與 aggregate recall gate 未固定前，不得 build/load/benchmark real VAD candidate |
 
 M2A/M2B 的 CER、sentence correctness、latency、RTF 與 RSS 是 trade-off observation
 及最終比較評分，不是單項淘汰 gate。Artifact mismatch、unknown provenance/license、
 runtime network access、OOM、bounded timeout 或 incomplete cleanup 仍須 fail closed，
 並保留實際 observation；它們不得被包裝成 quality rejection。
+
+### M2 TTS risk-focused closure（User-authorized 2026-08-23）
+
+本輪目標是產出可 review 的 POC 報告與高風險把關，不做系統微調或以量測雜訊淘汰
+候選。Matcha 採以下最小流程：
+
+1. 重用已 reviewed 的 20-prompt latency/RTF、peak RSS、temperature 與 hot-cycle
+   observations，不重跑 performance/resource matrix。
+2. 只執行一次 bounded lifecycle packet，確認 success、error、timeout、cancel、
+   force-abort、reopen 與最終 cleanup；不做 soak 或額外 repetition。
+3. 只執行一次 network-disabled P12 inference，確認無 runtime fetch/network syscall。
+4. User quality 只審查事前固定的十筆高風險 prompts：`tts-005`、`tts-006`、
+   `tts-008`、`tts-009`、`tts-011`、`tts-012`、`tts-013`、`tts-014`、`tts-017`、
+   `tts-018`。M2 screen 仍要求 median >=4/5 且無未記錄 critical misread；若進入
+   finalist，完整 20 prompts 留在 M3/M4 執行。
+5. Legal/training-data lineage 以風險記錄呈現：不阻止 internal offline POC report，
+   但在 redistribution 或 product adoption 前必須另行關閉。
+
+本輪 hard blockers 限於 artifact/runtime identity 不符、crash/OOM、bounded timeout
+無法收斂、cleanup residue、network-disabled inference 失敗或 runtime fetch、thermal
+throttle，以及 User critical misread/品質 gate 失敗。Resource 只檢查是否接近既有
+1,000 MiB advisory ceiling 或呈現明顯且持續、未 plateau 的高風險增長；sub-MiB
+step、page accounting、allocator/cache establishment 與小幅 sampling 差異只列
+observation，不作 PASS/FAIL 或 tuning trigger。
 
 ### M2A authorized ASR rows
 
@@ -174,7 +198,8 @@ benefit/cost/regression delta table。Quality/performance metrics 用來排序�
    可在完整 scope/limitation 下對外引用。
    C fixture lock 詳見
    [`M2B-C-SOURCE-SELECTION-001`](../../poc_audio/deliveries/M2B-C-SOURCE-SELECTION-001.md)。
-5. **Parallel TTS/VAD closure**：Matcha remaining gates 持續；VAD User strategy 已由
+5. **Parallel TTS/VAD closure**：Matcha 依本文件的 risk-focused closure 執行，不再
+   展開 resource 微量差異或 tuning matrix；VAD User strategy 已由
    [`RESP-AUDIO-M4A-G1B-VAD-SCOPE-001`](../../poc_audio/deliveries/RESP-AUDIO-M4A-G1B-VAD-SCOPE-001.md)
    記錄。Core ACK、WebRTC aggressiveness/shared endpoint profile 與 aggregate start/end
    recall gate 未 committed 前不得執行；frozen-label endpoint simulation 不能取代。
@@ -204,8 +229,9 @@ candidate-specific provisional integration；production dependency lock 必須�
 - M2B 只對 shortlist 完成一變因比較，並提出 primary、fallback、exact recipe 與
   benefit/cost/regression delta table。
 - Core/User 已 review comparative provisional selection；未宣稱 production lock。
-- TTS candidate 有明確 finalist/no-go disposition，且 User quality、offline、lifecycle、
-  resource 與 legal conditions 有 evidence 或 blocking risk。
+- TTS candidate 有明確 finalist/no-go disposition；M2 risk-focused User quality、offline、
+  lifecycle 與高風險 resource observations 齊全，legal limitation 已明列。完整 20-prompt
+  與 combined resource validation 留給 M3/M4 finalist。
 - VAD 有已授權 finalist/no-go 路徑；目前只有 User primary/fallback strategy，Core ACK、
   exact profile 與 aggregate recall gate 仍未完成，此項未滿足，M2 不得完成。
 - M3 real Pi/HAL 重測範圍、fixtures、artifact identities 與必要 M4A preliminary/pending
@@ -218,7 +244,8 @@ candidate-specific provisional integration；production dependency lock 必須�
   row/item budgets 與受控 artifact locations。
 - M2A scorecard、M2B optimization delta table、primary/fallback proposal 與 known risks。
 - Sanitized per-run results、timeout/OOM/error records、offline boundary 與 cleanup proof。
-- TTS User review/remaining disposition、VAD scope decision 與 M4A-P1–P12 traceability。
+- TTS risk-focused User review/remaining disposition、VAD scope decision 與
+  M4A-P1–P12 traceability。
 - 模型、large results、private audio、raw sensitive transcripts 均留在 Git 外，只提交
   checksum 與受控位置。
 
