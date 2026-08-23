@@ -1,7 +1,7 @@
 # Audio POC 工作流程與合作方式
 
 狀態：Authoritative working process  
-最後更新：2026-08-07
+最後更新：2026-08-23
 
 ## 1. 目的
 
@@ -75,6 +75,25 @@ M0 是遠端與證據鏈的 readiness gate；M1–M4 是四個正式交付 miles
 - `INCONCLUSIVE`：環境、證據或測試方法不足，不能推論 pass/fail。
 
 `INCONCLUSIVE` 不得包裝成 pass；`FAIL` 不得刪除。發現偏差時先判斷是否影響最終交付，再決定修正、重跑、淘汰或提出調整請求。
+
+#### 5.2.1 成績與判定報告的 User 發布確認
+
+任何 candidate 成績、`PASS` / `FAIL` / `INCONCLUSIVE`、advance / reject、
+winner / fallback 或 no-go 判定，在成為正式報告前必須先由 Assistant
+向 User 呈現草稿結果、測試方法、關鍵限制與擬定 disposition，並取得
+User 明確確認。未確認前：
+
+- 可繼續已授權的 bounded execution、原始 evidence 收集、sanity check 與
+  本地草稿整理，但草稿必須標為 `DRAFT / USER CONFIRMATION PENDING`。
+- 不得將成績或判定報告 commit、push、交付 Tester / Reviewer / Designer，
+  也不得用它更新 milestone 權威狀態、宣告 gate closure 或啟動後續
+  candidate / milestone。
+- 遇到 crash、OOM、timeout、cleanup failure 或其他安全停止條件時，
+  Assistant 可立即停止執行並回報，但仍不得未經 User 確認發布正式
+  disposition。
+
+User 的發布確認只表示可將該結果納入不可變 evidence chain 並送審，
+不取代 Tester / Reviewer / Designer 的證據審查、gate 裁決或 final acceptance。
 
 ### 5.3 Milestone 收尾
 
