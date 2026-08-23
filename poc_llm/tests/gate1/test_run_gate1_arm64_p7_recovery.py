@@ -42,14 +42,20 @@ class Arm64P7RecoveryRunnerTest(unittest.TestCase):
             "model_sha256": "2" * 64, "config_sha256": "3" * 64,
         })
 
-    def test_wrapper_is_qwen15_only_and_uses_fresh_path(self) -> None:
-        source = Path(
+    def test_wrappers_are_candidate_specific_and_use_fresh_paths(self) -> None:
+        qwen = Path(
             "poc_llm/tools/run_gate1_arm64_p7_qwen15.sh"
         ).read_text(encoding="utf-8")
-        self.assertIn("CAND-LRT-Q25-15B-Q8-R1", source)
-        self.assertNotIn("CAND-LRT-Q25-05B-Q8-R1", source)
-        self.assertNotIn("CAND-LRT-G4E2B-MOBILE-R1", source)
-        self.assertIn("llm-poc-g1-arm64-p7-qwen15-001", source)
+        gemma = Path(
+            "poc_llm/tools/run_gate1_arm64_p7_gemma.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("CAND-LRT-Q25-15B-Q8-R1", qwen)
+        self.assertNotIn("CAND-LRT-Q25-05B-Q8-R1", qwen + gemma)
+        self.assertNotIn("CAND-LRT-G4E2B-MOBILE-R1", qwen)
+        self.assertIn("CAND-LRT-G4E2B-MOBILE-R1", gemma)
+        self.assertNotIn("CAND-LRT-Q25-15B-Q8-R1", gemma)
+        self.assertIn("llm-poc-g1-arm64-p7-qwen15-001", qwen)
+        self.assertIn("llm-poc-g1-arm64-p7-gemma-001", gemma)
 
 
 if __name__ == "__main__":

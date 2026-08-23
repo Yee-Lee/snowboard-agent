@@ -17,7 +17,7 @@
       "filename": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
       "sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
       "size_bytes": 1597931520,
-      "status": "MEASUREMENT_COMPLETE_P6_CONDITIONAL_ESCALATION",
+      "status": "MEASUREMENT_COMPLETE_P6_CONDITIONAL_P7_PASS",
       "upstream_revision": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614"
     },
     {
@@ -68,6 +68,36 @@
       "stderr_sha256": "bfaf624fb30fac47ab192e17688b98a03ada697d2e03a94ce86cdea1661be173"
     },
     "reviewed": true
+  },
+  "p7_recovery_review": {
+    "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+    "execution_sha": "9b6c2a20f95695c26c6bb727f72d63be5c6b3860",
+    "level2": {
+      "exit_code": -15,
+      "kill_sent": false,
+      "process_group_absent": true,
+      "term_sent": true,
+      "waited": true
+    },
+    "network_namespace": "net:[4026532420]",
+    "p6": {
+      "disposition": "CONDITIONAL_ESCALATION",
+      "elapsed_ms": 500,
+      "terminal": "TIMEOUT"
+    },
+    "rebuild": {
+      "cleanup": "PASS",
+      "generate_terminal": "RESULT",
+      "ready": true,
+      "shutdown_ack": true,
+      "startup_ms": 4081.878
+    },
+    "result": "PASS",
+    "result_sha256": "96cef6bd2f2fa776cf986747770e9463cbea1d9d216bf157eb3d385ccba9322e",
+    "schema_validation": "PASS",
+    "stderr_original_sha256": "afdddcb3b81468fabbd55692c0458020489160b39820396aa6868298b4280f4b",
+    "stderr_rebuild_sha256": "78ace490438f3cf0d15a1ebeb2c580e21a38c4a902ed7f0746f7e01eeb0a55c",
+    "violations": []
   },
   "model_execution_performed": true,
   "model_smoke_attempts": [
@@ -172,6 +202,7 @@
     "platform": "ubuntu-aarch64",
     "measurement_runner_implemented": true,
     "measurement_sessions_planned": 20,
+    "p7_gemma_wrapper_prepared": true,
     "p7_recovery_runner_implemented": true,
     "real_adapter_implemented": true,
     "retained_and_arm64_tests": "57/57 PASS",
@@ -184,8 +215,8 @@
     "source_archive_sha256": "4a790f5c56e3622891d0784c2b153e53ba2d2a140f739e8dc6bff71613b78e07",
     "source_archive_size_bytes": 451258203
   },
-  "result": "GEMMA_MEASUREMENT_PASS_QWEN15_P6_CONDITIONAL_QWEN05_DEFERRED",
-  "wip_lock_sha256": "9d50f17f88493bf01875775ce351999b9d92757e6a96fe909cfdf11b758eefea",
+  "result": "GEMMA_MEASUREMENT_PASS_QWEN15_P6_CONDITIONAL_P7_PASS_QWEN05_DEFERRED",
+  "wip_lock_sha256": "b6a564e0bab50c467fa0382d8cdaae1ebc959708bdf6c8028cdaef6d96e7098e",
   "wip_manifest_projections": {
     "authenticated": 3,
     "failed": 0,

@@ -3,7 +3,7 @@
 - **Track**: ARM64 primary / `wip/m2-arm64-preflight`
 - **Baseline SHA**: `bda47427cb17075caf74a22feaa61b556a2c04d7`
 - **Authority**: `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`
-- **Status**: `GEMMA MEASUREMENT PASS / QWEN 1.5B P6 CONDITIONAL / QWEN 0.5B DEFERRED`
+- **Status**: `GEMMA MEASUREMENT PASS / QWEN 1.5B P6 CONDITIONAL + P7 PASS / QWEN 0.5B DEFERRED`
 - **Prepared delivery areas**: D1, D2, D8
 
 ## Acquired Candidate Artifacts
@@ -109,6 +109,20 @@ packet is prepared to prove terminate/wait/rebuild/READY and post-rebuild genera
 This is a workstation pre-screen. It is not formal P4 because the contract's three warm-ups,
 three cold samples and twenty hot samples were not executed, and it is not Pi/Gate 2 evidence.
 
+## Qwen P7 Recovery Review
+
+The locked P7 packet executed under SHA
+`9b6c2a20f95695c26c6bb727f72d63be5c6b3860`; sanitized result SHA-256 is
+`96cef6bd2f2fa776cf986747770e9463cbea1d9d216bf157eb3d385ccba9322e`.
+P6 again produced no terminal frame within 500 ms and remains
+`Conditional escalation`. Level 2 then sent SIGTERM, bounded the wait, observed exit `-15`
+without SIGKILL, and proved the process group absent. Rebuild reached authenticated READY in
+`4081.878 ms`, returned a real model-backed RESULT, acknowledged shutdown, exited 0 without
+TERM/KILL and left no process group. The strict P7 result schema validates with no violations.
+
+Qwen 1.5B therefore retains eligibility under the contract's P6 conditional rule because its full
+P7 workstation proof passes. This does not convert P6 itself to PASS and is not Pi/Gate 2 credit.
+
 ## Provenance and License Preparation
 
 - Official LiteRT-LM `v0.16.0` source archive: size `451258203`; SHA-256
@@ -121,8 +135,6 @@ three cold samples and twenty hot samples were not executed, and it is not Pi/Ga
 
 ## Remaining Gate1 Work
 
-- Execute and review the prepared Qwen P7 terminate/wait/rebuild packet; Qwen remains eligible only
-  if the full P7 proof passes.
 - Formal P4 repetitions, Qwen peak RSS, longer fixed prompt, disk measurement, timeout, failure
   recovery and Gemma P7 simulation.
 - Runner-owned log hygiene, final result-schema validation, candidate comparison and finalist advice.
@@ -134,7 +146,7 @@ Three candidate-specific strict configs, acquisition manifests and WIP candidate
 the fixed `/tmp/llm-poc-g1-arm64-001` staging root, canonical offline install/runtime argv and all
 runtime/model/config/bundle hashes. The staged wheel and three models were copied and re-hashed; all
 three pre-launch projections authenticate. The ARM64 WIP lock SHA-256 is
-`9d50f17f88493bf01875775ce351999b9d92757e6a96fe909cfdf11b758eefea`.
+`b6a564e0bab50c467fa0382d8cdaae1ebc959708bdf6c8028cdaef6d96e7098e`.
 
 The first offline namespace installation attempt proved an isolated namespace but stopped because
 the base Ubuntu Python has no `pip`. The replacement dependency-free, fail-closed wheel installer
@@ -146,5 +158,6 @@ dependencies resolve. The successful log SHA-256 is
 `d408d1577b71e4e1a9b56b6e6833b07cc7af33c82b7619775b645537c5ced8ff`. This is an offline-install
 pre-screen `PASS`, not an environment, model or candidate result.
 
-The next authorized hardware action is the Qwen 1.5B P7 recovery packet. The reviewed workstation
-measurements must not be promoted to complete Gate1 candidate `PASS`, P4 `PASS`, or Gate2 evidence.
+The next bounded hardware work is formal P4 preparation/execution or the remaining Gemma P7
+simulation. The reviewed workstation measurements and Qwen P7 proof must not be promoted to complete
+Gate1 candidate `PASS`, P4 `PASS`, or Gate2 evidence.

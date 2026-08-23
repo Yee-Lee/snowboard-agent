@@ -20,6 +20,7 @@
     "p7_recovery_runner":{"path":"poc_llm/tools/run_gate1_arm64_p7_recovery.py","sha256":"9dff52da245ad398638aa50c5572c1665f3a15083236228ab3dc21b3b9571bc9"},
     "p7_result_schema":{"path":"poc_llm/fixtures/gate1/arm64-p7-recovery-result-v1.schema.json","sha256":"ca16fceda78bd23a5bef67221c317db8c910567ff9e7b281d9637aba9708bb8e"},
     "p7_qwen15_wrapper":{"path":"poc_llm/tools/run_gate1_arm64_p7_qwen15.sh","sha256":"d67f29258a3aa33d417fc064c12d19a5f2dfbb09e7b209cd8cfe499ba55be132"},
+    "p7_gemma_wrapper":{"path":"poc_llm/tools/run_gate1_arm64_p7_gemma.sh","sha256":"4dcc5e8d3d9a923c35597ec8d81fea403ef9f3448363d47102d80298c30721b5"},
     "boundary":{"path":"poc_llm/harness/m1_contract_boundary.py","sha256":"f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
     "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
     "response_schema":{"path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
