@@ -1,10 +1,11 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
-狀態：`IN_PROGRESS / PREFLIGHT NEXT`
+狀態：`IN_PROGRESS / FINAL EXACT-IDENTITY ACK PENDING`
 
-Pi formal session 已依 User 指示排至 2026-08-24，詳見
+Pi formal session 已依 User 指示於 2026-08-24 開始，詳見
 [`M3-PI-SESSION-SCHEDULE-001`](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md)。
-目前為 `SCHEDULED / NOT EXECUTED`；2026-08-23 未連 Pi，也沒有 hardware result。
+Exact-SHA/environment/authorization preflight 已通過，capture 已開始；實體 playback
+發現 Core success-path drain defect，所有後續 formal execution 已停止並保留 evidence。
 
 ## 目標
 
@@ -21,18 +22,41 @@ M2 已由
 [`RESP-AUDIO-M2-GATE-CLOSURE-002`](../reviews/RESP-AUDIO-M2-GATE-CLOSURE-002.md)
 正式關閉；M3 依
 [`M3-ENTRY-LOCK-002`](../../poc_audio/deliveries/M3-ENTRY-LOCK-002.md)
-規劃，但尚未開始 hardware execution。User 已提交
+規劃並已開始 hardware execution。User 已提交
 [`CR-AUDIO-M3-RISK-FOCUSED-GATES-001`](../../poc_audio/deliveries/CR-AUDIO-M3-RISK-FOCUSED-GATES-001.md)
 供 Core/Designer 審查。Core 已以
 [`RESP-AUDIO-M3-RISK-FOCUSED-GATES-001`](../pm_handoff/RESP-AUDIO-M3-RISK-FOCUSED-GATES-001.md)
 `ACCEPTED WITH CONDITIONS` 核准判定框架與 packet minimum，並授權準備 test packet。
-User 已核准 packet，Core output adaptation 已固定為
-`ff09199583644a8f0822153e371589f52ae821a0`。formal backend、offline enforcement、
+User 已核准 packet；原 Core output adaptation SHA `ff091995...` 已由 drain replacement
+`6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf` 取代。formal backend、offline enforcement、
 candidate lifecycle 與 draft summary 已完成本地驗證。packet/runner candidate 已固定為
 `655e80ec4ed287708ed0a47f383b645d88650b18`；Core Designer 已以
 [`RESP-AUDIO-M3-PACKET-SIGNOFF-001`](../pm_handoff/RESP-AUDIO-M3-PACKET-SIGNOFF-001.md)
 在 commit `e63884451368079a9c876c2994c982627aa7d766` 一次性 ACK。M3 現由 Audio 主導
-Pi preflight 與 formal qualification，Core 無中間執行待辦。
+Pi qualification。Audio 已對 playback blocker 完成隔離實作與 Pi 驗證，並以
+[`CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
+交付 direct-child review candidate `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`。Core 已以
+[`RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../pm_handoff/RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
+接受 authoritative replacement、semantics 與 evidence，且不要求額外測試。Audio 現只做
+append-only packet/signoff identity update；final exact-identity ACK 前不繼續 formal run。
+
+## 2026-08-24 execution finding
+
+- Pi 5 / VoiceHAT `hw:0,0` preflight PASS；裝置 owner、temperature 與 throttling bounded。
+- 初次 `M3-VAD-01` capture 完整 6 秒，但首次載入 NumPy 固定建立 3 個 runtime threads，
+  harness 將其判為 cleanup FAIL；舊 evidence 不覆寫。
+- `OPENBLAS_NUM_THREADS=1` 已證明可把 runtime 維持單執行緒；operator rehearsal 收到
+  `300/300` frames、`peak=-12.6 dBFS`、`RMS=-30.7 dBFS`、device released。
+- recovery capture cleanup 為零且 runner result PASS，但維持
+  `DRAFT_USER_CONFIRMATION_PENDING`；Core SHA 更新後不直接沿用為新 packet formal result。
+- Packet-pinned Core AudioOutput writes/cleanup 完成卻無聲；同一 source 與 exact
+  Core-adapted native WAV 經 `aplay` 可聽。相同 pyalsaaudio `960 × 4` 設定加入
+  success-path `drain()` 後可聽，確認 completion defect。
+- Review candidate `6c7fc8c...` 在 Pi focused `8 passed`、完整 non-RPi
+  `267 passed / 1 optional skipped / 21 deselected`、5/5 silent reuse cycles、實體語音
+  `6.055 s` 完整 drain，User 確認可聽且音量與 `aplay` 類似，cleanup released。
+- Sanitized evidence：
+  [`M3-CORE-HAL-PLAYBACK-DRAIN-DEBUG-001`](../../poc_audio/evidence/m3/M3-CORE-HAL-PLAYBACK-DRAIN-DEBUG-001.md)。
 
 ## 對最終交付的貢獻
 
@@ -107,6 +131,9 @@ Pi preflight 與 formal qualification，Core 無中間執行待辦。
 及 Core 的
 [`RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001`](../pm_handoff/RESP-AUDIO-M3-1-REMEDIATION-FRAMEWORK-001.md)，
 M3.1 是 contingency stage，不是固定 milestone，也沒有預先 execution authority。
+
+本次 playback finding 不啟動 M3.1：根因位於 Core HAL success completion，修正不涉及
+gain、pre-roll 或 front-end processing，依正式 Core change/review 流程處理。
 
 只有以下三項同時成立才可提出啟動：
 

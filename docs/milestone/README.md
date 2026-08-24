@@ -64,14 +64,14 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有 M3 發現 evidence-backed blocker 後才可另行啟動。最終交付維持 `AT_RISK`（Matcha legal 與 Silero target-mic start-retention risk 尚未關閉），M3 維持 `PLANNED`。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 已進入 Pi hardware execution，現因已確認的 Core AudioOutput success-path drain defect 暫停；最終交付維持 `AT_RISK`。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
-| M3 | `IN_PROGRESS` | Core 已一次性 ACK exact packet；Audio 進入 Pi 5/M3 HAL preflight 與正式 qualification | [M3](m3_real_hardware_integration.md) |
+| M3 | `IN_PROGRESS / FINAL IDENTITY ACK PENDING` | Core 已接受 drain replacement `6c7fc8c...`；Audio 正機械更新 packet identity，完成 final ACK 後恢復 Pi VAD/ASR | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
@@ -98,30 +98,33 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `NEXT`：User 已核准 `M3-RISK-FOCUSED-QUALIFICATION-TEST-PACKET-001`；runner/local
-  validation 已完成並固定 candidate SHA
-  `655e80ec4ed287708ed0a47f383b645d88650b18`。Core 已在
-  `e63884451368079a9c876c2994c982627aa7d766` 一次性 ACK 並授權 formal Pi execution；
-  controlled sign-off 已在 Git 外產生並通過 schema guard；下一步由 Audio 部署 exact
-  checkouts 並執行 preflight。
-- `SCHEDULE`：User 已將 Pi formal session 排至 2026-08-24；狀態為
-  `SCHEDULED / NOT EXECUTED`。預留連續 3 小時、排程 buffer 4 小時，User/operator
-  預計參與 30–45 分鐘。2026-08-23 未連 Pi、未產生 hardware result 或 disposition。
+- `NEXT / FINAL IDENTITY ACK`：2026-08-24 exact-SHA Pi preflight 已通過，capture 已開始；實體
+  playback 發現 packet-pinned Core `ff091995...` 完成 writes/cleanup 卻無聲。Audio 已直接
+  debug、補 success-path drain、完成 workstation/Pi regression 與 User acoustic A/B，並以
+  [`CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
+  交付 direct-child review candidate `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`。Core 已接受
+  replacement、semantics 與 evidence；formal execution 只等待 append-only packet update
+  的 final exact-identity ACK。
+- `HARDWARE SESSION`：Pi 5、VoiceHAT `hw:0,0`、throttling `0x0`；preflight PASS。
+  `M3-VAD-01` 初次 capture 因首次 NumPy runtime threads 被 harness 誤判而保留 FAIL；以
+  `OPENBLAS_NUM_THREADS=1` 固定 runtime 後 recovery capture cleanup 為零，但仍是
+  `DRAFT_USER_CONFIRMATION_PENDING`，且 Core SHA 更換後不得直接當新 packet 的 formal result。
 - `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
   HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
   portable suite 176 項通過。Core output adaptation 已固定為
-  `ff09199583644a8f0822153e371589f52ae821a0`；POC execution SHA 已切定，下一步取得
-  Core packet sign-off。
-- `CLOSED BLOCKER`：Core 已在 AudioOutput 內完成 16 kHz mono S16_LE → 48 kHz
-  stereo S32_LE adaptation；User 接受剩餘 Core test coverage 為非阻塞風險。POC 不增加
-  自有 resampler，formal hardware execution 仍等待 packet sign-off。
+  歷史 execution SHA `ff09199583644a8f0822153e371589f52ae821a0`；POC execution SHA
+  `655e80ec...` 保持 immutable。Core 已接受 `6c7fc8c...`；Audio 正進行 append-only
+  packet/runner identity update 與 final sign-off。
+- `CLOSED CORE BLOCKER`：16 kHz mono S16_LE → 48 kHz stereo S32_LE data adaptation
+  本身正確，但 success completion 缺 ALSA drain，`close()` 前不保證 physical consumption。
+  修正不改 gain/resampler/format/buffer；POC 不增加自有 resampler。
 - `CORE ACCEPTED / AUDIO INTEGRATION UNBLOCKED / NOT EXECUTED`：固定
   `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum 已收到，附件
   regression 6 項通過；Core ACK 已固定於
   `caf4f7ba867e4ebc1972df0ade86c605a873a286`。Audio 後續自行執行，不再向 Core
   要 P9 補件；未執行前不產生 P9 PASS 或 LLM credit。
-- `CONTINGENCY`：M3.1 framework 已條件式接受；只有可重現 hard-gate finding、明確
-  root-cause evidence 與 Core 事前核准的一個 minimal remediation 同時具備才啟動。
+- `CONTINGENCY / NOT ACTIVATED`：本次是 Core HAL playback completion defect，不是
+  M3.1 允許的 gain/pre-roll/minimal front-end action；M3.1 framework 維持待命。
 - `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
   M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
   clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。

@@ -15,7 +15,7 @@
     "poc_option_a_validation_sha": "de3b0bab4daaf47f62956d4b27f6697b3d4fa823",
     "core_hal_previous_accepted_sha": "5c9e5aac47e7f4f0dd168d8c75541438ee74f858",
     "core_hal_previous_acceptance_sha": "2fb2e18f934c3d06392074adba3c4518402101e9",
-    "core_hal_execution_sha": "ff09199583644a8f0822153e371589f52ae821a0",
+    "core_hal_execution_sha": "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf",
     "core_hal_change_request": "CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001"
   },
   "fixtures": {

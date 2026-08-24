@@ -34,7 +34,7 @@ class M3PacketTests(unittest.TestCase):
         self.assertFalse(packet["authority"]["formal_execution_authorized"])
         self.assertEqual(
             packet["source"]["core_hal_execution_sha"],
-            "ff09199583644a8f0822153e371589f52ae821a0",
+            "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf",
         )
         self.assertEqual(len(packet["fixtures"]["vad"]), 8)
         self.assertEqual(len(packet["fixtures"]["asr"]), 5)

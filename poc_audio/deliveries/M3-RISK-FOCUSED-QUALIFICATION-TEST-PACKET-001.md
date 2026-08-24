@@ -32,7 +32,7 @@ is required.
 | Core accepted Option A delivery | `882e2b6ff571eb9d54ec96bae7d3b63338c5965c` |
 | Audio POC Option A validation SHA | `de3b0bab4daaf47f62956d4b27f6697b3d4fa823` |
 | Existing Core accepted HAL implementation | `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`; acceptance `2fb2e18f934c3d06392074adba3c4518402101e9` / `core_m3` |
-| Core HAL formal execution SHA | `ff09199583644a8f0822153e371589f52ae821a0`; SHA-002 supersedes deprecated `55f3526fd0a37a8831bdff769ea3ba61e5cd0684` |
+| Core HAL formal execution SHA | `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`; drain ACK supersedes `ff09199583644a8f0822153e371589f52ae821a0`, which superseded deprecated `55f3526fd0a37a8831bdff769ea3ba61e5cd0684` |
 | Target | Raspberry Pi 5, INMP441 input, MAX98357A output, VoiceHAT overlay |
 | Capture conversion | Accepted Option A, explicit 48 kHz to 16 kHz mono S16_LE; ASR boundary is exact 20 ms / 320 samples / 640 bytes |
 | VAD | Silero 6.2.1; implementation SHA `5188e3af360ba3b63f5eedb16288d39bc849cacc`; model SHA-256 `1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3` |
@@ -225,7 +225,7 @@ The packet validator and fake lifecycle runner exist and pass locally. They fail
 closed for formal modes and explicitly label fake output as not hardware evidence.
 The Core repo is available at `~/workspace/snowboard-agent/`, and Core delivery
 `DELIVERY-AUDIO-M3-CORE-HAL-OUTPUT-SHA-002` fixes formal execution to
-`ff09199583644a8f0822153e371589f52ae821a0`. HAL `preflight`, `capture`,
+`6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`. HAL `preflight`, `capture`,
 `direct-pcm`, the four HAL-owned lifecycle rows, finalist VAD, direct ASR,
 HAL/VAD-path ASR, the dedicated candidate cancel/force-abort rows and the fail-closed
 22-result summary are implemented against that exact HAL. The formal backend is ready
@@ -243,7 +243,7 @@ All output/evidence paths must be new; captured private WAVs remain outside Git.
 
 ```bash
 bash poc_audio/tools/run_m3_qualification.sh preflight \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-PREFLIGHT-01 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --artifact-dir <controlled-artifact-root> --runtime-python <authorized-sherpa-python> \
@@ -253,7 +253,7 @@ bash poc_audio/tools/run_m3_qualification.sh preflight \
   --controlled-locator <controlled://locator> --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh capture \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id <M3-CAPTURE-ID> \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --frames <20ms-frame-count> --capture-wav <new-controlled-wav> \
@@ -261,7 +261,7 @@ bash poc_audio/tools/run_m3_qualification.sh capture \
   --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh direct-pcm \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-PCM-01 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --pcm-wav <controlled-16k-mono-s16-wav> --samples-per-chunk 320 \
@@ -269,7 +269,7 @@ bash poc_audio/tools/run_m3_qualification.sh direct-pcm \
   --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh hal-lifecycle \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id <M3-LIFE-01-through-04> \
   --lifecycle-scenario <start-stop|reopen-5|invalid-input|invalid-output> \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
@@ -277,7 +277,7 @@ bash poc_audio/tools/run_m3_qualification.sh hal-lifecycle \
   --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh tts \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-TTS-SET-01 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --artifact-dir <controlled-artifact-root> --work-dir <new-disposable-model-dir> \
@@ -286,7 +286,7 @@ bash poc_audio/tools/run_m3_qualification.sh tts \
   --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh asr-direct \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-ASR-DIRECT-PCM-BASELINE-001 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --fixture-dir <controlled-five-wav-dir> --binary <checksum-pinned-base-q8-worker> \
@@ -295,7 +295,7 @@ bash poc_audio/tools/run_m3_qualification.sh asr-direct \
   --controlled-locator <controlled://locator> --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh vad-hal \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-VAD-SET-01 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --fixture-dir <controlled-ten-wav-dir> --vad-runtime-python <authorized-silero-python> \
@@ -304,7 +304,7 @@ bash poc_audio/tools/run_m3_qualification.sh vad-hal \
   --controlled-locator <controlled://locator> --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh asr-hal \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id M3-ASR-HAL-PATH-001 \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
   --fixture-dir <controlled-vad-work-dir/bounded-asr> \
@@ -315,7 +315,7 @@ bash poc_audio/tools/run_m3_qualification.sh asr-hal \
   --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh candidate-lifecycle \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --test-id <M3-LIFE-05-or-M3-LIFE-06> \
   --candidate-scenario <cancel-or-force-abort> \
   --input-device <hw:CARD,DEV> --output-device <hw:CARD,DEV> --input-channel <0-or-1> \
@@ -326,7 +326,7 @@ bash poc_audio/tools/run_m3_qualification.sh candidate-lifecycle \
   --controlled-locator <controlled://locator> --output <new-sanitized-result-json>
 
 bash poc_audio/tools/run_m3_qualification.sh summarize \
-  --core-root <core-at-ff09199583644a8f0822153e371589f52ae821a0> \
+  --core-root <core-at-6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf> \
   --signoff <controlled-signoff.json> --result-dir <sanitized-result-directory> \
   --output <new-draft-summary-json>
 ```
