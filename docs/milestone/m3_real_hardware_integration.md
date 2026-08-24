@@ -1,11 +1,13 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
-狀態：`IN_PROGRESS / FINAL EXACT-IDENTITY ACK PENDING`
+狀態：`GATE_REVIEW / CORE GATE 2A ACK PENDING`
 
-Pi formal session 已依 User 指示於 2026-08-24 開始，詳見
+Pi formal session 已依 User 指示於 2026-08-24 完成，詳見
 [`M3-PI-SESSION-SCHEDULE-001`](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md)。
-Exact-SHA/environment/authorization preflight 已通過，capture 已開始；實體 playback
-發現 Core success-path drain defect，所有後續 formal execution 已停止並保留 evidence。
+Final execution 綁定 Audio `f7b9694d1477f26513880526e0718d2b3c5766b3`、Core
+`6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf` 與 Core ACK commit
+`cae21217b2f7d812511bde77edb2cd1eb65e8f06`。22-result set 已通過單一 SHA/唯一 ID
+驗證，User 已核准 reviewed PASS disposition；M3 只等待 Core Gate 2A return ACK。
 
 ## 目標
 
@@ -37,8 +39,22 @@ Pi qualification。Audio 已對 playback blocker 完成隔離實作與 Pi 驗證
 [`CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
 交付 direct-child review candidate `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`。Core 已以
 [`RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../pm_handoff/RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
-接受 authoritative replacement、semantics 與 evidence，且不要求額外測試。Audio 現只做
-append-only packet/signoff identity update；final exact-identity ACK 前不繼續 formal run。
+接受 authoritative replacement、semantics 與 evidence，且不要求額外測試。Core 後續以
+`RESP-AUDIO-M3-PACKET-SIGNOFF-003` ACK replacement Audio SHA；Audio 已完成 final Pi run、
+evidence review 與 User publication approval。結果見
+[`M3-RISK-FOCUSED-QUALIFICATION-REVIEW-001`](../../poc_audio/evidence/m3/M3-RISK-FOCUSED-QUALIFICATION-REVIEW-001.md)。
+
+## 2026-08-24 final gate-review result
+
+- Exact 22-result set：`18 PASS / 0 FAIL / 4 human-review INCONCLUSIVE`；四項為 runner
+  刻意保留給 VAD/ASR/TTS 人工判定，不是 execution failure。
+- VAD 保留五段 speech；60 秒靜音、device-start、impact 與 cough 均為零 event；playback
+  speech 正確偵測。
+- Base Q8 direct/HAL 各產生五筆非空結果；HAL 無 paired regression，pause item 從三 edits
+  改善為一 edit。受控 semantic review 未發現 critical meaning-changing misread。
+- Matcha 六句皆完成 target AudioOutput playback；User 全數評為 `5/5` 並核准發布。
+- LIFE-01～06、offline isolation、PCM recovery 與 final shutdown cleanup 均通過；無 worker、
+  device owner 或 throttle。Small Q8 fallback 與 M3.1 均未啟動。
 
 ## 2026-08-24 execution finding
 

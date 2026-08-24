@@ -64,14 +64,14 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 已進入 Pi hardware execution，現因已確認的 Core AudioOutput success-path drain defect 暫停；最終交付維持 `AT_RISK`。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。M3 只等待 Core Gate 2A return ACK；最終交付維持 `AT_RISK`，因 M4 與 legal lineage 尚未關閉。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
 | M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
-| M3 | `IN_PROGRESS / FINAL IDENTITY ACK PENDING` | Core 已接受 drain replacement `6c7fc8c...`；Audio 正機械更新 packet identity，完成 final ACK 後恢復 Pi VAD/ASR | [M3](m3_real_hardware_integration.md) |
+| M3 | `GATE_REVIEW / CORE GATE 2A ACK PENDING` | Final Pi/HAL qualification 已完成且 User 核准發布；Audio 正提交完整 Gate 2A return SHA，Core 只需 ACK | [M3](m3_real_hardware_integration.md) |
 | M4 | `NOT_STARTED` | 20-session combined validation、Gate 2B final reference/conformance kit 與正式交付 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
@@ -92,29 +92,24 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
 | M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
 | M2B：optimization feasibility | `ACCEPTED FOR M3` — Reviewer 接受 base Q8 primary、small Q8 fallback 與 prompt recipe；完整 delta/regression 保留，不是 production lock |
-| Gate 2A：POC qualification/selection | `COMPLETE FOR M3` — ASR, TTS, VAD 皆已完成評估並指定 M3 finalist；完整 qualified selection 仍待 M3 target/HAL qualification 完成。 |
+| Gate 2A：POC qualification/selection | `RETURN PENDING CORE ACK` — M3 target/HAL qualification 與 User publication approval 已完成；VAD、base-Q8 ASR、Matcha TTS 為唯一 M4 finalists，等待 Core ACK return SHA。 |
 | Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
 
-- `NEXT / FINAL IDENTITY ACK`：2026-08-24 exact-SHA Pi preflight 已通過，capture 已開始；實體
-  playback 發現 packet-pinned Core `ff091995...` 完成 writes/cleanup 卻無聲。Audio 已直接
-  debug、補 success-path drain、完成 workstation/Pi regression 與 User acoustic A/B，並以
-  [`CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md)
-  交付 direct-child review candidate `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`。Core 已接受
-  replacement、semantics 與 evidence；formal execution 只等待 append-only packet update
-  的 final exact-identity ACK。
-- `HARDWARE SESSION`：Pi 5、VoiceHAT `hw:0,0`、throttling `0x0`；preflight PASS。
-  `M3-VAD-01` 初次 capture 因首次 NumPy runtime threads 被 harness 誤判而保留 FAIL；以
-  `OPENBLAS_NUM_THREADS=1` 固定 runtime 後 recovery capture cleanup 為零，但仍是
-  `DRAFT_USER_CONFIRMATION_PENDING`，且 Core SHA 更換後不得直接當新 packet 的 formal result。
-- `IMPLEMENTATION`：packet machine validator、11-case local fake lifecycle、formal
-  HAL/finalist backends、offline namespace enforcement 與 22-result draft summary 已完成；
-  portable suite 176 項通過。Core output adaptation 已固定為
-  歷史 execution SHA `ff09199583644a8f0822153e371589f52ae821a0`；POC execution SHA
-  `655e80ec...` 保持 immutable。Core 已接受 `6c7fc8c...`；Audio 正進行 append-only
-  packet/runner identity update 與 final sign-off。
+- `NEXT / CORE ACK`：User 已核准
+  [`M3-RISK-FOCUSED-QUALIFICATION-REVIEW-001`](../../poc_audio/evidence/m3/M3-RISK-FOCUSED-QUALIFICATION-REVIEW-001.md)。
+  Audio 提交一次性 Gate 2A return packet；Core 只需 ACK exact return SHA、reviewed
+  VAD/base-Q8/Matcha disposition 與既有邊界，不要求新 source、Pi run 或重評分。
+- `HARDWARE SESSION`：Pi 5、VoiceHAT `hw:0,0`、目標距離 `0.8–1.0 m`。十個 capture、
+  PCM recovery、LIFE-01～06、VAD、direct/HAL ASR 與六句 TTS 已完成；selected evidence
+  cleanup 全零，final shutdown 無 worker/device owner 且 `throttled=0x0`。
+- `IMPLEMENTATION`：final execution 固定 Audio
+  `f7b9694d1477f26513880526e0718d2b3c5766b3`、Core
+  `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`、Core ACK commit
+  `cae21217b2f7d812511bde77edb2cd1eb65e8f06`。22-result summary 為單一 SHA、零 FAIL；
+  Small Q8 與 M3.1 均未啟動。
 - `CLOSED CORE BLOCKER`：16 kHz mono S16_LE → 48 kHz stereo S32_LE data adaptation
   本身正確，但 success completion 缺 ALSA drain，`close()` 前不保證 physical consumption。
   修正不改 gain/resampler/format/buffer；POC 不增加自有 resampler。
@@ -123,13 +118,12 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
   regression 6 項通過；Core ACK 已固定於
   `caf4f7ba867e4ebc1972df0ade86c605a873a286`。Audio 後續自行執行，不再向 Core
   要 P9 補件；未執行前不產生 P9 PASS 或 LLM credit。
-- `CONTINGENCY / NOT ACTIVATED`：本次是 Core HAL playback completion defect，不是
-  M3.1 允許的 gain/pre-roll/minimal front-end action；M3.1 framework 維持待命。
-- `RISK`：Silero 在 M2 corrected run 的低音量句首 retention 未達 frozen 95% start gate；
-  M3 必須在 pinned target mic/HAL 驗證，必要時只提一個 fixed front-end gain 並檢查
-  clipping、silence、impact-noise、ASR 與 cleanup regression，不展開 tuning matrix。
-- `RISK`：Matcha risk-focused screen 已通過；`tts-013` 的 `start` 有輕微發音瑕疵，
-  User 給 4 分且未判 critical。Legal lineage 仍須在 redistribution、product adoption
+- `CONTINGENCY / NOT ACTIVATED`：M3 final target-mic evidence 未形成 gain、pre-roll 或
+  front-end blocker；M3.1 framework 維持待命但不啟動。
+- `CLOSED M3 TARGET-MIC RISK`：Silero 在 `0.8–1.0 m` 的 final low-volume case 保留 speech，
+  direct/HAL ASR 均 exact；silence、startup、impact、cough 與 cleanup regression 均未出現。
+- `RISK`：Matcha risk-focused screen 已通過；M2 的 `tts-013` 歷史評分為 4，M3 target
+  AudioOutput 六句皆為 5/5 且無 critical misread。Legal lineage 仍須在 redistribution、product adoption
   或 Gate 2B final-winner approval 前關閉。
 - `RISK`：大型/optional rows 可能受 Pi resource 或 schedule 限制；省略必須留下
   evidence-backed reason。
