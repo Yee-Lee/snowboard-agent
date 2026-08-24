@@ -1,6 +1,12 @@
 # M4：組合認證與正式交付
 
-狀態：`NOT_STARTED`
+狀態：`PLANNED / ENTRY CONDITIONS MET`
+
+Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
+並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。M4 尚未
+開始 execution；下一步由 Audio 建立 internal M4 packet，先執行已接受的 P9 surrogate，
+再進行 20-session combined/offline/failure-injection Gate 2B work。P9 未執行前沒有 PASS
+或 LLM credit。
 
 ## 目標
 

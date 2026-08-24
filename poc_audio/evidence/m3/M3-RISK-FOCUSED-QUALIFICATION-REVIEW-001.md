@@ -104,3 +104,11 @@ Core must ACK the committed Gate 2A return SHA before M3 is marked `COMPLETE`. P
 remains separately recorded as Core accepted and
 Audio integration unblocked but not executed; it does not masquerade as LLM credit.
 M4 and `POC Accepted` are not declared by this review.
+
+## Append-only Gate 2A closure
+
+Core commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` subsequently issued
+`RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001` with status
+`ACKNOWLEDGED — GATE 2A CLOSED`. It confirmed the evidence/return commits, exact
+Audio/Core execution SHAs, three finalists and unchanged M4/legal/P9 boundaries.
+This closes M3; P9 execution and combined Gate 2B validation remain M4 work.

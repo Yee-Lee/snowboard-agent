@@ -1,13 +1,16 @@
 # M3：Pi 5 真實 M3 Audio HAL 整合
 
-狀態：`GATE_REVIEW / CORE GATE 2A ACK PENDING`
+狀態：`COMPLETE`
 
 Pi formal session 已依 User 指示於 2026-08-24 完成，詳見
 [`M3-PI-SESSION-SCHEDULE-001`](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md)。
 Final execution 綁定 Audio `f7b9694d1477f26513880526e0718d2b3c5766b3`、Core
 `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf` 與 Core ACK commit
 `cae21217b2f7d812511bde77edb2cd1eb65e8f06`。22-result set 已通過單一 SHA/唯一 ID
-驗證，User 已核准 reviewed PASS disposition；M3 只等待 Core Gate 2A return ACK。
+驗證，User 已核准 reviewed PASS disposition。Core 已於 commit
+`5aac035d25f6498c3c0affe1ace4afd7de8f7254` 以
+[`RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001`](../pm_handoff/RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001.md)
+關閉 M3 / Gate 2A。
 
 ## 目標
 
