@@ -30,7 +30,7 @@ from audio_poc.m3_formal_hal import (  # noqa: E402
     run_hal_lifecycle,
     validate_case_identity,
 )
-from audio_poc.m3_asr import _level  # noqa: E402
+from audio_poc.m3_asr import _level, load_task_script_map  # noqa: E402
 from audio_poc.m3_candidate_lifecycle import run_candidate_lifecycle  # noqa: E402
 from audio_poc.m3_vad_worker import bounded_payload  # noqa: E402
 from audio_poc.m3_tts_playback import run_matcha_playback  # noqa: E402
@@ -236,6 +236,10 @@ class M3CoreHalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(level["peak_abs_s16"], 32768)
         self.assertEqual(level["clipped_samples"], 2)
         self.assertGreater(level["rms_s16"], 0)
+
+    async def test_asr_task_scoring_manifest_is_packaged(self) -> None:
+        script_map = load_task_script_map(REPO_ROOT)
+        self.assertEqual(script_map["啟"], "启")
 
     async def test_vad_bounded_payload_uses_one_exact_interval(self) -> None:
         payload = bytes(range(256)) * 250

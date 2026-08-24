@@ -26,6 +26,7 @@ FIXTURE_IDS = (
     "asr-clear-012",
     "asr-clear-023",
 )
+TASK_SCORING_FILENAME = "m2b_c_task_adjusted_scoring.json"
 
 
 def sha256_file(path: Path) -> str:
@@ -61,6 +62,12 @@ def _level(payload: bytes) -> dict[str, float | int]:
     }
 
 
+def load_task_script_map(repo_root: Path) -> dict[str, str]:
+    scoring_path = repo_root / "poc_audio/manifests" / TASK_SCORING_FILENAME
+    scoring = json.loads(scoring_path.read_text(encoding="utf-8"))
+    return scoring["normalization"]["traditional_to_simplified"]
+
+
 def run_direct_asr(
     repo_root: Path,
     fixture_dir: Path,
@@ -83,10 +90,7 @@ def run_direct_asr(
     plan_path = repo_root / "poc_audio/fixtures/authorized/recording_plan_v1.json"
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     planned = {item["fixture_id"]: item for item in plan["utterances"]}
-    scoring = json.loads(
-        (repo_root / "poc_audio/manifests/m2b_c_task_scoring.json").read_text(encoding="utf-8")
-    )
-    script_map = scoring["normalization"]["traditional_to_simplified"]
+    script_map = load_task_script_map(repo_root)
     work_dir.mkdir(parents=True)
     fixture_records: list[dict[str, Any]] = []
     for fixture_id in FIXTURE_IDS:
