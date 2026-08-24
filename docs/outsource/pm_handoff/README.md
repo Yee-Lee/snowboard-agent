@@ -85,6 +85,7 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 | [`DELIVERY-014-PM-LLM-POC-PI-PACKET-P11-PREFLIGHT-CORRECTION`](history/DELIVERY-014-PM-LLM-POC-PI-PACKET-P11-PREFLIGHT-CORRECTION.md) | LLM POC Gate 1 & Gate 2A Pi Execution Packets Revision | 無 | **Resolved — G1 accepted for execution; G2A frozen pending finalist ACK** | ACK: [`RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md`](../responses/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md) |
 | [`REQ-AUDIO-M3-PACKET-SIGNOFF-001`](history/REQ-AUDIO-M3-PACKET-SIGNOFF-001.md) | Audio POC M3 Risk-Focused Qualification Packet Signoff Request | 無 | **Resolved — Formal Pi Execution Authorized** | Response: [`RESP-AUDIO-M3-PACKET-SIGNOFF-001.md`](../responses/RESP-AUDIO-M3-PACKET-SIGNOFF-001.md) |
 | [`CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001`](history/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md) | Core AudioOutput ALSA Playback Drain Patch | 無 | **Resolved — Core HAL drain patch accepted at `6c7fc8c`** | Response: [`RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md`](../responses/RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md) |
+| [`REQ-AUDIO-M3-PACKET-SIGNOFF-002`](history/REQ-AUDIO-M3-PACKET-SIGNOFF-002.md) | Audio POC M3 Packet Signoff Update (Post Playback Drain Patch) | 無 | **Resolved — exact identities confirmed** | Response: [`RESP-AUDIO-M3-PACKET-SIGNOFF-002.md`](../responses/RESP-AUDIO-M3-PACKET-SIGNOFF-002.md) |
 
 ---
 
@@ -135,6 +136,7 @@ docs/outsource/pm_handoff/
     ├── DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-SOURCE-IDENTITY.md
     ├── DELIVERY-014-PM-LLM-POC-PI-PACKET-P11-PREFLIGHT-CORRECTION.md
     ├── REQ-AUDIO-M3-PACKET-SIGNOFF-001.md
+    ├── REQ-AUDIO-M3-PACKET-SIGNOFF-002.md
     ├── GATE1-PI-COMPAT-PACKET-006.md
     ├── GATE2A-PI-PACKET-001.md
     └── P9-SURROGATE-SOURCE-IDENTITY-001.md
