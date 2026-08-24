@@ -46,7 +46,9 @@ class _FakePCM:
     def __init__(self) -> None:
         self.payloads: list[bytes] = []
         self.closed = 0
+        self.drains = 0
         self.fail_on_write = False
+        self.fail_on_drain = False
 
     def write(self, payload: bytes) -> int:
         if self.fail_on_write:
@@ -56,6 +58,11 @@ class _FakePCM:
 
     def close(self) -> None:
         self.closed += 1
+
+    def drain(self) -> None:
+        self.drains += 1
+        if self.fail_on_drain:
+            raise OSError("mock drain error")
 
 
 def _adapted_config() -> AudioConfig:
@@ -181,6 +188,8 @@ def test_m3_audo_005() -> None:
 
     # 5 plays + 1 abort + 1 error + 1 cancel = 8 resampler sessions
     assert len(resamplers) == 8
+    # Only the five fully consumed, successfully written sessions are drained.
+    assert sink.drains == 5
     # Adapter reset discards the current resampler reference
     assert output._adapter._resampler is None
     assert sink.closed == 1
@@ -199,3 +208,28 @@ def test_m3_audo_007() -> None:
     output._pcm = sink
     output._write_worker(bytes(16))
     assert sink.payloads == [bytes(16)]
+
+
+def test_m3_audo_008() -> None:
+    output = AlsaAudioOutput(
+        _adapted_config(),
+        adapter_factory=lambda: _adapter(_TripleResampler()),
+    )
+    sink = _FakePCM()
+    sink.fail_on_drain = True
+    output._pcm = sink
+    output._executor = ThreadPoolExecutor(max_workers=1)
+    output._started = True
+
+    async def pcm():
+        yield struct.pack("<h", 1)
+
+    async def scenario() -> None:
+        with pytest.raises(OSError, match="mock drain error"):
+            await output.play(pcm())
+        assert output._adapter._resampler is None
+        await output.stop()
+
+    asyncio.run(scenario())
+    assert sink.drains == 1
+    assert sink.closed == 1

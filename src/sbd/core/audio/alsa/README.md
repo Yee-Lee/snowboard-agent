@@ -9,6 +9,8 @@ This backend is the selected P4 baseline recorded by
 - output: 16 kHz mono S16_LE, exactly 320 samples / 640 bytes / 20 ms;
 - ALSA period/buffer: 960 frames × 4 with one bounded blocking worker per
   capture or playback owner.
+- successful playback drains the accepted PCM through the physical device before
+  `play()` returns; error and cancellation paths skip drain and close promptly.
 
 Use [requirements/rpi-audio-option-a.txt](../../../../../requirements/rpi-audio-option-a.txt)
 on the Pi clean-build flow.  Its source hashes identify the selected sdists;

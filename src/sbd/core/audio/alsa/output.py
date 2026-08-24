@@ -77,6 +77,13 @@ class AlsaAudioOutput:
                 tail = adapter.flush()
                 if tail:
                     await self._run(lambda payload=tail: self._write_worker(payload))
+            # A successful play() means the physical device has consumed the
+            # complete stream, not merely that ALSA accepted it into a userspace
+            # or kernel buffer.  snd_pcm_close() drops queued playback, so an
+            # explicit drain is required before the success path returns.
+            # Error and cancellation paths skip this call and retain the bounded
+            # close/drop behavior in stop().
+            await self._run(self._drain_worker)
         finally:
             self._reset_adapter()
 
@@ -139,6 +146,14 @@ class AlsaAudioOutput:
             if consumed > len(remaining):
                 raise OSError("ALSA write returned an invalid frame count")
             remaining = remaining[consumed:]
+
+    def _drain_worker(self) -> None:
+        if self._pcm is None:
+            raise RuntimeError("ALSA playback is unavailable")
+        drain = getattr(self._pcm, "drain", None)
+        if drain is None:
+            raise RuntimeError("ALSA playback completion requires drain support")
+        drain()
 
     def _close_worker(self) -> None:
         pcm, self._pcm = self._pcm, None
