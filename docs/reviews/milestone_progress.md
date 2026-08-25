@@ -6,7 +6,7 @@
 * **Permanent development branch**: `core`
 * **M3 gate status**: `Accepted — Designer transition direct review complete`
 * **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
-* **Last updated**: 2026-08-17
+* **Last updated**: 2026-08-25
 * **Owner**: Designer
 
 ---
@@ -107,6 +107,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
+| M4a Generic Scaffold | `DESIGN COMPLETE — PENDING DEVELOPER IMPL` | 設計文件：`docs/implement/ch_m4a_generic_scaffold.md`；範圍：NullASRAdapter、NullTTSAdapter、ASR/TTS factory、config schema（ASRConfig / TTSConfig 新增佔位欄位、移除舊佔位Literal）、RM ResourceKey登記（`backend.perception.listen.asr` / `backend.action.speak.tts`）、12個Test ID；不含任何真實engine。POC M2B provisional selection ACK發出後，Designer另立candidate-specific integration設計 |
 | M4a Audio | `M2A BASELINE / M2B OPTIMIZATION AUTHORIZED — POC RETURN PENDING` | POC最新reviewed evidence為`audio` / `c30bf8b804d1a0ee3dd612110f8f6e387ffd686f`：SenseVoice與Whisper small Q8舊gate結果保留，但不再阻止比較。`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`授權Whisper Q8 / small Q5 / base Q5 / medium Q5（另可probe large-v3-turbo Q5）、一列sherpa-onnx bilingual、Vosk small-cn及optional Qwen3-ASR feasibility依共同低成本packet建立M2A scorecard；shortlist再進M2B DSP / decoder / number-domain / recovery單變因優化。M2A/M2B不設quality / performance hard gate；P9 surrogate責任不變 |
 | M4b LLM | `GATE 1 R5 PLATFORM-CONFIG REVISION AUTHORIZED — REAL EXECUTION BLOCKED` | 已複驗`llm` / `341ccc012d87847fed1d3a68e5ef7cc68eb872ba`的`M2-G1-PLATFORM-CONFIG-001`：R4 candidate只有單一config，無法同時驗證x86與Pi strict identity。`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受finding並授權Gate 1-owned R5 platform-keyed config/schema/lock/runner regression；frozen M1 protected paths不得修改。R5 exact-SHA intake前不得發行candidate manifest或跑真實x86/Pi；Gate 2A/2B及017整合診斷邊界不變 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
