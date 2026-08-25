@@ -47,6 +47,8 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 
 | Handoff ID | 標題 / 範疇 | 原 Legacy ID | 結案狀態 | 回覆 / 交付對照 |
 | :--- | :--- | :--- | :--- | :--- |
+| [`ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001`](history/ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001.md) | Matcha model-license evidence correction | `POC-audio-DEL-2026-001-R1` | **Resolved — Apache-2.0 model grant acknowledged; remaining lineage risk accepted by USER** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
+| [`DELIVERY-AUDIO-M4-GATE2B-001`](history/DELIVERY-AUDIO-M4-GATE2B-001.md) | Audio M4 Gate 2B technical delivery / Matcha license disposition | `POC-audio-DEL-2026-001-R1` | **Resolved — technical delivery and all three final references accepted** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`REQ-AUDIO-M4-RUNTIME-CLOSURE-002`](history/REQ-AUDIO-M4-RUNTIME-CLOSURE-002.md) | Core controller / finalist runtime closure | 無 | **Resolved — controller-r2, VAD, and TTS offline closures passed; Audio POC review pending** | Response: [`RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md`](../responses/RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md) |
 | [`PM-OUT-260805-001-m1-carryover-feedback`](history/PM-OUT-260805-001-m1-carryover-feedback/brief.md) | M1 完成後 Carry-over Feedback | `PM-OUT-2026-001-R1` | **Superseded**（由 003 取代） | 被 `PM-OUT-260806-003` 取代並收斂 |
 | [`PM-OUT-260806-003-m1-test-platform-scope`](history/PM-OUT-260806-003-m1-test-platform-scope/brief.md) | M1 測試平台矩陣與交付證據澄清 | `PM-OUT-2026-001-R2` | **Resolved**（全數驗收 PASS） | Response: [`CR-M1-II.md`](../responses/CR-M1-II.md) |
