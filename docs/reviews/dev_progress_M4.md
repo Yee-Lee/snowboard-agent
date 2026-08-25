@@ -28,6 +28,23 @@
 - **Next Developer entry criterion:** receive the M2B provisional-selection ACK and the exact candidate recipe; then implement the candidate-specific adapters, provisional configuration/dependency integration, and the corresponding Core delta tests.
 - This is a dependency boundary, not an implementation defect. It does not claim M4a Gate 3, Tester PASS, candidate freeze, or milestone acceptance.
 
+## M4a runtime closure (M4A-WP-05 to M4A-WP-08)
+
+| Work package | Estimate | Plan | Status |
+| :--- | :--- | :--- | :--- |
+| M4A-WP-05 | 0.25 day | Inventory the Pi Core, VAD, TTS, and whisper runtimes against `REQ-AUDIO-M4-RUNTIME-CLOSURE-002`. | Complete |
+| M4A-WP-06 | 0.5 day | Define a versioned offline wheel inventory and isolated controller-runtime manifest without mixing VAD/TTS native stacks. | Complete |
+| M4A-WP-07 | 0.5 day | Implement a fail-closed preflight for interpreter, venv isolation, Core SHA, wheel checksums, and Core Audio HAL imports. | Complete |
+| M4A-WP-08 | 0.25 day | Run a clean Pi reproduction and return the required closure evidence for Audio POC review. | Complete — Audio POC review pending |
+
+### M4a runtime closure inventory (Pi, 2026-08-25)
+
+- Pi hostname `snowboard` runs Python `3.13.5`. The deployed Core checkout is at `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`, with an untracked `config.m3.local.yaml`; it must not be overwritten during closure work.
+- Its existing `.venv` is invalid for this request because `include-system-site-packages = true`. It currently resolves `pyalsaaudio==0.11.0`, `samplerate==0.2.4`, `PyYAML==6.0.2`, and `numpy==2.4.2`, but not from an isolated closure.
+- Audio POC already has isolated VAD and TTS venvs, but their NumPy/native stacks differ. The Core controller closure must remain separate, be checksum-locked, and reject system-package resolution.
+- Controlled closure root: `/home/yee/.local/share/sbd/m4a-runtime-closure-002/` on the Pi. It holds separate controller-r2, VAD, and TTS wheel inventories, manifests, fresh isolated venvs, and clean-reproduction logs; it is intentionally Git-external.
+- Controller-r2 uses the request's `numpy==2.4.2`; VAD and TTS retain their separately locked `numpy==2.5.2`. All three `--no-index` installs and fail-closed preflights passed. The controller result is tied only to the currently deployed M3 SHA, not an M4a candidate.
+
 ## Candidate gate reform (WP-PROC-01 to WP-PROC-03)
 
 | Work package | Estimate | Plan | Status |
