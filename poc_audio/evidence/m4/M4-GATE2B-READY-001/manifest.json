@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "delivery_id": "POC-audio-DEL-2026-001-R1",
+  "status": "READY_FOR_INTERNAL_REVIEW_CORE_RESPONSE_REQUIRED",
+  "date": "2026-08-25",
+  "repository": {
+    "branch": "audio",
+    "delivery_sha_source": "full SHA recorded in the Core intake handoff created from this committed package",
+    "p9_1_and_combined_execution_sha": "8be3bc095b504b8eab1dfeb21b94173728b9656f",
+    "failure_execution_sha": "26f33a3c371eee61df46924432839d0fa9ee3bf8",
+    "core_hal_execution_sha": "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf"
+  },
+  "hardware": {
+    "platform": "Raspberry Pi 5",
+    "input": "VoiceHAT hw:0,0 channel 0",
+    "output": "VoiceHAT hw:0,0",
+    "test_distance": "0.8-1.0 m",
+    "network_method": "unshare user/network namespace with loopback down"
+  },
+  "finalists": [
+    {
+      "domain": "vad",
+      "candidate": "Silero VAD 6.2.1 ONNX",
+      "license_status": "MIT; pinned candidate identity",
+      "gate2b_disposition": "TECHNICAL_PASS_PENDING_CORE_FINAL_REFERENCE"
+    },
+    {
+      "domain": "asr",
+      "candidate": "whisper.cpp 1.9.2 base Q8, P0 greedy fixed prompt",
+      "artifact_sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+      "license_status": "MIT repository notice; final model-lineage notice review retained",
+      "gate2b_disposition": "TECHNICAL_PASS_PENDING_CORE_FINAL_REFERENCE"
+    },
+    {
+      "domain": "tts",
+      "candidate": "sherpa-onnx 1.13.5 Matcha zh/en with Vocos 16 kHz",
+      "license_status": "runtime Apache-2.0; model archive notice and mixed training-data lineage require Core written legal disposition",
+      "gate2b_disposition": "TECHNICAL_PASS_LEGAL_BLOCKING_RESPONSE_REQUIRED"
+    }
+  ],
+  "formal_results": [
+    {
+      "test_id": "M4-P9.1-REALISTIC-TURN-RESIDENCY-001",
+      "result": "PASS",
+      "execution_sha": "8be3bc095b504b8eab1dfeb21b94173728b9656f",
+      "sessions": "20/20",
+      "peak_used_mib": 3339.688,
+      "capacity_gate_mib": 3584,
+      "sample_count": 886,
+      "max_sample_start_gap_s": 0.254273,
+      "max_collection_duration_s": 0.104933,
+      "peak_temperature_c": 62.8,
+      "swap": "zero throughout",
+      "throttling": "throttled=0x0",
+      "cleanup": "all tracked categories zero",
+      "controlled_locator": "controlled://audio-poc/m4/20260825/p9.1-8be3bc0",
+      "controlled_sha256": "5883a6399c6d183d18bb7fb7a98fc7a60b6b42396fd5bde46168ae625e3ac880"
+    },
+    {
+      "test_id": "M4-COMBINED-20-SESSION-001",
+      "result": "PASS",
+      "execution_sha": "8be3bc095b504b8eab1dfeb21b94173728b9656f",
+      "sessions": "20/20",
+      "stage_terminals": "VAD/ASR/TTS SUCCESS in every session; playback completed",
+      "peak_used_mib": 979.109,
+      "sample_count": 387,
+      "max_sample_start_gap_s": 0.253048,
+      "max_collection_duration_s": 0.039213,
+      "peak_temperature_c": 58.95,
+      "throttling": "throttled=0x0",
+      "cleanup": "all tracked categories zero",
+      "controlled_locator": "controlled://audio-poc/m4/20260825/combined-8be3bc0",
+      "controlled_sha256": "c48adb395eae6db5ae69c544be6ef1228ad331cd08091507c5186846199c4810"
+    },
+    {
+      "test_id": "M4-FAILURE-INJECTION-RECOVERY-001",
+      "result": "PASS",
+      "execution_sha": "26f33a3c371eee61df46924432839d0fa9ee3bf8",
+      "cases": "12/12 expected terminals",
+      "recoveries": "12/12 SUCCESS",
+      "actual_finalist_modes": ["error", "timeout", "cancel"],
+      "controlled_double_mode": "force_abort only",
+      "cleanup": "every injection, every recovery and final aggregate all zero",
+      "controlled_locator": "controlled://audio-poc/m4/20260825/failure-26f33a3",
+      "controlled_sha256": "68d4f77b6f8a372f15c590c0fb4065154fa6c21c18aa1d2cf4a00b034a711862"
+    }
+  ],
+  "conformance_kit": {
+    "packet": {
+      "path": "poc_audio/manifests/m4_combined_packet.json",
+      "sha256": "07bba2fc704ed3983d1d86fc8b196918967861ad4a5adfe3a1ccd397a0470ce3"
+    },
+    "packet_schema": {
+      "path": "poc_audio/schemas/m4_combined_packet.schema.json",
+      "sha256": "b2c53a0d6f1756366cbcf924fbf41617b3c52c96eb11e49a0189d493ad621562"
+    },
+    "result_schema": {
+      "path": "poc_audio/schemas/m4_combined_result.schema.json",
+      "sha256": "6ef20573779d2b9b7a2c72e31cd7b238267674178c3f2dfa0eee14bdf8bd3ca3"
+    },
+    "runner": {
+      "path": "poc_audio/tools/run_m4_combined.sh",
+      "sha256": "ecc2322c7b220b1c16e7cf5af1d70899a7cef6df6d69f77446a3b284233d253a"
+    }
+  },
+  "publication_authority": "User confirmed P9.1 PASS and subsequently instructed completion, Core delivery, and waiting for response after the combined and corrected failure PASS summaries were presented.",
+  "acceptance_boundary": "This package is not POC Accepted. Core written intake, all blocking findings, Matcha legal disposition, and Designer approval remain required."
+}

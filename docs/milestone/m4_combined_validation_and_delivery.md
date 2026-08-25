@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`IN_PROGRESS / FAILURE EXECUTOR BASELINE CORRECTION`
+狀態：`GATE_REVIEW / READY FOR INTERNAL REVIEW / CORE RESPONSE REQUIRED`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -40,13 +40,19 @@ collection 後才記錄，錯把 collection cost 混入 sampling interval。appe
 下一個唯一 candidate SHA 與正式重跑；舊 draft FAIL 不取得 partial credit。
 
 User 已確認 candidate `8be3bc095b504b8eab1dfeb21b94173728b9656f` 的 reviewed P9.1
-`PASS`。同一 Audio/Core SHA 的 independent combined run 亦完成 20/20 sessions、offline、
-cleanup 全零、peak used `979.109 MiB`、peak temperature `58.95 °C` 且無 throttling，維持
-draft pending consolidated publication。後續 12-case failure run 的所有 injection terminal 與
-recovery 均成功，final cleanup 全零；但 VAD error/timeout 在 controller asyncio executor lazy
-建立後各誤記 `threads +1`，validator 因此拒絕 PASS。修正於所有 case baseline 前預熱
-run/abort 所需兩條 executor threads，並在寫 PASS raw 前預先驗證 per-case cleanup；214-test regression
-已通過。新 candidate 必須重跑完整 12 cases，不繼承 partial credit。
+`PASS`。同一 Audio/Core SHA 的 independent combined run 完成 20/20 sessions、offline、
+cleanup 全零、peak used `979.109 MiB`、peak temperature `58.95 °C` 且無 throttling。
+failure executor baseline 修正形成 candidate
+`26f33a3c371eee61df46924432839d0fa9ee3bf8`，完整重跑 VAD/ASR/TTS 各四種模式；12/12
+均達 expected terminal，12/12 same-finalist recovery SUCCESS，每個 injection、recovery 及
+final cleanup 全零。User 在取得 consolidated results 後指示完成報告、交付 Core 並等待回覆，
+因此三份結果正式納入 `POC-audio-DEL-2026-001-R1`。Pi 已恢復原 zram、確認無 worker/device
+owner、`throttled=0x0` 後關機。
+
+Gate 2B technical execution 已完成，狀態進入 `Ready for internal review`。尚未關閉的 exit
+conditions 僅為 Core committed intake/review findings、三個 finalist 的書面 legal disposition、
+Matcha model/archive/training-data lineage 的明確 blocking disposition，以及 Designer approval。
+這些條件完成前不得宣告 `POC Accepted`、不得建立 `audio_m4` tag 或授權 Gate 3 product lock。
 
 ## 目標
 

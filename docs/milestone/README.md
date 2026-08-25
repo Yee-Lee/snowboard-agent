@@ -64,7 +64,7 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。User 已於 2026-08-25 核准 M4 的固定 20-session catalog 與先 P9、後獨立 combined run 的順序；machine-readable packet、schema、fail-closed validator 與 local fake runner 已建立，20 個 persistent fake sessions、12 個 failure/recovery cases 及完整 214-test regression 已本地驗證。P9.1 已獲 User 確認 PASS，independent combined 20-session draft PASS 已完成；failure catalog 因 controller executor baseline 問題被 validator 拒絕，修正待新 SHA 重跑。最終交付維持 `AT_RISK`，因 failure validation、final review 與 Matcha legal lineage 尚未關閉。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。M4 的 P9.1、independent combined 20-session、offline 及 corrected 12-case failure/recovery 均在 Pi 完成 reviewed technical PASS；每個 injection/recovery 及 final cleanup 均為零。User 已指示完成報告、交付 Core 並等待回覆。Gate 2B package `POC-audio-DEL-2026-001-R1` 現為 `Ready for internal review`。最終交付維持 `AT_RISK`，只因 Core 書面 intake/findings、全 finalist legal disposition（Matcha lineage 為明確 blocker）與 Designer approval 尚未關閉。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
 | M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `IN_PROGRESS / FAILURE EXECUTOR BASELINE CORRECTION` | P9.1 confirmed PASS、combined 20/20 draft PASS；failure 12/12 執行完成但前兩案誤計 controller thread，214-test 修正待新 SHA 重跑 | [M4](m4_combined_validation_and_delivery.md) |
+| M4 | `GATE_REVIEW / READY FOR INTERNAL REVIEW` | P9.1、combined 20/20、offline、failure/recovery 12/12 technical PASS；delivery package 待 Core blocking response 與 Designer approval | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
 
@@ -98,16 +98,20 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `FAILURE EXECUTOR BASELINE / FIX VERIFIED LOCALLY`：candidate `8be3bc0...` 的 12 cases
-  全部達到預期 terminal、recovery 全成功且 final cleanup 全零，但 VAD error/timeout 在 lazy
-  controller executor 建立後各記錄 `threads +1`，validator 拒絕 PASS。修正於所有 case baseline
-  前預熱 run/abort 所需兩條 executor threads，並在寫 raw 前先驗證 per-case cleanup；214-test regression
-  通過。User 已指示儘快完成 M4 close、交付與 Pi 收尾，下一個唯一 SHA 將重跑完整 12 cases。
+- `GATE 2B PACKAGE / CORE BLOCKING RESPONSE REQUIRED`：
+  `POC-audio-DEL-2026-001-R1` 已彙整 machine-readable manifest、technical report、portable
+  conformance kit、ASR semantic-pattern report、rejected evidence 與 data-safety boundary。
+  Core 必須書面確認 exact intake、review findings、三個 finalist license disposition，以及
+  Matcha model/archive/training-data 的使用與再散布界線。回覆、blocking finding closure 與
+  Designer approval 前不宣告 `POC Accepted`、不建立 `audio_m4` tag。
 
-- `P9.1 CONFIRMED PASS / COMBINED DRAFT PASS`：Audio `8be3bc0...`、Core `6c7fc8c...`。
+- `P9.1 / COMBINED / FAILURE TECHNICAL PASS`：Audio `8be3bc0...`、`26f33a3...`，
+  Core `6c7fc8c...`。
   P9.1 20/20、886 samples、peak `3339.688 MiB`、max start gap `0.254273 s`、cleanup 全零；
   User 已確認 PASS。Independent combined 20/20、offline、peak `979.109 MiB`、`58.95 °C`、
-  無 throttling且 cleanup 全零；仍待 final consolidated publication confirmation。
+  無 throttling且 cleanup 全零。Corrected failure catalog 的 VAD/ASR/TTS error、timeout、cancel、
+  force-abort 共 12/12 expected terminal、12/12 recovery SUCCESS，逐案與 final cleanup 全零。
+  User 在取得 consolidated results 後指示完成報告並交付 Core，結果已正式納入 Gate 2B package。
 
 - `P9.1 SAMPLER TIMESTAMP METHOD / FIX VERIFIED LOCALLY`：candidate `ffcfaa8...`
   完成 20 sessions、cleanup 全零、peak used `3330.422 MiB`、zero swap 且無 throttling；888 筆
