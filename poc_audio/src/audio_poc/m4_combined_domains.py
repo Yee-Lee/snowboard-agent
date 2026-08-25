@@ -267,6 +267,7 @@ class PersistentTtsDomain:
     async def start(self) -> None:
         if self.process is not None or self.work_dir.exists() or not self.runtime_python.is_file():
             raise RuntimeError("M4 TTS runtime is unavailable or already started")
+        await asyncio.to_thread(_validate_tts_runtime, self.runtime_python)
         manifest = json.loads(
             (self.repo_root / "poc_audio/manifests/m4a_gate1b_candidates.json").read_text(encoding="utf-8")
         )
@@ -382,3 +383,17 @@ class AsyncP9Overlap:
         if not isinstance(workers, list) or not all(isinstance(pid, int) for pid in workers):
             raise RuntimeError("M4 P9 coordinator token is invalid")
         return await asyncio.to_thread(self.client.complete_infer, request_id, workers, self.timeout)
+
+
+def _validate_tts_runtime(runtime_python: Path) -> None:
+    """Verify the named isolated interpreter, never the controller's Python."""
+    venv_config = runtime_python.parent.parent / "pyvenv.cfg"
+    if not venv_config.is_file() or "include-system-site-packages = false" not in venv_config.read_text(encoding="utf-8"):
+        raise RuntimeError("M4 Matcha runtime must be an isolated venv")
+    check = subprocess.run(
+        [str(runtime_python), "-c", "import importlib.metadata as m; print(m.version('sherpa-onnx'))"],
+        capture_output=True, text=True, check=False,
+    )
+    version = check.stdout.strip() if check.returncode == 0 else "unavailable"
+    if version != "1.13.5":
+        raise RuntimeError(f"M4 Matcha runtime identity mismatch: sherpa-onnx={version}")

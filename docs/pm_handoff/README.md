@@ -19,6 +19,7 @@
 
 | Delivery | 狀態 | POC 回覆 / 下一步 |
 | --- | --- | --- |
+| [M4 runtime-closure request](../../poc_audio/deliveries/REQ-AUDIO-M4-RUNTIME-CLOSURE-001.md) | `ACTION REQUIRED BEFORE CORE INTEGRATION` | Pi default Python runtime 與 M4 finalist lock 不同；Audio 要求 Core 交付 isolated offline venv/wheel closure、checksum manifest 與 system-package-drift preflight。這不是 M4 PASS/FAIL 或 gate relaxation。 |
 | [Core HAL playback drain CR](../../poc_audio/deliveries/CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md) / [Core ACK](RESP-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md) / [final identity ACK](RESP-AUDIO-M3-PACKET-SIGNOFF-002.md) / [sanitized debug evidence](../../poc_audio/evidence/m3/M3-CORE-HAL-PLAYBACK-DRAIN-DEBUG-001.md) | `ACCEPTED / EXACT IDENTITIES ACKNOWLEDGED` | Core 已接受 authoritative replacement `6c7fc8c...` 與 Audio candidate `25e263b...`，且不要求額外 HAL 測試。Pi r2 exact-SHA preflight 已通過。 |
 | [M3 Pi session schedule](../../poc_audio/deliveries/M3-PI-SESSION-SCHEDULE-001.md) | `EXECUTED IN PART / FINAL IDENTITY ACK PENDING` | 2026-08-24 preflight PASS、capture 開始；playback drain blocker 已關閉，後續 formal run 等待 append-only packet/signoff update。 |
 | [M3 packet sign-off request](../../poc_audio/deliveries/REQ-AUDIO-M3-PACKET-SIGNOFF-001.md) / [Core ACK](RESP-AUDIO-M3-PACKET-SIGNOFF-001.md) | `HISTORICAL AUTHORIZATION / APPEND-ONLY UPDATE REQUIRED` | runner `655e80ec...`、manifest `ebadd620...65c55` 與 ACK `e638844...` 保持 immutable；因 Core replacement SHA 待定，後續 execution 需新 packet/runner identity 與 exact sign-off。 |
