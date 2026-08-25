@@ -410,6 +410,73 @@ network-syscall trace while networking remains enabled does not close P12;
 network-disabled evidence still requires an approved isolation method or an
 operator-approved temporary network change.
 
+## M4 combined packet local preparation
+
+Validate the User-approved M4 identities, 20-session catalog, P9 lock and 12
+failure-injection rows without importing a candidate runtime:
+
+```sh
+bash poc_audio/tools/run_m4_combined.sh validate
+```
+
+Run the deterministic local protocol suite with a new output path:
+
+```sh
+bash poc_audio/tools/run_m4_combined.sh fake \
+  --output /tmp/m4-combined-fake.json
+```
+
+The fake suite keeps one VAD, ASR and TTS worker resident across all 20 ordered
+sessions, then exercises error, timeout, cancel and force-abort plus recovery in
+each domain. Its output is always `NOT_HARDWARE_EVIDENCE`; it cannot produce a
+P9, Pi or Gate 2B disposition. Formal mode remains unavailable until the pinned
+HAL runner, controlled fixture lock and immutable candidate SHA are ready.
+
+After cutting the immutable M4 candidate SHA, generate the controlled fixture
+lock outside the repository before any Pi inference. The command verifies all
+20 WAVs are 16 kHz mono S16_LE and locks their order, byte hashes, metadata and
+reference hashes; it neither opens an audio device nor loads a model:
+
+```sh
+bash poc_audio/tools/run_m4_combined.sh lock-fixtures \
+  --fixture-dir /controlled/audio-poc/m4-fixtures \
+  --fixture-lock /controlled/audio-poc/m4/fixture-lock.json \
+  --audio-execution-sha <40-character-M4-candidate-SHA>
+```
+
+The lock and all WAVs are controlled evidence and must remain outside Git. The
+formal runner will reject a lock from a different Audio SHA or any later WAV
+hash/metadata drift.
+
+Once an immutable candidate SHA and a matching `M4_FORMAL_EXECUTION_AUTHORIZED`
+document exist, the Pi-only runner has two phases. It always creates new
+controlled work/evidence paths and runs inside a network namespace; it must not
+be invoked from a dirty checkout or with an unapproved authorization document:
+
+```sh
+bash poc_audio/tools/run_m4_combined.sh formal p9 \
+  --authorization /controlled/audio-poc/m4/authorization.json \
+  --core-root /controlled/core-at-pinned-sha \
+  --fixture-dir /controlled/audio-poc/m4-fixtures \
+  --fixture-lock /controlled/audio-poc/m4/fixture-lock.json \
+  --artifact-dir /controlled/audio-poc/artifacts \
+  --runtime-python /controlled/audio-poc/runtime/python \
+  --binary /controlled/audio-poc/asr/whisper-worker \
+  --model /controlled/audio-poc/asr/ggml-base-q8_0.bin \
+  --vad-runtime-python /controlled/audio-poc/vad/python \
+  --vad-model /controlled/audio-poc/vad/silero_vad.onnx \
+  --work-dir /controlled/audio-poc/m4/p9-work \
+  --input-device hw:<card>,<device> --output-device hw:<card>,<device> \
+  --input-channel 0 --controlled-locator controlled://m4/p9-001 \
+  --evidence-log /controlled/audio-poc/m4/p9-evidence.json \
+  --output /controlled/audio-poc/m4/p9-result.json
+```
+
+Replace `p9` with `combined` and use new output/work paths for the independent
+audio-only 20-session run; use `failure` for the separately controlled
+12-case finalist lifecycle packet. Neither command may be treated as a formal PASS until
+the resulting draft, method and limits are reviewed and you confirm publication.
+
 ## M1 P4 Option A validation packet
 
 Prepare the P4-A01 through P4-A10 evidence structure only after local tests

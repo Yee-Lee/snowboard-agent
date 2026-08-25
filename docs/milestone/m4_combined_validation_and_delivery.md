@@ -1,11 +1,17 @@
 # M4：組合認證與正式交付
 
-狀態：`PLANNED / ENTRY CONDITIONS MET`
+狀態：`IN_PROGRESS / LOCAL PACKET PREPARATION`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
-並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。M4 尚未
-開始 execution；下一步由 Audio 建立 internal M4 packet，先執行已接受的 P9 surrogate，
-再進行 20-session combined/offline/failure-injection Gate 2B work。P9 未執行前沒有 PASS
+並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
+2026-08-25 核准 internal M4 plan、固定 20-session catalog，以及先 P9、後獨立 combined
+run 的執行順序。Machine-readable packet、schema、fail-closed validator 與 local fake
+runner 已建立；20 個 persistent fake sessions、三 domain 共 12 個 failure/recovery cases
+與完整 regression 已本地驗證。這些結果不是 Pi、P9 或 Gate 2B evidence，formal mode 仍
+fail closed。candidate-SHA-bound fixture lock、P9 protocol client、persistent
+VAD/ASR/TTS + pinned HAL 的 `formal p9` / `formal combined` / `formal failure` paths，及
+controlled raw resource sampler 已完成 local implementation；它們仍須在 Pi 以 clean exact SHA
+執行。下一步 cut immutable candidate SHA，再執行已接受的 P9 surrogate。P9 未執行前沒有 PASS
 或 LLM credit。
 
 ## 目標

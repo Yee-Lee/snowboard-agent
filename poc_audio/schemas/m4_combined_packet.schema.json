@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:audio-poc:m4-combined-packet:1.0",
+  "title": "Audio POC M4 Combined Validation Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "packet_id", "status", "authority", "source", "fixtures", "pipeline", "candidates", "p9", "failure_injections", "timeouts_seconds", "publication_status"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "packet_id": {"const": "M4-COMBINED-VALIDATION-TEST-PACKET-001"},
+    "status": {"const": "USER_APPROVED_LOCAL_IMPLEMENTATION_AUTHORIZED"},
+    "authority": {"type": "object"},
+    "source": {"type": "object"},
+    "fixtures": {"type": "object"},
+    "pipeline": {"type": "object"},
+    "candidates": {"type": "object"},
+    "p9": {"type": "object"},
+    "failure_injections": {"type": "array", "minItems": 12, "maxItems": 12},
+    "timeouts_seconds": {"type": "object"},
+    "publication_status": {"const": "DRAFT_USER_CONFIRMATION_PENDING"}
+  }
+}
