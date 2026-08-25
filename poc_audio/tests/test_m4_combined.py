@@ -37,6 +37,7 @@ class M4PacketTests(unittest.TestCase):
         self.assertEqual(len(packet["fixtures"]["sessions"]), 20)
         self.assertEqual(len(packet["failure_injections"]), 12)
         self.assertEqual(packet["p9"]["catalog"], [row[0] for row in SESSION_ROWS])
+        self.assertEqual(packet["fixtures"]["sessions"][7][2], "asr-pause-038")
         self.assertEqual(
             packet["p9"]["orchestration_policy"],
             "VAD_ASR_THEN_P9_INFER_THEN_REASONER_TTS",
@@ -66,6 +67,12 @@ class M4PacketTests(unittest.TestCase):
         changed = copy.deepcopy(self.packet)
         changed["p9"]["orchestration_policy"] = "FULL_SESSION_OVERLAP"
         with self.assertRaisesRegex(ValueError, "P9.1 orchestration policy mismatch"):
+            validate_packet(changed)
+
+    def test_packet_rejects_superseded_hard_failure_fixture(self) -> None:
+        changed = copy.deepcopy(self.packet)
+        changed["fixtures"]["sessions"][7][2] = "asr-pause-037"
+        with self.assertRaisesRegex(ValueError, "20-session catalog mismatch"):
             validate_packet(changed)
 
     def test_packet_rejects_missing_failure_case(self) -> None:

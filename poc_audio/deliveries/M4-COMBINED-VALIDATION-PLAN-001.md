@@ -53,7 +53,7 @@ best-take selection or retrospective filtering is allowed.
 | Sessions | Category | Fixture IDs |
 | --- | --- | --- |
 | 01-04 | Taiwan Mandarin | `asr-clear-002`, `asr-clear-003`, `asr-pause-026`, `asr-pause-031` |
-| 05-08 | code switch | `asr-clear-011`, `asr-clear-012`, `asr-pause-036`, `asr-pause-037` |
+| 05-08 | code switch | `asr-clear-011`, `asr-clear-012`, `asr-pause-036`, `asr-pause-038` |
 | 09-12 | number | `asr-clear-016`, `asr-clear-017`, `asr-pause-041`, `asr-pause-043` |
 | 13-16 | date | `asr-clear-020`, `asr-clear-021`, `asr-pause-045`, `asr-pause-046` |
 | 17-20 | product term | `asr-clear-023`, `asr-clear-024`, `asr-pause-048`, `asr-pause-049` |
@@ -80,6 +80,10 @@ and one-to-one mapping before formal execution.
 
 ASR hypotheses are retained in controlled evidence. Git-tracked results contain
 fixture IDs, outcome classes and hashes, not private transcripts or raw PCM.
+
+`M4-P9.1-CATALOG-CORRECTION-001` records the User-approved replacement of the
+pre-existing known hard-failure `asr-pause-037` with the deterministic next
+same-class fixture `asr-pause-038`; no other row or gate changes.
 
 ## 4. Work packages and order
 

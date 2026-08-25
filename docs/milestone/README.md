@@ -72,7 +72,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
 | M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `IN_PROGRESS / P9.1 IMPLEMENTATION` | User 已核准 `VAD -> ASR -> LLM load -> TTS` 的 P9.1 replacement；runner/packet 已修改且 210 tests 通過，下一步 cut candidate 並取得 exact-SHA authorization | [M4](m4_combined_validation_and_delivery.md) |
+| M4 | `IN_PROGRESS / P9.1 CATALOG CORRECTION` | P9.1 sessions 01–07 正常；User 已核准以既有 M2 evidence 支持的 `asr-pause-038` 取代誤納的 hard-failure 037，下一步 cut 新 SHA 從頭重跑 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
 
@@ -97,6 +97,12 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
+
+- `P9.1 CATALOG CORRECTION / USER APPROVED`：candidate `b7b25ff...` 的 sessions 01–07
+  已完成正確 sequential residency，session 08 因誤納 M2 已知 hard-failure
+  `asr-pause-037` 停止，cleanup 全零。`M4-P9.1-CATALOG-CORRECTION-001` 固定以同類別下一筆
+  `asr-pause-038` 取代；既有 M2 evidence 已證明其兩個 event 合併為單一完整 capture。
+  新 candidate 必須從 session 01 重跑，不繼承 partial credit。
 
 - `P9.1 USER APPROVED / NEW CANDIDATE NEXT`：candidate `79185f992dd1510a9e8298242cec66b237081c52`
   在 package-aligned、zero-swap Pi 上的 P9 draft result 為 `FAIL`。完整 Audio overlap

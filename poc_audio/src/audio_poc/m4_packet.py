@@ -43,7 +43,7 @@ SESSION_ROWS = (
     ("M4-SESSION-05", "code_switch", "asr-clear-011", "tts-005"),
     ("M4-SESSION-06", "code_switch", "asr-clear-012", "tts-006"),
     ("M4-SESSION-07", "code_switch", "asr-pause-036", "tts-007"),
-    ("M4-SESSION-08", "code_switch", "asr-pause-037", "tts-008"),
+    ("M4-SESSION-08", "code_switch", "asr-pause-038", "tts-008"),
     ("M4-SESSION-09", "number", "asr-clear-016", "tts-009"),
     ("M4-SESSION-10", "number", "asr-clear-017", "tts-010"),
     ("M4-SESSION-11", "number", "asr-pause-041", "tts-011"),
@@ -126,6 +126,8 @@ def validate_packet(document: dict[str, Any]) -> None:
         raise ValueError("M4 TTS prompt identity mismatch")
     if fixtures.get("controlled_fixture_lock_required") is not True:
         raise ValueError("M4 formal run requires a controlled fixture lock")
+    if fixtures.get("catalog_correction") != "M4-P9.1-CATALOG-CORRECTION-001":
+        raise ValueError("M4 P9.1 catalog correction identity mismatch")
     sessions = _rows(fixtures.get("sessions"), "session catalog", 4)
     if sessions != SESSION_ROWS:
         raise ValueError("M4 20-session catalog mismatch")

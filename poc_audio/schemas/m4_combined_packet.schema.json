@@ -18,7 +18,13 @@
       }
     },
     "source": {"type": "object"},
-    "fixtures": {"type": "object"},
+    "fixtures": {
+      "type": "object",
+      "required": ["catalog_correction"],
+      "properties": {
+        "catalog_correction": {"const": "M4-P9.1-CATALOG-CORRECTION-001"}
+      }
+    },
     "pipeline": {"type": "object"},
     "candidates": {"type": "object"},
     "p9": {

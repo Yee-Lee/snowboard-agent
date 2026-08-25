@@ -19,6 +19,7 @@
     "recording_plan_sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
     "tts_prompt_sha256": "1f9699344394e718fa0d30fb24df3219407680268340418e564c70cc13007739",
     "controlled_fixture_lock_required": true,
+    "catalog_correction": "M4-P9.1-CATALOG-CORRECTION-001",
     "sessions": [
       ["M4-SESSION-01", "taiwan_mandarin", "asr-clear-002", "tts-001"],
       ["M4-SESSION-02", "taiwan_mandarin", "asr-clear-003", "tts-002"],
@@ -27,7 +28,7 @@
       ["M4-SESSION-05", "code_switch", "asr-clear-011", "tts-005"],
       ["M4-SESSION-06", "code_switch", "asr-clear-012", "tts-006"],
       ["M4-SESSION-07", "code_switch", "asr-pause-036", "tts-007"],
-      ["M4-SESSION-08", "code_switch", "asr-pause-037", "tts-008"],
+      ["M4-SESSION-08", "code_switch", "asr-pause-038", "tts-008"],
       ["M4-SESSION-09", "number", "asr-clear-016", "tts-009"],
       ["M4-SESSION-10", "number", "asr-clear-017", "tts-010"],
       ["M4-SESSION-11", "number", "asr-pause-041", "tts-011"],
