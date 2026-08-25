@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`IN_PROGRESS / P9.1 SAMPLER CORRECTION`
+狀態：`IN_PROGRESS / P9.1 SAMPLER TIMESTAMP CORRECTION`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -30,6 +30,14 @@ sessions 且 cleanup 全零，但背景 resource sampler 在 transient P9 PID �
 取樣、驗證實際 gap 不超過 `0.5 s`、容忍 PID exit race，並在 sampler thread 失敗時讓正式
 run fail closed；完整 212-test regression 已通過。User 已授權此次修正形成的下一個唯一
 candidate SHA，該 candidate 必須從 session 01 重跑，不繼承任何 partial PASS。
+
+candidate `ffcfaa85c9db98333b5ec879f22515bf870b19d1` 隨後完成全部 20 sessions、cleanup
+全零、peak used `3330.422 MiB`、zero swap 且無 throttling，但 888 筆 resource records
+有一筆 `0.532864 s` completion timestamp gap。檢查確認 timestamp 原在同步 `/proc`
+collection 後才記錄，錯把 collection cost 混入 sampling interval。append-only 修正改為
+在 collection 前記錄 timestamp，另存 collection duration；`0.25 s` schedule 與較嚴格的
+`0.5 s` continuity gate 均不變。完整 213-test regression 已通過，User 已授權此修正產生的
+下一個唯一 candidate SHA 與正式重跑；舊 draft FAIL 不取得 partial credit。
 
 ## 目標
 

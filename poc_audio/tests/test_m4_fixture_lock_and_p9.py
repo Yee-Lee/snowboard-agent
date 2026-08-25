@@ -29,6 +29,7 @@ from audio_poc.m4_formal import (  # noqa: E402
     ResourceSampler,
     _assert_controller_thread_policy,
     _p9_summary,
+    _resource_sample,
 )
 
 
@@ -75,6 +76,10 @@ class M4FixtureLockTests(unittest.TestCase):
 
 
 class M4P9ClientTests(unittest.TestCase):
+    def test_resource_sample_preserves_collection_start_timestamp(self) -> None:
+        sample = _resource_sample(set(), 123.456789)
+        self.assertEqual(sample["monotonic_s"], 123.456789)
+
     def test_formal_controller_requires_single_openblas_thread(self) -> None:
         with mock.patch.dict(os.environ, {"OPENBLAS_NUM_THREADS": "1"}, clear=False):
             _assert_controller_thread_policy()
@@ -112,16 +117,22 @@ class M4P9ClientTests(unittest.TestCase):
     def test_p9_summary_fails_closed_for_capacity_or_throttle(self) -> None:
         sample = {
             "monotonic_s": 1.0, "used_mib": 3500.0,
+            "collection_duration_s": 0.02,
             "swap_total_kib": 0, "throttled": "throttled=0x0",
         }
         second = {**sample, "monotonic_s": 1.25}
-        self.assertTrue(_p9_summary([sample, second])["all_samples_within_capacity_gate"])
+        summary = _p9_summary([sample, second])
+        self.assertTrue(summary["all_samples_within_capacity_gate"])
+        self.assertEqual(summary["sample_collection_duration_max_s"], 0.02)
         with self.assertRaisesRegex(RuntimeError, "capacity gate"):
             _p9_summary([sample, {**second, "used_mib": 3585.0}])
         with self.assertRaisesRegex(RuntimeError, "throttling proof"):
             _p9_summary([sample, {**second, "throttled": "throttled=0x50000"}])
         with self.assertRaisesRegex(RuntimeError, "sampler gap"):
             _p9_summary([sample, {**second, "monotonic_s": 1.51}])
+        with self.assertRaisesRegex(RuntimeError, "collection duration"):
+            _p9_summary([sample, {key: value for key, value in second.items()
+                                 if key != "collection_duration_s"}])
 
     def test_resource_sampler_reports_background_failure(self) -> None:
         def broken_supplier() -> set[int]:

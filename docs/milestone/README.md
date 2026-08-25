@@ -64,7 +64,7 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。User 已於 2026-08-25 核准 M4 的固定 20-session catalog 與先 P9、後獨立 combined run 的順序；machine-readable packet、schema、fail-closed validator 與 local fake runner 已建立，20 個 persistent fake sessions、12 個 failure/recovery cases 及完整 212-test regression 已本地驗證。Formal Pi mode 仍 fail closed，尚無可發布的 P9、hardware 或 Gate 2B PASS。最終交付維持 `AT_RISK`，因 M4 combined validation 與 Matcha legal lineage 尚未關閉。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。User 已於 2026-08-25 核准 M4 的固定 20-session catalog 與先 P9、後獨立 combined run 的順序；machine-readable packet、schema、fail-closed validator 與 local fake runner 已建立，20 個 persistent fake sessions、12 個 failure/recovery cases 及完整 213-test regression 已本地驗證。Formal Pi mode 仍 fail closed，尚無可發布的 P9、hardware 或 Gate 2B PASS。最終交付維持 `AT_RISK`，因 M4 combined validation 與 Matcha legal lineage 尚未關閉。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
 | M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `IN_PROGRESS / P9.1 SAMPLER CORRECTION` | corrected catalog 的 20 sessions 曾完成，但背景 sampler race 使 evidence 無效；fail-closed 修正及 212-test regression 已完成，下一步以新 SHA 從頭重跑 | [M4](m4_combined_validation_and_delivery.md) |
+| M4 | `IN_PROGRESS / P9.1 SAMPLER TIMESTAMP CORRECTION` | ffcfaa8 的 20 sessions 完成但 completion-time timestamp 產生假 gap；start-time 修正及 213-test regression 已完成，下一步以新 SHA 從頭重跑 | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
 
@@ -97,6 +97,13 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
+
+- `P9.1 SAMPLER TIMESTAMP METHOD / FIX VERIFIED LOCALLY`：candidate `ffcfaa8...`
+  完成 20 sessions、cleanup 全零、peak used `3330.422 MiB`、zero swap 且無 throttling；888 筆
+  中一筆 completion timestamp gap 為 `0.532864 s`。timestamp 原在同步 `/proc` collection
+  後記錄，錯把 collection cost 混入 sampling interval。修正改在 collection 前記時，另存
+  collection duration，保留 `0.25 s` schedule 與 `0.5 s` gate；213-test regression 通過。
+  User 已授權修正後下一個唯一 SHA 及正式重跑，不繼承 draft FAIL 的 partial credit。
 
 - `P9.1 SAMPLER EVIDENCE REJECTED / FIX VERIFIED LOCALLY`：candidate `d36490f...`
   完成 corrected catalog 20 sessions 且 cleanup 全零，但背景 sampler 在第 340 筆因 transient

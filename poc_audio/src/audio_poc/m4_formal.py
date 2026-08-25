@@ -92,14 +92,17 @@ class ResourceSampler:
         next_sample = time.monotonic()
         try:
             while not self._stop.is_set():
-                self.records.append(_resource_sample(self.pid_supplier()))
+                sampled_at = time.monotonic()
+                sample = _resource_sample(self.pid_supplier(), sampled_at)
+                sample["collection_duration_s"] = round(time.monotonic() - sampled_at, 6)
+                self.records.append(sample)
                 next_sample += self.interval_s
                 self._stop.wait(max(0.0, next_sample - time.monotonic()))
         except BaseException as error:
             self._error = error
 
 
-def _resource_sample(pids: set[int]) -> dict[str, Any]:
+def _resource_sample(pids: set[int], sampled_at: float) -> dict[str, Any]:
     meminfo: dict[str, int] = {}
     for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
         key, value = line.split(":", 1)
@@ -123,7 +126,9 @@ def _resource_sample(pids: set[int]) -> dict[str, Any]:
         if sample is not None:
             processes[str(pid)] = sample
     return {
-        "monotonic_s": round(time.monotonic(), 6),
+        # This timestamp marks when collection started. Using completion time
+        # would turn variable /proc read cost into a false sampling-gap signal.
+        "monotonic_s": round(sampled_at, 6),
         "mem_total_kib": meminfo.get("MemTotal"),
         "mem_available_kib": meminfo.get("MemAvailable"),
         "swap_total_kib": meminfo.get("SwapTotal"),
@@ -281,6 +286,7 @@ def _p9_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "sample_count": len(samples),
         "sample_interval_max_s": max_interval,
+        "sample_collection_duration_max_s": _sample_collection_duration_max(samples),
         "peak_used_mib": max(used),
         "capacity_gate_mib": 3584,
         "all_samples_within_capacity_gate": True,
@@ -294,6 +300,7 @@ def _resource_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "sample_count": len(samples),
         "sample_interval_max_s": _sample_interval_max(samples),
+        "sample_collection_duration_max_s": _sample_collection_duration_max(samples),
         "peak_used_mib": max(float(item["used_mib"]) for item in samples),
         "peak_temperature_millic": max(temperatures) if temperatures else None,
         "throttle_observations": sorted({str(item["throttled"]) for item in samples}),
@@ -309,6 +316,16 @@ def _sample_interval_max(samples: list[dict[str, Any]], gate_s: float = 0.5) -> 
     if maximum > gate_s:
         raise RuntimeError(f"M4 resource sampler gap exceeded {gate_s} seconds: {maximum}")
     return maximum
+
+
+def _sample_collection_duration_max(samples: list[dict[str, Any]]) -> float:
+    try:
+        durations = [float(item["collection_duration_s"]) for item in samples]
+    except (KeyError, TypeError, ValueError) as error:
+        raise RuntimeError("M4 resource sample collection duration is incomplete") from error
+    if any(duration < 0 for duration in durations):
+        raise RuntimeError("M4 resource sample collection duration is invalid")
+    return round(max(durations), 6)
 
 
 def _active_pids(
