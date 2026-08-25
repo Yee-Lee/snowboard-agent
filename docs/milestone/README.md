@@ -9,14 +9,15 @@ substages，不建立獨立 milestone tag。
 
 最後更新：2026-08-25
 
-最終交付可達性：`AT_RISK`
+最終交付可達性：`ON_TRACK / DELIVERED`
 
 M0 readiness 與 M1 frozen baseline 已完成。M2 的 SenseVoice、Matcha 及 Whisper
 small Q8 歷史 evidence 均保留原產生時的 disposition 與 immutable tested SHA。
 SenseVoice 歷史結果為 `REJECT`；Matcha risk-focused M2 screen 已完成，lifecycle、
-network-disabled P12 與 User 10-prompt quality 均通過，列為 M3 TTS finalist；legal
-lineage 仍阻擋 redistribution/product adoption 與 final-winner approval，但不阻擋
-internal offline POC。依 User 核准範圍不做 allocator/page 級微調。small Q8
+network-disabled P12 與 User 10-prompt quality 均通過，列為 M3 TTS finalist；pinned
+作者模型卡的 Apache-2.0 授權已證實。未具名 training-data lineage 由 User 接受為產品
+風險，component notice bundle 轉為 Gate 3 packaging 義務。依 User 核准範圍不做
+allocator/page 級微調。small Q8
 舊 diagnostic 不構成 formal qualification 或 selection。
 
 Core/User 已於 2026-08-21 接受
@@ -64,7 +65,7 @@ fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/
 為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
 提出 Silero conditional M3 finalist 與 target-mic blocker。
 
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。M4 的 P9.1、independent combined 20-session、offline 及 corrected 12-case failure/recovery 均在 Pi 完成 reviewed technical PASS；每個 injection/recovery 及 final cleanup 均為零。User 已指示完成報告、交付 Core 並等待回覆。Gate 2B package `POC-audio-DEL-2026-001-R1` 現為 `Ready for internal review`。最終交付維持 `AT_RISK`，只因 Core 書面 intake/findings、全 finalist legal disposition（Matcha lineage 為明確 blocker）與 Designer approval 尚未關閉。
+Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。M4 的 P9.1、independent combined 20-session、offline 及 corrected 12-case failure/recovery 均在 Pi 完成 reviewed technical PASS；每個 injection/recovery 及 final cleanup 均為零。Core Designer 以 committed response `be19b70b1dd91674e7ff981eb9d6b2dca9741f54` 接受 corrected Audio SHA `ca51bce9b4e205d9c9faf004d41c27169f108a3f`、portable kit 與三個 final references，blocking findings 為零並批准 closure。`POC-audio-DEL-2026-001-R1` 現為 `POC Accepted`，M4 標記 `COMPLETE`。
 
 | Milestone | 狀態 | 摘要 | 文件 |
 | --- | --- | --- | --- |
@@ -72,7 +73,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
 | M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `GATE_REVIEW / READY FOR INTERNAL REVIEW` | P9.1、combined 20/20、offline、failure/recovery 12/12 technical PASS；delivery package 待 Core blocking response 與 Designer approval | [M4](m4_combined_validation_and_delivery.md) |
+| M4 | `COMPLETE / POC ACCEPTED` | P9.1、combined 20/20、offline、failure/recovery 12/12 PASS；Core zero-findings acceptance 與 Designer approval 已 committed | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
 
@@ -93,18 +94,18 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
 | M2B：optimization feasibility | `ACCEPTED FOR M3` — Reviewer 接受 base Q8 primary、small Q8 fallback 與 prompt recipe；完整 delta/regression 保留，不是 production lock |
 | Gate 2A：POC qualification/selection | `COMPLETE / CORE ACKNOWLEDGED` — Core commit `5aac035...` 接受 complete return；Silero VAD、base-Q8 ASR、Matcha TTS 為唯一 M4 finalists。 |
-| Gate 2B：final reference | M4 完成 20 sessions、failure/offline、internal review 與 conformance kit；`POC Accepted` 後 Core 才可固定 final reference |
+| Gate 2B：final reference | `COMPLETE / POC ACCEPTED` — Core `be19b70...` 接受 corrected delivery、20 sessions、failure/offline、portable kit 與三個 final references |
 | Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
 
 ## Open risks and next authorized work
 
-- `GATE 2B PACKAGE / CORE BLOCKING RESPONSE REQUIRED`：
+- `GATE 2B PACKAGE / CORE ACCEPTED / ZERO BLOCKING FINDINGS`：
   `POC-audio-DEL-2026-001-R1` 已彙整 machine-readable manifest、technical report、portable
   conformance kit、ASR semantic-pattern report、rejected evidence 與 data-safety boundary。
-  Core 必須書面確認 exact intake、review findings、三個 finalist license disposition，以及
-  Matcha 已證實的 pinned Apache-2.0 模型授權、未具名 training-data lineage 與 component
-  notice bundle 的使用及再散布界線。回覆、blocking finding closure 與
-  Designer approval 前不宣告 `POC Accepted`、不建立 `audio_m4` tag。
+  Core `be19b70...` 已書面確認 exact intake、review findings、三個 finalist license
+  disposition 與 Designer approval。Matcha pinned Apache-2.0 模型授權已接受；未具名
+  training-data lineage 為 User-owned Accepted Risk，component notice bundle 為 Gate 3
+  packaging obligation，不再阻擋 Audio M4。
 
 - `P9.1 / COMBINED / FAILURE TECHNICAL PASS`：Audio `8be3bc0...`、`26f33a3...`，
   Core `6c7fc8c...`。

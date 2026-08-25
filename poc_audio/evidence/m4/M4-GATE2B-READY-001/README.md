@@ -1,6 +1,6 @@
 # M4 Gate 2B technical completion report
 
-Status: `READY FOR INTERNAL REVIEW / CORE RESPONSE REQUIRED`
+Status: `POC ACCEPTED / AUDIO M4 COMPLETE`
 
 Delivery ID: `POC-audio-DEL-2026-001-R1`
 
@@ -66,9 +66,10 @@ runner arguments recorded in the controlled result. Local packet validation is:
 bash poc_audio/tools/run_m4_combined.sh validate
 ```
 
-## Core blocking response required
+## Core response and final disposition
 
-Core must return one committed response containing:
+Core returned committed response `RESP-AUDIO-M4-GATE2B-001` at
+`be19b70b1dd91674e7ff981eb9d6b2dca9741f54` containing:
 
 1. Written intake of delivery ID, Audio branch/full delivery SHA, the two Audio
    execution SHAs, Core HAL SHA and all three controlled evidence hashes.
@@ -80,5 +81,8 @@ Core must return one committed response containing:
    replacement request or blocking-finding list.
 5. Core response path, branch and full committed SHA.
 
-Only after that response, closure of every blocking finding and Designer
-approval may Audio mark M4 complete and create the immutable `audio_m4` tag.
+Core reported zero blocking findings, accepted all three final references and
+portable-kit evidence, recorded Matcha lineage as a User-owned Accepted Risk,
+and granted Designer approval. Audio may therefore mark M4 complete and create
+the immutable `audio_m4` tag; Gate 3 notice packaging and technical acceptance
+remain downstream Core work.

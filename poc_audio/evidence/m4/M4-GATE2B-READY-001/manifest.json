@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
   "delivery_id": "POC-audio-DEL-2026-001-R1",
-  "status": "READY_FOR_INTERNAL_REVIEW_CORE_RESPONSE_REQUIRED",
+  "status": "POC_ACCEPTED_M4_COMPLETE",
   "date": "2026-08-25",
   "repository": {
     "branch": "audio",
-    "delivery_sha_source": "full SHA recorded in the Core intake handoff created from this committed package",
+    "corrected_delivery_sha": "ca51bce9b4e205d9c9faf004d41c27169f108a3f",
     "p9_1_and_combined_execution_sha": "8be3bc095b504b8eab1dfeb21b94173728b9656f",
     "failure_execution_sha": "26f33a3c371eee61df46924432839d0fa9ee3bf8",
     "core_hal_execution_sha": "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf"
@@ -22,20 +22,20 @@
       "domain": "vad",
       "candidate": "Silero VAD 6.2.1 ONNX",
       "license_status": "MIT; pinned candidate identity",
-      "gate2b_disposition": "TECHNICAL_PASS_PENDING_CORE_FINAL_REFERENCE"
+      "gate2b_disposition": "FINAL_REFERENCE_ACCEPTED"
     },
     {
       "domain": "asr",
       "candidate": "whisper.cpp 1.9.2 base Q8, P0 greedy fixed prompt",
       "artifact_sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
       "license_status": "MIT repository notice; final model-lineage notice review retained",
-      "gate2b_disposition": "TECHNICAL_PASS_PENDING_CORE_FINAL_REFERENCE"
+      "gate2b_disposition": "FINAL_REFERENCE_ACCEPTED"
     },
     {
       "domain": "tts",
       "candidate": "sherpa-onnx 1.13.5 Matcha zh/en with Vocos 16 kHz",
-      "license_status": "runtime and pinned author model card explicitly Apache-2.0; training-data lineage and complete component notice bundle require Core written disposition",
-      "gate2b_disposition": "TECHNICAL_PASS_LEGAL_BLOCKING_RESPONSE_REQUIRED"
+      "license_status": "runtime and pinned author model card explicitly Apache-2.0; unnamed training-data lineage is a User-owned Accepted Risk and component notices are a Gate 3 packaging obligation",
+      "gate2b_disposition": "FINAL_REFERENCE_ACCEPTED_WITH_USER_OWNED_LINEAGE_RISK"
     }
   ],
   "formal_results": [
@@ -104,6 +104,13 @@
     }
   },
   "publication_authority": "User confirmed P9.1 PASS and subsequently instructed completion, Core delivery, and waiting for response after the combined and corrected failure PASS summaries were presented.",
-  "license_correction": "M4-MATCHA-LICENSE-LINEAGE-AUDIT-001 proves the pinned author model card explicitly declares Apache-2.0; only data-lineage risk and notice packaging remain open.",
-  "acceptance_boundary": "This package is not POC Accepted. Core written intake, all blocking findings, Matcha data-lineage/notice disposition, and Designer approval remain required."
+  "license_correction": "M4-MATCHA-LICENSE-LINEAGE-AUDIT-001 proves the pinned author model card explicitly declares Apache-2.0. Core accepted the unnamed data-lineage risk under the User decision and retained notice completion for Gate 3 packaging.",
+  "core_acceptance": {
+    "response_path": "Core docs/outsource/responses/RESP-AUDIO-M4-GATE2B-001.md",
+    "branch": "core",
+    "commit": "be19b70b1dd91674e7ff981eb9d6b2dca9741f54",
+    "blocking_findings": 0,
+    "designer_approval": true
+  },
+  "acceptance_boundary": "POC Accepted and Audio M4 complete. Gate 3 technical acceptance and redistribution notice packaging remain Core-owned downstream work."
 }

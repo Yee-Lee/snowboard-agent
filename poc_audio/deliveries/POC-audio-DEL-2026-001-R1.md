@@ -1,6 +1,6 @@
 # POC-audio-DEL-2026-001-R1
 
-Status: `READY FOR INTERNAL REVIEW / CORE RESPONSE REQUIRED`
+Status: `POC ACCEPTED / AUDIO M4 COMPLETE`
 
 This is the Audio M4 Gate 2B technical delivery. The committed Core intake
 handoff generated from this package records the exact `audio` delivery SHA;
@@ -20,10 +20,9 @@ failure/recovery cases technically pass. Models, raw results, private audio,
 private transcripts, runtimes and secrets remain outside Git at checksum-bound
 controlled locators. Rejected evidence remains append-only in this repository.
 
-This submission deliberately does not claim `POC Accepted`. Core must return a
-committed written intake, review findings, all-finalist license disposition and
-an explicit Matcha training-data/notice risk disposition. The pinned author
-model card already proves Apache-2.0; see `M4-MATCHA-LICENSE-LINEAGE-AUDIT-001`.
-Blocking findings and
-Designer approval must close before M4 becomes `COMPLETE` or tag `audio_m4` is
-created. Gate 3 production integration remains entirely in Core scope.
+Core Designer response `RESP-AUDIO-M4-GATE2B-001`, committed on branch `core` at
+`be19b70b1dd91674e7ff981eb9d6b2dca9741f54`, accepted all three final
+references, reported zero blocking findings and approved Audio M4 closure.
+Matcha's unnamed training-data lineage is a User-owned Accepted Risk; completing
+the Apache and third-party component notice bundle remains a Gate 3 packaging
+obligation. Gate 3 technical acceptance remains entirely in Core scope.

@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`GATE_REVIEW / READY FOR INTERNAL REVIEW / CORE RESPONSE REQUIRED`
+狀態：`COMPLETE / POC ACCEPTED`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -49,11 +49,14 @@ final cleanup 全零。User 在取得 consolidated results 後指示完成報告
 因此三份結果正式納入 `POC-audio-DEL-2026-001-R1`。Pi 已恢復原 zram、確認無 worker/device
 owner、`throttled=0x0` 後關機。
 
-Gate 2B technical execution 已完成，狀態進入 `Ready for internal review`。尚未關閉的 exit
-conditions 僅為 Core committed intake/review findings、三個 finalist 的書面 legal disposition、
-Matcha 已證實的 pinned Apache-2.0 模型授權所剩 training-data lineage/component notices
-風險的明確 blocking disposition，以及 Designer approval。
-這些條件完成前不得宣告 `POC Accepted`、不得建立 `audio_m4` tag 或授權 Gate 3 product lock。
+Gate 2B technical execution 已完成。Core Designer response
+`docs/outsource/responses/RESP-AUDIO-M4-GATE2B-001.md` 於 Core commit
+`be19b70b1dd91674e7ff981eb9d6b2dca9741f54` 接受 corrected Audio SHA
+`ca51bce9b4e205d9c9faf004d41c27169f108a3f`、三個 final references 與 portable kit；
+blocking findings 為零並明確批准 M4 closure。Matcha pinned Apache-2.0 授權已接受，
+未具名 training-data lineage 為 User-owned Accepted Risk，component notice bundle 為 Gate 3
+packaging obligation。M4 因此標記 `COMPLETE / POC Accepted`；Gate 3 technical acceptance
+仍屬 Core 後續範圍。
 
 ## 目標
 
