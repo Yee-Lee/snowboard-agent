@@ -102,7 +102,8 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
   `POC-audio-DEL-2026-001-R1` 已彙整 machine-readable manifest、technical report、portable
   conformance kit、ASR semantic-pattern report、rejected evidence 與 data-safety boundary。
   Core 必須書面確認 exact intake、review findings、三個 finalist license disposition，以及
-  Matcha model/archive/training-data 的使用與再散布界線。回覆、blocking finding closure 與
+  Matcha 已證實的 pinned Apache-2.0 模型授權、未具名 training-data lineage 與 component
+  notice bundle 的使用及再散布界線。回覆、blocking finding closure 與
   Designer approval 前不宣告 `POC Accepted`、不建立 `audio_m4` tag。
 
 - `P9.1 / COMBINED / FAILURE TECHNICAL PASS`：Audio `8be3bc0...`、`26f33a3...`，

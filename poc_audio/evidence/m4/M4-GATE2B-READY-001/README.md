@@ -31,12 +31,16 @@ the actual finalists; force-abort alone used the controlled double.
 | --- | --- | --- | --- |
 | VAD | Silero 6.2.1 ONNX | MIT, pinned identity | Technical PASS; Core final-reference response required |
 | ASR | whisper.cpp 1.9.2 base Q8, P0 greedy fixed prompt | MIT repository notice; model-lineage notice review retained | Technical PASS; Core must confirm final-reference and product packaging disposition |
-| TTS | sherpa-onnx 1.13.5 Matcha zh/en + Vocos 16 kHz | Apache-2.0 runtime; model archive lacks embedded notice and mixed training-data redistribution lineage is incomplete | Technical PASS; **Core legal disposition is blocking** |
+| TTS | sherpa-onnx 1.13.5 Matcha zh/en + Vocos 16 kHz | Runtime and pinned author model card explicitly Apache-2.0; training-data lineage and complete component notices remain incomplete | Technical PASS; **Core data-lineage/notice disposition is blocking** |
 
-Audio POC does not have authority to manufacture a legal conclusion. Core must
-reply for all three finalists and explicitly either clear Matcha for a stated
-use boundary or reject final-winner use and return an evidence-backed no-go or
-replacement request. Until then, this package is not `POC Accepted`, no
+[`M4-MATCHA-LICENSE-LINEAGE-AUDIT-001`](../M4-MATCHA-LICENSE-LINEAGE-AUDIT-001.md)
+corrects the earlier broad wording: the pinned Matcha author model card does
+publish Apache-2.0, and its exact ONNX hash matches the tested archive. What
+remains open is the unnamed mixed Chinese/English training-data lineage and a
+complete redistribution notice bundle. Audio POC does not have authority to
+manufacture the legal conclusion. Core must explicitly clear the stated use
+boundary or return an evidence-backed no-go/replacement request. Until then,
+this package is not `POC Accepted`, no
 `audio_m4` tag is created, and Core must not lock a product dependency.
 
 ## Evidence and conformance kit
@@ -69,8 +73,9 @@ Core must return one committed response containing:
 1. Written intake of delivery ID, Audio branch/full delivery SHA, the two Audio
    execution SHAs, Core HAL SHA and all three controlled evidence hashes.
 2. PASS/FAIL findings for the portable kit and all M4 exit-gate evidence.
-3. A legal disposition for Silero, base-Q8 and Matcha; Matcha must explicitly
-   state permitted internal/final-reference/product/redistribution boundaries.
+3. A legal disposition for Silero, base-Q8 and Matcha; Matcha must acknowledge
+   its pinned Apache-2.0 model card and explicitly decide the remaining
+   data-lineage/notice risk plus internal/product/redistribution boundaries.
 4. Either acceptance of the three final references or an evidence-backed no-go,
    replacement request or blocking-finding list.
 5. Core response path, branch and full committed SHA.

@@ -22,6 +22,8 @@ controlled locators. Rejected evidence remains append-only in this repository.
 
 This submission deliberately does not claim `POC Accepted`. Core must return a
 committed written intake, review findings, all-finalist license disposition and
-an explicit Matcha model/training-data legal disposition. Blocking findings and
+an explicit Matcha training-data/notice risk disposition. The pinned author
+model card already proves Apache-2.0; see `M4-MATCHA-LICENSE-LINEAGE-AUDIT-001`.
+Blocking findings and
 Designer approval must close before M4 becomes `COMPLETE` or tag `audio_m4` is
 created. Gate 3 production integration remains entirely in Core scope.

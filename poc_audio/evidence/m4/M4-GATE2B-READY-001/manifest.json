@@ -34,7 +34,7 @@
     {
       "domain": "tts",
       "candidate": "sherpa-onnx 1.13.5 Matcha zh/en with Vocos 16 kHz",
-      "license_status": "runtime Apache-2.0; model archive notice and mixed training-data lineage require Core written legal disposition",
+      "license_status": "runtime and pinned author model card explicitly Apache-2.0; training-data lineage and complete component notice bundle require Core written disposition",
       "gate2b_disposition": "TECHNICAL_PASS_LEGAL_BLOCKING_RESPONSE_REQUIRED"
     }
   ],
@@ -104,5 +104,6 @@
     }
   },
   "publication_authority": "User confirmed P9.1 PASS and subsequently instructed completion, Core delivery, and waiting for response after the combined and corrected failure PASS summaries were presented.",
-  "acceptance_boundary": "This package is not POC Accepted. Core written intake, all blocking findings, Matcha legal disposition, and Designer approval remain required."
+  "license_correction": "M4-MATCHA-LICENSE-LINEAGE-AUDIT-001 proves the pinned author model card explicitly declares Apache-2.0; only data-lineage risk and notice packaging remain open.",
+  "acceptance_boundary": "This package is not POC Accepted. Core written intake, all blocking findings, Matcha data-lineage/notice disposition, and Designer approval remain required."
 }

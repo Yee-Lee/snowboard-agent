@@ -51,7 +51,8 @@ owner、`throttled=0x0` 後關機。
 
 Gate 2B technical execution 已完成，狀態進入 `Ready for internal review`。尚未關閉的 exit
 conditions 僅為 Core committed intake/review findings、三個 finalist 的書面 legal disposition、
-Matcha model/archive/training-data lineage 的明確 blocking disposition，以及 Designer approval。
+Matcha 已證實的 pinned Apache-2.0 模型授權所剩 training-data lineage/component notices
+風險的明確 blocking disposition，以及 Designer approval。
 這些條件完成前不得宣告 `POC Accepted`、不得建立 `audio_m4` tag 或授權 Gate 3 product lock。
 
 ## 目標
