@@ -12,6 +12,7 @@ import importlib.metadata
 import json
 import struct
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +47,13 @@ def _validate_command(command: object) -> tuple[str, str, Path] | None:
     return "RUN", command["session_id"], Path(path_text)
 
 
-def _run_one(session: Any, wav_path: Path, output_dir: Path, np: Any) -> dict[str, Any]:
+def _run_one(
+    model_session: Any,
+    session_id: str,
+    wav_path: Path,
+    output_dir: Path,
+    np: Any,
+) -> dict[str, Any]:
     payload, samples = read_wav(wav_path)
     duration_ms = len(samples) // 16
     state = np.zeros((2, 1, 128), dtype=np.float32)
@@ -57,7 +64,7 @@ def _run_one(session: Any, wav_path: Path, output_dir: Path, np: Any) -> dict[st
         if len(window) < WINDOW_SAMPLES:
             window = np.pad(window, (0, WINDOW_SAMPLES - len(window)))
         model_input = np.concatenate((context, window.reshape(1, -1)), axis=1)
-        output, state = session.run(None, {
+        output, state = model_session.run(None, {
             "input": model_input,
             "state": state,
             "sr": np.array(16_000, dtype=np.int64),
@@ -68,13 +75,13 @@ def _run_one(session: Any, wav_path: Path, output_dir: Path, np: Any) -> dict[st
     intervals = [list(item) for item in padded_and_merged_events(events, duration_ms)]
     if len(intervals) != 1:
         raise ValueError("NO_SINGLE_BOUNDED_UTTERANCE")
-    bounded_path = output_dir / f"{session}.wav"
+    bounded_path = output_dir / f"{session_id}.wav"
     if bounded_path.exists():
         raise ValueError("SESSION_OUTPUT_EXISTS")
     write_wav(bounded_path, bounded_payload(payload, intervals))
     return {
         "event": "RESULT",
-        "session_id": session,
+        "session_id": session_id,
         "source_sha256": _sha256_file(wav_path),
         "bounded_sha256": _sha256_file(bounded_path),
         "bounded_filename": bounded_path.name,
@@ -83,6 +90,25 @@ def _run_one(session: Any, wav_path: Path, output_dir: Path, np: Any) -> dict[st
         "positive_windows": positive_windows,
         "total_windows": len(probabilities),
     }
+
+
+def _serve(
+    model_session: Any,
+    output_dir: Path,
+    np: Any,
+    commands: Iterable[str],
+) -> int:
+    for raw in commands:
+        try:
+            command = _validate_command(json.loads(raw))
+            if command is None:
+                _emit({"event": "SHUTDOWN_ACK"})
+                return 0
+            _op, session_id, wav_path = command
+            _emit(_run_one(model_session, session_id, wav_path, output_dir, np))
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            _emit({"event": "ERROR", "code": str(error)})
+    return 3
 
 
 def main() -> int:
@@ -116,17 +142,7 @@ def main() -> int:
         "event": "READY", "candidate_id": "vad-silero-onnx-6.2.1",
         "model_sha256": MODEL_SHA256, "runtime": {**versions, "threads": 1},
     })
-    for raw in sys.stdin:
-        try:
-            command = _validate_command(json.loads(raw))
-            if command is None:
-                _emit({"event": "SHUTDOWN_ACK"})
-                return 0
-            _op, session_id, wav_path = command
-            _emit(_run_one(session_id, wav_path, args.output_dir, np))
-        except (OSError, ValueError, json.JSONDecodeError) as error:
-            _emit({"event": "ERROR", "code": str(error)})
-    return 3
+    return _serve(session, args.output_dir, np, sys.stdin)
 
 
 if __name__ == "__main__":
