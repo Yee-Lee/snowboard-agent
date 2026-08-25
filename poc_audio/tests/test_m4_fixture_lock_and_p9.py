@@ -25,7 +25,11 @@ from audio_poc.m4_fixture_lock import (  # noqa: E402
 from audio_poc.m4_p9 import P9Client, locked_p9_paths  # noqa: E402
 from audio_poc.m4_packet import SESSION_ROWS  # noqa: E402
 from audio_poc.m4_authorization import validate_authorization_document, validate_formal_result  # noqa: E402
-from audio_poc.m4_formal import _assert_controller_thread_policy, _p9_summary  # noqa: E402
+from audio_poc.m4_formal import (  # noqa: E402
+    ResourceSampler,
+    _assert_controller_thread_policy,
+    _p9_summary,
+)
 
 
 class M4FixtureLockTests(unittest.TestCase):
@@ -107,13 +111,28 @@ class M4P9ClientTests(unittest.TestCase):
 
     def test_p9_summary_fails_closed_for_capacity_or_throttle(self) -> None:
         sample = {
-            "used_mib": 3500.0, "swap_total_kib": 0, "throttled": "throttled=0x0",
+            "monotonic_s": 1.0, "used_mib": 3500.0,
+            "swap_total_kib": 0, "throttled": "throttled=0x0",
         }
-        self.assertTrue(_p9_summary([sample])["all_samples_within_capacity_gate"])
+        second = {**sample, "monotonic_s": 1.25}
+        self.assertTrue(_p9_summary([sample, second])["all_samples_within_capacity_gate"])
         with self.assertRaisesRegex(RuntimeError, "capacity gate"):
-            _p9_summary([{**sample, "used_mib": 3585.0}])
+            _p9_summary([sample, {**second, "used_mib": 3585.0}])
         with self.assertRaisesRegex(RuntimeError, "throttling proof"):
-            _p9_summary([{**sample, "throttled": "throttled=0x50000"}])
+            _p9_summary([sample, {**second, "throttled": "throttled=0x50000"}])
+        with self.assertRaisesRegex(RuntimeError, "sampler gap"):
+            _p9_summary([sample, {**second, "monotonic_s": 1.51}])
+
+    def test_resource_sampler_reports_background_failure(self) -> None:
+        def broken_supplier() -> set[int]:
+            raise ProcessLookupError("controlled race")
+
+        sampler = ResourceSampler(broken_supplier, interval_s=0.01)
+        sampler.start()
+        sampler._thread.join(timeout=1.0)  # type: ignore[union-attr]
+        sampler.stop()
+        with self.assertRaisesRegex(RuntimeError, "resource sampler failed"):
+            sampler.assert_healthy()
 
 
 class M4AuthorizationTests(unittest.TestCase):

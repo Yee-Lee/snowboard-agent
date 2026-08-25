@@ -42,7 +42,9 @@ class Domain:
 
 class FinalistFailureAdapterTests(unittest.IsolatedAsyncioTestCase):
     async def test_actual_error_timeout_cancel_and_controlled_abort(self) -> None:
-        adapter = FinalistFailureAdapter("vad", Domain, 0.01, 0.2)
+        # Process startup is not the behavior under test and can exceed 200 ms
+        # when the complete regression suite is contending for the workstation.
+        adapter = FinalistFailureAdapter("vad", Domain, 0.01, 1.0)
         error = await adapter.inject("error", {})
         self.assertEqual(error["terminal_status"], "ERROR")
         for scenario, terminal in (("timeout", "TIMEOUT"), ("cancel", "CANCELLED")):

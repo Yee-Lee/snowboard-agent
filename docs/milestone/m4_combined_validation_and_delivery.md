@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`IN_PROGRESS / P9.1 CATALOG CORRECTION`
+狀態：`IN_PROGRESS / P9.1 SAMPLER CORRECTION`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -14,8 +14,7 @@ Core SHA 與三個對齊後的隔離 runtime 執行 P9。正式結果仍為待 U
 的 `6.0 s` lifetime；另有 controller OpenBLAS thread delta `+3`。User 已判定原 P9
 不符合實際非串流使用順序，並指示 Audio POC 提出 P9.1。現由
 `P9.1-REALISTIC-TURN-RESIDENCY-DESIGN-001` 已獲 User 明確確認並取代原 P9。packet、runner、
-Audio residency proof、partial failure evidence 與 controller thread policy 已完成修改，210 項
-local regression 通過；下一步 cut 新 candidate 並取得 exact-SHA formal authorization。
+Audio residency proof、partial failure evidence 與 controller thread policy 已完成修改。
 P9.1 reviewed PASS 前不得繼續 independent 20-session run。
 
 首次 P9.1 candidate 已正確完成 sessions 01–07，session 08 因 catalog 誤納 M2 已知
@@ -23,6 +22,14 @@ hard-failure `asr-pause-037` 而停止，cleanup 全零。User 已核准
 `M4-P9.1-CATALOG-CORRECTION-001`，以同類別下一筆且既有 M2 evidence 證明為單一完整 capture
 的 `asr-pause-038` 取代；其餘 19 筆、candidate 與 gates 不變。下一步建立新 SHA 從 session 01
 完整重跑，不繼承 partial PASS。
+
+catalog 修正後的 candidate `d36490f62679f50a3c109c4a10e80f7ee45221ad` 曾完成全部 20
+sessions 且 cleanup 全零，但背景 resource sampler 在 transient P9 PID 結束時發生
+`ProcessLookupError` 後停止，runner 又以固定值誤報 sampling interval。該 draft PASS 已依
+`M4-P9.1-SAMPLER-RACE-001` 拒絕且不發布。append-only 修正以 `0.25 s` monotonic schedule
+取樣、驗證實際 gap 不超過 `0.5 s`、容忍 PID exit race，並在 sampler thread 失敗時讓正式
+run fail closed；完整 212-test regression 已通過。User 已授權此次修正形成的下一個唯一
+candidate SHA，該 candidate 必須從 session 01 重跑，不繼承任何 partial PASS。
 
 ## 目標
 

@@ -62,12 +62,13 @@ class M4ExecutionError(RuntimeError):
 class ResourceSampler:
     """Controlled raw sampler for the P9 capacity/thermal gate."""
 
-    def __init__(self, pid_supplier: Callable[[], set[int]], interval_s: float = 0.5) -> None:
+    def __init__(self, pid_supplier: Callable[[], set[int]], interval_s: float = 0.25) -> None:
         self.interval_s = interval_s
         self.pid_supplier = pid_supplier
         self.records: list[dict[str, Any]] = []
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._error: BaseException | None = None
 
     def start(self) -> None:
         if self._thread is not None:
@@ -83,10 +84,19 @@ class ResourceSampler:
                 raise RuntimeError("M4 resource sampler did not stop")
         return list(self.records)
 
+    def assert_healthy(self) -> None:
+        if self._error is not None:
+            raise RuntimeError("M4 resource sampler failed") from self._error
+
     def _run(self) -> None:
-        while not self._stop.is_set():
-            self.records.append(_resource_sample(self.pid_supplier()))
-            self._stop.wait(self.interval_s)
+        next_sample = time.monotonic()
+        try:
+            while not self._stop.is_set():
+                self.records.append(_resource_sample(self.pid_supplier()))
+                next_sample += self.interval_s
+                self._stop.wait(max(0.0, next_sample - time.monotonic()))
+        except BaseException as error:
+            self._error = error
 
 
 def _resource_sample(pids: set[int]) -> dict[str, Any]:
@@ -142,7 +152,7 @@ def _process_sample(pid: int) -> dict[str, int] | None:
                     break
         stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8").split()
         values["cpu_ticks"] = int(stat[13]) + int(stat[14])
-    except (FileNotFoundError, PermissionError, ValueError, IndexError):
+    except (FileNotFoundError, ProcessLookupError, PermissionError, ValueError, IndexError):
         return None
     return {
         "rss_kib": values.get("VmRSS", 0), "pss_kib": values.get("Pss", 0),
@@ -185,6 +195,7 @@ async def execute(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dic
         else:
             session_results = await coordinator.run(pipeline_lock)
         samples = sampler.stop()
+        sampler.assert_healthy()
         if p9_client is not None:
             await asyncio.to_thread(p9_client.shutdown, args.p9_shutdown_timeout)
         return {
@@ -266,9 +277,10 @@ def _p9_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
         raise RuntimeError("M4 P9 capacity gate exceeded 3584 MiB")
     if any(item["throttled"] != "throttled=0x0" for item in samples):
         raise RuntimeError("M4 P9 throttling proof is absent or indicates a throttle")
+    max_interval = _sample_interval_max(samples)
     return {
         "sample_count": len(samples),
-        "sample_interval_max_s": 0.5,
+        "sample_interval_max_s": max_interval,
         "peak_used_mib": max(used),
         "capacity_gate_mib": 3584,
         "all_samples_within_capacity_gate": True,
@@ -281,11 +293,22 @@ def _resource_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
     temperatures = [item["temperature_millic"] for item in samples if item["temperature_millic"] is not None]
     return {
         "sample_count": len(samples),
-        "sample_interval_max_s": 0.5,
+        "sample_interval_max_s": _sample_interval_max(samples),
         "peak_used_mib": max(float(item["used_mib"]) for item in samples),
         "peak_temperature_millic": max(temperatures) if temperatures else None,
         "throttle_observations": sorted({str(item["throttled"]) for item in samples}),
     }
+
+
+def _sample_interval_max(samples: list[dict[str, Any]], gate_s: float = 0.5) -> float:
+    if len(samples) < 2:
+        raise RuntimeError("M4 resource sampler continuity proof is incomplete")
+    timestamps = [float(item["monotonic_s"]) for item in samples]
+    gaps = [later - earlier for earlier, later in zip(timestamps, timestamps[1:])]
+    maximum = round(max(gaps), 6)
+    if maximum > gate_s:
+        raise RuntimeError(f"M4 resource sampler gap exceeded {gate_s} seconds: {maximum}")
+    return maximum
 
 
 def _active_pids(
