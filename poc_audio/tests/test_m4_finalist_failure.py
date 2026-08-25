@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -11,6 +13,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from audio_poc.m4_finalist_failure import FinalistFailureAdapter  # noqa: E402
+from audio_poc.m4_formal import _prepare_failure_executor  # noqa: E402
 
 
 class Domain:
@@ -41,6 +44,12 @@ class Domain:
 
 
 class FinalistFailureAdapterTests(unittest.IsolatedAsyncioTestCase):
+    async def test_failure_executor_exists_before_case_cleanup_baseline(self) -> None:
+        replacement = mock.AsyncMock(return_value=0)
+        with mock.patch("audio_poc.m4_formal.asyncio.to_thread", replacement):
+            await _prepare_failure_executor()
+        self.assertEqual(replacement.await_count, 2)
+
     async def test_actual_error_timeout_cancel_and_controlled_abort(self) -> None:
         # Process startup is not the behavior under test and can exceed 200 ms
         # when the complete regression suite is contending for the workstation.

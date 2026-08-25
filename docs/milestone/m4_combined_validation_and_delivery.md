@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`IN_PROGRESS / P9.1 SAMPLER TIMESTAMP CORRECTION`
+狀態：`IN_PROGRESS / FAILURE EXECUTOR BASELINE CORRECTION`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -38,6 +38,15 @@ collection 後才記錄，錯把 collection cost 混入 sampling interval。appe
 在 collection 前記錄 timestamp，另存 collection duration；`0.25 s` schedule 與較嚴格的
 `0.5 s` continuity gate 均不變。完整 213-test regression 已通過，User 已授權此修正產生的
 下一個唯一 candidate SHA 與正式重跑；舊 draft FAIL 不取得 partial credit。
+
+User 已確認 candidate `8be3bc095b504b8eab1dfeb21b94173728b9656f` 的 reviewed P9.1
+`PASS`。同一 Audio/Core SHA 的 independent combined run 亦完成 20/20 sessions、offline、
+cleanup 全零、peak used `979.109 MiB`、peak temperature `58.95 °C` 且無 throttling，維持
+draft pending consolidated publication。後續 12-case failure run 的所有 injection terminal 與
+recovery 均成功，final cleanup 全零；但 VAD error/timeout 在 controller asyncio executor lazy
+建立後各誤記 `threads +1`，validator 因此拒絕 PASS。修正於所有 case baseline 前預熱
+run/abort 所需兩條 executor threads，並在寫 PASS raw 前預先驗證 per-case cleanup；214-test regression
+已通過。新 candidate 必須重跑完整 12 cases，不繼承 partial credit。
 
 ## 目標
 

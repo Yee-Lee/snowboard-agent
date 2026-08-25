@@ -226,6 +226,7 @@ async def execute(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dic
 
 async def execute_failure(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dict[str, Any]:
     """Run the exact 12-case catalog without mixing it into the 20-session run."""
+    await _prepare_failure_executor()
     records = fixture_lock["records"]
     if not isinstance(records, list) or not records:
         raise ValueError("M4 failure run requires the controlled fixture lock")
@@ -270,6 +271,15 @@ async def execute_failure(args: argparse.Namespace, fixture_lock: dict[str, Any]
         "controller_thread_policy": {"OPENBLAS_NUM_THREADS": os.environ["OPENBLAS_NUM_THREADS"]},
         "network": assert_network_isolated(),
     }
+
+
+async def _prepare_failure_executor() -> None:
+    """Create both required harness threads before any per-case cleanup baseline."""
+    barrier = threading.Barrier(2, timeout=5.0)
+    await asyncio.wait_for(asyncio.gather(
+        asyncio.to_thread(barrier.wait),
+        asyncio.to_thread(barrier.wait),
+    ), timeout=5.0)
 
 
 def _p9_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
@@ -369,6 +379,27 @@ def _result(args: argparse.Namespace, authorization: dict[str, Any], result: str
     return document
 
 
+def _failure_bundle(
+    args: argparse.Namespace,
+    authorization: dict[str, Any],
+    details: dict[str, Any],
+    cleanup: dict[str, int],
+    evidence_sha256: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "1.0", "packet_id": PACKET_ID, "test_id": FAILURE_TEST_ID,
+        "publication_status": PUBLICATION_STATUS,
+        "audio_execution_sha": authorization["audio_execution_sha"],
+        "core_execution_sha": authorization["core_execution_sha"],
+        "controlled_evidence": {
+            "locator": args.controlled_locator, "sha256": evidence_sha256,
+        },
+        "cases": details.get("failure_cases", []), "cleanup": cleanup,
+        "proposed_disposition": "PASS",
+        "decision_boundary": "DRAFT: User confirmation is required before publication.",
+    }
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     root.add_argument("phase", choices=("p9_1", "combined", "failure"))
@@ -443,6 +474,14 @@ def main() -> int:
     cleanup = cleanup_delta(before, after)
     if any(cleanup.values()):
         result = "FAIL"
+    if args.phase == "failure" and result == "PASS":
+        try:
+            validate_failure_bundle(_failure_bundle(
+                args, authorization, details, cleanup, "0" * 64,
+            ))
+        except Exception as error:
+            result = "FAIL"
+            details["failure_bundle_validation_error"] = str(error)
     details["platform"] = platform_identity
     details["input_device"] = args.input_device
     details["output_device"] = args.output_device
@@ -460,16 +499,9 @@ def main() -> int:
         json.dump(raw_evidence, destination, indent=2, sort_keys=True)
         destination.write("\n")
     if args.phase == "failure" and result == "PASS":
-        failure_bundle = {
-            "schema_version": "1.0", "packet_id": PACKET_ID, "test_id": FAILURE_TEST_ID,
-            "publication_status": PUBLICATION_STATUS,
-            "audio_execution_sha": authorization["audio_execution_sha"],
-            "core_execution_sha": authorization["core_execution_sha"],
-            "controlled_evidence": {"locator": args.controlled_locator, "sha256": sha256_file(args.evidence_log)},
-            "cases": details.get("failure_cases", []), "cleanup": cleanup,
-            "proposed_disposition": result,
-            "decision_boundary": "DRAFT: User confirmation is required before publication.",
-        }
+        failure_bundle = _failure_bundle(
+            args, authorization, details, cleanup, sha256_file(args.evidence_log),
+        )
         validate_failure_bundle(failure_bundle)
         details["failure_bundle"] = failure_bundle
     elif args.phase == "failure":
