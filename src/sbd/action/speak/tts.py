@@ -55,3 +55,32 @@ class MockTTSAdapter:
             for frame in self._frames:
                 yield frame
         return generate()
+
+
+class NullTTSAdapter:
+    """TTS null implementation that emits one silent 20 ms PCM frame."""
+
+    def __init__(self) -> None:
+        self._started = False
+
+    async def start(self) -> None:
+        if not self._started:
+            import logging
+
+            logging.getLogger(__name__).info("TTSAdapter: running in null mode")
+        self._started = True
+
+    async def stop(self) -> None:
+        self._started = False
+
+    async def abort(self) -> None:
+        pass
+
+    async def force_abort(self) -> ForceAbortReport:
+        return ForceAbortReport()
+
+    def synthesize(self, text: str) -> AsyncIterator[bytes]:
+        async def generate() -> AsyncIterator[bytes]:
+            yield b"\x00" * 640
+
+        return generate()

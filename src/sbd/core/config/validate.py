@@ -12,6 +12,12 @@ def validate_config(config: 'AppConfig'):
         if p.required and not p.enabled:
             raise ConfigValueError(f"{path}: required=True but enabled=False is a contradiction")
 
+    def check_engine_config(driver, engine_name, path):
+        if driver not in ("mock", "null") and engine_name is None:
+            raise ConfigValueError(
+                f"{path}.engine_name is required when driver is not 'mock' or 'null'"
+            )
+
     check_policy(config.perception.listen, "perception.listen")
     check_policy(config.perception.read, "perception.read")
     check_policy(config.perception.look, "perception.look")
@@ -174,10 +180,18 @@ def validate_config(config: 'AppConfig'):
         raise ConfigValueError("log.rotate_backup_count must be > 0 if rotate_max_bytes > 0")
 
     # Real drivers require valid paths
-    check_model_path(config.perception.listen.adapter.driver, config.perception.listen.adapter.model_path, "perception.listen.adapter.model_path")
     check_model_path(config.perception.look.adapter.driver, config.perception.look.adapter.model_path, "perception.look.adapter.model_path")
     check_model_path(config.cognition.llm.driver, config.cognition.llm.model_path, "cognition.llm.model_path")
-    check_model_path(config.action.tts.driver, config.action.tts.model_path, "action.tts.model_path")
+    check_engine_config(
+        config.perception.listen.adapter.driver,
+        config.perception.listen.adapter.engine_name,
+        "perception.listen.adapter",
+    )
+    check_engine_config(
+        config.action.tts.driver,
+        config.action.tts.engine_name,
+        "action.tts",
+    )
 
     audio_real_fields = (
         ac.input.device, ac.input.native_format, ac.input.channel_index,
@@ -205,8 +219,8 @@ def validate_config(config: 'AppConfig'):
         raise ConfigValueError(f"core.display.driver is unsupported: {display.driver}")
 
     # Audio input / TTS format match
-    if config.action.tts.driver != "mock":
-        # for piper mock maybe we don't care, but for real we check if TTS rate matches Audio out rate
+    if config.action.tts.driver not in {"mock", "null"}:
+        # Candidate-specific adapters must declare their native PCM format later.
         fmt = ac.output.stream_format
         if fmt.sample_rate != 16000 or fmt.channels != 1 or fmt.sample_format != "s16_le":
             raise ConfigValueError("Audio input format must match TTS output format (16000Hz, 1ch, 16bit)")

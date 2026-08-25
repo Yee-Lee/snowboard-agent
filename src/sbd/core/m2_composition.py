@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.rest import Rest
-from sbd.action.speak import MockTTSAdapter, Speak
+from sbd.action.speak import Speak, make_tts_adapter
 from sbd.action.tool import Tool, ToolRegistry
 from sbd.cognition.llm import LLMGeneration, MockLLMEngineAdapter
 from sbd.cognition.prompt_builder import PromptBuilder
@@ -22,7 +22,7 @@ from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
 from sbd.input_events.external_message import ExternalMessageSource
 from sbd.input_events.mock import MockButtonInputSource, MockWakeWordInputSource
 from sbd.input_events.button import ButtonInputSource
-from sbd.perception.listen import Listen, MockASRAdapter
+from sbd.perception.listen import Listen, make_asr_adapter
 from sbd.perception.look import Look, MockVisionAdapter
 from sbd.perception.read import Read
 
@@ -76,10 +76,10 @@ class M2Composition:
         display = make_display(config.core.display)
         camera = make_camera(config.core.camera)
         gpio = make_gpio(config.core.gpio)
-        asr = MockASRAdapter()
+        asr = make_asr_adapter(config.perception.listen.adapter)
         vision = MockVisionAdapter()
         llm = MockLLMEngineAdapter(self.llm_outcomes)
-        tts = MockTTSAdapter()
+        tts = make_tts_adapter(config.action.tts)
         external = ExternalMessageSource(
             bus=bus,
             max_items=config.external_message.buffer_max,

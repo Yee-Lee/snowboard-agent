@@ -62,3 +62,34 @@ class MockASRAdapter:
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
+
+
+class NullASRAdapter:
+    """ASR null implementation that safely drains audio frames."""
+
+    def __init__(self) -> None:
+        self._started = False
+
+    async def start(self) -> None:
+        if not self._started:
+            import logging
+
+            logging.getLogger(__name__).info("ASRAdapter: running in null mode")
+        self._started = True
+
+    async def stop(self) -> None:
+        self._started = False
+
+    async def abort(self) -> None:
+        pass
+
+    async def force_abort(self) -> ForceAbortReport:
+        return ForceAbortReport()
+
+    async def transcribe(self, frames: AsyncIterator[bytes]) -> ASRResult:
+        try:
+            async for _ in frames:
+                await asyncio.sleep(0)
+        except GeneratorExit:
+            pass
+        return ASRResult(text="")

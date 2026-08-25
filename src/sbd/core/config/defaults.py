@@ -45,13 +45,17 @@ DEFAULT_CONFIG = AppConfig(
         startup_timeout_seconds=TimeoutMap(
             default=15.0,
             by_kind=MappingProxyType({
-                "backend.cognition.reasoner.llm": 120.0
+                "backend.cognition.reasoner.llm": 120.0,
+                "backend.perception.listen.asr": 30.0,
+                "backend.action.speak.tts": 30.0,
             })
         ),
         stop_timeout_seconds=TimeoutMap(
             default=3.0,
             by_kind=MappingProxyType({
-                "backend.cognition.reasoner.llm": 10.0
+                "backend.cognition.reasoner.llm": 10.0,
+                "backend.perception.listen.asr": 5.0,
+                "backend.action.speak.tts": 5.0,
             })
         ),
         recovery_timeout_seconds=30.0,

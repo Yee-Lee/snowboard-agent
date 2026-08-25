@@ -90,7 +90,7 @@ def test_m1_cfg_002_validation(tmp_path):
     with pytest.raises(ConfigValueError, match="resource timeout"):
         load_with("resource:\n  startup_timeout_seconds:\n    by_kind:\n      'unknown.resource': 1.0")
 
-    with pytest.raises(ConfigValueError, match="required for real driver"):
+    with pytest.raises(ConfigTypeError, match="must be one of"):
         load_with("perception:\n  listen:\n    adapter:\n      driver: whisper\n      model_path: null")
 
     with pytest.raises(ConfigValueError, match="exact integer"):
@@ -106,14 +106,12 @@ def test_m1_cfg_002_validation(tmp_path):
     with pytest.raises(ConfigValueError, match="Duplicate physical GPIO pin"):
         load_with("core:\n  gpio:\n    pins:\n      p1:\n        pin: 1\n      p2:\n        pin: 1")
 
-    dummy_model = tmp_path / "dummy_model.onnx"
-    dummy_model.write_text("dummy")
-    with pytest.raises(ConfigValueError, match="Audio input format must match TTS output format"):
+    with pytest.raises(ConfigTypeError, match="must be one of"):
         load_with(
             "core:\n  audio:\n    output:\n      stream_format:\n"
             "        sample_rate: 48000\n        channels: 2\n"
             "        sample_format: s32_le\n"
-            f"action:\n  tts:\n    driver: piper\n    model_path: {dummy_model.as_posix()}"
+            "action:\n  tts:\n    driver: piper"
         )
 
 
@@ -162,7 +160,6 @@ def test_m1_cfg_001_relative_paths_resolve_from_config_directory(tmp_path: Path)
         ("core:\n  display:\n    width: 127", "core.display.width"),
         ("core:\n  camera:\n    height: 0", "core.camera.height"),
         ("core:\n  camera:\n    quality: 101", "core.camera.quality"),
-        ("perception:\n  listen:\n    adapter:\n      driver: whisper\n      model_path: missing.bin", "perception.listen.adapter.model_path"),
     ],
 )
 def test_m1_cfg_002_cross_field_and_real_model_validation(

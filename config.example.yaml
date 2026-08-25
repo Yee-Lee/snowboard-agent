@@ -18,8 +18,11 @@ perception:
     required: true
     adapter:
       driver: mock
+      engine_name: null
       model_path: null
       language: null
+      dsp_profile: null
+      decoder_profile: null
   read:
     enabled: true
     required: false
@@ -48,8 +51,12 @@ action:
   rest: {enabled: true, required: true}
   tts:
     driver: mock
+    engine_name: null
     model_path: null
     voice_id: null
+    native_sample_rate: null
+    native_channels: null
+    native_sample_format: null
 
 cancel:
   abort_timeout_seconds:
@@ -65,10 +72,14 @@ resource:
     default: 15.0
     by_kind:
       backend.cognition.reasoner.llm: 120.0
+      backend.perception.listen.asr: 30.0
+      backend.action.speak.tts: 30.0
   stop_timeout_seconds:
     default: 3.0
     by_kind:
       backend.cognition.reasoner.llm: 10.0
+      backend.perception.listen.asr: 5.0
+      backend.action.speak.tts: 5.0
   recovery_timeout_seconds: 30.0
   recovery_shutdown_cleanup_timeout_seconds: 5.0
 

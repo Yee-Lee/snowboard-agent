@@ -47,9 +47,12 @@ class PerceptionTimeouts:
 
 @dataclass(frozen=True, slots=True)
 class ASRConfig:
-    driver: Literal["mock", "whisper"] = "mock"
+    driver: Literal["mock", "null"] = "mock"
+    engine_name: str | None = None
     model_path: Path | None = None
     language: str | None = None
+    dsp_profile: str | None = None
+    decoder_profile: str | None = None
 
 @dataclass(frozen=True, slots=True)
 class VisionConfig:
@@ -99,9 +102,13 @@ class CognitionConfig:
 
 @dataclass(frozen=True, slots=True)
 class TTSConfig:
-    driver: Literal["mock", "piper"] = "mock"
+    driver: Literal["mock", "null"] = "mock"
+    engine_name: str | None = None
     model_path: Path | None = None
     voice_id: str | None = None
+    native_sample_rate: int | None = None
+    native_channels: int | None = None
+    native_sample_format: str | None = None
 
 @dataclass(frozen=True, slots=True)
 class ActionConfig:

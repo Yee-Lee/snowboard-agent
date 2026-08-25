@@ -1,5 +1,33 @@
 # Developer Progress — M4
 
+## M4a generic scaffold (M4A-WP-01 to M4A-WP-04)
+
+| Work package | Estimate | Plan | Status |
+| :--- | :--- | :--- | :--- |
+| M4A-WP-01 | 0.25 day | Add null ASR/TTS adapters and engine-agnostic factories without importing a real engine. | Complete |
+| M4A-WP-02 | 0.25 day | Extend ASR/TTS configuration placeholders, validation, defaults, and the example configuration. | Complete |
+| M4A-WP-03 | 0.25 day | Wire the factories into the existing composition and register M4a resource timeout defaults. | Complete |
+| M4A-WP-04 | 0.5 day | Add ASR-NULL, TTS-NULL, and CFG regression tests; run the affected portable suite. | Complete |
+
+### M4a scope and constraints
+
+- Authority: `docs/implement/ch_m4a_generic_scaffold.md` and `DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003` §4.
+- This work supplies only the `mock` / `null` generic scaffold. It must not add a real ASR/TTS import, model path, production dependency, or reference to a POC branch head.
+- Existing `Listen`, `Speak`, and mock-adapter behavior remain unchanged. A candidate-specific adapter requires the later M2B provisional-selection ACK.
+
+### M4a developer verification
+
+- `PYTHONPATH=src python3 -m pytest -q tests/test_m4a_generic_scaffold.py tests/test_config.py tests/test_m2_wrk_001_002_004.py` → `31 passed`.
+- `PYTHONPATH=src python3 -m pytest -q -m 'not rpi'` → `275 passed, 2 skipped, 21 deselected`.
+- `python3 -m py_compile` passed for all changed Python modules.
+
+### M4a handoff status
+
+- **Core generic scaffold: Complete.** `NullASRAdapter` and `NullTTSAdapter`, their config-driven factories, engine-agnostic schema placeholders, resource timeouts, and the designated regression coverage are complete.
+- **Candidate-specific audio integration: Blocked by the planned external gate.** Audio POC must first return the M2A baseline and M2B optimization result, followed by a Core M2B provisional-selection ACK. Until then, Core must not select or import a real engine, model, voice, or production dependency.
+- **Next Developer entry criterion:** receive the M2B provisional-selection ACK and the exact candidate recipe; then implement the candidate-specific adapters, provisional configuration/dependency integration, and the corresponding Core delta tests.
+- This is a dependency boundary, not an implementation defect. It does not claim M4a Gate 3, Tester PASS, candidate freeze, or milestone acceptance.
+
 ## Candidate gate reform (WP-PROC-01 to WP-PROC-03)
 
 | Work package | Estimate | Plan | Status |
