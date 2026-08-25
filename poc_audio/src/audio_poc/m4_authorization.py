@@ -34,7 +34,7 @@ def validate_authorization_document(document: dict[str, Any]) -> None:
     required = {
         "schema_version", "status", "packet_id", "audio_execution_sha",
         "core_execution_sha", "packet_manifest_sha256", "user_authorization_id",
-        "p9_execution_authorized",
+        "p9_1_execution_authorized",
     }
     if set(document) != required:
         raise ValueError("M4 formal authorization fields are incomplete or unexpected")
@@ -50,8 +50,8 @@ def validate_authorization_document(document: dict[str, Any]) -> None:
         raise ValueError("M4 formal authorization packet checksum is invalid")
     if not isinstance(document["user_authorization_id"], str) or not document["user_authorization_id"].strip():
         raise ValueError("M4 formal authorization User authorization ID is required")
-    if document["p9_execution_authorized"] is not True:
-        raise ValueError("M4 formal authorization must explicitly authorize P9 execution")
+    if document["p9_1_execution_authorized"] is not True:
+        raise ValueError("M4 formal authorization must explicitly authorize P9.1 execution")
 
 
 def validate_formal_authorization(

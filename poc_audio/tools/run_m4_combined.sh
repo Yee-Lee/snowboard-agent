@@ -6,7 +6,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 packet="$repo_root/poc_audio/manifests/m4_combined_packet.json"
 
 if [[ $# -lt 1 ]]; then
-  echo "usage: $0 validate | fake --output FILE | lock-fixtures --fixture-dir DIR --fixture-lock FILE --audio-execution-sha SHA | formal <p9|combined|failure> [formal arguments]" >&2
+  echo "usage: $0 validate | fake --output FILE | lock-fixtures --fixture-dir DIR --fixture-lock FILE --audio-execution-sha SHA | formal <p9_1|combined|failure> [formal arguments]" >&2
   exit 2
 fi
 
@@ -39,7 +39,7 @@ case "$mode" in
     ;;
   formal)
     [[ $# -ge 1 ]] || {
-      echo "usage: $0 formal <p9|combined|failure> [formal arguments]" >&2
+      echo "usage: $0 formal <p9_1|combined|failure> [formal arguments]" >&2
       exit 2
     }
     command -v unshare >/dev/null || {
@@ -47,7 +47,7 @@ case "$mode" in
       exit 3
     }
     unshare --user --map-root-user --net -- \
-      env PYTHONPATH="$repo_root/poc_audio/src" \
+      env PYTHONPATH="$repo_root/poc_audio/src" OPENBLAS_NUM_THREADS=1 \
       python3 -m audio_poc.m4_formal "$1" --packet "$packet" --repo-root "$repo_root" "${@:2}"
     ;;
   *)

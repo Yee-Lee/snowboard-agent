@@ -5,6 +5,8 @@
   "authority": {
     "user_approval_date": "2026-08-25",
     "formal_execution_authorized": false,
+    "p9_1_user_approval_date": "2026-08-25",
+    "p9_1_design": "SEQUENTIAL_VAD_ASR_LLM_TTS_RESIDENCY",
     "m3_gate2a_ack_commit": "5aac035d25f6498c3c0affe1ace4afd7de8f7254",
     "p9_core_ack_commit": "caf4f7ba867e4ebc1972df0ade86c605a873a286"
   },
@@ -70,6 +72,10 @@
     }
   },
   "p9": {
+    "test_id": "M4-P9.1-REALISTIC-TURN-RESIDENCY-001",
+    "supersedes_test_id": "M4-P9-RESIDENCY-001",
+    "orchestration_policy": "VAD_ASR_THEN_P9_INFER_THEN_REASONER_TTS",
+    "controller_thread_policy": {"OPENBLAS_NUM_THREADS": "1"},
     "artifact_id": "M4B-P9-RESIDENCY-SURROGATE-001",
     "source_sha": "f18f823146727b50cb3ef15e9e14b51983643406",
     "protocol_version": "1.0",

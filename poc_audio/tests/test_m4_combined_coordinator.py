@@ -20,6 +20,7 @@ class FakeDomain:
         self.events = events
         self.started = 0
         self.stopped = 0
+        self.pid = {"vad": 101, "asr": 102, "tts": 103}[domain]
 
     async def start(self) -> None:
         self.started += 1
@@ -44,6 +45,9 @@ class FakeDomain:
             "sample_count": 160, "playback_complete": True,
         }
 
+    def residency_identity(self) -> dict[str, object]:
+        return {"pid": self.pid, "alive": True}
+
     async def stop(self) -> None:
         self.stopped += 1
         self.events.append(f"{self.domain}:stop")
@@ -53,9 +57,9 @@ class FakeP9:
     def __init__(self, events: list[str]) -> None:
         self.events = events
 
-    async def begin(self, request_id: str) -> dict[str, str]:
+    async def begin(self, request_id: str) -> dict[str, object]:
         self.events.append(f"p9:begin:{request_id}")
-        return {"request_id": request_id}
+        return {"request_id": request_id, "worker_pids": [201, 202, 203, 204]}
 
     async def complete(self, request_id: str, token: dict[str, str]) -> dict[str, object]:
         self.events.append(f"p9:complete:{request_id}")
@@ -79,7 +83,7 @@ def fixture_lock() -> dict[str, object]:
 
 
 class M4CoordinatorTests(unittest.IsolatedAsyncioTestCase):
-    async def test_persistent_domains_run_all_sessions_in_order_with_p9_overlap(self) -> None:
+    async def test_persistent_domains_run_p9_between_asr_and_tts(self) -> None:
         events: list[str] = []
         vad = FakeDomain("vad", events)
         asr = FakeDomain("asr", events)
@@ -90,10 +94,18 @@ class M4CoordinatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(results), 20)
         self.assertEqual(results[0]["session_id"], "M4-SESSION-01")
         self.assertEqual(results[-1]["session_id"], "M4-SESSION-20")
-        self.assertEqual(events[:5], [
-            "vad:start", "asr:start", "tts:start", "p9:begin:M4-SESSION-01",
-            "vad:M4-SESSION-01",
+        self.assertEqual(events[:9], [
+            "vad:start", "asr:start", "tts:start", "vad:M4-SESSION-01",
+            "asr:M4-SESSION-01", "p9:begin:M4-SESSION-01",
+            "p9:complete:M4-SESSION-01", "tts:M4-SESSION-01",
+            "vad:M4-SESSION-02",
         ])
+        self.assertTrue(results[0]["p9"]["audio_residency_stable"])
+        self.assertEqual(set(results[0]["p9"]["audio_residency"]), {"vad", "asr", "tts"})
+        self.assertEqual(
+            set(results[0]["timings_ms"]),
+            {"vad", "asr", "p9_infer", "tts_playback", "end_to_end"},
+        )
         self.assertEqual(events[-3:], ["tts:stop", "asr:stop", "vad:stop"])
 
     async def test_asr_empty_result_stops_all_domains(self) -> None:
@@ -111,6 +123,22 @@ class M4CoordinatorTests(unittest.IsolatedAsyncioTestCase):
         asr.run = empty  # type: ignore[method-assign]
         with self.assertRaisesRegex(RuntimeError, "ASR terminal result is unusable"):
             await M4CombinedCoordinator(vad, asr, tts).run(fixture_lock())
+        self.assertEqual([domain.stopped for domain in (vad, asr, tts)], [1, 1, 1])
+
+    async def test_p9_rejects_audio_process_identity_change(self) -> None:
+        events: list[str] = []
+        vad = FakeDomain("vad", events)
+        asr = FakeDomain("asr", events)
+        tts = FakeDomain("tts", events)
+
+        class ReplacingP9(FakeP9):
+            async def complete(self, request_id: str, token: dict[str, str]) -> dict[str, object]:
+                result = await super().complete(request_id, token)
+                tts.pid = 999
+                return result
+
+        with self.assertRaisesRegex(RuntimeError, "Audio residency changed"):
+            await M4CombinedCoordinator(vad, asr, tts).run(fixture_lock(), ReplacingP9(events))
         self.assertEqual([domain.stopped for domain in (vad, asr, tts)], [1, 1, 1])
 
 

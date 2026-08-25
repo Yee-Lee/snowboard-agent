@@ -1,6 +1,6 @@
 # M4-COMBINED-VALIDATION-PLAN-001
 
-Status: `USER APPROVED / LOCAL IMPLEMENTATION AUTHORIZED / FORMAL EXECUTION NOT AUTHORIZED`
+Status: `P9.1 USER APPROVED / IMPLEMENTATION AUTHORIZED / FORMAL EXECUTION NOT AUTHORIZED`
 
 ## 1. Purpose and delivery contribution
 
@@ -112,32 +112,35 @@ regression. Local tests must cover:
 
 No local test may be reported as Pi, P9 or Gate 2B evidence.
 
-### WP4.2 - Execute P9 resource reservation first
+### WP4.2 - Execute P9.1 realistic-turn residency first
 
 On the target Pi 5 4GB with Debian 13 aarch64, `swap=0` and networking disabled:
 
 1. verify the exact P9 source, executable, schema and lock hashes;
 2. verify clean Audio/Core SHAs, baseline ownership, temperature and throttling;
 3. start the three Audio finalists and the P9 surrogate as separate bounded
-   process groups;
+   process groups; keep all three Audio process identities stable for the full catalog;
 4. require P9 `READY` within 10 seconds and sample at intervals no greater than
    one second;
-5. for each approved catalog entry, send one `INFER` and overlap the corresponding
-   Audio workload with all four P9 CPU workers alive;
+5. for each approved catalog entry, run VAD and ASR, then send one `INFER` and
+   keep all Audio finalists resident while all four P9 CPU workers execute; after
+   matched `INFERENCE_COMPLETE`, run deterministic Reasoner mapping and TTS playback;
 6. preserve timestamps, request IDs, PIDs, `MemTotal`, `MemAvailable`, swap,
    per-PID RSS/PSS/CPU/threads, latency, temperature, throttling and xruns;
 7. require matched `INFERENCE_COMPLETE`, then bounded `SHUTDOWN_ACK`, process-group
    cleanup and restored device ownership.
 
-P9 `PASS` requires every primary capacity sample
+P9.1 `PASS` requires every primary capacity sample
 `MemTotal - MemAvailable <= 3584 MiB`, complete overlap, no OOM/memory-pressure
 event, disqualifying xrun, crash, thermal/session breach or residue. `sum(RSS)` is
 diagnostic only. A valid breach is `FAIL`; invalid preconditions are `Blocked`;
 lost evidence after start is `INCONCLUSIVE` only when pass/fail cannot be derived.
 
-The current accepted P9 delivery refers to an accepted duration/session catalog
-without enumerating it. User approval on 2026-08-25 freezes all 20 fixed sessions
-as the Audio packet's P9 overlap catalog.
+The User rejected the original full-session CPU overlap method as unrealistic on
+2026-08-25 and approved `P9.1-REALISTIC-TURN-RESIDENCY-DESIGN-001`. P9.1 keeps
+the unchanged surrogate artifact, memory envelope and all 20 fixed sessions, but
+places the CPU-heavy `INFER` at the realistic `ASR -> LLM -> TTS` boundary. The
+historical draft failure remains retained and receives no M4 credit.
 
 ### WP4.3 - Execute independent 20-session combined validation
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Any, Protocol
 
 
@@ -10,6 +11,8 @@ class PersistentDomain(Protocol):
     async def start(self) -> None: ...
 
     async def run(self, session: dict[str, Any]) -> dict[str, Any]: ...
+
+    def residency_identity(self) -> dict[str, Any]: ...
 
     async def stop(self) -> None: ...
 
@@ -30,6 +33,7 @@ class CombinedSessionResult:
     reasoner: dict[str, Any]
     tts: dict[str, Any]
     p9: dict[str, Any] | None
+    timings_ms: dict[str, float]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -41,6 +45,7 @@ class CombinedSessionResult:
             "reasoner": self.reasoner,
             "tts": self.tts,
             "p9": self.p9,
+            "timings_ms": self.timings_ms,
         }
 
 
@@ -49,6 +54,7 @@ class M4CombinedCoordinator:
 
     def __init__(self, vad: PersistentDomain, asr: PersistentDomain, tts: PersistentDomain) -> None:
         self._domains = {"vad": vad, "asr": asr, "tts": tts}
+        self.trace: list[dict[str, Any]] = []
 
     async def run(
         self,
@@ -86,26 +92,58 @@ class M4CombinedCoordinator:
     ) -> CombinedSessionResult:
         _validate_record(record)
         session_id = record["session_id"]
-        p9_token = await p9.begin(session_id) if p9 is not None else None
+        session_started = time.monotonic()
+        trace: dict[str, Any] = {
+            "session_id": session_id, "completed_stages": [], "timings_ms": {},
+        }
+        self.trace.append(trace)
         try:
+            stage_started = time.monotonic()
             vad = await self._domains["vad"].run(record)
             _validate_stage(vad, "vad", session_id)
+            trace["timings_ms"]["vad"] = _elapsed_ms(stage_started)
+            trace["completed_stages"].append("vad")
             asr_input = {**record, "bounded_wav": vad["bounded_wav"]}
+            stage_started = time.monotonic()
             asr = await self._domains["asr"].run(asr_input)
             _validate_stage(asr, "asr", session_id)
             if asr.get("terminal") != "SUCCESS" or asr.get("nonempty") is not True:
                 raise RuntimeError(f"M4 ASR terminal result is unusable: {session_id}")
+            trace["timings_ms"]["asr"] = _elapsed_ms(stage_started)
+            trace["completed_stages"].append("asr")
+            p9_result: dict[str, Any] | None = None
+            if p9 is not None:
+                audio_before = _audio_residency(self._domains)
+                stage_started = time.monotonic()
+                p9_token = await p9.begin(session_id)
+                complete = await p9.complete(session_id, p9_token)
+                trace["timings_ms"]["p9_infer"] = _elapsed_ms(stage_started)
+                audio_after = _audio_residency(self._domains)
+                if audio_after != audio_before:
+                    raise RuntimeError(f"M4 P9.1 Audio residency changed: {session_id}")
+                p9_result = {
+                    "request_id": session_id,
+                    "worker_pids": p9_token["worker_pids"],
+                    "inference_elapsed_s": complete.get("elapsed_s"),
+                    "audio_residency": audio_after,
+                    "audio_residency_stable": True,
+                }
+                trace["completed_stages"].append("p9_infer")
             reasoner = {
                 "terminal": "SUCCESS",
                 "mapping": "SESSION_ID_TO_FROZEN_TTS_ID_NO_TRANSCRIPT_MUTATION",
                 "tts_fixture_id": record["tts_fixture_id"],
             }
+            trace["completed_stages"].append("reasoner")
             tts_input = {**record, "reasoner": reasoner}
+            stage_started = time.monotonic()
             tts = await self._domains["tts"].run(tts_input)
             _validate_stage(tts, "tts", session_id)
             if tts.get("playback_complete") is not True:
                 raise RuntimeError(f"M4 TTS playback did not complete: {session_id}")
-            p9_result = await p9.complete(session_id, p9_token) if p9 is not None else None
+            trace["timings_ms"]["tts_playback"] = _elapsed_ms(stage_started)
+            trace["completed_stages"].append("tts_playback")
+            trace["timings_ms"]["end_to_end"] = _elapsed_ms(session_started)
             return CombinedSessionResult(
                 session_id=session_id,
                 asr_fixture_id=record["fixture_id"],
@@ -115,10 +153,24 @@ class M4CombinedCoordinator:
                 reasoner=reasoner,
                 tts=_sanitize_tts(tts),
                 p9=p9_result,
+                timings_ms=dict(trace["timings_ms"]),
             )
-        except BaseException:
-            # A partial P9 interval must never be represented as completed evidence.
+        except BaseException as error:
+            trace["error_type"] = type(error).__name__
+            trace["error"] = str(error)
+            trace["timings_ms"]["elapsed_before_error"] = _elapsed_ms(session_started)
             raise
+
+
+def _elapsed_ms(started: float) -> float:
+    return round((time.monotonic() - started) * 1000.0, 3)
+
+
+def _audio_residency(domains: dict[str, PersistentDomain]) -> dict[str, dict[str, Any]]:
+    identities = {name: domains[name].residency_identity() for name in ("vad", "asr", "tts")}
+    if any(not identity.get("alive") for identity in identities.values()):
+        raise RuntimeError("M4 P9.1 requires all Audio finalists resident and alive")
+    return identities
 
 
 def _validate_record(record: object) -> None:

@@ -43,7 +43,20 @@ from .m4_failure_fixture import build_sustained_probe
 from .m4_failure_runner import M4FailureRunner
 from .m4_finalist_failure import FinalistFailureAdapter
 from .m4_p9 import P9Client, locked_p9_paths
-from .m4_packet import PACKET_ID, PUBLICATION_STATUS, load_packet, validate_repo_inputs
+from .m4_packet import P9_1_TEST_ID, PACKET_ID, PUBLICATION_STATUS, load_packet, validate_repo_inputs
+
+
+class M4ExecutionError(RuntimeError):
+    """Retain partial stage/resource evidence after a formal execution error."""
+
+    def __init__(
+        self, cause: BaseException, resource_samples: list[dict[str, Any]],
+        session_trace: list[dict[str, Any]],
+    ) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
+        self.resource_samples = resource_samples
+        self.session_trace = session_trace
 
 
 class ResourceSampler:
@@ -160,7 +173,7 @@ async def execute(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dic
     p9_client: P9Client | None = None
     sampler = ResourceSampler(lambda: _active_pids(vad, asr, tts, p9_client))
     try:
-        if args.phase == "p9":
+        if args.phase == "p9_1":
             paths = locked_p9_paths(args.repo_root)
             p9_client = P9Client(paths["runner"], paths["schema"], paths["lock"])
             await asyncio.to_thread(p9_client.start, args.p9_ready_timeout)
@@ -177,13 +190,17 @@ async def execute(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dic
         return {
             "sessions": session_results,
             "session_count": len(session_results),
-            "p9": _p9_summary(samples) if args.phase == "p9" else None,
+            "p9": _p9_summary(samples) if args.phase == "p9_1" else None,
             "resources": _resource_summary(samples),
             "_resource_samples": samples,
             "stream_format": "16000_HZ_MONO_S16_LE",
             "core_native_output_format": "48000_HZ_STEREO_S32_LE",
+            "controller_thread_policy": {"OPENBLAS_NUM_THREADS": os.environ["OPENBLAS_NUM_THREADS"]},
             "network": assert_network_isolated(),
         }
+    except BaseException as error:
+        samples = sampler.stop() if sampler._thread is not None and sampler._thread.is_alive() else list(sampler.records)
+        raise M4ExecutionError(error, samples, coordinator.trace) from error
     finally:
         if sampler._thread is not None and sampler._thread.is_alive():
             sampler.stop()
@@ -232,7 +249,11 @@ async def execute_failure(args: argparse.Namespace, fixture_lock: dict[str, Any]
         "tts": FinalistFailureAdapter("tts", tts_factory, 0.1, args.failure_terminal_timeout),
     })
     cases = await runner.run(probes)
-    return {"failure_cases": cases, "network": assert_network_isolated()}
+    return {
+        "failure_cases": cases,
+        "controller_thread_policy": {"OPENBLAS_NUM_THREADS": os.environ["OPENBLAS_NUM_THREADS"]},
+        "network": assert_network_isolated(),
+    }
 
 
 def _p9_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
@@ -292,7 +313,7 @@ def _result(args: argparse.Namespace, authorization: dict[str, Any], result: str
         "schema_version": "1.0",
         "packet_id": PACKET_ID,
         "test_id": (
-            "M4-P9-RESIDENCY-001" if args.phase == "p9" else
+            P9_1_TEST_ID if args.phase == "p9_1" else
             FAILURE_TEST_ID if args.phase == "failure" else "M4-COMBINED-20-SESSION-001"
         ),
         "publication_status": PUBLICATION_STATUS,
@@ -310,7 +331,7 @@ def _result(args: argparse.Namespace, authorization: dict[str, Any], result: str
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
-    root.add_argument("phase", choices=("p9", "combined", "failure"))
+    root.add_argument("phase", choices=("p9_1", "combined", "failure"))
     root.add_argument("--packet", type=Path, required=True)
     root.add_argument("--authorization", type=Path, required=True)
     root.add_argument("--repo-root", type=Path, required=True)
@@ -358,8 +379,9 @@ def main() -> int:
     fixture_lock = load_fixture_lock(args.fixture_lock, authorization["audio_execution_sha"])
     verify_fixture_files(fixture_lock, args.fixture_dir)
     platform_identity = assert_target()
-    if args.phase == "p9":
+    if args.phase == "p9_1":
         _assert_p9_target()
+    _assert_controller_thread_policy()
     assert_network_isolated()
     before = runtime_snapshot()
     result = "PASS"
@@ -369,7 +391,14 @@ def main() -> int:
         details = asyncio.run(execute_failure(args, fixture_lock)) if args.phase == "failure" else asyncio.run(execute(args, fixture_lock))
     except Exception as error:
         result = "FAIL"
-        details = {"error_type": type(error).__name__, "error": str(error)}
+        if isinstance(error, M4ExecutionError):
+            details = {
+                "error_type": type(error.cause).__name__, "error": str(error.cause),
+                "partial_session_trace": error.session_trace,
+                "_resource_samples": error.resource_samples,
+            }
+        else:
+            details = {"error_type": type(error).__name__, "error": str(error)}
     after = runtime_snapshot()
     cleanup = cleanup_delta(before, after)
     if any(cleanup.values()):
@@ -440,6 +469,11 @@ def _assert_p9_target() -> None:
     )
     if swap_total_kib != 0:
         raise ValueError("M4 P9 requires SwapTotal: 0 before execution")
+
+
+def _assert_controller_thread_policy() -> None:
+    if os.environ.get("OPENBLAS_NUM_THREADS") != "1":
+        raise ValueError("M4 formal controller requires OPENBLAS_NUM_THREADS=1")
 
 
 if __name__ == "__main__":

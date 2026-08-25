@@ -1,6 +1,6 @@
 # M4：組合認證與正式交付
 
-狀態：`IN_PROGRESS / LOCAL PACKET PREPARATION`
+狀態：`IN_PROGRESS / P9.1 IMPLEMENTATION`
 
 Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / Gate 2A，
 並確認 Silero VAD、whisper.cpp base-Q8 ASR 與 Matcha TTS 為 M4 finalists。User 已於
@@ -8,11 +8,15 @@ Core 已於 commit `5aac035d25f6498c3c0affe1ace4afd7de8f7254` 正式關閉 M3 / 
 run 的執行順序。Machine-readable packet、schema、fail-closed validator 與 local fake
 runner 已建立；20 個 persistent fake sessions、三 domain 共 12 個 failure/recovery cases
 與完整 regression 已本地驗證。這些結果不是 Pi、P9 或 Gate 2B evidence，formal mode 仍
-fail closed。candidate-SHA-bound fixture lock、P9 protocol client、persistent
-VAD/ASR/TTS + pinned HAL 的 `formal p9` / `formal combined` / `formal failure` paths，及
-controlled raw resource sampler 已完成 local implementation；它們仍須在 Pi 以 clean exact SHA
-執行。下一步 cut immutable candidate SHA，再執行已接受的 P9 surrogate。P9 未執行前沒有 PASS
-或 LLM credit。
+fail closed。candidate `79185f992dd1510a9e8298242cec66b237081c52` 已在 Pi 以 pinned
+Core SHA 與三個對齊後的隔離 runtime 執行 P9。正式結果仍為待 User 確認的 draft `FAIL`：
+完整 Audio session 需 `8.459 s`，其中 ASR 單段 `6.028 s`，已超過 immutable P9 worker
+的 `6.0 s` lifetime；另有 controller OpenBLAS thread delta `+3`。User 已判定原 P9
+不符合實際非串流使用順序，並指示 Audio POC 提出 P9.1。現由
+`P9.1-REALISTIC-TURN-RESIDENCY-DESIGN-001` 已獲 User 明確確認並取代原 P9。packet、runner、
+Audio residency proof、partial failure evidence 與 controller thread policy 已完成修改，210 項
+local regression 通過；下一步 cut 新 candidate 並取得 exact-SHA formal authorization。
+P9.1 reviewed PASS 前不得繼續 independent 20-session run。
 
 ## 目標
 
@@ -102,6 +106,10 @@ M4 關閉剩餘 delivery checklist，產出最終 winner/no-go、組合認證、
 - Delivery checklist 有項目沒有 owner 或可行的關閉路徑。
 - License/redistribution 或資料安全 audit 出現 blocking issue。
 - Review finding 需要改變既定契約、硬體或 baseline。
+
+目前已觸發第一項：同一 clean Audio/Core SHA 的受控 P9 run 可重現完整 session 超過
+surrogate worker lifetime。User 已指示以符合 `VAD -> ASR -> LLM -> TTS` 實際順序的 P9.1
+取代原方法；設計確認前不得實作或執行，也不得以 client timeout 規避。
 
 ## Gate Review 問題
 

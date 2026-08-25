@@ -33,6 +33,8 @@ P9_PROFILE = {
     "ready_timeout_s": 10.0,
     "shutdown_timeout_s": 5.0,
 }
+P9_1_TEST_ID = "M4-P9.1-REALISTIC-TURN-RESIDENCY-001"
+P9_1_POLICY = "VAD_ASR_THEN_P9_INFER_THEN_REASONER_TTS"
 SESSION_ROWS = (
     ("M4-SESSION-01", "taiwan_mandarin", "asr-clear-002", "tts-001"),
     ("M4-SESSION-02", "taiwan_mandarin", "asr-clear-003", "tts-002"),
@@ -100,6 +102,11 @@ def validate_packet(document: dict[str, Any]) -> None:
         raise ValueError("M4 packet User approval is absent")
     if authority.get("formal_execution_authorized") is not False:
         raise ValueError("M4 planning packet must fail closed for formal execution")
+    if (
+        authority.get("p9_1_user_approval_date") != "2026-08-25"
+        or authority.get("p9_1_design") != "SEQUENTIAL_VAD_ASR_LLM_TTS_RESIDENCY"
+    ):
+        raise ValueError("M4 P9.1 User design approval is absent")
     if authority.get("m3_gate2a_ack_commit") != M3_ACK_SHA:
         raise ValueError("M4 packet M3 Gate 2A ACK mismatch")
     if authority.get("p9_core_ack_commit") != P9_ACK_SHA:
@@ -162,6 +169,13 @@ def validate_packet(document: dict[str, Any]) -> None:
 
     p9 = document.get("p9", {})
     if (
+        p9.get("test_id") != P9_1_TEST_ID
+        or p9.get("supersedes_test_id") != "M4-P9-RESIDENCY-001"
+        or p9.get("orchestration_policy") != P9_1_POLICY
+        or p9.get("controller_thread_policy") != {"OPENBLAS_NUM_THREADS": "1"}
+    ):
+        raise ValueError("M4 P9.1 orchestration policy mismatch")
+    if (
         p9.get("artifact_id") != "M4B-P9-RESIDENCY-SURROGATE-001"
         or p9.get("source_sha") != "f18f823146727b50cb3ef15e9e14b51983643406"
         or p9.get("protocol_version") != "1.0"
@@ -172,7 +186,7 @@ def validate_packet(document: dict[str, Any]) -> None:
     if p9.get("capacity_gate_mib") != 3584:
         raise ValueError("M4 P9 capacity gate mismatch")
     if p9.get("catalog") != [row[0] for row in SESSION_ROWS]:
-        raise ValueError("M4 P9 overlap catalog mismatch")
+        raise ValueError("M4 P9.1 residency catalog mismatch")
     if p9.get("execution_status") != "Pending":
         raise ValueError("M4 planning packet cannot claim P9 execution")
 

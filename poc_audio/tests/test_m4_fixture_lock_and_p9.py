@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import wave
 
 
@@ -23,7 +25,7 @@ from audio_poc.m4_fixture_lock import (  # noqa: E402
 from audio_poc.m4_p9 import P9Client, locked_p9_paths  # noqa: E402
 from audio_poc.m4_packet import SESSION_ROWS  # noqa: E402
 from audio_poc.m4_authorization import validate_authorization_document, validate_formal_result  # noqa: E402
-from audio_poc.m4_formal import _p9_summary  # noqa: E402
+from audio_poc.m4_formal import _assert_controller_thread_policy, _p9_summary  # noqa: E402
 
 
 class M4FixtureLockTests(unittest.TestCase):
@@ -69,6 +71,13 @@ class M4FixtureLockTests(unittest.TestCase):
 
 
 class M4P9ClientTests(unittest.TestCase):
+    def test_formal_controller_requires_single_openblas_thread(self) -> None:
+        with mock.patch.dict(os.environ, {"OPENBLAS_NUM_THREADS": "1"}, clear=False):
+            _assert_controller_thread_policy()
+        with mock.patch.dict(os.environ, {"OPENBLAS_NUM_THREADS": "4"}, clear=False):
+            with self.assertRaisesRegex(ValueError, "OPENBLAS_NUM_THREADS=1"):
+                _assert_controller_thread_policy()
+
     def test_locked_self_test_protocol_exercises_overlap_and_cleanup(self) -> None:
         paths = locked_p9_paths(REPO_ROOT)
         client = P9Client(paths["runner"], paths["schema"], paths["lock"], self_test=True)
@@ -117,14 +126,14 @@ class M4AuthorizationTests(unittest.TestCase):
             "core_execution_sha": "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf",
             "packet_manifest_sha256": "b" * 64,
             "user_authorization_id": "USER-M4-PI-001",
-            "p9_execution_authorized": True,
+            "p9_1_execution_authorized": True,
         }
 
     def test_authorization_rejects_unapproved_p9(self) -> None:
         document = self._authorization()
         validate_authorization_document(document)
-        document["p9_execution_authorized"] = False
-        with self.assertRaisesRegex(ValueError, "explicitly authorize P9"):
+        document["p9_1_execution_authorized"] = False
+        with self.assertRaisesRegex(ValueError, "explicitly authorize P9.1"):
             validate_authorization_document(document)
 
     def test_pass_result_requires_cleanup_and_controlled_evidence(self) -> None:

@@ -72,7 +72,7 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 | M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
 | M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
 | M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `IN_PROGRESS / LOCAL PACKET PREPARATION` | 20-session/P9 catalog 已核准，packet/schema/fake 與 formal failure runner 已本地驗證；下一步 cut candidate SHA，再執行 P9 與 combined Gate 2B | [M4](m4_combined_validation_and_delivery.md) |
+| M4 | `IN_PROGRESS / P9.1 IMPLEMENTATION` | User 已核准 `VAD -> ASR -> LLM load -> TTS` 的 P9.1 replacement；runner/packet 已修改且 210 tests 通過，下一步 cut candidate 並取得 exact-SHA authorization | [M4](m4_combined_validation_and_delivery.md) |
 
 ## Current M2 substage status
 
@@ -98,13 +98,21 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 
 ## Open risks and next authorized work
 
-- `NEXT / M4 CANDIDATE`：Core 已以
+- `P9.1 USER APPROVED / NEW CANDIDATE NEXT`：candidate `79185f992dd1510a9e8298242cec66b237081c52`
+  在 package-aligned、zero-swap Pi 上的 P9 draft result 為 `FAIL`。完整 Audio overlap
+  `8.459 s`，其中 base-Q8 ASR `6.028 s`，不能符合 immutable `6.0 s` worker lifetime。
+  User 已判定原設計不符合實際使用狀態；Audio POC 的
+  `P9.1-REALISTIC-TURN-RESIDENCY-DESIGN-001` 以 sequential turn lifecycle 取代 full-session
+  overlap，已獲 User 明確確認。runner/packet 與 fail-closed tests 已完成；下一步建立新
+  immutable candidate。在 P9.1 reviewed PASS 前不執行 independent combined/failure formal runs。
+
+- `P9.1 IMPLEMENTATION AFTER CONFIRMATION`：Core 已以
   [`RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001`](../pm_handoff/RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001.md)
   關閉 M3 / Gate 2A。User 已核准 internal M4 plan/catalog；packet/schema/local fake scaffold、
   candidate-SHA-bound fixture lock、P9 client，以及 pinned HAL persistent
-  `formal p9` / `formal combined` / `formal failure` runner 已建立並通過 local regression，但均未執行 Pi。
-  Audio 下一步 cut immutable candidate SHA，之後先執行 accepted P9 surrogate，再執行
-  independent 20-session combined/offline；P9 未執行前沒有 PASS 或 LLM credit。
+  runner 已建立並通過 local regression。原 P9 已在 Pi 執行但方法被 User 判定為設計缺陷，
+  不產生 M4 credit。P9.1 design 確認後，Audio 才修改 packet/runner、cut 新 immutable
+  candidate，並依 P9.1、independent combined、failure 的順序重新執行。
 - `HARDWARE SESSION`：Pi 5、VoiceHAT `hw:0,0`、目標距離 `0.8–1.0 m`。十個 capture、
   PCM recovery、LIFE-01～06、VAD、direct/HAL ASR 與六句 TTS 已完成；selected evidence
   cleanup 全零，final shutdown 無 worker/device owner 且 `throttled=0x0`。
@@ -116,11 +124,11 @@ Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correc
 - `CLOSED CORE BLOCKER`：16 kHz mono S16_LE → 48 kHz stereo S32_LE data adaptation
   本身正確，但 success completion 缺 ALSA drain，`close()` 前不保證 physical consumption。
   修正不改 gain/resampler/format/buffer；POC 不增加自有 resampler。
-- `CORE ACCEPTED / AUDIO INTEGRATION UNBLOCKED / NOT EXECUTED`：固定
+- `HISTORICAL P9 ARTIFACT / METHOD SUPERSEDED`：固定
   `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum 已收到，附件
   regression 6 項通過；Core ACK 已固定於
-  `caf4f7ba867e4ebc1972df0ade86c605a873a286`。Audio 後續自行執行，不再向 Core
-  要 P9 補件；未執行前不產生 P9 PASS 或 LLM credit。
+  `caf4f7ba867e4ebc1972df0ade86c605a873a286`。artifact identity 由 P9.1 沿用，但原本
+  full-session overlap 方法已由 User 指示取代；歷史 draft failure 保留且不產生 M4 credit。
 - `CONTINGENCY / NOT ACTIVATED`：M3 final target-mic evidence 未形成 gain、pre-roll 或
   front-end blocker；M3.1 framework 維持待命但不啟動。
 - `CLOSED M3 TARGET-MIC RISK`：Silero 在 `0.8–1.0 m` 的 final low-volume case 保留 speech，

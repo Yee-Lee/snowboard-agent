@@ -67,6 +67,13 @@ class PersistentVadDomain:
     async def run(self, session: dict[str, Any]) -> dict[str, Any]:
         return await asyncio.to_thread(self._run, session)
 
+    def residency_identity(self) -> dict[str, Any]:
+        process = self.process
+        return {
+            "pid": process.pid if process is not None else None,
+            "alive": process is not None and process.poll() is None,
+        }
+
     async def inject_error(self) -> None:
         """Make the loaded Silero worker reject a malformed protocol command."""
         await asyncio.to_thread(self._inject_error)
@@ -194,6 +201,13 @@ class PersistentAsrDomain:
 
     async def run(self, session: dict[str, Any]) -> dict[str, Any]:
         return await asyncio.to_thread(self._run, session)
+
+    def residency_identity(self) -> dict[str, Any]:
+        process = self.worker.process if self.worker is not None else None
+        return {
+            "pid": self.worker.pid if self.worker is not None else None,
+            "alive": process is not None and process.poll() is None,
+        }
 
     async def inject_error(self) -> None:
         """Ask the loaded native worker to process a nonexistent controlled WAV."""
@@ -332,6 +346,13 @@ class PersistentTtsDomain:
             "session_id": session["session_id"], "terminal": "SUCCESS",
             "pcm_sha256": pcm_sha256, "sample_count": int(header["sample_count"]),
             "playback_complete": True,
+        }
+
+    def residency_identity(self) -> dict[str, Any]:
+        process = self.process
+        return {
+            "pid": process.pid if process is not None else None,
+            "alive": process is not None and process.returncode is None,
         }
 
     async def inject_error(self) -> None:
