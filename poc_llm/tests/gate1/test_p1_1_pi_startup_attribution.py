@@ -59,6 +59,8 @@ class P11PiStartupAttributionTests(unittest.TestCase):
         self.assertIn("Gate/P credit**: `FORBIDDEN`", packet)
         self.assertIn("Never move Engine construction after READY", packet)
         self.assertIn("without a removal recommendation", packet)
+        self.assertIn("fresh run-scoped receipt", packet)
+        self.assertIn("never reused", packet)
 
     def test_viability_requires_ready_generation_and_cleanup(self) -> None:
         viable = {

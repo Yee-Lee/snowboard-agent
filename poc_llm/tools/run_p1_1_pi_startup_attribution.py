@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from poc_llm.harness.pi_artifact_auth import streaming_digest
+from poc_llm.harness.pi_artifact_auth import authenticate_model, streaming_digest
 from poc_llm.harness.pi_runtime import (
     load,
     protocol_validator,
@@ -46,7 +46,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gate1-lock", type=Path, required=True)
     parser.add_argument("--candidate-set", type=Path, required=True)
     parser.add_argument("--profile-set", type=Path, required=True)
-    parser.add_argument("--receipt-root", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     return parser.parse_args()
 
@@ -58,13 +57,11 @@ def locked_artifact(item: dict[str, str]) -> Path:
     return path
 
 
-def warm_model(path: Path) -> float:
+def drop_model_cache(path: Path) -> float:
     started = time.monotonic()
     with path.open("rb", buffering=0) as stream:
         if hasattr(os, "posix_fadvise") and hasattr(os, "POSIX_FADV_DONTNEED"):
             os.posix_fadvise(stream.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
-        while stream.read(8 * 1024 * 1024):
-            pass
     return round((time.monotonic() - started) * 1000, 3)
 
 
@@ -187,6 +184,7 @@ def main() -> int:
         response_path = ROOT / artifacts["response_schema"]["path"]
         config_schema = ROOT / artifacts["config_schema"]["path"]
         receipt_schema = ROOT / artifacts["artifact_receipt_schema"]["path"]
+        receipt_validator = Draft202012Validator(load(receipt_schema))
         catalog = load(ROOT / artifacts["catalog"]["path"])
         validator = protocol_validator(protocol_path, prompt_path, response_path)
         probe = locked["probe"]
@@ -196,13 +194,39 @@ def main() -> int:
             config = ROOT / entry["standard_config"]["path"]
             config_value = load(config)
             model = Path(config_value["model_path"])
-            receipt = args.receipt_root / f"{candidate_id}.artifact-receipt.json"
+            cache_drop_advice_ms = drop_model_cache(model)
+            model_record = authenticate_model(
+                model,
+                entry["model_sha256"],
+                entry["model_size_bytes"],
+                timeout_s=120.0,
+            )
+            receipt_value = {
+                "receipt_version": "pi-artifact-auth/2",
+                "packet_id": "G1-PI-COMPAT-007",
+                "run_id": args.run_id,
+                "execution_sha": args.execution_sha,
+                "execution_surface_sha256": streaming_digest(args.gate1_lock),
+                "candidate_id": candidate_id,
+                "runtime_sha256": runtime["wheel_sha256"],
+                "model": model_record,
+            }
+            if not receipt_validator.is_valid(receipt_value):
+                raise RuntimeError("P1.1 fresh artifact receipt schema mismatch")
+            receipt = raw_root / f"{candidate_id}.artifact-receipt.json"
+            receipt.write_text(
+                json.dumps(receipt_value, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
             candidate_result = {"candidate_id": candidate_id, "observations": []}
             result["candidates"].append(candidate_result)
             for profile in result["profiles"]:
                 observation: dict[str, Any] = {
                     "profile_id": profile,
-                    "cache_conditioning_ms": warm_model(model),
+                    "cache_drop_advice_ms": cache_drop_advice_ms,
+                    "artifact_authentication_ms": model_record[
+                        "authentication_duration_ms"
+                    ],
                     "eventual_ready_ms": None,
                     "stage_ms": {},
                     "ping_pong": False,

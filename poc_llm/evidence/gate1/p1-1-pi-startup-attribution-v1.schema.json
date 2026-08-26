@@ -42,10 +42,11 @@
     "observation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["profile_id", "cache_conditioning_ms", "eventual_ready_ms", "stage_ms", "ping_pong", "generation_terminal", "shutdown_ack", "cleanup", "p1_contract_fit", "diagnostic_result"],
+      "required": ["profile_id", "cache_drop_advice_ms", "artifact_authentication_ms", "eventual_ready_ms", "stage_ms", "ping_pong", "generation_terminal", "shutdown_ack", "cleanup", "p1_contract_fit", "diagnostic_result"],
       "properties": {
         "profile_id": {"const": "baseline"},
-        "cache_conditioning_ms": {"type": "number", "minimum": 0},
+        "cache_drop_advice_ms": {"type": "number", "minimum": 0},
+        "artifact_authentication_ms": {"type": "number", "minimum": 0},
         "eventual_ready_ms": {"type": ["number", "null"], "minimum": 0},
         "stage_ms": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
         "ping_pong": {"type": "boolean"},
