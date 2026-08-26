@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate1:cumulative-receipt:7.0",
+  "type":"object","additionalProperties":false,
+  "required":["packet_id","core_ack_id","execution_sha","execution_surface_sha256","run_id","evidence_manifest_sha256","accepted_p_items","finalists"],
+  "properties":{
+    "packet_id":{"const":"G1-PI-COMPAT-007"},
+    "core_ack_id":{"type":"string","minLength":1},
+    "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "execution_surface_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "run_id":{"type":"string","pattern":"^G1-PI-COMPAT-007-[A-Za-z0-9._:-]+$"},
+    "evidence_manifest_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "accepted_p_items":{"type":"array","minItems":6,"maxItems":6,"uniqueItems":true,"items":{"enum":["P1","P6","P7","P10A","P11","P12"]}},
+    "finalists":{"type":"array","minItems":1,"maxItems":2,"uniqueItems":true,"items":{"enum":["CAND-LRT-G4E2B-MOBILE-R1","CAND-LRT-Q25-15B-Q8-R1"]}}
+  }
+}

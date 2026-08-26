@@ -1,94 +1,48 @@
-# LLM M2：x86 Candidate Pre-screen, Pi Compatibility and Gate 1 Submission
+# LLM M2：Gate 1 Cumulative Stability and Core Integration
 
-狀態：`NOT_STARTED`
+狀態：`DESIGN REVIEW / EXECUTION HELD FOR REVIEWER`
 
-## 目標與交付貢獻
+## Goal and delivery contribution
 
-依 M1 frozen packet 在 Ubuntu 24.04 x86_64 執行完整 pairing 初篩，一次預選最多兩名，
-再於產品 Debian 13 Pi 執行 bounded compatibility try-run，只保留Pi `PASS`者並提交
-External Gate 1 candidate proposal。主要推進 D2、D4、D5、D7、D8。
+對Gemma 4 E2B與Qwen2.5 1.5B在產品Pi 5 4GB上正式完成P1、P6、P7、P10A、P11、P12，
+回答LLM穩定性與Core persistent-child整合可行性，最多保留兩名Gate 1 finalists。這些P evidence
+在identity不變時直接供2A/2B cumulative decision使用，不因gate transition重跑。
 
-x86與Gate 1 Pi compatibility只用於Gate 1 selection，不得取代任何Gate 2A M4B-P1～P12 evidence。
+## Entry
 
-## Entry Conditions
+- Gate 0與M1完成；兩名candidate/runtime/model/config/license identity固定。
+- Product target為Pi 5 4GB、Debian 13 aarch64、`swap=0`、offline、`throttled=0x0`。
+- Runtime wheel與兩個模型已在Pi持久artifact root，正式執行前仍須read-only staging與clean exact SHA。
+- User要求reviewer先審查design/source/tests；在放行前不commit/push、不送Core、不連Pi執行。
 
-- External Gate 0 已由 Core Designer 登錄為 `COMPLETE`，M1 為 `COMPLETE`。
-- Candidate matrix 已為每個 runtime/model/quantization/config pairing 配發不可變 ID。
-- Exact version、source/archive SHA-256、model/artifact SHA-256、quantization method、license、
-  offline 取得方法、transitive dependencies 與 aarch64 compatibility preflight 已固定。
-- Ubuntu 24.04 x86 runner與產品Pi的OS/architecture、owner、storage/memory及執行方式已
-  登錄；任何下載、安裝、artifact transfer或network切換已另行核准。
-- Benchmark packet、fixtures、metrics、淘汰規則、重跑上限與 evidence schema 已 frozen。
+## Historical `006`
 
-## Pending Pre-entry Platform Decision
+Run `G1-PI-COMPAT-006-20260826T125959Z-001`與manifest
+`34cb51b0bdb04a042281722db37514bce1daba234391fa79570482faa53d2208`永久保留。
+其valid environment與cleanup證據成立，但READY 10秒包含完整模型SHA；因此定性為packet defect，
+不是candidate incompatibility，不產生zero-finalist或P credit。
 
-兩台可用 Ubuntu 24.04 workstation 都是 UTM：一台為 macOS ARM64 host / ARM64 guest，
-另一台為 macOS x86_64 host / x86_64 guest。Core 已接受 ARM64 diagnostic SHA `265db057...`
-為 formal environment-preflight `PASS`，選 ARM64 為 primary Ubuntu pre-screen track；x86_64
-為獨立 portability/fallback track，不阻擋 ARM64。兩個命名 WIP branches 可在 predeclared
-commands與stop conditions下完成各自 workstation scope，但此授權不啟動 M2、不授權Pi或Gate 2。
+## Replacement work packet
 
-## Pending ARM-first Pi Transition Adjustment
+Authoritative packet為`poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md`；source lock為
+`poc_llm/harness/gate1-pi-compat-lock-v7.json`。核心設計：
 
-User已要求以完成的ARM64 UTM pre-screen取代後續x86_64 WIP completion/merge dependency，固定
-Gemma與Qwen 1.5B最多兩名，將其餘P1/P2/P3與mandatory acceptance移至產品Pi獨立packet。
-`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`保留完整可攜identity、sanitized result
-provenance、API/runner lessons與Pi checklist。此項尚待Core核准；在ACK前不得視為已修改本
-milestone entry/exit gate，不得執行Pi或跳過Gate 1 compatibility。
+- model各自只做一次streaming SHA，且在READY clock前完成；read-only receipt供後續child使用；
+- v2 wheel installer只做一次content authentication；
+- normal lifecycle同時完成P1與P10A的20 sessions，不另跑重複stability loop；
+- fault lifecycle同時完成P6 observation與P7 force-abort；一次rebuild完成recovery proof；
+- P11/P12使用packet-level pre/post evidence，不在每個child重複。
 
-## Work Packet
+## Exit
 
-Authoritative repository packet：`poc_llm/tests/gate1/GATE1-PACKET-005.md`。Frozen catalog、
-validator、platform-projection runners、schemas 與 checksums 由
-`poc_llm/harness/gate1-lock-v5.json` 控制。真實執行須待 Core 接受 R5 exact SHA 並另行授權。
+- 每個candidate有P1/P6/P7/P10A/P11/P12有效狀態、raw manifest、cleanup與review record。
+- Eligibility：P1/P7/P10A/P11/P12 PASS，P6 PASS或由P7支持的`Conditional escalation`。
+- Technical Lead、Internal Tester、Reviewer與User完成result review；Core以manifest SHA接受cumulative
+  boundary與最多兩名finalists。
+- Gate 2A只執行P2/P3/P4/P5/P8；不得重跑identity未變的Gate 1 P evidence。
 
-Accepted parent pre-entry packet：`poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-001.md`。ARM64
-accepted result與bounded continuation依 `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001`；後續
-branch run仍須在執行前自行固定 exact commands/operators/raw paths並遵守fail-closed stop rules。
+## Retry and prohibitions
 
-- 在x86對每個有效pairing執行完整portable packet，依固定排序一次預選最多兩名；只對
-  預選者執行產品Pi compatibility，`FAIL/INCONCLUSIVE`同cycle不得以第三名補位。
-- 每個 run 記錄 runner environment、candidate/config/fixture IDs、命令、開始/結束時間、
-  exit code、artifact checksum、raw evidence checksum 與 cleanup proof。
-- 初篩 metrics 至少包含 setup success、READY/generate smoke、JSON intent 格式率、
-  timeout/cancel/cleanup observability、latency/tokens-per-second sample、RSS 與 disk footprint。
-- 固定淘汰條件：license/source/checksum 不完整、無可重現 offline setup、arm64 incompatibility、
-  lifecycle/cleanup failure、無法產生合法 single-turn output，或超出 frozen hard resource gate。
-- Performance 未達起始目標但未觸犯 hard gate 時保留實測值，由 Designer 比較；不得事後
-  改 gate。Environment failure 記為 `INCONCLUSIVE`，不能直接淘汰 candidate。
-- 依 validity、correctness、resource headroom、reproducibility 與風險排序，最多保留兩個
-  finalists；提交 candidate matrix、license table、rejected reasons 與 Gate 1 request。
-
-## Exit Gate
-
-- 每個pairing都有固定ID、x86 evidence state；預選者另有Pi compatibility state與理由。
-- 最多兩個 finalists 通過所有 frozen Ubuntu hard gates，或提交 evidence-backed no-go／
-  change request；不得把 `INCONCLUSIVE` 當成 `PASS` 或任意淘汰。
-- POC Technical Lead 完成 evidence review，Internal Tester 確認 packet/result 完整性。
-- Core Designer 對 candidate proposal 與最多兩個 proposed finalists 發出 External Gate 1
-  書面 ACK；在 ACK
-  到位前 M2 可進 `GATE_REVIEW`，但 M3/Pi Gate 2A 必須保持 `NOT_STARTED / BLOCKED`。
-
-## Necessary Evidence
-
-- Candidate matrix、pairing IDs、versions、source/artifact checksums、license 與 offline method。
-- Ubuntu x86 environment與產品Pi compatibility commands、exit、metrics/observations、raw
-  evidence checksums、selection cycle與cleanup。
-- 淘汰矩陣、最多兩個 finalists、residual risks、Internal Tester confirmation 與 Gate 1 request。
-- Core Designer Gate 1 ACK，或尚未核准時的明確 `GATE_REVIEW / BLOCKED` 狀態。
-
-## Owner, Schedule and Retry Limit
-
-- Developer：setup、runner 與 local self-test；POC Test Controller：immutable Ubuntu runs。
-- Technical Lead：evidence review 與 finalist recommendation；Internal Tester：完整性確認；
-  Core Designer：Gate 1 approver。
-- Runner 可用後預估 3–5 個工作日；artifact download/storage 依 candidate matrix 另行核准。
-- 每個 candidate/case 最多一次 controlled rerun；原始結果保留。超過上限須提出 change request。
-
-## Prohibited in M2
-
-- 不在 R5 exact-SHA acceptance 與 execution authorization 前開始真實 x86/Pi Gate 1 run；
-  不在 Gate 1 finalist ACK 前開始 Raspberry Pi 5 Gate 2A benchmark。
-- 不以 Ubuntu 結果宣告 Pi M4B-P1～P12 `PASS`、Gate 2A provisional finalist 或 final winner。
-- 不提交模型、大型 raw result、private prompt/output、endpoint、credential 或 secret。
-- 不因結果不佳更改 pairing ID、fixture、metric、淘汰規則或只發布最好一次。
+Valid mandatory FAIL不retune、不same-revision rerun；reviewed infrastructure/evidence
+INCONCLUSIVE最多一次identical rerun。不得補Qwen 0.5B、在workstation跑P5、提交model/raw output/
+prompt/payload/credential、或在Reviewer前開始Pi run。

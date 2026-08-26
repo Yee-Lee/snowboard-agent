@@ -1,0 +1,34 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:pi-artifact-auth-receipt:2.0",
+  "type":"object","additionalProperties":false,
+  "required":["receipt_version","packet_id","run_id","execution_sha","execution_surface_sha256","candidate_id","runtime_sha256","model"],
+  "properties":{
+    "receipt_version":{"const":"pi-artifact-auth/2"},
+    "packet_id":{"enum":["G1-PI-COMPAT-007","G2A-PI-LLM-002"]},
+    "run_id":{"type":"string","minLength":1},
+    "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "execution_surface_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "candidate_id":{"enum":["CAND-LRT-G4E2B-MOBILE-R1","CAND-LRT-Q25-15B-Q8-R1"]},
+    "runtime_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "model":{
+      "type":"object","additionalProperties":false,
+      "required":["path","sha256","size_bytes","stat","authentication_duration_ms"],
+      "properties":{
+        "path":{"type":"string","pattern":"^/[^\\u0000]+$"},
+        "sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+        "size_bytes":{"type":"integer","minimum":1},
+        "authentication_duration_ms":{"type":"number","minimum":0},
+        "stat":{
+          "type":"object","additionalProperties":false,
+          "required":["device","inode","mode","size_bytes","mtime_ns","ctime_ns"],
+          "properties":{
+            "device":{"type":"integer","minimum":0},"inode":{"type":"integer","minimum":1},
+            "mode":{"type":"integer","minimum":1},"size_bytes":{"type":"integer","minimum":1},
+            "mtime_ns":{"type":"integer","minimum":0},"ctime_ns":{"type":"integer","minimum":0}
+          }
+        }
+      }
+    }
+  }
+}

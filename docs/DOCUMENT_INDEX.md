@@ -9,11 +9,17 @@
 * [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
 * [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md) - Core 接受 M2-G1-PLATFORM-CONFIG-001，授權 append-only R5 repository revision；真實執行仍封鎖
 * [`ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md`](pm_handoff/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md) - Core 接受 ARM64 UTM input、x86 waiver與兩個candidate freeze；要求先完成產品Pi compatibility再取Gate 1 finalist ACK
-* [`core_llm_m4b_tasks.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
+* [`DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md`](pm_handoff/DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md) - Core dispositions for the physical-Pi packets (Gate 1 and Gate 2A) revised
+* [`RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md`](pm_handoff/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md) - Core ACK for Pi Execution Packets (Gate 1 and Gate 2A) - Source Revision Correction
+* [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
 
+* `DELIVERY-014-CORE-LLM-POC-PACKETS-ACK.md` - (被取代) 由 016 取代
+* `RESP-LLM-POC-PI-EXECUTION-PACKETS-001.md` - (被取代) 由 002 取代
+* `DELIVERY-015-CORE-P9-SURROGATE-ACK.md` - (已完成) Core 接受 P9 surrogate
+* `RESP-LLM-POC-P9-SURROGATE-EXECUTABLE-001.md` - (已完成) M4A-P9 整合解除封鎖
 * `DELIVERY-AUDIO-POC-M3-ACK-001.md` - (歷史) Audio M3 HAL 合約採用確認
 * `core_audio_m3_requirements.md` - (歷史) 舊主線 M3 音訊要求
 * `audio_poc_delivery_checklist.md` - (歷史) 舊 Audio 交付清單
@@ -51,6 +57,16 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-INTERNAL-TESTER-M1-SIGNOFF-001.md`](response/ACK-INTERNAL-TESTER-M1-SIGNOFF-001.md) - Internal Tester M1 exact candidate/deterministic evidence sign-off
 * [`ACK-DELIVERY-AUDIO-POC-M3-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-AUDIO-POC-M3-001.md) - (歷史) Audio M3 HAL 採用存檔確認
 * [`RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md`](response/RESP-LLM-POC-P9-SURROGATE-ENVELOPE-001.md) - M4A-P9 資源保留 surrogate envelope 估算回覆
+* [`ACK-LLM-M2-GATE1-PI-COMPAT-006-REVIEW-001.md`](response/ACK-LLM-M2-GATE1-PI-COMPAT-006-REVIEW-001.md) - 更正v6為READY計時packet defect；撤回candidate FAIL／zero-finalist解讀
+* [`ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-REDESIGN-001.md`](response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-REDESIGN-001.md) - Gate 1/2A/2B累積P1–P12分工、去重與identity carry-forward評估
+* [`REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-001.md`](response/REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-001.md) - 已由R2取代的初次review request
+* [`ACK-LLM-M2-CUMULATIVE-GATES-REVIEW-001.md`](response/ACK-LLM-M2-CUMULATIVE-GATES-REVIEW-001.md) - 已由Reviewer後續overwrite findings取代；不得作execution approval
+* [`REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md`](response/REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md) - 已獲APPROVE；回覆source-SHA recursive invalidation與P5 fast-model兩項blocker
+* [`ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md`](response/ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md) - Reviewer無條件`APPROVE` R2；兩項critical findings關閉，可發布reviewed source
+
+## 3A. Independent Reviews (位於 `docs/reviews/`)
+
+* [`REVIEW-LLM-M2-CUMULATIVE-REDESIGN-001.md`](reviews/REVIEW-LLM-M2-CUMULATIVE-REDESIGN-001.md) - R2前的兩項critical findings；已由R2 approval關閉，保留審查歷程
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
@@ -68,6 +84,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md`](delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) - (已核准) ARM64 UTM sanitized experience kit、x86 waiver與後續移轉產品Pi的scope adjustment
 * [`DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md`](delivery/DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) - 修正 Core P9 範例缺少CPU trigger的缺陷；交付locked executable、protocol schema、process-group cleanup與Audio integration sequence
 * [`DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md`](delivery/DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md) - Gate 1 Pi compatibility與獨立Gate 2A Pi packet的可執行review candidate；請Core一次審核packet、保留Gate 1 finalist ACK邊界
+* [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md`](delivery/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) - `DRAFT / REVIEWER HOLD / NOT DELIVERED`；reviewer後請Core一次ACK累積gate boundary、v7 exact SHA與v6 supersession
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
@@ -85,6 +102,7 @@ Repo-owned 內部執行工作文件：
 * [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
 * [`GATE1-ENV-PREFLIGHT-ARM64-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001.md) - ARM64-only UTM executable request；與 x86_64 package/evidence 隔離
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
-* [`GATE1-PI-COMPAT-PACKET-006.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-006.md) - 兩個frozen candidates的Pi 5 compatibility executable packet；無Gate 2 credit
-* [`GATE2A-PI-PACKET-001.md`](../poc_llm/tests/gate2/GATE2A-PI-PACKET-001.md) - Gate 1 finalist ACK後的獨立Pi 5 P1–P8/P10A/P11/P12 packet
+* [`GATE1-PI-COMPAT-PACKET-007.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md) - `DESIGN REVIEW`；Pi 5累積P1/P6/P7/P10A/P11/P12 executable packet
+* [`GATE2A-PI-PACKET-002.md`](../poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md) - 只執行Gate 1未涵蓋的P2/P3/P4/P5/P8
+* [`GATE2B-PI-PACKET-001.md`](../poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md) - Accepted Audio整合的P9/P10B及affected-only regression
 * [`env-preflight-arm64-001.json`](../poc_llm/evidence/gate1/env-preflight-arm64-001.json) - ARM64 sanitized attempt history、checksums與結果範圍

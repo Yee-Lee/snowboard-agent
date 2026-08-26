@@ -1,156 +1,111 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`ARM64 PRIMARY + X86_64 FALLBACK WIP CONTINUATION AUTHORIZED / M2 NOT_STARTED`
+狀態：`CUMULATIVE GATE REDESIGN / REVIEWER CHECK REQUIRED / NO NEW EXECUTION`
 
-Revision：`2026-08-22-preflight-proposal`
+Revision：`2026-08-26-cumulative-p1-p12-r1`
 
-Owner：POC Technical Lead
+Owner：POC Technical Lead；User已授權累積Gate模型；外部接受者為Core Designer。
 
-Approver：Core Designer
+## Governing execution model
 
-本文件是 Gate 1、Gate 2A、Gate 2B work-package 的唯一 authoritative plan。它依
-`DELIVERY-LLM-POC-M4B-CONTRACT-001` 2026-08-19 revision 建立；目前沒有 Ubuntu
-benchmark、Pi run 或 candidate evidence。
+P1～P12只執行一次，分布於Gate 1、2A、2B；Gate切換本身不造成重跑。相同evidence可沿用
+的必要條件是原execution commit為目前clean checkout的ancestor、execution-surface lock digest與
+runtime/model/config/protocol/fixture SHA、Pi 5 4GB identity、OS、`swap=0`、offline要求及evidence
+manifest一致。Evidence/ACK/docs commit不構成source drift；execution identity drift只使受影響P項失效。
 
-## Result Semantics
+| Stage | Formal P credit | Primary decision | Packet |
+| --- | --- | --- | --- |
+| Gate 1 | P1, P6, P7, P10A, P11, P12 | LLM是否穩定、Core child整合與recovery是否可行；最多2名finalists | `G1-PI-COMPAT-007` |
+| Gate 2A | P2, P3, P4, P5, P8 | 輸出品質、效能、timeout、history；最多1名provisional finalist | `G2A-PI-LLM-002` |
+| Gate 2B | P9, P10B | Accepted Audio+LLM 4GB residency與20-session combined stability；final winner | `G2B-PI-COMBINED-001` |
 
-所有 package 只可使用：
+Gate 1完成後，2A不得例行重跑P1/P6/P7/P10A/P11/P12。Gate 2B不得例行重跑1/2A項目；
+只有combined integration確實修改的component/boundary才能建立predeclared focused regression。
 
-- `PASS`：指定 exact SHA、frozen packet、有效環境及所有 mandatory criteria 均通過，
-  evidence、cleanup、exit proof 完整。
-- `FAIL`：有效環境與完整 evidence 證明至少一項 mandatory criterion 違反。
-- `INCONCLUSIVE`：環境、SHA、工具、evidence 或執行不完整，無法區分 candidate 與
-  infrastructure failure。
-- `Blocked`：必要 ACK、platform、artifact、Accepted Audio package、權限或 owner 未就緒。
-- `Core threshold decision required`：只用於 P4 完整有效量測未達 negotiable target，
-  或 contract 明列需 Core 裁決的 4GB/8GB portability disposition；不能掩蓋 mandatory fail。
+## Result semantics
 
-沒有 evidence 的項目為 `Pending`，不是執行結果。一次 controlled rerun 後仍無法判定，
-必須 re-estimate 並建立 change request；原始結果保留。
+- `PASS`：exact identity、有效環境、完整方法與cleanup均通過。
+- `FAIL`：有效candidate run證明mandatory rule違反。
+- `INCONCLUSIVE`：environment、identity、evidence或方法失效，無法判定candidate。
+- `Blocked`：必要artifact、hardware、Accepted Audio kit、權限或review gate未就緒。
+- `Conditional escalation`：只限P6，且只有P7完整PASS時仍eligible。
+- `Core threshold decision required`：只限完整P4方法未達negotiable target。
 
-## Gate 1 Work Package
+未執行為`Pending`。不得把planning/unit test、UTM、workstation或`--plan-only`輸出標成Pi P結果。
 
-### Proposed pre-entry environment package
+## Gate 1 — stability and Core integration
 
-`G1-DUAL-UTM-PREFLIGHT-001` design was approved by Core. ARM64 diagnostic target `265db057...` is
-accepted as the formal ARM64 environment `PASS`; ARM64 is primary and x86_64 is an independent
-portability/fallback track. The two bounded tracks compare only
-offline package and lifecycle viability on two native-ISA virtualized environments:
+### Historical `006` evidence
 
-- macOS ARM64 host / Ubuntu 24.04 ARM64 UTM guest;
-- macOS x86_64 host / Ubuntu 24.04 x86_64 UTM guest.
+`G1-PI-COMPAT-006-20260826T125959Z-001`與manifest
+`34cb51b0bdb04a042281722db37514bce1daba234391fa79570482faa53d2208`永久保留。
+其10秒READY clock包含完整模型SHA，因此只證明packet implementation defect；不淘汰Gemma/Qwen、
+不供P credit、不得覆寫或same-revision重跑。
 
-It does not download or load a model, generate output, rank candidates, measure decision-bearing
-performance or produce Gate 1/Gate 2 evidence. Both environments use their pinned LiteRT-LM v0.16.0
-API wheel and the same predeclared checks. Three clean import/lifecycle repetitions are required;
-one controlled rerun is allowed only for an identified environment failure.
+### Replacement `007`
 
-The revised disposition accepts ARM64 `PASS` as sufficient for primary progress; x86_64 does not
-block it. Both owners may continue through approved workstation scopes using immutable predeclared
-commands and stop conditions without a Core round trip for each preparation step. Identity drift,
-missing authority, dirty/reused path, network fallback, unbounded process or cleanup failure stops
-that track. Both owners report before Technical Lead confirms a sanitized merge boundary back to
-`llm`; this does not itself start M2.
+`G1-PI-COMPAT-007`固定兩名candidate，不補第三名。Model以streaming SHA在任何READY clock前
+各驗證一次；artifact必須read-only，之後child只核對strict receipt與metadata。Wheel由v2 installer
+只驗證一次。三個purposeful lifecycle如下：
 
-| Field | Definition |
-| --- | --- |
-| Package | Current R5 target `G1-X86-PI-COMPAT-005`; platform disposition pending preflight decision |
-| Owner / approver | Developer + POC Test Controller / Technical Lead review / Core Designer ACK |
-| Dependency | Gate 0 recorded complete；M1 complete；dual-UTM preflight、resulting platform及affected packet revision取得Core ACK；artifact acquisition與pre-screen/Pi執行分別核准 |
-| Platform | Ubuntu 24.04 x86_64完整初篩；產品Pi 5 4GB / Debian 13 aarch64 bounded compatibility |
-| Entry / exit | Frozen lock + candidate/acquisition manifests → x86一次預選最多2名 → Pi PASS後置filter → Core written ACK |
-| Estimate | 3–5 working days after artifacts and both runners are available |
-| Re-estimation trigger | Candidate count/pairing/cycle changes、Pi預選者需補位、artifact/storage delta >25%、license或Pi incompatibility |
-| Runner / command | Authenticated selected-platform runner + immutable preselection + Pi compatibility + final filter；current R5見 `GATE1-PACKET-005.md`，後續版本依Core裁決 |
-| Evidence | Raw outside Git；x86/Pi/aggregate分離schemas與namespace，Gate 1 Pi evidence不得進2A |
-| Cleanup | Success requires SHUTDOWN ACK, exit 0 and absent process group; failure uses bounded group TERM→KILL→wait and records proof; unique raw dir |
-| Failure / no-go | x86 identity/gate/cleanup failure拒絕preselection；Pi FAIL/INCONCLUSIVE移除但不補第三名；zero retained產生no-go/change request |
+| Work package | P IDs | Single-source evidence | Exit |
+| --- | --- | --- | --- |
+| `G1-WP01-DEPLOY` | P11 | clean source、license、wheel/model/config SHA、offline install/import、native ELF/linkage | provenance與deploy全PASS |
+| `G1-WP02-NORMAL-STABILITY` | P1, P10A | READY<=10s、PING、同一Engine 20 sessions、5s cadence、PSS/system-used slope與median、thermal、clean shutdown | P1/P10A PASS |
+| `G1-WP03-CANCEL-RECOVERY` | P6, P7 | generation-active observation、CANCEL<=500ms或conditional、TERM/KILL/waitpid、rebuild/READY、recovery、fatal exit4 | P7 PASS；P6 PASS或valid conditional |
+| `G1-WP04-OFFLINE-RECEIPT` | P12 | pre/post offline/swap/throttling、log hygiene、artifact metadata unchanged、manifest | P12 PASS與cumulative receipt ready |
 
-Gate 1 selects proposed Pi candidates only. It produces neither Gate 2A provisional finalist nor
-final winner.
+Gate 1 candidate eligibility要求P1/P7/P10A/P11/P12 PASS且P6 PASS或由P7支持的
+`Conditional escalation`。User/reviewer/Core接受前結果不得對外成為finalist ACK。
 
-The x86 runner validates lock/candidate/acquisition identities, launches the exact bound argv and
-drives portable gates itself. The selector authenticates exact 60-case/P4 evidence, ranks x86 once
-and freezes at most two preselected candidates. Only those candidates may run the separate Pi
-compatibility packet；Pi PASS is a later eligibility filter and never changes the x86 ranking or
-backfills a third candidate. Protocol/fake regressions are test-only and do not start Gate 1.
+User要求reviewer先檢查design/source lock/negative tests，因此目前不得commit/push、送Core或執行Pi。
+Reviewer放行後，User允許execution與Core review並行；但Core ACK到位前不得關閉Gate或finalize P credit。
 
-Revision R5 preserves R4 log/P4/process-group/authentication controls and adds exact platform-keyed
-config projection. It remains an immutable review target; the pending preflight proposal does not
-rewrite it or authorize its real runners.
+## Gate 2A — remaining LLM-only acceptance
 
-## Gate 2A Work Packages — LLM-only Pi 5
+Entry為Core接受的Gate 1 cumulative receipt與至少一名finalist。Packet只跑P2/P3/P4/P5/P8：
 
-Common dependency：Gate 1 Core ACK、same frozen candidate/config/fixture/validator SHA、Pi 5 4GB
-mandatory environment（swap=0）、8GB informational environment、operator authorization。
+| Work package | P IDs | Optimized method | Exit |
+| --- | --- | --- | --- |
+| `G2A-WP01-OUTPUT` | P2, P3 | 10 valid cases ×3 model runs；10 invalid fixtures ×3 reference-normalizer runs；single persistent Engine；log scan | 60/60 exact dispositions、no leakage |
+| `G2A-WP02-PERFORMANCE` | P4 | cold 3；warmup 3；hot 20；raw/P50/P95、resource diagnostics | PASS或written Core threshold decision |
+| `G2A-WP03-TIMEOUT` | P5 | Pi-only continuous 512-token chunks、單一15–17s outer timeout、same-child health、standard rebuild | PASS；fast chunk固定CONTINUE，不產生early terminal |
+| `G2A-WP04-HISTORY` | P8 | 5 fixed nonce/trap single-turn conversations、KV envelope、hash-only evidence | PASS |
+| `G2A-WP05-PROVISIONAL` | cumulative | link accepted Gate 1 manifest；review all mandatory items | at most one provisional finalist |
 
-Gate 2A must use a new run ID、independent packet and `evidence/m4b/2a/` namespace. Gate 1 Pi
-compatibility output is not accepted as any P1～P12 input or completion proof.
+Gate 2A startup/cleanup只作remaining case的operation prerequisite，不重新宣告P1/P7。Read-only Gate 1
+model receipt可沿用；Git只需ancestor relation，lock/component digest才控制carry-forward。Metadata或
+execution-surface drift使affected identity Blocked，不能暗中rehash/repair。
 
-Common platform：Raspberry Pi 5 4GB mandatory；8GB runs use identical configuration and cannot
-repair a 4GB mandatory failure。
+## Gate 2B — combined final acceptance
 
-| Package | P IDs | Owner | Entry / exit | Estimate | Runner / evidence | Cleanup and failure/no-go |
-| --- | --- | --- | --- | ---: | --- | --- |
-| `G2A-WP01-PROVENANCE` | P11 | Developer prepares; Test Controller executes; Internal Tester confirms | Clean exact SHA, fixed source/model/config/license → reproducible setup manifest | 1 day/candidate | Planned `run_m4b_gate.py --gate 2A --cases P11`; `evidence/m4b/2a/<run>/p11` | Remove only run-owned temp; checksum/license/setup ambiguity = FAIL or INCONCLUSIVE by evidence validity |
-| `G2A-WP02-LIFECYCLE` | P1, P5, P6, P7 | Test Controller / Internal Tester | P11 valid, protocol/config frozen → lifecycle, timeout, Level 1/2 and Level 3 outcome evidence | 1.5 days/candidate | Planned runner cases `P1,P5,P6,P7`; `evidence/m4b/2a/<run>/lifecycle` | TERM→wait→KILL→waitpid→rebuild/READY; missing exit proof = FAIL; P6 conditional only when P7 all PASS |
-| `G2A-WP03-OUTPUT` | P2, P3, P8 | Test Controller / Internal Tester | Frozen 20-case catalog/validator → 100% schema/fallback/log and history isolation | 1 day/candidate | Gate 1 validator plus Pi adapter; `evidence/m4b/2a/<run>/output` | Any repetition, leakage or hidden history failure = FAIL; no averaging |
-| `G2A-WP04-PERF-SOAK-OFFLINE` | P4, P10A, P12 | Test Controller / Internal Tester | Prior 2A packages valid, cooling/power/token envelope frozen, offline approval → raw/P50/P95, 20 LLM-only sessions, offline proof | 2 days/candidate | Planned runner cases `P4,P10A,P12`; `evidence/m4b/2a/<run>/perf-soak-offline` | P4 miss requires Core decision; P10A/P12 mandatory fail causes no-go; cleanup/orphan proof required |
-| `G2A-WP05-PROVISIONAL` | 2A aggregate | Technical Lead recommends; Core Designer ACK | All required 2A results reviewed → at most one provisional finalist per reviewed candidate set | 0.5 day | 2A manifest and decision table | No final winner; unresolved mandatory result blocks provisional ACK |
+Entry為accepted Gate 1/2A receipts及Core-recorded Accepted Audio handoff ID/full SHA/executable kit。
+Surrogate只能debug，不能取得P9/P10B credit。
 
-Gate 2A mandatory set is P1/P2/P3/P5/P7/P8/P10A/P11/P12. P6 follows conditional escalation;
-P4 must be completely measured. 2A may issue a **provisional finalist ACK only**.
+P9與P10B共用一次4GB `swap=0` offline combined run，避免Audio/LLM重複load：先取idle/residency
+sample，再跑20個ASR fixture→LLM→TTS sessions（5s cadence），最後reverse shutdown與owner zero。
 
-Re-estimate Gate 2A when candidate/config/fixture SHA changes, Pi/cooling differs from packet,
-setup exceeds estimate by >25%, any mandatory case requires more than one rerun, or P4 needs a
-Core decision. A changed frozen input invalidates all affected packages.
+| Work package | P IDs | Exit |
+| --- | --- | --- |
+| `G2B-WP01-COMBINED` | P9, P10B | P9 system-used每sample<=3584MiB、no OOM/full PSI regression；P10B 20/20、<80°C、throttled=0、no crash/leak/stale/history/owner residue |
+| `G2B-WP02-FINAL` | cumulative | link Gate1 P1/P6/P7/P10A/P11/P12 + 2A P2/P3/P4/P5/P8 + 2B P9/P10B；User review後交Core final winner/no-go |
 
-## Gate 2B Work Packages — Accepted Audio + LLM
+8GB如執行只作identical-config informational sanity，不補救4GB failure。
 
-Common dependency：Gate 2A provisional finalist ACK and Core-recorded Accepted Audio POC final
-handoff ID/full SHA/kit. Missing Audio input is `Blocked`; surrogate is debug-only.
+## Estimates and re-estimation triggers
 
-| Package | P IDs | Owner | Entry / exit | Estimate | Runner / evidence | Cleanup and failure/no-go |
-| --- | --- | --- | --- | ---: | --- | --- |
-| `G2B-WP01-INTAKE-REGRESSION` | P1, P2, P5, P7, P8, P11, P12 regression | Developer verifies package; Test Controller runs; Internal Tester confirms | Same 2A candidate/config/fixture, Accepted Audio SHA/kit, 4GB swap=0 → baseline hashes and mandatory regression PASS | 1 day | Planned `run_m4b_gate.py --gate 2B --cases P1,P2,P5,P7,P8,P11,P12`; `evidence/m4b/2b/<run>/regression` | Baseline drift = Blocked; valid regression failure revokes final eligibility and returns to 2A review |
-| `G2B-WP02-RESIDENCY` | P9 | Test Controller / Internal Tester | Regression valid → Core parent + LLM + real ASR/TTS residency measurements | 1 day | Planned runner `--cases P9`; `evidence/m4b/2b/<run>/residency` | `system_used > 3584 MiB`、OOM、full pressure stall增加或swap≠0 = FAIL；sum RSS僅diagnostic；missing Audio = Blocked |
-| `G2B-WP03-COMBINED-SOAK` | P3 regression through catalog, P10B; P4 hot sanity | Test Controller / Internal Tester | P9 valid, same 20-case catalog → 20 ASR fixture→LLM→TTS sessions, 5s interval | 1.5 days | Planned runner `--cases P3,P4-HOT,P10B`; `evidence/m4b/2b/<run>/combined-soak` | ≥80°C, throttling, crash, leak, schema/fallback/log or owner residue = FAIL |
-| `G2B-WP04-FINAL-DECISION` | 2A + 2B aggregate | Technical Lead recommends; Core Designer decides | All mandatory 2A, regression, P9 and P10B reviewed → final winner ACK or no-go | 0.5 day | Combined manifest, full SHA and decision matrix | Only Core Designer may issue final winner; unresolved threshold or mandatory result blocks decision |
+| Stage | Expected scored cost per candidate | Re-estimate when |
+| --- | --- | --- |
+| Gate 1 | one model hash、3 Engine lifecycles、20+recovery generations、約100s fixed cadence | artifact/hash >120s、READY >10s、mandatory failure、environment drift |
+| Gate 2A | 30 model quality runs、30 cheap normalizer runs、26 performance runs、P5、P8 | execution-surface drift、P4 threshold decision、continuous-timeout implementation defect |
+| Gate 2B | one combined residency +20 sessions | Audio SHA/kit/process tree change、headroom<10%、mandatory fault |
 
-The fixed 2A regression subset covers lifecycle/framing, product schema, timeout, force-abort,
-history, provenance and offline behavior. P3 is exercised in P10B’s same catalog; P4 hot values are
-sanity evidence. Any runtime/model/config/protocol/fixture change triggers full affected 2A rerun.
+Valid mandatory `FAIL`不得retune/rerun。只有reviewed infrastructure/evidence `INCONCLUSIVE`可在新run ID
+做一次identical rerun。所有raw evidence在Git外，sanitized manifest不得包含model output、prompt/payload、
+binary、weights、credential或endpoint。
 
-Re-estimate Gate 2B when Accepted Audio SHA/kit changes, combined process tree differs, 4GB resource
-headroom falls below 10%, soak needs more than one rerun, or Core changes threshold semantics.
+## Current reviewer stop condition
 
-## Gate 2 Command Contract Self-test
-
-The committed runner currently validates the frozen case plan only and cannot execute hardware:
-
-```sh
-python3 poc_llm/tools/run_m4b_gate.py --gate 2A --cases P1,P2,P3,P4,P5,P6,P7,P8,P10A,P11,P12 --plan-only
-python3 poc_llm/tools/run_m4b_gate.py --gate 2B --cases P1,P2,P3,P4-HOT,P5,P7,P8,P9,P10B,P11,P12 --plan-only
-```
-
-Expected：exit `0`、`result=PLAN_VALID`、`execution_performed=false`。Removing `--plan-only`
-returns exit `3` / `Blocked` until an exact candidate SHA、hardware adapter、evidence destination
-and execution authorization are bound. This prevents the planning packet from being mistaken for
-Gate 2 evidence; implementation of the real hardware adapter is an explicit package entry dependency.
-
-## Currently Unresolved Core Decisions
-
-- User已提出ARM-first Pi transition：waive x86_64 WIP completion及原雙branch merge boundary，
-  以Gemma/Qwen 1.5B最多兩名進入獨立產品Pi compatibility，後續P1～P8/P10A/P11/P12只在
-  新Gate 2A Pi packet重跑。完整scope request與可攜工程經驗見
-  `DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION`；Core核准前本計畫原流程仍有效。
-- P5 1000ms workaround只證明timeout mechanism；正式15秒fixture/disposition仍待Core裁決，
-  必須在Pi Gate 2A packet凍結前解決。
-- ARM64 and x86_64 WIP owners must complete their bounded workstation results and Technical Lead must
-  confirm the sanitized integration boundary; R5 exact-SHA acceptance remains held until then.
-- Which Ubuntu pre-screen platform and affected append-only packet revision are accepted after the
-  preflight result.
-- P4 actual Pi measurements may require Core threshold disposition; method is frozen, acceptance is not.
-- A 4GB miss with valid 8GB results cannot become winner without an explicit Core contract exception.
-- Exact Accepted Audio final handoff ID/SHA/kit is pending and blocks Gate 2B.
-- Candidate/runtime/model/quantization pairings remain undecided until Gate 1 manifests are submitted.
+Review target必須包含：本plan、三份packet、Gate 1 runner/adapter/one-pass installer、schemas、fixtures、
+source lock、unit/negative tests、`006` defect disposition、exact proposed commit diff與未完成清單。
+Reviewer確認前下一個允許動作只有純本機read-only/static/unit validation及文件修正。

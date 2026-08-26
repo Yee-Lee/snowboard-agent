@@ -1,0 +1,24 @@
+{
+  "packet_id": "G1-PI-COMPAT-007",
+  "candidates": [
+    {
+      "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+      "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "model_size_bytes": 2588147712,
+      "standard_config": {
+        "path": "poc_llm/fixtures/gate1/pi-configs-v7/CAND-LRT-G4E2B-MOBILE-R1-standard.json",
+        "sha256": "7dbe5dd59466269bf7cb853842831c592d6849aa14b9b0d908d6ea53d0797320"
+      }
+    },
+    {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "model_sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
+      "model_size_bytes": 1597931520,
+      "standard_config": {
+        "path": "poc_llm/fixtures/gate1/pi-configs-v7/CAND-LRT-Q25-15B-Q8-R1-standard.json",
+        "sha256": "af179ed87a4aa63cfdcf4f95a9acdad3d52259923a5457573a816c2892a096c5"
+      }
+    }
+  ],
+  "backfill_forbidden": true
+}

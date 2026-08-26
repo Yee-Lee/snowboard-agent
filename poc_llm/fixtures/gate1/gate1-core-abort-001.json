@@ -1,0 +1,19 @@
+{
+  "fixture_id": "G1-CORE-ABORT-001",
+  "purpose": "Exercise cancel, force-abort and rebuild using the standard 16-token envelope",
+  "input": {
+    "perceptions": [
+      {
+        "kind": "read",
+        "status": "ok",
+        "text": "Write a detailed Traditional Chinese explanation of how a small offline assistant can remain calm, concise, and useful during a long conversation. Continue until the response limit."
+      }
+    ],
+    "pending_message_count": 0,
+    "capabilities": {
+      "perceptions": ["read", "listen"],
+      "actions": ["speak"],
+      "tools": []
+    }
+  }
+}

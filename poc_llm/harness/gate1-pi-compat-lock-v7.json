@@ -1,0 +1,37 @@
+{
+  "packet_id": "G1-PI-COMPAT-007",
+  "revision": "2026-08-26-r3",
+  "candidate_order": [
+    "CAND-LRT-G4E2B-MOBILE-R1",
+    "CAND-LRT-Q25-15B-Q8-R1"
+  ],
+  "candidate_set_sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a",
+  "runtime": {
+    "wheel_path": "/tmp/llm-poc-pi-artifacts-v1/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
+    "wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+  },
+  "artifacts": {
+    "packet": {"path": "poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md", "sha256": "a79d4ae2c5587c783e3dd05e17939026a3274d90a95dea055632a7025df1d5b4"},
+    "packet_tests": {"path": "poc_llm/tests/gate1/test_gate1_pi_packet_v7.py", "sha256": "192a7d5e0b0af09000c146c0ba83238fcb714a3e766e21368c883646f874fc4a"},
+    "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v7.py", "sha256": "09e27a71ac0c26bfa31723acf1132000e940f7af985523a45d3cd441d0440361"},
+    "adapter": {"path": "poc_llm/harness/litert_lm_pi_child_adapter_v2.py", "sha256": "9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
+    "pi_child_base": {"path": "poc_llm/harness/litert_lm_pi_child_adapter.py", "sha256": "345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
+    "child_base": {"path": "poc_llm/harness/litert_lm_child_adapter.py", "sha256": "d17c225a8d358275e6ce2b992f670ba7d8d73e35d73dc3da32b3a20a574f27ff"},
+    "contract_boundary": {"path": "poc_llm/harness/m1_contract_boundary.py", "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
+    "artifact_auth": {"path": "poc_llm/harness/pi_artifact_auth.py", "sha256": "db3a3e1c1beedcd33f2074a0ef7ec549c5bbae56e283fb9bb78e171d4073e328"},
+    "runtime_helpers": {"path": "poc_llm/harness/pi_runtime.py", "sha256": "9ddc1ae9070794454b01ecf65b2d3de8cf3fffcab4f41a59ed7194977d07919e"},
+    "runtime_helpers_v2": {"path": "poc_llm/harness/pi_runtime_v2.py", "sha256": "1f583738312dfd23a22c1f0a5e30b86cb0704dc07f18b2eed42a99d251e67d5d"},
+    "installer": {"path": "poc_llm/tools/install_gate1_arm64_wheel_v2.py", "sha256": "aa8c127ec5214e4926d12968b1e0a2d767f7934c141d144b7a392df124ee0e74"},
+    "config_schema": {"path": "poc_llm/contracts/m1/strict-config-pi-v2.schema.json", "sha256": "4fd0c7752ce18a21c7d03830618227567b301f1dc79116b34b206ddca62dff62"},
+    "protocol_schema": {"path": "poc_llm/contracts/m1/protocol-frame-pi.schema.json", "sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
+    "prompt_schema": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    "response_schema": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    "artifact_receipt_schema": {"path": "poc_llm/evidence/m4b/pi-artifact-auth-receipt-v2.schema.json", "sha256": "0e16445c0d35aafd0ab9746b4a9a8749d0a1e72864145ef010512824170f6852"},
+    "result_schema": {"path": "poc_llm/evidence/gate1/gate1-pi-compat-v7-result.schema.json", "sha256": "c4257532651df69374fecf75edf6a0256b2c2e17484c9bf2946f059bc7897942"},
+    "cumulative_receipt_schema": {"path": "poc_llm/evidence/m4b/gate1-cumulative-receipt-v7.schema.json", "sha256": "bfca46ee2e4ae07fdd2e777eae25af674a347501a312ef801d4885c69bc174aa"},
+    "abort_fixture": {"path": "poc_llm/fixtures/gate1/gate1-core-abort-001.json", "sha256": "5eb3f2c091d7f17da1017fbbf2ac36baca01ba97192d1f57443f6aa0f39ea02b"},
+    "catalog": {"path": "poc_llm/fixtures/gate2/gate2a-public-catalog-001.json", "sha256": "e34565a6d7281aa781b33bb5da29d57b65d6aa1197e0f1ad8df5efe31c241abf"},
+    "license_metadata": {"path": "poc_llm/fixtures/gate1/arm64-model-license-metadata-v1.json", "sha256": "49fefcf9d1986ff316c525b11ce6e0602885da61059fdf7e265897bc796fffef"}
+  }
+}

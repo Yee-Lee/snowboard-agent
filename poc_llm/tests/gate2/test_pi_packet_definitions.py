@@ -24,6 +24,8 @@ CONFIG_SCHEMA = ROOT / "poc_llm/contracts/m1/strict-config-pi.schema.json"
 PROMPT_SCHEMA = ROOT / "poc_llm/contracts/m1/prompt-input.schema.json"
 RESPONSE_SCHEMA = ROOT / "poc_llm/contracts/m1/response.schema.json"
 P5 = ROOT / "poc_llm/fixtures/gate2/p5-extreme-generation-001.json"
+P5_V2 = ROOT / "poc_llm/fixtures/gate2/p5-continuous-timeout-002.json"
+G2_PACKET_V2 = ROOT / "poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md"
 
 
 class FakeBackend:
@@ -75,6 +77,19 @@ class PiPacketDefinitionTests(unittest.TestCase):
         self.assertEqual(fixture["max_output_tokens"], 512)
         self.assertEqual(fixture["early_completion_disposition"], "INCONCLUSIVE")
         self.assertEqual(fixture["timeout_pass_window_ms"], [15000, 17000])
+
+    def test_p5_v2_predeclares_continuous_fast_model_disposition(self) -> None:
+        fixture = json.loads(P5_V2.read_text(encoding="utf-8"))
+        self.assertEqual(fixture["profile"], "p5-continuous-chunks-v1")
+        self.assertEqual(fixture["chunk_max_output_tokens"], 512)
+        self.assertEqual(fixture["timeout_ms"], 15000)
+        self.assertEqual(fixture["completed_chunk_disposition"], "CONTINUE")
+        self.assertTrue(fixture["result_before_timeout_forbidden"])
+        self.assertTrue(fixture["adaptive_fixture_forbidden"])
+        packet = G2_PACKET_V2.read_text(encoding="utf-8")
+        self.assertIn("M4B-P5-CONTINUOUS-TIMEOUT-002", packet)
+        self.assertIn("execution-surface SHA-256", packet)
+        self.assertIn("Git ancestor", packet)
 
     def test_gate1_lock_authenticates_every_repository_artifact(self) -> None:
         lock = json.loads(LOCK.read_text(encoding="utf-8"))
