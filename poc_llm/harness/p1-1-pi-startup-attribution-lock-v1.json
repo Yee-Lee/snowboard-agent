@@ -10,7 +10,7 @@
     "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "2cc049efb2705d91b13e5ce41cbb55f24c0a0d0ee5099fa0cd8829fb81463f26"},
     "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "104f40872dbf0b87bb557cb6a5266f9de0f46e4c0e795180d46021a3785e9136"},
     "result_schema": {"path": "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json", "sha256": "abdd764a267bb69003684e723504c1157cf92e100b4991612bd0c9229bd8ad29"},
-    "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "b327a6a591f74e9743ea8478aeb722ecb8d1641d67cc401c96fc9751a16edfce"},
+    "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "5dbe123f326e611a44fbc3df268e993bfdea2439f5f2181176e5e4c1328f6c35"},
     "candidate_set": {"path": "poc_llm/fixtures/gate1/pi-compat-candidates-v7.json", "sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a"}
   }
 }

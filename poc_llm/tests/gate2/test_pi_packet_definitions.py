@@ -16,7 +16,7 @@ from poc_llm.harness.pi_runtime import native_library_preflight, protocol_valida
 
 
 ROOT = Path(__file__).resolve().parents[3]
-LOCK = ROOT / "poc_llm/harness/gate1-pi-compat-lock-v6.json"
+LOCK = ROOT / "poc_llm/harness/gate1-pi-compat-lock-v7.json"
 G2_LOCK = ROOT / "poc_llm/harness/gate2a-pi-lock-v1.json"
 G2_RUNNER = ROOT / "poc_llm/tools/run_gate2a_pi.py"
 PROTOCOL = ROOT / "poc_llm/contracts/m1/protocol-frame-pi.schema.json"
@@ -93,7 +93,7 @@ class PiPacketDefinitionTests(unittest.TestCase):
 
     def test_gate1_lock_authenticates_every_repository_artifact(self) -> None:
         lock = json.loads(LOCK.read_text(encoding="utf-8"))
-        self.assertEqual(lock["packet_id"], "G1-PI-COMPAT-006")
+        self.assertEqual(lock["packet_id"], "G1-PI-COMPAT-007")
         self.assertEqual(lock["candidate_order"], ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"])
         for item in lock["artifacts"].values():
             path = ROOT / item["path"]

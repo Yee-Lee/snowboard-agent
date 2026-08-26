@@ -13,7 +13,7 @@ import subprocess
 import time
 from typing import Any, TextIO
 
-from jsonschema import Draft202012Validator, RefResolver
+from jsonschema import Draft202012Validator
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -151,8 +151,20 @@ def target_preflight(expected_sha: str) -> dict[str, Any]:
 
 def protocol_validator(protocol_schema: Path, prompt_schema: Path, response_schema: Path) -> Draft202012Validator:
     protocol = load(protocol_schema)
-    store = {item["$id"]: item for item in (protocol, load(prompt_schema), load(response_schema))}
-    return Draft202012Validator(protocol, resolver=RefResolver.from_schema(protocol, store=store))
+    prompt = load(prompt_schema)
+    response = load(response_schema)
+    for schema in (prompt, response):
+        schema.pop("$schema", None)
+        schema.pop("$id", None)
+    protocol["$defs"]["prompt_input"] = prompt
+    protocol["$defs"]["response"] = response
+    protocol["$defs"]["generate"]["properties"]["input"] = {
+        "$ref": "#/$defs/prompt_input"
+    }
+    protocol["$defs"]["result"]["properties"]["response"] = {
+        "$ref": "#/$defs/response"
+    }
+    return Draft202012Validator(protocol)
 
 
 def read_frame(stream: TextIO, timeout_s: float, validator: Draft202012Validator) -> dict[str, Any]:
