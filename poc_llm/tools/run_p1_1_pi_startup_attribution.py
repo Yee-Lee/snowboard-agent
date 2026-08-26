@@ -130,7 +130,7 @@ def main() -> int:
         "execution_sha": args.execution_sha,
         "environment": {},
         "environment_post": {},
-        "profiles": ["baseline"],
+        "profiles": [],
         "candidates": [],
         "result": "INCONCLUSIVE",
         "violations": [],
@@ -165,14 +165,17 @@ def main() -> int:
             locked_artifact(item)
         candidates = load(locked["candidate_set"])["candidates"]
         profiles = load(locked["profiles"])
+        profile_definitions = profiles.get("profiles", [])
+        profile_ids = [item.get("profile_id") for item in profile_definitions]
         if (
             profiles.get("packet_id") != PACKET_ID
             or profiles.get("gate_credit") != "FORBIDDEN"
             or profiles.get("candidate_order") != [item["candidate_id"] for item in candidates]
-            or [item["profile_id"] for item in profiles.get("profiles", [])]
-            != result["profiles"]
+            or len(profile_ids) != 1
+            or profile_ids[0] not in {"baseline", "bounded_context"}
         ):
             raise RuntimeError("P1.1 frozen profile set mismatch")
+        result["profiles"] = profile_ids
 
         runtime = lock["runtime"]
         install = subprocess.run(
@@ -234,9 +237,19 @@ def main() -> int:
             )
             candidate_result = {"candidate_id": candidate_id, "observations": []}
             result["candidates"].append(candidate_result)
-            for profile in result["profiles"]:
+            for profile_definition in profile_definitions:
+                profile = profile_definition["profile_id"]
+                expected_max_num_tokens = (
+                    None
+                    if profile == "baseline"
+                    else config_value["max_input_tokens"]
+                    + config_value["max_output_tokens"]
+                )
+                if profile_definition.get("max_num_tokens") != expected_max_num_tokens:
+                    raise RuntimeError("P1.1 profile/context envelope mismatch")
                 observation: dict[str, Any] = {
                     "profile_id": profile,
+                    "engine_max_num_tokens": expected_max_num_tokens,
                     "cache_drop_advice_ms": cache_drop_advice_ms,
                     "artifact_authentication_ms": model_record[
                         "authentication_duration_ms"

@@ -25,7 +25,7 @@ def pop_probe_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "--p1-1-profile",
-        choices=("baseline",),
+        choices=("baseline", "bounded_context"),
         required=True,
     )
     values, remaining = parser.parse_known_args()
@@ -49,6 +49,10 @@ class StartupProbeBackend(OriginalBackend):
 
         def engine(*args: Any, **kwargs: Any):
             mark("engine_start")
+            if probe_args.p1_1_profile == "bounded_context":
+                kwargs["max_num_tokens"] = (
+                    config["max_input_tokens"] + config["max_output_tokens"]
+                )
             value = original_engine(*args, **kwargs)
             mark("engine_end")
             return value

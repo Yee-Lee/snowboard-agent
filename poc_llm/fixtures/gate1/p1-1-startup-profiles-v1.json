@@ -9,14 +9,13 @@
   ],
   "profiles": [
     {
-      "profile_id": "baseline",
-      "max_num_tokens": null,
+      "profile_id": "bounded_context",
+      "max_num_tokens": 144,
       "enable_benchmark": true,
-      "purpose": "Measure the unchanged frozen Engine construction path."
+      "purpose": "Measure only the contract-bounded Engine context against the completed baseline."
     }
   ],
   "deferred_until_after_baseline_analysis": [
-    "bounded_context",
     "bounded_context_no_benchmark",
     "runtime_owned_registry_or_signature_controls_if_executable"
   ]

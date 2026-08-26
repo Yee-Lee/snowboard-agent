@@ -13,7 +13,10 @@
     "environment": {"type": "object"},
     "environment_post": {"type": "object"},
     "profiles": {
-      "const": ["baseline"]
+      "oneOf": [
+        {"const": ["baseline"]},
+        {"const": ["bounded_context"]}
+      ]
     },
     "candidates": {
       "type": "array",
@@ -42,9 +45,10 @@
     "observation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["profile_id", "cache_drop_advice_ms", "artifact_authentication_ms", "eventual_ready_ms", "stage_ms", "ping_pong", "generation_terminal", "shutdown_ack", "cleanup", "p1_contract_fit", "diagnostic_result"],
+      "required": ["profile_id", "engine_max_num_tokens", "cache_drop_advice_ms", "artifact_authentication_ms", "eventual_ready_ms", "stage_ms", "ping_pong", "generation_terminal", "shutdown_ack", "cleanup", "p1_contract_fit", "diagnostic_result"],
       "properties": {
-        "profile_id": {"const": "baseline"},
+        "profile_id": {"enum": ["baseline", "bounded_context"]},
+        "engine_max_num_tokens": {"type": ["integer", "null"], "minimum": 1},
         "cache_drop_advice_ms": {"type": "number", "minimum": 0},
         "artifact_authentication_ms": {"type": "number", "minimum": 0},
         "eventual_ready_ms": {"type": ["number", "null"], "minimum": 0},

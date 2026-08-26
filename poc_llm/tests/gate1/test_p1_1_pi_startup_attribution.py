@@ -63,11 +63,14 @@ class P11PiStartupAttributionTests(unittest.TestCase):
         self.assertEqual(profiles["gate_credit"], "FORBIDDEN")
         self.assertEqual(
             [item["profile_id"] for item in profiles["profiles"]],
-            ["baseline"],
+            ["bounded_context"],
         )
-        self.assertIsNone(profiles["profiles"][0]["max_num_tokens"])
+        self.assertEqual(profiles["profiles"][0]["max_num_tokens"], 144)
         self.assertTrue(profiles["profiles"][0]["enable_benchmark"])
-        self.assertIn("bounded_context", profiles["deferred_until_after_baseline_analysis"])
+        self.assertIn(
+            "bounded_context_no_benchmark",
+            profiles["deferred_until_after_baseline_analysis"],
+        )
 
     def test_packet_forbids_credit_and_engine_after_ready(self) -> None:
         packet = PACKET.read_text(encoding="utf-8")
@@ -76,6 +79,8 @@ class P11PiStartupAttributionTests(unittest.TestCase):
         self.assertIn("without a removal recommendation", packet)
         self.assertIn("fresh run-scoped receipt", packet)
         self.assertIn("never reused", packet)
+        self.assertIn("max_num_tokens=144", packet)
+        self.assertIn("comparison must start after a Pi reboot", packet)
 
     def test_viability_requires_ready_generation_and_cleanup(self) -> None:
         viable = {
