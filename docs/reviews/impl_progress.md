@@ -19,13 +19,13 @@
 | **Ch 09** | [ch09_action_payload.md](../implement/ch09_action_payload.md) | Done | Designer | LLMResponse action_payload schema |
 | **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
 | **Ch 11** | [ch11_error_logging.md](../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
-| **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Reviewer approved — Tester active | Designer | `IR_review_M4A_I`已Resolved並核准完整M4a scope；Tester補完Gate 3 test spec中 |
+| **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Design + test-spec coverage approved — Developer active | Designer | `IR_review_M4A_I`與`TR_spec_M4_I`均Resolved；Developer可建立M4A-WP-09～13 |
 | **Audio Protocol v1** | [protocol.md](../protocol.md) | Audio v1 Reviewer approved | Designer | ASR/TTS private child framing、identity、cancel、terminal與cleanup schema已核准；LLM部分仍Pending |
 
 ## 跨章節 Gate 與備註
 
 * 需確保 `ch01` 中定義的欄位能支援 `ch04` SM 的 Guard 邏輯。
-* M4a production implementation須等待本章Reviewer通過，且Tester修訂`test_spec_M4.md`後由Designer完成coverage sign-off；Accepted Audio POC evidence不取代Core exact-SHA驗收。
+* M4a production design與test-spec coverage sign-off均已完成；Accepted Audio POC evidence仍不取代Core exact-SHA驗收。
 
 ## M4a Designer handoff（2026-08-26）
 
@@ -41,10 +41,14 @@ Review scope固定為：
 
 Reviewer 已完成複審，並於 `IR_review_M4A_I.md` 中明確核准了完整 M4a handoff scope (包含 `model_spec.md`、`protocol.md`、`ch_m4a_audio_production.md` 與 `ch10_config.md`)，該審查單已 Resolved 並歸檔。
 
-### Tester — active (waiting for test spec revision)
+### Test spec — coverage resolved
 
-`docs/reviews/TR_spec_M4_I.md` 的 entry dependency 已滿足。Tester 現在應保留既有 `M4-REG-001` 並修訂 `docs/test_spec/test_spec_M4.md`，覆蓋該單列出的 13 個 M4A Test ID；完成後將 TR 狀態改為 `Revised` 交 Designer 作 100% coverage sign-off。
+`docs/reviews/TR_spec_M4_I.md`已Resolved。Tester第二次submission後，USER明確指示Designer
+接手剩餘修訂；Designer已直接補齊runner lifecycle/schema、READY identity、fixed runtime、
+real-child recovery、composition/RM與product preflight，並完成T1～T12終局核對。
 
-### Developer — queued after TR resolution
+### Developer — active：建立M4A-WP-09～13
 
-只有`TR_spec_M4_I`由Designer標`Resolved`後，Developer才更新`docs/reviews/dev_progress_M4.md`，估點並執行`M4A-WP-09`～`M4A-WP-13`。首個production implementation仍只跑主要Python minor與affected tests；建立provisional candidate commit前另依workflow取得USER確認。
+Developer現在更新`docs/reviews/dev_progress_M4.md`，估點並執行`M4A-WP-09`～
+`M4A-WP-13`。首個production implementation仍只跑主要Python minor與affected tests；
+建立provisional candidate commit前另依workflow取得USER確認。
