@@ -68,6 +68,11 @@ def warm_model(path: Path) -> float:
     return round((time.monotonic() - started) * 1000, 3)
 
 
+def fresh_install_paths() -> tuple[Path, Path]:
+    parent = Path(tempfile.mkdtemp(prefix="p1-1-install-", dir="/tmp"))
+    return parent, parent / "runtime"
+
+
 def stage_durations(stderr_path: Path, process_started_ns: int) -> dict[str, float]:
     values: dict[str, int] = {}
     for line in stderr_path.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -121,7 +126,7 @@ def main() -> int:
     }
     run_root = args.evidence_root / args.run_id
     raw_root = run_root / "raw"
-    install_root = Path(tempfile.mkdtemp(prefix="p1-1-install-", dir="/tmp"))
+    install_parent, install_root = fresh_install_paths()
     try:
         run_root.mkdir(parents=True, exist_ok=False)
         raw_root.mkdir()
@@ -308,7 +313,7 @@ def main() -> int:
         result["violations"].append(f"{type(exc).__name__}: {exc}")
         result["result"] = "INCONCLUSIVE"
     finally:
-        shutil.rmtree(install_root)
+        shutil.rmtree(install_parent)
         run_root.mkdir(parents=True, exist_ok=True)
         (run_root / "p1-1-sanitized.json").write_text(
             json.dumps(result, sort_keys=True, indent=2), encoding="utf-8"

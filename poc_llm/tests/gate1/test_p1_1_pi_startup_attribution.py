@@ -8,6 +8,7 @@ import unittest
 from jsonschema import Draft202012Validator
 
 from poc_llm.tools.run_p1_1_pi_startup_attribution import (
+    fresh_install_paths,
     observation_viable,
     stage_durations,
 )
@@ -21,6 +22,15 @@ LOCK = ROOT / "poc_llm/harness/p1-1-pi-startup-attribution-lock-v1.json"
 
 
 class P11PiStartupAttributionTests(unittest.TestCase):
+    def test_offline_installer_receives_a_nonexistent_target(self) -> None:
+        parent, target = fresh_install_paths()
+        try:
+            self.assertTrue(parent.is_dir())
+            self.assertFalse(target.exists())
+            self.assertEqual(target.parent, parent)
+        finally:
+            parent.rmdir()
+
     def test_lock_authenticates_every_p1_1_artifact(self) -> None:
         import hashlib
 
