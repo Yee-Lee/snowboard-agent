@@ -103,3 +103,6 @@ The Reviewer approved both corrections in `ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROV
 reported that approval in the active execution thread, satisfying the pre-execution review condition.
 The remaining ordering requirement is to publish the reviewed source and bind its exact SHA before
 starting the Pi command.
+
+Reviewed execution source: `b5690bbbef50ce37af356fd29b88ab920207c38e`; execution-surface
+SHA-256: `480adb939a6bfc359dfc2a10c9d478cece94df8fd24f8c48bb810d902e06d8d2`.

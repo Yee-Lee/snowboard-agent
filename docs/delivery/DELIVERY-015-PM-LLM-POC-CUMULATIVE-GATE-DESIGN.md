@@ -3,8 +3,9 @@
 - **Date**: 2026-08-26
 - **From**: LLM POC Team (M4b)
 - **To**: User / Reviewer; after approval, Core Designer
-- **Status**: `R2 REVIEW APPROVED / EXACT-SHA COMMIT PENDING / NOT DELIVERED`
-- **Post-review exact source SHA**: `<PENDING-COMMIT>`
+- **Status**: `R2 REVIEW APPROVED / READY TO RELAY / NOT YET DELIVERED`
+- **Post-review exact source SHA**: `b5690bbbef50ce37af356fd29b88ab920207c38e`
+- **Execution-surface SHA-256**: `480adb939a6bfc359dfc2a10c9d478cece94df8fd24f8c48bb810d902e06d8d2`
 - **Replacement Gate 1 packet**: `G1-PI-COMPAT-007`
 - **Defective historical attempt**: `G1-PI-COMPAT-006-20260826T125959Z-001`
 
@@ -44,7 +45,8 @@ without adaptive fixtures or a replacement-disposition round.
 1. Independent reviewer checks the design packet, runner, schemas, lock, fixtures, failure semantics
    and pure unit/negative tests.
 2. User accepts or rejects the reviewer finding.
-3. Only after acceptance does the POC commit/push and replace `<PENDING-COMMIT>` with the exact SHA.
+3. The reviewed source is committed as `b5690bbbef50ce37af356fd29b88ab920207c38e`; the Pi must
+   execute that exact clean checkout even though later documentation commits advance the branch.
 4. Core receives this delivery and returns one ACK covering the cumulative boundary, exact SHA and
    v6 supersession. User may separately authorize Pi execution before that ACK arrives.
 5. Gate 1 cannot close and P credit cannot become final until the ACK binds the reviewed evidence
