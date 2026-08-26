@@ -1,6 +1,6 @@
 # M4a Accepted Audio production integration
 
-狀態：Designer draft complete；待 Reviewer design review 與 Tester coverage sign-off。
+狀態：Reviewer design approval complete；Tester test-spec revision active，後續待 Designer coverage sign-off。
 
 本章將 `audio_m4` Accepted reference 落成 Core Gate 3 可實作的 ASR/TTS adapter、runtime identity、failure convergence 與驗收映射。權威 baseline 見 `docs/model_spec.md`，child wire schema 見 `docs/protocol.md`；既有公開 Protocol、Listen / Speak worker 與 Audio HAL 契約不變。
 
@@ -196,6 +196,7 @@ Real-driver exact values：
 ### 7.2 Factory / RM
 
 - `make_asr_adapter`與`make_tts_adapter`新增real branch且lazy import。
+- 對外factory簽名維持`make_asr_adapter(cfg: ASRConfig) -> ASRAdapter`與`make_tts_adapter(cfg: TTSConfig) -> TTSAdapter`，composition不得額外建立或傳入lock。當driver分別為`whispercpp`或`sherpa_matcha`時，factory從`cfg.artifact_lock_path`讀取tracked product lock，以不import任何native engine的parser完成schema、路徑與Accepted identity驗證，建立`AudioArtifactLock`後再lazy import對應adapter class，並呼叫`WhisperCppASRAdapter(cfg, lock=lock)`或`MatchaTTSAdapter(cfg, lock=lock)`。lock缺失、不可讀、schema錯誤或identity不符時，在建立child、Audio HAL或work artifact前fail closed；`mock`／`null`branch不得讀取lock。
 - Composition先建立adapter owner，再將同一owner作為backend `ResourceSpec.instance`與`recovery_hook`；real backend spec設`recoverable=True`，mock/null維持不可recover且force-abort report為空。
 - Existing worker dependencies不變。Adapter `start/stop`需idempotent，以容納backend與worker lifecycle既有呼叫順序。
 - Recovery hook只交換owner內部child handle；不得回replacement instance，不修改capability map，不publish public event。
@@ -239,7 +240,9 @@ Portable doubles不得importreal engine；Pi cards指向同一provisional/frozen
 
 ## 10. Required inheritance / delta index
 
-Developer delivery建立`docs/outsource/evidence/<M4-delivery>/m4a/inheritance.json`，至少逐列涵蓋：candidate/provenance、P1～P12及Audio internal M4 20-session/failure/offline。Schema欄位：
+Developer只負責在`scripts/`提供inheritance generator／template及其`tests/`驗證，不得直接建立或修改Tester-owned的`docs/outsource/evidence/`。Generator接受外部指定的40-character candidate SHA、POC locator與Gate 3 result locator，依下列schema輸出到caller明確指定的新路徑；Developer fast loop只使用temporary output。
+
+Tester在同一產品candidate完成Gate 3執行後，使用該generator產生並核對最終`docs/outsource/evidence/<M4-delivery>/m4a/inheritance.json`。Tester是該正式檔案唯一writer，且至少逐列涵蓋candidate/provenance、P1～P12及Audio internal M4 20-session/failure/offline：
 
 ```json
 {
@@ -257,7 +260,7 @@ Developer delivery建立`docs/outsource/evidence/<M4-delivery>/m4a/inheritance.j
 }
 ```
 
-`product_sha`由外部candidate runner注入，不從branch HEAD推導。缺欄、混SHA、`delta_result=PASS`但locator不存在，或只有「沿用POC」均fail closed。
+`product_sha`由Tester執行的外部candidate runner注入，不從branch HEAD推導。Generator不得自行宣告PASS或把development output寫入正式evidence目錄；缺欄、混SHA、`delta_result=PASS`但locator不存在，或只有「沿用POC」均fail closed。
 
 ## 11. Developer work packages
 
@@ -267,7 +270,7 @@ Developer delivery建立`docs/outsource/evidence/<M4-delivery>/m4a/inheritance.j
 | M4A-WP-10 | common framed child owner + ASR supervisor/adapter | portable protocol/lifecycle tests；Pi ASR format/semantic smoke |
 | M4A-WP-11 | Matcha worker/adapter + AudioOutput integration | portable framing/lifecycle tests；Pi PCM/playback smoke |
 | M4A-WP-12 | config/factory/composition/RM recovery wiring | strict config、lazy import、ASR/TTS recovery barrier regressions |
-| M4A-WP-13 | Gate 3 runner + inheritance index + offline/resource/notice delivery | same exact SHA evidence ready for Tester |
+| M4A-WP-13 | Gate 3 runner + inheritance generator/template + offline/resource/notice support | generator與schema regression全綠，same-SHA inputs ready for Tester；不寫正式evidence |
 
 Developer先更新`docs/reviews/dev_progress_M4.md`估點與狀態，再修改`src/`/`tests/`。Reviewer通過本設計且Designer簽核Tester revised `test_spec_M4.md`之前，不進入production implementation。
 

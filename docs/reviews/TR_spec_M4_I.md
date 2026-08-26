@@ -9,8 +9,8 @@ status: "Open"
 - **Milestone**: M4a Accepted Audio production integration
 - **Request date**: 2026-08-26
 - **Target**: `docs/test_spec/test_spec_M4.md`
-- **Entry dependency**: Reviewer approval of `docs/model_spec.md`、`docs/protocol.md` Audio v1、`docs/implement/ch_m4a_audio_production.md`與`docs/implement/ch10_config.md` M4a extension
-- **Activation**: Queued；Tester在`IR_review_IV` Resolved前不修改test spec
+- **Entry dependency**: Fulfilled — `IR_review_M4A_I`已Resolved並明確核准`docs/model_spec.md`、`docs/protocol.md` Audio v1、`docs/implement/ch_m4a_audio_production.md`、`docs/implement/ch10_config.md` M4a extension及跨章節一致性
+- **Activation**: Active — Tester現在修訂`docs/test_spec/test_spec_M4.md`；完成後將本單改為`Revised`交Designer作coverage sign-off
 - **Decision**: `REVISION REQUIRED BEFORE DEVELOPMENT`
 
 ## 1. Blocking finding: current M4 spec does not cover M4a

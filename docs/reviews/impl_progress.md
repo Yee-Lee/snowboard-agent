@@ -17,10 +17,10 @@
 | **Ch 07** | [ch07_external_message.md](../implement/ch07_external_message.md) | Done | Designer | External message buffer |
 | **Ch 08** | [ch08_display_arbiter.md](../implement/ch08_display_arbiter.md) | Done | Designer | Display 仲裁層協定 |
 | **Ch 09** | [ch09_action_payload.md](../implement/ch09_action_payload.md) | Done | Designer | LLMResponse action_payload schema |
-| **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension draft | Designer | 基礎Config schema已定稿；M4a real ASR/TTS fields與strict profile待同production design審查 |
+| **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
 | **Ch 11** | [ch11_error_logging.md](../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
-| **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Designer complete — Reviewer next | Designer | `audio_m4` Accepted reference已固定；Core Gate 3 ASR/TTS、runtime isolation、recovery與evidence mapping |
-| **Audio Protocol v1** | [protocol.md](../protocol.md) | Designer complete — Reviewer next | Designer | ASR/TTS private child framing、identity、cancel、terminal與cleanup schema；LLM部分仍Pending |
+| **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Reviewer approved — Tester active | Designer | `IR_review_M4A_I`已Resolved並核准完整M4a scope；Tester補完Gate 3 test spec中 |
+| **Audio Protocol v1** | [protocol.md](../protocol.md) | Audio v1 Reviewer approved | Designer | ASR/TTS private child framing、identity、cancel、terminal與cleanup schema已核准；LLM部分仍Pending |
 
 ## 跨章節 Gate 與備註
 
@@ -29,7 +29,7 @@
 
 ## M4a Designer handoff（2026-08-26）
 
-### Reviewer — next owner
+### Reviewer — approval complete
 
 Review scope固定為：
 
@@ -39,11 +39,11 @@ Review scope固定為：
 4. `docs/implement/ch10_config.md` M4a extension；
 5. 上述文件對Ch 2b / Ch 5 / Ch 6與`docs/milestones/M4.md`的直接一致性。
 
-Reviewer依workflow建立下一輪`docs/reviews/IR_review_IV.md`（requestor Reviewer、owner Designer）。Exit是Blocking全數Resolved並歸檔該輪；不得把M4b/LLM或M4c內容加入本次Audio design gate。
+Reviewer 已完成複審，並於 `IR_review_M4A_I.md` 中明確核准了完整 M4a handoff scope (包含 `model_spec.md`、`protocol.md`、`ch_m4a_audio_production.md` 與 `ch10_config.md`)，該審查單已 Resolved 並歸檔。
 
-### Tester — queued after IR resolution
+### Tester — active (waiting for test spec revision)
 
-`docs/reviews/TR_spec_M4_I.md`已Open但entry dependency尚未滿足。IR resolved後，Tester保留既有`M4-REG-001`並修訂`docs/test_spec/test_spec_M4.md`，覆蓋該單列出的13個M4A Test ID；完成後將TR狀態改`Revised`交Designer作100% coverage sign-off。
+`docs/reviews/TR_spec_M4_I.md` 的 entry dependency 已滿足。Tester 現在應保留既有 `M4-REG-001` 並修訂 `docs/test_spec/test_spec_M4.md`，覆蓋該單列出的 13 個 M4A Test ID；完成後將 TR 狀態改為 `Revised` 交 Designer 作 100% coverage sign-off。
 
 ### Developer — queued after TR resolution
 
