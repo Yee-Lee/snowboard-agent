@@ -10,9 +10,9 @@
   "profiles": [
     {
       "profile_id": "bounded_context",
-      "max_num_tokens": 144,
+      "max_num_tokens": 192,
       "enable_benchmark": true,
-      "purpose": "Measure only the contract-bounded Engine context against the completed baseline."
+      "purpose": "Measure the census-bounded Engine context against the completed baseline and rejected 144-token variant."
     }
   ],
   "deferred_until_after_baseline_analysis": [

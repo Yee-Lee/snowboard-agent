@@ -1,14 +1,15 @@
 {
   "packet_id": "P1.1-PI-STARTUP-ATTRIBUTION-001",
-  "revision": "2026-08-26-bounded-context-comparison",
+  "revision": "2026-08-26-census-bounded-context-192",
   "diagnostic_only": true,
   "gate_credit": "FORBIDDEN",
   "artifacts": {
-    "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "0e1a8146cfcf87b4fa6706177a13d737602699197f4db19020a4d6eebdeaa4f1"},
-    "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "65f763f6f59c95daeeaf93da1a5d8fbf4b31c427d2f7e72c46136a318485dcd1"},
-    "probe": {"path": "poc_llm/harness/p1_1_pi_startup_probe.py", "sha256": "92ddb43a0f12470284871847862ed2b16c528b4f18bd8c608c385f47d0dae42e"},
-    "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "26b0ccb156bbb67f390a869b2abedfb598313d599275ccc66239b8e40123c94a"},
-    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "b99992180c97e11577126dc3cb51635f5bb11594c1615b62abf4b995dcf24b85"},
+    "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "f5f0d1b0e581822eabdfbdc835bc796647453dae9dfbb87798a456c70074efe0"},
+    "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "56e2d562336970b1f07af79e68950b630c1947fb9a01f1c355778f908266d9be"},
+    "context_census": {"path": "poc_llm/fixtures/gate1/p1-1-context-token-census-v1.json", "sha256": "a2bef9780ec6f483281e68725c5ac5703d03d5baee46fa4484bd1815d757421e"},
+    "probe": {"path": "poc_llm/harness/p1_1_pi_startup_probe.py", "sha256": "2876171cf9b7f54a0fb63a19c117a652d46f7fc19f02177172abd7436d8b9bd7"},
+    "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "483df56eb1c5f9cab66d7a6c192b23a22c62d72f83e686abab61cef5edf32c90"},
+    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "96ef15b427917a7b60c1b3aac3c6495ae376af03c5ad1c7a940057ba9b79a865"},
     "result_schema": {"path": "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json", "sha256": "11155ed58dc38188d9fe52f07d46347c4e784659daf280e37dabef1879412714"},
     "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "5dbe123f326e611a44fbc3df268e993bfdea2439f5f2181176e5e4c1328f6c35"},
     "candidate_set": {"path": "poc_llm/fixtures/gate1/pi-compat-candidates-v7.json", "sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a"}

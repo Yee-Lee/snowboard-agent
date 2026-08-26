@@ -28,6 +28,7 @@ def pop_probe_args() -> argparse.Namespace:
         choices=("baseline", "bounded_context"),
         required=True,
     )
+    parser.add_argument("--p1-1-max-num-tokens", type=int)
     values, remaining = parser.parse_known_args()
     sys.argv[1:] = remaining
     return values
@@ -50,9 +51,9 @@ class StartupProbeBackend(OriginalBackend):
         def engine(*args: Any, **kwargs: Any):
             mark("engine_start")
             if probe_args.p1_1_profile == "bounded_context":
-                kwargs["max_num_tokens"] = (
-                    config["max_input_tokens"] + config["max_output_tokens"]
-                )
+                if probe_args.p1_1_max_num_tokens is None:
+                    raise ValueError("bounded context profile is missing max_num_tokens")
+                kwargs["max_num_tokens"] = probe_args.p1_1_max_num_tokens
             value = original_engine(*args, **kwargs)
             mark("engine_end")
             return value

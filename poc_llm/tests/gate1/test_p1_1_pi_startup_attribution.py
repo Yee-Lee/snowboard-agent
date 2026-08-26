@@ -19,6 +19,7 @@ from poc_llm.tools.run_p1_1_pi_startup_attribution import (
 
 ROOT = Path(__file__).resolve().parents[3]
 PROFILES = ROOT / "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json"
+CENSUS = ROOT / "poc_llm/fixtures/gate1/p1-1-context-token-census-v1.json"
 PACKET = ROOT / "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md"
 SCHEMA = ROOT / "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json"
 LOCK = ROOT / "poc_llm/harness/p1-1-pi-startup-attribution-lock-v1.json"
@@ -65,7 +66,7 @@ class P11PiStartupAttributionTests(unittest.TestCase):
             [item["profile_id"] for item in profiles["profiles"]],
             ["bounded_context"],
         )
-        self.assertEqual(profiles["profiles"][0]["max_num_tokens"], 144)
+        self.assertEqual(profiles["profiles"][0]["max_num_tokens"], 192)
         self.assertTrue(profiles["profiles"][0]["enable_benchmark"])
         self.assertIn(
             "bounded_context_no_benchmark",
@@ -79,8 +80,20 @@ class P11PiStartupAttributionTests(unittest.TestCase):
         self.assertIn("without a removal recommendation", packet)
         self.assertIn("fresh run-scoped receipt", packet)
         self.assertIn("never reused", packet)
-        self.assertIn("max_num_tokens=144", packet)
+        self.assertIn("max_num_tokens=192", packet)
         self.assertIn("comparison must start after a Pi reboot", packet)
+
+    def test_context_census_covers_catalog_and_selects_192(self) -> None:
+        census = json.loads(CENSUS.read_text(encoding="utf-8"))
+        self.assertTrue(census["diagnostic_only"])
+        self.assertEqual(census["gate_credit"], "FORBIDDEN")
+        requirements = [
+            item["required_total_tokens"]
+            for item in census["candidates"].values()
+        ]
+        self.assertEqual(max(requirements), 187)
+        self.assertEqual(census["frozen_engine_max_num_tokens"], 192)
+        self.assertGreaterEqual(census["frozen_engine_max_num_tokens"], max(requirements))
 
     def test_viability_requires_ready_generation_and_cleanup(self) -> None:
         viable = {

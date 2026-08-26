@@ -1,0 +1,23 @@
+{
+  "census_id": "P1.1-CONTEXT-TOKEN-CENSUS-001",
+  "diagnostic_only": true,
+  "gate_credit": "FORBIDDEN",
+  "method": "litert-conversation-render-then-engine-tokenize",
+  "catalog": "M4B-G2A-P2P3-001",
+  "runtime_added_token_margin": 1,
+  "max_output_tokens": 16,
+  "candidates": {
+    "CAND-LRT-G4E2B-MOBILE-R1": {
+      "rendered_input_max_tokens": 169,
+      "runtime_observed_input_max_tokens": 170,
+      "required_total_tokens": 186
+    },
+    "CAND-LRT-Q25-15B-Q8-R1": {
+      "rendered_input_max_tokens": 170,
+      "runtime_observed_input_max_tokens": 171,
+      "required_total_tokens": 187
+    }
+  },
+  "frozen_engine_max_num_tokens": 192,
+  "selection_rule": "smallest multiple of 64 greater than or equal to the observed total requirement"
+}

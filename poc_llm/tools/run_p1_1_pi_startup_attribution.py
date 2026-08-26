@@ -239,13 +239,21 @@ def main() -> int:
             result["candidates"].append(candidate_result)
             for profile_definition in profile_definitions:
                 profile = profile_definition["profile_id"]
-                expected_max_num_tokens = (
-                    None
-                    if profile == "baseline"
-                    else config_value["max_input_tokens"]
+                expected_max_num_tokens = profile_definition.get("max_num_tokens")
+                minimum_context = (
+                    config_value["max_input_tokens"]
                     + config_value["max_output_tokens"]
                 )
-                if profile_definition.get("max_num_tokens") != expected_max_num_tokens:
+                if (
+                    (profile == "baseline" and expected_max_num_tokens is not None)
+                    or (
+                        profile == "bounded_context"
+                        and (
+                            not isinstance(expected_max_num_tokens, int)
+                            or expected_max_num_tokens < minimum_context
+                        )
+                    )
+                ):
                     raise RuntimeError("P1.1 profile/context envelope mismatch")
                 observation: dict[str, Any] = {
                     "profile_id": profile,
@@ -282,6 +290,10 @@ def main() -> int:
                     "--artifact-receipt-schema", str(receipt_schema),
                     "--artifact-receipt-schema-sha256", streaming_digest(receipt_schema),
                 ]
+                if expected_max_num_tokens is not None:
+                    argv.extend(
+                        ["--p1-1-max-num-tokens", str(expected_max_num_tokens)]
+                    )
                 process: subprocess.Popen[str] | None = None
                 process_started_ns = time.monotonic_ns()
                 try:
