@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 from jsonschema import Draft202012Validator
 
 from poc_llm.tools.run_p1_1_pi_startup_attribution import (
+    diagnostic_stop,
     fresh_install_paths,
     observation_viable,
     stage_durations,
@@ -22,6 +25,18 @@ LOCK = ROOT / "poc_llm/harness/p1-1-pi-startup-attribution-lock-v1.json"
 
 
 class P11PiStartupAttributionTests(unittest.TestCase):
+    def test_cleanup_timeout_is_evidence_not_an_outer_runner_failure(self) -> None:
+        process = Mock()
+        process.poll.return_value = None
+        with patch(
+            "poc_llm.tools.run_p1_1_pi_startup_attribution.stop",
+            side_effect=subprocess.TimeoutExpired(["child"], 10.0),
+        ):
+            cleanup = diagnostic_stop(process)
+        self.assertTrue(cleanup["cleanup_timeout"])
+        self.assertFalse(cleanup["process_group_absent"])
+        self.assertTrue(cleanup["kill_sent"])
+
     def test_offline_installer_receives_a_nonexistent_target(self) -> None:
         parent, target = fresh_install_paths()
         try:

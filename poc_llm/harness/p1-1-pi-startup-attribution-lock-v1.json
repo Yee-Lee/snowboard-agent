@@ -7,8 +7,8 @@
     "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "85686be23d99bf22cb4b3f0120690530489af97a008b210100cd30f6aa6912b1"},
     "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "98407a4205269a2cb09d19d15a1362aa12f6103fe882af0f1864550ba8212815"},
     "probe": {"path": "poc_llm/harness/p1_1_pi_startup_probe.py", "sha256": "0bee76b2b853df692aaadaea65e1c9e83fbe372986c6ce505d4a05d97a8fda9a"},
-    "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "24a4dbfa3dc9509f734d47ece2b21fc5552ad9f3484e4d412d5942a7f09c511b"},
-    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "d21263296f6ab6531592aa0497744f3c8facea4b384656f8b6319ac33272cac1"},
+    "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "2cc049efb2705d91b13e5ce41cbb55f24c0a0d0ee5099fa0cd8829fb81463f26"},
+    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "104f40872dbf0b87bb557cb6a5266f9de0f46e4c0e795180d46021a3785e9136"},
     "result_schema": {"path": "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json", "sha256": "abdd764a267bb69003684e723504c1157cf92e100b4991612bd0c9229bd8ad29"},
     "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "b327a6a591f74e9743ea8478aeb722ecb8d1641d67cc401c96fc9751a16edfce"},
     "candidate_set": {"path": "poc_llm/fixtures/gate1/pi-compat-candidates-v7.json", "sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a"}

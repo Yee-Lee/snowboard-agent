@@ -105,6 +105,20 @@ def observation_viable(observation: dict[str, Any]) -> bool:
     )
 
 
+def diagnostic_stop(process: subprocess.Popen[str]) -> dict[str, Any]:
+    try:
+        return stop(process, kill_s=10.0)
+    except subprocess.TimeoutExpired:
+        return {
+            "exit_code": process.poll(),
+            "waited": False,
+            "term_sent": True,
+            "kill_sent": True,
+            "process_group_absent": False,
+            "cleanup_timeout": True,
+        }
+
+
 def main() -> int:
     args = parse_args()
     started = time.monotonic()
@@ -310,11 +324,11 @@ def main() -> int:
                             == "SHUTDOWN_ACK"
                         )
                         process.wait(timeout=2.0)
-                        observation["cleanup"] = stop(process)
+                        observation["cleanup"] = diagnostic_stop(process)
                         process = None
                 except Exception:
                     if process is not None:
-                        observation["cleanup"] = stop(process)
+                        observation["cleanup"] = diagnostic_stop(process)
                         process = None
                 observation["stage_ms"] = stage_durations(stderr_path, process_started_ns)
                 observation["p1_contract_fit"] = observation_viable(observation)
