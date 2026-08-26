@@ -1,0 +1,16 @@
+{
+  "packet_id": "P1.1-PI-STARTUP-ATTRIBUTION-001",
+  "revision": "2026-08-26-baseline-stage-attribution",
+  "diagnostic_only": true,
+  "gate_credit": "FORBIDDEN",
+  "artifacts": {
+    "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "005db7634b4f5f604ee13aabe8c2190de58b8a04bfeff0ce1980324df9422595"},
+    "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "98407a4205269a2cb09d19d15a1362aa12f6103fe882af0f1864550ba8212815"},
+    "probe": {"path": "poc_llm/harness/p1_1_pi_startup_probe.py", "sha256": "0bee76b2b853df692aaadaea65e1c9e83fbe372986c6ce505d4a05d97a8fda9a"},
+    "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "12c77f05b1f4309e3b8c208fc31b6fb8653f3e385a1c09f6ac39f12c617c5e9c"},
+    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "9b7810b6b58b31f799263e0edd087df39efd52c38b415e88a6c789db4de859f2"},
+    "result_schema": {"path": "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json", "sha256": "eb5dba37be8b9522c227d7bc1c6800042c6dcbf8855d8f7fc59f8f4e44195966"},
+    "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "b327a6a591f74e9743ea8478aeb722ecb8d1641d67cc401c96fc9751a16edfce"},
+    "candidate_set": {"path": "poc_llm/fixtures/gate1/pi-compat-candidates-v7.json", "sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a"}
+  }
+}

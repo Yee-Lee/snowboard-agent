@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowboard.local/schemas/p1-1-pi-startup-attribution-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_id", "run_id", "diagnostic_only", "gate_credit", "execution_sha", "environment", "environment_post", "profiles", "candidates", "result", "violations"],
+  "properties": {
+    "packet_id": {"const": "P1.1-PI-STARTUP-ATTRIBUTION-001"},
+    "run_id": {"type": "string", "pattern": "^P1-1-PI-STARTUP-[A-Za-z0-9._:-]+$"},
+    "diagnostic_only": {"const": true},
+    "gate_credit": {"const": "FORBIDDEN"},
+    "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "environment": {"type": "object"},
+    "environment_post": {"type": "object"},
+    "profiles": {
+      "const": ["baseline"]
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "result": {"enum": ["COMPLETE", "INCONCLUSIVE"]},
+    "violations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "observations"],
+      "properties": {
+        "candidate_id": {"enum": ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"]},
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"$ref": "#/$defs/observation"}
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "cache_conditioning_ms", "eventual_ready_ms", "stage_ms", "ping_pong", "generation_terminal", "shutdown_ack", "cleanup", "p1_contract_fit", "diagnostic_result"],
+      "properties": {
+        "profile_id": {"const": "baseline"},
+        "cache_conditioning_ms": {"type": "number", "minimum": 0},
+        "eventual_ready_ms": {"type": ["number", "null"], "minimum": 0},
+        "stage_ms": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "ping_pong": {"type": "boolean"},
+        "generation_terminal": {"enum": ["RESULT", "ERROR", "NONE"]},
+        "shutdown_ack": {"type": "boolean"},
+        "cleanup": {"type": "object"},
+        "p1_contract_fit": {"type": "boolean"},
+        "diagnostic_result": {"enum": ["VIABLE", "NOT_VIABLE", "INCONCLUSIVE"]}
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "packet_id": "P1.1-PI-STARTUP-ATTRIBUTION-001",
+  "diagnostic_only": true,
+  "gate_credit": "FORBIDDEN",
+  "cache_conditioning": "drop-advice-then-sequential-read-outside-startup-clock",
+  "candidate_order": [
+    "CAND-LRT-G4E2B-MOBILE-R1",
+    "CAND-LRT-Q25-15B-Q8-R1"
+  ],
+  "profiles": [
+    {
+      "profile_id": "baseline",
+      "max_num_tokens": null,
+      "enable_benchmark": true,
+      "purpose": "Measure the unchanged frozen Engine construction path."
+    }
+  ],
+  "deferred_until_after_baseline_analysis": [
+    "bounded_context",
+    "bounded_context_no_benchmark",
+    "runtime_owned_registry_or_signature_controls_if_executable"
+  ]
+}
