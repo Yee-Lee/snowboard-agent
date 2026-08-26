@@ -366,6 +366,11 @@ def empty_candidate(candidate_id: str) -> dict[str, Any]:
     }
 
 
+def p12_disposition(report: dict[str, Any]) -> str:
+    """Credit offline inference only after the normal inference lifecycle completed."""
+    return "PASS" if report["p_results"]["P1"] == "PASS" else "Blocked"
+
+
 def main() -> int:
     if sys.argv[1:] == ["--fatal-outcome-self-test"]:
         return 4
@@ -841,7 +846,7 @@ def main() -> int:
 
         aggregate["environment_post"] = target_preflight(args.execution_sha)
         for report in aggregate["candidates"]:
-            report["p_results"]["P12"] = "PASS"
+            report["p_results"]["P12"] = p12_disposition(report)
             if report["result"] == "PASS":
                 aggregate["proposed_finalists"].append(report["candidate_id"])
         if any(report["result"] == "INCONCLUSIVE" for report in aggregate["candidates"]):

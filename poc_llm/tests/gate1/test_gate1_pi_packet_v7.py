@@ -22,7 +22,12 @@ from poc_llm.harness.pi_artifact_auth import (
     streaming_digest,
     verify_model_receipt,
 )
-from poc_llm.tools.run_gate1_pi_compat_v7 import evaluate_p10a, ols_slope, percentile
+from poc_llm.tools.run_gate1_pi_compat_v7 import (
+    evaluate_p10a,
+    ols_slope,
+    p12_disposition,
+    percentile,
+)
 from poc_llm.tools.run_gate1_pi_compat_v7 import catalog_input
 
 
@@ -272,6 +277,14 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
         failed, _ = evaluate_p10a([session(index, 5.0) for index in range(20)])
         self.assertTrue(passed)
         self.assertFalse(failed)
+
+    def test_p12_requires_completed_offline_inference_lifecycle(self) -> None:
+        self.assertEqual(p12_disposition({"p_results": {"P1": "PASS"}}), "PASS")
+        for disposition in ("FAIL", "INCONCLUSIVE", "Blocked"):
+            self.assertEqual(
+                p12_disposition({"p_results": {"P1": disposition}}),
+                "Blocked",
+            )
 
     def test_result_schema_rejects_wrong_packet(self) -> None:
         validator = Draft202012Validator(json.loads(RESULT_SCHEMA.read_text(encoding="utf-8")))

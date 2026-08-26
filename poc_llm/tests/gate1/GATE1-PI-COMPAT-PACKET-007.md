@@ -87,6 +87,11 @@ deterministic controller fatal-outcome exit `4`; do not claim a product/systemd 
 
 ### G1-WP04 — P12 and cumulative receipt
 
+P12 is `PASS` only when the same offline run has completed the P1 normal inference lifecycle and
+the pre/post target observations both prove zero swap, no routes, all non-loopback interfaces down
+and no sensitive environment names. A candidate blocked before READY or inference keeps P12
+`Blocked`; target isolation alone is not offline-inference credit.
+
 Repeat offline interfaces/routes, sensitive-environment, swap and throttling proof after all work.
 Confirm model metadata still matches the receipt and scan runner-owned logs for prompt/output/
 payload/credential/endpoint leakage. Issue per-candidate P states and cumulative receipt only after
