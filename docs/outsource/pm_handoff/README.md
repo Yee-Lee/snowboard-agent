@@ -12,14 +12,14 @@
 
 ---
 
-### Milestone gate 判讀（Core Team，2026-08-21）
+### Milestone gate 判讀（Core Team，2026-08-26）
 
 | Gate | 目前狀態 | 外部 contract 影響 |
 | :--- | :--- | :--- |
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a M2A/M2B authorized / M4b Gate 1 R5 revision authorized** | Audio維持ACK-003 comparative funnel。LLM `M2-G1-PLATFORM-CONFIG-001`已在`341ccc0...`複驗成立；`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`授權R5 platform-keyed config/schema/lock/runner deterministic revision，保留M1 freeze。R5 intake前真實x86/Pi執行仍Blocked。 |
+| **M4a / M4b POC進場** | **M4a POC Accepted / Core Gate 3 design pending review；M4b Gate 1 R5 revision authorized** | Audio已在`audio_m4` / `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`完成；Core Gate 2B intake `be19b70...`接受final references。`model_spec.md`與M4a production design已建立，仍待Core Reviewer／Tester／Developer與exact-SHA Gate 3。LLM Gate 1狀態不因Audio完成而自動變更。 |
 | **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM M1 R3已完成Designer freeze，後續只剩Internal Tester gate。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
@@ -31,6 +31,10 @@ Gate 2A PASS。PM-019 本身的 ACK request 已完成，後續執行由 ACK-002 
 的ASR conditional execution順序已被M2A baseline / M2B optimization取代；舊evidence
 與PM-019 closure維持不變，不重開handoff。Core generic scaffold不等待M2B；candidate-specific
 provisional integration等待M2B reviewed selection，production lock仍等待Audio M3與Gate 2B。
+
+2026-08-26補充：上述Audio等待條件已由`RESP-AUDIO-M4-GATE2B-001`與Audio
+`audio_m4`完成。Core production lock現由`docs/model_spec.md`固定，後續依
+`docs/implement/ch_m4a_audio_production.md`進入Gate 3；POC evidence不取代Core Tester PASS。
 
 2026-08-21 `DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST`
 已由`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受並歸檔。
@@ -49,7 +53,7 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 | :--- | :--- | :--- | :--- | :--- |
 | [`ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001`](history/ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001.md) | Matcha model-license evidence correction | `POC-audio-DEL-2026-001-R1` | **Resolved — Apache-2.0 model grant acknowledged; remaining lineage risk accepted by USER** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`DELIVERY-AUDIO-M4-GATE2B-001`](history/DELIVERY-AUDIO-M4-GATE2B-001.md) | Audio M4 Gate 2B technical delivery / Matcha license disposition | `POC-audio-DEL-2026-001-R1` | **Resolved — technical delivery and all three final references accepted** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
-| [`REQ-AUDIO-M4-RUNTIME-CLOSURE-002`](history/REQ-AUDIO-M4-RUNTIME-CLOSURE-002.md) | Core controller / finalist runtime closure | 無 | **Resolved — controller-r2, VAD, and TTS offline closures passed; Audio POC review pending** | Response: [`RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md`](../responses/RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md) |
+| [`REQ-AUDIO-M4-RUNTIME-CLOSURE-002`](history/REQ-AUDIO-M4-RUNTIME-CLOSURE-002.md) | Core controller / finalist runtime closure | 無 | **Resolved — controller-r2, VAD, and TTS offline closures passed; accepted by downstream Gate 2B closure** | Response: [`RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md`](../responses/RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md) |
 | [`PM-OUT-260805-001-m1-carryover-feedback`](history/PM-OUT-260805-001-m1-carryover-feedback/brief.md) | M1 完成後 Carry-over Feedback | `PM-OUT-2026-001-R1` | **Superseded**（由 003 取代） | 被 `PM-OUT-260806-003` 取代並收斂 |
 | [`PM-OUT-260806-003-m1-test-platform-scope`](history/PM-OUT-260806-003-m1-test-platform-scope/brief.md) | M1 測試平台矩陣與交付證據澄清 | `PM-OUT-2026-001-R2` | **Resolved**（全數驗收 PASS） | Response: [`CR-M1-II.md`](../responses/CR-M1-II.md) |
 | [`PM-OUT-260806-004-m3-target-device-test-ack`](history/PM-OUT-260806-004-m3-target-device-test-ack/brief.md) | M3 目標裝置測試方式確認 | 無 | **Resolved**（已回覆 ACK） | Response: [`OUT-M3-TEST-2026-001.md`](../responses/OUT-M3-TEST-2026-001.md) |

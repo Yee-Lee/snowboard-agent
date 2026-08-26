@@ -107,8 +107,8 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
-| M4a Generic Scaffold | `DESIGN COMPLETE — PENDING DEVELOPER IMPL` | 設計文件：`docs/implement/ch_m4a_generic_scaffold.md`；範圍：NullASRAdapter、NullTTSAdapter、ASR/TTS factory、config schema（ASRConfig / TTSConfig 新增佔位欄位、移除舊佔位Literal）、RM ResourceKey登記（`backend.perception.listen.asr` / `backend.action.speak.tts`）、12個Test ID；不含任何真實engine。POC M2B provisional selection ACK發出後，Designer另立candidate-specific integration設計 |
-| M4a Audio | `M2A BASELINE / M2B OPTIMIZATION AUTHORIZED — POC RETURN PENDING` | POC最新reviewed evidence為`audio` / `c30bf8b804d1a0ee3dd612110f8f6e387ffd686f`：SenseVoice與Whisper small Q8舊gate結果保留，但不再阻止比較。`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`授權Whisper Q8 / small Q5 / base Q5 / medium Q5（另可probe large-v3-turbo Q5）、一列sherpa-onnx bilingual、Vosk small-cn及optional Qwen3-ASR feasibility依共同低成本packet建立M2A scorecard；shortlist再進M2B DSP / decoder / number-domain / recovery單變因優化。M2A/M2B不設quality / performance hard gate；P9 surrogate責任不變 |
+| M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
+| M4a Audio | `POC ACCEPTED — DESIGNER HANDOFF READY / REVIEWER NEXT` | Audio `audio_m4`固定於`5694ead4ba6be928fdb4dbdf6da7155b214d72bd`；corrected delivery `ca51bce...`，execution `8be3bc0...` / `26f33a3...`，Core intake `be19b70...`。`docs/model_spec.md`固定baseline，Audio Protocol v1與production design定義產品lock、隔離child、RM recovery、build/install/preflight與Gate 3 mapping。交接順序：Reviewer `IR_review_IV` → Tester revised `test_spec_M4.md` / `TR_spec_M4_I` → Developer WP-09～13。real M4a+M4b resource row仍等待Accepted LLM input |
 | M4b LLM | `GATE 1 R5 PLATFORM-CONFIG REVISION AUTHORIZED — REAL EXECUTION BLOCKED` | 已複驗`llm` / `341ccc012d87847fed1d3a68e5ef7cc68eb872ba`的`M2-G1-PLATFORM-CONFIG-001`：R4 candidate只有單一config，無法同時驗證x86與Pi strict identity。`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受finding並授權Gate 1-owned R5 platform-keyed config/schema/lock/runner regression；frozen M1 protected paths不得修改。R5 exact-SHA intake前不得發行candidate manifest或跑真實x86/Pi；Gate 2A/2B及017整合診斷邊界不變 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
@@ -127,7 +127,7 @@ Core Designer (contract owner) [DELIVERY-AUDIO-POC-M4A-CONTRACT-001]
     Gate 3: Core product inheritance / delta mapping → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；G1A ACK：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md`；最新ASR scope：`docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md`。016與019仍維持Resolved / archived；後續由ACK-003追蹤M2A/M2B committed return，不重開原handoff。
+Revision response：`docs/outsource/responses/PM-OUT-260817-016-m4a-poc-core-evidence-handoff.md`；final intake：`docs/outsource/responses/RESP-AUDIO-M4-GATE2B-001.md`。016與019維持Resolved / archived；Audio POC downstream已由`audio_m4`完成，Core後續只由Gate 3 product design / test / delivery追蹤，不重開原handoff。
 
 ### M4b LLM Contract Relay Flow（2026-08-17 修訂）
 

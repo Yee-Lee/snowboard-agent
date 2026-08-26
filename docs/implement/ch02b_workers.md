@@ -100,7 +100,7 @@ class AdapterUnavailable(AdapterError): ...
 - `CancelledError` 不包成 `AdapterError`。
 - 擁有 native thread / child process 的 adapter 必須實作 `abort()` 與 `force_abort()`；後者回傳 `ForceAbortReport`。
 - 無可靠 native cancel 的 blocking backend 必須 child-process isolate。
-- Adapter `start()` 必須等 READY ACK；`stop()` / `force_abort()` 必須完成 descendant exit proof。跨 process READY / cancel / result schema 進 `docs/protocol.md`（延後產出）。
+- Adapter `start()` 必須等 READY ACK；`stop()` / `force_abort()` 必須完成 descendant exit proof。跨 process READY / cancel / result schema進`docs/protocol.md`；Audio Protocol v1已建立，其他domain依各自gate補章。
 
 ## 2. Perception workers
 
@@ -402,5 +402,4 @@ src/sbd/
 - Ch 9：speak / tool / rest payload schema，以及 tool registry 驗證入口。
 - Ch 10：模型、backend、sampling、reason timeout，以及 per-kind abort / force-abort / waitpid timeout。
 - Ch 11：adapter exception 對 log level / `ErrorOccurred.where` 的映射。
-- `docs/protocol.md`（延後產出）：worker child 的 READY、request、stream、result、cancel、shutdown wire schema。
-
+- `docs/protocol.md`：worker child 的 READY、request、stream、result、cancel、shutdown wire schema；Audio v1已固定，LLM / wake仍待各自gate。

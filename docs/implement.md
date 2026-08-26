@@ -13,7 +13,7 @@
 | `display_spec.md` | Display 內容、lifecycle、Baseline / Complete UX profile |
 | `model_spec.md` | Runtime 模型選型、版本 / 授權固定與階段 gate |
 | `milestone.md` | WHEN + VERIFY──階段、範圍、驗收 |
-| `protocol.md`（尚未建立） | 對外 / 跨 process wire format（旁掛，延後產出） |
+| `protocol.md` | 對外 / 跨 process wire format；Audio Protocol v1 已定義，LLM 部分待 M4b final input |
 
 `arch.md` 未明或無法落實的項目，依 [reviews/README.md](reviews/README.md) §2 以 `arch_review_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有 `history/arch_review_implement.md` 僅保留歷史追蹤。
 
@@ -36,6 +36,7 @@
 | **9** | [ch09_action_payload.md](implement/ch09_action_payload.md) | LLMResponse action_payload schema | §2.7 / §4.6 |
 | **10** | [ch10_config.md](implement/ch10_config.md) | Config schema | §7.1 |
 | **11** | [ch11_error_logging.md](implement/ch11_error_logging.md) | 錯誤處理與 logging 慣例 | §3.4 / §6.6 / §6.7 |
+| **M4a** | [ch_m4a_audio_production.md](implement/ch_m4a_audio_production.md) | Accepted Audio production adapter、runtime isolation、recovery 與 Gate 3 mapping | §2.4 / §2.8 / §6.4 / §6.8 |
 
 各章目前狀態與備註見 [reviews/impl_progress.md](reviews/impl_progress.md) 。
 
@@ -56,6 +57,7 @@
 * **章節動態進度與跨章 gate** ： [reviews/impl_progress.md](reviews/impl_progress.md)
 * **Display 內容與 UX profile** ： [display_spec.md](display_spec.md)
 * **ASR / TTS / LLM / Vision / wake-word 選型 gate** ： [model_spec.md](model_spec.md)
+* **跨 process child wire schema** ： [protocol.md](protocol.md)
 * **設計與審查流程**： [reviews/README.md](reviews/README.md)
 * **Reviewer 工作原則與新輪次紀錄**： [reviews/README.md](reviews/README.md) §3（既有 `history/implement_reviewer.md` 與 `history/impl_review_*` 僅保留歷史）
 * **既有 Architect 審查紀錄**： `reviews/AR-Review-*.md`（新輪次見 [reviews/README.md](reviews/README.md) §1）

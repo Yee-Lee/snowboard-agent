@@ -34,7 +34,7 @@
 ### 1.2 本章不包含
 
 - worker `abort()` / `force_abort()` 演算法：Ch 6。
-- backend child IPC schema：`docs/protocol.md`（延後產出）。
+- backend child IPC schema：`docs/protocol.md`；Audio v1已固定，其他domain依各自gate補章。
 - config dataclass 與 timeout 實際值：Ch 10。
 - logger backend：Ch 11。
 - systemd unit / restart policy：部署文件。
@@ -597,4 +597,4 @@ Fake factory / Lifecycle 以 call log 與 `asyncio.Event` 控制，不碰實體�
 - Ch 6：一次 convergence 聚合全部 `destroyed_backends`，只呼叫一次 `begin_recovery()`；unknown key 直接 fatal。
 - Ch 10：需要 startup per-resource timeout、stop timeout、`recovery_timeout_seconds`、recovery shutdown cleanup timeout。
 - Ch 11：`StartupError` / `RecoveryFatalError` / `ShutdownReport` log 格式，以及 startup 前 Bus / SM fatal supervision 的工具 API。
-- `docs/protocol.md`（延後產出）：child READY / shutdown / cancel/result wire schema 仍延後，本章只依賴「hook return 代表 READY」語意。
+- `docs/protocol.md`：child READY / shutdown / cancel/result wire schema；Audio v1已固定，其他domain仍待gate。本章只依賴「hook return代表READY」語意。

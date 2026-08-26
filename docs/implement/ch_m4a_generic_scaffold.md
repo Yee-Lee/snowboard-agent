@@ -1,7 +1,7 @@
 # M4a Generic Scaffold 設計
 
 屬於 `implement.md` 索引 | 對應 `docs/milestones/M4.md` §6.1–6.2 M4a Audio  
-狀態：**設計定稿 — 等待 Developer 實作**
+狀態：**Implemented at `9f1f32e` — production integration由`ch_m4a_audio_production.md`承接**
 
 ---
 
@@ -11,9 +11,9 @@
 
 | Audio POC 狀態 | Core 授權範圍 |
 | :--- | :--- |
-| **M2A in progress（現在）** | ✅ 本文件所有內容 |
-| M2B reviewed selection 後 | Candidate-specific adapter + provisional dependency/config（另立設計） |
-| Gate 2B `POC Accepted` | Production lock（另立設計） |
+| M2A in progress（歷史階段） | ✅ 本文件所有內容 |
+| M2B reviewed selection 後 | Candidate-specific adapter + provisional dependency/config（已完成POC convergence） |
+| Gate 2B `POC Accepted` | Production lock與Gate 3接線見`ch_m4a_audio_production.md`、`model_spec.md`與`protocol.md` |
 
 **禁止在本 scaffold 引入：** 真實 engine import、固定 model path / engine class、production dependency、POC branch HEAD 引用
 
@@ -362,4 +362,4 @@ config.example.yaml          # perception.listen.adapter / action.tts / resource
 ---
 
 *Designer: 2026-08-25*  
-*Audio POC M2B provisional selection ACK 後，Designer 另立 candidate-specific integration 設計。*
+*Audio POC已於`audio_m4`完成；candidate-specific production integration由`ch_m4a_audio_production.md`承接。*

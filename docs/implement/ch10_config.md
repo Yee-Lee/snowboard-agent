@@ -1,6 +1,6 @@
 # Ch 10. Config schema
 
-屬於 implement.md 索引 | 對應 arch.md §7.1 | 狀態：定稿（IR-final 已通過（2026-08-01））
+屬於 implement.md 索引 | 對應 arch.md §7.1 | 狀態：基礎契約定稿（IR-final 2026-08-01）；M4a production extension待Reviewer審查（2026-08-26）
 
 上游：Ch 2a、Ch 2b、Ch 4、Ch 5、Ch 6、Ch 7、Ch 9。
 
@@ -129,9 +129,16 @@ class PerceptionTimeouts:
 
 @dataclass(frozen=True, slots=True)
 class ASRConfig:
-    driver: Literal["mock", "whisper"] = "mock"
+    driver: Literal["mock", "null", "whispercpp"] = "mock"
+    engine_name: str | None = None
     model_path: Path | None = None
+    worker_path: Path | None = None
+    runtime_python: Path | None = None
+    vad_model_path: Path | None = None
+    artifact_lock_path: Path | None = None
     language: str | None = None
+    dsp_profile: str | None = None
+    decoder_profile: str | None = None
 
 @dataclass(frozen=True, slots=True)
 class VisionConfig:
@@ -264,9 +271,16 @@ class CognitionConfig:
 
 @dataclass(frozen=True, slots=True)
 class TTSConfig:
-    driver: Literal["mock", "piper"] = "mock"
+    driver: Literal["mock", "null", "sherpa_matcha"] = "mock"
+    engine_name: str | None = None
     model_path: Path | None = None
+    vocoder_path: Path | None = None
+    runtime_python: Path | None = None
+    artifact_lock_path: Path | None = None
     voice_id: str | None = None
+    native_sample_rate: int | None = None
+    native_channels: int | None = None
+    native_sample_format: str | None = None
 
 @dataclass(frozen=True, slots=True)
 class ActionConfig:
@@ -277,6 +291,13 @@ class ActionConfig:
 ```
 
 Reasoner固定required，不提供 `required` 欄位； `cognition.llm.driver=litert_lm` 時 `model_path` 必須且必須是file。Mock不要求path。
+
+M4a real Audio adapter另套用`model_spec.md`與`ch_m4a_audio_production.md`：
+
+- `whispercpp`要求engine=`whisper.cpp-1.9.2`、language=`zh-TW`、DSP=`silero-6.2.1-endpoint-v1`、decoder=`p0-greedy-best-of-1`，以及model / worker / VAD runtime / VAD model / artifact lock五個絕對路徑；
+- `sherpa_matcha`要求engine=`sherpa-onnx-1.13.5-matcha`、voice=`matcha-zh-en-default-sid-0`、native format=`16000/1/s16_le`，以及model dir / Vocos / runtime / artifact lock四個絕對路徑；
+- YAML只能選tracked lock，不得覆寫checksum；path存在與artifact identity由product preflight在child / Audio HAL前fail closed；
+- `mock` / `null`不得因real-only path為空而失敗，也不得importreal module。
 
 `action.tool.enabled=true` 但sealed ToolRegistry為空時，依Ch 9視為tool worker未載入； `required=false` 得到P2=false， `required=true` 則startup fatal。
 
@@ -572,8 +593,15 @@ perception:
     required: true
     adapter:
       driver: mock
+      engine_name: null
       model_path: null
+      worker_path: null
+      runtime_python: null
+      vad_model_path: null
+      artifact_lock_path: null
       language: null
+      dsp_profile: null
+      decoder_profile: null
   read:
     enabled: true
     required: false
@@ -596,7 +624,15 @@ action:
   rest: {enabled: true, required: true}
   tts:
     driver: mock
+    engine_name: null
     model_path: null
+    vocoder_path: null
+    runtime_python: null
+    artifact_lock_path: null
+    voice_id: null
+    native_sample_rate: null
+    native_channels: null
+    native_sample_format: null
 
 core:
   audio: {driver: mock}
@@ -654,6 +690,9 @@ Config load發生在Event Bus / SM之前：
 17. loader重複呼叫無global state、結果相同。
 18. defaults tree、dataclass decoder與strict overlay對perception使用完全相同的 nested paths；舊 `listen_adapter` / `look_adapter` 以 `UnknownConfigKey` 拒絕。
 19. repository完整 `config.example.yaml` 由 `load_config(local_path=example_path)` 走與production相同的strict merge、decode、field與cross-field validation並成功；assert adapter值落在 `config.perception.listen.adapter` 與 `config.perception.look.adapter` 。
+20. `whispercpp`與`sherpa_matcha`的required field / exact profile table-driven驗證；每個missing/mismatch以含完整path的`ConfigValueError`在factory前拒絕。
+21. `mock` / `null`保留無artifact default；real-only module保持未import，factory unknown driver fail closed。
+22. YAML嘗試提供checksum override或舊`whisper` / `piper` driver視為unknown/invalid，不得fallback到real或mock。
 
 16. 對後續章節的輸入
 

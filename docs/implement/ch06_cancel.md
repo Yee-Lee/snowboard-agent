@@ -320,4 +320,4 @@ Fake worker 以 `asyncio.Event` 控制 abort、force-abort 與 outer task done�
 - Ch 7：buffer policy 仍由 Ch 4 執行，Ch 6 不直接依賴 buffer。
 - Ch 10：固定 `cancel.abort_timeout_seconds` 與 `cancel.force_abort_timeout_seconds` 的 default + per-kind schema。
 - Ch 11：固定 `ConvergenceFatalError` 為 Level 3 root cause；main 記一次 CRITICAL 並結束 process。
-- `docs/protocol.md`（延後產出）：child cooperative cancel / terminate wire format仍延後；本章只依賴 `force_abort()` return 的 termination proof。
+- `docs/protocol.md`：Audio child cooperative/deferred cancel wire已固定；其他domain仍待gate。本章只依賴`force_abort()`return的termination proof。
