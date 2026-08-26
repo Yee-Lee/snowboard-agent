@@ -1,6 +1,6 @@
 {
   "packet_id": "G1-PI-COMPAT-007",
-  "revision": "2026-08-26-r3",
+  "revision": "2026-08-26-r4-target-unit-fix",
   "candidate_order": [
     "CAND-LRT-G4E2B-MOBILE-R1",
     "CAND-LRT-Q25-15B-Q8-R1"
@@ -13,7 +13,7 @@
   },
   "artifacts": {
     "packet": {"path": "poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md", "sha256": "a79d4ae2c5587c783e3dd05e17939026a3274d90a95dea055632a7025df1d5b4"},
-    "packet_tests": {"path": "poc_llm/tests/gate1/test_gate1_pi_packet_v7.py", "sha256": "192a7d5e0b0af09000c146c0ba83238fcb714a3e766e21368c883646f874fc4a"},
+    "packet_tests": {"path": "poc_llm/tests/gate1/test_gate1_pi_packet_v7.py", "sha256": "e14c85db23a3f121efa0c1351ff5e1797d9037a4fcd484f3081c823e3272db10"},
     "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v7.py", "sha256": "09e27a71ac0c26bfa31723acf1132000e940f7af985523a45d3cd441d0440361"},
     "adapter": {"path": "poc_llm/harness/litert_lm_pi_child_adapter_v2.py", "sha256": "9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
     "pi_child_base": {"path": "poc_llm/harness/litert_lm_pi_child_adapter.py", "sha256": "345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},

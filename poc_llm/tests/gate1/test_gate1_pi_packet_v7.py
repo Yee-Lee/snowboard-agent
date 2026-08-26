@@ -4,6 +4,7 @@ import ast
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -85,6 +86,13 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
             model.chmod(0o644)
             model.write_bytes(b"modified")
             model.chmod(0o444)
+            os.utime(
+                model,
+                ns=(
+                    record["stat"]["mtime_ns"] + 2_000_000_000,
+                    record["stat"]["mtime_ns"] + 2_000_000_000,
+                ),
+            )
             with self.assertRaises(ArtifactAuthenticationError):
                 verify_model_receipt(record, model, expected)
 

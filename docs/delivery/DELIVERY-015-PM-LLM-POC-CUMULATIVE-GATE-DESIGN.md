@@ -3,9 +3,10 @@
 - **Date**: 2026-08-26
 - **From**: LLM POC Team (M4b)
 - **To**: User / Reviewer; after approval, Core Designer
-- **Status**: `R2 REVIEW APPROVED / READY TO RELAY / NOT YET DELIVERED`
+- **Status**: `DELIVERED TO CORE PM_HANDOFF / ACK PENDING`
 - **Post-review exact source SHA**: `b5690bbbef50ce37af356fd29b88ab920207c38e`
 - **Execution-surface SHA-256**: `480adb939a6bfc359dfc2a10c9d478cece94df8fd24f8c48bb810d902e06d8d2`
+- **Reviewer approval**: `ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE`
 - **Replacement Gate 1 packet**: `G1-PI-COMPAT-007`
 - **Defective historical attempt**: `G1-PI-COMPAT-006-20260826T125959Z-001`
 
@@ -65,4 +66,6 @@ Core is asked to return one response that:
 5. confirms Gate 2A runs only P2/P3/P4/P5/P8 and Gate 2B runs P9/P10B when unchanged Gate 1 evidence
    remains valid.
 
-This draft must not be copied into Core's handoff path until reviewer and User approval.
+Reviewer and User review conditions are satisfied. This revision is copied into Core's PM handoff;
+Core ACK may arrive while the authorized Gate 1 execution proceeds, but must arrive before Gate 1
+closure or final P credit.

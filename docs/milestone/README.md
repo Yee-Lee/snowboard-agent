@@ -6,22 +6,24 @@
 
 ## Current reachability
 
-狀態：`GATE1_R2_REVIEW_APPROVED / REVIEWED SOURCE b5690bb / DELIVERY-PUSH PENDING`。
+狀態：`GATE1_R3 TEST-ONLY FIX USER-AUTHORIZED / CANDIDATE COMMIT`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
 不淘汰candidate、不產生P credit。User已取消「Gate 1不得產生P1～P12 credit」的本地規則，改採
 Gate 1/2A/2B累積矩陣。Reviewer最新回覆要求修正source-SHA遞迴失效與P5 fast-model trap；
 R2已改用execution-surface digest與continuous-timeout fixture；Reviewer已無條件APPROVE，現先發布
-reviewed source `b5690bbbef50ce37af356fd29b88ab920207c38e` / execution surface `480adb9…5070`，
-再送Core並於Pi checkout該exact SHA執行。
+R2 source `b5690bbbef50ce37af356fd29b88ab920207c38e`已push/送Core，但Pi pure test在任何operator
+change/model load前發現same-tick negative-fixture nondeterminism。R3只修test+lock，workstation
+25/25、Pi isolated 14/14；Core已hold R2 SHA。User明確免除test-only targeted re-review，
+現在建立R3 exact SHA後繼續formal entry。
 
 ## External gates
 
 | Gate | State | First-executed P items | Close condition / next action |
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
-| Gate 1 | `REVIEW APPROVED / SOURCE COMMITTED` | P1, P6, P7, P10A, P11, P12 | push/relay exact SHA→Pi run→User result review→Core cumulative/finalist ACK |
+| Gate 1 | `R3 COMMIT / PI ENTRY` | P1, P6, P7, P10A, P11, P12 | R3 exact SHA/push/Core replacement→Pi run |
 | Gate 2A | `REDESIGNED / NOT_STARTED` | P2, P3, P4, P5, P8 | consume Gate 1 receipt；最多1 provisional finalist |
 | Gate 2B | `BLOCKED` | P9, P10B | Accepted Audio kit + 4GB combined PASS；Core final winner ACK |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
@@ -34,7 +36,7 @@ reviewed source `b5690bbbef50ce37af356fd29b88ab920207c38e` / execution surface `
 | --- | --- | --- |
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
-| M2 | `REVIEW APPROVED / SOURCE COMMITTED` | Gate 1 `007`：正式P1/P6/P7/P10A/P11/P12；exact SHA `b5690bb…`待push/execution |
+| M2 | `R3 USER-AUTHORIZED CANDIDATE` | Gate 1 formal execution未開始；R3 execution surface `568aa7…dc5` |
 | M3 | `REDESIGNED / NOT_STARTED` | Gate 2A `002`：只補P2/P3/P4/P5/P8 |
 | M4 | `REDESIGNED / BLOCKED` | Gate 2B `001`：P9/P10B；缺Accepted Audio |
 

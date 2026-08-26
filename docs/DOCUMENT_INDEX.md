@@ -63,6 +63,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-LLM-M2-CUMULATIVE-GATES-REVIEW-001.md`](response/ACK-LLM-M2-CUMULATIVE-GATES-REVIEW-001.md) - 已由Reviewer後續overwrite findings取代；不得作execution approval
 * [`REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md`](response/REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md) - 已獲APPROVE；回覆source-SHA recursive invalidation與P5 fast-model兩項blocker
 * [`ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md`](response/ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md) - Reviewer無條件`APPROVE` R2；兩項critical findings關閉，可發布reviewed source
+* [`REVIEW-REQUEST-LLM-M2-GATE1-TARGET-UNIT-R3-001.md`](response/REVIEW-REQUEST-LLM-M2-GATE1-TARGET-UNIT-R3-001.md) - Pi pure test發現same-tick negative-fixture nondeterminism；R3只改test+lock，User已免除targeted re-review並授權繼續
 
 ## 3A. Independent Reviews (位於 `docs/reviews/`)
 
@@ -84,7 +85,8 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md`](delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) - (已核准) ARM64 UTM sanitized experience kit、x86 waiver與後續移轉產品Pi的scope adjustment
 * [`DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md`](delivery/DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) - 修正 Core P9 範例缺少CPU trigger的缺陷；交付locked executable、protocol schema、process-group cleanup與Audio integration sequence
 * [`DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md`](delivery/DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md) - Gate 1 Pi compatibility與獨立Gate 2A Pi packet的可執行review candidate；請Core一次審核packet、保留Gate 1 finalist ACK邊界
-* [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md`](delivery/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) - `R2 APPROVED / READY TO RELAY`；請Core一次ACK累積gate boundary、reviewed SHA `b5690bb…`與v6 supersession
+* [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md`](delivery/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) - 已送Core `pm_handoff`、ACK pending；請一次接受累積gate boundary、reviewed SHA `b5690bb…`與v6 supersession
+* [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md`](delivery/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) - 要求Core暫勿ACK/execute R2 SHA；R3 targeted review後另送replacement exact SHA
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
