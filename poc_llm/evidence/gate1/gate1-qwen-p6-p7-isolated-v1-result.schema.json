@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:gate1:qwen:p6-p7-isolated:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_id", "base_packet_id", "run_id", "execution_sha", "execution_surface_sha256", "core_acceptance", "isolation", "environment", "environment_post", "runtime", "artifact_authentication", "prerequisite_ready_ms", "p_results", "cancel", "recovery", "violations", "result", "elapsed_ms"],
+  "properties": {
+    "packet_id": {"const": "G1-QWEN-P6P7-ISOLATED-001"},
+    "base_packet_id": {"const": "G1-PI-COMPAT-007"},
+    "run_id": {"type": "string", "pattern": "^G1-QWEN-P6P7-ISOLATED-[A-Za-z0-9._:-]+$"},
+    "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "execution_surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "core_acceptance": {"const": "PENDING"},
+    "isolation": {
+      "type": "object",
+      "required": ["boot_id_sha256", "prelaunch_uptime_s", "preexisting_adapter_processes", "prior_candidate_workloads_in_run", "candidate_id"],
+      "properties": {
+        "boot_id_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "prelaunch_uptime_s": {"type": "number", "minimum": 0, "maximum": 900},
+        "preexisting_adapter_processes": {"const": 0},
+        "prior_candidate_workloads_in_run": {"const": 0},
+        "candidate_id": {"const": "CAND-LRT-Q25-15B-Q8-R1"}
+      }
+    },
+    "environment": {"type": "object"},
+    "environment_post": {"type": "object"},
+    "runtime": {"type": "object"},
+    "artifact_authentication": {"type": "object"},
+    "prerequisite_ready_ms": {"type": ["number", "null"], "minimum": 0, "maximum": 10000},
+    "p_results": {
+      "type": "object", "additionalProperties": false, "required": ["P6", "P7"],
+      "properties": {
+        "P6": {"enum": ["PASS", "Conditional escalation", "FAIL", "Blocked"]},
+        "P7": {"enum": ["PASS", "FAIL", "Blocked"]}
+      }
+    },
+    "cancel": {"type": "object"},
+    "recovery": {"type": "object"},
+    "violations": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "elapsed_ms": {"type": "number", "minimum": 0}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "p_results": {"properties": {"P6": {"enum": ["PASS", "Conditional escalation"]}, "P7": {"const": "PASS"}}},
+          "violations": {"maxItems": 0},
+          "prerequisite_ready_ms": {"type": "number", "maximum": 10000}
+        }
+      }
+    },
+    {"if": {"properties": {"result": {"enum": ["FAIL", "INCONCLUSIVE"]}}}, "then": {"properties": {"violations": {"minItems": 1}}}}
+  ]
+}
