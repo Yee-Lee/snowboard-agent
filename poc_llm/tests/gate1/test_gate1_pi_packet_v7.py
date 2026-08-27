@@ -69,6 +69,14 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
             self.assertEqual(config["ready_timeout_ms"], 10_000)
             self.assertEqual(config["rebuild_timeout_ms"], 10_000)
             self.assertEqual(config["max_output_tokens"], 16)
+            expected_context = (
+                1024
+                if candidate["candidate_id"] == "CAND-LRT-G4E2B-MOBILE-R1"
+                else 512
+            )
+            self.assertEqual(config["engine_max_num_tokens"], expected_context)
+            invalid = {**config, "engine_max_num_tokens": 512 if expected_context == 1024 else 1024}
+            self.assertFalse(validator.is_valid(invalid), candidate["candidate_id"])
 
     def test_model_authentication_streams_once_without_read_bytes(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as directory:
@@ -121,6 +129,7 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
                 "test_profile": "standard",
                 "max_input_tokens": 128,
                 "max_output_tokens": 16,
+                "engine_max_num_tokens": 1024,
                 "temperature": 0.0,
                 "top_p": 1.0,
                 "threads": 4,

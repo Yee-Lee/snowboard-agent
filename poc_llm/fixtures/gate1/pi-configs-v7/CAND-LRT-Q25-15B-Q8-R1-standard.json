@@ -11,6 +11,7 @@
   "test_profile": "standard",
   "max_input_tokens": 128,
   "max_output_tokens": 16,
+  "engine_max_num_tokens": 512,
   "temperature": 0.0,
   "top_p": 1.0,
   "threads": 4,

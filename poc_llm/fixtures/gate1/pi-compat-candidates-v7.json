@@ -7,7 +7,7 @@
       "model_size_bytes": 2588147712,
       "standard_config": {
         "path": "poc_llm/fixtures/gate1/pi-configs-v7/CAND-LRT-G4E2B-MOBILE-R1-standard.json",
-        "sha256": "7dbe5dd59466269bf7cb853842831c592d6849aa14b9b0d908d6ea53d0797320"
+        "sha256": "bc8f32e2aa465176775d12a75afc98670728e353ae587e80c0d8f9db1d48a7d5"
       }
     },
     {
@@ -16,7 +16,7 @@
       "model_size_bytes": 1597931520,
       "standard_config": {
         "path": "poc_llm/fixtures/gate1/pi-configs-v7/CAND-LRT-Q25-15B-Q8-R1-standard.json",
-        "sha256": "af179ed87a4aa63cfdcf4f95a9acdad3d52259923a5457573a816c2892a096c5"
+        "sha256": "cd32c9132a70572053ec492a1aa1451848ea450b21eb9e6357b14564967c0152"
       }
     }
   ],

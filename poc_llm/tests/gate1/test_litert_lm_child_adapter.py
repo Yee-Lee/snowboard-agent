@@ -107,7 +107,7 @@ class ChildAdapterTest(unittest.TestCase):
         self.assertEqual(terminal["request_id"], "req-timeout")
         child.close()
 
-    def test_engine_uses_model_kv_cache_default(self):
+    def test_engine_uses_explicit_context_only_when_configured(self):
         captured = {}
 
         class Conversation:
@@ -166,6 +166,12 @@ class ChildAdapterTest(unittest.TestCase):
         self.assertEqual(captured["prompt_type"], "str")
         self.assertEqual(captured["conversation_kwargs"]["max_output_tokens"], 16)
         backend.close()
+
+        bounded_config = {**config, "engine_max_num_tokens": 1024}
+        with mock.patch.dict(sys.modules, {"litert_lm": fake}):
+            bounded_backend = LiteRtBackend(bounded_config)
+        self.assertEqual(captured["kwargs"]["max_num_tokens"], 1024)
+        bounded_backend.close()
 
     def test_backend_failure_diagnostic_redacts_message(self):
         secret = "sensitive backend detail"

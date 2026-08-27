@@ -2,7 +2,7 @@
 
 - **Packet ID**: `G1-PI-COMPAT-007`
 - **Revision**: `2026-08-26-r3`
-- **Status**: `REVIEW FINDINGS REVISED / RE-REVIEW REQUIRED / EXECUTION NOT AUTHORIZED`
+- **Status**: `REVIEW APPROVED / USER AUTHORIZED FOR EXECUTION`
 - **Replaces**: `G1-PI-COMPAT-006` for future Gate 1 execution
 - **Formal credit requested**: M4B-P1, P6, P7, P10A, P11, P12
 - **Execution owner**: LLM POC Test Controller
@@ -19,6 +19,11 @@ remains Pi-only.
 The User requires reviewer approval of this design before execution. After reviewer approval, the
 User may authorize execution while Core reviews the cumulative boundary. Results remain
 `CORE ACCEPTANCE PENDING` and cannot close a gate until the Core ACK arrives.
+
+The approved startup correction freezes `Engine.max_num_tokens=1024` for Gemma because its
+169-token rendered maximum selects the artifact's next available `prefill_1024` signature. Qwen
+freezes `512`, which independently completed READY and generation. These are total Engine state
+capacities, not accepted input sizes; the protocol envelope remains 128 input plus 16 output tokens.
 
 ## 2. Frozen candidates
 

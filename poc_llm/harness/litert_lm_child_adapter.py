@@ -93,11 +93,13 @@ class LiteRtBackend:
     def __init__(self, config: dict[str, Any]):
         import litert_lm  # Imported only after immutable input authentication.
 
-        self._engine = litert_lm.Engine(
-            config["model_path"],
-            backend=litert_lm.Backend.CPU(thread_count=config["threads"]),
-            enable_benchmark=True,
-        )
+        engine_options: dict[str, Any] = {
+            "backend": litert_lm.Backend.CPU(thread_count=config["threads"]),
+            "enable_benchmark": True,
+        }
+        if "engine_max_num_tokens" in config:
+            engine_options["max_num_tokens"] = config["engine_max_num_tokens"]
+        self._engine = litert_lm.Engine(config["model_path"], **engine_options)
         self._conversation = None
         self._lock = threading.Lock()
         self._sampler = litert_lm.SamplerConfig(
