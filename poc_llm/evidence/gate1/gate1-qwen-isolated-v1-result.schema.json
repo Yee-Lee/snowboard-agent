@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:gate1:qwen-isolated:result:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_id", "base_packet_id", "run_id", "execution_sha", "execution_surface_sha256", "isolation", "inner_result_sha256", "candidate_run", "violations", "result"],
+  "properties": {
+    "packet_id": {"const": "G1-QWEN-ISOLATED-COMPLETION-001"},
+    "base_packet_id": {"const": "G1-PI-COMPAT-007"},
+    "run_id": {"type": "string", "pattern": "^G1-PI-COMPAT-007-QWEN-ISOLATED-[A-Za-z0-9._:-]+$"},
+    "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "execution_surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "isolation": {
+      "type": "object",
+      "required": ["boot_id_sha256", "prelaunch_uptime_s", "preexisting_adapter_processes", "prior_candidate_workloads_in_run", "candidate_id"],
+      "properties": {
+        "boot_id_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "prelaunch_uptime_s": {"type": "number", "minimum": 0, "maximum": 900},
+        "preexisting_adapter_processes": {"const": 0},
+        "prior_candidate_workloads_in_run": {"const": 0},
+        "candidate_id": {"const": "CAND-LRT-Q25-15B-Q8-R1"}
+      }
+    },
+    "inner_result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidate_run": {"type": "object"},
+    "violations": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"result": {"const": "PASS"}}}, "then": {"properties": {"violations": {"maxItems": 0}}}},
+    {"if": {"properties": {"result": {"const": "INCONCLUSIVE"}}}, "then": {"properties": {"violations": {"minItems": 1}}}}
+  ]
+}

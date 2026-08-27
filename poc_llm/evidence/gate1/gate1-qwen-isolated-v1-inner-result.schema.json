@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:gate1:qwen-isolated:inner:1.0",
+  "type": "object",
+  "required": ["packet_id", "run_id", "execution_sha", "execution_surface_sha256", "core_acceptance", "gate2_credit_scope", "environment", "environment_post", "runtime", "candidates", "proposed_finalists", "violations", "result"],
+  "properties": {
+    "packet_id": {"const": "G1-PI-COMPAT-007"},
+    "run_id": {"type": "string", "pattern": "^G1-PI-COMPAT-007-QWEN-ISOLATED-[A-Za-z0-9._:-]+$"},
+    "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "execution_surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "core_acceptance": {"const": "PENDING"},
+    "gate2_credit_scope": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"enum": ["P1", "P6", "P7", "P10A", "P11", "P12"]}},
+    "environment": {"type": "object"},
+    "environment_post": {"type": "object"},
+    "runtime": {"type": "object"},
+    "candidates": {
+      "type": "array", "minItems": 1, "maxItems": 1,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "proposed_finalists": {"type": "array", "maxItems": 1, "uniqueItems": true, "items": {"const": "CAND-LRT-Q25-15B-Q8-R1"}},
+    "violations": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "elapsed_ms": {"type": "number", "minimum": 0}
+  },
+  "allOf": [
+    {"if": {"properties": {"result": {"const": "PASS"}}}, "then": {"properties": {"proposed_finalists": {"minItems": 1}, "violations": {"maxItems": 0}}}},
+    {"if": {"properties": {"result": {"const": "FAIL"}}}, "then": {"properties": {"proposed_finalists": {"maxItems": 0}}}},
+    {"if": {"properties": {"result": {"const": "INCONCLUSIVE"}}}, "then": {"properties": {"violations": {"minItems": 1}}}}
+  ],
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "p_results", "artifact_authentication", "normal_lifecycle", "stability", "cancel", "recovery", "violations", "result"],
+      "properties": {
+        "candidate_id": {"const": "CAND-LRT-Q25-15B-Q8-R1"},
+        "p_results": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["P1", "P6", "P7", "P10A", "P11", "P12"],
+          "properties": {
+            "P1": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]},
+            "P6": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Conditional escalation", "Blocked"]},
+            "P7": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]},
+            "P10A": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]},
+            "P11": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]},
+            "P12": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "Blocked"]}
+          }
+        },
+        "artifact_authentication": {"type": "object"},
+        "normal_lifecycle": {"type": "object"},
+        "stability": {"type": "object"},
+        "cancel": {"type": "object"},
+        "recovery": {"type": "object"},
+        "violations": {"type": "array", "items": {"type": "string"}},
+        "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"result": {"const": "PASS"}}},
+          "then": {
+            "properties": {
+              "p_results": {
+                "properties": {
+                  "P1": {"const": "PASS"},
+                  "P6": {"enum": ["PASS", "Conditional escalation"]},
+                  "P7": {"const": "PASS"},
+                  "P10A": {"const": "PASS"},
+                  "P11": {"const": "PASS"},
+                  "P12": {"const": "PASS"}
+                }
+              },
+              "violations": {"maxItems": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"result": {"enum": ["FAIL", "INCONCLUSIVE"]}}},
+          "then": {"properties": {"violations": {"minItems": 1}}}
+        }
+      ]
+    }
+  }
+}

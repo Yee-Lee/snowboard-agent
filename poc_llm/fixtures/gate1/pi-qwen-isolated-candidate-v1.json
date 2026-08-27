@@ -1,0 +1,15 @@
+{
+  "packet_id": "G1-PI-COMPAT-007",
+  "candidates": [
+    {
+      "candidate_id": "CAND-LRT-Q25-15B-Q8-R1",
+      "model_sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9",
+      "model_size_bytes": 1597931520,
+      "standard_config": {
+        "path": "poc_llm/fixtures/gate1/pi-configs-v7/CAND-LRT-Q25-15B-Q8-R1-standard.json",
+        "sha256": "cd32c9132a70572053ec492a1aa1451848ea450b21eb9e6357b14564967c0152"
+      }
+    }
+  ],
+  "backfill_forbidden": true
+}
