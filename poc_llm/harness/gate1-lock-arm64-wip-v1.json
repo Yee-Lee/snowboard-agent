@@ -12,7 +12,7 @@
     "offline_install_wrapper":{"path":"poc_llm/tools/run_gate1_arm64_offline_install.sh","sha256":"5979c5aab54f5e3aeca953fb4962890bbc552b9b65eed071196e83f486150400"},
     "adapter_binding_bundle":{"path":"poc_llm/fixtures/gate1/arm64-adapter-binding-bundle-v1.json","sha256":"d2e9ec85e0f8de2c1fe6a40b77fe95b4a5e8c6a8f3acc34234aba6b8162c3682"},
     "model_license_metadata":{"path":"poc_llm/fixtures/gate1/arm64-model-license-metadata-v1.json","sha256":"49fefcf9d1986ff316c525b11ce6e0602885da61059fdf7e265897bc796fffef"},
-    "adapter":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"64f87eb4f0f882ffa0e5510156cd82e6a4c373d761bc292f0846a4bfeecaeb8a"},
+    "adapter":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},
     "smoke_runner":{"path":"poc_llm/tools/run_gate1_arm64_smoke.py","sha256":"73f08f214b2440fdd9d45f680eba20e67e4ec9e3bdc48d2625e8de13bd068421"},
     "measurement_runner":{"path":"poc_llm/tools/run_gate1_arm64_measurement.py","sha256":"5458c45294766bb28de52719b0f1bc167c1d23b9bea55a16728535b613269f7b"},
     "measurement_schema":{"path":"poc_llm/fixtures/gate1/arm64-measurement-result-v1.schema.json","sha256":"850bae9cbdf301cfb947f8aa0886eadece6ab8b7ab1359b2a6434f0457688fd1"},

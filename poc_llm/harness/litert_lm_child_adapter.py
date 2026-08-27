@@ -15,7 +15,7 @@ import sys
 import threading
 from typing import Any, Protocol, TextIO
 
-from jsonschema import Draft202012Validator, RefResolver
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -56,10 +56,18 @@ def _protocol_validator() -> Draft202012Validator:
     protocol = json.loads((CONTRACT_ROOT / "protocol-frame-arm64.schema.json").read_text(encoding="utf-8"))
     prompt = json.loads((CONTRACT_ROOT / "prompt-input.schema.json").read_text(encoding="utf-8"))
     response = json.loads((CONTRACT_ROOT / "response.schema.json").read_text(encoding="utf-8"))
-    store = {item["$id"]: item for item in (protocol, prompt, response)}
-    return Draft202012Validator(
-        protocol, resolver=RefResolver.from_schema(protocol, store=store)
-    )
+    for schema in (prompt, response):
+        schema.pop("$schema", None)
+        schema.pop("$id", None)
+    protocol["$defs"]["prompt_input"] = prompt
+    protocol["$defs"]["response"] = response
+    protocol["$defs"]["generate"]["properties"]["input"] = {
+        "$ref": "#/$defs/prompt_input"
+    }
+    protocol["$defs"]["result"]["properties"]["response"] = {
+        "$ref": "#/$defs/response"
+    }
+    return Draft202012Validator(protocol)
 
 
 def _strict_config_validator() -> Draft202012Validator:

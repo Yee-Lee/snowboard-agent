@@ -17,7 +17,7 @@
     "runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v7.py", "sha256": "d8fbd83d017ed118cb741c43da8db1e72d3a7cefc054eaef8af01d746022cfcb"},
     "adapter": {"path": "poc_llm/harness/litert_lm_pi_child_adapter_v2.py", "sha256": "9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
     "pi_child_base": {"path": "poc_llm/harness/litert_lm_pi_child_adapter.py", "sha256": "345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
-    "child_base": {"path": "poc_llm/harness/litert_lm_child_adapter.py", "sha256": "64f87eb4f0f882ffa0e5510156cd82e6a4c373d761bc292f0846a4bfeecaeb8a"},
+    "child_base": {"path": "poc_llm/harness/litert_lm_child_adapter.py", "sha256": "eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},
     "child_base_tests": {"path": "poc_llm/tests/gate1/test_litert_lm_child_adapter.py", "sha256": "6ee23d87c7eb789103f22b2f552364815ae7ea4d25817d7e59dcd1069ce06ae9"},
     "contract_boundary": {"path": "poc_llm/harness/m1_contract_boundary.py", "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
     "artifact_auth": {"path": "poc_llm/harness/pi_artifact_auth.py", "sha256": "db3a3e1c1beedcd33f2074a0ef7ec549c5bbae56e283fb9bb78e171d4073e328"},
