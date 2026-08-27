@@ -1,0 +1,45 @@
+{
+  "packet_id": "G1-P6.1-P7.1-001",
+  "base_packet_id": "G1-PI-COMPAT-007",
+  "revision": "2026-08-27-p6-1-p7-1-v1",
+  "candidate_order": [
+    "CAND-LRT-G4E2B-MOBILE-R1",
+    "CAND-LRT-Q25-15B-Q8-R1"
+  ],
+  "candidate_set_sha256": "77a0390c5c482c90906049b566cba214ead0b55b8847fd42573fc5a2fa2f8975",
+  "thresholds": {
+    "cancel_ms": 500,
+    "rebuild_ready_ms": 10000,
+    "rebuild_diagnostic_ms": 30000
+  },
+  "runtime": {
+    "wheel_path": "/tmp/llm-poc-pi-artifacts-v1/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
+    "wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+  },
+  "artifacts": {
+    "packet": {"path": "poc_llm/tests/gate1/GATE1-P6.1-P7.1-REDESIGN-001.md", "sha256": "78072dd407b8744070a38408a7d071269e6e3387043717441d47ed0900e3bf56"},
+    "packet_tests": {"path": "poc_llm/tests/gate1/test_gate1_p6_1_p7_1.py", "sha256": "5e18e6354522bf1915c3a2431c921452c5fb0579c54fb39fb2b89ce481d6ed2b"},
+    "runner": {"path": "poc_llm/tools/run_gate1_p6_1_p7_1.py", "sha256": "addc916f6783ea41e44cde65197189ccaa40fda88b8ea89528250d421ccc0716"},
+    "async_adapter": {"path": "poc_llm/harness/litert_lm_pi_async_child_adapter_v1.py", "sha256": "403156c73e98f61096881d57099b0d2babf4d9b029520c0a5fdb56eb44fc6207"},
+    "async_adapter_tests": {"path": "poc_llm/tests/gate1/test_litert_lm_pi_async_child_adapter_v1.py", "sha256": "dcef1122b36e885e852bf2a0e6196f4f4e862ffa7a3c8363fd18f80e3fd28b0b"},
+    "base_runner": {"path": "poc_llm/tools/run_gate1_pi_compat_v7.py", "sha256": "acc7b027bfc995f5e8e5d748d5baca405fc6c1c96e564e20a8983f8f5bb5cc16"},
+    "adapter": {"path": "poc_llm/harness/litert_lm_pi_child_adapter_v2.py", "sha256": "9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
+    "pi_child_base": {"path": "poc_llm/harness/litert_lm_pi_child_adapter.py", "sha256": "345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
+    "child_base": {"path": "poc_llm/harness/litert_lm_child_adapter.py", "sha256": "eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},
+    "contract_boundary": {"path": "poc_llm/harness/m1_contract_boundary.py", "sha256": "f83e5300668063d19abce187a5d35f148eeecd16a1e49a9f9931b06f7002a697"},
+    "artifact_auth": {"path": "poc_llm/harness/pi_artifact_auth.py", "sha256": "db3a3e1c1beedcd33f2074a0ef7ec549c5bbae56e283fb9bb78e171d4073e328"},
+    "runtime_helpers": {"path": "poc_llm/harness/pi_runtime.py", "sha256": "95f3e845ad5a483bbcc7307acf3977749369558d2a22c07b56c3fad52f628dad"},
+    "runtime_helpers_v2": {"path": "poc_llm/harness/pi_runtime_v2.py", "sha256": "1f583738312dfd23a22c1f0a5e30b86cb0704dc07f18b2eed42a99d251e67d5d"},
+    "installer": {"path": "poc_llm/tools/install_gate1_arm64_wheel_v2.py", "sha256": "aa8c127ec5214e4926d12968b1e0a2d767f7934c141d144b7a392df124ee0e74"},
+    "config_schema": {"path": "poc_llm/contracts/m1/strict-config-pi-v2.schema.json", "sha256": "e00ad3c8cdb2ceede5409bbe950f94c0c993f17b32a8e568f7ad9effa6f35015"},
+    "protocol_schema": {"path": "poc_llm/contracts/m1/protocol-frame-pi.schema.json", "sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
+    "prompt_schema": {"path": "poc_llm/contracts/m1/prompt-input.schema.json", "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    "response_schema": {"path": "poc_llm/contracts/m1/response.schema.json", "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    "artifact_receipt_schema": {"path": "poc_llm/evidence/m4b/pi-artifact-auth-receipt-v2.schema.json", "sha256": "0e16445c0d35aafd0ab9746b4a9a8749d0a1e72864145ef010512824170f6852"},
+    "result_schema": {"path": "poc_llm/evidence/gate1/gate1-p6-1-p7-1-v1-result.schema.json", "sha256": "0b3c15252074ef3c9a026722191d67edc8d829289147bbab88d90c90550afcca"},
+    "abort_fixture": {"path": "poc_llm/fixtures/gate1/gate1-core-abort-001.json", "sha256": "5eb3f2c091d7f17da1017fbbf2ac36baca01ba97192d1f57443f6aa0f39ea02b"},
+    "catalog": {"path": "poc_llm/fixtures/gate2/gate2a-public-catalog-001.json", "sha256": "e34565a6d7281aa781b33bb5da29d57b65d6aa1197e0f1ad8df5efe31c241abf"},
+    "license_metadata": {"path": "poc_llm/fixtures/gate1/arm64-model-license-metadata-v1.json", "sha256": "49fefcf9d1986ff316c525b11ce6e0602885da61059fdf7e265897bc796fffef"}
+  }
+}

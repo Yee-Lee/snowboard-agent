@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:gate1:p6-1-p7-1:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packet_id", "base_packet_id", "run_id", "test_id", "candidate_id",
+    "execution_sha", "execution_surface_sha256", "core_acceptance", "isolation",
+    "environment", "environment_post", "runtime", "artifact_authentication",
+    "prerequisite_ready_ms", "cancel", "recovery", "final_cleanup", "p_result",
+    "violations", "result", "elapsed_ms"
+  ],
+  "properties": {
+    "packet_id": {"const": "G1-P6.1-P7.1-001"},
+    "base_packet_id": {"const": "G1-PI-COMPAT-007"},
+    "run_id": {"type": "string", "pattern": "^G1-(P6\\.1|P7\\.1)-[A-Za-z0-9._:-]+$"},
+    "test_id": {"enum": ["P6.1", "P7.1"]},
+    "candidate_id": {
+      "enum": ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"]
+    },
+    "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "execution_surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "core_acceptance": {"const": "PENDING"},
+    "isolation": {
+      "type": "object",
+      "required": [
+        "boot_id_sha256", "prelaunch_uptime_s", "preexisting_adapter_processes",
+        "prior_candidate_workloads_in_run", "candidate_id", "test_id",
+        "prior_receipts_checked"
+      ],
+      "properties": {
+        "boot_id_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "prelaunch_uptime_s": {"type": "number", "minimum": 0, "maximum": 900},
+        "preexisting_adapter_processes": {"const": 0},
+        "prior_candidate_workloads_in_run": {"const": 0},
+        "prior_receipts_checked": {"type": "integer", "minimum": 0, "maximum": 3},
+        "candidate_id": {
+          "enum": ["CAND-LRT-G4E2B-MOBILE-R1", "CAND-LRT-Q25-15B-Q8-R1"]
+        },
+        "test_id": {"enum": ["P6.1", "P7.1"]}
+      }
+    },
+    "environment": {"type": "object"},
+    "environment_post": {"type": "object"},
+    "runtime": {"type": "object"},
+    "artifact_authentication": {"type": "object"},
+    "prerequisite_ready_ms": {"type": ["number", "null"], "minimum": 0},
+    "cancel": {"type": "object"},
+    "recovery": {"type": "object"},
+    "final_cleanup": {"type": "object"},
+    "p_result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "violations": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "elapsed_ms": {"type": "number", "minimum": 0}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "p_result": {"const": "PASS"},
+          "violations": {"maxItems": 0},
+          "prerequisite_ready_ms": {"type": "number", "maximum": 10000}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"result": {"enum": ["FAIL", "INCONCLUSIVE"]}}},
+      "then": {"properties": {"violations": {"minItems": 1}}}
+    },
+    {
+      "if": {"properties": {"test_id": {"const": "P6.1"}, "result": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "cancel": {
+            "type": "object",
+            "required": [
+              "async_activity_observed", "terminal", "elapsed_ms", "cancel_request_ms",
+              "native_cancel_invoked_ms", "native_stream_terminal_ms", "native_cancel_count",
+              "cancelled_conversation_discarded", "same_engine_health_terminal",
+              "same_engine_health_ms", "conversation_discard_count"
+            ],
+            "properties": {
+              "async_activity_observed": {"const": true},
+              "terminal": {"const": "CANCELLED"},
+              "elapsed_ms": {"type": "number", "minimum": 0, "maximum": 500},
+              "cancel_request_ms": {"const": 0},
+              "native_cancel_invoked_ms": {"type": "number", "minimum": 0, "maximum": 500},
+              "native_stream_terminal_ms": {"type": "number", "minimum": 0, "maximum": 500},
+              "native_cancel_count": {"const": 1},
+              "cancelled_conversation_discarded": {"const": true},
+              "same_engine_health_terminal": {"const": "RESULT"},
+              "same_engine_health_ms": {"type": "number", "minimum": 0},
+              "conversation_discard_count": {"const": 2}
+            }
+          },
+          "recovery": {"maxProperties": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"test_id": {"const": "P7.1"}, "result": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "cancel": {"maxProperties": 0},
+          "recovery": {
+            "type": "object",
+            "required": [
+              "native_cancel_invoked", "abort_to_absence_ms", "rebuild_ready_ms",
+              "ready_sla_ms", "diagnostic_timeout_ms", "diagnostic_disposition",
+              "health_terminal", "health_ms", "fatal_outcome_exit_code"
+            ],
+            "properties": {
+              "native_cancel_invoked": {"const": false},
+              "abort_to_absence_ms": {"type": "number", "minimum": 0},
+              "rebuild_ready_ms": {"type": "number", "minimum": 0, "maximum": 10000},
+              "ready_sla_ms": {"const": 10000},
+              "diagnostic_timeout_ms": {"const": 30000},
+              "diagnostic_disposition": {"const": "WITHIN_SLA"},
+              "health_terminal": {"const": "RESULT"},
+              "health_ms": {"type": "number", "minimum": 0},
+              "fatal_outcome_exit_code": {"const": 4}
+            }
+          }
+        }
+      }
+    }
+  ]
+}
