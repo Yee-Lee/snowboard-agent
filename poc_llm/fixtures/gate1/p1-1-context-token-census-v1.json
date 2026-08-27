@@ -2,22 +2,23 @@
   "census_id": "P1.1-CONTEXT-TOKEN-CENSUS-001",
   "diagnostic_only": true,
   "gate_credit": "FORBIDDEN",
-  "method": "litert-conversation-render-then-engine-tokenize",
+  "method": "litert-conversation-render-then-engine-tokenize-lower-bound-with-runtime-capacity-observation",
   "catalog": "M4B-G2A-P2P3-001",
   "runtime_added_token_margin": 1,
   "max_output_tokens": 16,
   "candidates": {
     "CAND-LRT-G4E2B-MOBILE-R1": {
       "rendered_input_max_tokens": 169,
-      "runtime_observed_input_max_tokens": 170,
-      "required_total_tokens": 186
+      "runtime_observed_input_minimum_exclusive": 192,
+      "tokenizer_count_disposition": "LOWER_BOUND_ONLY_MODEL_INTERNAL_PREFILL_EXPANSION"
     },
     "CAND-LRT-Q25-15B-Q8-R1": {
       "rendered_input_max_tokens": 170,
       "runtime_observed_input_max_tokens": 171,
-      "required_total_tokens": 187
+      "required_total_tokens": 187,
+      "tokenizer_count_disposition": "RUNTIME_CONFIRMED_AT_192"
     }
   },
-  "frozen_engine_max_num_tokens": 192,
-  "selection_rule": "smallest multiple of 64 greater than or equal to the observed total requirement"
+  "frozen_engine_max_num_tokens": 512,
+  "selection_rule": "pre-existing Gemma planning baseline; tokenizer census is not accepted as a complete capacity oracle for multimodal model internals"
 }

@@ -66,7 +66,7 @@ class P11PiStartupAttributionTests(unittest.TestCase):
             [item["profile_id"] for item in profiles["profiles"]],
             ["bounded_context"],
         )
-        self.assertEqual(profiles["profiles"][0]["max_num_tokens"], 192)
+        self.assertEqual(profiles["profiles"][0]["max_num_tokens"], 512)
         self.assertTrue(profiles["profiles"][0]["enable_benchmark"])
         self.assertIn(
             "bounded_context_no_benchmark",
@@ -80,20 +80,22 @@ class P11PiStartupAttributionTests(unittest.TestCase):
         self.assertIn("without a removal recommendation", packet)
         self.assertIn("fresh run-scoped receipt", packet)
         self.assertIn("never reused", packet)
-        self.assertIn("max_num_tokens=192", packet)
+        self.assertIn("max_num_tokens=512", packet)
         self.assertIn("comparison must start after a Pi reboot", packet)
 
-    def test_context_census_covers_catalog_and_selects_192(self) -> None:
+    def test_context_census_rejects_tokenizer_only_bound_and_selects_512(self) -> None:
         census = json.loads(CENSUS.read_text(encoding="utf-8"))
         self.assertTrue(census["diagnostic_only"])
         self.assertEqual(census["gate_credit"], "FORBIDDEN")
-        requirements = [
-            item["required_total_tokens"]
-            for item in census["candidates"].values()
-        ]
-        self.assertEqual(max(requirements), 187)
-        self.assertEqual(census["frozen_engine_max_num_tokens"], 192)
-        self.assertGreaterEqual(census["frozen_engine_max_num_tokens"], max(requirements))
+        gemma = census["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]
+        qwen = census["candidates"]["CAND-LRT-Q25-15B-Q8-R1"]
+        self.assertGreater(gemma["runtime_observed_input_minimum_exclusive"], 191)
+        self.assertEqual(
+            gemma["tokenizer_count_disposition"],
+            "LOWER_BOUND_ONLY_MODEL_INTERNAL_PREFILL_EXPANSION",
+        )
+        self.assertEqual(qwen["required_total_tokens"], 187)
+        self.assertEqual(census["frozen_engine_max_num_tokens"], 512)
 
     def test_viability_requires_ready_generation_and_cleanup(self) -> None:
         viable = {

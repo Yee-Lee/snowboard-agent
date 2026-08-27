@@ -1,15 +1,15 @@
 {
   "packet_id": "P1.1-PI-STARTUP-ATTRIBUTION-001",
-  "revision": "2026-08-26-census-bounded-context-192",
+  "revision": "2026-08-27-planning-baseline-context-512",
   "diagnostic_only": true,
   "gate_credit": "FORBIDDEN",
   "artifacts": {
-    "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "f5f0d1b0e581822eabdfbdc835bc796647453dae9dfbb87798a456c70074efe0"},
-    "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "56e2d562336970b1f07af79e68950b630c1947fb9a01f1c355778f908266d9be"},
-    "context_census": {"path": "poc_llm/fixtures/gate1/p1-1-context-token-census-v1.json", "sha256": "a2bef9780ec6f483281e68725c5ac5703d03d5baee46fa4484bd1815d757421e"},
+    "packet": {"path": "poc_llm/tests/gate1/P1.1-PI-STARTUP-ATTRIBUTION-PACKET-001.md", "sha256": "5eeae64372fdce1314dee30e0cd420864a1956530700ef85f298254af11fef4a"},
+    "profiles": {"path": "poc_llm/fixtures/gate1/p1-1-startup-profiles-v1.json", "sha256": "46a40328565e3c92e1bcc69ceb5845a887aca7eeceba535724ae84a804502154"},
+    "context_census": {"path": "poc_llm/fixtures/gate1/p1-1-context-token-census-v1.json", "sha256": "a9076ffa0336eceb3299cc3aeeaf2a947f72e3f72646332e8b30da31ed7b022f"},
     "probe": {"path": "poc_llm/harness/p1_1_pi_startup_probe.py", "sha256": "2876171cf9b7f54a0fb63a19c117a652d46f7fc19f02177172abd7436d8b9bd7"},
     "runner": {"path": "poc_llm/tools/run_p1_1_pi_startup_attribution.py", "sha256": "483df56eb1c5f9cab66d7a6c192b23a22c62d72f83e686abab61cef5edf32c90"},
-    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "96ef15b427917a7b60c1b3aac3c6495ae376af03c5ad1c7a940057ba9b79a865"},
+    "tests": {"path": "poc_llm/tests/gate1/test_p1_1_pi_startup_attribution.py", "sha256": "ebee42551c7c2dd48b4b521b3b4144c6e1b4683f5ac006c8fef87bb97a5797f0"},
     "result_schema": {"path": "poc_llm/evidence/gate1/p1-1-pi-startup-attribution-v1.schema.json", "sha256": "11155ed58dc38188d9fe52f07d46347c4e784659daf280e37dabef1879412714"},
     "gate1_lock": {"path": "poc_llm/harness/gate1-pi-compat-lock-v7.json", "sha256": "5dbe123f326e611a44fbc3df268e993bfdea2439f5f2181176e5e4c1328f6c35"},
     "candidate_set": {"path": "poc_llm/fixtures/gate1/pi-compat-candidates-v7.json", "sha256": "38ad3b88c0d3ea93f25fd6a580829867fc87de92666fb0ea0c84568c5e33a35a"}

@@ -10,9 +10,9 @@
   "profiles": [
     {
       "profile_id": "bounded_context",
-      "max_num_tokens": 192,
+      "max_num_tokens": 512,
       "enable_benchmark": true,
-      "purpose": "Measure the census-bounded Engine context against the completed baseline and rejected 144-token variant."
+      "purpose": "Measure the pre-existing 512-token Gemma planning baseline after model-internal prefill expansion invalidated the tokenizer-derived 192-token bound."
     }
   ],
   "deferred_until_after_baseline_analysis": [
