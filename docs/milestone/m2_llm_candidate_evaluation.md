@@ -1,6 +1,6 @@
 # LLM M2：Gate 1 Cumulative Stability and Core Integration
 
-狀態：`DESIGN REVIEW / EXECUTION HELD FOR REVIEWER`
+狀態：`USER COMPLETE / CORE GATE-COMPLETION REVIEW`
 
 ## Goal and delivery contribution
 
@@ -13,7 +13,8 @@
 - Gate 0與M1完成；兩名candidate/runtime/model/config/license identity固定。
 - Product target為Pi 5 4GB、Debian 13 aarch64、`swap=0`、offline、`throttled=0x0`。
 - Runtime wheel與兩個模型已在Pi持久artifact root，正式執行前仍須read-only staging與clean exact SHA。
-- User要求reviewer先審查design/source/tests；在放行前不commit/push、不送Core、不連Pi執行。
+- Reviewer已核准cumulative design，Core已ACK R3 execution entry，User已授權Pi執行與後續
+  append-only source SHA。Gate 1結果仍須User核准後才可commit/publish或送Core closure。
 
 ## Historical `006`
 
@@ -41,8 +42,25 @@ Authoritative packet為`poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md`；sou
   boundary與最多兩名finalists。
 - Gate 2A只執行P2/P3/P4/P5/P8；不得重跑identity未變的Gate 1 P evidence。
 
+## Withdrawn legacy aggregate
+
+| Candidate | P1 | P6.1 | P7.1 | P10A | P11 | P12 | Gate 1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Gemma 4 E2B | PASS | PASS | PASS | PASS | PASS | PASS | PASS / finalist |
+| Qwen2.5 1.5B Q8 | PASS | PASS | FAIL | PASS | PASS | PASS | FAIL / User waiver to Gate 2A |
+
+Gemma formal receipt is `G1-PI-COMPAT-007-20260827T131517Z-002`. Qwen's reboot-isolated normal
+lifecycle is `G1-PI-COMPAT-007-QWEN-ISOLATED-20260827T134110Z`; its prospectively frozen focused
+P6/P7 receipt is `G1-QWEN-P6P7-ISOLATED-20260827T135911Z`. Detailed hashes, metrics, cleanup and
+adjudication are in `ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md`.
+
+The former Gemma-only aggregate was withdrawn before publication. Independent reboot-isolated
+P6.1/P7.1 now replace both legacy credits. Qwen P7.1 independently recovered READY in `18152.025 ms`,
+so its score remains FAIL. The User retains Qwen for Gate 2A by explicit defect waiver and bounded
+workaround opportunity; Gemma remains the normal finalist. Core completion review is pending.
+
 ## Retry and prohibitions
 
 Valid mandatory FAIL不retune、不same-revision rerun；reviewed infrastructure/evidence
 INCONCLUSIVE最多一次identical rerun。不得補Qwen 0.5B、在workstation跑P5、提交model/raw output/
-prompt/payload/credential、或在Reviewer前開始Pi run。
+prompt/payload/credential。P6.1/P7.1設計、source、schema與tests須先由User審核，之後才可開始Pi run。

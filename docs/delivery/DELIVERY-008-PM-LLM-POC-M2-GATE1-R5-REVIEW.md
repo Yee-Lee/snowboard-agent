@@ -23,7 +23,7 @@ M2.
 
 - `docs/DOCUMENT_INDEX.md`
 - `docs/milestone/README.md`
-- `docs/pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`
+- `docs/pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`
 - `docs/response/ACK-LLM-M2-GATE1-PLATFORM-CONFIG-R5-INTAKE-001.md`
 - `poc_llm/evidence/gate1/gate1-r5-run-result.schema.json`
 - `poc_llm/evidence/gate1/gate1-selection-v5.schema.json`

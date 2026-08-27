@@ -2,11 +2,11 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-08-26
+最後更新：2026-08-27
 
 ## Current reachability
 
-狀態：`GATE1_R3 TEST-ONLY FIX USER-AUTHORIZED / CANDIDATE COMMIT`。
+狀態：`GATE1 USER ADJUDICATED / CORE COMPLETION REVIEW PENDING`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -16,15 +16,18 @@ R2已改用execution-surface digest與continuous-timeout fixture；Reviewer已�
 R2 source `b5690bbbef50ce37af356fd29b88ab920207c38e`已push/送Core，但Pi pure test在任何operator
 change/model load前發現same-tick negative-fixture nondeterminism。R3只修test+lock，workstation
 25/25、Pi isolated 14/14；Core已hold R2 SHA。User明確免除test-only targeted re-review，
-現在建立R3 exact SHA後繼續formal entry。
+R3 exact SHA `4dc76d1574daa7a9f7f56b98a8d65e00258fd46c`與surface `568aa7…dc5`
+已push且獲Core ACK。其後append-only runs保留P1/P10A/P11/P12等有效工程證據；但官方
+LiteRT-LM v0.16 source review證明舊P6未使用documented async path，且舊P7承接cancel-conditioned
+process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 prospective redesign。
 
 ## External gates
 
 | Gate | State | First-executed P items | Close condition / next action |
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
-| Gate 1 | `R3 COMMIT / PI ENTRY` | P1, P6, P7, P10A, P11, P12 | R3 exact SHA/push/Core replacement→Pi run |
-| Gate 2A | `REDESIGNED / NOT_STARTED` | P2, P3, P4, P5, P8 | consume Gate 1 receipt；最多1 provisional finalist |
+| Gate 1 | `USER PASS / CORE REVIEW PENDING` | P1, P6.1, P7.1, P10A, P11, P12 | single Core gate-completion review |
+| Gate 2A | `BLOCKED BY GATE1 / NOT_STARTED` | P2, P3, P4, P5, P8 | consume approved finalist receipt；只補remaining P items |
 | Gate 2B | `BLOCKED` | P9, P10B | Accepted Audio kit + 4GB combined PASS；Core final winner ACK |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
@@ -36,7 +39,7 @@ change/model load前發現same-tick negative-fixture nondeterminism。R3只修te
 | --- | --- | --- |
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
-| M2 | `R3 USER-AUTHORIZED CANDIDATE` | Gate 1 formal execution未開始；R3 execution surface `568aa7…dc5` |
+| M2 | `USER COMPLETE / CORE REVIEW` | Gemma normal finalist；Qwen P7.1 FAIL但依User defect waiver保留Gate 2A資格 |
 | M3 | `REDESIGNED / NOT_STARTED` | Gate 2A `002`：只補P2/P3/P4/P5/P8 |
 | M4 | `REDESIGNED / BLOCKED` | Gate 2B `001`：P9/P10B；缺Accepted Audio |
 
@@ -54,13 +57,14 @@ change/model load前發現same-tick negative-fixture nondeterminism。R3只修te
 
 ## Open dependencies and risks
 
-- **Reviewer gate**：`ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE`已無條件關閉兩項finding；
-  reviewed execution surface不得再修改，發布後才可執行。
-- **Core cumulative ACK**：User允許Reviewer後execution與Core review並行，但Core ACK前不得finalize
-  P credit、Gate 1 finalists或gate closure。
-- **Pi operator state**：模型已在`/var/tmp`持久保存；正式run需clean exact checkout、read-only model
-  staging、`swap=0`及offline interface changes，結束後恢復。
-- **P1 startup**：修正後10秒只包含small receipt/config validation與Engine init；若仍超時才是正式P1 FAIL。
+- **Qwen P7.1 defect**：rebuild READY `18152.025 ms`，維持`FAIL / SLOW_RECOVERY`；User保留其
+  Gate 2A candidate資格尋求workaround，但不得把waiver改寫為PASS。
+- **Core closure ACK**：Core已接受R3 cumulative design與entry SHA，但四份replacement receipts、
+  User Qwen defect waiver、兩名Gate 2A candidates與Gate 1 closure仍待單一Gate-completion review。
+- **Pi operator state**：Gate 1後已恢復zram/network、移除`/tmp` bind且無殘留process；模型仍在
+  `/var/tmp`持久保存。Gate 2A需重新建立read-only staging並重做clean/offline/swap preflight。
+- **P1 startup**：Gemma 1024與Qwen 512皆通過initial READY；capacity必須綁exact artifact，禁止恢復
+  implicit 4096 default或把144-token protocol envelope當Engine capacity。
 - **P6**：native cancel已知可能nondeterministic；只有P7完整PASS才允許Conditional escalation。
 - **P4**：完整方法未達negotiable target需Core written decision。
 - **P5**：固定continuous 512-token chunks共用單一outer timer；chunk完成固定CONTINUE，禁止
@@ -71,18 +75,24 @@ change/model load前發現same-tick negative-fixture nondeterminism。R3只修te
 ## Active packets
 
 - [Gate 1 cumulative packet](../../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md)
+- [Gate 1 P6.1/P7.1 corrective packet](../../poc_llm/tests/gate1/GATE1-P6.1-P7.1-REDESIGN-001.md)
 - [Gate 2A remaining packet](../../poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md)
 - [Gate 2B combined packet](../../poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md)
 - [Cumulative redesign assessment](../response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-REDESIGN-001.md)
 - [Independent reviewer request](../response/REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-001.md)
 - [Latest reviewer findings](../reviews/REVIEW-LLM-M2-CUMULATIVE-REDESIGN-001.md)
 - [R2 reviewer approval](../response/ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md)
+- [Gate 1 cumulative User review](../response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md)
+- [Gate 1 P6.1/P7.1 User review](../response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md)
+- [Gate 1 runner lessons](../response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md)
+- [Gate 1 closure delivery draft](../delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md)
 
 ## Governing and historical inputs
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
-- [Pi packet R2 ACK](../pm_handoff/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
-- [ARM64-to-Pi transition ACK](../pm_handoff/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
+- [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
+- [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
+- [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)
 - [Pi entry point](../../poc_llm/README.md)

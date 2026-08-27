@@ -6,11 +6,7 @@
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
-* [`PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md`](pm_handoff/PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md) - Gate 1 LiteRT-LM / model pairing 與 Pi 5 benchmark 前期研究參考
-* [`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md) - Core 接受 M2-G1-PLATFORM-CONFIG-001，授權 append-only R5 repository revision；真實執行仍封鎖
-* [`ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md`](pm_handoff/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md) - Core 接受 ARM64 UTM input、x86 waiver與兩個candidate freeze；要求先完成產品Pi compatibility再取Gate 1 finalist ACK
-* [`DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md`](pm_handoff/DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md) - Core dispositions for the physical-Pi packets (Gate 1 and Gate 2A) revised
-* [`RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md`](pm_handoff/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md) - Core ACK for Pi Execution Packets (Gate 1 and Gate 2A) - Source Revision Correction
+* [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) - Core接受cumulative boundary、R3 replacement SHA與execution；Gate 1 closure仍待completed manifest review
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
@@ -37,6 +33,11 @@
 * `ACK-LLM-M2-DUAL-UTM-PREFLIGHT-PLAN-001.md` - (已承接) design/preparation授權已由 ARM64 diagnostic ACK推進為bounded continuation
 * `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001.md` - (已承接) ARM64 diagnostic/WIP 授權已由 ARM64-to-Pi transition ACK取代
 * `REQUEST-LLM-POC-P9-SURROGATE-ENVELOPE-001.md` - (已回覆) Core Designer 要求提供 M4A-P9 資源保留 surrogate envelope
+* `PM-POC-LLM-20260818-002-litert-lm-candidate-research-reference.md` - (已納入) 候選與Pi規劃已由formal candidate freeze及實測取代
+* `DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md` - (已承接) platform-config revision已納入後續cumulative R3 design
+* `ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md` - (已完成) ARM64到Pi transition與candidate freeze已執行
+* `DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md` - (已取代) 舊physical-Pi packet delivery已由cumulative R3 ACK取代
+* `RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md` - (已取代) 舊packet source disposition已由cumulative R3 ACK取代
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -64,6 +65,9 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md`](response/REVIEW-REQUEST-LLM-M2-CUMULATIVE-GATES-R2-001.md) - 已獲APPROVE；回覆source-SHA recursive invalidation與P5 fast-model兩項blocker
 * [`ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md`](response/ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE.md) - Reviewer無條件`APPROVE` R2；兩項critical findings關閉，可發布reviewed source
 * [`REVIEW-REQUEST-LLM-M2-GATE1-TARGET-UNIT-R3-001.md`](response/REVIEW-REQUEST-LLM-M2-GATE1-TARGET-UNIT-R3-001.md) - Pi pure test發現same-tick negative-fixture nondeterminism；R3只改test+lock，User已免除targeted re-review並授權繼續
+* [`ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md`](response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md) - 已於發布前撤回；legacy P6/P7不再產生credit，等待P6.1/P7.1 replacement evidence
+* [`ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md`](response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md) - P1.1、Engine lifecycle、artifact receipt、Pi operator與Gate 2/product影響紀錄
+* [`ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md`](response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md) - 四份獨立reboot replacement receipts；P6.1雙PASS、Gemma P7.1 PASS、Qwen P7.1 SLOW_RECOVERY/FAIL，待User裁決
 
 ## 3A. Independent Reviews (位於 `docs/reviews/`)
 
@@ -85,8 +89,10 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md`](delivery/DELIVERY-011-PM-LLM-POC-M2-ARM64-TO-PI-TRANSITION.md) - (已核准) ARM64 UTM sanitized experience kit、x86 waiver與後續移轉產品Pi的scope adjustment
 * [`DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md`](delivery/DELIVERY-012-PM-LLM-POC-P9-SURROGATE-EXECUTABLE.md) - 修正 Core P9 範例缺少CPU trigger的缺陷；交付locked executable、protocol schema、process-group cleanup與Audio integration sequence
 * [`DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md`](delivery/DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md) - Gate 1 Pi compatibility與獨立Gate 2A Pi packet的可執行review candidate；請Core一次審核packet、保留Gate 1 finalist ACK邊界
-* [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md`](delivery/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) - 已送Core `pm_handoff`、ACK pending；請一次接受累積gate boundary、reviewed SHA `b5690bb…`與v6 supersession
+* [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md`](delivery/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) - 已由cumulative R3 ACK接受累積gate boundary、v7 logic與v6 supersession
 * [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md`](delivery/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) - 要求Core暫勿ACK/execute R2 SHA；R3 targeted review後另送replacement exact SHA
+* [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](delivery/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) - 已送Core；R3 SHA `4dc76d1…`與surface `568aa7…dc5`已獲cumulative R3 ACK
+* [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md`](delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) - User已裁決；請Core一次接受四份replacement receipts、Gate 1 PASS及Qwen P7.1 defect waiver
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
@@ -105,6 +111,7 @@ Repo-owned 內部執行工作文件：
 * [`GATE1-ENV-PREFLIGHT-ARM64-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001.md) - ARM64-only UTM executable request；與 x86_64 package/evidence 隔離
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
 * [`GATE1-PI-COMPAT-PACKET-007.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md) - `DESIGN REVIEW`；Pi 5累積P1/P6/P7/P10A/P11/P12 executable packet
+* [`GATE1-P6.1-P7.1-REDESIGN-001.md`](../poc_llm/tests/gate1/GATE1-P6.1-P7.1-REDESIGN-001.md) - legacy P6/P7 replacement；官方async cancel與獨立force-abort/rebuild設計，待User source review後執行
 * [`GATE2A-PI-PACKET-002.md`](../poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md) - 只執行Gate 1未涵蓋的P2/P3/P4/P5/P8
 * [`GATE2B-PI-PACKET-001.md`](../poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md) - Accepted Audio整合的P9/P10B及affected-only regression
 * [`env-preflight-arm64-001.json`](../poc_llm/evidence/gate1/env-preflight-arm64-001.json) - ARM64 sanitized attempt history、checksums與結果範圍

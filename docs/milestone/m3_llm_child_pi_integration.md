@@ -5,11 +5,12 @@
 ## Goal
 
 消費Gate 1 cumulative receipt，只在Pi完成尚未驗證的P2、P3、P4、P5、P8，與Gate 1的
-P1/P6/P7/P10A/P11/P12合併形成完整2A decision。2A最多提出一名provisional finalist。
+P1/P6.1/P7.1/P10A/P11/P12合併形成完整2A decision。Gemma為normal finalist；Qwen以User
+defect waiver保留candidate資格且P7.1維持FAIL。2A最多提出一名provisional finalist。
 
 ## Entry
 
-- Gate 1至少一名finalist及accepted cumulative receipt/evidence manifest。
+- Gate 1至少一名normal finalist、User-waived Qwen candidate及accepted cumulative receipt/evidence manifest。
 - Gate 1 execution commit為current clean checkout的ancestor；execution-surface lock、shared
   component、Pi與environment identity未漂移。Evidence/docs commit不要求Git SHA equality。
 - `G2A-PI-LLM-002` executable revision、Reviewer/User/Core review與Pi authorization就緒。
@@ -25,9 +26,10 @@ P1/P6/P7/P10A/P11/P12合併形成完整2A decision。2A最多提出一名provisi
 
 ## Exit
 
-P2/P3/P5/P8 PASS，P4方法完整且PASS或有written threshold decision；合併Gate 1 accepted items後
-所有2A mandatory requirements關閉。Reviewer/Internal Tester/User review完成後才提交provisional
-proposal；Core只可發provisional ACK，不是final winner。
+P2/P3/P5/P8 PASS，P4方法完整且PASS或有written threshold decision。Qwen若被提名為provisional，
+必須明載P7.1 FAIL及User/Core written workaround disposition，不得把waiver轉為PASS。
+Reviewer/Internal Tester/User review完成後才提交provisional proposal；Core只可發provisional ACK，
+不是final winner。
 
 ## Prohibited
 

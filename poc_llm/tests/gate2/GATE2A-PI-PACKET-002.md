@@ -7,6 +7,7 @@
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
 - **Formal credit carried from Gate 1**: M4B-P1, P6, P7, P10A, P11, P12
 - **Outcome ceiling**: provisional finalist; never final winner
+- **Gate 1 candidate entry**: Gemma normal finalist; Qwen User defect waiver with P7.1 `FAIL`
 
 ## 1. No-repeat entry rule
 
@@ -69,10 +70,12 @@ never model text.
 
 ### G2A-WP05 — cumulative provisional decision
 
-Combine this packet's P2/P3/P4/P5/P8 manifest with the accepted Gate 1 receipt. A candidate is eligible
-for provisional recommendation only when every mandatory P1～P8/P10A/P11/P12 item is accepted, P6
-has its allowed disposition backed by P7, and P4 is either PASS or has a written threshold decision.
-At most one provisional candidate is recommended after User review.
+Combine this packet's P2/P3/P4/P5/P8 manifest with the accepted Gate 1 receipt. Gemma follows the
+normal all-mandatory-item rule. The User separately retained Qwen for Gate 2A with P7.1 `FAIL`; this
+waiver permits evaluation but never changes its score. Qwen may be proposed provisionally only when
+all newly executed items pass (or P4 has its written threshold decision) and User/Core issue a
+written product-workaround disposition for the carried P7.1 defect. At most one provisional
+candidate is recommended after User review.
 
 ## 3. Cost controls
 
