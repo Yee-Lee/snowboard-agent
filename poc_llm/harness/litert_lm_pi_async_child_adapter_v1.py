@@ -11,6 +11,10 @@ import threading
 import time
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from poc_llm.harness.litert_lm_child_adapter import (
     BackendFailure,
     Cancelled,

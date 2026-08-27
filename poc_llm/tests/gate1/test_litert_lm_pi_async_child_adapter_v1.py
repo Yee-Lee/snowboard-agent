@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import contextlib
 import io
+from pathlib import Path
+import subprocess
 import sys
 import threading
 import types
@@ -22,6 +24,22 @@ CONFIG = {
 
 
 class AsyncAdapterTests(unittest.TestCase):
+    def test_file_entrypoint_resolves_repository_imports(self):
+        root = Path(__file__).resolve().parents[3]
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(root / "poc_llm/harness/litert_lm_pi_async_child_adapter_v1.py"),
+                "--help",
+            ],
+            cwd="/tmp",
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("--artifact-receipt", completed.stdout)
+
     def test_cancel_once_discards_conversation_and_new_conversation_is_healthy(self):
         created = []
         first_chunk = threading.Event()
