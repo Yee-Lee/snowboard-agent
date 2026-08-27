@@ -27,6 +27,7 @@ from poc_llm.tools.run_gate1_pi_compat_v7 import (
     ols_slope,
     p12_disposition,
     percentile,
+    session_metrics_valid,
 )
 from poc_llm.tools.run_gate1_pi_compat_v7 import catalog_input
 
@@ -286,6 +287,18 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
         failed, _ = evaluate_p10a([session(index, 5.0) for index in range(20)])
         self.assertTrue(passed)
         self.assertFalse(failed)
+
+    def test_native_token_metrics_use_rendered_capacity_not_structured_size(self) -> None:
+        valid = {"prefill_tokens": 169, "decode_tokens": 16, "kv_tokens": 185}
+        self.assertTrue(session_metrics_valid(valid, 1024))
+        self.assertTrue(session_metrics_valid(valid, 512))
+        self.assertFalse(session_metrics_valid({**valid, "decode_tokens": 17}, 1024))
+        self.assertFalse(session_metrics_valid({**valid, "kv_tokens": 1025}, 1024))
+        self.assertFalse(session_metrics_valid({**valid, "prefill_tokens": 0}, 1024))
+        self.assertNotIn(
+            '> 144',
+            RUNNER.read_text(encoding="utf-8"),
+        )
 
     def test_p12_requires_completed_offline_inference_lifecycle(self) -> None:
         self.assertEqual(p12_disposition({"p_results": {"P1": "PASS"}}), "PASS")

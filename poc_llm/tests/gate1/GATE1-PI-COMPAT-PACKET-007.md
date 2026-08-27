@@ -73,6 +73,12 @@ turn conversations in one persistent Engine. Each request must produce exactly o
 `MemAvailable`, CPU, threads, temperature and throttling. Require SHUTDOWN_ACK, exit `0`, waitpid and
 process-group absence.
 
+Native token metrics must report positive prefill/KV use, no more than 16 decode tokens and KV use
+within the candidate-specific Engine capacity. The 128-token structured-input contract is enforced
+by its schema and is not misapplied to the larger adapter-rendered prompt. Every request creates and
+closes a fresh conversation, so the persistent Engine cannot carry conversation history between
+sessions.
+
 P1 is `PASS` only when READY/framing/generation/shutdown/cleanup pass. P10A requires 20/20 sessions,
 no crash/OOM, temperature below 80°C, `throttled=0x0`, and the frozen session 6–20 rules: PSS and
 system-used OLS slopes each <=4.0 MiB/session; medians of sessions 16–20 are no more than 64 MiB

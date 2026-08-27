@@ -137,6 +137,24 @@ def evaluate_p10a(sessions: list[dict[str, Any]]) -> tuple[bool, dict[str, float
     return passed, calculations
 
 
+def session_metrics_valid(metrics: dict[str, Any], engine_capacity: int) -> bool:
+    """Validate native metrics without confusing serialized input with rendered KV use."""
+    prefill = metrics.get("prefill_tokens")
+    decode = metrics.get("decode_tokens")
+    kv_tokens = metrics.get("kv_tokens")
+    return bool(
+        isinstance(prefill, int)
+        and not isinstance(prefill, bool)
+        and prefill > 0
+        and isinstance(decode, int)
+        and not isinstance(decode, bool)
+        and 0 <= decode <= 16
+        and isinstance(kv_tokens, int)
+        and not isinstance(kv_tokens, bool)
+        and 0 < kv_tokens <= engine_capacity
+    )
+
+
 def _process_group_pids(group_id: int) -> list[int]:
     members: list[int] = []
     for stat_path in Path("/proc").glob("[0-9]*/stat"):
@@ -605,8 +623,10 @@ def main() -> int:
                         if terminal.get("type") != "RESULT":
                             raise PiPacketFailure("P10A session did not return RESULT")
                         metrics = terminal.get("metrics", {})
-                        if metrics.get("kv_tokens", 10**9) > 144:
-                            raise PiPacketFailure("P10A KV token envelope indicates accumulation")
+                        if not session_metrics_valid(
+                            metrics, config_value["engine_max_num_tokens"]
+                        ):
+                            raise PiPacketFailure("P10A native token metrics violate the frozen envelope")
                         time.sleep(5.0)
                         resources = group_resource_sample(active_process.pid)
                         thermal = thermal_sample()
