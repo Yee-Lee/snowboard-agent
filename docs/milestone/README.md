@@ -6,7 +6,7 @@
 
 ## Current reachability
 
-狀態：`GATE1 USER ADJUDICATED / CORE COMPLETION REVIEW PENDING`。
+狀態：`GATE1 CLOSED / GATE2A ENTRY READY`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -26,8 +26,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate | State | First-executed P items | Close condition / next action |
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
-| Gate 1 | `USER PASS / CORE REVIEW PENDING` | P1, P6.1, P7.1, P10A, P11, P12 | single Core gate-completion review |
-| Gate 2A | `BLOCKED BY GATE1 / NOT_STARTED` | P2, P3, P4, P5, P8 | consume approved finalist receipt；只補remaining P items |
+| Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
+| Gate 2A | `ENTRY READY / NOT_STARTED` | P2, P3, P4, P5, P8 | both candidates；review executable packet before Pi execution |
 | Gate 2B | `BLOCKED` | P9, P10B | Accepted Audio kit + 4GB combined PASS；Core final winner ACK |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
@@ -39,7 +39,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | --- | --- | --- |
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
-| M2 | `USER COMPLETE / CORE REVIEW` | Gemma normal finalist；Qwen P7.1 FAIL但依User defect waiver保留Gate 2A資格 |
+| M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `REDESIGNED / NOT_STARTED` | Gate 2A `002`：只補P2/P3/P4/P5/P8 |
 | M4 | `REDESIGNED / BLOCKED` | Gate 2B `001`：P9/P10B；缺Accepted Audio |
 
@@ -59,8 +59,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 - **Qwen P7.1 defect**：rebuild READY `18152.025 ms`，維持`FAIL / SLOW_RECOVERY`；User保留其
   Gate 2A candidate資格尋求workaround，但不得把waiver改寫為PASS。
-- **Core closure ACK**：Core已接受R3 cumulative design與entry SHA，但四份replacement receipts、
-  User Qwen defect waiver、兩名Gate 2A candidates與Gate 1 closure仍待單一Gate-completion review。
+- **Core closure ACK**：`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`已接受四份replacement
+  receipts、User Qwen defect waiver、兩名Gate 2A candidates並關閉Gate 1。
 - **Pi operator state**：Gate 1後已恢復zram/network、移除`/tmp` bind且無殘留process；模型仍在
   `/var/tmp`持久保存。Gate 2A需重新建立read-only staging並重做clean/offline/swap preflight。
 - **P1 startup**：Gemma 1024與Qwen 512皆通過initial READY；capacity必須綁exact artifact，禁止恢復
@@ -92,6 +92,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
+- [Gate 1 closure ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
 - [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)

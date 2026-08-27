@@ -1,6 +1,6 @@
 # LLM M2：Gate 1 Cumulative Stability and Core Integration
 
-狀態：`USER COMPLETE / CORE GATE-COMPLETION REVIEW`
+狀態：`COMPLETE / CORE GATE 1 CLOSED`
 
 ## Goal and delivery contribution
 
@@ -57,7 +57,8 @@ adjudication are in `ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md`
 The former Gemma-only aggregate was withdrawn before publication. Independent reboot-isolated
 P6.1/P7.1 now replace both legacy credits. Qwen P7.1 independently recovered READY in `18152.025 ms`,
 so its score remains FAIL. The User retains Qwen for Gate 2A by explicit defect waiver and bounded
-workaround opportunity; Gemma remains the normal finalist. Core completion review is pending.
+workaround opportunity; Gemma remains the normal finalist. Core accepted this disposition and
+closed Gate 1 in `DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`.
 
 ## Retry and prohibitions
 

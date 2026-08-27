@@ -1,6 +1,6 @@
 # LLM M3：Gate 2A Remaining LLM-only Pi Validation
 
-狀態：`REDESIGNED / NOT_STARTED`
+狀態：`ENTRY READY / EXECUTABLE PACKET REVIEW / NOT_STARTED`
 
 ## Goal
 
