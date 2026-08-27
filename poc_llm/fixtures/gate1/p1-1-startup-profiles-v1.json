@@ -10,9 +10,9 @@
   "profiles": [
     {
       "profile_id": "bounded_context",
-      "max_num_tokens": 512,
+      "max_num_tokens": 1024,
       "enable_benchmark": true,
-      "purpose": "Measure the pre-existing 512-token Gemma planning baseline after model-internal prefill expansion invalidated the tokenizer-derived 192-token bound."
+      "purpose": "Measure the smallest Gemma prefill signature above the 169-token rendered prompt after 192- and 512-entry contexts proved insufficient."
     }
   ],
   "deferred_until_after_baseline_analysis": [

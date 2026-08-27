@@ -9,8 +9,10 @@
   "candidates": {
     "CAND-LRT-G4E2B-MOBILE-R1": {
       "rendered_input_max_tokens": 169,
-      "runtime_observed_input_minimum_exclusive": 192,
-      "tokenizer_count_disposition": "LOWER_BOUND_ONLY_MODEL_INTERNAL_PREFILL_EXPANSION"
+      "runtime_observed_input_minimum_exclusive": 512,
+      "available_prefill_signatures_tokens": [128, 1024],
+      "selected_prefill_signature_tokens": 1024,
+      "tokenizer_count_disposition": "LOWER_BOUND_ONLY_MODEL_SIGNATURE_CAPACITY_GOVERNS"
     },
     "CAND-LRT-Q25-15B-Q8-R1": {
       "rendered_input_max_tokens": 170,
@@ -19,6 +21,6 @@
       "tokenizer_count_disposition": "RUNTIME_CONFIRMED_AT_192"
     }
   },
-  "frozen_engine_max_num_tokens": 512,
-  "selection_rule": "pre-existing Gemma planning baseline; tokenizer census is not accepted as a complete capacity oracle for multimodal model internals"
+  "frozen_engine_max_num_tokens": 1024,
+  "selection_rule": "smallest authenticated Gemma prefill signature above the 169-token rendered maximum; tokenizer count alone is not a complete model-capacity oracle"
 }
