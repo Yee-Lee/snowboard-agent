@@ -21,6 +21,25 @@
 
   範例：`feat[M3]: add GPIO button InputSource with debounce`、`docs[M2]: restore §3.4 required_kinds derivation`
 
+  **日常溝通文件標題分類**：以 `docs` 作為文件異動的第一層分類，
+  以 milestone scope 區分範圍；涉及 PM、POC、審查或驗收往返時，title 必須以
+  下列固定 category 開頭，格式為
+  ``docs[M{x}]: <category> — <concise action>``。這讓日常溝通可由 Git log
+  篩選，而不與 `feat` / `fix` / `test` 的產品工作混淆。
+
+  | category | 用途 | 範例 |
+  |---|---|---|
+  | `handoff` | 收件、移交或歸檔外部輸入 | `docs[M4A]: handoff — receive Audio POC evidence` |
+  | `ack` | 接受、核准或確認外部輸入 | `docs[M4A]: ack — accept final reference package` |
+  | `review` | 設計、測試或跨角色審查回覆 | `docs[M4A]: review — resolve test-spec findings` |
+  | `response` | 回覆 PM、POC 或其他團隊的請求 | `docs[M4A]: response — answer scope request` |
+  | `plan` | 更新執行、驗收或交付計畫 | `docs[M4A]: plan — revise Tester execution handoff` |
+  | `evidence` | 記錄 candidate、驗收或調查證據 | `docs[M4A]: evidence — record candidate verification results` |
+
+  不屬於上述日常溝通的產品設計或一般文件，可直接使用簡潔 action title；不得以
+  `docs` 隱藏 source、dependency、config contract、runner 或 test 的實質變更，這些
+  仍應依實際工作類型使用 `feat`、`fix`、`test`、`chore` 或 `refactor`。
+
   **內容（Body）規範**：
   - 使用英文條列式（`-`）描述修改內容或緣由。
   - 全文 60 words 以內。
