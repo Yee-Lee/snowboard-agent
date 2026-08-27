@@ -43,8 +43,10 @@ Execution requires Raspberry Pi 5 4GB, Debian 13 aarch64, a clean full source SH
 non-loopback interfaces/routes offline and `throttled=0x0` before and after the scored workload.
 
 The v2 installer is the sole wheel-content authenticator. Each model must be an absolute regular
-file with no write bits and is streamed through SHA-256 once before child launch, with a 120-second
-deadline. The runner writes a strict receipt containing the digest and stable filesystem identity.
+file with no write bits and is streamed through SHA-256 once immediately before its own child launch,
+with a 120-second deadline. Candidate authentication and lifecycle are interleaved; the runner may
+not authenticate every model first and delay a later candidate behind another candidate's workload.
+The runner writes a strict receipt containing the digest and stable filesystem identity.
 Every child authenticates the small receipt, config, protocol, prompt, response and receipt schemas,
 then compares model metadata; no child rereads the full model. The final check compares metadata to
 the receipt instead of rehashing the model.

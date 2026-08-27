@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from unittest.mock import Mock
 import zipfile
 
 from jsonschema import Draft202012Validator
@@ -28,6 +29,7 @@ from poc_llm.tools.run_gate1_pi_compat_v7 import (
     p12_disposition,
     percentile,
     session_metrics_valid,
+    start_child,
 )
 from poc_llm.tools.run_gate1_pi_compat_v7 import catalog_input
 
@@ -188,6 +190,9 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
         self.assertEqual(len(auth_calls), 1)
         source = RUNNER.read_text(encoding="utf-8")
         self.assertNotIn("streaming_digest(wheel)", source)
+        first_loop = source.index("for entry in candidates:")
+        execution_loop = source.index("for entry in candidates:", first_loop + 1)
+        self.assertGreater(source.index("model_record = authenticate_model"), execution_loop)
         self.assertNotIn("read_bytes()", ADAPTER.read_text(encoding="utf-8"))
         for option in (
             "--config-schema-sha256",
@@ -197,6 +202,36 @@ class Gate1PiPacketV7Tests(unittest.TestCase):
             "--artifact-receipt-schema-sha256",
         ):
             self.assertIn(option, ADAPTER.read_text(encoding="utf-8"))
+
+    def test_ready_failure_reaps_the_launched_process(self) -> None:
+        process = Mock()
+        with (
+            patch(
+                "poc_llm.tools.run_gate1_pi_compat_v7.launch_authenticated",
+                return_value=process,
+            ),
+            patch(
+                "poc_llm.tools.run_gate1_pi_compat_v7.require_ready_v2",
+                side_effect=RuntimeError("ready failed"),
+            ),
+            patch("poc_llm.tools.run_gate1_pi_compat_v7.stop") as reaper,
+        ):
+            with self.assertRaises(RuntimeError):
+                start_child(
+                    config=Path("config.json"),
+                    config_sha256="a" * 64,
+                    config_value={},
+                    config_schema=Path("config.schema.json"),
+                    protocol_schema=Path("protocol.schema.json"),
+                    prompt_schema=Path("prompt.schema.json"),
+                    response_schema=Path("response.schema.json"),
+                    receipt=Path("receipt.json"),
+                    receipt_schema=Path("receipt.schema.json"),
+                    install_root=Path("runtime"),
+                    validator=Mock(),
+                    stderr=Mock(),
+                )
+        reaper.assert_called_once_with(process)
 
     def test_license_metadata_covers_only_the_frozen_candidate_pair(self) -> None:
         lock = json.loads(LOCK.read_text(encoding="utf-8"))

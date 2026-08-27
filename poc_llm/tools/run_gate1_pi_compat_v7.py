@@ -288,7 +288,11 @@ def start_child(
         install_root=install_root,
         stderr=stderr,
     )
-    require_ready_v2(process, validator, config_value, config_sha256)
+    try:
+        require_ready_v2(process, validator, config_value, config_sha256)
+    except Exception:
+        stop(process)
+        raise
     return process, round((time.monotonic() - started) * 1000, 3)
 
 
@@ -533,35 +537,10 @@ def main() -> int:
                 or config_value.get("model_sha256") != entry["model_sha256"]
             ):
                 raise PiPacketFailure("candidate/config identity mismatch")
-            model_record = authenticate_model(
-                Path(config_value["model_path"]),
-                entry["model_sha256"],
-                entry["model_size_bytes"],
-                timeout_s=120.0,
-            )
-            receipt = {
-                "receipt_version": "pi-artifact-auth/2",
-                "packet_id": PACKET_ID,
-                "run_id": args.run_id,
-                "execution_sha": args.execution_sha,
-                "execution_surface_sha256": aggregate["execution_surface_sha256"],
-                "candidate_id": entry["candidate_id"],
-                "runtime_sha256": runtime["wheel_sha256"],
-                "model": model_record,
-            }
-            if not receipt_validator.is_valid(receipt):
-                raise PiPacketFailure("artifact receipt schema mismatch")
-            receipt_path = raw_dir / f"{entry['candidate_id']}.artifact-receipt.json"
-            receipt_path.write_text(
-                json.dumps(receipt, sort_keys=True, separators=(",", ":")),
-                encoding="utf-8",
-            )
             prepared[entry["candidate_id"]] = {
                 "entry": entry,
                 "config": config,
                 "config_value": config_value,
-                "receipt": receipt,
-                "receipt_path": receipt_path,
             }
 
         for entry in candidates:
@@ -571,22 +550,46 @@ def main() -> int:
             record = prepared[candidate_id]
             config = record["config"]
             config_value = record["config_value"]
-            receipt_path = record["receipt_path"]
-            report["artifact_authentication"] = {
-                "model_sha256": record["receipt"]["model"]["sha256"],
-                "model_size_bytes": record["receipt"]["model"]["size_bytes"],
-                "duration_ms": record["receipt"]["model"]["authentication_duration_ms"],
-                "receipt_sha256": streaming_digest(receipt_path),
-                "full_model_hash_count": 1,
-                "metadata_unchanged": False,
-            }
-            report["p_results"]["P11"] = "PASS"
             stderr_paths = [
                 raw_dir / f"{candidate_id}.normal.stderr",
                 raw_dir / f"{candidate_id}.fault.stderr",
                 raw_dir / f"{candidate_id}.rebuild.stderr",
             ]
             try:
+                # Authenticate just in time so each P1 begins from the same receipt-conditioned cache state.
+                model_record = authenticate_model(
+                    Path(config_value["model_path"]),
+                    entry["model_sha256"],
+                    entry["model_size_bytes"],
+                    timeout_s=120.0,
+                )
+                receipt = {
+                    "receipt_version": "pi-artifact-auth/2",
+                    "packet_id": PACKET_ID,
+                    "run_id": args.run_id,
+                    "execution_sha": args.execution_sha,
+                    "execution_surface_sha256": aggregate["execution_surface_sha256"],
+                    "candidate_id": candidate_id,
+                    "runtime_sha256": runtime["wheel_sha256"],
+                    "model": model_record,
+                }
+                if not receipt_validator.is_valid(receipt):
+                    raise PiPacketFailure("artifact receipt schema mismatch")
+                receipt_path = raw_dir / f"{candidate_id}.artifact-receipt.json"
+                receipt_path.write_text(
+                    json.dumps(receipt, sort_keys=True, separators=(",", ":")),
+                    encoding="utf-8",
+                )
+                report["artifact_authentication"] = {
+                    "model_sha256": model_record["sha256"],
+                    "model_size_bytes": model_record["size_bytes"],
+                    "duration_ms": model_record["authentication_duration_ms"],
+                    "receipt_sha256": streaming_digest(receipt_path),
+                    "full_model_hash_count": 1,
+                    "metadata_unchanged": False,
+                }
+                report["p_results"]["P11"] = "PASS"
+
                 # P1 + P10A share one persistent Engine and one set of 20 sessions.
                 with stderr_paths[0].open("w", encoding="utf-8") as stderr:
                     active_process, ready_ms = start_child(
@@ -828,7 +831,7 @@ def main() -> int:
                 report["p_results"]["P7"] = "PASS"
 
                 verify_model_receipt(
-                    record["receipt"]["model"],
+                    receipt["model"],
                     Path(config_value["model_path"]),
                     config_value["model_sha256"],
                 )
@@ -849,6 +852,11 @@ def main() -> int:
             except PiPacketFailure as exc:
                 report["violations"].append(str(exc))
                 report["result"] = "FAIL"
+                if (
+                    report["p_results"]["P11"] == "PASS"
+                    and report["p_results"]["P1"] == "Blocked"
+                ):
+                    report["p_results"]["P1"] = "FAIL"
                 if active_process is not None:
                     report.setdefault("recovery", {})["exception_cleanup"] = stop(active_process)
                     active_process = None
