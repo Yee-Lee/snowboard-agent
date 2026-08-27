@@ -8,7 +8,7 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 目前無待處理專案 | - | - | - | - | - |
+| (無) | | | | | |
 
 ---
 
@@ -19,8 +19,8 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a POC Accepted / Core Gate 3 design pending review；M4b Gate 1 R5 revision authorized** | Audio已在`audio_m4` / `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`完成；Core Gate 2B intake `be19b70...`接受final references。`model_spec.md`與M4a production design已建立，仍待Core Reviewer／Tester／Developer與exact-SHA Gate 3。LLM Gate 1狀態不因Audio完成而自動變更。 |
-| **歸檔狀態** | **目前所有已收件要求均已裁決並歸檔** | Audio Option A已由`DELIVERY-AUDIO-POC-M3-P4-ACK-004`接受；PM-014已由PM-018在`f87c5e6`收斂；LLM M1 R3已完成Designer freeze，後續只剩Internal Tester gate。 |
+| **M4a / M4b POC進場** | **M4a design + test spec approved / Development active；M4b replacement ACK resolved** | Audio已在`audio_m4` / `5694ead4ba6be928fdb4df6da7155b214d72bd`完成；Core `IR_review_M4A_I`與`TR_spec_M4_I`均Resolved，Developer可建立M4A-WP-09～13。M4b以`DELIVERY-017`的replacement SHA `4dc76d1574daa7a9f7f56b98a8d65e00258fd46c`取代R2；Core ACK已完成。 |
+| **歸檔狀態** | **`DELIVERY-015`／`017`已由同一Core ACK完成歸檔；`016` hold已由`017`關閉歸檔** | Audio既有要求均已歸檔；M4b cumulative Gate boundary與replacement identity已歸檔結案。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
@@ -51,6 +51,10 @@ R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。
 
 | Handoff ID | 標題 / 範疇 | 原 Legacy ID | 結案狀態 | 回覆 / 交付對照 |
 | :--- | :--- | :--- | :--- | :--- |
+| [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE`](history/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) | Gate 1 cumulative closure review / P6.1/P7.1 replacement | `DELIVERY-015` | **Resolved — Gate 1 Closed / Candidates Advanced** | ACK: [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) |
+| [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN`](history/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) | M4b cumulative Gate allocation / carry-forward / v7 boundary | `ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |
+| [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA`](history/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) | Replacement Gate 1 execution SHA / deterministic target fixture | `DELIVERY-015` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |
+| [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD`](history/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) | Prior R2 SHA hold while deterministic target fixture was prepared | 無 | **Resolved — closed by DELIVERY-017 replacement SHA** | Replacement: [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) |
 | [`ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001`](history/ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001.md) | Matcha model-license evidence correction | `POC-audio-DEL-2026-001-R1` | **Resolved — Apache-2.0 model grant acknowledged; remaining lineage risk accepted by USER** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`DELIVERY-AUDIO-M4-GATE2B-001`](history/DELIVERY-AUDIO-M4-GATE2B-001.md) | Audio M4 Gate 2B technical delivery / Matcha license disposition | `POC-audio-DEL-2026-001-R1` | **Resolved — technical delivery and all three final references accepted** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`REQ-AUDIO-M4-RUNTIME-CLOSURE-002`](history/REQ-AUDIO-M4-RUNTIME-CLOSURE-002.md) | Core controller / finalist runtime closure | 無 | **Resolved — controller-r2, VAD, and TTS offline closures passed; accepted by downstream Gate 2B closure** | Response: [`RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md`](../responses/RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md) |
@@ -144,6 +148,9 @@ docs/outsource/pm_handoff/
     ├── DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-REVIEW.md
     ├── DELIVERY-013-PM-LLM-POC-PI-EXECUTION-PACKETS-SOURCE-IDENTITY.md
     ├── DELIVERY-014-PM-LLM-POC-PI-PACKET-P11-PREFLIGHT-CORRECTION.md
+    ├── DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md
+    ├── DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md
+    ├── DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md
     ├── REQ-AUDIO-M3-PACKET-SIGNOFF-001.md
     ├── REQ-AUDIO-M3-PACKET-SIGNOFF-002.md
     ├── REQ-AUDIO-M3-PACKET-SIGNOFF-003.md
