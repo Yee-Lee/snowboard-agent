@@ -20,9 +20,16 @@ perception:
       driver: mock
       engine_name: null
       model_path: null
+      worker_path: null
+      runtime_python: null
+      vad_model_path: null
+      artifact_lock_path: null
       language: null
       dsp_profile: null
       decoder_profile: null
+      child_ready_timeout_seconds: 30.0
+      child_terminate_timeout_seconds: 5.0
+      child_kill_wait_timeout_seconds: 2.0
   read:
     enabled: true
     required: false
@@ -53,10 +60,16 @@ action:
     driver: mock
     engine_name: null
     model_path: null
+    vocoder_path: null
+    runtime_python: null
+    artifact_lock_path: null
     voice_id: null
     native_sample_rate: null
     native_channels: null
     native_sample_format: null
+    child_ready_timeout_seconds: 30.0
+    child_terminate_timeout_seconds: 5.0
+    child_kill_wait_timeout_seconds: 2.0
 
 cancel:
   abort_timeout_seconds:

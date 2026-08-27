@@ -12,12 +12,6 @@ def validate_config(config: 'AppConfig'):
         if p.required and not p.enabled:
             raise ConfigValueError(f"{path}: required=True but enabled=False is a contradiction")
 
-    def check_engine_config(driver, engine_name, path):
-        if driver not in ("mock", "null") and engine_name is None:
-            raise ConfigValueError(
-                f"{path}.engine_name is required when driver is not 'mock' or 'null'"
-            )
-
     check_policy(config.perception.listen, "perception.listen")
     check_policy(config.perception.read, "perception.read")
     check_policy(config.perception.look, "perception.look")
@@ -57,6 +51,15 @@ def validate_config(config: 'AppConfig'):
     check_timeout(config.cognition.llm.child_ready_timeout_seconds, "cognition.llm.child_ready_timeout_seconds")
     check_timeout(config.cognition.llm.child_terminate_timeout_seconds, "cognition.llm.child_terminate_timeout_seconds")
     check_timeout(config.cognition.llm.child_kill_wait_timeout_seconds, "cognition.llm.child_kill_wait_timeout_seconds")
+    for name, value in (
+        ("perception.listen.adapter.child_ready_timeout_seconds", config.perception.listen.adapter.child_ready_timeout_seconds),
+        ("perception.listen.adapter.child_terminate_timeout_seconds", config.perception.listen.adapter.child_terminate_timeout_seconds),
+        ("perception.listen.adapter.child_kill_wait_timeout_seconds", config.perception.listen.adapter.child_kill_wait_timeout_seconds),
+        ("action.tts.child_ready_timeout_seconds", config.action.tts.child_ready_timeout_seconds),
+        ("action.tts.child_terminate_timeout_seconds", config.action.tts.child_terminate_timeout_seconds),
+        ("action.tts.child_kill_wait_timeout_seconds", config.action.tts.child_kill_wait_timeout_seconds),
+    ):
+        check_timeout(value, name)
 
     # Cancel timeouts
     check_timeout(config.cancel.abort_timeout_seconds.default, "cancel.abort_timeout_seconds.default")
@@ -182,16 +185,8 @@ def validate_config(config: 'AppConfig'):
     # Real drivers require valid paths
     check_model_path(config.perception.look.adapter.driver, config.perception.look.adapter.model_path, "perception.look.adapter.model_path")
     check_model_path(config.cognition.llm.driver, config.cognition.llm.model_path, "cognition.llm.model_path")
-    check_engine_config(
-        config.perception.listen.adapter.driver,
-        config.perception.listen.adapter.engine_name,
-        "perception.listen.adapter",
-    )
-    check_engine_config(
-        config.action.tts.driver,
-        config.action.tts.engine_name,
-        "action.tts",
-    )
+    _validate_m4a_asr(config.perception.listen.adapter)
+    _validate_m4a_tts(config.action.tts)
 
     audio_real_fields = (
         ac.input.device, ac.input.native_format, ac.input.channel_index,
@@ -240,6 +235,71 @@ def validate_config(config: 'AppConfig'):
         raise ConfigValueError("input_sources.button.long_press_min_ms must exceed short_press_min_ms")
     if button_pin is not None and button.short_press_min_ms < button_pin.debounce_ms:
         raise ConfigValueError("input_sources.button.short_press_min_ms must be >= GPIO debounce_ms")
+
+
+def _required_absolute_path(value, path: str, *, directory: bool = False) -> None:
+    from pathlib import Path
+
+    if not isinstance(value, Path) or not value.is_absolute():
+        raise ConfigValueError(f"{path} is required and must be an absolute path")
+    if directory and not value.is_dir():
+        raise ConfigValueError(f"{path} must name an existing directory")
+    if not directory and not value.is_file():
+        raise ConfigValueError(f"{path} must name an existing file")
+
+
+def _validate_m4a_asr(asr) -> None:
+    path = "perception.listen.adapter"
+    real_fields = (
+        asr.engine_name, asr.model_path, asr.worker_path, asr.runtime_python,
+        asr.vad_model_path, asr.artifact_lock_path, asr.language,
+        asr.dsp_profile, asr.decoder_profile,
+    )
+    if asr.driver in {"mock", "null"}:
+        if any(value is not None for value in real_fields):
+            raise ConfigValueError(f"{path} mock/null cannot contain real-only fields")
+        return
+    if asr.driver != "whispercpp":
+        raise ConfigValueError(f"{path}.driver is unsupported: {asr.driver}")
+    exact = {
+        "engine_name": "whisper.cpp-1.9.2",
+        "language": "zh-TW",
+        "dsp_profile": "silero-6.2.1-endpoint-v1",
+        "decoder_profile": "p0-greedy-best-of-1",
+    }
+    for field, expected in exact.items():
+        if getattr(asr, field) != expected:
+            raise ConfigValueError(f"{path}.{field} must be {expected!r}")
+    for field in ("model_path", "worker_path", "runtime_python", "vad_model_path", "artifact_lock_path"):
+        _required_absolute_path(getattr(asr, field), f"{path}.{field}")
+
+
+def _validate_m4a_tts(tts) -> None:
+    path = "action.tts"
+    real_fields = (
+        tts.engine_name, tts.model_path, tts.vocoder_path, tts.runtime_python,
+        tts.artifact_lock_path, tts.voice_id, tts.native_sample_rate,
+        tts.native_channels, tts.native_sample_format,
+    )
+    if tts.driver in {"mock", "null"}:
+        if any(value is not None for value in real_fields):
+            raise ConfigValueError(f"{path} mock/null cannot contain real-only fields")
+        return
+    if tts.driver != "sherpa_matcha":
+        raise ConfigValueError(f"{path}.driver is unsupported: {tts.driver}")
+    exact = {
+        "engine_name": "sherpa-onnx-1.13.5-matcha",
+        "voice_id": "matcha-zh-en-default-sid-0",
+        "native_sample_rate": 16000,
+        "native_channels": 1,
+        "native_sample_format": "s16_le",
+    }
+    for field, expected in exact.items():
+        if getattr(tts, field) != expected:
+            raise ConfigValueError(f"{path}.{field} must be {expected!r}")
+    _required_absolute_path(tts.model_path, f"{path}.model_path", directory=True)
+    for field in ("vocoder_path", "runtime_python", "artifact_lock_path"):
+        _required_absolute_path(getattr(tts, field), f"{path}.{field}")
 
 
 def _validate_ssd1351(display) -> None:

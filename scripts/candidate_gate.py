@@ -6,8 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import platform
 import re
+import signal
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -23,7 +26,8 @@ PORTABLE_MINORS = ("3.11", "3.12", "3.13")
 PROTECTED_PATHS = (
     "src",
     "tests",
-    "scripts/candidate_gate.py",
+    "scripts",
+    "native",
     ".github/workflows/candidate-portable.yml",
     "pyproject.toml",
     "pytest.ini",
@@ -161,47 +165,232 @@ def suite_counts(junit: Path, stdout: str) -> dict[str, int]:
     return counts
 
 
+def _process_tree(root_pid: int) -> dict[int, int]:
+    """Return the live Linux descendant PID -> PGID map, including root."""
+    parents: dict[int, int] = {}
+    proc = Path("/proc")
+    if proc.is_dir():
+        for entry in proc.iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                tail = (entry / "stat").read_text(encoding="ascii").rsplit(")", 1)[1].split()
+                parents[int(entry.name)] = int(tail[1])
+            except (OSError, ValueError, IndexError):
+                continue
+    owned = {root_pid}
+    changed = True
+    while changed:
+        changed = False
+        for pid, parent in parents.items():
+            if pid not in owned and parent in owned:
+                owned.add(pid)
+                changed = True
+    result: dict[int, int] = {}
+    for pid in owned:
+        try:
+            result[pid] = os.getpgid(pid)
+        except ProcessLookupError:
+            continue
+    return result
+
+
+def _live_group(tree: dict[int, int], pgid: int) -> bool:
+    for pid, expected_group in tree.items():
+        if expected_group != pgid:
+            continue
+        try:
+            if os.getpgid(pid) != pgid:
+                continue
+            stat = Path("/proc") / str(pid) / "stat"
+            if not stat.is_file() or stat.read_text(encoding="ascii").rsplit(")", 1)[1].split()[0] != "Z":
+                return True
+        except (OSError, ProcessLookupError, IndexError):
+            continue
+    return False
+
+
+def _signal_process_tree(tree: dict[int, int], sig: signal.Signals, *, live_only: bool) -> None:
+    own_group = os.getpgrp()
+    for pgid in sorted(set(tree.values()), reverse=True):
+        if pgid == own_group or (live_only and not _live_group(tree, pgid)):
+            continue
+        try:
+            os.killpg(pgid, sig)
+        except ProcessLookupError:
+            continue
+
+
+def _terminate_timed_out_suite(
+    process: subprocess.Popen[str],
+) -> tuple[str, str]:
+    """Terminate pytest and any independently sessionized product descendants."""
+    tree = _process_tree(process.pid)
+    _signal_process_tree(tree, signal.SIGTERM, live_only=False)
+    try:
+        stdout, stderr = process.communicate(timeout=2.0)
+    except subprocess.TimeoutExpired:
+        _signal_process_tree(tree, signal.SIGKILL, live_only=True)
+        try:
+            stdout, stderr = process.communicate(timeout=2.0)
+        except subprocess.TimeoutExpired as error:
+            raise GateFailure("timed-out suite process tree could not be reaped") from error
+    else:
+        # A top-level pytest can exit while a child-created process group is
+        # still alive and no longer holds the pytest stdout/stderr pipes.
+        _signal_process_tree(tree, signal.SIGKILL, live_only=True)
+    return stdout, stderr
+
+
+def _network_attempt_count(trace: Path) -> int:
+    if not trace.is_file():
+        raise GateFailure("M4a network audit did not produce a trace")
+    return sum(
+        1
+        for line in trace.read_text(encoding="utf-8", errors="replace").splitlines()
+        if re.search(r"\bAF_INET6?\b", line)
+    )
+
+
 def execute_pytest(
     repo: Repository,
     output: Path,
     target: str,
     marker: str,
     timeout_seconds: float,
-) -> tuple[int, dict[str, int], list[str]]:
+    *,
+    mode: str,
+    run_id: str,
+) -> tuple[int, dict[str, int], list[str], list[str], int | None]:
     if timeout_seconds <= 0:
         raise GateFailure("timeout seconds must be greater than zero")
     junit = output / "junit.xml"
-    argv = [sys.executable, "-m", "pytest", "-v", "-m", marker, target, f"--junitxml={junit}"]
+    targets = [target]
+    manifest = (repo.root / target).resolve() if not Path(target).is_absolute() else Path(target).resolve()
+    if target.endswith(".txt"):
+        if not manifest.is_file() or not manifest.is_relative_to(repo.root):
+            raise GateFailure("suite manifest must be a tracked repository file")
+        targets = [line.strip() for line in manifest.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if not targets:
+            raise GateFailure("suite manifest must contain at least one test path")
+        for item in targets:
+            item_path = (repo.root / item).resolve()
+            if item.startswith("-") or not item_path.is_file() or not item_path.is_relative_to(repo.root / "tests"):
+                raise GateFailure("suite manifest contains an invalid test path")
+    argv = [sys.executable, "-m", "pytest", "-v", "-m", marker, *targets, f"--junitxml={junit}"]
     stdout_path = output / "logs" / "suite.stdout.log"
     stderr_path = output / "logs" / "suite.stderr.log"
+    raw_logs = ["logs/suite.stdout.log", "logs/suite.stderr.log"]
+    target_path = (repo.root / target).resolve() if not Path(target).is_absolute() else Path(target).resolve()
+    m4a_network_audit = (
+        mode == "acceptance"
+        and target_path == (repo.root / "tests" / "milestones" / "test_m4_local_voice.py").resolve()
+    )
+    network_trace = output / "logs" / "network.trace.log"
+    launch_argv = argv
+    if m4a_network_audit:
+        strace = shutil.which("strace")
+        if strace is None:
+            raise GateFailure("M4a target acceptance requires strace network auditing")
+        launch_argv = [
+            strace, "-f", "-qq", "-e", "trace=network",
+            "-o", str(network_trace), "--", *argv,
+        ]
+        raw_logs.append("logs/network.trace.log")
     try:
-        completed = subprocess.run(
-            argv,
-            cwd=repo.root,
-            text=True,
-            capture_output=True,
-            timeout=timeout_seconds,
-            check=False,
+        environment = os.environ.copy()
+        source_root = str(repo.root / "src")
+        existing_pythonpath = environment.get("PYTHONPATH")
+        environment["PYTHONPATH"] = (
+            source_root if not existing_pythonpath
+            else source_root + os.pathsep + existing_pythonpath
         )
-        stdout_path.write_text(completed.stdout, encoding="utf-8")
-        stderr_path.write_text(completed.stderr, encoding="utf-8")
+        for name in (
+            "SBD_M4A_CANDIDATE_SHA", "SBD_M4A_ACCEPTANCE_RUN_ID",
+            "SBD_M4A_CARD_ROOT", "SBD_M4A_RUNNER_PREFLIGHT",
+        ):
+            environment.pop(name, None)
+        if mode == "acceptance":
+            card_root = output / "cards"
+            if card_root.exists():
+                raise GateFailure("acceptance card output already exists")
+            card_root.mkdir()
+            environment.update({
+                "SBD_M4A_CANDIDATE_SHA": repo.candidate_sha,
+                "SBD_M4A_ACCEPTANCE_RUN_ID": run_id,
+                "SBD_M4A_CARD_ROOT": str(card_root),
+                "SBD_M4A_RUNNER_PREFLIGHT": str((output / "preflight.json").resolve()),
+            })
+        process = subprocess.Popen(
+            launch_argv,
+            cwd=repo.root,
+            env=environment,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+        )
+        try:
+            stdout, stderr = process.communicate(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as error:
+            stdout, stderr = _terminate_timed_out_suite(process)
+            stdout_path.write_text(stdout, encoding="utf-8")
+            stderr_path.write_text(stderr + f"\nTIMEOUT after {timeout_seconds} seconds\n", encoding="utf-8")
+            raise GateFailure(f"suite timeout after {timeout_seconds} seconds") from error
+        stdout_path.write_text(stdout, encoding="utf-8")
+        stderr_path.write_text(stderr, encoding="utf-8")
     except subprocess.TimeoutExpired as error:
+        # Defensive fallback for a platform-specific Popen implementation.
         stdout = error.stdout.decode() if isinstance(error.stdout, bytes) else (error.stdout or "")
         stderr = error.stderr.decode() if isinstance(error.stderr, bytes) else (error.stderr or "")
         stdout_path.write_text(stdout, encoding="utf-8")
         stderr_path.write_text(stderr + f"\nTIMEOUT after {timeout_seconds} seconds\n", encoding="utf-8")
         raise GateFailure(f"suite timeout after {timeout_seconds} seconds") from error
-    return completed.returncode, suite_counts(junit, completed.stdout), argv
+    network_attempt_count: int | None = None
+    if m4a_network_audit:
+        network_attempt_count = _network_attempt_count(network_trace)
+        if network_attempt_count:
+            raise GateFailure("M4a target suite attempted an IPv4/IPv6 network syscall")
+    return process.returncode, suite_counts(junit, stdout), argv, raw_logs, network_attempt_count
 
 
 def passed(exit_code: int, counts: dict[str, int]) -> bool:
     return exit_code == 0 and all(counts[name] == 0 for name in ("failed", "skipped", "xfailed"))
 
 
+def _finalize_acceptance_cards(output: Path, result: dict[str, Any]) -> None:
+    card_root = output / "cards"
+    if not card_root.is_dir() or card_root.is_symlink():
+        raise GateFailure("acceptance card output is absent or unsafe")
+    reserved = set(result) - {"candidate_sha"}
+    for path in sorted(card_root.iterdir()):
+        if not path.is_file() or path.is_symlink() or path.suffix != ".json":
+            raise GateFailure("acceptance card output contains an unsafe entry")
+        draft = load_json(path, "test-specific acceptance card")
+        test_id = draft.get("test_id")
+        if (
+            not isinstance(test_id, str)
+            or not re.fullmatch(r"M4[A-Z0-9-]{3,63}", test_id)
+            or draft.get("candidate_sha") != result["candidate_sha"]
+        ):
+            raise GateFailure("test-specific acceptance card identity mismatch")
+        if set(draft) & reserved:
+            raise GateFailure("test-specific acceptance card overrides runner fields")
+        finalized = dict(result)
+        finalized.update(draft)
+        write_json(path, finalized)
+
+
 def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: str, marker: str) -> None:
     result = base_result(repo, mode, args.run_id)
-    exit_code, counts, suite_command = execute_pytest(
-        repo, output, args.suite if hasattr(args, "suite") else args.node, marker, args.timeout_seconds
+    exit_code, counts, suite_command, raw_logs, network_attempt_count = execute_pytest(
+        repo,
+        output,
+        args.suite if hasattr(args, "suite") else args.node,
+        marker,
+        args.timeout_seconds,
+        mode=mode,
+        run_id=args.run_id,
     )
     status = "Pass" if passed(exit_code, counts) else "Fail"
     result.update(
@@ -209,7 +398,7 @@ def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: st
             "counts": counts,
             "ended_at_utc": utc_now(),
             "exit_code": exit_code,
-            "raw_logs": ["logs/suite.stdout.log", "logs/suite.stderr.log"],
+            "raw_logs": raw_logs,
             "status": status,
             "suite_command": suite_command,
             "timeout_seconds": args.timeout_seconds,
@@ -220,10 +409,14 @@ def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: st
         result["suite"] = args.suite
     elif mode == "acceptance":
         result["suite"] = args.suite
+        if network_attempt_count is not None:
+            result["network_attempt_count"] = network_attempt_count
     else:
         result["node"] = args.node
         if status == "Pass":
             result["status"] = "Diagnostic"
+    if mode == "acceptance" and passed(exit_code, counts):
+        _finalize_acceptance_cards(output, result)
     write_json(output / "result.json", result)
     if not passed(exit_code, counts):
         raise GateFailure(f"{mode} suite failed, timed out, was skipped, or was xfailed")

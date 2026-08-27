@@ -69,7 +69,7 @@ def test_asr_null_003_listen_with_null_adapter_publishes_timeout() -> None:
 # ASR-NULL-004 / ASR-NULL-005
 def test_asr_null_004_005_factory_selects_null_and_rejects_unavailable_driver() -> None:
     assert isinstance(make_asr_adapter(ASRConfig(driver="null")), NullASRAdapter)
-    with pytest.raises(ValueError, match="M2B provisional selection ACK"):
+    with pytest.raises(ValueError, match="unsupported"):
         make_asr_adapter(ASRConfig(driver="unknown"))  # type: ignore[arg-type]
 
 
@@ -101,7 +101,7 @@ def test_tts_null_002_speak_with_null_adapter_publishes_ok() -> None:
 # TTS-NULL-003 / TTS-NULL-004
 def test_tts_null_003_004_factory_selects_null_and_rejects_unavailable_driver() -> None:
     assert isinstance(make_tts_adapter(TTSConfig(driver="null")), NullTTSAdapter)
-    with pytest.raises(ValueError, match="M2B provisional selection ACK"):
+    with pytest.raises(ValueError, match="unsupported"):
         make_tts_adapter(TTSConfig(driver="unknown"))  # type: ignore[arg-type]
 
 
@@ -112,21 +112,17 @@ def test_cfg_asr_001_002_003_validate_null_and_future_engine_name_requirements()
         DEFAULT_CONFIG.perception,
         listen=replace(
             DEFAULT_CONFIG.perception.listen,
-            adapter=ASRConfig(driver="real_engine"),  # type: ignore[arg-type]
+            adapter=ASRConfig(driver="whispercpp"),
         ),
     )
     with pytest.raises(ConfigValueError, match="perception.listen.adapter.engine_name"):
         validate_config(_config_with(perception=real_without_name))
-    real_with_name = replace(
+    unknown = replace(
         real_without_name,
-        listen=replace(
-            real_without_name.listen,
-            adapter=ASRConfig(  # type: ignore[arg-type]
-                driver="real_engine", engine_name="sherpa_sensevoice"
-            ),
-        ),
+        listen=replace(real_without_name.listen, adapter=ASRConfig(driver="real_engine")),  # type: ignore[arg-type]
     )
-    validate_config(_config_with(perception=real_with_name))
+    with pytest.raises(ConfigValueError, match="driver is unsupported"):
+        validate_config(_config_with(perception=unknown))
 
 
 # CFG-TTS-001 / CFG-TTS-002
@@ -135,7 +131,7 @@ def test_cfg_tts_001_002_validate_null_and_future_engine_name_requirements() -> 
     validate_config(_config_with(action=null_tts))
     real_tts = replace(
         DEFAULT_CONFIG.action,
-        tts=TTSConfig(driver="real_engine"),  # type: ignore[arg-type]
+        tts=TTSConfig(driver="sherpa_matcha"),
     )
     with pytest.raises(ConfigValueError, match="action.tts.engine_name"):
         validate_config(_config_with(action=real_tts))

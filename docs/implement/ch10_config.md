@@ -139,6 +139,9 @@ class ASRConfig:
     language: str | None = None
     dsp_profile: str | None = None
     decoder_profile: str | None = None
+    child_ready_timeout_seconds: float = 30.0
+    child_terminate_timeout_seconds: float = 5.0
+    child_kill_wait_timeout_seconds: float = 2.0
 
 @dataclass(frozen=True, slots=True)
 class VisionConfig:
@@ -281,6 +284,9 @@ class TTSConfig:
     native_sample_rate: int | None = None
     native_channels: int | None = None
     native_sample_format: str | None = None
+    child_ready_timeout_seconds: float = 30.0
+    child_terminate_timeout_seconds: float = 5.0
+    child_kill_wait_timeout_seconds: float = 2.0
 
 @dataclass(frozen=True, slots=True)
 class ActionConfig:
@@ -296,6 +302,7 @@ M4a real Audio adapter另套用`model_spec.md`與`ch_m4a_audio_production.md`：
 
 - `whispercpp`要求engine=`whisper.cpp-1.9.2`、language=`zh-TW`、DSP=`silero-6.2.1-endpoint-v1`、decoder=`p0-greedy-best-of-1`，以及model / worker / VAD runtime / VAD model / artifact lock五個絕對路徑；
 - `sherpa_matcha`要求engine=`sherpa-onnx-1.13.5-matcha`、voice=`matcha-zh-en-default-sid-0`、native format=`16000/1/s16_le`，以及model dir / Vocos / runtime / artifact lock四個絕對路徑；
+- 兩個real Audio adapter各自的READY、TERM wait與KILL wait timeout皆必須為strict config中的有限正數；不得使用無界child wait；
 - YAML只能選tracked lock，不得覆寫checksum；path存在與artifact identity由product preflight在child / Audio HAL前fail closed；
 - `mock` / `null`不得因real-only path為空而失敗，也不得importreal module。
 

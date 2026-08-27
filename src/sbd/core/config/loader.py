@@ -14,6 +14,11 @@ from .validate import (
     UnknownConfigKey, validate_config,
 )
 
+
+class _DriverConfigValueError(ConfigValueError, ConfigTypeError):
+    """Unknown real-driver selection is both a legacy type and strict value error."""
+
+
 def _get_field_type(cls, field_name: str):
     hints = get_type_hints(cls)
     return hints.get(field_name)
@@ -84,8 +89,11 @@ def _overlay_dict(
     if get_origin(field_type) is Literal:
         choices = get_args(field_type)
         if not any(type(overlay) is type(choice) and overlay == choice for choice in choices):
-            if path.startswith(("root.core.audio.", "root.core.display.")):
-                raise ConfigValueError(
+            if path.startswith((
+                "root.core.audio.", "root.core.display.",
+                "root.perception.listen.adapter.", "root.action.tts.",
+            )):
+                raise _DriverConfigValueError(
                     f"{path} must be one of {choices}, got {overlay!r}"
                 )
             raise ConfigTypeError(f"{path} must be one of {choices}, got {overlay!r}")

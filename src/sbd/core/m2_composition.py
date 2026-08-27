@@ -134,6 +134,12 @@ class M2Composition:
         rm.register(ResourceSpec(
             key="backend.perception.listen.asr", phase=StartPhase.BACKEND,
             factory=lambda resolver: asr,
+            recoverable=config.perception.listen.adapter.driver == "whispercpp",
+            recovery_hook=(
+                asr
+                if config.perception.listen.adapter.driver == "whispercpp"
+                else None
+            ),
         ))
         rm.register(ResourceSpec(
             key="backend.perception.look.vision", phase=StartPhase.BACKEND,
@@ -146,6 +152,10 @@ class M2Composition:
         rm.register(ResourceSpec(
             key="backend.action.speak.tts", phase=StartPhase.BACKEND,
             factory=lambda resolver: tts,
+            recoverable=config.action.tts.driver == "sherpa_matcha",
+            recovery_hook=(
+                tts if config.action.tts.driver == "sherpa_matcha" else None
+            ),
         ))
 
         if config.perception.listen.enabled:

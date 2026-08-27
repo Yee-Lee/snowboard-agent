@@ -1,0 +1,13 @@
+tests/test_m4a_cfg_001.py
+tests/test_m4a_lock_001.py
+tests/test_m4a_ipc_001.py
+tests/test_m4a_asr_001.py
+tests/test_m4a_asr_002.py
+tests/test_m4a_asr_003.py
+tests/test_m4a_tts_001.py
+tests/test_m4a_tts_002.py
+tests/test_m4a_priv_001.py
+tests/test_m4a_off_001.py
+tests/test_m4a_res_001.py
+tests/test_m4a_pkg_001.py
+tests/test_m4a_inh_001.py

@@ -47,12 +47,19 @@ class PerceptionTimeouts:
 
 @dataclass(frozen=True, slots=True)
 class ASRConfig:
-    driver: Literal["mock", "null"] = "mock"
+    driver: Literal["mock", "null", "whispercpp"] = "mock"
     engine_name: str | None = None
     model_path: Path | None = None
+    worker_path: Path | None = None
+    runtime_python: Path | None = None
+    vad_model_path: Path | None = None
+    artifact_lock_path: Path | None = None
     language: str | None = None
     dsp_profile: str | None = None
     decoder_profile: str | None = None
+    child_ready_timeout_seconds: float = 30.0
+    child_terminate_timeout_seconds: float = 5.0
+    child_kill_wait_timeout_seconds: float = 2.0
 
 @dataclass(frozen=True, slots=True)
 class VisionConfig:
@@ -102,13 +109,19 @@ class CognitionConfig:
 
 @dataclass(frozen=True, slots=True)
 class TTSConfig:
-    driver: Literal["mock", "null"] = "mock"
+    driver: Literal["mock", "null", "sherpa_matcha"] = "mock"
     engine_name: str | None = None
     model_path: Path | None = None
+    vocoder_path: Path | None = None
+    runtime_python: Path | None = None
+    artifact_lock_path: Path | None = None
     voice_id: str | None = None
     native_sample_rate: int | None = None
     native_channels: int | None = None
     native_sample_format: str | None = None
+    child_ready_timeout_seconds: float = 30.0
+    child_terminate_timeout_seconds: float = 5.0
+    child_kill_wait_timeout_seconds: float = 2.0
 
 @dataclass(frozen=True, slots=True)
 class ActionConfig:
