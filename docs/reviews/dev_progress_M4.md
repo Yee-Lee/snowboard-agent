@@ -109,9 +109,19 @@ the child-watcher-populated `Process.returncode` for the existing five-second
 bound. The exact no-delay node passed 20/20 independent CPython 3.11 runs; the
 four affected files passed 66 tests, and the complete M4A manifest passed all 167
 tests on CPython 3.11.16, 3.12.3 and 3.13.15 with zero skip or xfail. A new
-append-only candidate remains pending USER commit approval. The candidate-runner
-regression passed all 14 tests, and the repository non-RPi regression passed 451
-tests with 28 target-only deselections.
+append-only candidate was created as
+`7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`. The candidate-runner regression
+passed all 14 tests, and the repository non-RPi regression passed 451 tests with
+28 target-only deselections.
+
+Developer exact-candidate verification used a clean clone of `7aba0719…`.
+Candidate gate run `m4a-7aba071-20260828-devp01` passed 167/167 tests on each of
+CPython 3.11.16, 3.12.3 and 3.13.15. After rebooting the Pi, a fresh detached
+checkout, product install and controller venv passed preflight. Real ASR completed
+two nonempty turns plus bounded finite no-endpoint; real TTS completed ALSA,
+deferred Level 2 destruction, rebuild and two recovery turns. Both traces had
+zero IPv4/IPv6 calls, all cleanup deltas were zero, and the final target baseline
+was clean. These results remain Developer verification, not Tester acceptance.
 
 Developer fast-loop results on the designated local Python 3 minor:
 

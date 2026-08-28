@@ -188,4 +188,25 @@ The new portable regressions for finite-input convergence, production OpenBLAS p
 
 ### Candidate handoff
 
-A new append-only candidate is pending USER approval and therefore no candidate SHA or formal result is claimed here. After commit, Developer will run the complete candidate gate against the clean exact SHA. Only if that gate passes will Developer reboot the Pi, run the exact-SHA diagnostic from a clean target and hand the candidate back to Tester for formal portable and target re-verification.
+The USER-approved append-only candidate is
+`7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`. Developer candidate gate run
+`m4a-7aba071-20260828-devp01` used a clean clone of that exact SHA and passed
+all 167 manifest tests on CPython 3.11.16, 3.12.3 and 3.13.15, with zero fail,
+skip or xfail; its matrix result is `Pass`.
+
+Developer then rebooted the Pi to boot ID
+`a3a1e7a5-68cc-4a77-ba6a-fb62f89dadc6` and verified a zero-process, zero-ALSA
+holder and zero-temp baseline. A new detached exact-SHA checkout, fresh product
+install and fresh controller venv passed product and closure preflight. Real ASR
+returned two nonempty results in 3593.554 / 3575.184 ms and the finite
+no-endpoint case converged in 138.033 ms. Real TTS played 69,462 bytes through
+ALSA, retained one controller thread, performed deferred Level 1 to Level 2
+destruction, rebuilt, and produced 69,128 / 69,474 recovery bytes. Both modes
+reached `STOPPED`, recorded zero process/thread/fd/temp cleanup deltas and zero
+IPv4/IPv6 calls in their complete traces. Final process, ALSA, temp and protected
+checkout checks were clean.
+
+These are **Developer Exact-Candidate Verification** results only. Tester must
+use new run IDs and fresh outputs to independently rerun the formal three-minor
+portable matrix, Pi preflight and complete target acceptance before resolving
+this review.
