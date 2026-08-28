@@ -210,3 +210,23 @@ These are **Developer Exact-Candidate Verification** results only. Tester must
 use new run IDs and fresh outputs to independently rerun the formal three-minor
 portable matrix, Pi preflight and complete target acceptance before resolving
 this review.
+
+## Tester portable sign-off — Pass; target Pending
+
+- Candidate: `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` from a clean detached worktree.
+- Tester run: `m4a-7aba071-20260828-p01`.
+- Exact CPython 3.11 no-delay node: 20 independent processes, 20/20 passed.
+- CPython 3.11.16, 3.12.3 and 3.13.15: 167 passed per minor, with zero fail, skip or xfail.
+- `matrix-index.json`: Pass; every result binds the same candidate SHA and run ID.
+- Protected candidate paths remained clean after execution.
+- Sanitized evidence: `docs/outsource/evidence/M4A-TESTER-7ABA071-20260828/README.md`.
+
+`TRDEV-M4A-002` now satisfies its locked portable minimum re-verification. The
+portable portions of `TRDEV-M4A-001`, `TRDEV-M4A-003` and `TRDEV-M4A-004` also
+remain green. Their real-device requirements are still Pending and are not
+promoted using Developer diagnostics.
+
+Per `docs/roles/workflow.md` §4 steps 3–5, the next gate is Designer candidate
+review/freeze of this exact protected SHA. Tester requests that Designer record
+`7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` as frozen or return a Blocking
+finding. Target preflight and acceptance must not start before that decision.
