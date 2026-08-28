@@ -280,8 +280,9 @@ def test_m4a_tts_002_actual_process_group_destroy_and_recovery() -> None:
         }
         child.operation_finished()
 
-        # Actual Matcha cooperative cancellation must produce a terminal and
-        # return the same persistent child to READY.
+        # Native Matcha generation cannot cooperatively stop.  Its deferred
+        # request must remain pending through the bounded Level-1 observation,
+        # then Level 2 destroys the actual process group.
         cancel_text = TTS_FIXTURE * 200
         cancel_id = child.allocate_request_id()
         await child.send({
@@ -293,22 +294,15 @@ def test_m4a_tts_002_actual_process_group_destroy_and_recovery() -> None:
         assert deferred == {
             "protocol": 1, "event": "CANCEL_DEFERRED", "request_id": cancel_id,
         }
-        cancelled = await asyncio.wait_for(
-            child.receive(), timeout=config.action.tts.child_ready_timeout_seconds,
+        pending_terminal = asyncio.create_task(child.receive())
+        level1_seconds = config.cancel.abort_timeout_seconds.by_kind.get(
+            "action.speak",
+            config.cancel.abort_timeout_seconds.default,
         )
-        assert cancelled == {
-            "protocol": 1, "event": "CANCELLED", "request_id": cancel_id,
-        }
-        child.operation_finished()
-
-        # Level-1 timeout cannot become success; Level 2 destroys the actual
-        # process group while generation is active.
-        timed_generator = tts.synthesize(cancel_text)
-        timed = asyncio.create_task(anext(timed_generator))
-        await _wait_state(tts, ChildState.BUSY)
-        timed.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await timed
+        done, _ = await asyncio.wait({pending_terminal}, timeout=level1_seconds)
+        assert not done, "deferred native generation must not report success at Level 1"
+        pending_terminal.cancel()
+        await asyncio.gather(pending_terminal, return_exceptions=True)
         report = await tts.force_abort()
         assert report.destroyed_backends == ("backend.action.speak.tts",)
         assert tts.state is ChildState.DESTROYED

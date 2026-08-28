@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import os
 import struct
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -102,6 +104,27 @@ def test_m4a_tts_001_profile_is_fixed_cpu_two_threads_one_sentence() -> None:
         "sid": 0, "speed": 1.0, "provider": "cpu", "threads": 2, "max_sentences": 1,
         "sample_rate_hz": 16000, "channels": 1, "sample_format": "S16_LE",
     }
+
+
+def test_m4a_tts_001_product_entry_sets_native_thread_policy_before_imports() -> None:
+    environment = os.environ.copy()
+    environment["OPENBLAS_NUM_THREADS"] = "8"
+    source_root = str(Path(__file__).resolve().parents[1] / "src")
+    environment["PYTHONPATH"] = source_root + os.pathsep + environment.get("PYTHONPATH", "")
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import os; import sbd.main; print(os.environ['OPENBLAS_NUM_THREADS'])",
+        ],
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=10,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.strip() == "1"
 
 
 def test_m4a_tts_001_actual_worker_builds_fixed_cpu_profile(

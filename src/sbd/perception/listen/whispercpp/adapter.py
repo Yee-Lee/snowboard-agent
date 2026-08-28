@@ -28,6 +28,12 @@ from sbd.perception.listen.asr import ASRResult
 
 ASR_KEY = "backend.perception.listen.asr"
 ASR_ERROR_CODES = {"INVALID_FRAME", "NO_SPEECH", "MULTIPLE_UTTERANCES", "INFERENCE_REJECTED"}
+FRAME_BYTES = 640
+# A finite source can end while Silero is still triggered.  Feed at most two
+# seconds of silence through the normal credit path so the fixed 500 ms end
+# silence plus 600 ms post-padding can converge without a new wire operation.
+EOF_TERMINAL_SILENCE_FRAMES = 100
+_SILENCE_FRAME = b"\x00" * FRAME_BYTES
 
 
 class _Child(Protocol):
@@ -130,8 +136,8 @@ class WhisperCppASRAdapter:
                 first = await anext(frames)
             except StopAsyncIteration:
                 raise AdapterRejected("ASR input contains no frames") from None
-            if len(first) != 640:
-                raise AdapterError("ASR frame must be exactly 640 bytes")
+            if len(first) != FRAME_BYTES:
+                raise AdapterError(f"ASR frame must be exactly {FRAME_BYTES} bytes")
             request_id = self._child.allocate_request_id()
             self._active_request_id = request_id
             self._cancel_requested.clear()
@@ -142,10 +148,12 @@ class WhisperCppASRAdapter:
                 await self._child.send({"protocol": 1, "op": "BEGIN", "request_id": request_id, "format": "16000_mono_s16le", "frame_bytes": 640})
                 sequence = 0
                 frame: bytes | None = first
+                source_exhausted = False
+                terminal_silence_remaining = 0
                 while frame is not None:
-                    if len(frame) != 640:
-                        raise AdapterError("ASR frame must be exactly 640 bytes")
-                    await self._child.send({"protocol": 1, "op": "FRAME", "request_id": request_id, "sequence": sequence, "payload_bytes": 640}, frame)
+                    if len(frame) != FRAME_BYTES:
+                        raise AdapterError(f"ASR frame must be exactly {FRAME_BYTES} bytes")
+                    await self._child.send({"protocol": 1, "op": "FRAME", "request_id": request_id, "sequence": sequence, "payload_bytes": FRAME_BYTES}, frame)
                     captured_pcm.extend(frame)
                     event = await self._receive_with_cancel(request_id)
                     name = event.get("event")
@@ -155,9 +163,32 @@ class WhisperCppASRAdapter:
                         if event["sequence"] != sequence:
                             raise AudioProtocolError("FRAME_ACCEPTED sequence mismatch")
                         sequence += 1
-                        frame, asynchronous_event = await self._next_frame_or_event(
-                            frames, request_id,
-                        )
+                        if source_exhausted:
+                            terminal_silence_remaining -= 1
+                            if terminal_silence_remaining == 0:
+                                await self._send_cancel_once(request_id)
+                                terminal = await self._child.receive()
+                                name = terminal.get("event")
+                                if name == "CANCELLED":
+                                    self._validate_simple(terminal, request_id, name)
+                                    self._finish()
+                                    raise AdapterRejected(
+                                        "ASR input ended before an endpoint",
+                                    )
+                                if name == "ERROR":
+                                    self._raise_request_error(terminal, request_id)
+                                raise AudioProtocolError(
+                                    "unexpected ASR end-of-input terminal event",
+                                )
+                            frame, asynchronous_event = _SILENCE_FRAME, None
+                        else:
+                            frame, asynchronous_event = await self._next_frame_or_event(
+                                frames, request_id,
+                            )
+                            if frame is None and asynchronous_event is None:
+                                source_exhausted = True
+                                terminal_silence_remaining = EOF_TERMINAL_SILENCE_FRAMES
+                                frame = _SILENCE_FRAME
                         if asynchronous_event is not None:
                             name = asynchronous_event.get("event")
                             if name == "CANCEL_DEFERRED":

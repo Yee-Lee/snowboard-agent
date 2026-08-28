@@ -72,7 +72,10 @@ def emit(value: dict[str, Any], payload: bytes | None = None) -> None:
 
 
 def read_control() -> dict[str, Any] | None:
-    raw = sys.stdin.buffer.readline(MAX_CONTROL_BYTES + 1)
+    # Keep select() and reads on the same unbuffered fd model.  A buffered
+    # readline may otherwise hide a coalesced CANCEL/GENERATE from select().
+    stream = getattr(sys.stdin.buffer, "raw", sys.stdin.buffer)
+    raw = stream.readline(MAX_CONTROL_BYTES + 1)
     if raw == b"":
         return None
     if len(raw) > MAX_CONTROL_BYTES or not raw.endswith(b"\n"):

@@ -298,6 +298,119 @@ def test_m4a_ipc_001_asr_child_rejects_second_begin_as_busy(
     assert events[-1] == {"protocol": 1, "event": "SHUTDOWN_ACK"}
 
 
+@pytest.mark.parametrize("fragmented_begin", [False, True])
+def test_m4a_ipc_001_actual_asr_process_handles_coalesced_and_fragmented_input(
+    tmp_path: Path,
+    fragmented_begin: bool,
+) -> None:
+    launcher = tmp_path / "asr-supervisor-fixture.py"
+    for name in ("vad", "worker", "model", "lock"):
+        (tmp_path / name).write_bytes(name.encode())
+    launcher.write_text(
+        "import os\n"
+        "from pathlib import Path\n"
+        "from types import SimpleNamespace\n"
+        "from sbd.perception.listen.whispercpp import supervisor as target\n"
+        "class Silero:\n"
+        "    def __init__(self, path): self.calls = 0\n"
+        "    def reset(self): self.calls = 0\n"
+        "    def probability(self, frame):\n"
+        "        self.calls += 1\n"
+        "        return 1.0 if self.calls <= 10 else 0.0\n"
+        "class Native:\n"
+        "    def __init__(self, *args): self.pid = os.getpid()\n"
+        "    def transcribe(self, path): return ('fixture', 0.1)\n"
+        "    def stop(self): pass\n"
+        "    def terminate(self): pass\n"
+        f"root = Path({str(tmp_path)!r})\n"
+        "target.parse_args = lambda: SimpleNamespace("
+        "vad_model=root/'vad', asr_binary=root/'worker', asr_model=root/'model', "
+        "runtime_lock=root/'lock', profile_sha256='a'*64, work_dir=root)\n"
+        "target.Silero = Silero\n"
+        "target.NativeWorker = Native\n"
+        "raise SystemExit(target.main())\n",
+        encoding="utf-8",
+    )
+
+    async def run() -> None:
+        environment = os.environ.copy()
+        source_root = str(Path(__file__).resolve().parents[1] / "src")
+        environment["PYTHONPATH"] = source_root + os.pathsep + environment.get("PYTHONPATH", "")
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            str(launcher),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=tmp_path,
+            env=environment,
+            start_new_session=True,
+        )
+        try:
+            assert process.stdin is not None and process.stdout is not None
+            ready = await asyncio.wait_for(read_control(process.stdout), timeout=5)
+            assert ready["event"] == "READY"
+
+            begin = encode_control({
+                "protocol": 1, "op": "BEGIN", "request_id": 1,
+                "format": "16000_mono_s16le", "frame_bytes": 640,
+            })
+            first_frame = encode_control({
+                "protocol": 1, "op": "FRAME", "request_id": 1,
+                "sequence": 0, "payload_bytes": 640,
+            }) + b"\x00" * 640
+            if fragmented_begin:
+                split = len(begin) // 2
+                process.stdin.write(begin[:split])
+                await process.stdin.drain()
+                await asyncio.sleep(0.01)
+                process.stdin.write(begin[split:] + first_frame)
+            else:
+                process.stdin.write(begin + first_frame)
+            await process.stdin.drain()
+
+            event = await asyncio.wait_for(read_control(process.stdout), timeout=5)
+            assert event == {
+                "protocol": 1, "event": "FRAME_ACCEPTED",
+                "request_id": 1, "sequence": 0,
+            }
+            endpoint = None
+            for sequence in range(1, 120):
+                process.stdin.write(encode_control({
+                    "protocol": 1, "op": "FRAME", "request_id": 1,
+                    "sequence": sequence, "payload_bytes": 640,
+                }) + b"\x00" * 640)
+                await process.stdin.drain()
+                event = await asyncio.wait_for(read_control(process.stdout), timeout=5)
+                if event["event"] == "ENDPOINT":
+                    endpoint = event
+                    break
+                assert event == {
+                    "protocol": 1, "event": "FRAME_ACCEPTED",
+                    "request_id": 1, "sequence": sequence,
+                }
+            assert endpoint is not None and endpoint["captured_frames"] <= 120
+            terminal = await asyncio.wait_for(read_control(process.stdout), timeout=5)
+            assert terminal["event"] == "RESULT" and terminal["text"] == "fixture"
+
+            process.stdin.write(encode_control({"protocol": 1, "op": "SHUTDOWN"}))
+            await process.stdin.drain()
+            assert await asyncio.wait_for(read_control(process.stdout), timeout=5) == {
+                "protocol": 1, "event": "SHUTDOWN_ACK",
+            }
+            assert await asyncio.wait_for(process.wait(), timeout=5) == 0
+        finally:
+            if process.returncode is None:
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=2)
+                except TimeoutError:
+                    process.kill()
+                    await process.wait()
+
+    asyncio.run(run())
+
+
 def test_m4a_ipc_001_tts_child_rejects_second_generate_as_busy(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

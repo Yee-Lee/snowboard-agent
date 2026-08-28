@@ -3,10 +3,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import signal
 import sys
 from collections.abc import Callable
 from pathlib import Path
+
+# Production controller native libraries must not leave an idle OpenBLAS pool
+# behind after audio adaptation.  This executes before any project module can
+# lazily import NumPy or samplerate.
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from sbd.core.config import AppConfig, ConfigError, load_config
 from sbd.core.error_observer import ErrorLoggingObserver

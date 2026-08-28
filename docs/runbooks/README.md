@@ -12,6 +12,7 @@
 | **M2** | [`m2-development.md`](m2-development.md) | **Mock 認知與意圖垂直切片**<br>(Perception, Intent Reasoner, Action, Mock HAL) | Deterministic Workers 與 Session 流程測試 |
 | **M3** | [`m3-development.md`](m3-development.md)<br>實體驗收以 [`m3_rpi_validation.md`](m3_rpi_validation.md) 為準 | **Raspberry Pi 5 HAL 與實體硬體驗收**<br>(Audio I2S, Display SPI, Camera CSI, GPIO/Button) | 27 個 DEV 單元測項 + 20 個樹莓派實體硬體測試卡 |
 | **M4 起共用 Candidate Gate** | [`candidate_hardware_gate.md`](candidate_hardware_gate.md) | **Portable-first 與單一 frozen SHA**<br>(Python matrix, preflight, minimal result / raw log) | 3.11 / 3.12 / 3.13 candidate matrix + 單一部署 runtime硬體驗收 |
+| **M4A Developer Pi 診斷** | [`m4a_developer_pi_diagnostic.md`](m4a_developer_pi_diagnostic.md) | **送審前真實 Audio 診斷**<br>(fresh device/product、offline ASR/TTS/ALSA、cleanup) | Working-tree Diagnostic + USER-approved exact-candidate verification；不取代 Tester acceptance |
 
 ---
 

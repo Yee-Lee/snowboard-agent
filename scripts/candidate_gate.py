@@ -299,6 +299,9 @@ def execute_pytest(
         raw_logs.append("logs/network.trace.log")
     try:
         environment = os.environ.copy()
+        # The formal runner is itself a production launch boundary.  Set the
+        # native thread policy before pytest imports controller audio modules.
+        environment["OPENBLAS_NUM_THREADS"] = "1"
         source_root = str(repo.root / "src")
         existing_pythonpath = environment.get("PYTHONPATH")
         environment["PYTHONPATH"] = (

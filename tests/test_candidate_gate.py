@@ -71,6 +71,7 @@ def candidate_repo(tmp_path: Path) -> tuple[Path, str]:
         "    root=pathlib.Path(os.environ['SBD_M4A_CARD_ROOT'])\n"
         "    sha=os.environ['SBD_M4A_CANDIDATE_SHA']\n"
         "    assert os.environ['SBD_M4A_ACCEPTANCE_RUN_ID']=='accept-002'\n"
+        "    assert os.environ['OPENBLAS_NUM_THREADS']=='1'\n"
         "    (root/'M4A-TARGET-001.json').write_text(json.dumps({"
         "'candidate_sha':sha,'test_id':'M4A-TARGET-001','metric':1}))\n",
     )

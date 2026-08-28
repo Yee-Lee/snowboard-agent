@@ -66,7 +66,11 @@ def emit(value: dict[str, Any]) -> None:
 
 
 def read_control() -> dict[str, Any] | None:
-    raw = sys.stdin.buffer.readline(MAX_CONTROL_BYTES + 1)
+    # select() below observes the OS fd.  Reading through BufferedReader can
+    # prefetch the following coalesced FRAME into userspace and make that fd
+    # look empty forever, so every stdin byte uses the same raw FileIO owner.
+    stream = getattr(sys.stdin.buffer, "raw", sys.stdin.buffer)
+    raw = stream.readline(MAX_CONTROL_BYTES + 1)
     if raw == b"":
         return None
     if len(raw) > MAX_CONTROL_BYTES or not raw.endswith(b"\n"):
@@ -81,9 +85,10 @@ def read_control() -> dict[str, Any] | None:
 
 
 def read_exact(count: int) -> bytes:
+    stream = getattr(sys.stdin.buffer, "raw", sys.stdin.buffer)
     chunks = bytearray()
     while len(chunks) < count:
-        block = sys.stdin.buffer.read(count - len(chunks))
+        block = stream.read(count - len(chunks))
         if not block:
             raise RuntimeError("PAYLOAD_EOF")
         chunks.extend(block)

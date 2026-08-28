@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import os
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from sbd.adaptor.audio_lock import AudioArtifactLock
-from sbd.adaptor.errors import AdapterError
+from sbd.adaptor.errors import AdapterError, AdapterRejected
+from sbd.adaptor.framed_child import ChildState, FramedProcess
 from sbd.core.config.models import ASRConfig
 from sbd.perception.listen.whispercpp.adapter import WhisperCppASRAdapter
+from sbd.perception.listen.whispercpp import adapter as adapter_module
 from sbd.perception.listen.whispercpp.supervisor import (
     EndpointDetector,
     FRAME_BYTES,
@@ -50,6 +54,152 @@ def test_m4a_asr_001_stream_credit_endpoint_stops_pull_and_maps_result() -> None
         assert [item["op"] for item in sent] == ["BEGIN", "FRAME", "FRAME"]
         assert [item.get("sequence") for item in sent[1:]] == [0, 1]
         assert all(len(payload) == 640 for _, payload in child.messages[1:])
+
+    asyncio.run(run())
+
+
+def test_m4a_asr_001_finite_input_flushes_bounded_silence_to_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def run() -> None:
+        monkeypatch.setattr(adapter_module, "EOF_TERMINAL_SILENCE_FRAMES", 2)
+        child = ScriptedChild([
+            asr_ack(1, 0), asr_ack(1, 1), asr_endpoint(1, 3),
+            asr_result(1, "finite"),
+        ])
+        adapter = WhisperCppASRAdapter(_config(), lock=LOCK, child_factory=lambda: child)
+        await adapter.start()
+
+        async def finite_frames():
+            yield b"\x00" * 640
+
+        result = await adapter.transcribe(finite_frames())
+        frame_messages = [item for item in child.messages if item[0].get("op") == "FRAME"]
+        assert result.text == "finite"
+        assert [item[0]["sequence"] for item in frame_messages] == [0, 1, 2]
+        assert all(item[1] == b"\x00" * 640 for item in frame_messages)
+        assert child.state is ChildState.READY
+
+    asyncio.run(run())
+
+
+def test_m4a_asr_001_finite_no_endpoint_cancels_after_exact_flush_bound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def run() -> None:
+        monkeypatch.setattr(adapter_module, "EOF_TERMINAL_SILENCE_FRAMES", 2)
+        child = ScriptedChild(
+            [asr_ack(1, 0), asr_ack(1, 1), asr_ack(1, 2)],
+            cancel_events=[{
+                "protocol": 1, "event": "CANCELLED", "request_id": 1,
+            }],
+        )
+        adapter = WhisperCppASRAdapter(_config(), lock=LOCK, child_factory=lambda: child)
+        await adapter.start()
+
+        async def finite_frames():
+            yield b"\x00" * 640
+
+        with pytest.raises(AdapterRejected, match="ended before an endpoint"):
+            await adapter.transcribe(finite_frames())
+        assert [item[0]["op"] for item in child.messages] == [
+            "BEGIN", "FRAME", "FRAME", "FRAME", "CANCEL",
+        ]
+        assert child.state is ChildState.READY
+        assert child.force_count == 0
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("mode", ["endpoint", "no_endpoint"])
+def test_m4a_asr_001_finite_input_converges_through_actual_supervisor_process(
+    tmp_path: Path,
+    mode: str,
+) -> None:
+    launcher = tmp_path / "finite-supervisor-fixture.py"
+    artifacts = {}
+    for name in ("vad", "worker", "model", "lock"):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        artifacts[name] = path
+    launcher.write_text(
+        "import os, sys\n"
+        "from pathlib import Path\n"
+        "from types import SimpleNamespace\n"
+        "from sbd.perception.listen.whispercpp import supervisor as target\n"
+        "mode = sys.argv[2]\n"
+        "class Silero:\n"
+        "    def __init__(self, path): self.calls = 0\n"
+        "    def reset(self): self.calls = 0\n"
+        "    def probability(self, frame):\n"
+        "        self.calls += 1\n"
+        "        if mode == 'no_endpoint': return 0.0\n"
+        "        return 1.0 if self.calls <= 10 else 0.0\n"
+        "class Native:\n"
+        "    def __init__(self, *args): self.pid = os.getpid()\n"
+        "    def transcribe(self, path): return ('finite fixture', 0.1)\n"
+        "    def stop(self): pass\n"
+        "    def terminate(self): pass\n"
+        f"artifact_root = Path({str(tmp_path)!r})\n"
+        "target.parse_args = lambda: SimpleNamespace("
+        "vad_model=artifact_root/'vad', asr_binary=artifact_root/'worker', "
+        "asr_model=artifact_root/'model', runtime_lock=artifact_root/'lock', "
+        "profile_sha256='a'*64, work_dir=Path(sys.argv[1]))\n"
+        "target.Silero = Silero\n"
+        "target.NativeWorker = Native\n"
+        "raise SystemExit(target.main())\n",
+        encoding="utf-8",
+    )
+    environment = os.environ.copy()
+    source_root = str(Path(__file__).resolve().parents[1] / "src")
+    environment["PYTHONPATH"] = source_root + os.pathsep + environment.get("PYTHONPATH", "")
+    expected_ready = {
+        "runtime_lock_sha256": hashlib.sha256(artifacts["lock"].read_bytes()).hexdigest(),
+        "vad_model_sha256": hashlib.sha256(artifacts["vad"].read_bytes()).hexdigest(),
+        "asr_binary_sha256": hashlib.sha256(artifacts["worker"].read_bytes()).hexdigest(),
+        "asr_model_sha256": hashlib.sha256(artifacts["model"].read_bytes()).hexdigest(),
+        "profile_sha256": "a" * 64,
+    }
+    process = FramedProcess(
+        argv_builder=lambda workdir: [
+            sys.executable, str(launcher), str(workdir), mode,
+        ],
+        work_root=tmp_path / "work",
+        expected_ready=expected_ready,
+        ready_timeout=5,
+        terminate_timeout=1,
+        kill_timeout=1,
+        environment=environment,
+    )
+
+    async def run() -> None:
+        adapter = WhisperCppASRAdapter(
+            _config(), lock=LOCK, child_factory=lambda: process,
+        )
+        await adapter.start()
+
+        async def finite_frames():
+            yield b"\x00" * FRAME_BYTES
+
+        try:
+            if mode == "endpoint":
+                result = await asyncio.wait_for(
+                    adapter.transcribe(finite_frames()), timeout=10,
+                )
+                assert result.text == "finite fixture"
+            else:
+                with pytest.raises(AdapterRejected, match="ended before an endpoint"):
+                    await asyncio.wait_for(
+                        adapter.transcribe(finite_frames()), timeout=10,
+                    )
+            assert adapter.state is ChildState.READY
+        finally:
+            if adapter.state is ChildState.READY:
+                await adapter.stop()
+            elif adapter.state is ChildState.BUSY:
+                await adapter.force_abort()
+        assert adapter.state is ChildState.STOPPED
+        assert process.workdir is None
 
     asyncio.run(run())
 

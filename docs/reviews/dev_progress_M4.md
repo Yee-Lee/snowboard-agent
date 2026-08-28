@@ -88,6 +88,52 @@
 | M4A-WP-12 | 2.0 days | Strict config, lazy factories, composition ownership and RM rebuild barrier wiring | `M4A-CFG-001`; recovery/composition portions of `M4A-ASR-003` and `M4A-TTS-002` | WP-10 and WP-11 adapter lifecycle complete | Developer complete — Tester pending |
 | M4A-WP-13 | 2.0 days | Gate 3 target runner support, inheritance generator/template and offline/resource/privacy collection support | `M4A-OFF-001`, `M4A-RES-001`, `M4A-INH-001`; aggregate `M4A-PRIV-001` | WP-09～12 executable; Accepted M4b only for combined resource row | Developer complete — Tester pending |
 
+### TR_dev_M4_I correction plan (M4A-WP-14 to M4A-WP-18)
+
+| Work package | Estimate | Plan | Finding | Status |
+| :--- | ---: | :--- | :--- | :--- |
+| M4A-WP-14 | 0.75 day | Add bounded finite-input terminal silence and recoverable no-endpoint convergence without changing Audio Protocol v1. | `TRDEV-M4A-001` | Complete |
+| M4A-WP-15 | 0.75 day | Replace buffered child stdin reads with one raw/unbuffered framing model and add fragmented/coalesced actual-process coverage. | `TRDEV-M4A-002` | Complete |
+| M4A-WP-16 | 0.5 day | Enforce the single-thread OpenBLAS policy before controller native imports and in the formal candidate runner. | `TRDEV-M4A-003` | Complete |
+| M4A-WP-17 | 0.5 day | Align the Pi actual-child cancellation case with deferred Level 1 observation, Level 2 destruction, rebuild and two-success recovery. | `TRDEV-M4A-004` | Complete |
+| M4A-WP-18 | 0.5 day | Add a Developer-owned Pi pre-submit runbook and sanitized executable diagnostic for fresh device/product, offline ASR/TTS/ALSA and cleanup verification. | Process prevention requested after `TRDEV-M4A-001`～`004` | Complete |
+| Developer re-verification | 0.5 day | Run named M4A regressions, candidate-runner tests and the primary-minor portable fast loop; record exact results in the review response. | All four findings | Complete |
+
+The correction remains inside the approved public APIs and existing Audio Protocol v1 message set. Formal CPython 3.11/3.12/3.13 matrix execution and fresh Pi acceptance remain Tester-owned after a new USER-approved append-only candidate SHA is available.
+
+Developer fast-loop results on the designated local Python 3 minor:
+
+- Focused ASR/IPC/TTS correction suite: `66 passed in 6.80s`, exit 0.
+- Complete 13-ID M4A portable manifest: `167 passed in 9.92s`, exit 0; no fail, skip or xfail.
+- Candidate-gate regression: `14 passed in 26.35s`, exit 0.
+- Repository non-RPi regression: `449 passed, 2 skipped, 28 deselected in 70.23s`, exit 0. The two repository-level skips are outside the M4A formal manifest.
+- Pi target suite collection: `7 tests collected in 0.36s`, exit 0.
+- `py_compile` for every changed Python file and `git diff --check`: passed.
+
+Developer Raspberry Pi working-tree diagnostic on 2026-08-28:
+
+- Began after a device reboot with zero M4A processes, ALSA holders, ASR/TTS
+  temp entries and formal-checkout tracked changes. The diagnostic used a new
+  isolated checkout and loopback-only network namespaces; it is not formal
+  acceptance and is not exact-candidate evidence because the fix is uncommitted.
+- Fresh aarch64 whisper build passed with binary SHA-256
+  `6aa73d996dfb03b12aabf5e706170301902ee9a3ceafa14573e7f269ec04cc26`;
+  fresh product install passed with 8 wheels and product lock
+  `21389a0fb6030a9ca74645003239119a9e299bd2719b98e2df15bc19a0c360d4`.
+- Fresh controller-r2 closure preflight passed with manifest SHA-256
+  `6bb24f9a0a2f2a66a522706b22222081fbf009b28c9dc0942a22d714114276f4`.
+- Real ASR produced two nonempty results in 3883.509 ms and 3858.173 ms;
+  finite no-endpoint converged recoverably in 135.881 ms. The complete process
+  tree made zero IPv4/IPv6 calls and stopped with process/thread/fd/temp deltas 0.
+- Real TTS wrote and drained 69,408 bytes through ALSA. The controller had one
+  native thread after imports; deferred cancel escalated through Level 2,
+  rebuilt and produced 69,460 / 69,350 bytes in two recovery syntheses. The
+  complete process tree made zero IPv4/IPv6 calls and all cleanup deltas were 0.
+- The repeatable procedure is
+  `docs/runbooks/m4a_developer_pi_diagnostic.md`; the sanitized entry point is
+  `scripts/m4a_developer_pi_check.py`. A USER-approved candidate must still be
+  rerun from a clean exact SHA before Tester handoff.
+
 ### Developer WIP checkpoint — 2026-08-26
 
 Work is intentionally paused for workstation shutdown. All changes remain uncommitted; no candidate SHA, Pi PASS, Tester handoff or milestone completion is claimed.
