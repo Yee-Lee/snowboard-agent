@@ -1,7 +1,7 @@
 ---
 requestor: "Tester"
 owner: "Developer"
-status: "Revised"
+status: "Resolved"
 ---
 
 # TR_dev_M4_I — M4A Gate 3 candidate rejection
@@ -317,3 +317,79 @@ tests, Tester review/evidence and directly related Developer documentation will
 be recorded in a new append-only candidate after USER commit approval. Only that
 exact SHA may proceed through a new matrix and fresh Pi verification before
 Tester begins a new formal acceptance run.
+
+## Tester portable re-verification of telemetry candidate — Pass
+
+- Candidate: `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`, checked out as a
+  clean detached worktree. It is an append-only descendant of rejected candidate
+  `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`.
+- Tester run: `m4a-6c3ba954-20260829-t01`; Developer result files and run IDs
+  were not reused.
+- CPython 3.11.16: **171 passed**, zero failed/skipped/xfailed.
+- CPython 3.12.3: **171 passed**, zero failed/skipped/xfailed.
+- CPython 3.13.15: **171 passed**, zero failed/skipped/xfailed.
+- `matrix-index.json`: `Pass`; all three results bind the same full candidate
+  SHA, Tester run ID, tracked suite manifest and 120-second timeout.
+- The protected checkout remained clean after all three executions and matrix
+  creation. The telemetry regressions therefore satisfy the portable portion of
+  `TRDEV-M4A-005` without weakening the formal full-tree strace gate.
+- Sanitized evidence:
+  `docs/outsource/evidence/M4A-TESTER-6C3BA954-20260829/README.md`.
+
+This is portable sign-off only. Target acceptance remains **Pending** until
+Designer reviews and freezes this exact SHA. `origin/core` did not yet contain
+the candidate when Tester completed the matrix, so the candidate must be pushed
+unchanged before freeze/handoff. After freeze, Tester must use a new Pi run ID,
+reboot the device, rebuild the product/controller inputs and execute the complete
+20-turn acceptance; Developer's 40-second and real-device diagnostics remain
+non-formal.
+
+## Tester final target reconciliation — Pass
+
+### Frozen identity and execution
+
+- Designer freeze was confirmed for exact candidate
+  `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9` after its unchanged push to
+  `origin/core`.
+- Tester rebooted the Pi to boot ID
+  `a0dc71ef-3254-4606-b7a8-eeab5421220e` and confirmed zero pre-run product
+  processes, ALSA holders and temporary IPC entries.
+- To honor the USER's no-repeat direction, Tester reused the checksum-verified
+  exact-SHA product/controller produced by the completed Developer build, but
+  created a fresh product preflight, target preflight, loopback-only namespace,
+  output root and formal run ID `m4a-6c3ba954-20260829-pi01`.
+- The formal process inherited conflicting `ORT_DISABLE_TELEMETRY=0`; no shell
+  workaround supplied the required value.
+
+### Formal result
+
+- Target preflight: **Pass**, CPython 3.13.5, exact candidate and portable run
+  `m4a-6c3ba954-20260829-t01`.
+- Complete real-device suite: **7 passed**, zero failed/skipped/xfailed in
+  173.109 seconds.
+- `M4A-ASR-001/002/003`, `M4A-TTS-001/002`, `M4A-OFF-001`,
+  `M4A-RES-001`, `M4A-PKG-001` and `M4A-PRIV-001`: **Pass**.
+- The outer full-descendant syscall trace contains **0** IPv4/IPv6 records;
+  `network_attempt_count=0` and `downloader_calls=0`.
+- The 20-turn resource card records p99 latency 7724.653 ms, peak system use
+  829.703 MiB, zero orphan processes and `throttled=0x0`.
+- All final process/thread/fd/temp cleanup counters and post-run baseline checks
+  are zero. The exact-SHA checkout remained clean.
+
+### Finding disposition and evidence
+
+`TRDEV-M4A-005` is **Resolved**. The same formal full-tree audit that rejected
+`7aba0719…` now observes zero attempted network syscalls despite the conflicting
+inherited value. This is direct re-verification of the failed acceptance point;
+the earlier Developer 40-second diagnostic is not promoted or counted.
+
+The official inheritance generator validated all 16 required candidate, P1–P12
+and Audio-internal rows against the immutable Accepted Audio SHA and matching
+passing Core result cards. Sanitized evidence is under
+`docs/outsource/evidence/M4A-TESTER-6C3BA954-20260829/`; raw logs remain
+Git-external.
+
+Tester records the M4A technical sub-gate as **Pass** for candidate
+`6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`. The shared real M4A+M4B combined
+resource row remains Pending until M4B input is Accepted, so this disposition
+does not declare the overall M4 milestone complete or authorize a `core_m4` tag.
