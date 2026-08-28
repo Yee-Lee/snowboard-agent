@@ -1,7 +1,7 @@
 # GATE2A-PI-PACKET-002 — Cumulative Remaining LLM-only Validation
 
 - **Packet ID**: `G2A-PI-LLM-002`
-- **Revision**: `2026-08-28-r3-executable-cumulative`
+- **Revision**: `2026-08-28-r4-fail-closed-evidence`
 - **Status**: `EXECUTABLE CANDIDATE / USER REVIEW REQUIRED / NOT AUTHORIZED`
 - **Entry receipt**: `G1-M4B-CLOSURE-001`, bound to the Core-accepted Gate 1 closure ACK
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
@@ -58,8 +58,16 @@ disposition `CONTINUE`: immediately start the identical next chunk under the ori
 never emit `RESULT`. This continuous-chunk rule is fixed before candidate execution and is neither
 an adaptive fixture nor a result-dependent retry.
 
-At the outer deadline, cancel the currently owned generation and require a correlated `TIMEOUT`
-from 15.000 through 17.000 seconds, at least one real model chunk started, no hung worker, READY
+At the outer deadline, atomically stop the continuous state machine and require a correlated `TIMEOUT`
+from 15.000 through 17.000 seconds. If a chunk is active, invoke native cancel exactly once; if the
+deadline falls after a chunk closes and before the next starts, stop continuation with zero native
+cancels. Completion and cancellation compete in one final lock-protected arbitration before any
+`chunk_completed` marker: cancel-first leaves the chunk incomplete, while completion-first clears
+the active conversation and enters the between-chunks state before declaring completion. Both
+cancel-first reservation and conversation close are coordinated until the native cancel call
+returns. `native_cancel_once` is emitted only after success; `native_cancel_failed` records a raised
+native call and makes P5 fail. Neither completion nor close may overtake a reserved native call. Both
+predeclared observations require at least one real model chunk, no hung worker, READY
 recovery, then one unchanged standard-config rebuild probe and zero residue. An early `RESULT` is a
 packet/adapter defect and makes the evidence `INCONCLUSIVE`; a candidate generation error, wrong or
 late terminal, failed timeout cancellation, hang or failed recovery is `FAIL`. There is no fast-model
@@ -108,6 +116,14 @@ candidate/runtime/model identity and current filesystem metadata; the model cont
 rehash-read. The runner executes only P2/P3/P4/P5/P8, stores no model text, and retains Qwen P7.1
 as `FAIL` in both its entry and result schemas.
 
+The runner independently recomputes every P2/P3/P4/P5/P8 disposition from sanitized sample fields
+and cleanup proofs before publication; Gate 2B repeats that verification when consuming the result.
+Pre-READY, probe, sampler, filesystem, method and evidence failures are `INCONCLUSIVE`. A scored
+post-READY deadline, EOF, broken/reset protocol pipe, invalid protocol frame or bounded shutdown
+timeout is a candidate violation and therefore `FAIL`,
+as are other validly observed candidate/cleanup violations. Log scans combine fixed forbidden strings with the
+current frozen fixture, nonce and trap canaries without persisting matched text.
+
 After review, run one command after each clean reboot, substituting the accepted receipt path and
 the exact clean execution SHA:
 
@@ -116,5 +132,5 @@ unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/b
 unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-001 --evidence-root <controlled-evidence-root-outside-git>
 ```
 
-Workstation definition verification for this revision is 42/42 Gate 2 tests plus 136/136 Gate 1
+Workstation definition verification for this revision is recorded in the current re-review request plus 136/136 Gate 1
 regressions. These results authenticate the executable design only and provide no Pi P credit.

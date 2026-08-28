@@ -23,6 +23,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from poc_llm.harness.m1_contract_boundary import normalize_response
+from poc_llm.harness.gate2_errors_v1 import (
+    CandidateViolation,
+    EvidenceInvalid,
+    sanitized_error,
+    write_json_evidence,
+)
 from poc_llm.harness.pi_artifact_auth import streaming_digest, verify_model_receipt
 from poc_llm.harness.pi_runtime import (
     PiPacketFailure,
@@ -80,6 +86,8 @@ OBSERVATION_ERRORS = (
     TypeError,
     ValueError,
 )
+SCORED_PIPE_ERRORS = (PiPacketFailure, BrokenPipeError, ConnectionResetError, UnicodeError)
+SCORED_CLOSE_ERRORS = SCORED_PIPE_ERRORS + (subprocess.TimeoutExpired,)
 
 
 def parse_args() -> argparse.Namespace:
@@ -245,6 +253,40 @@ def start_p5(
     return process, round((time.monotonic() - started) * 1000, 3)
 
 
+def scored_generate(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], float]:
+    """Classify a READY child's scored protocol timeout/EOF/frame defect as candidate behavior."""
+
+    try:
+        return generate(*args, **kwargs)
+    except SCORED_PIPE_ERRORS as error:
+        raise CandidateViolation("post-READY scored protocol failure") from error
+
+
+def scored_pong(
+    process: subprocess.Popen[str], validator: Draft202012Validator
+) -> dict[str, Any]:
+    """Run the scored same-child liveness exchange after READY."""
+
+    try:
+        send(process, {"type": "PING", "protocol_version": "snowboard.llm/1"})
+        if process.stdout is None:
+            raise PiPacketFailure("P5 child stdout unavailable")
+        return read_frame(process.stdout, 2.0, validator)
+    except SCORED_PIPE_ERRORS as error:
+        raise CandidateViolation("post-READY same-child protocol failure") from error
+
+
+def scored_close_child(
+    process: subprocess.Popen[str], validator: Draft202012Validator
+) -> dict[str, Any]:
+    """Treat a READY candidate's failed protocol shutdown as a scored violation."""
+
+    try:
+        return close_child(process, validator)
+    except SCORED_CLOSE_ERRORS as error:
+        raise CandidateViolation("post-READY candidate cleanup failure") from error
+
+
 def p2_valid(
     terminal: dict[str, Any],
     entry: dict[str, Any],
@@ -304,15 +346,31 @@ def p4_summary(cold: list[dict[str, Any]], hot: list[dict[str, Any]]) -> dict[st
     }
 
 
-def scan_owned_logs(raw_dir: Path) -> list[str]:
-    violations: list[str] = []
+def scan_owned_logs(raw_dir: Path, runtime_markers: set[str]) -> dict[str, Any]:
+    files: list[dict[str, str]] = []
+    leaked = False
+    markers = tuple(FORBIDDEN_LOG) + tuple(
+        marker for marker in sorted(runtime_markers) if marker
+    )
     for path in sorted(raw_dir.iterdir()):
         if not path.is_file() or path.name == "gate2a-sanitized.json":
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            content = path.read_bytes()
+            text = content.decode("utf-8", errors="replace")
+        except OSError as error:
+            raise EvidenceInvalid("Gate 2A owned-log scan failed") from error
+        files.append({"name": path.name, "sha256": hashlib.sha256(content).hexdigest()})
         if any(marker in text for marker in FORBIDDEN_LOG):
-            violations.append(f"owned log hygiene failure: {path.name}")
-    return violations
+            leaked = True
+        if any(marker in text for marker in markers[len(FORBIDDEN_LOG):]):
+            leaked = True
+    return {
+        "passed": not leaked,
+        "scanned_files": files,
+        "static_marker_count": len(FORBIDDEN_LOG),
+        "runtime_marker_count": len(markers) - len(FORBIDDEN_LOG),
+    }
 
 
 def p5_result_disposition(
@@ -334,6 +392,257 @@ def p5_result_disposition(
     if terminal.get("type") == "RESULT" and elapsed_ms < 15000:
         return "INCONCLUSIVE"
     return "FAIL"
+
+
+def p5_runner_disposition(
+    terminal: dict[str, Any],
+    elapsed_ms: float,
+    *,
+    markers_ok: bool,
+    health_ok: bool,
+    rebuild_ok: bool,
+    candidate_error: str | None,
+    observation_error: str | None,
+    rebuild_candidate_error: str | None,
+    rebuild_observation_error: str | None,
+) -> str:
+    """Apply the typed matrix used by the real P5 runner path."""
+
+    primary = p5_primary_disposition(
+        terminal,
+        elapsed_ms,
+        markers_ok=markers_ok,
+        health_ok=health_ok,
+        candidate_error=candidate_error,
+        observation_error=observation_error,
+    )
+    if primary != "PASS":
+        return primary
+    if rebuild_candidate_error is not None:
+        return "FAIL"
+    if rebuild_observation_error is not None:
+        return "INCONCLUSIVE"
+    return "PASS" if rebuild_ok else "FAIL"
+
+
+def p5_primary_disposition(
+    terminal: dict[str, Any],
+    elapsed_ms: float,
+    *,
+    markers_ok: bool,
+    health_ok: bool,
+    candidate_error: str | None,
+    observation_error: str | None,
+) -> str:
+    if candidate_error is not None:
+        return "FAIL"
+    if observation_error is not None:
+        return "INCONCLUSIVE"
+    return p5_result_disposition(
+        terminal, elapsed_ms, markers_ok=markers_ok,
+        health_ok=health_ok, rebuild_ok=True,
+    )
+
+
+def cleanup_pass(value: object) -> bool:
+    return isinstance(value, dict) and value == {
+        "exit_code": 0, "waited": True, "term_sent": False,
+        "kill_sent": False, "process_group_absent": True,
+    }
+
+
+def verify_gate2a_result(
+    result: dict[str, Any],
+    catalog: dict[str, Any],
+    p8_fixture: dict[str, Any],
+    *,
+    engine_capacity: int,
+    max_output_tokens: int,
+) -> dict[str, str]:
+    """Independently recompute Gate 2A dispositions from sanitized evidence."""
+
+    samples = result.get("samples", {})
+    computed: dict[str, str] = {}
+    p2 = samples.get("p2", {})
+    p2_cases = p2.get("cases", []) if isinstance(p2, dict) else []
+    expected_p2 = {
+        (entry["id"], repetition)
+        for entry in catalog["valid_cases"]
+        for repetition in range(catalog["repetitions"])
+    }
+    observed_p2 = {
+        (item.get("id"), item.get("repetition"))
+        for item in p2_cases if isinstance(item, dict)
+    }
+    if isinstance(p2, dict) and p2.get("error_type") is not None:
+        computed["P2"] = "INCONCLUSIVE"
+    else:
+        valid_p2 = (
+            len(p2_cases) == len(expected_p2)
+            and observed_p2 == expected_p2
+            and all(
+                item.get("valid") is True
+                and isinstance(item.get("prefill_tokens"), int)
+                and item["prefill_tokens"] > 0
+                and isinstance(item.get("decode_tokens"), int)
+                and 0 < item["decode_tokens"] <= max_output_tokens
+                and isinstance(item.get("kv_tokens"), int)
+                and 0 < item["kv_tokens"] <= engine_capacity
+                and item["kv_tokens"]
+                <= item["prefill_tokens"] + item["decode_tokens"] + 16
+                for item in p2_cases
+            )
+        )
+        computed["P2"] = "PASS" if valid_p2 else "FAIL"
+
+    p3 = samples.get("p3", [])
+    expected_p3 = {entry["id"] for entry in catalog["failure_raw_outputs"]}
+    observed_p3 = {item.get("id") for item in p3 if isinstance(item, dict)}
+    computed["P3"] = "PASS" if (
+        len(p3) == len(expected_p3)
+        and observed_p3 == expected_p3
+        and all(
+            item.get("repetitions") == catalog["repetitions"]
+            and item.get("deterministic") is True
+            and item.get("fallback") is True
+            for item in p3
+        )
+    ) else "FAIL"
+
+    p4 = samples.get("p4", {})
+    failures = p4.get("failures", []) if isinstance(p4, dict) else []
+    if any(item.get("category") != "CandidateViolation" for item in failures):
+        computed["P4"] = "INCONCLUSIVE"
+    elif failures:
+        computed["P4"] = "FAIL"
+    else:
+        cold, warmups, hot = p4.get("cold", []), p4.get("warmups", []), p4.get("hot", [])
+        complete = len(cold) == 3 and len(warmups) == 3 and len(hot) == 20
+        try:
+            summary = p4_summary(cold, hot) if complete else {}
+            environment_ok = complete and all(
+                item["thermal"]["temperature_c"] < 80
+                and item["thermal"]["throttled"] == "0x0"
+                and item["resources"]["pss_mib"] > 0
+                for item in cold + hot
+            )
+            metrics_complete = complete and all(
+                isinstance(item.get("wall_ms"), (int, float))
+                and isinstance(item.get("metrics", {}).get("ttft_ms"), (int, float))
+                and isinstance(item.get("metrics", {}).get("decode_tokens_per_second"), (int, float))
+                for item in warmups + hot
+            )
+        except (KeyError, TypeError, ValueError, statistics.StatisticsError):
+            environment_ok = metrics_complete = False
+            summary = {}
+        if not complete or not metrics_complete:
+            computed["P4"] = "INCONCLUSIVE"
+        elif not environment_ok:
+            computed["P4"] = "INCONCLUSIVE"
+        elif p4.get("summary") != summary:
+            computed["P4"] = "INCONCLUSIVE"
+        elif summary["ttft_p95_ms"] <= 2500 and summary["decode_p50_tokens_per_second"] >= 4:
+            computed["P4"] = "PASS"
+        else:
+            computed["P4"] = "Core threshold decision required"
+
+    p5 = samples.get("p5", {})
+    counts = p5.get("marker_counts", {}) if isinstance(p5, dict) else {}
+    mode = p5.get("timeout_mode") if isinstance(p5, dict) else None
+    active_markers = (
+        counts.get("chunk_started", 0) >= 1
+        and counts.get("chunk_started", 0) > counts.get("chunk_completed", 0)
+        and counts.get("native_cancel_once") == 1
+        and counts.get("native_cancel_failed") == 0
+        and counts.get("timeout_between_chunks") == 0
+    )
+    boundary_markers = (
+        counts.get("chunk_completed", 0) >= 1
+        and counts.get("chunk_started") == counts.get("chunk_completed")
+        and counts.get("native_cancel_once") == 0
+        and counts.get("native_cancel_failed") == 0
+        and counts.get("timeout_between_chunks") == 1
+    )
+    marker_mode_ok = (
+        (mode == "ACTIVE_CHUNK_CANCEL" and active_markers)
+        or (mode == "BETWEEN_CHUNKS_STOP" and boundary_markers)
+    ) and counts.get("continuous_terminal_cancelled") == 1
+    marker_mode_ok = marker_mode_ok and counts.get("conversation_discarded", 0) >= counts.get("chunk_started", 0)
+    computed["P5"] = p5_runner_disposition(
+        {"type":p5.get("terminal"), "code":p5.get("code"),
+         "request_id":"p5-continuous"},
+        p5.get("elapsed_ms", -1), markers_ok=marker_mode_ok,
+        health_ok=(p5.get("same_child_pong") == "PONG"
+                   and p5.get("same_child_health_terminal") == "RESULT"),
+        rebuild_ok=p5.get("rebuild_health_terminal") == "RESULT",
+        candidate_error=p5.get("candidate_error_type"),
+        observation_error=p5.get("observation_error_type"),
+        rebuild_candidate_error=p5.get("rebuild_candidate_error_type"),
+        rebuild_observation_error=p5.get("rebuild_error_type"),
+    )
+
+    p8 = samples.get("p8", {})
+    p8_cases = p8.get("cases", []) if isinstance(p8, dict) else []
+    expected_p8 = {entry["id"] for entry in p8_fixture["cases"]}
+    if isinstance(p8, dict) and p8.get("error_type") is not None:
+        computed["P8"] = "INCONCLUSIVE"
+    else:
+        computed["P8"] = "PASS" if (
+            len(p8_cases) == len(expected_p8)
+            and {item.get("id") for item in p8_cases} == expected_p8
+            and all(
+                item.get("terminal") == "RESULT"
+                and item.get("prior_marker_leaked") is False
+                and item.get("current_marker_present_once") is True
+                and item.get("current_trap_absent") is True
+                and item.get("kv_is_single_turn") is True
+                for item in p8_cases
+            )
+        ) else "FAIL"
+
+    hygiene = samples.get("log_hygiene", {})
+    if hygiene.get("passed") is not True:
+        computed["P3"] = "FAIL"
+    cleanup = result.get("cleanup", {})
+    cleanup_items = {
+        "P2": ("p2",), "P4": ("standard",), "P5": ("p5_same_child", "p5_rebuild"),
+        "P8": ("p8",),
+    }
+    for item, names in cleanup_items.items():
+        if computed[item] in {"PASS", "Core threshold decision required"} and not all(
+            cleanup_pass(cleanup.get(name)) for name in names
+        ):
+            computed[item] = "FAIL"
+    if computed["P4"] in {"PASS", "Core threshold decision required"} and not (
+        isinstance(cleanup.get("p4_cold"), list)
+        and len(cleanup["p4_cold"]) == 3
+        and all(cleanup_pass(item) for item in cleanup["p4_cold"])
+    ):
+        computed["P4"] = "FAIL"
+    if result.get("executed_results") != computed:
+        raise EvidenceInvalid("Gate 2A claimed dispositions do not match sanitized evidence")
+    if any(value == "FAIL" for value in computed.values()):
+        scope = "FAIL"
+    elif any(value in {"INCONCLUSIVE", "Blocked"} for value in computed.values()):
+        scope = "INCONCLUSIVE"
+    elif computed["P4"] == "Core threshold decision required":
+        scope = "Core threshold decision required"
+    else:
+        scope = "PASS"
+    if "gate2a_scope_result" in result and (
+        result.get("gate2a_scope_result") != scope or result.get("result") != scope
+    ):
+        raise EvidenceInvalid("Gate 2A scope result does not match P dispositions")
+    if "provisional_eligibility" in result:
+        expected_eligibility = (
+            "ELIGIBLE_FOR_USER_REVIEW" if scope == "PASS" and result.get("candidate_id") == CANDIDATES[0]
+            else "WORKAROUND_DISPOSITION_REQUIRED" if scope == "PASS"
+            else "PENDING" if scope == "Core threshold decision required"
+            else "NOT_ELIGIBLE"
+        )
+        if result["provisional_eligibility"] != expected_eligibility:
+            raise EvidenceInvalid("Gate 2A eligibility does not match evidence")
+    return computed
 
 
 def initial_result(args: argparse.Namespace) -> dict[str, Any]:
@@ -519,6 +828,16 @@ def main() -> int:
         catalog = load(artifacts["catalog"])
         p5_fixture = load(artifacts["p5_fixture"])
         p8_fixture = load(artifacts["p8_fixture"])
+        runtime_log_markers = {
+            entry["text"] for entry in catalog["valid_cases"]
+        } | {
+            entry["raw"] for entry in catalog["failure_raw_outputs"] if entry["raw"]
+        } | {
+            value for entry in p8_fixture["cases"]
+            for value in (entry["nonce"], entry["trap"])
+        } | {
+            perception["text"] for perception in p5_fixture["input"]["perceptions"]
+        }
         if (
             p5_fixture["timeout_ms"] != 15000
             or p5_fixture["timeout_pass_window_ms"] != [15000, 17000]
@@ -555,6 +874,7 @@ def main() -> int:
         standard_stderr = raw_dir / "standard.stderr"
         with standard_stderr.open("w", encoding="utf-8") as stderr:
             cold: list[dict[str, Any]] = []
+            cold_cleanup: list[dict[str, Any]] = []
             p4_failures: list[dict[str, Any]] = []
             for index in range(3):
                 active, ready_ms = start_child(**common, stderr=stderr)
@@ -573,14 +893,16 @@ def main() -> int:
                     else:
                         p4_failures.append({
                             "phase": "cold", "index": index,
+                            "category": "CandidateViolation",
                             "terminal": terminal.get("type"),
                             "code": terminal.get("code"),
                         })
-                    close_child(active, validator)
+                    cold_cleanup.append(close_child(active, validator))
                     active = None
                 except OBSERVATION_ERRORS as error:
                     p4_failures.append({
                         "phase": "cold", "index": index,
+                        "category": "EnvironmentInvalid",
                         "error_type": type(error).__name__,
                     })
                     result["cleanup"][f"p4_cold_forced_{index}"] = stop(active)
@@ -623,8 +945,8 @@ def main() -> int:
                 result["cleanup"]["p2_forced"] = stop(active)
                 active = None
             result["executed_results"]["P2"] = (
-                "PASS"
-                if p2_error is None and len(p2) == 30 and all(item["valid"] for item in p2)
+                "INCONCLUSIVE" if p2_error is not None else
+                "PASS" if len(p2) == 30 and all(item["valid"] for item in p2)
                 else "FAIL"
             )
 
@@ -664,6 +986,7 @@ def main() -> int:
                     else:
                         p4_failures.append({
                             "phase": "warmup", "index": index,
+                            "category": "CandidateViolation",
                             "terminal": terminal.get("type"),
                             "code": terminal.get("code"),
                         })
@@ -681,6 +1004,7 @@ def main() -> int:
                     else:
                         p4_failures.append({
                             "phase": "hot", "index": index,
+                            "category": "CandidateViolation",
                             "terminal": terminal.get("type"),
                             "code": terminal.get("code"),
                         })
@@ -688,7 +1012,8 @@ def main() -> int:
                 active = None
             except OBSERVATION_ERRORS as error:
                 p4_failures.append({
-                    "phase": "resident", "error_type": type(error).__name__,
+                    "phase": "resident", "category": "EnvironmentInvalid",
+                    "error_type": type(error).__name__,
                 })
                 result["cleanup"]["standard_forced"] = stop(active)
                 active = None
@@ -703,8 +1028,12 @@ def main() -> int:
                 and item["resources"]["pss_mib"] > 0
                 for item in cold + hot
             )
-            if not method_complete or not p4_environment_ok:
+            if any(item["category"] == "EnvironmentInvalid" for item in p4_failures):
+                result["executed_results"]["P4"] = "INCONCLUSIVE"
+            elif not method_complete:
                 result["executed_results"]["P4"] = "FAIL"
+            elif not p4_environment_ok:
+                result["executed_results"]["P4"] = "INCONCLUSIVE"
             elif (
                 summary["ttft_p95_ms"] <= 2500
                 and summary["decode_p50_tokens_per_second"] >= 4
@@ -725,6 +1054,7 @@ def main() -> int:
                     "failures": p4_failures,
                 },
             })
+            result["cleanup"]["p4_cold"] = cold_cleanup
 
             active, p8_ready_ms = start_child(**product_common, stderr=stderr)
             p8: list[dict[str, Any]] = []
@@ -782,8 +1112,8 @@ def main() -> int:
                 result["cleanup"]["p8_forced"] = stop(active)
                 active = None
             result["executed_results"]["P8"] = (
-                "PASS"
-                if p8_error is None and len(p8) == 5
+                "INCONCLUSIVE" if p8_error is not None else
+                "PASS" if len(p8) == 5
                 and all(
                     item["terminal"] == "RESULT"
                     and not item["prior_marker_leaked"]
@@ -804,6 +1134,7 @@ def main() -> int:
         health: dict[str, Any] = {}
         health_ms: float | None = None
         p5_observation_error: str | None = None
+        p5_candidate_error: str | None = None
         p5_same_cleanup: dict[str, Any] = {}
         with p5_stderr.open("w", encoding="utf-8") as stderr:
             active, p5_ready_ms = start_p5(
@@ -822,24 +1153,25 @@ def main() -> int:
             )
             operation_started = time.monotonic()
             try:
-                terminal, elapsed_ms = generate(
+                terminal, elapsed_ms = scored_generate(
                     active,
                     validator,
                     "p5-continuous",
                     p5_fixture["input"],
                     timeout_s=17.5,
                 )
-                send(active, {"type": "PING", "protocol_version": "snowboard.llm/1"})
-                if active.stdout is None:
-                    raise PiPacketFailure("P5 child stdout unavailable")
-                pong = read_frame(active.stdout, 2.0, validator)
-                health, health_ms = generate(
+                pong = scored_pong(active, validator)
+                health, health_ms = scored_generate(
                     active, validator, "p5-same-child-health", STANDARD_INPUT
                 )
-                p5_same_cleanup = close_child(active, validator)
+                p5_same_cleanup = scored_close_child(active, validator)
+                active = None
+            except CandidateViolation as error:
+                elapsed_ms = round((time.monotonic() - operation_started) * 1000, 3)
+                p5_candidate_error = type(error.__cause__).__name__
+                p5_same_cleanup = stop(active)
                 active = None
             except (
-                PiPacketFailure,
                 OSError,
                 subprocess.SubprocessError,
                 KeyError,
@@ -855,13 +1187,31 @@ def main() -> int:
             "chunk_started": marker_text.count("P5_EVENT chunk_started"),
             "chunk_completed": marker_text.count("P5_EVENT chunk_completed"),
             "native_cancel_once": marker_text.count("P5_EVENT native_cancel_once"),
+            "native_cancel_failed": marker_text.count("P5_EVENT native_cancel_failed"),
+            "timeout_between_chunks": marker_text.count("P5_EVENT timeout_between_chunks"),
             "continuous_terminal_cancelled": marker_text.count("P5_EVENT continuous_terminal_cancelled"),
             "conversation_discarded": marker_text.count("P5_EVENT conversation_discarded"),
         }
-        markers_ok = (
+        active_markers_ok = (
             marker_counts["chunk_started"] >= 1
             and marker_counts["chunk_started"] > marker_counts["chunk_completed"]
             and marker_counts["native_cancel_once"] == 1
+            and marker_counts["native_cancel_failed"] == 0
+            and marker_counts["timeout_between_chunks"] == 0
+        )
+        boundary_markers_ok = (
+            marker_counts["chunk_completed"] >= 1
+            and marker_counts["chunk_started"] == marker_counts["chunk_completed"]
+            and marker_counts["native_cancel_once"] == 0
+            and marker_counts["native_cancel_failed"] == 0
+            and marker_counts["timeout_between_chunks"] == 1
+        )
+        timeout_mode = (
+            "ACTIVE_CHUNK_CANCEL" if active_markers_ok else
+            "BETWEEN_CHUNKS_STOP" if boundary_markers_ok else "INVALID"
+        )
+        markers_ok = (
+            (active_markers_ok or boundary_markers_ok)
             and marker_counts["continuous_terminal_cancelled"] == 1
             and marker_counts["conversation_discarded"] >= marker_counts["chunk_started"]
         )
@@ -872,14 +1222,19 @@ def main() -> int:
         rebuild_ready_ms: float | None = None
         rebuild_health_ms: float | None = None
         rebuild_error: str | None = None
+        rebuild_candidate_error: str | None = None
         rebuild_cleanup: dict[str, Any] = {}
         with rebuild_stderr.open("w", encoding="utf-8") as stderr:
             try:
                 active, rebuild_ready_ms = start_child(**common, stderr=stderr)
-                rebuild_terminal, rebuild_health_ms = generate(
+                rebuild_terminal, rebuild_health_ms = scored_generate(
                     active, validator, "p5-rebuild-health", STANDARD_INPUT
                 )
-                rebuild_cleanup = close_child(active, validator)
+                rebuild_cleanup = scored_close_child(active, validator)
+                active = None
+            except CandidateViolation as error:
+                rebuild_candidate_error = type(error.__cause__).__name__
+                rebuild_cleanup = stop(active)
                 active = None
             except (
                 PiPacketFailure,
@@ -893,12 +1248,16 @@ def main() -> int:
                 rebuild_cleanup = stop(active)
                 active = None
         rebuild_ok = rebuild_terminal.get("type") == "RESULT"
-        result["executed_results"]["P5"] = p5_result_disposition(
+        result["executed_results"]["P5"] = p5_runner_disposition(
             terminal,
             elapsed_ms,
             markers_ok=markers_ok,
             health_ok=health_ok,
             rebuild_ok=rebuild_ok,
+            candidate_error=p5_candidate_error,
+            observation_error=p5_observation_error,
+            rebuild_candidate_error=rebuild_candidate_error,
+            rebuild_observation_error=rebuild_error,
         )
         result["samples"]["p5"] = {
             "ready_ms": p5_ready_ms,
@@ -906,6 +1265,8 @@ def main() -> int:
             "code": terminal.get("code"),
             "elapsed_ms": elapsed_ms,
             "observation_error_type": p5_observation_error,
+            "candidate_error_type": p5_candidate_error,
+            "timeout_mode": timeout_mode,
             "marker_counts": marker_counts,
             "same_child_pong": pong.get("type"),
             "same_child_health_terminal": health.get("type"),
@@ -914,13 +1275,15 @@ def main() -> int:
             "rebuild_health_terminal": rebuild_terminal.get("type"),
             "rebuild_health_ms": rebuild_health_ms,
             "rebuild_error_type": rebuild_error,
+            "rebuild_candidate_error_type": rebuild_candidate_error,
         }
         result["cleanup"]["p5_same_child"] = p5_same_cleanup
         result["cleanup"]["p5_rebuild"] = rebuild_cleanup
 
-        hygiene = scan_owned_logs(raw_dir)
-        result["violations"].extend(hygiene)
-        if hygiene:
+        hygiene = scan_owned_logs(raw_dir, runtime_log_markers)
+        result["samples"]["log_hygiene"] = hygiene
+        if not hygiene["passed"]:
+            result["violations"].append("CandidateViolation: owned log hygiene")
             result["executed_results"]["P3"] = "FAIL"
         verify_model_receipt(
             receipt["model"], Path(config_value["model_path"]), config_value["model_sha256"]
@@ -948,6 +1311,11 @@ def main() -> int:
         else:
             result["provisional_eligibility"] = "NOT_ELIGIBLE"
         result["result"] = result["gate2a_scope_result"]
+        verify_gate2a_result(
+            result, catalog, p8_fixture,
+            engine_capacity=product_value["engine_max_num_tokens"],
+            max_output_tokens=product_value["max_output_tokens"],
+        )
     except (
         PiPacketFailure,
         OSError,
@@ -956,7 +1324,8 @@ def main() -> int:
         TypeError,
         ValueError,
     ) as error:
-        result["violations"].append(str(error))
+        evidence = sanitized_error(error)
+        result["violations"].append(f"{evidence['category']}: {evidence['error_type']}")
         result["gate2a_scope_result"] = "INCONCLUSIVE"
         result["provisional_eligibility"] = "PENDING"
         result["result"] = "INCONCLUSIVE"
@@ -974,9 +1343,16 @@ def main() -> int:
                     result["gate2a_scope_result"] = "INCONCLUSIVE"
                     result["provisional_eligibility"] = "PENDING"
                     result["result"] = "INCONCLUSIVE"
-            (raw_dir / "gate2a-sanitized.json").write_text(
-                json.dumps(result, sort_keys=True), encoding="utf-8"
-            )
+            try:
+                write_json_evidence(raw_dir / "gate2a-sanitized.json", result)
+            except EvidenceInvalid as error:
+                evidence = sanitized_error(error)
+                result["violations"].append(
+                    f"{evidence['category']}: {evidence['error_type']}"
+                )
+                result["gate2a_scope_result"] = "INCONCLUSIVE"
+                result["provisional_eligibility"] = "PENDING"
+                result["result"] = "INCONCLUSIVE"
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     if result["result"] == "PASS":
         return 0

@@ -15,14 +15,22 @@ from unittest.mock import patch
 from jsonschema import Draft202012Validator
 
 from poc_llm.harness.gate2b_combined_v1 import Gate2BCombinedCoordinator
-from poc_llm.harness.gate2b_resources_v1 import evaluate_resources, process_tree
+from poc_llm.harness.gate2b_resources_v1 import ResourceSampler, evaluate_resources, process_tree
+from poc_llm.harness.gate2_errors_v1 import (
+    CandidateViolation, CleanupViolation, EnvironmentInvalid, EvidenceInvalid, PacketDefect,
+    write_json_evidence,
+)
+from poc_llm.harness.pi_runtime import PiPacketFailure
+from test_gate2a_pi_v2 import complete_cleanup, complete_samples
 from poc_llm.tools.run_gate2b_pi_v1 import (
     CombinedLlmDomain,
     combined_exception_disposition,
     main as gate2b_main,
+    scan_owned_logs,
     verify_external_checkouts,
     verify_gate2a_entry,
     verify_audio_kit,
+    verify_gate2b_result,
     valid_run_id as valid_gate2b_run_id,
 )
 
@@ -85,7 +93,8 @@ class Llm(Domain):
             "speech_sha256":hashlib.sha256(speech.encode()).hexdigest(),
             "response_sha256":"b" * 64, "prior_marker_leaked":False,
             "current_marker_present_once":True, "current_trap_absent":True,
-            "metrics":{"ttft_ms":1.0,"decode_tokens_per_second":10.0,"kv_tokens":10},
+            "metrics":{"prefill_tokens":8,"decode_tokens":2,"ttft_ms":1.0,
+                       "decode_tokens_per_second":10.0,"kv_tokens":10},
         }
 
 
@@ -119,11 +128,35 @@ def valid_result_session(index: int) -> dict:
         "llm":{"terminal":"SUCCESS","request_id":session_id,"response_sha256":"c"*64,
                "speech_sha256":"d"*64,"prior_marker_leaked":False,
                "current_marker_present_once":True,"current_trap_absent":True,
-               "metrics":{"kv_tokens":10}},
+               "metrics":{"prefill_tokens":8,"decode_tokens":2,"kv_tokens":10,
+                          "ttft_ms":1.0,"decode_tokens_per_second":10.0}},
         "tts":{"terminal":"SUCCESS","pcm_sha256":"e"*64,"sample_count":10,
                "playback_complete":True,"input_speech_sha256":"d"*64},
         "timings_ms":{"vad":1.0,"asr":1.0,"llm":1.0,"tts_playback":1.0,"end_to_end":4.0},
     }
+
+
+def resource_values(leak_per_session: float = 0.0) -> tuple[list[dict], list[dict]]:
+    def sample(index: int, *, session: bool) -> dict:
+        value = {
+            "monotonic_s":float(index) * 0.25,"mem_total_kib":4_000_000,
+            "mem_available_kib":1_000_000,"system_used_mib":3000.0 + leak_per_session * index,
+            "temperature_c":60.0,"throttled":"throttled=0x0","swap_total_kib":0,
+            "psi_full_total":100,"owners":{
+                name:{"root_pid":100 + offset,"root_present":True,"process_count":1,
+                      "rss_kib":1000,"pss_kib":900 + int(leak_per_session * 1024 * index / 5),
+                      "threads":1,"cpu_ticks":index + 1}
+                for offset,name in enumerate(("controller","vad","asr","tts","llm"))
+            },"unique_process_count":5,
+        }
+        if session:
+            value["session_index"] = index + 1
+        else:
+            value["collection_duration_s"] = 0.01
+        return value
+    return [sample(index, session=False) for index in range(3)], [
+        sample(index, session=True) for index in range(20)
+    ]
 
 
 class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
@@ -173,6 +206,104 @@ class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
             await coordinator.run(values)
         self.assertEqual(events, [])
 
+    async def test_each_domain_stop_failure_forces_all_owned_groups_absent(self) -> None:
+        async def pause(_value: float) -> None:
+            pass
+
+        async def injected_stop(self) -> None:
+            self.events.append(f"stop:{self.name}")
+            raise RuntimeError("injected stop failure")
+
+        for failed_name in ("vad", "asr", "tts", "llm"):
+            with self.subTest(domain=failed_name):
+                events: list[str] = []
+                classes = {"vad":Vad,"asr":Asr,"tts":Tts,"llm":Llm}
+                failed_class = type(
+                    f"StopFailure{failed_name}", (classes[failed_name],),
+                    {"stop": injected_stop},
+                )
+                domains = {
+                    name:(failed_class(name, events) if name == failed_name else classes[name](name, events))
+                    for name in classes
+                }
+                by_pid = {domain.pid:domain for domain in domains.values()}
+                coordinator = Gate2BCombinedCoordinator(
+                    domains["vad"], domains["asr"], domains["llm"], domains["tts"],
+                    pause=pause,
+                    group_absent=lambda pid: not by_pid[pid].alive,
+                    force_cleanup=lambda _name, pid: (
+                        setattr(by_pid[pid], "alive", False)
+                        or {"process_group_absent":True}
+                    ),
+                )
+                with self.assertRaises(CleanupViolation):
+                    await coordinator.run(records(), cadence_s=0)
+                self.assertTrue(all(not domain.alive for domain in domains.values()))
+                self.assertTrue(coordinator.cleanup_proofs[failed_name]["fallback_used"])
+
+    async def test_partial_start_failure_still_force_cleans_earlier_owner(self) -> None:
+        async def pause(_value: float) -> None:
+            pass
+
+        events: list[str] = []
+        vad, asr = Vad("vad", events), Asr("asr", events)
+
+        async def vad_stop_failure() -> None:
+            events.append("stop:vad")
+            raise RuntimeError("injected stop failure")
+
+        async def asr_start_failure() -> None:
+            events.append("start:asr")
+            raise RuntimeError("injected start failure")
+
+        vad.stop = vad_stop_failure  # type: ignore[method-assign]
+        asr.start = asr_start_failure  # type: ignore[method-assign]
+        domains = {vad.pid: vad, asr.pid: asr}
+        coordinator = Gate2BCombinedCoordinator(
+            vad, asr, Llm("llm", events), Tts("tts", events), pause=pause,
+            group_absent=lambda pid: not domains.get(pid, vad).alive,
+            force_cleanup=lambda _name, pid: (
+                setattr(domains[pid], "alive", False) or {"process_group_absent": True}
+            ),
+        )
+        with self.assertRaises(CleanupViolation):
+            await coordinator.run(records(), cadence_s=0)
+        self.assertFalse(vad.alive)
+        self.assertEqual(coordinator.started_roots["vad"], vad.pid)
+        self.assertTrue(coordinator.cleanup_proofs["vad"]["fallback_used"])
+        self.assertTrue(coordinator.cleanup_proofs["vad"]["process_group_absent"])
+
+    async def test_start_raises_after_becoming_live_and_owner_is_force_cleaned(self) -> None:
+        async def pause(_value: float) -> None:
+            pass
+
+        events: list[str] = []
+        vad = Vad("vad", events)
+
+        async def start_then_raise() -> None:
+            events.append("start:vad")
+            vad.alive = True
+            raise RuntimeError("injected post-allocation start failure")
+
+        async def stop_failure() -> None:
+            events.append("stop:vad")
+            raise RuntimeError("injected stop failure")
+
+        vad.start = start_then_raise  # type: ignore[method-assign]
+        vad.stop = stop_failure  # type: ignore[method-assign]
+        coordinator = Gate2BCombinedCoordinator(
+            vad, Asr("asr", events), Llm("llm", events), Tts("tts", events), pause=pause,
+            group_absent=lambda _pid: not vad.alive,
+            force_cleanup=lambda _name, _pid: (
+                setattr(vad, "alive", False) or {"process_group_absent": True}
+            ),
+        )
+        with self.assertRaises(CleanupViolation):
+            await coordinator.run(records(), cadence_s=0)
+        self.assertFalse(vad.alive)
+        self.assertEqual(coordinator.started_roots["vad"], vad.pid)
+        self.assertTrue(coordinator.cleanup_proofs["vad"]["fallback_used"])
+
 
 class Gate2BDefinitionTests(unittest.TestCase):
     def test_run_id_is_single_safe_slug(self) -> None:
@@ -180,17 +311,43 @@ class Gate2BDefinitionTests(unittest.TestCase):
         for value in ("../escape", "/tmp/escape", "nested/run", "", "a" * 129):
             self.assertFalse(valid_gate2b_run_id(value))
 
-    def test_combined_session_failure_is_fail_not_infrastructure_inconclusive(self) -> None:
-        p_results, result = combined_exception_disposition(
-            combined_entered=True, sessions_completed=False
+    def test_error_category_matrix_is_fail_closed_without_conflation(self) -> None:
+        for error in (CandidateViolation("terminal"), CleanupViolation("residue")):
+            self.assertEqual(
+                combined_exception_disposition(error, combined_entered=True),
+                ({"P9":"Blocked","P10B":"FAIL"}, "FAIL"),
+            )
+        for error in (EnvironmentInvalid("thermal"), EvidenceInvalid("write"),
+                      PacketDefect("method"), OSError("protocol I/O")):
+            self.assertEqual(
+                combined_exception_disposition(error, combined_entered=True),
+                ({"P9":"Blocked","P10B":"Blocked"}, "INCONCLUSIVE"),
+            )
+
+    def test_entered_llm_protocol_faults_fail_p10b_via_domain_runner(self) -> None:
+        domain = CombinedLlmDomain(common={"validator": object()}, stderr=io.StringIO(), engine_capacity=512)
+        domain.process = object()  # type: ignore[assignment]
+        for injected in (
+            PiPacketFailure("protocol frame deadline exceeded"),
+            PiPacketFailure("candidate stdout closed"),
+            PiPacketFailure("candidate emitted invalid JSONL"),
+            PiPacketFailure("candidate emitted protocol-invalid frame"),
+            BrokenPipeError("closed"), ConnectionResetError("reset"),
+        ):
+            with self.subTest(error=type(injected).__name__), patch(
+                "poc_llm.tools.run_gate2b_pi_v1.generate",
+                side_effect=injected,
+            ):
+                with self.assertRaises(CandidateViolation) as caught:
+                    domain._run("M4-SESSION-01", "transcript", "nonce", "trap")
+                self.assertEqual(
+                    combined_exception_disposition(caught.exception, combined_entered=True),
+                    ({"P9":"Blocked","P10B":"FAIL"}, "FAIL"),
+                )
+        self.assertEqual(
+            combined_exception_disposition(EnvironmentInvalid("sampler"), combined_entered=True),
+            ({"P9":"Blocked","P10B":"Blocked"}, "INCONCLUSIVE"),
         )
-        self.assertEqual(p_results, {"P9":"Blocked","P10B":"FAIL"})
-        self.assertEqual(result, "FAIL")
-        p_results, result = combined_exception_disposition(
-            combined_entered=False, sessions_completed=False
-        )
-        self.assertEqual(p_results, {"P9":"Blocked","P10B":"Blocked"})
-        self.assertEqual(result, "INCONCLUSIVE")
 
     def test_gate2b_lock_authenticates_repository_surface(self) -> None:
         lock = json.loads(G2B_LOCK.read_text())
@@ -273,23 +430,8 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "full_model_hash_count":0,"metadata_unchanged":True},
             "carried_results":{"P1":"PASS","P6.1":"PASS","P7.1":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS"},
             "executed_results":{"P2":"PASS","P3":"PASS","P4":"PASS","P5":"PASS","P8":"PASS"},
-            "samples":{
-                "p2":{"ready_ms":1.0,"cases":[{} for _ in range(30)],"error_type":None},
-                "p3":[{} for _ in range(10)],
-                "p4":{"resident_ready_ms":1.0,"cold":[{} for _ in range(3)],
-                      "warmups":[{} for _ in range(3)],"hot":[{} for _ in range(20)],
-                      "summary":{str(index):index for index in range(7)},"failures":[]},
-                "p5":{"ready_ms":1.0,"terminal":"ERROR","code":"TIMEOUT","elapsed_ms":15000.0,
-                      "observation_error_type":None,"marker_counts":{},"same_child_pong":"PONG",
-                      "same_child_health_terminal":"RESULT","rebuild_ready_ms":1.0,
-                      "rebuild_health_terminal":"RESULT","rebuild_error_type":None},
-                "p8":{"ready_ms":1.0,"cases":[{} for _ in range(5)],"error_type":None},
-            },
-            "cleanup":{
-                name:{"exit_code":0,"waited":True,"term_sent":False,
-                      "kill_sent":False,"process_group_absent":True}
-                for name in ("p2","standard","p8","p5_same_child","p5_rebuild")
-            },"violations":[],"gate2a_scope_result":"PASS",
+            "samples":complete_samples(),
+            "cleanup":complete_cleanup(),"violations":[],"gate2a_scope_result":"PASS",
             "provisional_eligibility":"ELIGIBLE_FOR_USER_REVIEW","result":"PASS",
         }
         with tempfile.TemporaryDirectory() as directory:
@@ -332,26 +474,53 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertEqual(process_tree(2, table), {2,3,4})
 
     def test_resource_gate_requires_memory_thermal_psi_oom_and_owners(self) -> None:
-        records_value = [
-            {"monotonic_s":float(index) * 0.25,"system_used_mib":3000.0,
-             "temperature_c":60.0,"throttled":"throttled=0x0","swap_total_kib":0,
-             "psi_full_total":100,"owners":{
-                 name:{"root_present":True,"process_count":1,"rss_kib":10,"pss_kib":9,
-                       "threads":1,"cpu_ticks":index + 1}
-                 for name in ("controller","vad","asr","tts","llm")
-             },"collection_duration_s":0.01}
-            for index in range(3)
-        ]
-        passed, summary = evaluate_resources(records_value, oom_before=1, oom_after=1)
+        records_value, points = resource_values()
+        passed, summary = evaluate_resources(
+            records_value, session_points=points, oom_before=1, oom_after=1
+        )
         self.assertTrue(passed)
         self.assertEqual(summary["psi_full_total_delta"], 0)
         records_value[-1]["system_used_mib"] = 3584.001
-        self.assertFalse(evaluate_resources(records_value, oom_before=1, oom_after=1)[0])
+        self.assertFalse(evaluate_resources(
+            records_value, session_points=points, oom_before=1, oom_after=1
+        )[0])
         records_value[-1]["system_used_mib"] = 3000.0
         for record in records_value:
             for owner in record["owners"].values():
                 owner["cpu_ticks"] = 1
-        self.assertFalse(evaluate_resources(records_value, oom_before=1, oom_after=1)[0])
+        self.assertFalse(evaluate_resources(
+            records_value, session_points=points, oom_before=1, oom_after=1
+        )[0])
+
+    def test_below_capacity_linear_leak_fails_frozen_p10a_rules(self) -> None:
+        records_value, points = resource_values(leak_per_session=5.0)
+        passed, summary = evaluate_resources(
+            records_value, session_points=points, oom_before=1, oom_after=1
+        )
+        self.assertFalse(passed)
+        self.assertGreater(summary["leak"]["system_used"]["slope_mib_per_session"], 4.0)
+
+    def test_thermal_psi_sampler_and_evidence_faults_are_not_valid_passes(self) -> None:
+        records_value, points = resource_values()
+        hot = json.loads(json.dumps(records_value))
+        hot[-1]["temperature_c"] = 80.0
+        self.assertFalse(evaluate_resources(
+            hot, session_points=points, oom_before=1, oom_after=1
+        )[0])
+        stalled = json.loads(json.dumps(records_value))
+        stalled[-1]["psi_full_total"] += 1
+        self.assertFalse(evaluate_resources(
+            stalled, session_points=points, oom_before=1, oom_after=1
+        )[0])
+        sampler = ResourceSampler(lambda: {"controller":1}, interval_s=0.01)
+        with patch(
+            "poc_llm.harness.gate2b_resources_v1.resource_sample",
+            side_effect=OSError("injected sampler I/O"),
+        ), self.assertRaisesRegex(RuntimeError, "initial residency sample"):
+            sampler.start()
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(EvidenceInvalid):
+                write_json_evidence(Path(directory), {"result":"PASS"})
 
     def test_combined_llm_uses_speak_only_and_detects_prior_marker(self) -> None:
         class Process:
@@ -382,6 +551,14 @@ class Gate2BDefinitionTests(unittest.TestCase):
         with patch("poc_llm.tools.run_gate2b_pi_v1.generate", return_value=(terminal, 1.0)):
             leaked = domain._run("M4-SESSION-02", "next", "G2BN0002", "G2BT0002")
         self.assertTrue(leaked["prior_marker_leaked"])
+
+    def test_runtime_gate2b_canary_leak_is_detected_without_persisting_match(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "llm.stderr"
+            path.write_text("diagnostic G2BN0007 only", encoding="utf-8")
+            report = scan_owned_logs([path], {"G2BN0007"})
+        self.assertFalse(report["passed"])
+        self.assertNotIn("G2BN0007", json.dumps(report))
 
     def test_audio_kit_verifier_checks_manifest_and_each_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -418,6 +595,10 @@ class Gate2BDefinitionTests(unittest.TestCase):
 
     def test_gate2b_pass_schema_requires_20_sessions_and_both_p_items(self) -> None:
         accepted_entry = json.loads(AUDIO_ENTRY.read_text())
+        continuous, points = resource_values()
+        _passed, resource_summary = evaluate_resources(
+            continuous, session_points=points, oom_before=1, oom_after=1
+        )
         value = {
             "packet_id":"G2B-PI-COMBINED-001","run_id":"run",
             "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1","execution_sha":"a"*40,
@@ -438,23 +619,42 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "full_model_hash_count":0,"metadata_unchanged":True},
             "sessions":[valid_result_session(index) for index in range(1,21)],
             "soak":{"cadence_seconds":5.0,"pause_count":19,"pause_elapsed_ms":[5000.0]*19,"total_elapsed_ms":95000.0},
-            "resources":{"sample_count":2,"peak_system_used_mib":3000.0,
-                "peak_temperature_c":60.0,"max_sample_start_gap_s":0.25,
-                "max_collection_duration_s":0.1,"psi_full_total_delta":0,
-                "oom_kill_delta":0,"owner_sets_complete":True,
-                "cpu_observed_for_all_owners":True,"swap_zero_for_all_samples":True,
-                "throttled_zero_for_all_samples":True,
-                "owner_peaks":{name:{} for name in ("controller","vad","asr","tts","llm")}},
+            "resources":resource_summary,
+            "resource_observations":{"continuous_samples":continuous,"session_points":points,
+                                     "oom_before":1,"oom_after":1},
             "cleanup":{"reverse_order":["llm","tts","asr","vad"],
                 "process_groups_absent":{name:True for name in ("vad","asr","tts","llm")},
                 "audio_device_owner_count":0,
                 "llm":{"exit_code":0,"waited":True,"term_sent":False,
-                       "kill_sent":False,"process_group_absent":True}},
+                       "kill_sent":False,"process_group_absent":True},
+                "domains":{name:{"root_pid":100+index,"cooperative_stop":True,
+                    "fallback_used":False,"process_group_absent":True,"error_type":None}
+                    for index,name in enumerate(("vad","asr","tts","llm"))}},
+            "log_hygiene":{"passed":True,"scanned_files":[
+                {"name":name,"sha256":"9"*64}
+                for name in ("offline-install.stdout","offline-install.stderr","llm.stderr")
+            ],"static_marker_count":7,"runtime_marker_count":80},
+            "partial_trace":[],
             "p_results":{"P9":"PASS","P10B":"PASS"},
             "violations":[],"result":"PASS","publication_status":"REVIEW_REQUIRED",
         }
         validator = Draft202012Validator(json.loads(G2B_SCHEMA.read_text()))
         self.assertTrue(validator.is_valid(value))
+        self.assertEqual(verify_gate2b_result(
+            value, engine_capacity=1024, max_output_tokens=64
+        ), {"P9":"PASS","P10B":"PASS"})
+        mismatched = json.loads(json.dumps(value))
+        mismatched["sessions"][0]["llm"]["request_id"] = "M4-SESSION-02"
+        with self.assertRaises(EvidenceInvalid):
+            verify_gate2b_result(mismatched, engine_capacity=1024, max_output_tokens=64)
+        incomplete_owner = json.loads(json.dumps(value))
+        del incomplete_owner["resource_observations"]["session_points"][0]["owners"]["vad"]
+        with self.assertRaises(EvidenceInvalid):
+            verify_gate2b_result(incomplete_owner, engine_capacity=1024, max_output_tokens=64)
+        residue = json.loads(json.dumps(value))
+        residue["cleanup"]["domains"]["tts"]["fallback_used"] = True
+        with self.assertRaises(EvidenceInvalid):
+            verify_gate2b_result(residue, engine_capacity=1024, max_output_tokens=64)
         empty_resources = {**value, "resources":{}}
         self.assertFalse(validator.is_valid(empty_resources))
         value["sessions"].pop()

@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-28-r2-real-combined-executable`
+- **Revision**: `2026-08-28-r3-fail-closed-evidence`
 - **Status**: `EXECUTABLE CANDIDATE / REVIEWER CHECK REQUIRED / NOT AUTHORIZED`
 - **Entry receipts**: User-reviewed Gate 2A provisional receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -49,13 +49,26 @@ User-reviewed provisional LLM child, then performs:
 
 P9 `PASS` requires every 4GB sample to keep system-used memory <=3584 MiB, `swap=0`, no OOM, no
 increase in full memory-pressure stall, complete process ownership and valid cleanup. Sum RSS is
-diagnostic only. An optional 8GB run uses the identical configuration and cannot repair 4GB failure.
+diagnostic only. One stable resource point is captured after every session. Sessions 6–20 combined
+PSS and system-used slopes must each be <=4.0 MiB/session, and sessions 16–20 medians must be no more
+than 64 MiB above sessions 1–5; per-owner PSS leak diagnostics are also retained. An optional 8GB run
+uses the identical configuration and cannot repair 4GB failure.
 
 P10B `PASS` requires 20/20 combined sessions, 19 measured pauses of at least five seconds, accepted
 Audio semantics, correlated valid LLM `speak` results containing the current session marker exactly
 once (and no current trap/prior marker), whose text is actually consumed by TTS,
 temperature <80°C, `throttled=0x0`, no crash/leak/stale result/history contamination and final zero
 residue. No sample is removed and no post-result threshold change is allowed.
+
+Every domain is registered for cleanup before `start()` is awaited. Its root is captured immediately
+after successful start, or recovered from residency identity when start raises after allocation.
+Cooperative reverse stop is followed by bounded
+owner-specific TERM/KILL and absence checks when needed; any stop error or fallback is non-PASS even
+when residue is removed. Partial-start cleanup proof is retained even if full residency and sampling
+were never reached. The independent result verifier recomputes P9/P10B from sessions, continuous
+and per-session resource samples, log-scan disposition and cleanup proofs. Infrastructure/probe/I/O
+failures remain `INCONCLUSIVE`; a scored post-READY LLM deadline, EOF, invalid frame or broken/reset
+protocol pipe and other observed candidate/resource/cleanup violations are `FAIL`.
 
 ## 4. Final cumulative decision
 

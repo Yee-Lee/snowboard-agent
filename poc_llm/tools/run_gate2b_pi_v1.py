@@ -10,9 +10,11 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import subprocess
 import sys
+import time
 from typing import Any, TextIO
 
 from jsonschema import Draft202012Validator
@@ -22,6 +24,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from poc_llm.harness.gate2b_combined_v1 import Gate2BCombinedCoordinator
+from poc_llm.harness.gate2_errors_v1 import (
+    CandidateViolation,
+    CleanupViolation,
+    EnvironmentInvalid,
+    EvidenceInvalid,
+    PacketDefect,
+    error_result,
+    sanitized_error,
+    write_json_evidence,
+)
 from poc_llm.harness.gate2b_resources_v1 import (
     ResourceSampler,
     evaluate_resources,
@@ -38,6 +50,7 @@ from poc_llm.harness.pi_runtime import (
 )
 from poc_llm.harness.pi_runtime_v2 import native_library_preflight_v2
 from poc_llm.tools.run_gate1_pi_compat_v7 import close_child, generate, start_child
+from poc_llm.tools.run_gate2a_pi_v2 import verify_gate2a_result
 
 
 PACKET_ID = "G2B-PI-COMBINED-001"
@@ -51,6 +64,16 @@ FORBIDDEN_LOG = (
     "raw model output:", "BEGIN PRIVATE PROMPT", "SECRET_PAYLOAD",
     "credential=", "api_key=", "hidden context:", "LEAK_MARKER",
 )
+SCORED_PIPE_ERRORS = (PiPacketFailure, BrokenPipeError, ConnectionResetError, UnicodeError)
+
+
+def scored_generate(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], float]:
+    """Classify a READY LLM's scored timeout/EOF/frame defect as candidate behavior."""
+
+    try:
+        return generate(*args, **kwargs)
+    except SCORED_PIPE_ERRORS as error:
+        raise CandidateViolation("post-READY scored protocol failure") from error
 
 
 def parse_args() -> argparse.Namespace:
@@ -202,6 +225,19 @@ def verify_gate2a_entry(
         ) != gate2a["artifact_receipt_sha256"]
     ):
         raise PiPacketFailure("Gate 2A reviewed result chain mismatch")
+    catalog = load(repo_artifact(gate2a_lock["artifacts"]["catalog"]))
+    p8_fixture = load(repo_artifact(gate2a_lock["artifacts"]["p8_fixture"]))
+    product = load(repo_artifact(
+        gate2a_lock["candidates"][gate2a_result["candidate_id"]]["product_config"]
+    ))
+    try:
+        verify_gate2a_result(
+            gate2a_result, catalog, p8_fixture,
+            engine_capacity=product["engine_max_num_tokens"],
+            max_output_tokens=product["max_output_tokens"],
+        )
+    except EvidenceInvalid as error:
+        raise PiPacketFailure("Gate 2A reviewed result evidence mismatch") from error
     combined_p_results = {
         **gate2a_result["carried_results"],
         **gate2a_result["executed_results"],
@@ -289,6 +325,7 @@ class CombinedLlmDomain:
         self.prior_markers: list[str] = []
         self.ready_ms: float | None = None
         self.cleanup: dict[str, Any] = {}
+        self.log_markers: set[str] = set()
 
     async def start(self) -> None:
         self.process, self.ready_ms = await asyncio.to_thread(
@@ -330,7 +367,8 @@ class CombinedLlmDomain:
                 "tools": [],
             },
         }
-        terminal, _wall_ms = generate(
+        self.log_markers.update((transcript, nonce, trap))
+        terminal, _wall_ms = scored_generate(
             self.process, self.common["validator"], session_id, value,
             timeout_s=15.0,
         )
@@ -353,11 +391,12 @@ class CombinedLlmDomain:
             or metrics["kv_tokens"]
             > metrics["prefill_tokens"] + metrics["decode_tokens"] + 16
         ):
-            raise RuntimeError("Gate 2B LLM product result or single-turn metric invalid")
+            raise CandidateViolation("Gate 2B LLM product result or single-turn metric invalid")
         prior_leak = any(marker in speech for marker in self.prior_markers)
         current_marker_present = speech.count(nonce) == 1
         current_trap_absent = trap not in speech
         self.prior_markers.extend([nonce, trap])
+        self.log_markers.add(speech)
         return {
             "session_id": session_id,
             "terminal": "SUCCESS",
@@ -389,10 +428,53 @@ class CombinedLlmDomain:
             self.process = None
 
 
-def scan_log(path: Path) -> None:
-    text = path.read_text(encoding="utf-8", errors="replace")
-    if any(marker in text for marker in FORBIDDEN_LOG):
-        raise PiPacketFailure("Gate 2B LLM log hygiene failure")
+def scan_owned_logs(paths: list[Path], runtime_markers: set[str]) -> dict[str, Any]:
+    files: list[dict[str, str]] = []
+    leaked = False
+    markers = tuple(FORBIDDEN_LOG) + tuple(
+        marker for marker in sorted(runtime_markers) if marker
+    )
+    for path in paths:
+        try:
+            content = path.read_bytes()
+        except OSError as error:
+            raise EvidenceInvalid("Gate 2B owned-log scan failed") from error
+        text = content.decode("utf-8", errors="replace")
+        files.append({"name": path.name, "sha256": hashlib.sha256(content).hexdigest()})
+        if any(marker in text for marker in markers):
+            leaked = True
+    return {
+        "passed": not leaked,
+        "scanned_files": files,
+        "static_marker_count": len(FORBIDDEN_LOG),
+        "runtime_marker_count": len(markers) - len(FORBIDDEN_LOG),
+    }
+
+
+def force_owned_group(name: str, group_id: int) -> dict[str, Any]:
+    term_sent = kill_sent = False
+    if group_absent(group_id):
+        return {"owner": name, "term_sent": False, "kill_sent": False,
+                "process_group_absent": True}
+    try:
+        os.killpg(group_id, signal.SIGTERM)
+        term_sent = True
+    except (ProcessLookupError, PermissionError):
+        pass
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline and not group_absent(group_id):
+        time.sleep(0.05)
+    if not group_absent(group_id):
+        try:
+            os.killpg(group_id, signal.SIGKILL)
+            kill_sent = True
+        except (ProcessLookupError, PermissionError):
+            pass
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline and not group_absent(group_id):
+            time.sleep(0.05)
+    return {"owner": name, "term_sent": term_sent, "kill_sent": kill_sent,
+            "process_group_absent": group_absent(group_id)}
 
 
 def audio_device_owner_count() -> int:
@@ -444,7 +526,10 @@ def initial_result(args: argparse.Namespace) -> dict[str, Any]:
         "sessions": [],
         "soak": {},
         "resources": {},
+        "resource_observations": {},
         "cleanup": {},
+        "log_hygiene": {},
+        "partial_trace": [],
         "p_results": {"P9": "Blocked", "P10B": "Blocked"},
         "violations": [],
         "result": "INCONCLUSIVE",
@@ -453,11 +538,101 @@ def initial_result(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def combined_exception_disposition(
-    *, combined_entered: bool, sessions_completed: bool
+    error: BaseException, *, combined_entered: bool
 ) -> tuple[dict[str, str], str]:
-    if combined_entered and not sessions_completed:
+    if combined_entered and error_result(error) == "FAIL":
         return {"P9": "Blocked", "P10B": "FAIL"}, "FAIL"
     return {"P9": "Blocked", "P10B": "Blocked"}, "INCONCLUSIVE"
+
+
+def verify_gate2b_result(
+    result: dict[str, Any], *, engine_capacity: int, max_output_tokens: int
+) -> dict[str, str]:
+    """Independently recompute Gate 2B dispositions from sanitized observations."""
+
+    observations = result.get("resource_observations", {})
+    try:
+        resources_pass, summary = evaluate_resources(
+            observations["continuous_samples"],
+            session_points=observations["session_points"],
+            oom_before=observations["oom_before"],
+            oom_after=observations["oom_after"],
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise EvidenceInvalid("Gate 2B resource observations are incomplete") from error
+    if result.get("resources") != summary:
+        raise EvidenceInvalid("Gate 2B resource summary does not match observations")
+    sessions = result.get("sessions", [])
+    expected_ids = EXPECTED_AUDIO_SESSIONS
+    session_ids = [item.get("session_id") for item in sessions if isinstance(item, dict)]
+    session_ok = len(sessions) == 20 and session_ids == expected_ids
+    for item in sessions:
+        if not isinstance(item, dict):
+            session_ok = False
+            continue
+        llm = item.get("llm", {})
+        metrics = llm.get("metrics", {})
+        session_ok = session_ok and bool(
+            item.get("vad", {}).get("terminal") == "SUCCESS"
+            and item.get("asr", {}).get("terminal") == "SUCCESS"
+            and llm.get("terminal") == "SUCCESS"
+            and llm.get("request_id") == item.get("session_id")
+            and llm.get("prior_marker_leaked") is False
+            and llm.get("current_marker_present_once") is True
+            and llm.get("current_trap_absent") is True
+            and item.get("tts", {}).get("terminal") == "SUCCESS"
+            and item.get("tts", {}).get("playback_complete") is True
+            and item.get("tts", {}).get("input_speech_sha256") == llm.get("speech_sha256")
+            and all(isinstance(metrics.get(name), int) and not isinstance(metrics.get(name), bool)
+                    for name in ("prefill_tokens", "decode_tokens", "kv_tokens"))
+            and metrics.get("prefill_tokens", 0) > 0
+            and 0 < metrics.get("decode_tokens", 0) <= max_output_tokens
+            and 0 < metrics.get("kv_tokens", 0) <= engine_capacity
+            and metrics.get("kv_tokens", 0)
+            <= metrics.get("prefill_tokens", 0) + metrics.get("decode_tokens", 0) + 16
+        )
+    soak = result.get("soak", {})
+    soak_ok = (
+        soak.get("cadence_seconds") == 5.0
+        and soak.get("pause_count") == 19
+        and len(soak.get("pause_elapsed_ms", [])) == 19
+        and all(value >= 5000 for value in soak.get("pause_elapsed_ms", []))
+        and soak.get("total_elapsed_ms", 0) >= 95000
+    )
+    cleanup = result.get("cleanup", {})
+    domain_proofs = cleanup.get("domains", {})
+    cleanup_ok = (
+        cleanup.get("reverse_order") == ["llm", "tts", "asr", "vad"]
+        and set(domain_proofs) == {"vad", "asr", "tts", "llm"}
+        and all(
+            proof.get("cooperative_stop") is True
+            and proof.get("fallback_used") is False
+            and proof.get("process_group_absent") is True
+            and proof.get("error_type") is None
+            for proof in domain_proofs.values()
+        )
+        and cleanup.get("process_groups_absent") == {
+            "vad": True, "asr": True, "tts": True, "llm": True,
+        }
+        and cleanup.get("audio_device_owner_count") == 0
+        and cleanup.get("llm") == {
+            "exit_code": 0, "waited": True, "term_sent": False,
+            "kill_sent": False, "process_group_absent": True,
+        }
+    )
+    hygiene_ok = result.get("log_hygiene", {}).get("passed") is True
+    p_results = {
+        "P9": "PASS" if resources_pass else "FAIL",
+        "P10B": "PASS" if (
+            resources_pass and session_ok and soak_ok and cleanup_ok and hygiene_ok
+        ) else "FAIL",
+    }
+    if result.get("p_results") != p_results:
+        raise EvidenceInvalid("Gate 2B claimed dispositions do not match sanitized evidence")
+    expected_result = "PASS" if p_results == {"P9":"PASS", "P10B":"PASS"} else "FAIL"
+    if result.get("result") != expected_result:
+        raise EvidenceInvalid("Gate 2B top-level result does not match P dispositions")
+    return p_results
 
 
 def main() -> int:
@@ -523,6 +698,8 @@ def main() -> int:
                 "sample_gap_seconds_max": 0.5,
                 "psi_full_total_delta": 0,
                 "oom_kill_delta": 0,
+                "leak_slope_mib_per_session_max": 4.0,
+                "leak_late_early_median_delta_mib_max": 64.0,
             }
         ):
             raise PiPacketFailure("Gate 2B lock identity mismatch")
@@ -677,7 +854,8 @@ def main() -> int:
                 engine_capacity=standard_value["engine_max_num_tokens"],
             )
             coordinator = Gate2BCombinedCoordinator(
-                vad, asr, llm_domain, tts, pause=asyncio.sleep
+                vad, asr, llm_domain, tts, pause=asyncio.sleep,
+                group_absent=group_absent, force_cleanup=force_owned_group,
             )
             sampler = ResourceSampler(
                 lambda: {"controller": os.getpid(), **coordinator.residency_roots()},
@@ -691,25 +869,42 @@ def main() -> int:
 
             def stop_sampling() -> None:
                 nonlocal samples, roots_after
-                roots_after = coordinator.residency_roots()
-                samples = sampler.stop()
+                roots_after = dict(coordinator.started_roots)
+                try:
+                    samples = sampler.stop()
+                except Exception as error:
+                    raise EnvironmentInvalid("Gate 2B resource sampler failed") from error
+
+            def capture_session(index: int) -> None:
+                try:
+                    sampler.capture_session(index)
+                except Exception as error:
+                    raise EnvironmentInvalid("Gate 2B session resource probe failed") from error
 
             sessions = asyncio.run(coordinator.run(
                 records,
                 cadence_s=args.cadence_seconds,
                 on_resident=start_sampling,
                 before_shutdown=stop_sampling,
+                after_session=capture_session,
             ))
             sessions_completed = True
         oom_after = oom_kill_count()
         resources_pass, resource_summary = evaluate_resources(
-            samples, oom_before=oom_before, oom_after=oom_after
+            samples, session_points=sampler.session_points,
+            oom_before=oom_before, oom_after=oom_after
         )
         (raw_dir / "resource-samples.json").write_text(
             json.dumps(samples, sort_keys=True), encoding="utf-8"
         )
         result["sessions"] = sessions
         result["resources"] = resource_summary
+        result["resource_observations"] = {
+            "continuous_samples": samples,
+            "session_points": sampler.session_points,
+            "oom_before": oom_before,
+            "oom_after": oom_after,
+        }
         result["soak"] = {
             "cadence_seconds": args.cadence_seconds,
             "pause_count": len(coordinator.cadence_pause_elapsed_ms),
@@ -724,6 +919,7 @@ def main() -> int:
             "process_groups_absent": process_absence,
             "audio_device_owner_count": audio_device_owner_count(),
             "llm": llm_domain.cleanup,
+            "domains": coordinator.cleanup_proofs,
         }
         p10b_pass = (
             len(sessions) == 20
@@ -746,10 +942,13 @@ def main() -> int:
             and all(process_absence.values())
             and result["cleanup"]["audio_device_owner_count"] == 0
         )
-        try:
-            scan_log(llm_stderr_path)
-        except PiPacketFailure as hygiene_error:
-            result["violations"].append(str(hygiene_error))
+        hygiene = scan_owned_logs(
+            [raw_dir / "offline-install.stdout", raw_dir / "offline-install.stderr", llm_stderr_path],
+            llm_domain.log_markers,
+        )
+        result["log_hygiene"] = hygiene
+        if not hygiene["passed"]:
+            result["violations"].append("CandidateViolation: owned log hygiene")
             p10b_pass = False
         result["p_results"]["P9"] = "PASS" if resources_pass else "FAIL"
         result["p_results"]["P10B"] = "PASS" if p10b_pass and resources_pass else "FAIL"
@@ -763,20 +962,30 @@ def main() -> int:
             "PASS" if result["p_results"] == {"P9": "PASS", "P10B": "PASS"}
             else "FAIL"
         )
+        verify_gate2b_result(
+            result,
+            engine_capacity=standard_value["engine_max_num_tokens"],
+            max_output_tokens=standard_value["max_output_tokens"],
+        )
     except (
         PiPacketFailure, OSError, subprocess.SubprocessError, KeyError, TypeError,
         ValueError, RuntimeError, json.JSONDecodeError,
     ) as error:
-        result["violations"].append(str(error))
-        result["p_results"], result["result"] = combined_exception_disposition(
-            combined_entered=combined_entered,
-            sessions_completed=sessions_completed,
+        error_evidence = sanitized_error(error)
+        result["violations"].append(
+            f"{error_evidence['category']}: {error_evidence['error_type']}"
         )
-        if combined_entered and coordinator is not None:
+        result["p_results"], result["result"] = combined_exception_disposition(
+            error, combined_entered=combined_entered,
+        )
+        if coordinator is not None:
+            result["partial_trace"] = coordinator.trace
             result["cleanup"]["reverse_order"] = coordinator.stop_order
-            if roots_after:
+            result["cleanup"]["domains"] = coordinator.cleanup_proofs
+            cleanup_roots = roots_after or dict(coordinator.started_roots)
+            if cleanup_roots:
                 result["cleanup"]["process_groups_absent"] = {
-                    name: group_absent(pid) for name, pid in roots_after.items()
+                    name: group_absent(pid) for name, pid in cleanup_roots.items()
                 }
             try:
                 result["cleanup"]["audio_device_owner_count"] = audio_device_owner_count()
@@ -815,9 +1024,14 @@ def main() -> int:
                 if errors:
                     result["violations"].append("Gate 2B result schema validation failed")
                     result["result"] = "INCONCLUSIVE"
-            (raw_dir / "gate2b-sanitized.json").write_text(
-                json.dumps(result, sort_keys=True), encoding="utf-8"
-            )
+            try:
+                write_json_evidence(raw_dir / "gate2b-sanitized.json", result)
+            except EvidenceInvalid as error:
+                evidence = sanitized_error(error)
+                result["violations"].append(
+                    f"{evidence['category']}: {evidence['error_type']}"
+                )
+                result["result"] = "INCONCLUSIVE"
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0 if result["result"] == "PASS" else 1 if result["result"] == "FAIL" else 2
 

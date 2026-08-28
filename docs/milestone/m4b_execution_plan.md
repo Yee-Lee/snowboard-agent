@@ -58,8 +58,8 @@ Gate 1完成後，2A不得例行重跑P1/P6/P7/P10A/P11/P12。Gate 2B不得例�
 Gate 1 candidate eligibility要求P1/P7/P10A/P11/P12 PASS且P6 PASS或由P7支持的
 `Conditional escalation`。User/reviewer/Core接受前結果不得對外成為finalist ACK。
 
-User要求reviewer先檢查design/source lock/negative tests，因此目前不得commit/push、送Core或執行Pi。
-Reviewer放行後，User允許execution與Core review並行；但Core ACK到位前不得關閉Gate或finalize P credit。
+Gate 1已取得Core closure ACK。Gate 2 development surface已通過R4 reviewer驗證，User已授權
+milestone commit/push；但未授權Pi execution、artifact staging、benchmark publication或candidate proposal。
 
 ## Gate 2A — remaining LLM-only acceptance
 
@@ -104,8 +104,10 @@ Valid mandatory `FAIL`不得retune/rerun。只有reviewed infrastructure/evidenc
 做一次identical rerun。所有raw evidence在Git外，sanitized manifest不得包含model output、prompt/payload、
 binary、weights、credential或endpoint。
 
-## Current reviewer stop condition
+## Current execution stop condition
 
-Review target必須包含：本plan、三份packet、Gate 1 runner/adapter/one-pass installer、schemas、fixtures、
-source lock、unit/negative tests、`006` defect disposition、exact proposed commit diff與未完成清單。
-Reviewer確認前下一個允許動作只有純本機read-only/static/unit validation及文件修正。
+R4 reviewer已對Gate 2A lock
+`2a57754362d30d74c616a58a368bb79208493bc1fdb04b2cf1242c5b68fc683e`與Gate 2B lock
+`5c89ca0b3499b8983361594ab41869872f189b1b410bf4f3333cac2a780fe775`放行。本次milestone
+commit/push凍結該source；取得明確Pi授權前，不得啟動Gate 2A、model/runtime staging
+或任何hardware credit run。

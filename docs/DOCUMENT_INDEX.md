@@ -76,6 +76,13 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 ## 3A. Independent Reviews (位於 `docs/reviews/`)
 
 * [`REVIEW-LLM-M2-CUMULATIVE-REDESIGN-001.md`](reviews/REVIEW-LLM-M2-CUMULATIVE-REDESIGN-001.md) - R2前的兩項critical findings；已由R2 approval關閉，保留審查歷程
+* [`REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-001.md`](reviews/REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-001.md) - 依User縮限POC範圍後的Gate 2 executable獨立審查；五項有效性與failure-path findings待一次修正
+* [`REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R2-001.md`](response/REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R2-001.md) - F1～F5單輪replacement、兩層lock與targeted re-review入口；Pi尚未授權
+* [`REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R2-001.md`](reviews/REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R2-001.md) - R2 targeted re-review；F1/F5關閉，P5原子transition、實際runner錯誤分類與partial-start cleanup仍為blocking
+* [`REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R3-001.md`](response/REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R3-001.md) - 僅回覆R2-F1～F3；P5仲裁、post-READY typed runner path與partial-start owner cleanup replacement
+* [`REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R3-001.md`](reviews/REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R3-001.md) - R3 targeted review；partial-start已關閉，native cancel lifetime與scored exception precedence仍blocking
+* [`REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R4-001.md`](response/REVIEW-REQUEST-LLM-M3-M4-GATE2-READINESS-R4-001.md) - 僅回覆R3-F1/F2；Condition lifetime、post-call marker、exception matrix與two-stage disposition
+* [`REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R4-001.md`](reviews/REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R4-001.md) - R4 targeted approval；R3-F1/F2已關閉，exact milestone commit/push已授權，Pi仍未授權
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：

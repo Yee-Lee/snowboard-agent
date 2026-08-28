@@ -5,9 +5,11 @@ import io
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
+import time
 import types
 import unittest
 import uuid
@@ -16,6 +18,9 @@ from unittest.mock import patch
 from jsonschema import Draft202012Validator
 
 from poc_llm.harness.litert_lm_child_adapter import Cancelled
+from poc_llm.harness.litert_lm_pi_child_adapter import PiChild
+from poc_llm.harness.gate2_errors_v1 import CandidateViolation, EvidenceInvalid, error_result
+from poc_llm.harness.pi_runtime import PiPacketFailure
 from poc_llm.harness.m1_contract_boundary import normalize_response
 from poc_llm.tools.run_gate2a_pi_v2 import (
     CANDIDATES,
@@ -23,8 +28,14 @@ from poc_llm.tools.run_gate2a_pi_v2 import (
     STANDARD_INPUT,
     p2_valid,
     p5_result_disposition,
+    p5_runner_disposition,
     valid_run_id as valid_gate2a_run_id,
     p4_summary,
+    scan_owned_logs,
+    scored_generate,
+    scored_pong,
+    scored_close_child,
+    verify_gate2a_result,
     main as gate2a_main,
 )
 
@@ -47,25 +58,57 @@ CLEANUP_PROOF = {
 
 
 def complete_samples() -> dict:
+    metrics = {"prefill_tokens":8,"decode_tokens":4,"kv_tokens":12,
+               "ttft_ms":1.0,"decode_tokens_per_second":5.0}
+    cold = {"ready_ms":1.0,"wall_ms":1.0,"metrics":dict(metrics),
+            "resources":{"pss_mib":1.0},
+            "thermal":{"temperature_c":50.0,"throttled":"0x0"}}
+    warm = {"wall_ms":1.0,"metrics":dict(metrics)}
+    hot = {**warm,"resources":{"pss_mib":1.0},
+           "thermal":{"temperature_c":50.0,"throttled":"0x0"}}
     return {
-        "p2":{"ready_ms":1.0,"cases":[{} for _ in range(30)],"error_type":None},
-        "p3":[{} for _ in range(10)],
-        "p4":{"resident_ready_ms":1.0,"cold":[{} for _ in range(3)],
-              "warmups":[{} for _ in range(3)],"hot":[{} for _ in range(20)],
-              "summary":{str(index):index for index in range(7)},"failures":[]},
+        "p2":{"ready_ms":1.0,"cases":[
+            {"id":f"P2-{case:03d}","repetition":rep,"wall_ms":1.0,"valid":True,
+             "prefill_tokens":8,"decode_tokens":4,"kv_tokens":12,"response_sha256":"a"*64}
+            for case in range(1,11) for rep in range(3)
+        ],"error_type":None},
+        "p3":[{"id":f"P3-{case:03d}","repetitions":3,"deterministic":True,
+               "fallback":True,"diagnostic_sha256":"b"*64} for case in range(11,21)],
+        "p4":{"resident_ready_ms":1.0,"cold":[dict(cold) for _ in range(3)],
+              "warmups":[dict(warm) for _ in range(3)],"hot":[dict(hot) for _ in range(20)],
+              "summary":{"cold_wall_p50_ms":1.0,"hot_wall_p50_ms":1.0,
+                "hot_wall_p95_ms":1.0,"ttft_p50_ms":1.0,"ttft_p95_ms":1.0,
+                "decode_p50_tokens_per_second":5.0,"decode_p95_tokens_per_second":5.0},
+              "failures":[]},
         "p5":{"ready_ms":1.0,"terminal":"ERROR","code":"TIMEOUT","elapsed_ms":15000.0,
-              "observation_error_type":None,"marker_counts":{},"same_child_pong":"PONG",
-              "same_child_health_terminal":"RESULT","rebuild_ready_ms":1.0,
-              "rebuild_health_terminal":"RESULT","rebuild_error_type":None},
-        "p8":{"ready_ms":1.0,"cases":[{} for _ in range(5)],"error_type":None},
+              "observation_error_type":None,"candidate_error_type":None,
+              "timeout_mode":"ACTIVE_CHUNK_CANCEL",
+              "marker_counts":{"chunk_started":1,"chunk_completed":0,"native_cancel_once":1,
+                "native_cancel_failed":0,
+                "timeout_between_chunks":0,"continuous_terminal_cancelled":1,
+                "conversation_discarded":1},"same_child_pong":"PONG",
+              "same_child_health_terminal":"RESULT","same_child_health_ms":1.0,
+              "rebuild_ready_ms":1.0,"rebuild_health_terminal":"RESULT",
+              "rebuild_health_ms":1.0,"rebuild_error_type":None,
+              "rebuild_candidate_error_type":None},
+        "p8":{"ready_ms":1.0,"cases":[
+            {"id":f"P8-{case:03d}","wall_ms":1.0,"terminal":"RESULT",
+             "response_sha256":"c"*64,"prior_marker_leaked":False,
+             "current_marker_present_once":True,"current_trap_absent":True,
+             "prefill_tokens":8,"decode_tokens":4,"kv_tokens":12,"kv_is_single_turn":True}
+            for case in range(1,6)],"error_type":None},
+        "log_hygiene":{"passed":True,"scanned_files":[{"name":"standard.stderr","sha256":"d"*64}],
+                       "static_marker_count":7,"runtime_marker_count":31},
     }
 
 
 def complete_cleanup() -> dict:
-    return {
+    value = {
         name:dict(CLEANUP_PROOF)
         for name in ("p2","standard","p8","p5_same_child","p5_rebuild")
     }
+    value["p4_cold"] = [dict(CLEANUP_PROOF) for _ in range(3)]
+    return value
 
 
 class Benchmark:
@@ -82,6 +125,7 @@ class Conversation:
         self.blocking = blocking
         self.cancelled = threading.Event()
         self.cancel_count = 0
+        self.close_count = 0
         self.token_count = 12
 
     def send_message_async(self, _prompt: str):
@@ -97,7 +141,7 @@ class Conversation:
         return Benchmark()
 
     def close(self) -> None:
-        pass
+        self.close_count += 1
 
 
 class Engine:
@@ -256,6 +300,373 @@ class Gate2APiV2Tests(unittest.TestCase):
             backend.close()
         self.assertEqual(stderr.getvalue().count("P5_EVENT native_cancel_once"), 1)
         self.assertEqual(stderr.getvalue().count("P5_EVENT continuous_terminal_cancelled"), 1)
+
+    def test_p5_between_chunks_timeout_is_deterministic_without_native_cancel(self) -> None:
+        class FastEngine(Engine):
+            def create_conversation(self, **_kwargs) -> Conversation:
+                value = Conversation(blocking=False)
+                self.created.append(value)
+                return value
+
+        fake_module = types.SimpleNamespace(
+            Backend=types.SimpleNamespace(CPU=lambda **_kwargs: object()),
+            Engine=FastEngine, SamplerConfig=lambda **_kwargs: object(),
+        )
+        reached, release = threading.Event(), threading.Event()
+        stderr = io.StringIO()
+        with patch.dict(sys.modules, {"litert_lm": fake_module}), patch("sys.stderr", stderr):
+            from poc_llm.harness.litert_lm_pi_p5_child_adapter_v1 import LiteRtContinuousBackend
+            backend = LiteRtContinuousBackend({"model_path":"/model","threads":4,
+                "engine_max_num_tokens":1024,"temperature":0.0,"top_p":1.0})
+            backend._between_chunks_hook = lambda: (reached.set(), release.wait(2))
+            caught: list[Exception] = []
+            worker = threading.Thread(target=lambda: self._capture_error(
+                caught, lambda: backend.generate("prompt", max_output_tokens=512)
+            ))
+            worker.start()
+            self.assertTrue(reached.wait(1))
+            backend.cancel()
+            release.set()
+            worker.join(2)
+        self.assertIsInstance(caught[0], Cancelled)
+        self.assertEqual(stderr.getvalue().count("P5_EVENT native_cancel_once"), 0)
+        self.assertEqual(stderr.getvalue().count("P5_EVENT timeout_between_chunks"), 1)
+
+    def test_p5_completion_arbitration_has_only_two_valid_schedules(self) -> None:
+        class FastEngine(Engine):
+            def create_conversation(self, **_kwargs) -> Conversation:
+                value = Conversation(blocking=False)
+                self.created.append(value)
+                return value
+
+        fake_module = types.SimpleNamespace(
+            Backend=types.SimpleNamespace(CPU=lambda **_kwargs: object()),
+            Engine=FastEngine, SamplerConfig=lambda **_kwargs: object(),
+        )
+        for hook_name, expected_native, expected_completed, expected_boundary in (
+            ("_before_completion_arbitration_hook", 1, 0, 0),
+            ("_after_completion_arbitration_hook", 0, 1, 1),
+        ):
+            with self.subTest(hook=hook_name):
+                reached, release = threading.Event(), threading.Event()
+                stderr = io.StringIO()
+                with patch.dict(sys.modules, {"litert_lm": fake_module}), patch("sys.stderr", stderr):
+                    from poc_llm.harness.litert_lm_pi_p5_child_adapter_v1 import LiteRtContinuousBackend
+                    backend = LiteRtContinuousBackend({"model_path":"/model","threads":4,
+                        "engine_max_num_tokens":1024,"temperature":0.0,"top_p":1.0})
+                    setattr(backend, hook_name, lambda: (reached.set(), release.wait(2)))
+                    caught: list[Exception] = []
+                    worker = threading.Thread(target=lambda: self._capture_error(
+                        caught, lambda: backend.generate("prompt", max_output_tokens=512)
+                    ))
+                    worker.start()
+                    self.assertTrue(reached.wait(1))
+                    backend.cancel()
+                    release.set()
+                    worker.join(2)
+                    self.assertFalse(worker.is_alive())
+                    self.assertIsInstance(caught[0], Cancelled)
+                    health = backend.generate("health", max_output_tokens=16)
+                    self.assertEqual(health.text, "chunk")
+                    backend.close()
+                    rebuild = LiteRtContinuousBackend({"model_path":"/model","threads":4,
+                        "engine_max_num_tokens":1024,"temperature":0.0,"top_p":1.0})
+                    rebuilt_health = rebuild._chunk("health", 16, 0)
+                    self.assertEqual(rebuilt_health.text, "chunk")
+                    rebuild.close()
+                    self.assertTrue(all(
+                        conversation.close_count >= 1
+                        for conversation in backend._engine.created + rebuild._engine.created
+                    ))
+                markers = stderr.getvalue()
+                self.assertEqual(markers.count("P5_EVENT native_cancel_once"), expected_native)
+                # One completion is same-child health and one is the fresh rebuild probe.
+                self.assertEqual(markers.count("P5_EVENT chunk_completed"), expected_completed + 2)
+                self.assertEqual(markers.count("P5_EVENT timeout_between_chunks"), expected_boundary)
+                self.assertEqual(markers.count("P5_EVENT continuous_terminal_cancelled"), 1)
+
+    def test_native_cancel_lifetime_is_reserved_until_success_or_failure(self) -> None:
+        class LifetimeConversation(Conversation):
+            def __init__(self, fail: bool):
+                super().__init__(blocking=False)
+                self.fail = fail
+                self.finish_generation = threading.Event()
+                self.native_entered = threading.Event()
+                self.native_release = threading.Event()
+
+            def send_message_async(self, _prompt: str):
+                yield {"text":"chunk"}
+                self.finish_generation.wait(2)
+
+            def cancel_process(self) -> None:
+                self.cancel_count += 1
+                self.native_entered.set()
+                self.native_release.wait(2)
+                self.cancelled.set()
+                if self.fail:
+                    raise RuntimeError("injected native cancel failure")
+
+        for fail in (False, True):
+            with self.subTest(native_failure=fail):
+                conversation = LifetimeConversation(fail)
+
+                class LifetimeEngine(Engine):
+                    def create_conversation(self, **_kwargs):
+                        self.created.append(conversation)
+                        return conversation
+
+                fake_module = types.SimpleNamespace(
+                    Backend=types.SimpleNamespace(CPU=lambda **_kwargs: object()),
+                    Engine=LifetimeEngine, SamplerConfig=lambda **_kwargs: object(),
+                )
+                stderr = io.StringIO()
+                with patch.dict(sys.modules, {"litert_lm":fake_module}), patch("sys.stderr", stderr):
+                    from poc_llm.harness.litert_lm_pi_p5_child_adapter_v1 import LiteRtContinuousBackend
+                    backend = LiteRtContinuousBackend({"model_path":"/model","threads":4,
+                        "engine_max_num_tokens":1024,"temperature":0.0,"top_p":1.0})
+                    finalization_reached = threading.Event()
+                    backend._before_conversation_close_hook = finalization_reached.set
+                    caught: list[Exception] = []
+                    worker = threading.Thread(target=lambda: self._capture_error(
+                        caught, lambda: backend.generate("prompt", max_output_tokens=512)))
+                    worker.start()
+                    while not backend._engine.created:
+                        pass
+                    cancel_errors: list[Exception] = []
+                    canceller = threading.Thread(target=lambda: self._capture_error(
+                        cancel_errors, backend.cancel))
+                    canceller.start()
+                    self.assertTrue(conversation.native_entered.wait(1))
+                    conversation.finish_generation.set()
+                    self.assertTrue(finalization_reached.wait(1))
+                    self.assertTrue(worker.is_alive())
+                    self.assertEqual(conversation.close_count, 0)
+                    conversation.native_release.set()
+                    canceller.join(2)
+                    worker.join(2)
+                    self.assertFalse(canceller.is_alive())
+                    self.assertFalse(worker.is_alive())
+                    self.assertEqual(cancel_errors, [])
+                    self.assertEqual(conversation.cancel_count, 1)
+                    self.assertEqual(conversation.close_count, 1)
+                markers = stderr.getvalue()
+                self.assertEqual(markers.count("P5_EVENT native_cancel_once"), 0 if fail else 1)
+                self.assertEqual(markers.count("P5_EVENT native_cancel_failed"), 1 if fail else 0)
+                if fail:
+                    self.assertEqual(p5_runner_disposition(
+                        {"type":"ERROR","code":"TIMEOUT","request_id":"p5-continuous"},
+                        16000.0, markers_ok=False, health_ok=True, rebuild_ok=True,
+                        candidate_error=None, observation_error=None,
+                        rebuild_candidate_error=None, rebuild_observation_error=None,
+                    ), "FAIL")
+
+    def test_p5_protocol_integration_cancel_and_completion_first(self) -> None:
+        class FastEngine(Engine):
+            def create_conversation(self, **_kwargs):
+                value = Conversation(blocking=False)
+                self.created.append(value)
+                return value
+
+        for mode, engine_type in (("active", Engine), ("boundary", FastEngine)):
+            with self.subTest(mode=mode):
+                fake_module = types.SimpleNamespace(
+                    Backend=types.SimpleNamespace(CPU=lambda **_kwargs: object()),
+                    Engine=engine_type, SamplerConfig=lambda **_kwargs: object(),
+                )
+                output, stderr = io.StringIO(), io.StringIO()
+                with patch.dict(sys.modules, {"litert_lm":fake_module}), patch("sys.stderr", stderr):
+                    from poc_llm.harness.litert_lm_pi_p5_child_adapter_v1 import LiteRtContinuousBackend
+                    config = {"model_path":"/model","threads":4,"engine_max_num_tokens":1024,
+                        "temperature":0.0,"top_p":1.0,"max_output_tokens":16,
+                        "generate_timeout_ms":20,"term_timeout_ms":1000,
+                        "candidate_id":"candidate","pairing_revision":"r1","platform":"pi",
+                        "runtime_sha256":"a"*64,"model_sha256":"b"*64}
+                    backend = LiteRtContinuousBackend(config)
+                    if mode == "boundary":
+                        backend._between_chunks_hook = lambda: self._wait_cancel_requested(backend)
+                    child = PiChild(config, "c"*64, backend, output)
+                    child.protocol = types.SimpleNamespace(iter_errors=lambda _frame: [])
+                    request = {"type":"GENERATE","protocol_version":"snowboard.llm/1",
+                        "request_id":"p5-continuous","input":STANDARD_INPUT}
+                    self.assertTrue(child.handle(request))
+                    child.worker.join(2)
+                    self.assertFalse(child.worker.is_alive())
+                    frames = [json.loads(line) for line in output.getvalue().splitlines()]
+                    self.assertEqual(frames[-1]["type"], "ERROR")
+                    self.assertEqual(frames[-1]["code"], "TIMEOUT")
+                    self.assertEqual(frames[-1]["request_id"], "p5-continuous")
+                    self.assertTrue(child.handle({"type":"PING","protocol_version":"snowboard.llm/1"}))
+                    self.assertTrue(child.handle({**request,"request_id":"p5-health"}))
+                    child.worker.join(2)
+                    frames = [json.loads(line) for line in output.getvalue().splitlines()]
+                    self.assertEqual(frames[-1]["type"], "RESULT")
+                    self.assertFalse(child.handle({"type":"SHUTDOWN","protocol_version":"snowboard.llm/1"}))
+                    child.close()
+                    rebuild = LiteRtContinuousBackend(config)
+                    self.assertEqual(rebuild._chunk("health", 16, 0).text, "chunk")
+                    rebuild.close()
+                markers = stderr.getvalue()
+                self.assertEqual(markers.count("P5_EVENT native_cancel_failed"), 0, markers)
+                self.assertEqual(markers.count("P5_EVENT native_cancel_once"), 1 if mode == "active" else 0)
+                self.assertEqual(markers.count("P5_EVENT timeout_between_chunks"), 0 if mode == "active" else 1)
+
+    @staticmethod
+    def _wait_cancel_requested(backend) -> None:
+        deadline = time.monotonic() + 1
+        while time.monotonic() < deadline:
+            with backend._lock:
+                if backend._cancel_requested:
+                    return
+            time.sleep(0.001)
+        raise AssertionError("controlled timeout did not request cancellation")
+
+    def test_scored_generate_maps_actual_post_ready_protocol_faults_to_fail(self) -> None:
+        for message in (
+            "protocol frame deadline exceeded",
+            "candidate stdout closed",
+            "candidate emitted invalid JSONL",
+            "candidate emitted protocol-invalid frame",
+        ):
+            with self.subTest(message=message), patch(
+                "poc_llm.tools.run_gate2a_pi_v2.generate",
+                side_effect=PiPacketFailure(message),
+            ):
+                with self.assertRaises(CandidateViolation) as caught:
+                    scored_generate(object(), object(), "p5-continuous", {})
+                self.assertEqual(error_result(caught.exception), "FAIL")
+        self.assertEqual(error_result(EvidenceInvalid("probe")), "INCONCLUSIVE")
+
+    def test_scored_pipe_ping_and_shutdown_exception_matrix(self) -> None:
+        process = types.SimpleNamespace(stdout=object())
+        for error in (BrokenPipeError("closed"), ConnectionResetError("reset")):
+            with self.subTest(kind=type(error).__name__), patch(
+                "poc_llm.tools.run_gate2a_pi_v2.generate", side_effect=error,
+            ), self.assertRaises(CandidateViolation):
+                scored_generate(process, object(), "p5", {})
+            with patch("poc_llm.tools.run_gate2a_pi_v2.send", side_effect=error), \
+                    self.assertRaises(CandidateViolation):
+                scored_pong(process, object())
+        timeout = subprocess.TimeoutExpired(["child"], 2)
+        with patch("poc_llm.tools.run_gate2a_pi_v2.close_child", side_effect=timeout), \
+                self.assertRaises(CandidateViolation):
+            scored_close_child(process, object())
+
+    def test_p5_two_stage_precedence_matrix(self) -> None:
+        valid = {"type":"ERROR","code":"TIMEOUT","request_id":"p5-continuous"}
+        cases = (
+            (valid, True, True, "CandidateViolation", None, None, "OSError", True, "FAIL"),
+            (valid, False, True, None, None, None, "OSError", True, "FAIL"),
+            (valid, True, True, None, "OSError", "CandidateViolation", None, True, "INCONCLUSIVE"),
+            (valid, True, True, None, None, "CandidateViolation", None, True, "FAIL"),
+            (valid, True, True, None, None, None, "OSError", True, "INCONCLUSIVE"),
+            (valid, True, True, None, None, None, None, False, "FAIL"),
+            (valid, True, True, None, None, None, None, True, "PASS"),
+            ({"type":"RESULT"}, False, True, None, "PacketDefect", None, None, True, "INCONCLUSIVE"),
+        )
+        for terminal, markers, health, candidate, observation, rebuild_candidate, rebuild_observation, rebuild_ok, expected in cases:
+            with self.subTest(expected=expected, candidate=candidate, observation=observation):
+                self.assertEqual(p5_runner_disposition(
+                    terminal, 16000.0 if terminal is valid else 14000.0,
+                    markers_ok=markers, health_ok=health, rebuild_ok=rebuild_ok,
+                    candidate_error=candidate, observation_error=observation,
+                    rebuild_candidate_error=rebuild_candidate,
+                    rebuild_observation_error=rebuild_observation,
+                ), expected)
+                evidence = complete_samples()
+                p5 = evidence["p5"]
+                p5.update({
+                    "terminal":terminal.get("type"), "code":terminal.get("code"),
+                    "elapsed_ms":16000.0 if terminal is valid else 14000.0,
+                    "candidate_error_type":candidate,
+                    "observation_error_type":observation,
+                    "rebuild_candidate_error_type":rebuild_candidate,
+                    "rebuild_error_type":rebuild_observation,
+                    "rebuild_health_terminal":"RESULT" if rebuild_ok else "ERROR",
+                })
+                if not markers:
+                    p5["marker_counts"]["native_cancel_once"] = 0
+                if not health:
+                    p5["same_child_health_terminal"] = "ERROR"
+                catalog = json.loads(CATALOG.read_text())
+                p8 = json.loads((ROOT / "poc_llm/fixtures/gate2/p8-state-isolation-001.json").read_text())
+                observed = verify_gate2a_result(
+                    {"samples":evidence,"cleanup":complete_cleanup(),
+                     "executed_results":{"P2":"PASS","P3":"PASS","P4":"PASS",
+                                         "P5":expected,"P8":"PASS"}},
+                    catalog, p8, engine_capacity=1024, max_output_tokens=64,
+                )
+                self.assertEqual(observed["P5"], expected)
+
+    def test_p5_real_runner_path_distinguishes_no_late_terminal_and_probe_fault(self) -> None:
+        with patch(
+            "poc_llm.tools.run_gate2a_pi_v2.generate",
+            side_effect=PiPacketFailure("protocol frame deadline exceeded"),
+        ):
+            with self.assertRaises(CandidateViolation) as no_terminal:
+                scored_generate(object(), object(), "p5-continuous", {})
+        self.assertEqual(p5_runner_disposition(
+            {"type":"NO_TERMINAL"}, 17500.0, markers_ok=False, health_ok=False,
+            rebuild_ok=True, candidate_error=type(no_terminal.exception).__name__,
+            observation_error=None, rebuild_candidate_error=None,
+            rebuild_observation_error=None,
+        ), "FAIL")
+
+        late = {"type":"ERROR","code":"TIMEOUT","request_id":"p5-continuous"}
+        with patch("poc_llm.tools.run_gate2a_pi_v2.generate", return_value=(late, 17000.001)):
+            terminal, elapsed = scored_generate(object(), object(), "p5-continuous", {})
+        self.assertEqual(p5_runner_disposition(
+            terminal, elapsed, markers_ok=True, health_ok=True, rebuild_ok=True,
+            candidate_error=None, observation_error=None, rebuild_candidate_error=None,
+            rebuild_observation_error=None,
+        ), "FAIL")
+
+        with patch("poc_llm.tools.run_gate2a_pi_v2.generate", side_effect=OSError("probe I/O")):
+            with self.assertRaises(OSError) as probe:
+                scored_generate(object(), object(), "p5-continuous", {})
+        self.assertEqual(p5_runner_disposition(
+            {"type":"NO_TERMINAL"}, 1.0, markers_ok=False, health_ok=False,
+            rebuild_ok=False, candidate_error=None,
+            observation_error=type(probe.exception).__name__, rebuild_candidate_error=None,
+            rebuild_observation_error=None,
+        ), "INCONCLUSIVE")
+
+    @staticmethod
+    def _capture_error(target: list[Exception], operation) -> None:
+        try:
+            operation()
+        except Exception as error:
+            target.append(error)
+
+    def test_independent_verifier_rejects_mutated_pass_samples(self) -> None:
+        catalog = json.loads(CATALOG.read_text())
+        p8 = json.loads((ROOT / "poc_llm/fixtures/gate2/p8-state-isolation-001.json").read_text())
+        value = {"samples":complete_samples(),"cleanup":complete_cleanup(),
+                 "executed_results":{"P2":"PASS","P3":"PASS","P4":"PASS","P5":"PASS","P8":"PASS"}}
+        self.assertEqual(verify_gate2a_result(
+            value, catalog, p8, engine_capacity=1024, max_output_tokens=64
+        )["P5"], "PASS")
+        mutations = [
+            lambda copy: copy["samples"]["p2"]["cases"].pop(),
+            lambda copy: copy["samples"]["p3"][0].update({"fallback":False}),
+            lambda copy: copy["samples"]["p4"]["hot"][0].pop("metrics"),
+            lambda copy: copy["samples"]["p5"]["marker_counts"].update({"native_cancel_once":0}),
+            lambda copy: copy["samples"]["p8"]["cases"][0].update({"prior_marker_leaked":True}),
+        ]
+        for mutate in mutations:
+            changed = json.loads(json.dumps(value))
+            mutate(changed)
+            with self.assertRaises(EvidenceInvalid):
+                verify_gate2a_result(
+                    changed, catalog, p8, engine_capacity=1024, max_output_tokens=64
+                )
+
+    def test_runtime_p8_canary_leak_is_detected_without_persisting_match(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "standard.stderr"
+            path.write_text("diagnostic P8N00003 only", encoding="utf-8")
+            report = scan_owned_logs(Path(directory), {"P8N00003"})
+        self.assertFalse(report["passed"])
+        self.assertNotIn("P8N00003", json.dumps(report))
 
     def test_p5_no_or_late_terminal_is_fail_but_early_result_is_definition_inconclusive(self) -> None:
         self.assertEqual(

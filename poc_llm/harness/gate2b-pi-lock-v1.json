@@ -10,7 +10,9 @@
     "sample_interval_seconds":0.25,
     "sample_gap_seconds_max":0.5,
     "psi_full_total_delta":0,
-    "oom_kill_delta":0
+    "oom_kill_delta":0,
+    "leak_slope_mib_per_session_max":4.0,
+    "leak_late_early_median_delta_mib_max":64.0
   },
   "runtime":{
     "wheel_path":"/tmp/llm-poc-pi-artifacts-v1/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
@@ -26,12 +28,13 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"6fe111eb1933fa274afc26e05422626e37acf7bc591f0099efabce6cc4023935"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"9e319a2490f61ee147396c98fa93092a867a31423f0fad5d314aec1bb89eb05f"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"87191139c90abe961b4cf48bb8289702bb974d0608676f50452dfbf45740bbfc"},
-    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1dea40241a4cd1c04714dc9da665138d019417756e6e48c533b38c181c119f23"},
-    "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"ad1f4ff050799e68ec7b144123034b607ac29b9138c00a32d771ecc1dcacca06"},
-    "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"36d6447fe040fcb0f9637decba505c58626e1bd3c66a0a626ce275e14bd3e118"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"c52938da6e1a0b6fd00cc7efd611165a29ef26400a38bd02646a803d0bca4abb"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"79685679504109e470604015985f734f8bb0dfcd826b15ec6aa4085bca9f5dec"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"51f47fcf69e43a32a6aafc6e2c97ebee944b416ed43fd89de030d3cc6e94da25"},
+    "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
+    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
+    "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
+    "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"2a57754362d30d74c616a58a368bb79208493bc1fdb04b2cf1242c5b68fc683e"},
     "standard_adapter":{"path":"poc_llm/harness/litert_lm_pi_child_adapter_v2.py","sha256":"9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
     "pi_child_base":{"path":"poc_llm/harness/litert_lm_pi_child_adapter.py","sha256":"345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
     "child_base":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},
@@ -48,6 +51,6 @@
     "gate2a_receipt_schema":{"path":"poc_llm/evidence/m4b/gate2a-provisional-receipt-v1.schema.json","sha256":"6986454101c1d5f2b568bde0ce59ac352e33129da05b380e1ffcdf12a5c89811"},
     "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"3cd23a79ad86f7df80d190f56d6b403888f79c147cfe9265729aa08fadee8326"},
     "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"c949efa4b146b0c1835255451f68b3b1fca767b193a370d2a558c6475b3404e1"},
-    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"c623810e1be7698ac2d178fa9072a99041f3f060f88ca86adc389105a44955b8"}
+    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"8a0777f579c8b123cb1ab68ac4e337ff5a8fe075db5b836ade107163ef8ab528"}
   }
 }

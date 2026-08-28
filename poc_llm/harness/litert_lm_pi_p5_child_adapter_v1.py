@@ -53,10 +53,18 @@ class LiteRtContinuousBackend:
             temperature=config["temperature"], top_p=config["top_p"]
         )
         self._lock = threading.Lock()
+        self._condition = threading.Condition(self._lock)
         self._conversation: Any | None = None
         self._cancel_requested = False
         self._native_cancel_invoked = False
+        self._native_cancel_in_flight = False
+        self._native_cancel_succeeded = False
         self._continuous_claimed = False
+        self._state = "IDLE"
+        self._between_chunks_hook: Any | None = None
+        self._before_completion_arbitration_hook: Any | None = None
+        self._after_completion_arbitration_hook: Any | None = None
+        self._before_conversation_close_hook: Any | None = None
 
     @staticmethod
     def _metrics(conversation: Any) -> dict[str, int | float]:
@@ -74,6 +82,12 @@ class LiteRtContinuousBackend:
     def _chunk(
         self, prompt: str, max_output_tokens: int, ordinal: int
     ) -> Generation:
+        with self._lock:
+            if self._cancel_requested:
+                self._state = "BETWEEN_CHUNKS"
+                event("timeout_between_chunks", ordinal=ordinal)
+                raise Cancelled("continuous generation cancelled between chunks")
+            self._state = "STARTING_CHUNK"
         try:
             conversation = self._engine.create_conversation(
                 sampler_config=self._sampler,
@@ -82,16 +96,15 @@ class LiteRtContinuousBackend:
             )
         except Exception as error:
             raise BackendFailure("create_conversation", error) from error
-        cancel_immediately = False
         with self._lock:
+            if self._cancel_requested:
+                self._state = "BETWEEN_CHUNKS"
+                event("timeout_between_chunks", ordinal=ordinal)
+                conversation.close()
+                raise Cancelled("continuous generation cancelled before active chunk")
             self._conversation = conversation
-            cancel_immediately = self._cancel_requested
-            if cancel_immediately and not self._native_cancel_invoked:
-                self._native_cancel_invoked = True
+            self._state = "ACTIVE_CHUNK"
         event("chunk_started", ordinal=ordinal)
-        if cancel_immediately:
-            event("native_cancel_once", ordinal=ordinal)
-            conversation.cancel_process()
         chunks: list[str] = []
         try:
             try:
@@ -117,12 +130,33 @@ class LiteRtContinuousBackend:
                 )
             except Exception as error:
                 raise BackendFailure("benchmark_info", error) from error
+            hook = self._before_completion_arbitration_hook
+            if hook is not None:
+                hook()
+            with self._condition:
+                if self._cancel_requested:
+                    raise Cancelled("continuous generation cancelled before completion")
+                if self._conversation is conversation:
+                    self._conversation = None
+                self._state = "BETWEEN_CHUNKS"
+            hook = self._after_completion_arbitration_hook
+            if hook is not None:
+                hook()
             event("chunk_completed", ordinal=ordinal)
             return generation
         finally:
-            with self._lock:
+            hook = self._before_conversation_close_hook
+            if hook is not None:
+                hook()
+            with self._condition:
+                while (
+                    self._native_cancel_in_flight
+                    and self._conversation is conversation
+                ):
+                    self._condition.wait()
                 if self._conversation is conversation:
                     self._conversation = None
+                self._state = "BETWEEN_CHUNKS"
             conversation.close()
             event("conversation_discarded", ordinal=ordinal)
 
@@ -130,6 +164,9 @@ class LiteRtContinuousBackend:
         with self._lock:
             self._cancel_requested = False
             self._native_cancel_invoked = False
+            self._native_cancel_in_flight = False
+            self._native_cancel_succeeded = False
+            self._state = "IDLE"
             continuous = not self._continuous_claimed
             self._continuous_claimed = True
         if not continuous:
@@ -139,23 +176,43 @@ class LiteRtContinuousBackend:
             while True:
                 self._chunk(prompt, max_output_tokens, ordinal)
                 ordinal += 1
+                hook = self._between_chunks_hook
+                if hook is not None:
+                    hook()
                 with self._lock:
                     if self._cancel_requested:
+                        event("timeout_between_chunks", ordinal=ordinal)
                         raise Cancelled("continuous generation cancelled")
         except Cancelled:
             event("continuous_terminal_cancelled", ordinal=ordinal)
             raise
 
     def cancel(self) -> None:
-        with self._lock:
+        with self._condition:
             self._cancel_requested = True
             conversation = self._conversation
-            should_cancel = conversation is not None and not self._native_cancel_invoked
+            should_cancel = (
+                self._state == "ACTIVE_CHUNK"
+                and conversation is not None
+                and not self._native_cancel_invoked
+            )
             if should_cancel:
                 self._native_cancel_invoked = True
-        if should_cancel:
-            event("native_cancel_once")
+                self._native_cancel_in_flight = True
+        if not should_cancel:
+            return
+        cancel_error: BaseException | None = None
+        try:
             conversation.cancel_process()
+        except BaseException as error:
+            cancel_error = error
+        try:
+            event("native_cancel_once" if cancel_error is None else "native_cancel_failed")
+        finally:
+            with self._condition:
+                self._native_cancel_succeeded = cancel_error is None
+                self._native_cancel_in_flight = False
+                self._condition.notify_all()
 
     def close(self) -> None:
         self.cancel()

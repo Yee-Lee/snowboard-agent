@@ -8,6 +8,8 @@ import json
 import time
 from typing import Any, Awaitable, Callable, Protocol
 
+from poc_llm.harness.gate2_errors_v1 import CandidateViolation, CleanupViolation
+
 
 class PersistentDomain(Protocol):
     async def start(self) -> None: ...
@@ -68,6 +70,8 @@ class Gate2BCombinedCoordinator:
         tts: TtsDomain,
         *,
         pause: Callable[[float], Awaitable[None]],
+        group_absent: Callable[[int], bool] | None = None,
+        force_cleanup: Callable[[str, int], dict[str, Any]] | None = None,
     ) -> None:
         self._domains: dict[str, PersistentDomain] = {
             "vad": vad,
@@ -80,10 +84,14 @@ class Gate2BCombinedCoordinator:
         self._llm = llm
         self._tts = tts
         self._pause = pause
+        self._group_absent = group_absent
+        self._force_cleanup = force_cleanup
         self.trace: list[dict[str, Any]] = []
         self.stop_order: list[str] = []
         self.cadence_pause_elapsed_ms: list[float] = []
         self.total_elapsed_ms: float | None = None
+        self.started_roots: dict[str, int] = {}
+        self.cleanup_proofs: dict[str, dict[str, Any]] = {}
 
     async def run(
         self,
@@ -92,6 +100,7 @@ class Gate2BCombinedCoordinator:
         cadence_s: float = 5.0,
         on_resident: Callable[[], None] | None = None,
         before_shutdown: Callable[[], None] | None = None,
+        after_session: Callable[[int], None] | None = None,
     ) -> list[dict[str, Any]]:
         if len(records) != 20 or cadence_s < 0:
             raise ValueError("Gate 2B requires exactly 20 sessions and nonnegative cadence")
@@ -103,14 +112,25 @@ class Gate2BCombinedCoordinator:
         try:
             for name in ("vad", "asr", "tts", "llm"):
                 domain = self._domains[name]
-                await domain.start()
                 started.append((name, domain))
+                try:
+                    await domain.start()
+                finally:
+                    identity = domain.residency_identity()
+                    pid = identity.get("pid")
+                    if identity.get("alive") is True and isinstance(pid, int) and pid > 0:
+                        self.started_roots[name] = pid
+                identity = domain.residency_identity()
+                if identity.get("alive") is not True or name not in self.started_roots:
+                    raise RuntimeError(f"Gate 2B {name} did not become resident")
             self._require_resident()
             if on_resident is not None:
                 on_resident()
             results: list[dict[str, Any]] = []
             for index, record in enumerate(records):
                 results.append((await self._run_one(record, index)).to_dict())
+                if after_session is not None:
+                    after_session(index + 1)
                 if index != len(records) - 1:
                     pause_started = time.monotonic()
                     await self._pause(cadence_s)
@@ -124,14 +144,55 @@ class Gate2BCombinedCoordinator:
                     before_shutdown()
                 except BaseException as error:
                     failures.append(error)
+            cleanup_failed = False
             for name, domain in reversed(started):
+                root = self.started_roots.get(name)
+                identity_before_stop = domain.residency_identity()
+                identity_pid = identity_before_stop.get("pid")
+                if (
+                    root is None
+                    and identity_before_stop.get("alive") is True
+                    and isinstance(identity_pid, int)
+                    and identity_pid > 0
+                ):
+                    root = identity_pid
+                    self.started_roots[name] = root
+                cooperative_ok = True
+                error_type: str | None = None
                 try:
                     await domain.stop()
-                    self.stop_order.append(name)
                 except BaseException as error:
-                    failures.append(error)
+                    cooperative_ok = False
+                    cleanup_failed = True
+                    error_type = type(error).__name__
+                self.stop_order.append(name)
+                if root is not None and self._group_absent is not None:
+                    absent = self._group_absent(root)
+                else:
+                    identity = domain.residency_identity()
+                    absent = identity.get("alive") is False
+                fallback: dict[str, Any] | None = None
+                if not absent and root is not None and self._force_cleanup is not None:
+                    try:
+                        fallback = self._force_cleanup(name, root)
+                        absent = fallback.get("process_group_absent") is True
+                    except BaseException as error:
+                        fallback = {"process_group_absent": False}
+                        error_type = error_type or type(error).__name__
+                        absent = False
+                if not absent:
+                    cleanup_failed = True
+                self.cleanup_proofs[name] = {
+                    "root_pid": root,
+                    "cooperative_stop": cooperative_ok,
+                    "fallback_used": fallback is not None,
+                    "process_group_absent": absent,
+                    "error_type": error_type,
+                }
+            if cleanup_failed:
+                failures.append(CleanupViolation("Gate 2B bounded owner cleanup failed"))
             if failures:
-                raise RuntimeError("Gate 2B reverse-order cleanup failed") from failures[0]
+                raise failures[0]
 
     def residency_roots(self) -> dict[str, int]:
         identities = self._require_resident()
@@ -178,7 +239,7 @@ class Gate2BCombinedCoordinator:
                 raise RuntimeError("Gate 2B ASR transcript is unusable")
             transcript_sha256 = hashlib.sha256(transcript.encode("utf-8")).hexdigest()
             if asr.get("transcript_sha256") != transcript_sha256:
-                raise RuntimeError("Gate 2B ASR transcript identity mismatch")
+                raise CandidateViolation("Gate 2B ASR transcript identity mismatch")
             trace["timings_ms"]["asr"] = _elapsed_ms(started)
             trace["completed_stages"].append("asr")
 
@@ -197,7 +258,7 @@ class Gate2BCombinedCoordinator:
                 or llm.get("current_marker_present_once") is not True
                 or llm.get("current_trap_absent") is not True
             ):
-                raise RuntimeError("Gate 2B LLM history or response identity failure")
+                raise CandidateViolation("Gate 2B LLM history or response identity failure")
             trace["timings_ms"]["llm"] = _elapsed_ms(started)
             trace["completed_stages"].append("llm")
 
@@ -209,7 +270,7 @@ class Gate2BCombinedCoordinator:
             })
             _validate_stage(tts, "tts", session_id)
             if tts.get("playback_complete") is not True:
-                raise RuntimeError("Gate 2B TTS playback did not complete")
+                raise CandidateViolation("Gate 2B TTS playback did not complete")
             trace["timings_ms"]["tts_playback"] = _elapsed_ms(started)
             trace["completed_stages"].append("tts_playback")
             trace["timings_ms"]["end_to_end"] = _elapsed_ms(session_started)
@@ -276,4 +337,4 @@ def _validate_stage(stage: object, name: str, session_id: str) -> None:
         or stage.get("session_id") != session_id
         or stage.get("terminal") != "SUCCESS"
     ):
-        raise RuntimeError(f"Gate 2B {name} stage identity/terminal mismatch")
+        raise CandidateViolation(f"Gate 2B {name} stage identity/terminal mismatch")

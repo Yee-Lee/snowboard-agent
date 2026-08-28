@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import shutil
+import statistics
 import subprocess
 import threading
 import time
@@ -157,6 +158,7 @@ class ResourceSampler:
         self.roots = roots
         self.interval_s = interval_s
         self.records: list[dict[str, Any]] = []
+        self.session_points: list[dict[str, Any]] = []
         self._stop = threading.Event()
         self._first_sample = threading.Event()
         self._thread: threading.Thread | None = None
@@ -175,6 +177,9 @@ class ResourceSampler:
             if self._error is not None:
                 raise RuntimeError("Gate 2B initial residency sample failed") from self._error
             raise RuntimeError("Gate 2B initial residency sample deadline exceeded")
+        if self._error is not None:
+            self._thread.join(timeout=2.0)
+            raise RuntimeError("Gate 2B initial residency sample failed") from self._error
 
     def stop(self) -> list[dict[str, Any]]:
         self._stop.set()
@@ -185,6 +190,13 @@ class ResourceSampler:
         if self._error is not None:
             raise RuntimeError("Gate 2B resource sampler failed") from self._error
         return list(self.records)
+
+    def capture_session(self, session_index: int) -> None:
+        if session_index != len(self.session_points) + 1:
+            raise RuntimeError("Gate 2B session resource point order mismatch")
+        record = resource_sample(self.roots(), time.monotonic())
+        record["session_index"] = session_index
+        self.session_points.append(record)
 
     def _run(self) -> None:
         next_sample = time.monotonic()
@@ -204,8 +216,53 @@ class ResourceSampler:
             self._first_sample.set()
 
 
+def _ols_slope(values: list[float]) -> float:
+    if len(values) < 2:
+        raise ValueError("Gate 2B requires at least two leak samples")
+    mean_x = (len(values) - 1) / 2
+    mean_y = sum(values) / len(values)
+    denominator = sum((index - mean_x) ** 2 for index in range(len(values)))
+    return sum(
+        (index - mean_x) * (value - mean_y)
+        for index, value in enumerate(values)
+    ) / denominator
+
+
+def _leak_metrics(session_points: list[dict[str, Any]]) -> dict[str, Any]:
+    if (
+        len(session_points) != 20
+        or [item.get("session_index") for item in session_points] != list(range(1, 21))
+    ):
+        raise ValueError("Gate 2B requires exactly 20 ordered session resource points")
+    combined_pss = [
+        sum(owner["pss_kib"] for owner in item["owners"].values()) / 1024
+        for item in session_points
+    ]
+    system_used = [item["system_used_mib"] for item in session_points]
+
+    def calculations(values: list[float]) -> dict[str, float]:
+        return {
+            "slope_mib_per_session": round(_ols_slope(values[5:]), 6),
+            "late_early_median_delta_mib": round(
+                statistics.median(values[15:]) - statistics.median(values[:5]), 3
+            ),
+        }
+
+    return {
+        "combined_pss": calculations(combined_pss),
+        "system_used": calculations(system_used),
+        "per_owner_pss": {
+            name: calculations([
+                item["owners"][name]["pss_kib"] / 1024 for item in session_points
+            ])
+            for name in ("controller", "vad", "asr", "tts", "llm")
+        },
+    }
+
+
 def evaluate_resources(
-    records: list[dict[str, Any]], *, oom_before: int, oom_after: int
+    records: list[dict[str, Any]], *, session_points: list[dict[str, Any]],
+    oom_before: int, oom_after: int
 ) -> tuple[bool, dict[str, Any]]:
     if len(records) < 2:
         raise ValueError("Gate 2B requires at least two resource samples")
@@ -234,6 +291,7 @@ def evaluate_resources(
     throttled_zero = all(
         record["throttled"] == "throttled=0x0" for record in records
     )
+    leak = _leak_metrics(session_points)
     summary = {
         "sample_count": len(records),
         "peak_system_used_mib": max(record["system_used_mib"] for record in records),
@@ -248,6 +306,7 @@ def evaluate_resources(
         "cpu_observed_for_all_owners": cpu_observed,
         "swap_zero_for_all_samples": swap_zero,
         "throttled_zero_for_all_samples": throttled_zero,
+        "leak": leak,
         "owner_peaks": {
             name: {
                 "process_count": max(record["owners"][name]["process_count"] for record in records),
@@ -269,5 +328,9 @@ def evaluate_resources(
         and cpu_observed
         and swap_zero
         and throttled_zero
+        and leak["combined_pss"]["slope_mib_per_session"] <= 4.0
+        and leak["system_used"]["slope_mib_per_session"] <= 4.0
+        and leak["combined_pss"]["late_early_median_delta_mib"] <= 64.0
+        and leak["system_used"]["late_early_median_delta_mib"] <= 64.0
     )
     return passed, summary
