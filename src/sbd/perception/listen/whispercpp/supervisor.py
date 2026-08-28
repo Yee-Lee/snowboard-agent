@@ -21,6 +21,11 @@ from pathlib import Path
 from typing import Any
 
 
+# Guard direct child invocation as well as the normal parent-owned environment.
+# Silero imports ONNX Runtime lazily, after this module entry boundary executes.
+os.environ["ORT_DISABLE_TELEMETRY"] = "1"
+
+
 MAX_CONTROL_BYTES = 16 * 1024
 FRAME_BYTES = 640
 SAMPLE_RATE = 16000

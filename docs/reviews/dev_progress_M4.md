@@ -88,7 +88,7 @@
 | M4A-WP-12 | 2.0 days | Strict config, lazy factories, composition ownership and RM rebuild barrier wiring | `M4A-CFG-001`; recovery/composition portions of `M4A-ASR-003` and `M4A-TTS-002` | WP-10 and WP-11 adapter lifecycle complete | Developer complete — Tester pending |
 | M4A-WP-13 | 2.0 days | Gate 3 target runner support, inheritance generator/template and offline/resource/privacy collection support | `M4A-OFF-001`, `M4A-RES-001`, `M4A-INH-001`; aggregate `M4A-PRIV-001` | WP-09～12 executable; Accepted M4b only for combined resource row | Developer complete — Tester pending |
 
-### TR_dev_M4_I correction plan (M4A-WP-14 to M4A-WP-18)
+### TR_dev_M4_I correction plan (M4A-WP-14 to M4A-WP-20)
 
 | Work package | Estimate | Plan | Finding | Status |
 | :--- | ---: | :--- | :--- | :--- |
@@ -98,6 +98,7 @@
 | M4A-WP-17 | 0.5 day | Align the Pi actual-child cancellation case with deferred Level 1 observation, Level 2 destruction, rebuild and two-success recovery. | `TRDEV-M4A-004` | Complete |
 | M4A-WP-18 | 0.5 day | Add a Developer-owned Pi pre-submit runbook and sanitized executable diagnostic for fresh device/product, offline ASR/TTS/ALSA and cleanup verification. | Process prevention requested after `TRDEV-M4A-001`～`004` | Complete |
 | M4A-WP-19 | 0.25 day | Replace the nondeterministic CPython 3.11 asyncio transport-wait oracle with a bounded child-watcher return-code check, preserving every protocol assertion. | `TRDEV-M4A-002` re-verification regression | Complete |
+| M4A-WP-20 | 0.5 day | Force-disable ONNX Runtime 1DS telemetry at the parent environment and both direct child entry boundaries; prove override-before-init and long-lived zero-network behavior. | `TRDEV-M4A-005` | Implementation complete — exact candidate pending |
 | Developer re-verification | 0.5 day | Run named M4A regressions, candidate-runner tests and the primary-minor portable fast loop; record exact results in the review response. | All four findings | Complete |
 
 The correction remains inside the approved public APIs and existing Audio Protocol v1 message set. Formal CPython 3.11/3.12/3.13 matrix execution and fresh Pi acceptance remain Tester-owned after a new USER-approved append-only candidate SHA is available.
@@ -122,6 +123,19 @@ two nonempty turns plus bounded finite no-endpoint; real TTS completed ALSA,
 deferred Level 2 destruction, rebuild and two recovery turns. Both traces had
 zero IPv4/IPv6 calls, all cleanup deltas were zero, and the final target baseline
 was clean. These results remain Developer verification, not Tester acceptance.
+
+Formal target run `m4a-7aba071-20260829-pi01` later completed all seven product
+cases but was correctly rejected because its full-tree trace contained 54
+IPv4/IPv6 records from ONNX Runtime 1.29.0 1DS telemetry. M4A-WP-20 forces
+`ORT_DISABLE_TELEMETRY=1` in the parent child environment and at ASR/TTS direct
+entry boundaries before native initialization. Working-tree verification passed
+73 affected tests, 14 candidate-runner tests, 171/171 M4a manifest tests on each
+of CPython 3.11.16, 3.12.3 and 3.13.15, and 455 repository non-RPi tests with 28
+target deselections. On Pi, a real Silero/ONNX session started from a conflicting
+`ORT_DISABLE_TELEMETRY=0`, observed the forced `1`, remained alive for 40 seconds
+and completed with zero IPv4/IPv6 trace records and no process residue. This is
+working-tree diagnostic evidence only; exact-candidate and formal 20-turn reruns
+remain required.
 
 Developer fast-loop results on the designated local Python 3 minor:
 

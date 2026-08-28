@@ -18,6 +18,11 @@ from pathlib import Path
 from typing import Any
 
 
+# sherpa-onnx embeds ONNX Runtime.  Disable its 1DS uploader before any direct
+# or indirect native-engine initialization, including diagnostic invocation.
+os.environ["ORT_DISABLE_TELEMETRY"] = "1"
+
+
 MAX_CONTROL_BYTES = 16 * 1024
 MAX_PCM_BYTES = 64 * 1024 * 1024
 VOICE_ID = "matcha-zh-en-default-sid-0"

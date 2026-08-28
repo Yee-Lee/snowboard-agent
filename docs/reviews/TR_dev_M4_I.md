@@ -230,3 +230,90 @@ Per `docs/roles/workflow.md` §4 steps 3–5, the next gate is Designer candidat
 review/freeze of this exact protected SHA. Tester requests that Designer record
 `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` as frozen or return a Blocking
 finding. Target preflight and acceptance must not start before that decision.
+
+## Tester target re-verification — Rejected
+
+### Candidate and gate result
+
+- Candidate: `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`.
+- Pi acceptance run: `m4a-7aba071-20260829-pi01` on rebooted Pi boot ID
+  `64a0d1f8-04fe-4a84-a340-ad449ea28e57`.
+- Fresh native worker SHA-256:
+  `c5e862d2786a483de77e0f6921331f45879d1a864c80c67ac9a74b0376447f72`.
+- All seven real-device pytest cases completed in 170.911 seconds, but the
+  formal runner rejected the run at the offline network gate.
+- Authoritative result: `<pi-run-root>/acceptance/accept-failure.json`;
+  `result.json` and signed acceptance cards do not exist.
+- Sanitized evidence:
+  `docs/outsource/evidence/M4A-TESTER-7ABA071-20260828/README.md`.
+
+### TRDEV-M4A-005 — ONNX Runtime telemetry violates the zero-attempt contract
+
+- **Contract / test IDs:** `M4A-OFF-001` and complete Gate 3 target acceptance
+  require zero IPv4/IPv6 network attempts by the full descendant process tree.
+  Blocking egress in a loopback-only namespace does not permit attempted calls.
+- **Formal evidence:** the outer full-tree `strace` recorded 54 IPv4/IPv6
+  syscalls across 18 TIDs, including 24 DNS connects to `192.168.0.1:53` that
+  returned `ENETUNREACH`. The acceptance subprocess itself completed seven of
+  seven device cases, 20 resource turns and clean final reconciliation, so
+  those unsigned outputs are diagnostic only and cannot override the runner.
+- **Root cause:** the persistent VAD supervisor initializes ONNX Runtime 1.29.0,
+  whose official non-Windows build contains the Microsoft 1DS telemetry uploader.
+  The 20-turn lifetime crosses its delayed uploader interval and resolves
+  `mobile.events.data.microsoft.com`; the resulting DNS/connect attempts are
+  product-descendant syscalls even when the namespace prevents egress.
+- **Required correction:** force `ORT_DISABLE_TELEMETRY=1` in
+  `offline_child_environment()`, overriding any inherited conflicting value.
+  Establish the same invariant at the ASR supervisor and TTS worker module
+  entrypoints before native runtime initialization. Add clean-subprocess tests
+  proving both direct child paths override a conflicting environment before
+  fake native session/TTS initialization.
+- **Forbidden workaround:** do not filter telemetry destinations or syscall
+  records, weaken the full-tree trace, rely on DNS failure/network namespaces,
+  add an ad-hoc shell export, or reuse this rejected acceptance run.
+- **Minimum re-verification:** create a new append-only candidate, pass the
+  complete CPython 3.11/3.12/3.13 portable matrix, and prove a persistent real
+  VAD/TTS process running longer than 30 seconds produces zero full-tree network
+  syscalls. Tester must then reboot the Pi and perform a new fresh-build product,
+  preflight and complete 20-turn acceptance under a new run ID.
+
+## Developer response to target re-verification — Revised
+
+### TRDEV-M4A-005 — Production telemetry invariant implemented
+
+- **Accepted root cause:** the prior short Developer traces did not cross ONNX
+  Runtime's delayed 1DS uploader interval. The formal 20-turn trace did, so the
+  calls belong to a product descendant and violate the zero-attempt contract
+  even though no packet could leave the loopback-only namespace.
+- **Correction:** `offline_child_environment()` now always writes
+  `ORT_DISABLE_TELEMETRY=1`. Both the directly executable ASR supervisor and TTS
+  worker establish the same value at module entry, before any lazy ONNX Runtime
+  or sherpa-onnx initialization. An inherited `0`, `false` or `yes` cannot
+  weaken this production-owned invariant.
+- **Regression:** `tests/test_m4a_off_001.py` checks the parent environment table
+  against conflicting values and launches both child entrypoints in clean
+  subprocesses with `ORT_DISABLE_TELEMETRY=0`. Fake native constructors assert
+  the value is already exactly `1` when the real VAD/TTS initialization path
+  reaches them.
+
+### Developer verification — 2026-08-29
+
+- Focused offline/ASR/IPC/TTS regression: **73 passed**; candidate-runner
+  regression: **14 passed**.
+- Complete M4A portable manifest: CPython 3.11, 3.12 and 3.13 each
+  **171 passed**, with zero fail, skip or xfail.
+- Repository non-RPi regression: **455 passed, 28 deselected**.
+- On the Pi, an isolated patched checkout inherited
+  `ORT_DISABLE_TELEMETRY=0`, initialized the real Silero ONNX model, remained
+  alive for 40 seconds, and completed with zero AF_INET/AF_INET6 records in its
+  full descendant `strace` and no residual process. This is working-tree
+  diagnostic evidence only, not exact-candidate or formal acceptance evidence.
+
+### New candidate requirement
+
+Rejected SHA `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` and run
+`m4a-7aba071-20260829-pi01` remain immutable and rejected. The telemetry source,
+tests, Tester review/evidence and directly related Developer documentation will
+be recorded in a new append-only candidate after USER commit approval. Only that
+exact SHA may proceed through a new matrix and fresh Pi verification before
+Tester begins a new formal acceptance run.

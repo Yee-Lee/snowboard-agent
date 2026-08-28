@@ -95,6 +95,9 @@ def offline_child_environment(
         "PIP_CONFIG_FILE": os.devnull,
         "HF_HUB_OFFLINE": "1",
         "TRANSFORMERS_OFFLINE": "1",
+        # Official non-Windows ONNX Runtime builds include a 1DS uploader.
+        # Full disablement must happen before the native runtime initializes.
+        "ORT_DISABLE_TELEMETRY": "1",
     })
     for name in tuple(environment):
         if name.lower().endswith("_proxy"):
