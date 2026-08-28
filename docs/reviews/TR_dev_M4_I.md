@@ -1,7 +1,7 @@
 ---
 requestor: "Tester"
 owner: "Developer"
-status: "Rejected"
+status: "Revised"
 ---
 
 # TR_dev_M4_I — M4A Gate 3 candidate rejection
@@ -169,3 +169,23 @@ The new portable regressions for finite-input convergence, production OpenBLAS p
 
 - **Do not apply:** moving `executor.shutdown(wait=True)` before `SHUTDOWN_ACK` and switching to bounded `process.communicate()` were both tested in disposable copies and still reproduced the failure; they are not acceptable fixes for this finding.
 - **Minimum re-verification:** create a new append-only candidate containing only the test-oracle correction and any directly required documentation. On CPython 3.11, run the exact no-delay node 20 independent times, then all four affected files. Finally rerun a new complete candidate-gate portable matrix on CPython 3.11/3.12/3.13. Only a zero-Fail/Skip/XFail matrix may enter fresh Pi product/preflight/acceptance.
+
+## Developer response to Tester re-verification — Revised
+
+### TRDEV-M4A-002 — Python 3.11 exit oracle corrected
+
+- **Accepted root cause:** the child had already exited with status zero and had been reaped, while CPython 3.11's asyncio subprocess transport waiter remained pending on pipe callbacks. The protocol sequence and product-child exit were successful; the final `Process.wait()` assertion was a nondeterministic test oracle.
+- **Correction:** `tests/test_m4a_ipc_001.py` keeps all `READY`, `FRAME_ACCEPTED`, `ENDPOINT`, nonempty `RESULT` and `SHUTDOWN_ACK` assertions unchanged. Its final bounded exit check now polls `process.returncode` for at most five seconds. A zero value proves the child watcher completed waitpid without waiting for the delayed transport waiter.
+- **Scope:** this append-only correction changes no product source, protocol, runner, dependency or target configuration. It does not reinterpret the earlier offline finding or claim target acceptance; those target dispositions remain pending behind the portable entry gate.
+
+### Developer verification — 2026-08-28
+
+- CPython 3.11.16, exact no-delay `[False]` node: 20 independent pytest processes, **20/20 passed**.
+- CPython 3.11.16, four affected ASR/IPC/TTS files: **66 passed**.
+- Complete 13-ID M4A portable manifest with third-party pytest autoload disabled and host `PYTHONPATH` removed: CPython 3.11.16 **167 passed**, CPython 3.12.3 **167 passed**, and CPython 3.13.15 **167 passed**; zero fail, skip or xfail in each run.
+- Candidate-runner regression: **14 passed**. Repository non-RPi regression: **451 passed, 28 deselected**.
+- `git diff --check` passes. The only protected change is the requested test-oracle correction; this review and the directly related Developer progress record are documentation-only handoff updates.
+
+### Candidate handoff
+
+A new append-only candidate is pending USER approval and therefore no candidate SHA or formal result is claimed here. After commit, Developer will run the complete candidate gate against the clean exact SHA. Only if that gate passes will Developer reboot the Pi, run the exact-SHA diagnostic from a clean target and hand the candidate back to Tester for formal portable and target re-verification.

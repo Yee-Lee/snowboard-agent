@@ -398,7 +398,13 @@ def test_m4a_ipc_001_actual_asr_process_handles_coalesced_and_fragmented_input(
             assert await asyncio.wait_for(read_control(process.stdout), timeout=5) == {
                 "protocol": 1, "event": "SHUTDOWN_ACK",
             }
-            assert await asyncio.wait_for(process.wait(), timeout=5) == 0
+            deadline = asyncio.get_running_loop().time() + 5
+            while (
+                process.returncode is None
+                and asyncio.get_running_loop().time() < deadline
+            ):
+                await asyncio.sleep(0.01)
+            assert process.returncode == 0
         finally:
             if process.returncode is None:
                 process.terminate()

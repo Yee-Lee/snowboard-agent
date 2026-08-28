@@ -97,9 +97,21 @@
 | M4A-WP-16 | 0.5 day | Enforce the single-thread OpenBLAS policy before controller native imports and in the formal candidate runner. | `TRDEV-M4A-003` | Complete |
 | M4A-WP-17 | 0.5 day | Align the Pi actual-child cancellation case with deferred Level 1 observation, Level 2 destruction, rebuild and two-success recovery. | `TRDEV-M4A-004` | Complete |
 | M4A-WP-18 | 0.5 day | Add a Developer-owned Pi pre-submit runbook and sanitized executable diagnostic for fresh device/product, offline ASR/TTS/ALSA and cleanup verification. | Process prevention requested after `TRDEV-M4A-001`～`004` | Complete |
+| M4A-WP-19 | 0.25 day | Replace the nondeterministic CPython 3.11 asyncio transport-wait oracle with a bounded child-watcher return-code check, preserving every protocol assertion. | `TRDEV-M4A-002` re-verification regression | Complete |
 | Developer re-verification | 0.5 day | Run named M4A regressions, candidate-runner tests and the primary-minor portable fast loop; record exact results in the review response. | All four findings | Complete |
 
 The correction remains inside the approved public APIs and existing Audio Protocol v1 message set. Formal CPython 3.11/3.12/3.13 matrix execution and fresh Pi acceptance remain Tester-owned after a new USER-approved append-only candidate SHA is available.
+
+Tester re-verification of candidate `ed1b2cf57581d48966a7dd6535c024ea51922b28`
+exposed a CPython 3.11-only test-oracle race after the actual ASR child had exited
+zero and been reaped. M4A-WP-19 changes only the final portable assertion to poll
+the child-watcher-populated `Process.returncode` for the existing five-second
+bound. The exact no-delay node passed 20/20 independent CPython 3.11 runs; the
+four affected files passed 66 tests, and the complete M4A manifest passed all 167
+tests on CPython 3.11.16, 3.12.3 and 3.13.15 with zero skip or xfail. A new
+append-only candidate remains pending USER commit approval. The candidate-runner
+regression passed all 14 tests, and the repository non-RPi regression passed 451
+tests with 28 target-only deselections.
 
 Developer fast-loop results on the designated local Python 3 minor:
 
