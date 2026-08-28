@@ -1,0 +1,47 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate2a:pi-result:2.0",
+  "$defs":{
+    "cleanup_proof":{"const":{"exit_code":0,"waited":true,"term_sent":false,"kill_sent":false,"process_group_absent":true}},
+    "artifact_auth_pass":{
+      "type":"object","required":["reused_receipt_sha256","model_sha256","model_size_bytes","full_model_hash_count","metadata_unchanged"],
+      "properties":{"reused_receipt_sha256":{"pattern":"^[0-9a-f]{64}$"},"model_sha256":{"pattern":"^[0-9a-f]{64}$"},"model_size_bytes":{"type":"integer","minimum":1},"full_model_hash_count":{"const":0},"metadata_unchanged":{"const":true}}
+    },
+    "complete_samples":{
+      "type":"object","additionalProperties":false,"required":["p2","p3","p4","p5","p8"],
+      "properties":{
+        "p2":{"type":"object","required":["ready_ms","cases","error_type"],"properties":{"ready_ms":{"type":"number","minimum":0},"cases":{"type":"array","minItems":30,"maxItems":30},"error_type":{"type":"null"}}},
+        "p3":{"type":"array","minItems":10,"maxItems":10},
+        "p4":{"type":"object","required":["resident_ready_ms","cold","warmups","hot","summary","failures"],"properties":{"resident_ready_ms":{"type":"number","minimum":0},"cold":{"type":"array","minItems":3,"maxItems":3},"warmups":{"type":"array","minItems":3,"maxItems":3},"hot":{"type":"array","minItems":20,"maxItems":20},"summary":{"type":"object","minProperties":7},"failures":{"type":"array","maxItems":0}}},
+        "p5":{"type":"object","required":["ready_ms","terminal","code","elapsed_ms","observation_error_type","marker_counts","same_child_pong","same_child_health_terminal","rebuild_ready_ms","rebuild_health_terminal","rebuild_error_type"],"properties":{"ready_ms":{"type":"number","minimum":0},"terminal":{"const":"ERROR"},"code":{"const":"TIMEOUT"},"elapsed_ms":{"type":"number","minimum":15000,"maximum":17000},"observation_error_type":{"type":"null"},"marker_counts":{"type":"object"},"same_child_pong":{"const":"PONG"},"same_child_health_terminal":{"const":"RESULT"},"rebuild_ready_ms":{"type":"number","minimum":0},"rebuild_health_terminal":{"const":"RESULT"},"rebuild_error_type":{"type":"null"}}},
+        "p8":{"type":"object","required":["ready_ms","cases","error_type"],"properties":{"ready_ms":{"type":"number","minimum":0},"cases":{"type":"array","minItems":5,"maxItems":5},"error_type":{"type":"null"}}}
+      }
+    },
+    "complete_cleanup":{
+      "type":"object","additionalProperties":false,"required":["p2","standard","p8","p5_same_child","p5_rebuild"],
+      "properties":{"p2":{"$ref":"#/$defs/cleanup_proof"},"standard":{"$ref":"#/$defs/cleanup_proof"},"p8":{"$ref":"#/$defs/cleanup_proof"},"p5_same_child":{"$ref":"#/$defs/cleanup_proof"},"p5_rebuild":{"$ref":"#/$defs/cleanup_proof"}}
+    }
+  },
+  "type":"object","additionalProperties":false,
+  "required":["packet_id","run_id","candidate_id","execution_sha","execution_surface_sha256","gate1_entry","isolation","environment","environment_post","runtime","artifact_authentication","carried_results","executed_results","samples","cleanup","violations","gate2a_scope_result","provisional_eligibility","result"],
+  "properties":{
+    "packet_id":{"const":"G2A-PI-LLM-002"},"run_id":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "candidate_id":{"enum":["CAND-LRT-G4E2B-MOBILE-R1","CAND-LRT-Q25-15B-Q8-R1"]},
+    "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},"execution_surface_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "gate1_entry":{"type":"object"},"isolation":{"type":"object"},"environment":{"type":"object"},"environment_post":{"type":"object"},"runtime":{"type":"object"},"artifact_authentication":{"type":"object"},
+    "carried_results":{"type":"object","additionalProperties":false,"required":["P1","P6.1","P7.1","P10A","P11","P12"],"properties":{"P1":{"enum":["PASS","FAIL"]},"P6.1":{"enum":["PASS","FAIL"]},"P7.1":{"enum":["PASS","FAIL"]},"P10A":{"enum":["PASS","FAIL"]},"P11":{"enum":["PASS","FAIL"]},"P12":{"enum":["PASS","FAIL"]}}},
+    "executed_results":{"type":"object","additionalProperties":false,"required":["P2","P3","P4","P5","P8"],"properties":{"P2":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked"]},"P3":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked"]},"P4":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked","Core threshold decision required"]},"P5":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked"]},"P8":{"enum":["PASS","FAIL","INCONCLUSIVE","Blocked"]}}},
+    "samples":{"type":"object"},"cleanup":{"type":"object"},"violations":{"type":"array","items":{"type":"string"}},
+    "gate2a_scope_result":{"enum":["PASS","FAIL","INCONCLUSIVE","Core threshold decision required"]},
+    "provisional_eligibility":{"enum":["ELIGIBLE_FOR_USER_REVIEW","WORKAROUND_DISPOSITION_REQUIRED","NOT_ELIGIBLE","PENDING"]},
+    "result":{"enum":["PASS","FAIL","INCONCLUSIVE","Core threshold decision required"]}
+  },
+  "allOf":[
+    {"if":{"properties":{"candidate_id":{"const":"CAND-LRT-Q25-15B-Q8-R1"}}},"then":{"properties":{"carried_results":{"properties":{"P7.1":{"const":"FAIL"}}},"provisional_eligibility":{"not":{"const":"ELIGIBLE_FOR_USER_REVIEW"}}}}},
+    {"if":{"properties":{"result":{"const":"PASS"}}},"then":{"properties":{"artifact_authentication":{"$ref":"#/$defs/artifact_auth_pass"},"samples":{"$ref":"#/$defs/complete_samples"},"cleanup":{"$ref":"#/$defs/complete_cleanup"},"executed_results":{"properties":{"P2":{"const":"PASS"},"P3":{"const":"PASS"},"P4":{"const":"PASS"},"P5":{"const":"PASS"},"P8":{"const":"PASS"}}},"violations":{"maxItems":0}}}},
+    {"if":{"properties":{"result":{"const":"Core threshold decision required"}}},"then":{"properties":{"artifact_authentication":{"$ref":"#/$defs/artifact_auth_pass"},"samples":{"$ref":"#/$defs/complete_samples"},"cleanup":{"$ref":"#/$defs/complete_cleanup"},"executed_results":{"properties":{"P2":{"const":"PASS"},"P3":{"const":"PASS"},"P4":{"const":"Core threshold decision required"},"P5":{"const":"PASS"},"P8":{"const":"PASS"}}},"provisional_eligibility":{"const":"PENDING"},"violations":{"maxItems":0}}}},
+    {"if":{"properties":{"result":{"const":"FAIL"}}},"then":{"properties":{"executed_results":{"anyOf":[{"properties":{"P2":{"const":"FAIL"}}},{"properties":{"P3":{"const":"FAIL"}}},{"properties":{"P4":{"const":"FAIL"}}},{"properties":{"P5":{"const":"FAIL"}}},{"properties":{"P8":{"const":"FAIL"}}}]},"provisional_eligibility":{"const":"NOT_ELIGIBLE"}}}},
+    {"if":{"properties":{"candidate_id":{"const":"CAND-LRT-G4E2B-MOBILE-R1"},"result":{"const":"PASS"}}},"then":{"properties":{"provisional_eligibility":{"const":"ELIGIBLE_FOR_USER_REVIEW"}}}},
+    {"if":{"properties":{"candidate_id":{"const":"CAND-LRT-Q25-15B-Q8-R1"},"result":{"const":"PASS"}}},"then":{"properties":{"provisional_eligibility":{"const":"WORKAROUND_DISPOSITION_REQUIRED"}}}}
+  ]
+}

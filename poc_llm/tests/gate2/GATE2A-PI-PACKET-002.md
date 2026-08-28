@@ -1,9 +1,9 @@
 # GATE2A-PI-PACKET-002 — Cumulative Remaining LLM-only Validation
 
 - **Packet ID**: `G2A-PI-LLM-002`
-- **Revision**: `2026-08-26-r2`
-- **Status**: `REVIEW FINDINGS REVISED / RE-REVIEW REQUIRED / NOT AUTHORIZED`
-- **Entry receipt**: Core-accepted `G1-PI-COMPAT-007` cumulative receipt
+- **Revision**: `2026-08-28-r3-executable-cumulative`
+- **Status**: `EXECUTABLE CANDIDATE / USER REVIEW REQUIRED / NOT AUTHORIZED`
+- **Entry receipt**: `G1-M4B-CLOSURE-001`, bound to the Core-accepted Gate 1 closure ACK
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
 - **Formal credit carried from Gate 1**: M4B-P1, P6, P7, P10A, P11, P12
 - **Outcome ceiling**: provisional finalist; never final winner
@@ -29,9 +29,12 @@ against the model on the physical Pi in this packet.
 
 ### G2A-WP01 — P2/P3 product result contract and log hygiene
 
-Run the ten model-backed valid catalog cases three hot repetitions each through one persistent Engine.
-Require exact product-schema output and the frozen expected action/tool disposition for all 30 model
-results. Run each of the ten invalid/raw-output fixtures three deterministic repetitions at the
+Run the ten model-backed valid catalog cases three hot repetitions each through one persistent Engine
+using the predeclared 128-input/64-output product profile; the Gate 1 16-token minimal/performance
+profile is not a valid product-JSON envelope. Require exact product-schema output and the frozen
+expected action/tool disposition for all 30 model results. A normal valid case that resolves to the
+frozen P5 fallback is not credited as a valid model answer. Run each of the ten invalid/raw-output
+fixtures three deterministic repetitions at the
 reference normalizer boundary; require the documented fallback and no exception for all 30 boundary
 results. Scan all owned logs for prompt, raw output, payload, credential, endpoint, hidden-context and
 fixture-marker leakage. One failure is P2/P3 `FAIL`; no averaging.
@@ -48,7 +51,9 @@ decode P50 >=4 tok/s is P4 `PASS`; a complete method below target is
 
 Use `M4B-P5-CONTINUOUS-TIMEOUT-002` on the Pi as one outer protocol operation with one frozen
 15-second timer. Inside that operation, execute the same public extreme input in consecutive real
-model chunks of at most 512 output tokens. Completion/EOS of any chunk has the predeclared
+model chunks of at most 512 output tokens. Gemma uses 512-token chunks at frozen Engine capacity
+1024; Qwen uses 256-token chunks at frozen Engine capacity 512 so the rendered prompt and output
+remain inside its accepted capacity. Completion/EOS of any chunk has the predeclared
 disposition `CONTINUE`: immediately start the identical next chunk under the original timer and
 never emit `RESULT`. This continuous-chunk rule is fixed before candidate execution and is neither
 an adaptive fixture nor a result-dependent retry.
@@ -63,10 +68,11 @@ accepted.
 
 ### G2A-WP04 — P8 history isolation
 
-Run five frozen nonce/trap single-turn requests through one resident Engine, creating a new
-conversation each time. Require no prior nonce/trap reproduction, no KV/context accumulation beyond
-the fixed envelope, schema-valid terminals and final zero residue. Store hashes and dispositions,
-never model text.
+Run five frozen nonce/trap single-turn requests through one resident Engine with the same
+128-input/64-output product profile, creating a new conversation each time. Require the current
+nonce exactly once, the current trap absent, no prior nonce/trap reproduction, no KV/context
+accumulation beyond the fixed envelope, schema-valid terminals and final zero residue. Store hashes
+and dispositions, never model text.
 
 ### G2A-WP05 — cumulative provisional decision
 
@@ -81,15 +87,34 @@ candidate is recommended after User review.
 
 - Reuse the Gate 1 read-only model receipt and execution-surface digest; do not perform a routine
   multi-gigabyte rehash or require the later documentation commit to equal the Gate 1 Git SHA.
-- P2/P3 share one Engine; invalid P3 fixtures never invoke the model.
+- P2 uses one product-profile Engine; invalid P3 fixtures never invoke the model.
 - P4 retains only the samples required by its formal method.
 - P5 and P8 each use one purpose-specific lifecycle plus only their mandated rebuild/cleanup.
 - Do not run P1/P6/P7/P10A/P11/P12 again unless their bound identity changed.
 
 ## 4. Evidence and reviewer gate
 
-The final executable revision must bind a runner, cumulative-receipt schema, configs, catalog,
+The final executable revision must bind a runner, cumulative-receipt schema, separate frozen
+16-output performance and 64-output product configs, catalog,
 `p5-continuous-timeout-002.json`, P8 fixtures, result schema and all checksums. Its entry verifier
 must execute an ancestor check plus lock/component digest comparison; direct Gate 1/current `HEAD`
 equality is forbidden. Raw model text remains outside Git. Reviewer approval is required before
 commit/push, Core delivery or Pi execution.
+
+The executable candidate is `run_gate2a_pi_v2.py`, authenticated by
+`gate2a-pi-lock-v2.json`. It accepts one candidate and one prior Gate 1 artifact-authentication
+receipt per reboot-isolated run. The artifact receipt is checked by schema, Gate 1 execution SHA,
+candidate/runtime/model identity and current filesystem metadata; the model contents are not
+rehash-read. The runner executes only P2/P3/P4/P5/P8, stores no model text, and retains Qwen P7.1
+as `FAIL` in both its entry and result schemas.
+
+After review, run one command after each clean reboot, substituting the accepted receipt path and
+the exact clean execution SHA:
+
+```sh
+unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-G4E2B-MOBILE-R1 --execution-sha <execution-sha> --run-id G2A-PI-GEMMA-001 --evidence-root <controlled-evidence-root-outside-git>
+unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-001 --evidence-root <controlled-evidence-root-outside-git>
+```
+
+Workstation definition verification for this revision is 42/42 Gate 2 tests plus 136/136 Gate 1
+regressions. These results authenticate the executable design only and provide no Pi P credit.

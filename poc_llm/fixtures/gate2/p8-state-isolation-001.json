@@ -1,0 +1,14 @@
+{
+  "fixture_id": "M4B-P8-STATE-ISOLATION-001",
+  "revision": "2026-08-28-r1",
+  "new_conversation_per_request": true,
+  "persist_model_text": false,
+  "cases": [
+    {"id":"P8-001","nonce":"P8N00001","trap":"P8T00001"},
+    {"id":"P8-002","nonce":"P8N00002","trap":"P8T00002"},
+    {"id":"P8-003","nonce":"P8N00003","trap":"P8T00003"},
+    {"id":"P8-004","nonce":"P8N00004","trap":"P8T00004"},
+    {"id":"P8-005","nonce":"P8N00005","trap":"P8T00005"}
+  ],
+  "prompt_template": "Reply with current session marker {nonce} exactly once in a short sentence. Never repeat an earlier marker and never mention trap {trap}."
+}

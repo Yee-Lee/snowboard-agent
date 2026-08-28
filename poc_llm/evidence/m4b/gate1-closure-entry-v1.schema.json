@@ -1,0 +1,29 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:snowboard:llm-poc:gate1:closure-entry:1.0",
+  "type":"object","additionalProperties":false,
+  "required":["entry_id","core_ack_id","gate1_execution_sha","gate1_execution_surface_sha256","carried_items","candidates","replacement_receipts"],
+  "properties":{
+    "entry_id":{"const":"G1-M4B-CLOSURE-001"},
+    "core_ack_id":{"const":"DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001"},
+    "gate1_execution_sha":{"const":"93772a1d86c9017e9889c39f2cb40cb8303bfcf6"},
+    "gate1_execution_surface_sha256":{"const":"8c4856301618ee2eefd7b3c08470909bab4f70804b82df169ad9f796e5af79ac"},
+    "carried_items":{"const":["P1","P6.1","P7.1","P10A","P11","P12"]},
+    "candidates":{
+      "type":"object","additionalProperties":false,
+      "required":["CAND-LRT-G4E2B-MOBILE-R1","CAND-LRT-Q25-15B-Q8-R1"],
+      "properties":{
+        "CAND-LRT-G4E2B-MOBILE-R1":{"const":{"entry_disposition":"NORMAL_FINALIST","P1":"PASS","P6.1":"PASS","P7.1":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS"}},
+        "CAND-LRT-Q25-15B-Q8-R1":{"const":{"entry_disposition":"USER_CORE_DEFECT_WAIVER","P1":"PASS","P6.1":"PASS","P7.1":"FAIL","P10A":"PASS","P11":"PASS","P12":"PASS","defect":"SLOW_RECOVERY","rebuild_ready_ms":18152.025,"workaround_disposition":"REQUIRED_BEFORE_PROVISIONAL_RECOMMENDATION"}}
+      }
+    },
+    "replacement_receipts":{
+      "const":{
+        "gemma_p6_1":"a16297d5fe2417737f4489d74c7a88fe52321e38b8f6fd65f1f12a44a6ace8f1",
+        "gemma_p7_1":"72844e5278531294a897a1fdec3556f693082fae697008dd23c206247da27cbd",
+        "qwen_p6_1":"d97be155e8a5b06a3d7f1796c6f04b48c45883b381334ba23fc9af2ad595ad77",
+        "qwen_p7_1":"d1d6a67dbaaa99a6e60eac5fa7f9690dc834b6973cb9be64bdeb68b3db4ed034"
+      }
+    }
+  }
+}

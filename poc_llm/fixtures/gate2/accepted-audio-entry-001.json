@@ -1,0 +1,26 @@
+{
+  "entry_id":"AUDIO-M4-ACCEPTED-001",
+  "delivery_id":"POC-audio-DEL-2026-001-R1",
+  "tag":"audio_m4",
+  "tag_object_sha":"24b2571a23dde2f77027242b61142b0c1a59924c",
+  "completion_sha":"5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
+  "corrected_delivery_sha":"ca51bce9b4e205d9c9faf004d41c27169f108a3f",
+  "p9_combined_execution_sha":"8be3bc095b504b8eab1dfeb21b94173728b9656f",
+  "failure_execution_sha":"26f33a3c371eee61df46924432839d0fa9ee3bf8",
+  "core_hal_execution_sha":"6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf",
+  "core_response_id":"RESP-AUDIO-M4-GATE2B-001",
+  "core_response_sha":"be19b70b1dd91674e7ff981eb9d6b2dca9741f54",
+  "manifest_sha256":"74e2737f5c965d1691a130176e6e0955dec207134d00686212de4cad60404fad",
+  "conformance_kit":{
+    "packet_sha256":"07bba2fc704ed3983d1d86fc8b196918967861ad4a5adfe3a1ccd397a0470ce3",
+    "packet_schema_sha256":"b2c53a0d6f1756366cbcf924fbf41617b3c52c96eb11e49a0189d493ad621562",
+    "result_schema_sha256":"6ef20573779d2b9b7a2c72e31cd7b238267674178c3f2dfa0eee14bdf8bd3ca3",
+    "runner_sha256":"ecc2322c7b220b1c16e7cf5af1d70899a7cef6df6d69f77446a3b284233d253a"
+  },
+  "finalists":{
+    "vad":{"id":"vad-silero-onnx-6.2.1","model_sha256":"1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"},
+    "asr":{"id":"asr-whispercpp-base-q8_0-1.9.2-m2b","model_sha256":"c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"},
+    "tts":{"id":"tts-sherpa-matcha-zh-en-1.13.5","archive_sha256":"271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef","vocoder_sha256":"b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"}
+  },
+  "status":"POC_ACCEPTED_M4_COMPLETE"
+}

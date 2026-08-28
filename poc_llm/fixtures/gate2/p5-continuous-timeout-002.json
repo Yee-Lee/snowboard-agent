@@ -4,6 +4,10 @@
   "profile": "p5-continuous-chunks-v1",
   "max_input_tokens": 128,
   "chunk_max_output_tokens": 512,
+  "candidate_chunk_max_output_tokens": {
+    "CAND-LRT-G4E2B-MOBILE-R1": 512,
+    "CAND-LRT-Q25-15B-Q8-R1": 256
+  },
   "timeout_ms": 15000,
   "timeout_pass_window_ms": [15000, 17000],
   "continuation_rule": "repeat_same_chunk_until_outer_timeout",

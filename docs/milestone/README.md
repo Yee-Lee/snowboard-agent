@@ -2,11 +2,11 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-08-27
+最後更新：2026-08-28
 
 ## Current reachability
 
-狀態：`GATE1 CLOSED / GATE2A ENTRY READY`。
+狀態：`GATE1 CLOSED / GATE2 EXECUTABLES COMMITTED / READY FOR PI EXECUTION`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -27,8 +27,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
-| Gate 2A | `ENTRY READY / NOT_STARTED` | P2, P3, P4, P5, P8 | both candidates；review executable packet before Pi execution |
-| Gate 2B | `BLOCKED` | P9, P10B | Accepted Audio kit + 4GB combined PASS；Core final winner ACK |
+| Gate 2A | `READY FOR PI EXECUTION / NOT_STARTED` | P2, P3, P4, P5, P8 | 002 executable candidate reviewed and committed；ready to execute on Pi |
+| Gate 2B | `READY FOR PI EXECUTION / NOT_STARTED` | P9, P10B | real Audio→LLM→Audio runner/lock reviewed and committed；ready to execute on Pi after 2A |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -40,8 +40,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
-| M3 | `REDESIGNED / NOT_STARTED` | Gate 2A `002`：只補P2/P3/P4/P5/P8 |
-| M4 | `REDESIGNED / BLOCKED` | Gate 2B `001`：P9/P10B；缺Accepted Audio |
+| M3 | `READY FOR PI EXECUTION / NOT_STARTED` | 002 runner/lock/schema reviewed and committed；ready for Pi credit |
+| M4 | `READY FOR PI EXECUTION / NOT_STARTED` | Accepted Audio與combined runner reviewed and committed；ready for Pi credit after M3 |
 
 ## Cumulative P1～P12 rule
 
@@ -69,7 +69,11 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - **P4**：完整方法未達negotiable target需Core written decision。
 - **P5**：固定continuous 512-token chunks共用單一outer timer；chunk完成固定CONTINUE，禁止
   early RESULT及結果後adaptive fixture。
-- **Accepted Audio**：Gate 2B仍缺Core-recorded final handoff ID/SHA/executable kit。
+- **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
+  `5694ead4…`與Core acceptance
+  `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認；Pi上實體artifact staging與LLM combined
+  runner已在worktree完成且Gate 2 suite 42/42；Pi實體artifact staging與review仍待完成，不把
+  既有Audio-only PASS誤作M4B P9/P10B credit。
 - **Evidence safety**：不commit model、wheel、native binary、raw output、prompt/payload、credential或endpoint。
 
 ## Active packets
@@ -85,6 +89,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [Gate 1 cumulative User review](../response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-20260827-USER-REVIEW.md)
 - [Gate 1 P6.1/P7.1 User review](../response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md)
 - [Gate 1 runner lessons](../response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md)
+- [Gate 2A entry audit](../response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md)
 - [Gate 1 closure delivery draft](../delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md)
 
 ## Governing and historical inputs

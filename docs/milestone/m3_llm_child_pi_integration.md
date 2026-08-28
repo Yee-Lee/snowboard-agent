@@ -1,6 +1,6 @@
 # LLM M3：Gate 2A Remaining LLM-only Pi Validation
 
-狀態：`ENTRY READY / EXECUTABLE PACKET REVIEW / NOT_STARTED`
+狀態：`READY FOR PI EXECUTION / NOT_STARTED`
 
 ## Goal
 
@@ -14,6 +14,13 @@ defect waiver保留candidate資格且P7.1維持FAIL。2A最多提出一名provis
 - Gate 1 execution commit為current clean checkout的ancestor；execution-surface lock、shared
   component、Pi與environment identity未漂移。Evidence/docs commit不要求Git SHA equality。
 - `G2A-PI-LLM-002` executable revision、Reviewer/User/Core review與Pi authorization就緒。
+
+2026-08-27 entry audit發現舊`001` executable無法執行accepted `002` scope。2026-08-28已在
+worktree建立`run_gate2a_pi_v2.py`、`gate2a-pi-lock-v2.json`、cumulative entry/result schemas、
+candidate-specific P5 adapter/config、64-output product profile與P8 fixture；目前完整Gate 2
+suite 42/42、Gate 1 regression 136/136。
+這只解除implementation gap，尚待review/commit，未產生Pi credit。完整追蹤見
+`docs/response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`。
 
 ## Work
 
