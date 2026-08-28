@@ -1,7 +1,7 @@
 ---
 requestor: "Tester"
 owner: "Developer"
-status: "Revised"
+status: "Rejected"
 ---
 
 # TR_dev_M4_I — M4A Gate 3 candidate rejection
@@ -128,3 +128,44 @@ Because protected product/test inputs require correction, create a new append-on
 ### Candidate handoff
 
 Protected source, test and runner inputs changed, so rejected SHA `306dbc96585d1eef55ba0c6380e2eeceaa2057fc` is not reused or rewritten. A new append-only provisional candidate commit remains pending the final exact commit confirmation. After its full SHA exists, Developer must first repeat the Pi diagnostic from that clean exact SHA; only then is it handed to Tester for the complete CPython 3.11/3.12/3.13 portable matrix and one fresh Pi build/install/preflight/acceptance run. No Developer diagnostic output is formal evidence.
+
+## Tester re-verification — Rejected
+
+### Candidate and gate result
+
+- New append-only candidate: `ed1b2cf57581d48966a7dd6535c024ea51922b28`.
+- Tester portable run: `m4a-ed1b2cf-20260828-p02`.
+- CPython 3.11.16: **Fail** — 166 passed, 1 failed, 0 skipped/xfailed.
+- CPython 3.12.3 and 3.13.15: Pass — 167 passed each, 0 failed/skipped/xfailed.
+- Candidate-runner regression: 14 passed. Adjacent `not rpi` regression: 451 passed, 28 deselected.
+- Formal matrix is **Fail**, so target preflight and acceptance were correctly not started.
+- The Pi was rebooted as requested. Boot ID `85777d3e-7dda-4ff5-8190-cc03901959f6` had zero candidate processes, ALSA holders and ASR/TTS temp entries; this clean target remains unused by acceptance.
+- Sanitized evidence summary: `docs/outsource/evidence/M4A-TESTER-ED1B2CF-20260828/README.md`.
+
+### TRDEV-M4A-001, TRDEV-M4A-003 and TRDEV-M4A-004
+
+The new portable regressions for finite-input convergence, production OpenBLAS policy and deferred cancellation all pass on the three supported Python minors. Their required real-device dispositions remain Pending because the portable entry gate failed; they are not reopened or promoted to Pass.
+
+### TRDEV-M4A-002 — Rejected: Python 3.11 actual-process exit oracle is nondeterministic
+
+- **Contract / Test ID:** `M4A-IPC-001`; `docs/protocol.md` §2.2 and `test_spec_M4.md` require `READY → SHUTDOWN → SHUTDOWN_ACK → STOPPED` plus bounded parent waitpid. The portable matrix requires zero Fail on CPython 3.11/3.12/3.13.
+- **Formal reproduction:** with host `PYTHONPATH` removed and third-party pytest autoload disabled, run candidate `ed1b2cf57581d48966a7dd6535c024ea51922b28` through `candidate_gate.py portable --python 3.11 --suite tests/m4a_portable_suite.txt --timeout-seconds 120`. `test_m4a_ipc_001_actual_asr_process_handles_coalesced_and_fragmented_input[False]` receives `FRAME_ACCEPTED`, `ENDPOINT`, nonempty `RESULT` and `SHUTDOWN_ACK`, then `asyncio.wait_for(process.wait(), timeout=5)` raises `TimeoutError`.
+- **Repeatability:** the unchanged node passes twice and fails on the third independent run. This is a reproducible false-green risk, not a one-off result eligible for retry promotion. Under `strace` it passes 5/5, confirming timing sensitivity.
+- **Root cause evidence:** a Tester-only wrapper around `asyncio.subprocess.Process.wait()` records, at cancellation after 5.007 seconds, `process.returncode=0` and `/proc/<pid>` absent. The child was already reaped; Python 3.11's asyncio subprocess transport waiter remained pending on its pipe callbacks. Replacing `wait()` with bounded `communicate()` still fails on iteration 9, so pipe draining does not resolve this runtime behavior.
+- **Expected / actual:** expected a deterministic portable proof that the real child is reaped within the bound; actual test intermittently fails after proving the child already exited zero. This prevents a valid three-version matrix and therefore blocks Pi acceptance.
+- **Exact correction:** keep every protocol assertion unchanged, but replace the final `Process.wait()` oracle with a bounded poll of `process.returncode`. Asyncio sets that property only after its child watcher processes waitpid, so this proves reaping without depending on the delayed transport waiter. The following disposable patch passes the failing node 20/20 on CPython 3.11, all four affected files (`66 passed`) and the complete M4A manifest (`167 passed`):
+
+```diff
+@@
+-            assert await asyncio.wait_for(process.wait(), timeout=5) == 0
++            deadline = asyncio.get_running_loop().time() + 5
++            while (
++                process.returncode is None
++                and asyncio.get_running_loop().time() < deadline
++            ):
++                await asyncio.sleep(0.01)
++            assert process.returncode == 0
+```
+
+- **Do not apply:** moving `executor.shutdown(wait=True)` before `SHUTDOWN_ACK` and switching to bounded `process.communicate()` were both tested in disposable copies and still reproduced the failure; they are not acceptable fixes for this finding.
+- **Minimum re-verification:** create a new append-only candidate containing only the test-oracle correction and any directly required documentation. On CPython 3.11, run the exact no-delay node 20 independent times, then all four affected files. Finally rerun a new complete candidate-gate portable matrix on CPython 3.11/3.12/3.13. Only a zero-Fail/Skip/XFail matrix may enter fresh Pi product/preflight/acceptance.
