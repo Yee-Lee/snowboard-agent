@@ -48,16 +48,12 @@ from poc_llm.harness.pi_runtime import (
     stop,
     target_preflight,
 )
-from poc_llm.harness.pi_runtime_v2 import native_library_preflight_v2
-from poc_llm.tools.run_gate1_pi_compat_v7 import close_child, generate, start_child
+from poc_llm.harness.pi_runtime_v2 import native_library_preflight_v2, require_ready_v2
+from poc_llm.tools.run_gate1_pi_compat_v7 import close_child, generate
 from poc_llm.tools.run_gate2a_pi_v2 import verify_gate2a_result
 
 
 PACKET_ID = "G2B-PI-COMBINED-001"
-CANDIDATES = (
-    "CAND-LRT-G4E2B-MOBILE-R1",
-    "CAND-LRT-Q25-15B-Q8-R1",
-)
 RUN_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 EXPECTED_AUDIO_SESSIONS = [f"M4-SESSION-{index:02d}" for index in range(1, 21)]
 FORBIDDEN_LOG = (
@@ -91,6 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--core-root", type=Path, required=True)
     parser.add_argument("--audio-fixture-dir", type=Path, required=True)
     parser.add_argument("--audio-fixture-lock", type=Path, required=True)
+    parser.add_argument("--audio-fixture-manifest", type=Path, required=True)
     parser.add_argument("--audio-artifact-dir", type=Path, required=True)
     parser.add_argument("--audio-runtime-python", type=Path, required=True)
     parser.add_argument("--audio-asr-binary", type=Path, required=True)
@@ -114,6 +111,59 @@ def repo_artifact(item: dict[str, str]) -> Path:
     if not path.is_file() or streaming_digest(path) != item["sha256"]:
         raise PiPacketFailure(f"locked repository artifact mismatch: {item['path']}")
     return path
+
+
+def start_gate2b_child(
+    *,
+    adapter: Path,
+    config: Path,
+    config_sha256: str,
+    config_value: dict[str, Any],
+    config_schema: Path,
+    protocol_schema: Path,
+    prompt_schema: Path,
+    response_schema: Path,
+    receipt: Path,
+    receipt_schema: Path,
+    install_root: Path,
+    validator: Draft202012Validator,
+    stderr: TextIO,
+) -> tuple[subprocess.Popen[str], float]:
+    """Launch only the frozen Gate 2B prompt adapter."""
+
+    argv = [
+        "env", f"PYTHONPATH={install_root}", "python3", str(adapter),
+        "--config", str(config), "--config-sha256", config_sha256,
+        "--config-schema", str(config_schema),
+        "--config-schema-sha256", streaming_digest(config_schema),
+        "--protocol-schema", str(protocol_schema),
+        "--protocol-schema-sha256", streaming_digest(protocol_schema),
+        "--prompt-schema", str(prompt_schema),
+        "--prompt-schema-sha256", streaming_digest(prompt_schema),
+        "--response-schema", str(response_schema),
+        "--response-schema-sha256", streaming_digest(response_schema),
+        "--artifact-receipt", str(receipt),
+        "--artifact-receipt-sha256", streaming_digest(receipt),
+        "--artifact-receipt-schema", str(receipt_schema),
+        "--artifact-receipt-schema-sha256", streaming_digest(receipt_schema),
+    ]
+    started = time.monotonic()
+    process = subprocess.Popen(
+        argv,
+        cwd=ROOT,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=stderr,
+        text=True,
+        start_new_session=True,
+        env={**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"},
+    )
+    try:
+        require_ready_v2(process, validator, config_value, config_sha256)
+    except Exception:
+        stop(process)
+        raise
+    return process, round((time.monotonic() - started) * 1000, 3)
 
 
 def git_output(root: Path, *args: str) -> str:
@@ -189,6 +239,123 @@ def verify_audio_kit(audio_root: Path, accepted: dict[str, Any]) -> dict[str, An
         "manifest_sha256": accepted["manifest_sha256"],
         "status": manifest["status"],
     }
+
+
+def verify_audio_runtime(
+    runtime_python: Path, expected: dict[str, Any]
+) -> dict[str, Any]:
+    """Authenticate one accepted isolated Audio runtime before residency timing."""
+
+    venv_config = runtime_python.parent.parent / "pyvenv.cfg"
+    if (
+        not runtime_python.is_file()
+        or not venv_config.is_file()
+        or "include-system-site-packages = false"
+        not in venv_config.read_text(encoding="utf-8")
+    ):
+        raise PiPacketFailure("Accepted Audio runtime isolation mismatch")
+    probe = subprocess.run(
+        [
+            str(runtime_python),
+            "-c",
+            (
+                "import importlib.metadata as m,json,platform,sys;"
+                "print(json.dumps({'package':sys.argv[1],"
+                "'version':m.version(sys.argv[1]),"
+                "'python_version':platform.python_version(),"
+                "'isolated':sys.prefix!=sys.base_prefix},sort_keys=True))"
+            ),
+            expected["package"],
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={
+            **os.environ,
+            "PIP_NO_INDEX":"1",
+            "HF_HUB_OFFLINE":"1",
+            "TRANSFORMERS_OFFLINE":"1",
+            "NO_PROXY":"*",
+        },
+    )
+    try:
+        observed = json.loads(probe.stdout)
+    except (json.JSONDecodeError, TypeError) as error:
+        raise PiPacketFailure("Accepted Audio runtime identity probe failed") from error
+    if probe.returncode != 0 or observed != expected:
+        raise PiPacketFailure("Accepted Audio runtime identity mismatch")
+    return observed
+
+
+def verify_audio_controlled_inputs(
+    *,
+    fixture_lock: Path,
+    fixture_manifest: Path,
+    artifact_dir: Path,
+    tts_runtime_python: Path,
+    asr_binary: Path,
+    asr_model: Path,
+    vad_runtime_python: Path,
+    vad_model: Path,
+    accepted: dict[str, Any],
+) -> dict[str, Any]:
+    """Pin every external Audio input before any model becomes resident."""
+
+    controlled = accepted["controlled_inputs"]
+    finalists = accepted["finalists"]
+    expected_files = {
+        "fixture_lock_sha256": (fixture_lock, controlled["fixture_lock_sha256"]),
+        "fixture_manifest_sha256": (
+            fixture_manifest,
+            controlled["delivered_fixture_manifest_sha256"],
+        ),
+        "vad_model_sha256": (vad_model, finalists["vad"]["model_sha256"]),
+        "asr_binary_sha256": (
+            asr_binary,
+            finalists["asr"]["worker_binary_sha256"],
+        ),
+        "asr_model_sha256": (asr_model, finalists["asr"]["model_sha256"]),
+        "tts_archive_sha256": (
+            artifact_dir / "models/matcha-icefall-zh-en.tar.bz2",
+            finalists["tts"]["archive_sha256"],
+        ),
+        "tts_vocoder_sha256": (
+            artifact_dir / "models/vocos-16khz-univ.onnx",
+            finalists["tts"]["vocoder_sha256"],
+        ),
+    }
+    observed: dict[str, Any] = {}
+    for name, (path, expected_sha256) in expected_files.items():
+        if not path.is_file() or streaming_digest(path) != expected_sha256:
+            raise PiPacketFailure(f"Accepted Audio controlled input mismatch: {name}")
+        observed[name] = expected_sha256
+
+    lock = load(fixture_lock)
+    delivered = load(fixture_manifest)
+    lock_records = lock.get("records", [])
+    delivered_records = delivered.get("records", {})
+    if (
+        lock.get("audio_execution_sha") != accepted["p9_combined_execution_sha"]
+        or lock.get("fixture_count") != controlled["fixture_count"]
+        or [item.get("session_id") for item in lock_records]
+        != EXPECTED_AUDIO_SESSIONS
+        or not isinstance(delivered_records, dict)
+        or any(
+            delivered_records.get(item.get("fixture_id"), {}).get("derived_sha256")
+            != item.get("sha256")
+            for item in lock_records
+        )
+    ):
+        raise PiPacketFailure("Accepted Audio fixture provenance mismatch")
+    observed["fixture_count"] = len(lock_records)
+    observed["vad_runtime"] = verify_audio_runtime(
+        vad_runtime_python, accepted["runtimes"]["vad"]
+    )
+    observed["tts_runtime"] = verify_audio_runtime(
+        tts_runtime_python, accepted["runtimes"]["tts"]
+    )
+    return observed
 
 
 def verify_gate2a_entry(
@@ -296,11 +463,14 @@ class TranscriptAsrDomain:
         worker = self.accepted.worker
         bounded = session.get("bounded_wav")
         if worker is None or not isinstance(bounded, Path) or not bounded.is_file():
-            raise RuntimeError("Gate 2B accepted ASR is unavailable")
-        metrics = worker.transcribe(bounded, self.accepted.timeout)
+            raise CandidateViolation("Gate 2B accepted ASR is unavailable after READY")
+        try:
+            metrics = worker.transcribe(bounded, self.accepted.timeout)
+        except Exception as error:
+            raise CandidateViolation("Gate 2B accepted ASR session failed") from error
         transcript = str(metrics.pop("hypothesis"))
         if not transcript.strip():
-            raise RuntimeError("Gate 2B accepted ASR returned an empty transcript")
+            raise CandidateViolation("Gate 2B accepted ASR returned an empty transcript")
         return {
             "session_id": session["session_id"],
             "terminal": "SUCCESS",
@@ -308,6 +478,31 @@ class TranscriptAsrDomain:
             "transcript_sha256": hashlib.sha256(transcript.encode("utf-8")).hexdigest(),
             "latency_ms": metrics["latency_ms"],
         }
+
+
+class ScoredAudioDomain:
+    """Classify an accepted Audio domain's post-READY session fault as P10B behavior."""
+
+    def __init__(self, name: str, accepted_domain: Any) -> None:
+        self.name = name
+        self.accepted = accepted_domain
+
+    async def start(self) -> None:
+        await self.accepted.start()
+
+    async def stop(self) -> None:
+        await self.accepted.stop()
+
+    def residency_identity(self) -> dict[str, Any]:
+        return self.accepted.residency_identity()
+
+    async def run(self, session: dict[str, Any]) -> dict[str, Any]:
+        try:
+            return await self.accepted.run(session)
+        except Exception as error:
+            raise CandidateViolation(
+                f"Gate 2B accepted {self.name} session failed"
+            ) from error
 
 
 class CombinedLlmDomain:
@@ -329,7 +524,7 @@ class CombinedLlmDomain:
 
     async def start(self) -> None:
         self.process, self.ready_ms = await asyncio.to_thread(
-            start_child, **self.common, stderr=self.stderr
+            start_gate2b_child, **self.common, stderr=self.stderr
         )
 
     def residency_identity(self) -> dict[str, Any]:
@@ -515,6 +710,7 @@ def initial_result(args: argparse.Namespace) -> dict[str, Any]:
         "packet_id": PACKET_ID,
         "run_id": args.run_id,
         "candidate_id": "UNKNOWN",
+        "integration_pairing_revision": "",
         "execution_sha": args.execution_sha,
         "execution_surface_sha256": "",
         "gate2a_receipt_sha256": "",
@@ -669,7 +865,8 @@ def main() -> int:
             raise PiPacketFailure("Gate 2B controlled evidence must remain outside Git")
         audio_root_resolved = args.audio_root.resolve()
         for path in (
-            args.audio_fixture_dir, args.audio_fixture_lock, args.audio_artifact_dir,
+            args.audio_fixture_dir, args.audio_fixture_lock,
+            args.audio_fixture_manifest, args.audio_artifact_dir,
         ):
             if path.resolve().is_relative_to(audio_root_resolved):
                 raise PiPacketFailure("Gate 2B controlled Audio input must remain outside Git")
@@ -718,10 +915,23 @@ def main() -> int:
         result["accepted_audio"] = {
             **verify_external_checkouts(args.audio_root, args.core_root, accepted),
             **verify_audio_kit(args.audio_root, accepted),
+            **verify_audio_controlled_inputs(
+                fixture_lock=args.audio_fixture_lock,
+                fixture_manifest=args.audio_fixture_manifest,
+                artifact_dir=args.audio_artifact_dir,
+                tts_runtime_python=args.audio_runtime_python,
+                asr_binary=args.audio_asr_binary,
+                asr_model=args.audio_asr_model,
+                vad_runtime_python=args.audio_vad_runtime_python,
+                vad_model=args.audio_vad_model,
+                accepted=accepted,
+            ),
             "core_response_id": accepted["core_response_id"],
             "core_response_sha": accepted["core_response_sha"],
         }
 
+        if args.gate2a_receipt.resolve() != artifacts["gate2a_receipt"]:
+            raise PiPacketFailure("Gate 2A model-finalist receipt path mismatch")
         gate2a, _gate2a_result = verify_gate2a_entry(
             args.gate2a_receipt,
             args.gate2a_result,
@@ -776,6 +986,14 @@ def main() -> int:
 
         product_config = repo_artifact(candidate["product_config"])
         standard_value = load(product_config)
+        if (
+            standard_value["pairing_revision"]
+            != gate2a["selection"]["gate2b_pairing_revision"]
+            or candidate["product_config"]["sha256"]
+            != gate2a["selection"]["gate2b_product_config_sha256"]
+        ):
+            raise PiPacketFailure("Gate 2B integration revision mismatch")
+        result["integration_pairing_revision"] = standard_value["pairing_revision"]
         receipt_schema = artifacts["artifact_receipt_schema"]
         receipt = load(args.artifact_receipt)
         if not Draft202012Validator(load(receipt_schema)).is_valid(receipt):
@@ -814,18 +1032,24 @@ def main() -> int:
         audio, audio_config = bindings["make_alsa_config"](
             args.core_root, args.input_device, args.output_device, args.input_channel
         )
-        vad = bindings["PersistentVadDomain"](
-            args.audio_root, args.audio_vad_runtime_python, args.audio_vad_model,
-            work_dir / "vad-bounded", args.operation_timeout,
+        vad = ScoredAudioDomain(
+            "VAD",
+            bindings["PersistentVadDomain"](
+                args.audio_root, args.audio_vad_runtime_python, args.audio_vad_model,
+                work_dir / "vad-bounded", args.operation_timeout,
+            ),
         )
         accepted_asr = bindings["PersistentAsrDomain"](
             args.audio_asr_binary, args.audio_asr_model,
             work_dir / "asr", args.operation_timeout,
         )
         asr = TranscriptAsrDomain(accepted_asr)
-        tts = bindings["PersistentTtsDomain"](
-            args.audio_root, args.audio_artifact_dir, args.audio_runtime_python,
-            work_dir / "tts", audio, audio_config, args.operation_timeout,
+        tts = ScoredAudioDomain(
+            "TTS",
+            bindings["PersistentTtsDomain"](
+                args.audio_root, args.audio_artifact_dir, args.audio_runtime_python,
+                work_dir / "tts", audio, audio_config, args.operation_timeout,
+            ),
         )
 
         protocol = artifacts["protocol_schema"]
@@ -833,6 +1057,7 @@ def main() -> int:
         response_schema = artifacts["response_schema"]
         validator = protocol_validator(protocol, prompt_schema, response_schema)
         common = {
+            "adapter": artifacts["gate2b_adapter"],
             "config": product_config,
             "config_sha256": candidate["product_config"]["sha256"],
             "config_value": standard_value,
@@ -942,8 +1167,16 @@ def main() -> int:
             and all(process_absence.values())
             and result["cleanup"]["audio_device_owner_count"] == 0
         )
+        asr_stderr_path = work_dir / "asr/base-q8.stderr.log"
+        if not asr_stderr_path.is_file():
+            raise EvidenceInvalid("Gate 2B accepted ASR log is unavailable")
         hygiene = scan_owned_logs(
-            [raw_dir / "offline-install.stdout", raw_dir / "offline-install.stderr", llm_stderr_path],
+            [
+                raw_dir / "offline-install.stdout",
+                raw_dir / "offline-install.stderr",
+                llm_stderr_path,
+                asr_stderr_path,
+            ],
             llm_domain.log_markers,
         )
         result["log_hygiene"] = hygiene

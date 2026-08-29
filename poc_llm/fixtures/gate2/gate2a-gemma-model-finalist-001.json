@@ -1,0 +1,40 @@
+{
+  "receipt_version": "gate2a-model-finalist/1",
+  "packet_id": "G2A-PI-LLM-002",
+  "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+  "candidate_disposition": "USER_SELECTED_MODEL_FINALIST",
+  "execution_sha": "e2b59fac609e0d768ff3554754363900cbed70a9",
+  "execution_surface_sha256": "eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1",
+  "gate2a_lock_sha256": "eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1",
+  "candidate_result_sha256": "41f1d8e4f74bac25fd83a17fd0bdb776e9cb0bae1c4c04fdc345f378592681e7",
+  "artifact_receipt_sha256": "e2624656c6c9a298423ba2374785c121247254a5f984ea5228910119d2d37c6d",
+  "gate1_entry_sha256": "1d41436d3f3337267341ff8fa155f7be97d18659c8c5925909bac75187128a61",
+  "p_results": {
+    "P1": "PASS",
+    "P2": "FAIL",
+    "P3": "PASS",
+    "P4": "PASS",
+    "P5": "PASS",
+    "P6.1": "PASS",
+    "P7.1": "PASS",
+    "P8": "FAIL",
+    "P10A": "PASS",
+    "P11": "PASS",
+    "P12": "PASS"
+  },
+  "p8_qualifier": "DEPENDENCY_LIMITED_BY_P2",
+  "selection": {
+    "decision": "ADVANCE_MODEL_ONLY",
+    "current_product_baseline": "REJECTED",
+    "gate2b_pairing_revision": "litert-lm-v0.16.0-pi-g2b-r1",
+    "gate2b_product_config_sha256": "78d55bdee44bbc4f22b12533674f74026324c118127f8878a0a0072e3f9734cd",
+    "scoring_policy": "FIRST_MODEL_CONTACT_IS_HELD_OUT_GATE2B"
+  },
+  "user_review": {
+    "approved": true,
+    "review_id": "ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW"
+  },
+  "core_ack_id": null,
+  "core_ack_required_before_final_delivery": true,
+  "result": "MODEL_FINALIST_SELECTED"
+}

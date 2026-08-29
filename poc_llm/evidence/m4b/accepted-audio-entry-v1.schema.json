@@ -2,7 +2,7 @@
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "$id":"urn:snowboard:llm-poc:accepted-audio-entry:1.0",
   "type":"object","additionalProperties":false,
-  "required":["entry_id","delivery_id","tag","tag_object_sha","completion_sha","corrected_delivery_sha","p9_combined_execution_sha","failure_execution_sha","core_hal_execution_sha","core_response_id","core_response_sha","manifest_sha256","conformance_kit","finalists","status"],
+  "required":["entry_id","delivery_id","tag","tag_object_sha","completion_sha","corrected_delivery_sha","p9_combined_execution_sha","failure_execution_sha","core_hal_execution_sha","core_response_id","core_response_sha","manifest_sha256","conformance_kit","finalists","controlled_inputs","runtimes","status"],
   "properties":{
     "entry_id":{"const":"AUDIO-M4-ACCEPTED-001"},
     "delivery_id":{"const":"POC-audio-DEL-2026-001-R1"},
@@ -27,8 +27,21 @@
     "finalists":{
       "const":{
         "vad":{"id":"vad-silero-onnx-6.2.1","model_sha256":"1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"},
-        "asr":{"id":"asr-whispercpp-base-q8_0-1.9.2-m2b","model_sha256":"c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"},
+        "asr":{"id":"asr-whispercpp-base-q8_0-1.9.2-m2b","worker_binary_sha256":"64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b","model_sha256":"c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"},
         "tts":{"id":"tts-sherpa-matcha-zh-en-1.13.5","archive_sha256":"271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef","vocoder_sha256":"b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"}
+      }
+    },
+    "controlled_inputs":{
+      "const":{
+        "fixture_lock_sha256":"d7d3086c578511763b60074ef7c049e37ef814094e399ad3562e3be2fda0e0f8",
+        "delivered_fixture_manifest_sha256":"1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2",
+        "fixture_count":20
+      }
+    },
+    "runtimes":{
+      "const":{
+        "vad":{"package":"onnxruntime","version":"1.29.0","python_version":"3.13.5","isolated":true},
+        "tts":{"package":"sherpa-onnx","version":"1.13.5","python_version":"3.13.5","isolated":true}
       }
     },
     "status":{"const":"POC_ACCEPTED_M4_COMPLETE"}

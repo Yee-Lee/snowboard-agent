@@ -1,8 +1,8 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`GATE 2A POC ROUND COMPLETE / GEMMA MODEL FINALIST / GATE 2B ENTRY BLOCKED`
+狀態：`GATE 2A POC ROUND COMPLETE / GEMMA MODEL FINALIST / GATE 2B IN_PROGRESS`
 
-Revision：`2026-08-29-gate2a-user-closure-r1`
+Revision：`2026-08-29-gate2b-entry-r2`
 
 Owner：POC Technical Lead；User已授權累積Gate模型；外部接受者為Core Designer。
 
@@ -118,9 +118,11 @@ binary、weights、credential或endpoint。
 
 Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen不進正式Gate 2B。原始
 machine FAIL/PASS不可改寫；Gemma P2/P8不得因選型裁決轉為PASS。Core對`DELIVERY-019`與closure
-delivery的ACK可在POC round關閉後補入，但新的Gate 2B scored execution必須先有versioned、frozen、
-reviewed integration-qualified Gemma revision、updated consumer boundary、Accepted Audio staging及
-獨立Pi授權。禁止把current failed configuration直接餵入combined scoring。
+delivery的ACK依User裁決可在Gate 2B execution期間補入，但final delivery前必須收到。新的Gate 2B
+scored execution仍必須使用versioned/frozen integration-qualified Gemma revision、updated consumer
+boundary及Accepted Audio staging。Worktree replacement與consumer已完成26/26定向測試；User已
+授權直接commit/push與Pi staging/execution，independent review可後補。禁止把current failed
+configuration直接餵入combined scoring。
 
 POC主交付完成後，P1.2 cold-start歸因與未入選candidate的identical Gate 2B envelope可列為
 informational/no-credit backlog。它們不得延誤正式Gate 2B，也不得回溯改寫單一finalist的選型結果。

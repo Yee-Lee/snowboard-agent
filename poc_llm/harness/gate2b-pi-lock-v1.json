@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r4-consume-terminal-observer-gate2a-lock",
+  "revision":"2026-08-29-r5-gemma-model-finalist-integration",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -21,20 +21,18 @@
   },
   "candidates":{
     "CAND-LRT-G4E2B-MOBILE-R1":{
-      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-product.json","sha256":"a5f72d290a216e35eee4d4cf4faea0f383519a6e224c4db346d015b0072ee58e"}
-    },
-    "CAND-LRT-Q25-15B-Q8-R1":{
-      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-Q25-15B-Q8-R1-product.json","sha256":"c485cf2f5fba3be3ce512a7fb333745923d92df37259c8e59d98b6f922c5eb3d"}
+      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product.json","sha256":"78d55bdee44bbc4f22b12533674f74026324c118127f8878a0a0072e3f9734cd"}
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"c52938da6e1a0b6fd00cc7efd611165a29ef26400a38bd02646a803d0bca4abb"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"79685679504109e470604015985f734f8bb0dfcd826b15ec6aa4085bca9f5dec"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"51f47fcf69e43a32a6aafc6e2c97ebee944b416ed43fd89de030d3cc6e94da25"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"d02006bf12a632bd4f35a645deef5871020e92e23883bcaee527c9cdef4d8cde"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"6db06949d25eef66d510f154a4ca743fffd36d4606bb45d7d8447ec945dd825c"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"d794de95cace81e887f7a6fc47e15f3df9499ef21798a7b8fc8d460fb88c0e22"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
     "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1"},
+    "gate2b_adapter":{"path":"poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py","sha256":"0e09c5804d5d2c4e6a542390ee730d755b40c32b42d8837ef47376fe719e50c3"},
     "standard_adapter":{"path":"poc_llm/harness/litert_lm_pi_child_adapter_v2.py","sha256":"9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
     "pi_child_base":{"path":"poc_llm/harness/litert_lm_pi_child_adapter.py","sha256":"345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
     "child_base":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},
@@ -43,14 +41,15 @@
     "runtime_helpers_v2":{"path":"poc_llm/harness/pi_runtime_v2.py","sha256":"1f583738312dfd23a22c1f0a5e30b86cb0704dc07f18b2eed42a99d251e67d5d"},
     "gate1_helper_runner":{"path":"poc_llm/tools/run_gate1_pi_compat_v7.py","sha256":"acc7b027bfc995f5e8e5d748d5baca405fc6c1c96e564e20a8983f8f5bb5cc16"},
     "installer":{"path":"poc_llm/tools/install_gate1_arm64_wheel_v2.py","sha256":"aa8c127ec5214e4926d12968b1e0a2d767f7934c141d144b7a392df124ee0e74"},
-    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-product-v1.schema.json","sha256":"16eb6a811b15d0cf455252213610e310f57f12b98c8326884493f1402565c80f"},
+    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v1.schema.json","sha256":"ed35b25ab703dcf09f92b2a55103e9e5f384d7af98d7d2196a92f383ec62069a"},
     "protocol_schema":{"path":"poc_llm/contracts/m1/protocol-frame-pi.schema.json","sha256":"e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
     "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
     "response_schema":{"path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
     "artifact_receipt_schema":{"path":"poc_llm/evidence/m4b/pi-artifact-auth-receipt-v2.schema.json","sha256":"0e16445c0d35aafd0ab9746b4a9a8749d0a1e72864145ef010512824170f6852"},
-    "gate2a_receipt_schema":{"path":"poc_llm/evidence/m4b/gate2a-provisional-receipt-v1.schema.json","sha256":"6986454101c1d5f2b568bde0ce59ac352e33129da05b380e1ffcdf12a5c89811"},
-    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"3cd23a79ad86f7df80d190f56d6b403888f79c147cfe9265729aa08fadee8326"},
-    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"c949efa4b146b0c1835255451f68b3b1fca767b193a370d2a558c6475b3404e1"},
-    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"8a0777f579c8b123cb1ab68ac4e337ff5a8fe075db5b836ade107163ef8ab528"}
+    "gate2a_receipt_schema":{"path":"poc_llm/evidence/m4b/gate2a-model-finalist-receipt-v1.schema.json","sha256":"4408c585b43deb586f8d6a14dc77474a139309e46a385da9e7252fd42a116cbf"},
+    "gate2a_receipt":{"path":"poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json","sha256":"adaa71293c3152de6a7a16d10150c3d6714b9acf4fe855b07b62d8dd2611d938"},
+    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"d2340737916910f84867c993f12cdeab447bb32608a9262f3a3368fd8cfd8c5e"},
+    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"b5dcf432b269f8ac96283f6912eee9c58efc27ca4312d7ced4f04404852432ba"},
+    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"0edeea8f4cacf4c409422adb921e679f1ca267bdaefc1e9c022b58504f583a2d"}
   }
 }

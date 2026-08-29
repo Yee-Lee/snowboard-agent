@@ -40,6 +40,7 @@
 * `DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md` - (已取代) 舊physical-Pi packet delivery已由cumulative R3 ACK取代
 * `RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md` - (已取代) 舊packet source disposition已由cumulative R3 ACK取代
 * [`ACK-LLM-POC-M3-GATE2-PI-AUTH.md`](pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md) - (已完成) Core Gate 2A Pi staging/execution授權；final evidence已完成User review
+* [`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md) - (已完成) Core exact-SHA Gate 2A Pi execution authorization；明列`RESULT PENDING`，不等於Gate 2A result/finalist ACK
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -76,6 +77,8 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md`](response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md) - final-surface雙candidate Pi evidence、immutable P dispositions、User選定Gemma model finalist並關閉M3 POC round
 * [`REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md`](response/REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md) - Gate 2A 002 executable worktree reviewer入口、resolved findings、exact surface與核對清單
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md) - Gate 2B real Audio→LLM→Audio executable、Accepted Audio identity、resource/cleanup核對清單
+* [`ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001.md`](response/ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001.md) - Gate 2A model-finalist consumer replacement、Accepted Audio controlled-input provenance與Gate 2B entry audit
+* [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-R2-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-R2-001.md) - 取代舊全PASS provisional consumer；只含Gemma、新integration revision與Pi前review清單
 
 ## 3A. Independent Reviews (位於 `docs/reviews/`)
 

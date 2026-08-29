@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,7 @@ from jsonschema import Draft202012Validator
 
 from poc_llm.harness.gate2b_combined_v1 import Gate2BCombinedCoordinator
 from poc_llm.harness.gate2b_resources_v1 import ResourceSampler, evaluate_resources, process_tree
+from poc_llm.harness.litert_lm_gate2b_child_adapter_v1 import gate2b_product_prompt
 from poc_llm.harness.gate2_errors_v1 import (
     CandidateViolation, CleanupViolation, EnvironmentInvalid, EvidenceInvalid, PacketDefect,
     write_json_evidence,
@@ -24,10 +26,13 @@ from poc_llm.harness.pi_runtime import PiPacketFailure
 from test_gate2a_pi_v2 import complete_cleanup, complete_samples
 from poc_llm.tools.run_gate2b_pi_v1 import (
     CombinedLlmDomain,
+    ScoredAudioDomain,
     combined_exception_disposition,
     main as gate2b_main,
     scan_owned_logs,
     verify_external_checkouts,
+    verify_audio_controlled_inputs,
+    verify_audio_runtime,
     verify_gate2a_entry,
     verify_audio_kit,
     verify_gate2b_result,
@@ -38,7 +43,8 @@ from poc_llm.tools.run_gate2b_pi_v1 import (
 ROOT = Path(__file__).resolve().parents[3]
 AUDIO_ENTRY = ROOT / "poc_llm/fixtures/gate2/accepted-audio-entry-001.json"
 AUDIO_SCHEMA = ROOT / "poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json"
-G2A_SCHEMA = ROOT / "poc_llm/evidence/m4b/gate2a-provisional-receipt-v1.schema.json"
+G2A_SCHEMA = ROOT / "poc_llm/evidence/m4b/gate2a-model-finalist-receipt-v1.schema.json"
+G2A_RECEIPT = ROOT / "poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json"
 G2B_SCHEMA = ROOT / "poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json"
 G2B_RUNNER = ROOT / "poc_llm/tools/run_gate2b_pi_v1.py"
 G2B_LOCK = ROOT / "poc_llm/harness/gate2b-pi-lock-v1.json"
@@ -160,6 +166,20 @@ def resource_values(leak_per_session: float = 0.0) -> tuple[list[dict], list[dic
 
 
 class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
+    async def test_post_ready_audio_stage_fault_is_candidate_violation(self) -> None:
+        events: list[str] = []
+        accepted = Vad("vad", events)
+
+        async def fail(_session: dict) -> dict:
+            raise RuntimeError("private backend detail")
+
+        accepted.run = fail  # type: ignore[method-assign]
+        wrapped = ScoredAudioDomain("VAD", accepted)
+        await wrapped.start()
+        with self.assertRaises(CandidateViolation):
+            await wrapped.run({"session_id":"M4-SESSION-01"})
+        await wrapped.stop()
+
     async def test_real_pipeline_keeps_private_text_in_memory_and_stops_reverse(self) -> None:
         events: list[str] = []
         pauses: list[float] = []
@@ -354,6 +374,20 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertEqual(lock["packet_id"], "G2B-PI-COMBINED-001")
         self.assertEqual(lock["fault_schedule"], [])
         self.assertEqual(lock["session_count"], 20)
+        self.assertEqual(set(lock["candidates"]), {"CAND-LRT-G4E2B-MOBILE-R1"})
+        self.assertEqual(
+            lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]["product_config"]["path"],
+            "poc_llm/fixtures/gate2/pi-configs-v2/"
+            "CAND-LRT-G4E2B-MOBILE-R1-gate2b-product.json",
+        )
+        self.assertEqual(
+            lock["artifacts"]["gate2b_adapter"]["path"],
+            "poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py",
+        )
+        self.assertEqual(
+            lock["artifacts"]["gate2a_receipt"]["path"],
+            "poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json",
+        )
         for item in lock["artifacts"].values():
             path = ROOT / item["path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
@@ -368,6 +402,14 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertTrue(validator.is_valid(entry))
         self.assertEqual(entry["tag"], "audio_m4")
         self.assertEqual(entry["tag_object_sha"], "24b2571a23dde2f77027242b61142b0c1a59924c")
+        self.assertEqual(
+            entry["controlled_inputs"]["fixture_lock_sha256"],
+            "d7d3086c578511763b60074ef7c049e37ef814094e399ad3562e3be2fda0e0f8",
+        )
+        self.assertEqual(
+            entry["finalists"]["asr"]["worker_binary_sha256"],
+            "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b",
+        )
         self.assertEqual(entry["status"], "POC_ACCEPTED_M4_COMPLETE")
 
     def test_external_audio_tag_and_completion_are_distinct_exact_identities(self) -> None:
@@ -394,32 +436,39 @@ class Gate2BDefinitionTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "Audio checkout identity"):
                 verify_external_checkouts(audio, core, drift)
 
-    def test_gate2a_receipt_requires_qwen_written_workaround(self) -> None:
-        value = {
-            "receipt_version":"gate2a-provisional/1", "packet_id":"G2A-PI-LLM-002",
-            "candidate_id":"CAND-LRT-Q25-15B-Q8-R1",
-            "candidate_disposition":"USER_CORE_DEFECT_WAIVER",
-            "execution_sha":"a"*40, "execution_surface_sha256":"b"*64,
-            "gate2a_lock_sha256":"c"*64, "candidate_result_sha256":"d"*64,
-            "artifact_receipt_sha256":"e"*64, "gate1_entry_sha256":"f"*64,
-            "p_results":{"P1":"PASS","P2":"PASS","P3":"PASS","P4":"PASS","P5":"PASS","P6.1":"PASS","P7.1":"FAIL","P8":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS"},
-            "user_review":{"approved":True,"review_id":"USER-G2A-001"},
-            "core_ack_id":None,"core_ack_required_before_final_delivery":True,
-            "p4_threshold_decision":None,
-            "workaround":{"disposition":"restart child before next turn","accepted_by_user":True,"accepted_by_core":True,"user_decision_id":"USER-QWEN-001","core_decision_id":"CORE-QWEN-001"},
-            "result":"PASS",
-        }
+    def test_gate2a_receipt_preserves_failures_and_user_model_selection(self) -> None:
+        value = json.loads(G2A_RECEIPT.read_text())
         validator = Draft202012Validator(json.loads(G2A_SCHEMA.read_text()))
         self.assertTrue(validator.is_valid(value))
-        value["workaround"]["accepted_by_core"] = False
+        value["p_results"]["P2"] = "PASS"
         self.assertFalse(validator.is_valid(value))
-        value["workaround"]["accepted_by_core"] = True
-        value["p_results"]["P7.1"] = "PASS"
+        value = json.loads(G2A_RECEIPT.read_text())
+        value["candidate_id"] = "CAND-LRT-Q25-15B-Q8-R1"
         self.assertFalse(validator.is_valid(value))
+        value = json.loads(G2A_RECEIPT.read_text())
+        value["user_review"]["approved"] = False
+        self.assertFalse(validator.is_valid(value))
+
+    def test_gate2b_prompt_is_generic_deterministic_and_schema_explicit(self) -> None:
+        value = {
+            "perceptions":[{"kind":"listen","status":"ok","text":"hello MARKER-X"}],
+            "pending_message_count":0,
+            "capabilities":{"perceptions":["listen"],"actions":["speak"],"tools":[]},
+        }
+        first = gate2b_product_prompt(value)
+        self.assertEqual(first, gate2b_product_prompt(json.loads(json.dumps(value))))
+        self.assertIn('"action_kind":"speak"', first)
+        self.assertIn("MARKER-X", first)
+        source = (ROOT / "poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py").read_text()
+        self.assertNotIn("M4-SESSION-", source)
+        self.assertNotIn("P2-00", source)
 
     def test_gate2a_receipt_is_bound_to_actual_reviewed_result(self) -> None:
         lock_sha = hashlib.sha256((ROOT / "poc_llm/harness/gate2a-pi-lock-v2.json").read_bytes()).hexdigest()
         artifact_sha = "e" * 64
+        samples = complete_samples()
+        samples["p2"]["cases"][0]["valid"] = False
+        samples["p8"]["cases"][0]["current_marker_present_once"] = False
         result = {
             "packet_id":"G2A-PI-LLM-002","run_id":"run",
             "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1","execution_sha":"a"*40,
@@ -429,10 +478,10 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "model_sha256":"d"*64,"model_size_bytes":1,
                 "full_model_hash_count":0,"metadata_unchanged":True},
             "carried_results":{"P1":"PASS","P6.1":"PASS","P7.1":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS"},
-            "executed_results":{"P2":"PASS","P3":"PASS","P4":"PASS","P5":"PASS","P8":"PASS"},
-            "samples":complete_samples(),
-            "cleanup":complete_cleanup(),"violations":[],"gate2a_scope_result":"PASS",
-            "provisional_eligibility":"ELIGIBLE_FOR_USER_REVIEW","result":"PASS",
+            "executed_results":{"P2":"FAIL","P3":"PASS","P4":"PASS","P5":"PASS","P8":"FAIL"},
+            "samples":samples,
+            "cleanup":complete_cleanup(),"violations":[],"gate2a_scope_result":"FAIL",
+            "provisional_eligibility":"NOT_ELIGIBLE","result":"FAIL",
         }
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -440,18 +489,22 @@ class Gate2BDefinitionTests(unittest.TestCase):
             result_path.write_text(json.dumps(result, sort_keys=True))
             gate1_entry = ROOT / "poc_llm/fixtures/gate2/gate1-closure-entry-001.json"
             receipt = {
-                "receipt_version":"gate2a-provisional/1","packet_id":"G2A-PI-LLM-002",
-                "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1","candidate_disposition":"NORMAL_FINALIST",
+                "receipt_version":"gate2a-model-finalist/1","packet_id":"G2A-PI-LLM-002",
+                "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1","candidate_disposition":"USER_SELECTED_MODEL_FINALIST",
                 "execution_sha":"a"*40,"execution_surface_sha256":lock_sha,
                 "gate2a_lock_sha256":lock_sha,
                 "candidate_result_sha256":hashlib.sha256(result_path.read_bytes()).hexdigest(),
                 "artifact_receipt_sha256":artifact_sha,
                 "gate1_entry_sha256":hashlib.sha256(gate1_entry.read_bytes()).hexdigest(),
-                "p_results":{"P1":"PASS","P2":"PASS","P3":"PASS","P4":"PASS","P5":"PASS","P6.1":"PASS","P7.1":"PASS","P8":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS"},
-                "p4_threshold_decision":None,
-                "user_review":{"approved":True,"review_id":"USER-G2A-001"},
+                "p_results":{"P1":"PASS","P2":"FAIL","P3":"PASS","P4":"PASS","P5":"PASS","P6.1":"PASS","P7.1":"PASS","P8":"FAIL","P10A":"PASS","P11":"PASS","P12":"PASS"},
+                "p8_qualifier":"DEPENDENCY_LIMITED_BY_P2",
+                "selection":{"decision":"ADVANCE_MODEL_ONLY","current_product_baseline":"REJECTED",
+                    "gate2b_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r1",
+                    "gate2b_product_config_sha256":"a"*64,
+                    "scoring_policy":"FIRST_MODEL_CONTACT_IS_HELD_OUT_GATE2B"},
+                "user_review":{"approved":True,"review_id":"ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW"},
                 "core_ack_id":None,"core_ack_required_before_final_delivery":True,
-                "workaround":None,"result":"PASS",
+                "result":"MODEL_FINALIST_SELECTED",
             }
             receipt_path = root / "receipt.json"
             receipt_path.write_text(json.dumps(receipt, sort_keys=True))
@@ -460,8 +513,8 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 ROOT / "poc_llm/harness/gate2a-pi-lock-v2.json",
             )
             self.assertEqual(observed["candidate_id"], result["candidate_id"])
-            self.assertEqual(bound_result["result"], "PASS")
-            result["executed_results"]["P8"] = "FAIL"
+            self.assertEqual(bound_result["result"], "FAIL")
+            result["samples"]["p8"]["cases"][1]["prior_marker_leaked"] = True
             result_path.write_text(json.dumps(result, sort_keys=True))
             with self.assertRaisesRegex(Exception, "result chain"):
                 verify_gate2a_entry(
@@ -593,6 +646,112 @@ class Gate2BDefinitionTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "kit mismatch"):
                 verify_audio_kit(root, accepted)
 
+    def test_audio_controlled_inputs_and_runtime_are_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact_dir = root / "artifacts"
+            models = artifact_dir / "models"
+            models.mkdir(parents=True)
+            paths = {
+                "vad_model": root / "vad.onnx",
+                "asr_binary": root / "asr-worker",
+                "asr_model": root / "asr-model.bin",
+                "tts_archive": models / "matcha-icefall-zh-en.tar.bz2",
+                "tts_vocoder": models / "vocos-16khz-univ.onnx",
+            }
+            for name, path in paths.items():
+                path.write_bytes(name.encode())
+            lock = {
+                "audio_execution_sha":"8" * 40,
+                "fixture_count":20,
+                "records":[
+                    {"session_id":f"M4-SESSION-{index:02d}",
+                     "fixture_id":f"fixture-{index:02d}","sha256":f"{index:064x}"}
+                    for index in range(1, 21)
+                ],
+            }
+            delivered = {
+                "records":{
+                    item["fixture_id"]:{"derived_sha256":item["sha256"]}
+                    for item in lock["records"]
+                }
+            }
+            fixture_lock = root / "fixture-lock.json"
+            fixture_manifest = root / "fixture-manifest.json"
+            fixture_lock.write_text(json.dumps(lock, sort_keys=True))
+            fixture_manifest.write_text(json.dumps(delivered, sort_keys=True))
+            accepted = json.loads(AUDIO_ENTRY.read_text())
+            accepted["p9_combined_execution_sha"] = "8" * 40
+            accepted["controlled_inputs"] = {
+                "fixture_lock_sha256":hashlib.sha256(fixture_lock.read_bytes()).hexdigest(),
+                "delivered_fixture_manifest_sha256":hashlib.sha256(
+                    fixture_manifest.read_bytes()
+                ).hexdigest(),
+                "fixture_count":20,
+            }
+            accepted["finalists"]["vad"]["model_sha256"] = hashlib.sha256(
+                paths["vad_model"].read_bytes()
+            ).hexdigest()
+            accepted["finalists"]["asr"].update({
+                "worker_binary_sha256":hashlib.sha256(
+                    paths["asr_binary"].read_bytes()
+                ).hexdigest(),
+                "model_sha256":hashlib.sha256(paths["asr_model"].read_bytes()).hexdigest(),
+            })
+            accepted["finalists"]["tts"].update({
+                "archive_sha256":hashlib.sha256(paths["tts_archive"].read_bytes()).hexdigest(),
+                "vocoder_sha256":hashlib.sha256(paths["tts_vocoder"].read_bytes()).hexdigest(),
+            })
+            with patch(
+                "poc_llm.tools.run_gate2b_pi_v1.verify_audio_runtime",
+                side_effect=[accepted["runtimes"]["vad"], accepted["runtimes"]["tts"]],
+            ):
+                observed = verify_audio_controlled_inputs(
+                    fixture_lock=fixture_lock,
+                    fixture_manifest=fixture_manifest,
+                    artifact_dir=artifact_dir,
+                    tts_runtime_python=root / "tts-python",
+                    asr_binary=paths["asr_binary"],
+                    asr_model=paths["asr_model"],
+                    vad_runtime_python=root / "vad-python",
+                    vad_model=paths["vad_model"],
+                    accepted=accepted,
+                )
+            self.assertEqual(observed["fixture_count"], 20)
+            paths["asr_binary"].write_bytes(b"drift")
+            with self.assertRaisesRegex(Exception, "asr_binary_sha256"):
+                verify_audio_controlled_inputs(
+                    fixture_lock=fixture_lock,
+                    fixture_manifest=fixture_manifest,
+                    artifact_dir=artifact_dir,
+                    tts_runtime_python=root / "tts-python",
+                    asr_binary=paths["asr_binary"],
+                    asr_model=paths["asr_model"],
+                    vad_runtime_python=root / "vad-python",
+                    vad_model=paths["vad_model"],
+                    accepted=accepted,
+                )
+
+            runtime_python = root / "venv/bin/python"
+            runtime_python.parent.mkdir(parents=True)
+            runtime_python.write_text("stub")
+            (root / "venv/pyvenv.cfg").write_text(
+                "include-system-site-packages = false\n"
+            )
+            runtime_expected = accepted["runtimes"]["vad"]
+            completed = subprocess.CompletedProcess(
+                [], 0, stdout=json.dumps(runtime_expected), stderr=""
+            )
+            with patch("poc_llm.tools.run_gate2b_pi_v1.subprocess.run", return_value=completed):
+                self.assertEqual(
+                    verify_audio_runtime(runtime_python, runtime_expected), runtime_expected
+                )
+            (root / "venv/pyvenv.cfg").write_text(
+                "include-system-site-packages = true\n"
+            )
+            with self.assertRaisesRegex(Exception, "isolation"):
+                verify_audio_runtime(runtime_python, runtime_expected)
+
     def test_gate2b_pass_schema_requires_20_sessions_and_both_p_items(self) -> None:
         accepted_entry = json.loads(AUDIO_ENTRY.read_text())
         continuous, points = resource_values()
@@ -601,7 +760,9 @@ class Gate2BDefinitionTests(unittest.TestCase):
         )
         value = {
             "packet_id":"G2B-PI-COMBINED-001","run_id":"run",
-            "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1","execution_sha":"a"*40,
+            "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
+            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r1",
+            "execution_sha":"a"*40,
             "execution_surface_sha256":"b"*64,"gate2a_receipt_sha256":"c"*64,
             "accepted_audio":{
                 "audio_completion_sha":accepted_entry["completion_sha"],
@@ -613,6 +774,16 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "status":accepted_entry["status"],
                 "core_response_id":accepted_entry["core_response_id"],
                 "core_response_sha":accepted_entry["core_response_sha"],
+                "fixture_lock_sha256":accepted_entry["controlled_inputs"]["fixture_lock_sha256"],
+                "fixture_manifest_sha256":accepted_entry["controlled_inputs"]["delivered_fixture_manifest_sha256"],
+                "fixture_count":accepted_entry["controlled_inputs"]["fixture_count"],
+                "vad_model_sha256":accepted_entry["finalists"]["vad"]["model_sha256"],
+                "asr_binary_sha256":accepted_entry["finalists"]["asr"]["worker_binary_sha256"],
+                "asr_model_sha256":accepted_entry["finalists"]["asr"]["model_sha256"],
+                "tts_archive_sha256":accepted_entry["finalists"]["tts"]["archive_sha256"],
+                "tts_vocoder_sha256":accepted_entry["finalists"]["tts"]["vocoder_sha256"],
+                "vad_runtime":accepted_entry["runtimes"]["vad"],
+                "tts_runtime":accepted_entry["runtimes"]["tts"],
             },"environment":{},"environment_post":{},"runtime":{},
             "artifact_authentication":{"reused_receipt_sha256":"f"*64,
                 "model_sha256":"a"*64,"model_size_bytes":1,
@@ -632,7 +803,10 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     for index,name in enumerate(("vad","asr","tts","llm"))}},
             "log_hygiene":{"passed":True,"scanned_files":[
                 {"name":name,"sha256":"9"*64}
-                for name in ("offline-install.stdout","offline-install.stderr","llm.stderr")
+                for name in (
+                    "offline-install.stdout","offline-install.stderr",
+                    "llm.stderr","base-q8.stderr.log",
+                )
             ],"static_marker_count":7,"runtime_marker_count":80},
             "partial_trace":[],
             "p_results":{"P9":"PASS","P10B":"PASS"},
@@ -688,6 +862,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     "--evidence-root", str(evidence), "--audio-root", str(raw / "audio"),
                     "--core-root", str(raw / "core"), "--audio-fixture-dir", str(raw / "fixtures"),
                     "--audio-fixture-lock", str(raw / "fixture-lock.json"),
+                    "--audio-fixture-manifest", str(raw / "fixture-manifest.json"),
                     "--audio-artifact-dir", str(raw / "artifacts"),
                     "--audio-runtime-python", str(raw / "tts-python"),
                     "--audio-asr-binary", str(raw / "asr"), "--audio-asr-model", str(raw / "asr-model"),

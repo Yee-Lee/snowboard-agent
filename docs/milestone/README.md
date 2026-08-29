@@ -6,7 +6,7 @@
 
 ## Current reachability
 
-狀態：`GATE1 CLOSED / GATE2A POC ROUND CLOSED / GEMMA MODEL FINALIST / CORE ACK PENDING / GATE2B NOT_STARTED`。
+狀態：`GATE1 CLOSED / GATE2A POC ROUND CLOSED / GEMMA MODEL FINALIST / CORE ACK PENDING / GATE2B IN_PROGRESS`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -28,7 +28,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
 | Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，請Core ACK語意與selection |
-| Gate 2B | `DEVELOPMENT READINESS APPROVED / NOT_STARTED` | P9, P10B | 先建立integration-qualified Gemma revision與consumer boundary，再取得review、Pi授權及staging |
+| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | commit/push exact replacement，完成Pi inventory/staging後執行一次P9/P10B |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -41,7 +41,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `NOT_STARTED` | Development readiness已通過R4 review；待新Gemma integration revision、Core ACK、Pi授權與staging |
+| M4 | `IN_PROGRESS` | 新Gemma integration revision與consumer已完成26/26定向驗證；User授權commit/push及Pi staging/execution，review可後補 |
 
 ## Cumulative P1～P12 rule
 
@@ -80,15 +80,16 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
   已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
   現有receipt不得改寫，新的integration revision不得覆蓋本輪觀察。
-- **Gate 2B integration entry**：Gemma current product pairing P2 3/30，不能直接作combined baseline。
-  必須建立versioned/frozen candidate、以precommitted或held-out cases完成entry qualification，並更新
-  Gate 2B consumer boundary後才可請求execution review與Pi授權。
+- **Gate 2B integration entry**：Gemma current product pairing P2 3/30，永久不得直接作combined
+  baseline。Replacement `litert-lm-v0.16.0-pi-g2b-r1`與model-finalist receipt已在worktree完成，
+  只含Gemma並採held-out 20-session first contact；lock `8cc706…95a76`與26/26定向測試已由User
+  授權直接commit/push及Pi執行，independent review可後補。Core對`DELIVERY-019/021`的ACK依User
+  裁決可於執行期間補入，但final delivery前必須收到。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
-  `5694ead4…`與Core acceptance
-  `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認；Pi上實體artifact staging與LLM combined
-  runner replacement已在worktree完成且Gate 2 suite 59/59；Pi實體artifact staging與execution
-  authorization仍待完成，不把
-  既有Audio-only PASS誤作M4B P9/P10B credit。
+  `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV
+  deterministic lock `d7d308…e0f8`與delivered manifest `1b3356…30a2`已完成repo-external靜態
+  provenance audit；replacement runner會在residency計時前驗證全部Audio artifact/runtime identity。
+  User已授權Pi path inventory、staging與execution；既有Audio-only PASS不提供M4B P9/P10B credit。
 - **Evidence safety**：不commit model、wheel、native binary、raw output、prompt/payload、credential或endpoint。
 - **Post-delivery informational backlog**：正式POC交付完成後，才續作P1.2 cold-start cause matrix，
   並視成本對未入選candidate執行no-credit Gate 2B同包比較；不得延誤或改寫正式單一finalist流程。
@@ -125,6 +126,7 @@ ACK繼續驗證carried evidence。Gate 2 Pi authorization已完成其M3用途並
 - [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
 - [Gate 1 closure ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
 - [Gate 2A Pi authorization (historical)](../pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md)
+- [Gate 2A exact-SHA Core authorization (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md)
 - [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)

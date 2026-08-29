@@ -1,6 +1,6 @@
 # M4b Delivery Taxonomy and Cumulative Traceability Crosswalk
 
-狀態：`CONTROLLED / GATE 2A USER-CLOSED / GEMMA MODEL FINALIST / CORE ACK PENDING`
+狀態：`CONTROLLED / GATE 2A USER-CLOSED / GEMMA MODEL FINALIST / GATE 2B IN_PROGRESS`
 
 Owner：POC Technical Lead；External acceptance：Core Designer。
 
@@ -39,9 +39,9 @@ Owner：POC Technical Lead；External acceptance：Core Designer。
 | P6 | D3 | Gate 1 `007` | conditional only with same-manifest P7 PASS | `Accepted Gate 1 as P6.1` |
 | P7 | D3 | Gate 1 `007` | 2A/2B ordinary cleanup is not P7 rescore | `Accepted Gate 1 as P7.1; Qwen FAIL waiver retained` |
 | P8 | D4 | Gate 2A `002` | current FAIL retained；new integration qualification before 2B | `FAIL both; DEPENDENCY_LIMITED_BY_P2; no observed prior-state leak` |
-| P9 | D6 | Gate 2B `001` | Accepted Audio mandatory; surrogate no credit | `Blocked: new Gemma integration revision / Core ACK / Pi authorization and staging` |
+| P9 | D6 | Gate 2B `001` | Accepted Audio mandatory; surrogate no credit | `Pending execution: replacement ready and User-authorized; Pi staging incomplete` |
 | P10A | D6 | Gate 1 `007` | 2A does not repeat 20-session soak | `Accepted Gate 1` |
-| P10B | D6 | Gate 2B `001` | same run as P9 | `Blocked: new Gemma integration revision / Core ACK / Pi authorization and staging` |
+| P10B | D6 | Gate 2B `001` | same run as P9 | `Pending execution: replacement ready and User-authorized; Pi staging incomplete` |
 | P11 | D8 | Gate 1 `007` | later packets authenticate receipt; drift returns to P11 | `Accepted Gate 1` |
 | P12 | D8 | Gate 1 `007` | later run observes current offline state without rescoring accepted P12 | `Accepted Gate 1` |
 
