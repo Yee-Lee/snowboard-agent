@@ -6,8 +6,7 @@
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
-* [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) - Core接受cumulative boundary、R3 replacement SHA與execution；Gate 1 closure仍待completed manifest review
-* [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core接受四份P6.1/P7.1 receipts、Qwen defect waiver與雙candidate Gate 2A entry；Gate 1 closed
+* [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
@@ -41,6 +40,10 @@
 * `RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md` - (已取代) 舊packet source disposition已由cumulative R3 ACK取代
 * [`ACK-LLM-POC-M3-GATE2-PI-AUTH.md`](pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md) - (已完成) Core Gate 2A Pi staging/execution授權；final evidence已完成User review
 * [`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md) - (已完成) Core exact-SHA Gate 2A Pi execution authorization；明列`RESULT PENDING`，不等於Gate 2A result/finalist ACK
+* [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) - (已完成) Core接受cumulative boundary、R3 replacement SHA與execution
+* [`DELIVERY-LLM-POC-M4B-GATE2A-CLOSURE-ACK-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-CLOSURE-ACK-001.md) - (已完成) Core接受Gemma sole model-finalist與Gate 2A immutable results
+* [`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-REVIEW-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-REVIEW-001.md) - (已完成) Core接受022/023並關閉final provenance blocker
+* [`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md`](pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md) - (最終ACK) Core接受Gemma POC winner、R3 manifest與User known-defect waiver；Core Gate 3 pending
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -117,10 +120,10 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`](delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md) - User關閉Gate 2A POC round、選定Gemma唯一model finalist；請Core ACK語意、selection及Gate 2B新integration revision邊界
 * [`DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md`](delivery/DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md) - 要求Core將Engine-loaded與inference-ready分離；固定pre-warm、實際token budget及分離watchdog納入產品child設計，ACK可後至
 * [`DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md`](delivery/DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md) - User裁決從prospective Gate 2B完全移除system-wide Memory PSI採集與gate；保留4GB capacity、swap/OOM、leak、thermal、ownership及cleanup，Core ACK可後至
-* [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md`](delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) - User核准Gemma POC winner與LiteRT-LM resident-retention defect waiver；一次請Core發final ACK並承接產品mitigation
+* [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md`](delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) - 已獲Core final ACK；Gemma POC winner與LiteRT-LM resident-retention defect waiver由Core承接至Gate 3
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
-* [`POC-llm-DEL-2026-001-R3.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md) - User-approved Gemma POC winner manifest；固定runtime/model/config/protocol、累積P matrix、known defect與Core action
+* [`POC-llm-DEL-2026-001-R3.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md) - Core-accepted Gemma POC winner manifest；固定runtime/model/config/protocol、累積P matrix、known defect與Core action
 
 ## 5. Working Plan (位於 `docs/milestone/`)
 Repo-owned 內部執行工作文件：

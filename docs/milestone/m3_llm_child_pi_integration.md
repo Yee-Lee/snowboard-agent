@@ -1,6 +1,6 @@
 # LLM M3：Gate 2A Remaining LLM-only Pi Validation
 
-狀態：`COMPLETE / USER MODEL-FINALIST DECISION / CORE ACK PENDING`
+狀態：`COMPLETE / CORE ACK`
 
 ## Goal
 
@@ -67,8 +67,8 @@ User已審核完整sanitized evidence並選定Gemma為唯一**model finalist**�
 關閉M3/Gate 2A POC execution與selection round。Gemma current prompt/config仍因P2 FAIL而不是
 deliverable product baseline；Gate 2B scoring前必須建立、事前凍結及review新的integration-qualified
 candidate revision，不得用調整後重跑覆蓋本輪證據。完整裁決見
-`docs/response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md`；Core external ACK由
-`docs/delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`請求。
+`docs/response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md`。Core final-winner ACK已整併接受
+`DELIVERY-019`語意分離與`DELIVERY-021`唯一Gemma model-finalist selection；machine結果不改寫。
 
 ## Prohibited
 

@@ -1,6 +1,6 @@
 # M4b Delivery Taxonomy and Cumulative Traceability Crosswalk
 
-狀態：`CONTROLLED / GATE 2B USER-CLOSED / GEMMA POC WINNER / CORE FINAL ACK PENDING`
+狀態：`CONTROLLED / LLM POC COMPLETE / GEMMA POC WINNER / CORE FINAL ACK`
 
 Owner：POC Technical Lead；External acceptance：Core Designer。
 
@@ -23,8 +23,8 @@ Owner：POC Technical Lead；External acceptance：Core Designer。
 | --- | --- | --- | --- | --- |
 | Gate 0 | M0 | none | contract/readiness receipts | POC / PM / Core |
 | Gate 1 | M2 | P1, P6, P7, P10A, P11, P12 | `G1-PI-COMPAT-007`; stability/Core-fit；最多2 finalists | Test Controller + Technical Lead / Reviewer + User + Core |
-| Gate 2A | M3 | P2, P3, P4, P5, P8 | final machine dispositions immutable；User選Gemma model finalist；Core ACK pending | Test Controller + Technical Lead / User / Core |
-| Gate 2B | M4 | P9, P10B | Attempt 006 machine FAIL retained；User known-defect waiver selects Gemma POC winner；Core final ACK pending | Test Controller + Technical Lead / User / Core |
+| Gate 2A | M3 | P2, P3, P4, P5, P8 | final machine dispositions immutable；User選Gemma model finalist；Core ACK complete | Test Controller + Technical Lead / User / Core |
+| Gate 2B | M4 | P9, P10B | Attempt 006 machine FAIL retained；Core接受User known-defect waiver與Gemma POC winner | Test Controller + Technical Lead / User / Core |
 | Gate 3 | Core production | Core `M4B-*` | product exact-SHA acceptance | Core Developer / Tester / Designer |
 
 ## P1～P12 ownership

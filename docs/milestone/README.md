@@ -6,7 +6,7 @@
 
 ## Current reachability
 
-狀態：`GATE1 CLOSED / GATE2A POC ROUND CLOSED / GATE2B POC CLOSED / GEMMA POC WINNER / CORE FINAL ACK PENDING`。
+狀態：`LLM POC COMPLETE / GATE1 CLOSED / GATE2A CLOSED / GATE2B FINAL WINNER ACKED / GEMMA ACCEPTED`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -27,8 +27,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
-| Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，併入final Core ACK |
-| Gate 2B | `POC ROUND CLOSED / USER WINNER / CORE FINAL ACK PENDING` | P9, P10B | Attempt 006完成20/20；machine P9/P10B FAIL不改寫；User以known runtime defect waiver選定Gemma winner |
+| Gate 2A | `CLOSED / CORE ACK` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫 |
+| Gate 2B | `CLOSED / CORE FINAL WINNER ACK` | P9, P10B | Attempt 006完成20/20；machine P9/P10B FAIL不改寫；Core接受User known-runtime-defect waiver與Gemma winner |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -40,8 +40,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
-| M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `COMPLETE / CORE FINAL ACK PENDING` | Attempt 006完成20/20 combined sessions；User接受LiteRT-LM resident-retention defect並選定Gemma POC winner |
+| M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
+| M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
 
 ## Cumulative P1～P12 rule
 
@@ -87,8 +87,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   接受此契約調整；ACK可在已授權執行期間補入，final delivery前仍須連結。
 - **P2/P3/P8 semantics adjustment**：User已裁決P2為完整candidate configuration的整合
   qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
-  已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
-  現有receipt不得改寫，新的integration revision不得覆蓋本輪觀察。
+  已由Core final ACK確認；final evidence獲User核准，Gemma以model finalist身分入選。現有receipt
+  不得改寫，新的integration revision不得覆蓋本輪觀察。
 - **Gate 2B integration entry**：Gemma current product pairing P2 3/30，永久不得直接作combined
   baseline。Replacement `litert-lm-v0.16.0-pi-g2b-r1`與model-finalist receipt只含Gemma並採held-out
   20-session first contact。Initial formal `G2B-PI-COMBINED-001`在VAD/ASR啟動後由Accepted TTS
@@ -104,15 +104,15 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   `--diagnostic-session-only`。它先用獨立`--preflight-only`驗證全部static entry、model receipt
   metadata與thermal/OOM/memory probes，再以相同四domain/ALSA/controller執行單session；兩者
   通過才可執行`G2B-PI-COMBINED-006`。Current r14不再要求PSI probe或`psi=1`；Attempt 001～005不得覆寫。
-  Independent review可後補。Core對`DELIVERY-019/021/022/023`的ACK未在current checkout出現；User已
-  授權以`DELIVERY-024`一次提交winner與consolidated ACK request，不阻擋POC closure，但仍阻擋production lock。
+  Independent review可後補。Core final ACK已整併接受`DELIVERY-019/021/022/023`並接受
+  `DELIVERY-024`的winner與waiver；production acceptance仍由Core Gate 3另行判定。
 - **Gate 2B final result**：exact SHA `0c75536…`的preflight與單session diagnostic均PASS；formal
   `G2B-PI-COMBINED-006`完成20/20真實VAD→ASR→LLM→TTS/ALSA sessions，schema、marker、trap、history、
   offline、thermal與cleanup全部符合。Frozen verifier因combined PSS slope `5.900893 MiB/session`及
   late-early median `131.578 MiB`回傳P9/P10B FAIL；system-used slope僅`0.101957 MiB/session`、peak
   `2382.969 MiB`，swap/OOM/throttle為零。User將此分類為LiteRT-LM Engine/Session resident-retention
   known defect、保留machine FAIL並grant waiver，選定Gemma為POC winner。`DELIVERY-024`與R3 winner
-  manifest請Core發final ACK及承接Gate 3 mitigation。
+  manifest已獲Core final-winner ACK；Core承接Gate 3 mitigation與exact-product-SHA複驗。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV
   deterministic lock `d7d308…e0f8`與delivered manifest `1b3356…30a2`已完成repo-external靜態
@@ -146,17 +146,22 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [Gate 2B User-approved winner assessment](../response/ASSESSMENT-LLM-M4-GATE2B-20260829-USER-REVIEW.md)
 - [Gate 2B closure and Gemma winner delivery](../delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md)
 - [POC winner manifest R3](../../poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md)
+- [Core Gate 2B final-winner ACK](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md)
 
 ## Governing and historical inputs
 
-2026-08-29 round-close audit：`docs/pm_handoff/`四份直屬Income仍具治理效力。M4b contract與
-Core task boundary控制最終交付；cumulative R3 ACK控制跨gate累積與carry-forward；Gate 1 closure
-ACK繼續驗證carried evidence。Gate 2 Pi authorization已完成其M3用途並原文移入history。
+2026-08-29 final round-close audit：`docs/pm_handoff/`保留三份直屬governing Income：M4b contract、
+Core task boundary，以及被Gate 2A immutable lock以原路徑/雜湊驗證的Gate 1 closure ACK。Cumulative、
+Gate 2A及Gate 2B ACK/review均已完成用途並原文移入history；final-winner ACK接受Gemma與R3並把
+產品風險交由Core Gate 3追蹤。
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
-- [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
-- [Gate 1 closure ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
+- [Cumulative Gate R3 ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
+- [Gate 1 closure ACK (governing locked input)](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
+- [Gate 2A closure ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-CLOSURE-ACK-001.md)
+- [Gate 2B final review (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-REVIEW-001.md)
+- [Gate 2B final-winner ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md)
 - [Gate 2A Pi authorization (historical)](../pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md)
 - [Gate 2A exact-SHA Core authorization (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001.md)
 - [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)

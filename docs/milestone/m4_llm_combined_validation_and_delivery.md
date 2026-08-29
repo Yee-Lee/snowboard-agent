@@ -1,6 +1,6 @@
 # LLM M4：Gate 2B Cumulative Audio + LLM Final Validation
 
-狀態：`COMPLETE / USER-APPROVED POC WINNER / CORE FINAL ACK PENDING`
+狀態：`COMPLETE / CORE FINAL WINNER ACK`
 
 Entry authority：`USER AUTHORIZED COMMIT/PUSH + PI STAGING/EXECUTION / REVIEW MAY FOLLOW`
 
@@ -105,7 +105,8 @@ marker、trap、history、offline、thermal、log hygiene與cleanup觀察均符�
 `5.900893 MiB/session`及late-early median `131.578 MiB`使machine P9/P10B為FAIL。User確認runner已遵循
 fresh Conversation＋deterministic close，將此定性為`KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT
 RETENTION`，保留machine scores並grant waiver，選定Gemma為POC winner。R3 manifest與
-`DELIVERY-024`構成Core final-winner ACK handoff；Gate 3仍須產品exact-SHA mitigation與複驗。
+`DELIVERY-024`構成Core final-winner ACK handoff；Core已接受Gemma、R3與User waiver。Gate 3仍須
+產品exact-SHA mitigation與複驗。
 
 ## Work
 
@@ -119,9 +120,10 @@ RETENTION`，保留machine scores並grant waiver，選定Gemma為POC winner。R3
 ## Exit
 
 Gate 1、2A與2B manifest chain完整；User已審核Attempt 006、接受known runtime defect waiver並選定
-Gemma POC winner。Machine P9/P10B FAIL與先前P2/P8 FAIL不改寫。M4 POC work完成，對外狀態為
-`USER-APPROVED POC WINNER / CORE FINAL ACK PENDING`；Core ACK前不得鎖入production，Gate 3仍須對
-產品exact SHA完成model/protocol review、resident-memory mitigation及combined驗收。
+Gemma POC winner。Machine P9/P10B FAIL與先前P2/P8 FAIL不改寫。Core final-winner ACK接受Gemma、
+R3 manifest、pre-warm lifecycle、prospective Memory PSI addendum與known-defect waiver，M4 POC正式
+完成。此ACK不是Gate 3 PASS；Core仍須對產品exact SHA完成model/protocol review、resident-memory
+mitigation及combined驗收。
 
 ## Prohibited
 
