@@ -72,11 +72,17 @@ Attempt 003（execution SHA `26e654968bbd4c9b2a9a2796d21cfbc01fba7446`）已進�
 session，但LLM在parent/child同為15秒的deadline邊界失去typed terminal，P10B為immutable `FAIL`。
 後續no-credit cold/warm歸因確認：同一298-token prefill在reboot後首個post-READY request需16.704秒，
 same-boot fresh process/Engine為5.061秒；完整cold output另有schema-invalid及marker缺失。User已授權
-corrective pairing `r3`與重做實驗：128 tokens對rendered prompt硬性執行、speak-only constrained JSON與
+corrective pairing `r4`與重做實驗：128 tokens對rendered prompt硬性執行、speak-only constrained JSON與
 current-marker pattern、
 固定non-sensitive pre-warm完成後才發布`INFERENCE_READY`，以及15秒child deadline外2秒terminal-only
 observer grace。`DELIVERY-022`要求Core把pre-warm納入正式child lifecycle；ACK可後至但final交付前須連結。
 Attempt 003不覆寫，corrective result在User review前仍不得發布。
+
+Attempt 004（execution SHA `a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f`）在session 01完成VAD/ASR
+後收到LLM RESULT，但constrained JSON於64 decode token ceiling尚未閉合，parent正確拒絕；四domain
+cooperative cleanup且零殘留，P10B為immutable `FAIL`、P9未計分。相同transcript hash的no-credit
+reproduction將ceiling提高為128後於72 tokens完成valid schema、marker exactly-once及trap absent。
+Pairing `r4`只將output ceiling改為128並補sanitized invariant diagnostic；input 128與Engine 1024不變。
 
 ## Work
 

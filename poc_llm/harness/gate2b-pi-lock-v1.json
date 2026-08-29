@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r10-prewarm-budget-marker-schema",
+  "revision":"2026-08-29-r11-prewarm-budget-marker-output",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -22,14 +22,14 @@
   "candidates":{
     "CAND-LRT-G4E2B-MOBILE-R1":{
       "gate2a_parent":{"pairing_revision":"litert-lm-v0.16.0-pi-g2b-r1","product_config_sha256":"78d55bdee44bbc4f22b12533674f74026324c118127f8878a0a0072e3f9734cd"},
-      "corrective_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r3",
-      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json","sha256":"3f72d4cdedd83d015a015014be7d80928fef32b4a4f71e18bae90a97e14e4a36"}
+      "corrective_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r4",
+      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json","sha256":"c609b8bdc6be70a0a7631d3875223b56d90df37418304ebe264713f2f39afadb"}
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"b41dbcaea9609b72361f16d3ece266bf731f4268af2a6f58813ffa2ffd110ee1"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"59684e78b25474923765fd0bfda8c5e68ac8df582911d872080c4062227c7ccc"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"88d7489672fa9238ec08ca2e382130c56eb5a10511ae62144a5fa1fee59b014e"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"df2c04d2c50a7ecce09639d401591d671c6cee6b8982519acbe543bc05083836"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"5e47c59e5510168a7e9fd3e619a258e718dd92bcd59d69dd07e51d10f04b729e"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"e0352e6601c0e99a2991692413042ad69410ffa41f519bc1cc85b81ecb4958fc"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
@@ -43,7 +43,7 @@
     "runtime_helpers_v2":{"path":"poc_llm/harness/pi_runtime_v2.py","sha256":"1f583738312dfd23a22c1f0a5e30b86cb0704dc07f18b2eed42a99d251e67d5d"},
     "gate1_helper_runner":{"path":"poc_llm/tools/run_gate1_pi_compat_v7.py","sha256":"acc7b027bfc995f5e8e5d748d5baca405fc6c1c96e564e20a8983f8f5bb5cc16"},
     "installer":{"path":"poc_llm/tools/install_gate1_arm64_wheel_v2.py","sha256":"aa8c127ec5214e4926d12968b1e0a2d767f7934c141d144b7a392df124ee0e74"},
-    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json","sha256":"1fcebafe96ad4e89295be3e337e8a15d09071c65863ea67202e02cb2cb186dc1"},
+    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json","sha256":"9118e6101f46165bfe475515e9a7796c98bd500bb5dffc13cee643de4809a8a5"},
     "protocol_schema":{"path":"poc_llm/contracts/m1/protocol-frame-pi.schema.json","sha256":"e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
     "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
     "response_schema":{"path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
@@ -52,6 +52,6 @@
     "gate2a_receipt":{"path":"poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json","sha256":"adaa71293c3152de6a7a16d10150c3d6714b9acf4fe855b07b62d8dd2611d938"},
     "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"34993ee13a90ef34866cbcf2076c0ae1d7f7a940f97f0db773a47b718f071072"},
     "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"3a6a03a077adcd2a971530f43e88e4cfc9cd7035567d9811aa7ae5ceffea2ad1"},
-    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"c3dc5a162b5d4ac1c674cacb5772dd5890985f87e97b65a35e07cd49adb4e924"}
+    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"40e3279bcf69faf7cb488b3f62a8d4d92999b78e2c8c5d5f5da4df099e2e7279"}
   }
 }

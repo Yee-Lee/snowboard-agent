@@ -598,21 +598,40 @@ class CombinedLlmDomain:
             isinstance(metrics.get(name), int)
             for name in ("prefill_tokens", "decode_tokens", "kv_tokens")
         )
-        if (
-            terminal.get("type") != "RESULT"
-            or terminal.get("request_id") != session_id
-            or response.get("action_kind") != "speak"
-            or not isinstance(speech, str)
-            or not speech.strip()
-            or not metric_types
-            or metrics["prefill_tokens"] <= 0
-            or metrics["prefill_tokens"]
-            > self.common["config_value"]["max_input_tokens"]
-            or metrics["kv_tokens"] <= 0
-            or metrics["kv_tokens"] > self.engine_capacity
-            or metrics["kv_tokens"]
-            > metrics["prefill_tokens"] + metrics["decode_tokens"] + 16
-        ):
+        checks = {
+            "terminal_result": terminal.get("type") == "RESULT",
+            "request_correlated": terminal.get("request_id") == session_id,
+            "speak_action": response.get("action_kind") == "speak",
+            "speech_nonempty": isinstance(speech, str) and bool(speech.strip()),
+            "metric_types": metric_types,
+            "prefill_positive": metric_types and metrics["prefill_tokens"] > 0,
+            "prefill_within_limit": metric_types and metrics["prefill_tokens"]
+            <= self.common["config_value"]["max_input_tokens"],
+            "decode_positive": metric_types and metrics["decode_tokens"] > 0,
+            "decode_within_limit": metric_types and metrics["decode_tokens"]
+            <= self.common["config_value"]["max_output_tokens"],
+            "kv_positive": metric_types and metrics["kv_tokens"] > 0,
+            "kv_within_capacity": metric_types
+            and metrics["kv_tokens"] <= self.engine_capacity,
+            "kv_accounted": metric_types and metrics["kv_tokens"]
+            <= metrics["prefill_tokens"] + metrics["decode_tokens"] + 16,
+        }
+        if not all(checks.values()):
+            if self.stderr is not None:
+                diagnostic = {
+                    "checks": checks,
+                    "metrics": {
+                        name: metrics.get(name)
+                        if isinstance(metrics.get(name), (int, float)) else None
+                        for name in ("prefill_tokens", "decode_tokens", "kv_tokens", "ttft_ms")
+                    },
+                }
+                self.stderr.write(
+                    "GATE2B_LLM_VALIDATION_DIAGNOSTIC "
+                    + json.dumps(diagnostic, sort_keys=True, separators=(",", ":"))
+                    + "\n"
+                )
+                self.stderr.flush()
             raise CandidateViolation("Gate 2B LLM product result or single-turn metric invalid")
         prior_leak = any(marker in speech for marker in self.prior_markers)
         current_marker_present = speech.count(nonce) == 1

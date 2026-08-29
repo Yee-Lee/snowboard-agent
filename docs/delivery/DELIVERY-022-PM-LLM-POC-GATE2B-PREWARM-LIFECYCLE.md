@@ -34,11 +34,14 @@ not rewritten by this delivery.
 
 The diagnostic also found two independent integration defects: the declared 128-token input profile
 actually reached 298 prefill tokens, and the complete output was schema-invalid and omitted the
-current marker. Pre-warm does not excuse either defect. Pairing `r3` separately enforces the rendered
+current marker. Pre-warm does not excuse either defect. Pairing `r4` separately enforces the rendered
 input budget with the model tokenizer and uses LiteRT-LM LLGuidance constrained decoding for the
 frozen speak-only response structure and controlled current-marker pattern. Exact-once, forbidden-
 literal and prior-marker behavior remain independently scored. The preceding `r2` public no-credit
 probe proved prompt-only marker wording insufficient and never entered formal Audio residency.
+Attempt 004 then proved that a 64-token output ceiling can truncate otherwise constrained JSON; an
+identical-input no-credit reproduction completed at 72 tokens. The corrected output ceiling is 128,
+within the unchanged 1024-token Engine capacity and independent of the 128-token input limit.
 
 ## Watchdog and state requirements
 

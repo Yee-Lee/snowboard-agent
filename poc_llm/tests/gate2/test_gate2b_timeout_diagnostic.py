@@ -75,7 +75,7 @@ class Gate2BTimeoutDiagnosticTests(unittest.TestCase):
         domain = CombinedLlmDomain(
             common={"validator": object(), "config_value":{
                 "generate_timeout_ms":15000, "terminal_grace_ms":2000,
-                "max_input_tokens":128,
+                "max_input_tokens":128, "max_output_tokens":128,
             }}, stderr=None, engine_capacity=1024
         )
         domain.process = Process()
