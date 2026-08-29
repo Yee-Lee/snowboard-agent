@@ -346,8 +346,10 @@ def main() -> int:
         "session_id": SESSION_ID,
         "result": "INCONCLUSIVE",
     }
+    stage = "arguments"
     try:
         require_parent_args(args)
+        stage = "formal_identity"
         if streaming_digest(args.packet_lock) != args.packet_lock_sha256:
             raise ValueError("Formal Gate 2B packet lock mismatch")
         lock = load(args.packet_lock)
@@ -370,64 +372,94 @@ def main() -> int:
         config = repo_artifact(candidate["product_config"])
         runtime = lock["runtime"]
         installer = artifacts["installer"]
+        original_cwd = Path.cwd()
         with tempfile.TemporaryDirectory(
             prefix="llm-poc-g2b-timeout-debug-", dir="/tmp"
         ) as directory:
             work_root = Path(directory)
-            install_root = work_root / "install"
-            install = subprocess.run(
-                [
-                    sys.executable, str(installer),
-                    "--wheel", runtime["wheel_path"],
-                    "--wheel-sha256", runtime["wheel_sha256"],
-                    "--target", str(install_root),
-                ],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-                timeout=300,
-            )
-            if install.returncode != 0 or json.loads(install.stdout).get("result") != "PASS":
-                raise RuntimeError("Offline diagnostic runtime install failed")
+            os.chdir(work_root)
+            try:
+                stage = "runtime_install"
+                install_root = work_root / "install"
+                install = subprocess.run(
+                    [
+                        sys.executable, str(installer),
+                        "--wheel", runtime["wheel_path"],
+                        "--wheel-sha256", runtime["wheel_sha256"],
+                        "--target", str(install_root),
+                    ],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                    timeout=300,
+                )
+                if (
+                    install.returncode != 0
+                    or json.loads(install.stdout).get("result") != "PASS"
+                ):
+                    raise RuntimeError("Offline diagnostic runtime install failed")
 
-            bindings = load_audio_bindings(args.audio_root)
-            fixture_lock = bindings["load_fixture_lock"](
-                args.audio_fixture_lock,
-                accepted["p9_combined_execution_sha"],
-            )
-            bindings["verify_fixture_files"](fixture_lock, args.audio_fixture_dir)
-            record = fixture_lock["records"][0]
-            if record.get("session_id") != SESSION_ID:
-                raise ValueError("First Accepted Audio session identity mismatch")
-            record = {
-                **record,
-                "wav_path": args.audio_fixture_dir / record["filename"],
+                stage = "audio_transcript"
+                bindings = load_audio_bindings(args.audio_root)
+                fixture_lock = bindings["load_fixture_lock"](
+                    args.audio_fixture_lock,
+                    accepted["p9_combined_execution_sha"],
+                )
+                bindings["verify_fixture_files"](
+                    fixture_lock, args.audio_fixture_dir
+                )
+                record = fixture_lock["records"][0]
+                if record.get("session_id") != SESSION_ID:
+                    raise ValueError("First Accepted Audio session identity mismatch")
+                record = {
+                    **record,
+                    "wav_path": args.audio_fixture_dir / record["filename"],
+                }
+                audio, roots, _absence = asyncio.run(acquire_transcript(
+                    bindings=bindings,
+                    audio_root=args.audio_root,
+                    record=record,
+                    vad_runtime_python=args.audio_vad_runtime_python,
+                    vad_model=args.audio_vad_model,
+                    asr_binary=args.audio_asr_binary,
+                    asr_model=args.audio_asr_model,
+                    work_root=work_root,
+                ))
+                transcript = audio.pop("transcript")
+                value = request_value(transcript)
+                stage = "llm_generation"
+                generation, worker_cleanup = run_worker(
+                    args=args,
+                    install_root=install_root,
+                    config=config,
+                    config_sha256=candidate["product_config"]["sha256"],
+                    config_schema=artifacts["product_config_schema"],
+                    receipt_schema=artifacts["artifact_receipt_schema"],
+                    value=value,
+                )
+                del transcript, value
+            finally:
+                os.chdir(original_cwd)
+
+        stage = "postcondition"
+        postcondition: dict[str, Any]
+        try:
+            environment_post = target_preflight(args.execution_sha)
+            postcondition = {
+                "passed": True,
+                "git_sha": environment_post.get("git_sha"),
+                "swap_total_bytes": environment_post.get("swap_total_bytes"),
+                "routes_offline": environment_post.get("network", {}).get(
+                    "routes_offline"
+                ),
+                "throttled": environment_post.get("throttled_prelaunch"),
             }
-            audio, roots, _absence = asyncio.run(acquire_transcript(
-                bindings=bindings,
-                audio_root=args.audio_root,
-                record=record,
-                vad_runtime_python=args.audio_vad_runtime_python,
-                vad_model=args.audio_vad_model,
-                asr_binary=args.audio_asr_binary,
-                asr_model=args.audio_asr_model,
-                work_root=work_root,
-            ))
-            transcript = audio.pop("transcript")
-            value = request_value(transcript)
-            generation, worker_cleanup = run_worker(
-                args=args,
-                install_root=install_root,
-                config=config,
-                config_sha256=candidate["product_config"]["sha256"],
-                config_schema=artifacts["product_config_schema"],
-                receipt_schema=artifacts["artifact_receipt_schema"],
-                value=value,
-            )
-            del transcript, value
-
-        environment_post = target_preflight(args.execution_sha)
+        except Exception as error:
+            postcondition = {
+                "passed": False,
+                "error_type": type(error).__name__,
+            }
 
         report.update({
             "execution_sha": args.execution_sha,
@@ -440,14 +472,7 @@ def main() -> int:
                 ),
                 "throttled_prelaunch": environment.get("throttled_prelaunch"),
             },
-            "environment_post": {
-                "git_sha": environment_post.get("git_sha"),
-                "swap_total_bytes": environment_post.get("swap_total_bytes"),
-                "routes_offline": environment_post.get("network", {}).get(
-                    "routes_offline"
-                ),
-                "throttled": environment_post.get("throttled_prelaunch"),
-            },
+            "environment_post": postcondition,
             "audio_input": {
                 "fixture_id": record["fixture_id"],
                 "fixture_sha256": record["sha256"],
@@ -462,11 +487,16 @@ def main() -> int:
                 "audio_device_owner_count": audio_device_owner_count(),
             },
         })
-        report["result"] = "COMPLETE" if generation.get("terminal") == "RESULT" else "INCONCLUSIVE"
+        report["result"] = (
+            "COMPLETE"
+            if generation.get("terminal") == "RESULT" and postcondition["passed"]
+            else "INCONCLUSIVE"
+        )
         print(json.dumps(report, sort_keys=True, separators=(",", ":")))
         return 0 if report["result"] == "COMPLETE" else 2
     except Exception as error:
         report["error_type"] = type(error).__name__
+        report["failure_stage"] = stage
         print(json.dumps(report, sort_keys=True, separators=(",", ":")))
         return 2
 
