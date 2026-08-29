@@ -73,6 +73,10 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - **Gate 2 R4 review**：R3-F1/F2已關閉；Condition lifetime、post-call outcome、窄typed boundary、
   primary-before-rebuild及runner/verifier一致性均通過可重複實驗。Core已另行授權Gate 2A Pi
   execution；benchmark publication、candidate proposal與Gate 2B仍須先完成User evidence review。
+- **P2/P3/P8 semantics adjustment**：User已裁決P2為完整candidate configuration的整合
+  qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
+  已請Core確認；ACK可後至，不阻擋相同frozen surface完成雙candidate比較，但現有receipt
+  不得改寫，User review前不發布結果、不提名provisional finalist。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance
   `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認；Pi上實體artifact staging與LLM combined

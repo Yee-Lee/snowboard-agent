@@ -105,6 +105,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md`](delivery/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) - 要求Core暫勿ACK/execute R2 SHA；R3 targeted review後另送replacement exact SHA
 * [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](delivery/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) - 已送Core；R3 SHA `4dc76d1…`與surface `568aa7…dc5`已獲cumulative R3 ACK
 * [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md`](delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) - User已裁決；請Core一次接受四份replacement receipts、Gate 1 PASS及Qwen P7.1 defect waiver
+* [`DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md`](delivery/DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md) - 請Core分離P2整合qualification與裸模型選型、保留P3安全邊界、縮限P8為history/KV isolation；ACK可後至且不阻擋已核准的雙candidate frozen execution
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
