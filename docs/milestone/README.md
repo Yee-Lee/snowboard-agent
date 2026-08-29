@@ -6,7 +6,7 @@
 
 ## Current reachability
 
-狀態：`GATE1 CLOSED / GATE2 DEVELOPMENT READINESS APPROVED / SOURCE FROZEN FOR DELIVERY / PI NOT AUTHORIZED`。
+狀態：`GATE1 CLOSED / GATE2A IN_PROGRESS / CORE+USER PI AUTHORIZED / EXECUTION SHA FROZEN`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -27,7 +27,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
-| Gate 2A | `DEVELOPMENT READINESS APPROVED / NOT_STARTED` | P2, P3, P4, P5, P8 | R4已關閉R3-F1/F2；待pushed exact SHA、Pi授權與staging |
+| Gate 2A | `IN_PROGRESS / PI AUTHORIZED` | P2, P3, P4, P5, P8 | Core授權exact `ed7aaca…`；先完成clean/offline/read-only staging與preflight，再依packet執行 |
 | Gate 2B | `DEVELOPMENT READINESS APPROVED / NOT_STARTED` | P9, P10B | R4已關閉shared scored boundary；待Gate 2A receipt、Pi授權與staging |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
@@ -40,7 +40,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
-| M3 | `NOT_STARTED` | Development readiness已通過R4 review；待pushed exact SHA與Pi授權後才可改為`IN_PROGRESS` |
+| M3 | `IN_PROGRESS` | R4 review、pushed exact SHA及Core/User Pi授權均到位；正在執行staging/preflight與Gate 2A |
 | M4 | `NOT_STARTED` | Development readiness已通過R4 review；待Gate 2A receipt、Pi授權與staging |
 
 ## Cumulative P1～P12 rule
@@ -61,8 +61,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   Gate 2A candidate資格尋求workaround，但不得把waiver改寫為PASS。
 - **Core closure ACK**：`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`已接受四份replacement
   receipts、User Qwen defect waiver、兩名Gate 2A candidates並關閉Gate 1。
-- **Pi operator state**：Gate 1後已恢復zram/network、移除`/tmp` bind且無殘留process；模型仍在
-  `/var/tmp`持久保存。Gate 2A需重新建立read-only staging並重做clean/offline/swap preflight。
+- **Pi operator state**：Core於`ACK-LLM-POC-M3-GATE2-PI-AUTH`授權exact `ed7aaca…`執行；User於
+  2026-08-29確認Pi可連線並要求繼續。模型/runtime、clean SHA、read-only staging、offline/swap及
+  process residue仍須以本次preflight實測確認。
 - **P1 startup**：Gemma 1024與Qwen 512皆通過initial READY；capacity必須綁exact artifact，禁止恢復
   implicit 4096 default或把144-token protocol envelope當Engine capacity。
 - **P6**：native cancel已知可能nondeterministic；只有P7完整PASS才允許Conditional escalation。
@@ -70,8 +71,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - **P5**：固定continuous 512-token chunks共用單一outer timer；chunk完成固定CONTINUE，禁止
   early RESULT及結果後adaptive fixture。
 - **Gate 2 R4 review**：R3-F1/F2已關閉；Condition lifetime、post-call outcome、窄typed boundary、
-  primary-before-rebuild及runner/verifier一致性均通過可重複實驗。Reviewer授權exact
-  milestone commit/push；Pi execution、benchmark publication與candidate proposal仍未授權。
+  primary-before-rebuild及runner/verifier一致性均通過可重複實驗。Core已另行授權Gate 2A Pi
+  execution；benchmark publication、candidate proposal與Gate 2B仍須先完成User evidence review。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance
   `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認；Pi上實體artifact staging與LLM combined
@@ -98,7 +99,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Governing and historical inputs
 
-2026-08-28 round-close audit：`docs/pm_handoff/`四份直屬Income均仍具治理效力。M4b
+2026-08-29 entry audit：`docs/pm_handoff/`五份直屬Income均仍具治理效力。M4b
 contract與Core task boundary控制最終交付；cumulative R3 ACK控制跨gate累積與
 carry-forward；Gate 1 closure ACK控制兩名Gate 2A candidate及Qwen waiver。本輪無檔案可歸檔。
 
@@ -106,6 +107,7 @@ carry-forward；Gate 1 closure ACK控制兩名Gate 2A candidate及Qwen waiver。
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
 - [Gate 1 closure ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
+- [Gate 2A Pi authorization](../pm_handoff/ACK-LLM-POC-M3-GATE2-PI-AUTH.md)
 - [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)

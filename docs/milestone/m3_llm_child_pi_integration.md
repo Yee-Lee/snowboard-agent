@@ -1,6 +1,6 @@
 # LLM M3：Gate 2A Remaining LLM-only Pi Validation
 
-狀態：`NOT_STARTED`
+狀態：`IN_PROGRESS`
 
 ## Goal
 
@@ -25,10 +25,13 @@ native cancel實際呼叫仍可在conversation close後發生，且scored broken
 timeout與mixed-stage precedence仍可產生錯誤`INCONCLUSIVE`。R3-F1/F2現已用Condition lifetime、
 post-call marker、窄scored exception matrix與primary-before-rebuild裁決修正；59項Gate 2測試包含
 完整protocol integration。R4 reviewer已重現59/59 Gate 2、136/136 Gate 1與十輪定向競態/裁決
-實驗，關閉R3-F1/F2並授權exact milestone commit/push；Pi仍未授權，未產生Pi credit。完整追蹤見
+實驗，關閉R3-F1/F2並授權exact milestone commit/push。Core其後以
+`ACK-LLM-POC-M3-GATE2-PI-AUTH`授權exact `ed7aaca2e187b2287d442d6841e1ab2610b67570`
+進行staging與Gate 2A；User於2026-08-29確認Pi可連線並要求繼續，因此M3進入`IN_PROGRESS`，
+但尚未產生Pi credit。完整追蹤見
 `docs/response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`。
-本次commit只凍結development-ready source；只有取得pushed exact SHA、Pi授權與完成重建staging
-後，index才可把M3改為`IN_PROGRESS`。
+Execution source固定為上述commit；本輪先重建並驗證clean/offline/read-only staging，再按不可變
+packet執行。任何surface drift停止執行並回報，不在Pi修補。
 
 ## Work
 
