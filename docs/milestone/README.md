@@ -80,9 +80,11 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   Accepted Audio `controller-r2` manifest `6bb24f9a…76f4`、wheel inventory、isolated venv及import
   origin驗證。正式attempt 006前，必須先由同一exact SHA通過static preflight及一次真正
   VAD→ASR→LLM→TTS/ALSA、resource/log/cleanup全鏈diagnostic；兩種模式都不建立evidence或P credit。
-- **Gate 2B runner containment**：Accepted Audio child一律從run-owned temporary cwd啟動，任何
-  cwd-relative runtime side effect隨該目錄刪除，不得污染exact Git checkout。No-credit diagnostic
-  另輸出250 ms sample-end stage PSI歸因；零full-stall門檻不變，歸因只供debug且不改寫P9。
+- **Gate 2B runner containment與PSI裁決**：Accepted Audio child一律從run-owned temporary cwd啟動，
+  任何cwd-relative runtime side effect隨該目錄刪除，不得污染exact Git checkout。User於2026-08-29
+  指示從prospective Gate 2B execution surface完全移除system-wide memory PSI採集與gate；P9仍嚴格檢查
+  system-used、`swap=0`、OOM、leak、temperature、throttling、ownership與cleanup。`DELIVERY-023`請Core
+  接受此契約調整；ACK可在已授權執行期間補入，final delivery前仍須連結。
 - **P2/P3/P8 semantics adjustment**：User已裁決P2為完整candidate configuration的整合
   qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
   已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
@@ -100,8 +102,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   歷史attempt 003～005亦不得覆寫；其User review/發布狀態與正式P disposition分開保存。Current
   r5 lock加入`controller-r2` closure、安全Audio-domain診斷及恰一session的
   `--diagnostic-session-only`。它先用獨立`--preflight-only`驗證全部static entry、model receipt
-  metadata與PSI/thermal/OOM/memory probes，再以相同四domain/ALSA/controller執行單session；兩者
-  通過才可執行`G2B-PI-COMBINED-006`。Attempt 001～005不得覆寫。
+  metadata與thermal/OOM/memory probes，再以相同四domain/ALSA/controller執行單session；兩者
+  通過才可執行`G2B-PI-COMBINED-006`。Current r14不再要求PSI probe或`psi=1`；Attempt 001～005不得覆寫。
   Independent review可後補。Core對
   `DELIVERY-019/021`的ACK依User裁決
   可於執行期間補入，但final delivery前必須收到。

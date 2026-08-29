@@ -1,4 +1,4 @@
-"""Continuous process-tree, memory, thermal and PSI sampling for Gate 2B."""
+"""Continuous process-tree, memory and thermal sampling for Gate 2B."""
 
 from __future__ import annotations
 
@@ -72,17 +72,6 @@ def _meminfo() -> dict[str, int]:
     return values
 
 
-def _psi_full_total() -> int:
-    path = Path("/proc/pressure/memory")
-    if not path.is_file():
-        raise RuntimeError("Gate 2B memory PSI is unavailable")
-    for line in path.read_text(encoding="ascii").splitlines():
-        if line.startswith("full "):
-            values = dict(item.split("=", 1) for item in line.split()[1:])
-            return int(values["total"])
-    raise RuntimeError("Gate 2B full memory PSI counter is unavailable")
-
-
 def oom_kill_count() -> int:
     for line in Path("/proc/vmstat").read_text(encoding="ascii").splitlines():
         if line.startswith("oom_kill "):
@@ -145,7 +134,6 @@ def resource_sample(owner_roots: dict[str, int], sampled_at: float) -> dict[str,
         ),
         "temperature_c": temperature_c,
         "throttled": throttled,
-        "psi_full_total": _psi_full_total(),
         "owners": owners,
         "unique_process_count": len(all_pids),
     }
@@ -300,7 +288,6 @@ def evaluate_resources(
         "max_collection_duration_s": max(
             record["collection_duration_s"] for record in records
         ),
-        "psi_full_total_delta": records[-1]["psi_full_total"] - records[0]["psi_full_total"],
         "oom_kill_delta": oom_after - oom_before,
         "owner_sets_complete": owner_sets_complete,
         "cpu_observed_for_all_owners": cpu_observed,
@@ -322,7 +309,6 @@ def evaluate_resources(
         summary["peak_system_used_mib"] <= 3584
         and summary["peak_temperature_c"] < 80
         and summary["max_sample_start_gap_s"] <= 0.5
-        and summary["psi_full_total_delta"] == 0
         and summary["oom_kill_delta"] == 0
         and owner_sets_complete
         and cpu_observed

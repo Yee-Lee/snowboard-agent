@@ -43,7 +43,6 @@ from poc_llm.tools.run_gate2b_pi_v1 import (
     require_resource_probe_preflight,
     scan_owned_logs,
     single_session_diagnostic_output,
-    summarize_psi_transitions,
     verify_external_checkouts,
     verify_audio_controlled_inputs,
     verify_audio_controller_runtime,
@@ -64,6 +63,7 @@ G2B_SCHEMA = ROOT / "poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json"
 G2B_RUNNER = ROOT / "poc_llm/tools/run_gate2b_pi_v1.py"
 G2B_LOCK = ROOT / "poc_llm/harness/gate2b-pi-lock-v1.json"
 G2B_PACKET = ROOT / "poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md"
+G2B_RESOURCES = ROOT / "poc_llm/harness/gate2b_resources_v1.py"
 
 
 class Domain:
@@ -164,7 +164,7 @@ def resource_values(leak_per_session: float = 0.0) -> tuple[list[dict], list[dic
             "monotonic_s":float(index) * 0.25,"mem_total_kib":4_000_000,
             "mem_available_kib":1_000_000,"system_used_mib":3000.0 + leak_per_session * index,
             "temperature_c":60.0,"throttled":"throttled=0x0","swap_total_kib":0,
-            "psi_full_total":100,"owners":{
+            "owners":{
                 name:{"root_pid":100 + offset,"root_present":True,"process_count":1,
                       "rss_kib":1000,"pss_kib":900 + int(leak_per_session * 1024 * index / 5),
                       "threads":1,"cpu_ticks":index + 1}
@@ -209,11 +209,6 @@ class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(pauses, [])
         self.assertEqual(len(llm.inputs), 1)
         self.assertEqual(len(tts.inputs), 1)
-        self.assertEqual(len(coordinator.session_stage_windows), 1)
-        self.assertEqual(
-            tuple(coordinator.session_stage_windows[0]["stage_ends_monotonic_s"]),
-            ("vad", "asr", "llm", "tts_playback"),
-        )
 
     async def test_formal_coordinator_still_rejects_one_session(self) -> None:
         events: list[str] = []
@@ -475,19 +470,12 @@ class Gate2BDefinitionTests(unittest.TestCase):
             "domain_diagnostics":[], "partial_trace":[], "violations":[],
             "result":"PASS",
         }
-        output = single_session_diagnostic_output(
-            value,
-            psi_diagnostic={
-                "psi_full_total_delta_us": 3,
-                "stage_delta_us": {"llm": 3},
-            },
-        )
+        output = single_session_diagnostic_output(value)
         serialized = json.dumps(output)
         self.assertNotIn("private", serialized)
         self.assertFalse(output["formal_credit"])
         self.assertFalse(output["evidence_created"])
         self.assertEqual(output["p_results"], {"P9":"Blocked","P10B":"Blocked"})
-        self.assertEqual(output["psi_diagnostic"]["stage_delta_us"], {"llm": 3})
 
     def test_audio_runtime_cwd_contains_relative_side_effect_and_restores(self) -> None:
         original = Path.cwd()
@@ -501,27 +489,6 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 (runtime_cwd / "controlled-side-effect.ses").read_text(), "safe"
             )
         self.assertFalse((original / "controlled-side-effect.ses").exists())
-
-    def test_psi_transition_summary_attributes_sample_end_stage(self) -> None:
-        records_value = [
-            {"monotonic_s":10.0, "psi_full_total":100},
-            {"monotonic_s":10.25, "psi_full_total":103},
-            {"monotonic_s":10.5, "psi_full_total":107},
-            {"monotonic_s":10.75, "psi_full_total":107},
-        ]
-        summary = summarize_psi_transitions(records_value, [{
-            "start_monotonic_s":10.1,
-            "stage_ends_monotonic_s":{
-                "vad":10.2, "asr":10.4, "llm":10.7, "tts_playback":11.0,
-            },
-        }])
-        self.assertEqual(summary["psi_full_total_delta_us"], 7)
-        self.assertEqual(summary["transition_count"], 2)
-        self.assertEqual(summary["stage_delta_us"], {"asr":3, "llm":4})
-        self.assertEqual(
-            [item["sample_end_offset_s"] for item in summary["transitions"]],
-            [0.25, 0.5],
-        )
 
     def test_run_id_is_single_safe_slug(self) -> None:
         self.assertTrue(valid_gate2b_run_id("G2B-PI-COMBINED-001"))
@@ -853,13 +820,12 @@ class Gate2BDefinitionTests(unittest.TestCase):
         table = {2:1,3:2,4:3,5:1}
         self.assertEqual(process_tree(2, table), {2,3,4})
 
-    def test_resource_gate_requires_memory_thermal_psi_oom_and_owners(self) -> None:
+    def test_resource_gate_requires_memory_thermal_oom_and_owners(self) -> None:
         records_value, points = resource_values()
         passed, summary = evaluate_resources(
             records_value, session_points=points, oom_before=1, oom_after=1
         )
         self.assertTrue(passed)
-        self.assertEqual(summary["psi_full_total_delta"], 0)
         records_value[-1]["system_used_mib"] = 3584.001
         self.assertFalse(evaluate_resources(
             records_value, session_points=points, oom_before=1, oom_after=1
@@ -875,7 +841,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
     def test_missing_resource_probe_fails_before_residency(self) -> None:
         with patch(
             "poc_llm.tools.run_gate2b_pi_v1.resource_sample",
-            side_effect=RuntimeError("memory PSI is unavailable"),
+            side_effect=RuntimeError("memory sample is unavailable"),
         ), self.assertRaisesRegex(EnvironmentInvalid, "before residency"):
             require_resource_probe_preflight()
         with patch(
@@ -895,17 +861,12 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertFalse(passed)
         self.assertGreater(summary["leak"]["system_used"]["slope_mib_per_session"], 4.0)
 
-    def test_thermal_psi_sampler_and_evidence_faults_are_not_valid_passes(self) -> None:
+    def test_thermal_sampler_and_evidence_faults_are_not_valid_passes(self) -> None:
         records_value, points = resource_values()
         hot = json.loads(json.dumps(records_value))
         hot[-1]["temperature_c"] = 80.0
         self.assertFalse(evaluate_resources(
             hot, session_points=points, oom_before=1, oom_after=1
-        )[0])
-        stalled = json.loads(json.dumps(records_value))
-        stalled[-1]["psi_full_total"] += 1
-        self.assertFalse(evaluate_resources(
-            stalled, session_points=points, oom_before=1, oom_after=1
         )[0])
         sampler = ResourceSampler(lambda: {"controller":1}, interval_s=0.01)
         with patch(
@@ -1305,6 +1266,11 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertIn('lock.get("fault_schedule") != []', source)
         self.assertIn("full_model_hash_count\": 0", source)
         self.assertIn("TranscriptAsrDomain", source)
+
+    def test_memory_psi_is_absent_from_current_execution_surface(self) -> None:
+        for path in (G2B_RUNNER, G2B_RESOURCES, G2B_SCHEMA, G2B_LOCK):
+            with self.subTest(path=path):
+                self.assertNotIn("psi", path.read_text(encoding="utf-8").lower())
 
     def test_preexisting_gate2b_paths_are_not_deleted(self) -> None:
         run_id = f"g2b-ownership-{uuid.uuid4().hex}"

@@ -91,13 +91,16 @@ fail-fast每輪只揭露下一層，正式attempt 006前新增兩個硬門檻：
 preflight，以及一次使用相同VAD/ASR/LLM/TTS、Core controller、真實ALSA、resource/log/cleanup路徑的
 no-credit diagnostic。Diagnostic只執行第一筆固定fixture、刪除所有暫存資料、不得建立formal evidence，
 且P9/P10B保持`Blocked`；Accepted Audio children從run-owned temporary cwd啟動，避免immutable runtime
-的relative side effect污染exact checkout。失敗時另提供250 ms sample-end stage的safe PSI attribution，
-但`full total delta=0`門檻不變。只有兩道門檻都PASS才可開始20-session formal run。
+的relative side effect污染exact checkout。User於2026-08-29指示prospective revision `r14`完全移除
+system-wide memory PSI採集、preflight、schema與PASS/FAIL gate；歷史Attempt 002不改寫。剩餘P9
+resource gate維持system-used、`swap=0`、OOM、leak、temperature、throttling、ownership與cleanup。
+`DELIVERY-023`請Core接受此契約調整，ACK可後至但final delivery前須連結。只有兩道門檻都PASS才可
+開始20-session formal run。
 
 ## Work
 
 - P9/P10B共用一次Audio+LLM load與20 sessions，不建立額外residency-only重複run。
-- P9記錄system-used、完整process-tree PSS/RSS、CPU、threads/owners、PSI、temperature與cleanup；
+- P9記錄system-used、完整process-tree PSS/RSS、CPU、threads/owners、temperature與cleanup；
   capacity gate只用`MemTotal-MemAvailable<=3584MiB`，sum RSS僅diagnostic。
 - P10B執行20個ASR fixture→LLM→TTS sessions（5s cadence），驗證Audio semantics、LLM schema、
   latency、thermal、history/stale result、log hygiene與final residue。

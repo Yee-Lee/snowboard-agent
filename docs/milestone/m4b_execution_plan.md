@@ -98,12 +98,13 @@ Initial attempt `G2B-PI-COMBINED-001`因受控store漏放Accepted TTS verifier�
 source而在完整residency前`INCONCLUSIVE`；其evidence固定保留，不提供P credit。Replacement
 `G2B-PI-COMBINED-002`已驗證完整Audio closure並使四domain READY，但Pi boot未啟用kernel PSI，
 因此第一筆resource sample `INCONCLUSIVE`；零session且cleanup完整。Attempt
-`G2B-PI-COMBINED-003`必須在任何domain啟動前驗證完整Audio source與memory/PSI/OOM/thermal probe
-closure，使用新exact execution SHA與evidence root；未改變的read-only input root可沿用。
+`G2B-PI-COMBINED-003`原規劃在任何domain啟動前驗證完整Audio source與memory/PSI/OOM/thermal
+probe closure；該歷史entry不改寫。User於2026-08-29以prospective `r14`裁決完全移除system-wide
+memory PSI採集與gate，後續只驗證保留的memory/OOM/thermal及完整Audio source closure。
 
 | Work package | P IDs | Exit |
 | --- | --- | --- |
-| `G2B-WP01-COMBINED` | P9, P10B | P9 system-used每sample<=3584MiB、no OOM/full PSI regression；P10B 20/20、<80°C、throttled=0、no crash/leak/stale/history/owner residue |
+| `G2B-WP01-COMBINED` | P9, P10B | P9 system-used每sample<=3584MiB、swap=0、no OOM/leak；P10B 20/20、<80°C、throttled=0、no crash/stale/history/owner residue；兩者cleanup零殘留 |
 | `G2B-WP02-FINAL` | cumulative | link Gate1 P1/P6/P7/P10A/P11/P12 + 2A P2/P3/P4/P5/P8 + 2B P9/P10B；User review後交Core final winner/no-go |
 
 8GB如執行只作identical-config informational sanity，不補救4GB failure。
@@ -130,11 +131,12 @@ boundary及Accepted Audio staging。Initial attempt 001的staging defect不改�
 lock `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`將兩個TTS wheel source
 納入pre-residency authentication。Attempt 002證明Pi的PSI default-disabled boot不符合P9 measurement
 entry；attempt 003先以獨立no-credit/no-evidence/zero-residency smoke fail-close全部static entry與
-resource probes，lock `da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`；
+當時的resource probes，lock `da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`；
 PASS後才允許formal evidence/run ID。Pi launch固定private-mount/
 read-only-sysfs，避免繼承host `wlan0` view。User已
 授權直接commit/push與Pi staging/execution，independent review可後補。禁止把current failed
-configuration直接餵入combined scoring。
+configuration直接餵入combined scoring。Prospective r14依User裁決不讀取、不保存且不判定memory
+PSI；`DELIVERY-023`要求Core更新P9契約語意，ACK可隨執行後補但final delivery前必須連結。
 
 POC主交付完成後，P1.2 cold-start歸因與未入選candidate的identical Gate 2B envelope可列為
 informational/no-credit backlog。它們不得延誤正式Gate 2B，也不得回溯改寫單一finalist的選型結果。

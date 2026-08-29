@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r13-contained-audio-cwd-psi-attribution`
+- **Revision**: `2026-08-29-r14-user-resource-adjustment`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -47,7 +47,7 @@ boundary; it does not claim that the Core product composition root is under test
    in memory, feeds the real LLM, and the LLM `speak` text exists only in memory before feeding the
    accepted TTS;
 3. per-session end-to-end and LLM timings, schema disposition, `MemTotal-MemAvailable`, full process-
-   tree PSS/RSS, CPU, threads/process ownership, temperature, throttling and PSI;
+   tree PSS/RSS, CPU, threads/process ownership, temperature and throttling;
 4. the predeclared combined fault schedule, which is empty because the integration adds no new
    cancel/failure protocol and both accepted child boundaries retain their reviewed failure credit;
    this does not replay or claim new failure credit; and
@@ -55,8 +55,8 @@ boundary; it does not claim that the Core product composition root is under test
 
 ## 3. P9 and P10B decisions
 
-P9 `PASS` requires every 4GB sample to keep system-used memory <=3584 MiB, `swap=0`, no OOM, no
-increase in full memory-pressure stall, complete process ownership and valid cleanup. Sum RSS is
+P9 `PASS` requires every 4GB sample to keep system-used memory <=3584 MiB, `swap=0`, no OOM,
+complete process ownership and valid cleanup. Sum RSS is
 diagnostic only. One stable resource point is captured after every session. Sessions 6–20 combined
 PSS and system-used slopes must each be <=4.0 MiB/session, and sessions 16–20 medians must be no more
 than 64 MiB above sessions 1–5; per-owner PSS leak diagnostics are also retained. An optional 8GB run
@@ -167,17 +167,24 @@ diagnostics. Pairing `r5` leaves all LLM behavior unchanged and adds the previou
 Audio `controller-r2` closure plus sanitized Audio-domain diagnostics; Engine capacity remains 1024
 and the input ceiling remains 128.
 
-The corrective attempt uses a new execution SHA/run ID/evidence root, requires every resource probe before
-residency, and may reuse the unchanged authenticated read-only input root. The PSI-enabled reboot
+On 2026-08-29 the User directed that memory PSI be removed from this POC execution surface. Revision
+`r14` therefore does not read `/proc/pressure/memory`, require `psi=1`, store PSI observations, or use
+PSI in P9/P10B disposition. The mandatory resource gates remain system-used capacity, `swap=0`, OOM,
+leak, temperature, throttling, ownership and cleanup. This prospective adjustment does not rewrite
+historical Attempt 002; Core contract acknowledgement is requested by `DELIVERY-023` and may follow
+the already authorized execution.
+
+The corrective attempt uses a new execution SHA/run ID/evidence root, requires every retained resource
+probe before residency, and may reuse the unchanged authenticated read-only input root. Any reboot
 restores the platform's 2 GiB zram swap and clears the boot-local `/tmp` artifact bind mount; before
-attempt 003 the operator must return swap to zero and recreate the persisted `/var/tmp` artifact root
+execution the operator must return swap to zero and recreate the persisted `/var/tmp` artifact root
 as the same read-only `/tmp` mount. Receipt metadata is rechecked without a full model hash.
 
 Before creating corrective evidence or loading any domain, execute the exact command below once with
 `--preflight-only`, replace the run ID with `G2B-PREFLIGHT-006`, and use a fresh outside-Git placeholder
 evidence root. Every other argument must remain byte-for-byte identical to the formal invocation.
 The mode authenticates source/lock, Audio/Core, all controlled inputs, Gate 2A chain, runtime wheel,
-model receipt metadata, offline/swap/sysfs/ALSA state and live memory/PSI/OOM/thermal probes. It must
+model receipt metadata, offline/swap/sysfs/ALSA state and live memory/OOM/thermal probes. It must
 return `result=PASS`, `formal_credit=false`, `evidence_created=false`, leave the placeholder absent,
 and perform zero Audio/LLM residency. Failure does not consume `G2B-PI-COMBINED-006`; fix the
 environment and repeat only this smoke preflight.
@@ -190,8 +197,8 @@ sampling, owned-log scan and reverse cleanup as formal mode. It runs exactly one
 no cadence/leak judgment, returns `formal_credit=false` and `evidence_created=false`, removes all
 temporary data and leaves P9/P10B `Blocked`. Immutable Accepted Audio children execute from the
 run-owned work directory so cwd-relative files cannot dirty the exact Git checkout. A failed
-resource check emits only sampled PSI increments attributed to the VAD/ASR/LLM/TTS sample-end
-window at 250 ms resolution; it never emits prompt, transcript, response or speech text. Formal
+resource check emits only sanitized retained capacity/thermal/ownership diagnostics; it never emits
+prompt, transcript, response or speech text. Formal
 `G2B-PI-COMBINED-006` is prohibited unless this
 probe returns `result=PASS`, all four stages complete, resource and log checks pass, and cleanup is
 zero-residue. Formal mode still rejects any catalog other than all 20 sessions.

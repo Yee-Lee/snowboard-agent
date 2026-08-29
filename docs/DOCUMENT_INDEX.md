@@ -115,6 +115,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md`](delivery/DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md) - 紀錄Qwen P1.2 cold READY finding；Gate 2A限用30秒操作觀察窗口且不改P1或產生credit，Core ACK可後至
 * [`DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`](delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md) - User關閉Gate 2A POC round、選定Gemma唯一model finalist；請Core ACK語意、selection及Gate 2B新integration revision邊界
 * [`DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md`](delivery/DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md) - 要求Core將Engine-loaded與inference-ready分離；固定pre-warm、實際token budget及分離watchdog納入產品child設計，ACK可後至
+* [`DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md`](delivery/DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md) - User裁決從prospective Gate 2B完全移除system-wide Memory PSI採集與gate；保留4GB capacity、swap/OOM、leak、thermal、ownership及cleanup，Core ACK可後至
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
