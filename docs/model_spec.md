@@ -137,3 +137,79 @@ The USER owns the remaining unnamed Matcha Chinese/English training-data and voi
 Any change to an engine/model/vocoder/voice checksum, VAD endpoint profile, ASR prompt/decoder, runtime package version, native build option or TTS generation profile is a baseline change. It requires a change request, updated provenance and affected POC/Core delta evidence; it cannot be hidden as a packaging or config-only edit.
 
 LLM, Vision and wake-word baselines remain pending their own gates and are not fixed by this Audio section.
+
+## 6. M4b LLM POC winner baseline
+
+### 6.1 Authority and status
+
+| Item | Fixed value |
+| :--- | :--- |
+| Status | `POC FINAL WINNER ACCEPTED — CORE M4B GATE 3 PENDING` |
+| Core ACK | `DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001` |
+| POC execution SHA | `0c75536e6ee99b502c59438989ca852194648946` |
+| POC closure content | `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae` |
+| POC publication locator | `485bb2a7c07d86a09899f09358c744edd733f875` |
+| Winner manifest | `POC-llm-DEL-2026-001-R3` |
+| Formal evidence | `G2B-PI-COMBINED-006`; sanitized SHA-256 `f5f5b3acd15e32bb0208da9f838cec4415469c28c12a45b25f8c2f5f55ad33fa` |
+
+This fixes the POC reference input; it is not Core product Gate 3 PASS. Product implementation,
+machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
+
+### 6.2 Runtime and model identity
+
+| Field | Fixed value |
+| :--- | :--- |
+| Candidate / pairing | `CAND-LRT-G4E2B-MOBILE-R1` / `litert-lm-v0.16.0-pi-g2b-r5` |
+| Platform | Raspberry Pi 5 4 GB / Debian 13 aarch64 / CPU / 4 threads |
+| Runtime | LiteRT-LM API `0.16.0`; source tag commit `924e79c91542761242244e4f1651851f822e4cbb` |
+| Runtime wheel | `litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl`; SHA-256 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
+| Native library SHA-256 | `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` |
+| Model source | `litert-community/gemma-4-E2B-it-litert-lm@6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` |
+| Model file | `gemma-4-E2B-it.litertlm`; 2,588,147,712 bytes |
+| Model SHA-256 | `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` |
+| Quantization | artifact-embedded mobile 2/4/8-bit mixture |
+| Runtime / model license | Apache-2.0 in exact upstream/runtime metadata; preserve license text, source attribution and notices |
+| Product config SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
+| Protocol | `snowboard.llm/1`；wire contract見`docs/protocol.md` §4 |
+
+Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
+startup must authenticate the exact source revision, filename, size and checksum with network and
+runtime download disabled. Extra/missing artifact, version/hash mismatch, system-site fallback,
+alternate model or endpoint is a startup failure before Engine construction.
+
+### 6.3 Frozen product profile
+
+| Setting | Value |
+| :--- | :--- |
+| Rendered input | maximum 128 exact-model tokens, enforced before generation and checked against runtime prefill metrics |
+| Output / Engine capacity | 128 / 1024 tokens |
+| Sampling | temperature `0.0`, top-p `1.0` |
+| Readiness | authenticate → Engine load → fixed public pre-warm → disposable Conversation close/state discard → `INFERENCE_READY` |
+| READY / generation / terminal grace | 45,000 / 15,000 / 2,000 ms；grace只收terminal，不接受late success |
+| Cancel / TERM / KILL / rebuild READY | 500 / 2,000 / 1,000 / 10,000 ms |
+| Output | constrained `speak/tool/rest` JSON；current marker、forbidden/prior marker與allowlist獨立驗證 |
+| Conversation | every operation uses a fresh single-turn Conversation and deterministic close; no cross-operation hidden history/KV |
+| Network | runtime download `false`, network fallback `false`, fallback model `null` |
+
+Any change to model/runtime/native/config/chat template/prompt builder/constrained-output schema,
+token limits, sampling, thread count, deadlines, readiness path or fallback/offline behavior is a
+baseline change. It requires a change request, new lock and affected POC/Core delta evidence.
+
+### 6.4 Accepted defect and Core delta
+
+Attempt 006 machine P9/P10B remain `FAIL`: combined PSS slope was `5.900893 MiB/session` and
+late-minus-early median delta `131.578 MiB`, above the frozen `4 MiB/session` / `64 MiB` limits.
+The User accepted this for POC winner selection as `KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT
+RETENTION`; no root cause or upstream exact-platform reproduction is asserted.
+
+Core Gate 3 must not inherit the waiver as product PASS. The product design/test must:
+
+1. monitor `MemAvailable`, per-owner PSS attribution and zero owner/process/ALSA residue;
+2. define a bounded Engine/process recycle trigger and maximum interval without recycling during an
+   active request;
+3. account for rebuild plus mandatory pre-warm as unavailability and keep the RM recovery barrier
+   closed until replacement `INFERENCE_READY`;
+4. repeat the 4 GB, `swap=0`, offline 20-session combined envelope on one exact Core product SHA;
+5. preserve machine P9/P10B FAIL and the User waiver as separate evidence fields; and
+6. close the cancellation false-pass risk by asserting typed cancellation outcome, joined worker,
+   single native cancel, discarded Conversation, healthy replacement and zero unhandled-thread warning.

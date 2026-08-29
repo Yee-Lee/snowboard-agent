@@ -1,14 +1,14 @@
 # Snowboard child-process protocols
 
-狀態：Audio Protocol v1 Designer draft complete，待 Reviewer 審查；LLM child protocol 待 M4b final input。
+狀態：Audio Protocol v1與LLM Protocol `snowboard.llm/1` Designer draft complete，待 Reviewer 審查。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
 ## 1. Common framing
 
 - Parent 以 `start_new_session=True` 啟動每個 top-level child，使 child PID=PGID；ASR supervisor 的 native whisper descendant 不得建立 nested session/group。
-- Control 為單行 UTF-8 JSON，以 `\n` 終止，最大 16 KiB。Object 必須 exact-key、`protocol: 1`；unknown/missing/extra key 一律 protocol error。
-- `request_id` 是在單一 child lifetime 內由 parent 配置的正整數，嚴格遞增且不可重用。所有 operation event 帶相同 ID；READY/SHUTDOWN 不帶 request ID。
+- Control 為單行 UTF-8 JSON，以 `\n` 終止，最大 16 KiB。Object 必須 exact-key；Audio使用`protocol: 1`，LLM使用`protocol_version: "snowboard.llm/1"`，unknown/missing/extra key一律protocol error。
+- `request_id`由parent在單一child lifetime內配置、嚴格遞增且不可重用。Audio為正整數；LLM為符合`^[A-Za-z0-9._:-]+$`且長度1～128的string。所有operation event帶同一ID；READY/PING/PONG/SHUTDOWN不帶request ID。
 - Binary payload 只允許在 schema 明列的 header 後立即出現，parent/child 以 `readexactly(payload_bytes)` 讀取。不得 scan delimiter、部分接受或無界 buffer。
 - 一次只允許一個 active request。第二個 BEGIN/GENERATE 在第一個 terminal 前以 `BUSY` 拒絕，不排隊。
 - IPC text/PCM 可存在於 pipe 與 private process memory，但不得寫入 log/result/evidence。stderr 只允許 sanitized code/stage/PID，不含 command、prompt、transcript、TTS text、PCM 或私人 path。
@@ -159,7 +159,157 @@ READY 只在 exact runtime/acoustic/Vocos/profile validation 與 engine load 完
 
 `CANCELLED`、`CANCEL_DEFERRED`、`ERROR` 與 `SHUTDOWN_ACK` 的 lifecycle meaning 同 §2.2。允許的 TTS request code 為 `INVALID_TEXT`、`GENERATION_REJECTED`、`INVALID_PCM`；identity、protocol、crash 與 cleanup failure 仍是 backend failure。
 
-## 4. State / terminal rules
+## 4. LLM startup / readiness lifecycle
+
+本節以Accepted R3 winner manifest固定M4b child protocol。Exact model/runtime/config identity見
+`model_spec.md` §6；以下lifecycle、token、deadline與exact-key wire schema不得退回「Engine建好
+即READY」。
+
+### 4.1 Startup states
+
+```text
+STARTING
+  -> AUTHENTICATED
+  -> ENGINE_LOADED
+  -> PREWARMING
+  -> INFERENCE_READY
+```
+
+- 靜態runtime/model/config/chat-template/schema先在startup timing外完成checksum與strict identity
+  驗證；READY路徑不得重新hash完整model。
+- `ENGINE_LOADED`只表示LiteRT-LM Engine建構完成，不接受GENERATE、不解除RM recovery
+  barrier，也不使`LLMEngineAdapter.start()` return。
+- 每次child process/service start都必須執行一次固定、公開、非敏感pre-warm。它必須經過與
+  production相同的chat template、model tokenizer、rendered-token檢查、constrained-output與
+  disposable `Conversation`；不得用fake backend或不同prompt path代替。
+- Pre-warm成功後先`close()` Conversation、清除Python/shared reference並丟棄output、KV與
+  history；只有absence/cleanup assertion成立才進`INFERENCE_READY`。
+- wire event可繼續命名`READY`以維持common framing相容，但其唯一合法語意是
+  `INFERENCE_READY`。Engine load完成不得提前emit READY。
+- Pre-warm duration屬startup availability；記入sanitized engine-load/pre-warm timing與public
+  prompt digest，不計入第一個使用者request latency，也不得log prompt/output text。
+
+### 4.2 Token and output boundaries
+
+- Parent/child以該exact model tokenizer驗chat-template rendered input，超過128 tokens時在
+  inference前fail closed；runtime benchmark回報的`prefill_tokens`也必須在`1..128`。
+- Output ceiling為128 tokens；Engine capacity為1024 tokens。兩者不得與rendered input limit
+  混用。
+- Constrained output、schema validation、current-request marker exactly-once、forbidden literal、
+  prior-marker absence與product allowlist是獨立判定；pre-warm或token limit通過不能替代任一項。
+- 每次user operation建立fresh single-turn Conversation並在`finally` deterministic close；不得
+  跨request/session重用Conversation、hidden history或KV state。
+
+### 4.3 Watchdogs and terminal observation
+
+- Engine-load/pre-warm、first-token、generation與terminal observation使用不同deadline/telemetry；
+  不以單一outer timeout混合歸因。
+- scored/production generation deadline為15秒。Child deadline到期後必須停止generation並emit
+  typed `TIMEOUT`/`ERROR` terminal。
+- Parent最多另等2秒terminal-observation-only grace以接收child-owned terminal；grace內收到的
+  late generation result仍是timeout，不得轉Pass或normal result。
+- deadline/cancel路徑須先辨識專用Cancelled型別，再處理其`RuntimeError`等父類；測試必須
+  capture worker outcome、join thread/process並禁止unhandled-thread warning false-pass。
+- child破壞或Engine recycle後，replacement同樣從AUTHENTICATED重走load + mandatory pre-warm；
+  recovery barrier只在新child `INFERENCE_READY`後解除。
+
+### 4.4 Exact wire schema
+
+LLM frame一律使用`protocol_version="snowboard.llm/1"`。READY只在§4.1完成後送出；
+`state="READY"`等同`INFERENCE_READY`：
+
+```json
+{
+  "type": "READY",
+  "protocol_version": "snowboard.llm/1",
+  "state": "READY",
+  "identity": {
+    "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+    "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+    "platform": "pi-debian13-aarch64",
+    "runtime_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"
+  }
+}
+```
+
+Parent以structured `ReasoningInput`送GENERATE，不傳已rendered prompt；child才套用frozen chat
+template並執行tokenizer boundary。`input` exact schema沿用Ch 2b：perceptions最多16筆、
+`pending_message_count >= 0`，capabilities分為unique perceptions/actions/tools；tool只傳name、
+description與JSON input schema，不傳handler：
+
+```json
+{
+  "type": "GENERATE",
+  "protocol_version": "snowboard.llm/1",
+  "request_id": "session01.turn01.reason01",
+  "input": {
+    "perceptions": [{"kind":"listen","status":"ok","text":"<private>"}],
+    "pending_message_count": 0,
+    "capabilities": {
+      "perceptions": ["listen"],
+      "actions": ["speak","rest"],
+      "tools": []
+    }
+  }
+}
+```
+
+成功result只帶Ch 9可正規化的`speak/tool/rest` response與sanitized metrics。Metrics exact keys為
+`init_ms`、`ttft_ms`、`prefill_tokens`、`prefill_tokens_per_second`、`decode_tokens`、
+`decode_tokens_per_second`、`kv_tokens`；`prefill_tokens`須在1～128、`decode_tokens`在1～128、
+`kv_tokens`在1～1024，否則parent拒絕result：
+
+```json
+{
+  "type": "RESULT",
+  "protocol_version": "snowboard.llm/1",
+  "request_id": "session01.turn01.reason01",
+  "response": {
+    "action_kind": "speak",
+    "action_payload": {"text":"<private validated text>"},
+    "next_perceptions": ["listen"]
+  },
+  "metrics": {
+    "init_ms": 0.0,
+    "ttft_ms": 500.0,
+    "prefill_tokens": 64,
+    "prefill_tokens_per_second": 120.0,
+    "decode_tokens": 32,
+    "decode_tokens_per_second": 10.0,
+    "kv_tokens": 96
+  },
+  "state": "READY"
+}
+```
+
+`metrics`在wire可省略以相容schema，但production parent必須要求它存在並套用上述boundary；
+缺失不得當作成功。Response exact action規則：`speak` payload只有nonblank `text`且
+`next_perceptions`非空；`tool` payload只有合法dotted `name`與object `arguments`且
+`next_perceptions`非空；`rest` payload與`next_perceptions`皆空。Parent仍須用Ch 9 product
+validator及capability/tool allowlist再次驗證，child自稱valid不具權威。
+
+Control與terminal：
+
+```json
+{"type":"CANCEL","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01"}
+{"type":"CANCELLED","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01","state":"READY"}
+{"type":"ERROR","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01","code":"TIMEOUT","state":"READY"}
+{"type":"PING","protocol_version":"snowboard.llm/1"}
+{"type":"PONG","protocol_version":"snowboard.llm/1","state":"READY"}
+{"type":"SHUTDOWN","protocol_version":"snowboard.llm/1"}
+{"type":"SHUTDOWN_ACK","protocol_version":"snowboard.llm/1"}
+```
+
+ERROR code只允許`BUSY`、`INVALID_REQUEST`、`TIMEOUT`、`GENERATION_FAILED`、
+`CANCEL_FAILED`、`PROTOCOL_ERROR`。`BUSY` state=`GENERATING`；`TIMEOUT`／
+`GENERATION_FAILED`完成request cleanup後state=`READY`；`CANCEL_FAILED`／`PROTOCOL_ERROR`
+state=`FATAL`並進Level 2 termination/rebuild，不得同child繼續。`INVALID_REQUEST`可在READY或
+GENERATING拒絕該frame，但不得改變目前active request。每個request恰有一個RESULT、CANCELLED
+或ERROR terminal；late/duplicate/wrong-ID frame皆protocol failure。
+
+## 5. State / terminal rules
 
 | State | Legal input | Legal output / next state |
 | :--- | :--- | :--- |
@@ -171,8 +321,15 @@ READY 只在 exact runtime/acoustic/Vocos/profile validation 與 engine load 完
 
 每個 request 恰允許一個 terminal（`RESULT`、`PCM`、`ERROR`、`CANCELLED`）。`FRAME_ACCEPTED`、`ENDPOINT` 與 `CANCEL_DEFERRED` 是 nonterminal。Terminal 後任何同 request late event 都是 protocol failure；parent 不得跨 request ID 合併 output。
 
-## 5. Test requirements
+## 6. Test requirements
 
 Portable protocol tests 覆蓋 fragmented read、coalesced header/payload、wrong/duplicate request ID、wrong sequence/length/hash、max boundary、extra key、invalid UTF-8/JSON、BUSY、EOF 與 late terminal。Lifecycle tests 覆蓋 READY mismatch cleanup、cooperative cancel、deferred cancel→force-abort、TERM→KILL→waitpid、nested descendant cleanup、same-owner rebuild 與 next-request success。
 
 Pi evidence 驗 exact real READY fields 與 product lock，但不保存 private `text` 或 PCM；只記 sanitized status、hash、size、latency、PID/exit 與 cleanup count。
+
+LLM portable/target tests另須覆蓋：Engine-loaded但pre-warm未完成時拒絕GENERATE、pre-warm
+failure不emit READY、pre-warm Conversation/output/KV/reference清除、每次restart/rebuild重跑、
+rendered 129-token pre-inference拒絕、runtime prefill >128拒絕、128-token boundary success、
+schema/marker各自fail closed、15秒generation與2秒terminal-only grace不混判，以及cancel subclass
+不被父類包裝且zero unhandled-thread warning。Pi evidence只保存timing/token counts/public digest與
+terminal/cleanup identity，不保存pre-warm或user prompt/output。

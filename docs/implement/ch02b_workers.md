@@ -240,9 +240,12 @@ src/sbd/cognition/litert_lm/
 實作約束：
 
 - LiteRT-LM Python 未公開可靠推論 cancellation API，故 Engine 必須放在專用 child process，不得在 Snowboard 主 process 的 thread 內直接推論。
-- `start()` spawn child；child 載入並持有 `litert_lm.Engine`，回 READY ACK 後 adapter 才 return。模型跨 IDLE、wake 與 session 常駐，不因每 turn 重載。
+- `start()` spawn child；child驗artifact/config後載入並持有`litert_lm.Engine`，此時只到`ENGINE_LOADED`。每次child start/rebuild都須以相同chat template、model tokenizer、rendered-token檢查與constrained-output path執行固定非敏感pre-warm，close/discard disposable Conversation、output與KV/history後才回`READY`（唯一語意為`INFERENCE_READY`），adapter才return。Pre-warm算startup availability，不藏入第一個user request latency。模型跨IDLE、wake與session常駐，不因每turn重載。
 - 每次 `generate()` 透過 IPC 建立無隱藏歷史的新 `Conversation`；child 使用 `send_message_async()` 的同步 iterator 收集文字，再串流 / 回傳 parent。
+- Chat-template rendered input以exact model tokenizer在inference前強制`<=128` tokens，runtime `prefill_tokens`亦須`<=128`；output ceiling 128、Engine capacity 1024分別驗證。Constrained JSON、current marker、forbidden/prior marker與allowlist仍各自fail closed。
+- Generation deadline固定15秒；parent另有最多2秒terminal-observation-only grace，只能接收child-owned `TIMEOUT`/`ERROR`，不得接受逾時result。Engine-load/pre-warm、first-token、generation與terminal observation使用不同watchdog/telemetry。
 - `abort()` 送 cooperative cancel request；只有 child 回覆 operation 已停止時才 return。LiteRT-LM 無可靠 cancel 時，允許此呼叫等到 Level 1 timeout。
+- Cancellation exception處理須先match專用Cancelled型別，再match其`RuntimeError`等父類；thread/process測試必須capture terminal outcome並assert join，任何`PytestUnhandledThreadExceptionWarning`均為test failure，不得只靠thread已結束形成false pass。
 - `force_abort()` 依序 terminate child、在上限內 waitpid，必要時 kill 後再次 waitpid；確認 IPC 關閉且無 descendant 後，回報 LLM backend destroyed。
 - `stop()` 優先送 graceful shutdown；逾時同樣 terminate / kill + waitpid，return 前不得留下 child。
 - Tool handler 只註冊於 Snowboard `ToolRegistry`，絕不傳入 child。

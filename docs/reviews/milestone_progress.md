@@ -109,7 +109,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow，不重跑已Accepted的M4A-only結果。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
-| M4b LLM | `GATE 1 CLOSED — GATE 2A PI EXECUTION AUTHORIZED` | Core已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`接受Gate 1：Gemma正常finalist，Qwen維持P7.1 `FAIL / SLOW_RECOVERY`並以User defect waiver保留。POC milestone SHA `ed7aaca2e187b2287d442d6841e1ab2610b67570`之Gate 2A/2B locks重現為`2a577543…`／`5c89ca0b…`；R4 review無Blocking。`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`授權以clean reboot執行P2/P3/P4/P5/P8；目前尚無Pi Gate 2A credit、provisional finalist或Gate 2B授權。 |
+| M4b LLM | `GEMMA POC WINNER ACCEPTED — CORE GATE 3 PENDING` | Gate 2B execution SHA`0c75536e6ee99b502c59438989ca852194648946`完成20/20 full-chain sessions；machine P9/P10B因combined PSS slope/delta維持`FAIL`，User以known LiteRT-LM resident-retention defect waiver選定Gemma。Core已驗證closure `5ffdd9e...`及publication `485bb2a...`並由`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`接受R3；`M4B-G2B-F01`已關閉且不重跑Pi。`model_spec.md`與`protocol.md`已納入產品設計input；Gate 3仍須protocol design review、Tester test-spec coverage review、persistent-child implementation及產品exact-SHA驗證。 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -139,12 +139,16 @@ Core Designer (contract owner) [DELIVERY-LLM-POC-M4B-CONTRACT-001]
       → Gate 1 R5: platform-keyed config/acquisition identity + frozen runner/lock regression
         → Core R5 exact-SHA intake後，才可依環境／operator授權進行candidate manifest與真實Gate 1 run
           → authenticated x86 pre-screen + 最多兩名Pi compatibility → Core Gate 1 finalist ACK
-    Gate 2A: LLM-only P1~P8 / P10A / P11 / P12 → provisional finalist ACK
-    Gate 2B: Accepted Audio reference + P9 / P10B combined → final winner ACK
+    Gate 2A: LLM-only P1~P8 / P10A / P11 / P12 → sole model-finalist ACK
+      → 若tested pairing未通過P2/P8，另建完整versioned integration revision
+        → freeze後以precommitted / held-out catalog重跑P2/P3/P4/P5/P8
+    Gate 2B: Accepted Audio reference + qualified revision + P9 / P10B combined → final winner ACK
     Gate 3: Core product implementation → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。Gate 1已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`關閉；Gemma與帶Qwen defect waiver的兩名candidate依累積Gate規則進入Gate 2A。POC R4 execution surface已提交為`ed7aaca2e187b2287d442d6841e1ab2610b67570`並由`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`授權實體執行。017仍只作Core integration diagnostic，不產生Gate 2A credit。
+Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。Gate 1已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`關閉。Gate 2A replacement execution／closure為`e2b59fac609e0d768ff3554754363900cbed70a9`／`3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`。Gate 2B已由User授權在`0c75536e6ee99b502c59438989ca852194648946`執行並以defect waiver選定Gemma POC winner；Core驗證closure `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae`與publication `485bb2a7c07d86a09899f09358c744edd733f875`後已發final winner ACK。POC Gate 2B關閉，Core Gate 3仍Pending。017仍只作Core integration diagnostic，不產生Gate 2A / 2B credit。
+
+Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` workstation regression為200 passed但帶1個`PytestUnhandledThreadExceptionWarning`。POC `LiteRtAsyncBackend.generate()`目前先catch `RuntimeError`、後catch其子類`Cancelled`，會把cancel outcome包為`BackendFailure`；既有測試只join thread而未assert第一個worker outcome。新Gemma revision／Core persistent-child實作須將`Cancelled`分支置前，並assert worker terminal、join、single native cancel、conversation discard、healthy replacement及zero unhandled-thread warning；不得沿用此false-pass測試形狀。
 
 ---
 
