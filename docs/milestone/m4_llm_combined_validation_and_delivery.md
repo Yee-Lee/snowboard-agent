@@ -90,7 +90,9 @@ package版本及import origin，並加入不輸出private error text的Audio-dom
 fail-fast每輪只揭露下一層，正式attempt 006前新增兩個硬門檻：同一exact SHA的零residency static
 preflight，以及一次使用相同VAD/ASR/LLM/TTS、Core controller、真實ALSA、resource/log/cleanup路徑的
 no-credit diagnostic。Diagnostic只執行第一筆固定fixture、刪除所有暫存資料、不得建立formal evidence，
-且P9/P10B保持`Blocked`；只有兩道門檻都PASS才可開始20-session formal run。
+且P9/P10B保持`Blocked`；Accepted Audio children從run-owned temporary cwd啟動，避免immutable runtime
+的relative side effect污染exact checkout。失敗時另提供250 ms sample-end stage的safe PSI attribution，
+但`full total delta=0`門檻不變。只有兩道門檻都PASS才可開始20-session formal run。
 
 ## Work
 

@@ -38,10 +38,12 @@ from poc_llm.tools.run_gate2b_pi_v1 import (
     ScoredAudioDomain,
     combined_exception_disposition,
     evaluate_single_session_resources,
+    isolated_audio_cwd,
     main as gate2b_main,
     require_resource_probe_preflight,
     scan_owned_logs,
     single_session_diagnostic_output,
+    summarize_psi_transitions,
     verify_external_checkouts,
     verify_audio_controlled_inputs,
     verify_audio_controller_runtime,
@@ -207,6 +209,11 @@ class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(pauses, [])
         self.assertEqual(len(llm.inputs), 1)
         self.assertEqual(len(tts.inputs), 1)
+        self.assertEqual(len(coordinator.session_stage_windows), 1)
+        self.assertEqual(
+            tuple(coordinator.session_stage_windows[0]["stage_ends_monotonic_s"]),
+            ("vad", "asr", "llm", "tts_playback"),
+        )
 
     async def test_formal_coordinator_still_rejects_one_session(self) -> None:
         events: list[str] = []
@@ -468,12 +475,53 @@ class Gate2BDefinitionTests(unittest.TestCase):
             "domain_diagnostics":[], "partial_trace":[], "violations":[],
             "result":"PASS",
         }
-        output = single_session_diagnostic_output(value)
+        output = single_session_diagnostic_output(
+            value,
+            psi_diagnostic={
+                "psi_full_total_delta_us": 3,
+                "stage_delta_us": {"llm": 3},
+            },
+        )
         serialized = json.dumps(output)
         self.assertNotIn("private", serialized)
         self.assertFalse(output["formal_credit"])
         self.assertFalse(output["evidence_created"])
         self.assertEqual(output["p_results"], {"P9":"Blocked","P10B":"Blocked"})
+        self.assertEqual(output["psi_diagnostic"]["stage_delta_us"], {"llm": 3})
+
+    def test_audio_runtime_cwd_contains_relative_side_effect_and_restores(self) -> None:
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            runtime_cwd = Path(directory)
+            with isolated_audio_cwd(runtime_cwd):
+                Path("controlled-side-effect.ses").write_text("safe")
+                self.assertEqual(Path.cwd(), runtime_cwd)
+            self.assertEqual(Path.cwd(), original)
+            self.assertEqual(
+                (runtime_cwd / "controlled-side-effect.ses").read_text(), "safe"
+            )
+        self.assertFalse((original / "controlled-side-effect.ses").exists())
+
+    def test_psi_transition_summary_attributes_sample_end_stage(self) -> None:
+        records_value = [
+            {"monotonic_s":10.0, "psi_full_total":100},
+            {"monotonic_s":10.25, "psi_full_total":103},
+            {"monotonic_s":10.5, "psi_full_total":107},
+            {"monotonic_s":10.75, "psi_full_total":107},
+        ]
+        summary = summarize_psi_transitions(records_value, [{
+            "start_monotonic_s":10.1,
+            "stage_ends_monotonic_s":{
+                "vad":10.2, "asr":10.4, "llm":10.7, "tts_playback":11.0,
+            },
+        }])
+        self.assertEqual(summary["psi_full_total_delta_us"], 7)
+        self.assertEqual(summary["transition_count"], 2)
+        self.assertEqual(summary["stage_delta_us"], {"asr":3, "llm":4})
+        self.assertEqual(
+            [item["sample_end_offset_s"] for item in summary["transitions"]],
+            [0.25, 0.5],
+        )
 
     def test_run_id_is_single_safe_slug(self) -> None:
         self.assertTrue(valid_gate2b_run_id("G2B-PI-COMBINED-001"))

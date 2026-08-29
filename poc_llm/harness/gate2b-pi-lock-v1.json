@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r12-controller-closure-diagnostic",
+  "revision":"2026-08-29-r13-contained-audio-cwd-psi-attribution",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -27,11 +27,11 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"01859815cb6170fc2f8b5d40fff135c95e1d786a45ea0ab14cfc3a2f62a7faca"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"df91da94b2a56f8949ab069790115e78b3c120bd1daeaa7ec8d8e48fd2fd4689"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"0bb4cacbbca8125155c5466603aebee2e990cadf7474f60f835be05a45258ae8"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"1751343dea5d5c97ee1cdbe0ff2c0f0cf4a936be86e9458a075dd5c597a53d38"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"85a07475c6f1a2c7cd2896108d78de19d1f60dabb9e4a4d09e588b5ae4a82ae6"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"969efa6d2d18c91d415114626ebe9aba3c787d4f28610c7102a2b02714ec3762"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
-    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"717e4428ba212776465eae5e4663999d9b7f7d4f824534e22234d38fcedb2751"},
+    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"60ada3781c6b2c7b80866fbef87e18b506315a8085f89848ca173b0065f23695"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
     "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1"},
     "gate2b_adapter":{"path":"poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py","sha256":"68f68ffd79370d77aea016a728c2ccf37d628ce39a6fa7603979769b7d1d1afe"},

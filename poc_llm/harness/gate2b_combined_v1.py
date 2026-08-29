@@ -92,6 +92,7 @@ class Gate2BCombinedCoordinator:
         self.total_elapsed_ms: float | None = None
         self.started_roots: dict[str, int] = {}
         self.cleanup_proofs: dict[str, dict[str, Any]] = {}
+        self.session_stage_windows: list[dict[str, Any]] = []
 
     async def run(
         self,
@@ -264,12 +265,19 @@ class Gate2BCombinedCoordinator:
         }
         self.trace.append(trace)
         session_started = time.monotonic()
+        stage_window: dict[str, Any] = {
+            "session_id": session_id,
+            "start_monotonic_s": session_started,
+            "stage_ends_monotonic_s": {},
+        }
+        self.session_stage_windows.append(stage_window)
         try:
             started = time.monotonic()
             vad = await self._vad.run(record)
             _validate_stage(vad, "vad", session_id)
             trace["timings_ms"]["vad"] = _elapsed_ms(started)
             trace["completed_stages"].append("vad")
+            stage_window["stage_ends_monotonic_s"]["vad"] = time.monotonic()
 
             started = time.monotonic()
             asr = await self._asr.run({**record, "bounded_wav": vad["bounded_wav"]})
@@ -282,6 +290,7 @@ class Gate2BCombinedCoordinator:
                 raise CandidateViolation("Gate 2B ASR transcript identity mismatch")
             trace["timings_ms"]["asr"] = _elapsed_ms(started)
             trace["completed_stages"].append("asr")
+            stage_window["stage_ends_monotonic_s"]["asr"] = time.monotonic()
 
             nonce = f"G2BN{index + 1:04d}"
             trap = f"G2BT{index + 1:04d}"
@@ -301,6 +310,7 @@ class Gate2BCombinedCoordinator:
                 raise CandidateViolation("Gate 2B LLM history or response identity failure")
             trace["timings_ms"]["llm"] = _elapsed_ms(started)
             trace["completed_stages"].append("llm")
+            stage_window["stage_ends_monotonic_s"]["llm"] = time.monotonic()
 
             started = time.monotonic()
             tts = await self._tts.run({
@@ -313,6 +323,7 @@ class Gate2BCombinedCoordinator:
                 raise CandidateViolation("Gate 2B TTS playback did not complete")
             trace["timings_ms"]["tts_playback"] = _elapsed_ms(started)
             trace["completed_stages"].append("tts_playback")
+            stage_window["stage_ends_monotonic_s"]["tts_playback"] = time.monotonic()
             trace["timings_ms"]["end_to_end"] = _elapsed_ms(session_started)
             return CombinedSession(
                 session_id=session_id,

@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r12-controller-closure-diagnostic`
+- **Revision**: `2026-08-29-r13-contained-audio-cwd-psi-attribution`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -188,7 +188,11 @@ root. This mode uses the same four accepted domains, coordinator, first frozen f
 VAD→ASR→LLM→TTS data flow, Core `controller-r2`, direct ALSA playback, continuous/session resource
 sampling, owned-log scan and reverse cleanup as formal mode. It runs exactly one session, performs
 no cadence/leak judgment, returns `formal_credit=false` and `evidence_created=false`, removes all
-temporary data and leaves P9/P10B `Blocked`. Formal `G2B-PI-COMBINED-006` is prohibited unless this
+temporary data and leaves P9/P10B `Blocked`. Immutable Accepted Audio children execute from the
+run-owned work directory so cwd-relative files cannot dirty the exact Git checkout. A failed
+resource check emits only sampled PSI increments attributed to the VAD/ASR/LLM/TTS sample-end
+window at 250 ms resolution; it never emits prompt, transcript, response or speech text. Formal
+`G2B-PI-COMBINED-006` is prohibited unless this
 probe returns `result=PASS`, all four stages complete, resource and log checks pass, and cleanup is
 zero-residue. Formal mode still rejects any catalog other than all 20 sessions.
 

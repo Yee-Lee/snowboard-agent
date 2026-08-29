@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -1008,7 +1009,76 @@ def evaluate_single_session_resources(
     return passed, summary
 
 
-def single_session_diagnostic_output(result: dict[str, Any]) -> dict[str, Any]:
+@contextmanager
+def isolated_audio_cwd(work_dir: Path):
+    """Contain cwd-relative side effects from immutable Accepted Audio children."""
+
+    previous = Path.cwd()
+    os.chdir(work_dir)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
+
+
+def summarize_psi_transitions(
+    records: list[dict[str, Any]], stage_windows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Attribute sampled full-stall increments without exposing private payloads."""
+
+    if len(records) < 2:
+        return {
+            "sample_count": len(records),
+            "psi_full_total_delta_us": 0,
+            "transition_count": 0,
+            "stage_delta_us": {},
+            "transitions": [],
+        }
+    first_sample_s = float(records[0]["monotonic_s"])
+    stage_order = ("vad", "asr", "llm", "tts_playback")
+
+    def stage_at(sampled_s: float) -> str:
+        if not stage_windows:
+            return "unattributed"
+        window = stage_windows[0]
+        if sampled_s < float(window["start_monotonic_s"]):
+            return "resident_before_session"
+        ends = window.get("stage_ends_monotonic_s", {})
+        for stage in stage_order:
+            end = ends.get(stage)
+            if not isinstance(end, (int, float)) or sampled_s <= float(end):
+                return stage
+        return "post_session"
+
+    stage_delta: dict[str, int] = {}
+    transitions: list[dict[str, Any]] = []
+    for previous, current in zip(records, records[1:]):
+        increment = int(current["psi_full_total"]) - int(previous["psi_full_total"])
+        if increment <= 0:
+            continue
+        sampled_s = float(current["monotonic_s"])
+        stage = stage_at(sampled_s)
+        stage_delta[stage] = stage_delta.get(stage, 0) + increment
+        transitions.append({
+            "sample_end_offset_s": round(sampled_s - first_sample_s, 6),
+            "sample_end_stage": stage,
+            "delta_us": increment,
+        })
+    return {
+        "sample_count": len(records),
+        "sampling_attribution": "sample_end_stage_at_250ms_resolution",
+        "psi_full_total_delta_us": (
+            int(records[-1]["psi_full_total"]) - int(records[0]["psi_full_total"])
+        ),
+        "transition_count": len(transitions),
+        "stage_delta_us": stage_delta,
+        "transitions": transitions,
+    }
+
+
+def single_session_diagnostic_output(
+    result: dict[str, Any], *, psi_diagnostic: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Return only sanitized, no-credit convergence observations."""
 
     return {
@@ -1021,6 +1091,7 @@ def single_session_diagnostic_output(result: dict[str, Any]) -> dict[str, Any]:
         "execution_surface_sha256": result["execution_surface_sha256"],
         "session": result["sessions"][0] if len(result["sessions"]) == 1 else None,
         "resources": result["resources"],
+        "psi_diagnostic": psi_diagnostic or {},
         "cleanup": result["cleanup"],
         "log_hygiene": result["log_hygiene"],
         "domain_diagnostics": result["domain_diagnostics"],
@@ -1163,6 +1234,7 @@ def main() -> int:
     sessions_completed = False
     preflight_succeeded = False
     diagnostic_succeeded = False
+    diagnostic_psi: dict[str, Any] = {}
     try:
         if (
             raw_dir.exists()
@@ -1449,25 +1521,29 @@ def main() -> int:
                 except Exception as error:
                     raise EnvironmentInvalid("Gate 2B session resource probe failed") from error
 
-            if args.diagnostic_session_only:
-                sessions = asyncio.run(coordinator.run_single_diagnostic(
-                    records[0],
-                    on_resident=start_sampling,
-                    before_shutdown=stop_sampling,
-                    after_session=capture_session,
-                ))
-            else:
-                sessions = asyncio.run(coordinator.run(
-                    records,
-                    cadence_s=args.cadence_seconds,
-                    on_resident=start_sampling,
-                    before_shutdown=stop_sampling,
-                    after_session=capture_session,
-                ))
+            with isolated_audio_cwd(work_dir):
+                if args.diagnostic_session_only:
+                    sessions = asyncio.run(coordinator.run_single_diagnostic(
+                        records[0],
+                        on_resident=start_sampling,
+                        before_shutdown=stop_sampling,
+                        after_session=capture_session,
+                    ))
+                else:
+                    sessions = asyncio.run(coordinator.run(
+                        records,
+                        cadence_s=args.cadence_seconds,
+                        on_resident=start_sampling,
+                        before_shutdown=stop_sampling,
+                        after_session=capture_session,
+                    ))
             sessions_completed = True
             result["runtime"]["llm_inference_ready_ms"] = llm_domain.ready_ms
         oom_after = oom_kill_count()
         if args.diagnostic_session_only:
+            diagnostic_psi = summarize_psi_transitions(
+                samples, coordinator.session_stage_windows
+            )
             resources_pass, resource_summary = evaluate_single_session_resources(
                 samples,
                 session_points=sampler.session_points,
@@ -1677,8 +1753,15 @@ def main() -> int:
             if not diagnostic_succeeded:
                 result["result"] = "FAIL"
             result["p_results"] = {"P9": "Blocked", "P10B": "Blocked"}
+            if not diagnostic_psi and samples:
+                diagnostic_psi = summarize_psi_transitions(
+                    samples,
+                    coordinator.session_stage_windows if coordinator is not None else [],
+                )
             print(json.dumps(
-                single_session_diagnostic_output(result),
+                single_session_diagnostic_output(
+                    result, psi_diagnostic=diagnostic_psi
+                ),
                 sort_keys=True,
                 separators=(",", ":"),
             ))
