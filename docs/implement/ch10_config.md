@@ -298,6 +298,13 @@ class ActionConfig:
 
 Reasoner固定required，不提供 `required` 欄位； `cognition.llm.driver=litert_lm` 時 `model_path` 必須且必須是file。Mock不要求path。
 
+上述LLM numeric defaults仍是pre-M4b placeholder，不是Gate 2A R1 config或production baseline。
+`DELIVERY-019`已確認Gemma R1 prompt/config pairing的P2/P8失敗；new integration revision只可依
+`ch_m4b_llm_production.md` §1.4作bounded prompt/config adaptation。Gate 2B final winner ACK後，本節須改為
+strict product shape：real driver另要求`runtime_python`、`artifact_lock_path`、versioned product-profile
+identity與所有finite lifecycle timeout；YAML不得直接覆寫model/runtime/profile checksum。Final numeric
+token/sampling/timeouts只由accepted product lock帶入，不從R1或development revision猜測。
+
 M4a real Audio adapter另套用`model_spec.md`與`ch_m4a_audio_production.md`：
 
 - `whispercpp`要求engine=`whisper.cpp-1.9.2`、language=`zh-TW`、DSP=`silero-6.2.1-endpoint-v1`、decoder=`p0-greedy-best-of-1`，以及model / worker / VAD runtime / VAD model / artifact lock五個絕對路徑；

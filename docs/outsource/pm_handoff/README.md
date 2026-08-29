@@ -19,8 +19,8 @@
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b進度** | **M4a Core Gate 3 Accepted；M4b Gate 2A Pi execution authorized** | M4a product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已由Tester與Designer完成final reconciliation。M4b Gate 1已關閉；POC exact SHA `ed7aaca2e187b2287d442d6841e1ab2610b67570`及locks已核對，Gate 2A可執行但尚無Pi result、provisional finalist或Gate 2B授權。 |
-| **歸檔狀態** | **Active handoff = 0** | `DELIVERY-018`已於`237f404` ACK並歸檔；根目錄重複副本已移除。後續M4b執行由`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`及新evidence追蹤，不重開已完成handoff。 |
+| **M4a / M4b進度** | **M4a Core Gate 3 Accepted；M4b Gate 2A closed / Gemma model finalist** | M4a product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已Accepted。M4b Gate 2A execution `e2b59fac609e0d768ff3554754363900cbed70a9`及surface `eccbcdc1…`已由User review；Core以`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`接受Gemma為sole model finalist並排除Qwen。Gemma R1 P2/P8仍FAIL，故須new frozen integration revision；Gate 2B未授權。 |
+| **歸檔狀態** | **Active handoff = 0** | `DELIVERY-019`與`DELIVERY-021`已由同一Gate 2A provisional ACK處理並歸檔；後續工作由integration-qualified Gemma revision與Gate 2B entry delivery追蹤，不重開已完成handoff。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
@@ -41,6 +41,12 @@ finalist，Qwen則維持P7.1 `FAIL / SLOW_RECOVERY`並依User waiver進Gate 2A�
 reviewed Gate 2 execution surface提交為`ed7aaca2e187b2287d442d6841e1ab2610b67570`；
 Core只授權Gate 2A P2/P3/P4/P5/P8實體執行，沒有預先核准result、candidate或Gate 2B。
 
+2026-08-29 Gate 2A closure更新：User已review兩名candidate的final-surface evidence，選定
+Gemma 4 E2B mobile為sole model finalist並排除Qwen。Core接受`DELIVERY-019`的P2/P3/P8語意及
+`DELIVERY-021`的selection，但不改寫Gemma R1 P2/P8 FAIL，也不把model finalist視為Gate 2B winner或
+product baseline。Gate 2B前須建立new frozen integration-qualified Gemma revision、通過受影響P2/P8
+qualification、完成entry review及另行Pi授權。
+
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 
 ---
@@ -51,6 +57,8 @@ Core只授權Gate 2A P2/P3/P4/P5/P8實體執行，沒有預先核准result、can
 
 | Handoff ID | 標題 / 範疇 | 原 Legacy ID | 結案狀態 | 回覆 / 交付對照 |
 | :--- | :--- | :--- | :--- | :--- |
+| [`DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST`](history/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md) | Gate 2A closure / Gemma sole model finalist / Qwen exclusion | 無 | **Resolved — User decision and immutable machine results ACKed；Gate 2B entry revision required** | ACK: [`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001.md) |
+| [`DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT`](history/DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md) | Gate 2A P2/P3/P8 selection / integration semantics | 無 | **Resolved — semantic separation accepted without rewriting Gate 2A receipts** | ACK: [`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001.md) |
 | [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE`](history/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) | Gate 1 cumulative closure review / P6.1/P7.1 replacement | `DELIVERY-015` | **Resolved — Gate 1 Closed / Candidates Advanced** | ACK: [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) |
 | [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN`](history/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) | M4b cumulative Gate allocation / carry-forward / v7 boundary | `ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |
 | [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA`](history/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) | Replacement Gate 1 execution SHA / deterministic target fixture | `DELIVERY-015` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |

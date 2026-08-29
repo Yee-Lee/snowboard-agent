@@ -1,6 +1,6 @@
 # Snowboard child-process protocols
 
-狀態：Audio Protocol v1 Designer draft complete，待 Reviewer 審查；LLM child protocol 待 M4b final input。
+狀態：Audio Protocol v1 Reviewer approved；LLM Protocol v1 Designer complete、queued for single full M4b review，shipping READY identity待Gate 2B final input。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
@@ -176,3 +176,146 @@ READY 只在 exact runtime/acoustic/Vocos/profile validation 與 engine load 完
 Portable protocol tests 覆蓋 fragmented read、coalesced header/payload、wrong/duplicate request ID、wrong sequence/length/hash、max boundary、extra key、invalid UTF-8/JSON、BUSY、EOF 與 late terminal。Lifecycle tests 覆蓋 READY mismatch cleanup、cooperative cancel、deferred cancel→force-abort、TERM→KILL→waitpid、nested descendant cleanup、same-owner rebuild 與 next-request success。
 
 Pi evidence 驗 exact real READY fields 與 product lock，但不保存 private `text` 或 PCM；只記 sanitized status、hash、size、latency、PID/exit 與 cleanup count。
+
+## 6. LLM Protocol v1（Designer complete；single full M4b review pending）
+
+本節只固定Core parent與其直接擁有的LLM child之engine-agnostic wire contract。Final engine、model、
+quantization、runtime與profile checksum須在M4b Gate 2B final winner ACK後由`model_spec.md`固定；
+在此之前不得把POC candidate identity預寫成product READY值。
+
+### 6.1 Parent → child
+
+每次generate先送一個bounded prompt header，再立即送exact UTF-8 payload；sampling、token上限與
+model identity均在startup strict config / product lock固定，不得逐request覆寫：
+
+```json
+{"protocol":1,"op":"GENERATE","request_id":1,"prompt_utf8_bytes":4096,"prompt_sha256":"<64 hex>"}
+```
+
+Header受§1的16 KiB control上限；其後payload不加delimiter，以
+`readexactly(prompt_utf8_bytes)`讀取。Prompt必須nonempty、valid UTF-8、無NUL、SHA-256吻合且不超過
+256 KiB。Parent在寫pipe前拒絕空值／超限，child在交runtime前驗length/hash/UTF-8；不截斷、
+不scan delimiter、不把payload寫入log。
+
+Cooperative cancellation與shutdown：
+
+```json
+{"protocol":1,"op":"CANCEL","request_id":1}
+```
+
+```json
+{"protocol":1,"op":"SHUTDOWN"}
+```
+
+### 6.2 Child → parent
+
+READY只在selected runtime/model/profile identity驗證且persistent engine完成載入後送出：
+
+```json
+{
+  "protocol": 1,
+  "event": "READY",
+  "pid": 3456,
+  "pgid": 3456,
+  "runtime_lock_sha256": "<64 hex>",
+  "runtime_artifact_sha256": "<64 hex>",
+  "model_sha256": "<64 hex>",
+  "profile_sha256": "<64 hex>"
+}
+```
+
+Streaming chunk為nonterminal；`sequence`從0逐一遞增，`text`可存在於private pipe但不得log：
+
+```json
+{"protocol":1,"event":"CHUNK","request_id":1,"sequence":0,"text":"<private UTF-8 chunk>"}
+```
+
+每個CHUNK受16 KiB control上限；parent另以256 KiB aggregate UTF-8上限收集。超限、錯序、空chunk、
+invalid UTF-8、wrong request ID或terminal後chunk均為protocol failure，不回傳partial output。
+
+Successful terminal不重送完整文字，只驗證parent已收集內容的identity：
+
+```json
+{
+  "protocol": 1,
+  "event": "RESULT",
+  "request_id": 1,
+  "finish_reason": "stop",
+  "chunk_count": 3,
+  "output_utf8_bytes": 512,
+  "output_sha256": "<64 hex>"
+}
+```
+
+`finish_reason`只允許`stop`、`max_tokens`、`refused`。Parent驗chunk count、aggregate byte count與
+SHA-256後才建立`LLMGeneration`；不吻合是protocol failure。`refused`與空白aggregate由Reasoner
+走P5 fallback；`max_tokens`仍須通過完整product validator，不代表截斷JSON可接受。
+
+Normal cooperative cancel terminal：
+
+```json
+{"protocol":1,"event":"CANCELLED","request_id":1}
+```
+
+若selected runtime沒有可靠native cancel，child回nonterminal：
+
+```json
+{"protocol":1,"event":"CANCEL_DEFERRED","request_id":1}
+```
+
+此時parent `abort()`保持pending；child即使native generation稍後自然完成也必須丟棄output並回
+CANCELLED，不得再回CHUNK / RESULT。Ch 6 Level 1 timeout後由`force_abort()`終止完整process group。
+
+可恢復request error清除request-local conversation後回READY：
+
+```json
+{"protocol":1,"event":"ERROR","request_id":1,"code":"GENERATION_REJECTED"}
+```
+
+允許code為`INVALID_PROMPT`、`GENERATION_REJECTED`、`OUTPUT_LIMIT`。Identity mismatch、invalid
+framing、engine crash、EOF、cleanup failure或hidden-history reset failure不是request ERROR。
+
+Clean shutdown：
+
+```json
+{"protocol":1,"event":"SHUTDOWN_ACK"}
+```
+
+ACK後child釋放engine、清request-local state並exit zero；parent仍須waitpid。
+
+若child在BUSY時收到第二個GENERATE，防禦性拒絕該新request且保留原active request：
+
+```json
+{"protocol":1,"event":"BUSY","request_id":2,"active_request_id":1}
+```
+
+BUSY只終結被拒絕的第二個request；child須先bounded read並丟棄該request已宣告的prompt payload，
+避免pipe失去frame alignment，且不得把它交runtime。原active request仍依自己的CHUNK / terminal
+完成。正常parent adapter以single-flight lock保證不送出此序列，portable negative test仍須覆蓋
+child防線。
+
+### 6.3 LLM state and terminal rules
+
+| State | Legal input | Legal output / next state |
+| :--- | :--- | :--- |
+| STARTING | none | READY→READY；其他→backend failure |
+| READY | GENERATE；SHUTDOWN | GENERATE→BUSY；SHUTDOWN_ACK→STOPPED |
+| BUSY | CANCEL；defensive second GENERATE | CHUNK keeps BUSY；RESULT/ERROR/CANCELLED→READY；CANCEL_DEFERRED keeps BUSY；BUSY只拒絕second request |
+| DESTROYED | none | only RM recovery may spawn and validate replacement |
+
+每個accepted request恰允許一個terminal（RESULT、ERROR、CANCELLED）；BUSY是未被接受之second
+request的唯一terminal。CHUNK與CANCEL_DEFERRED是nonterminal。第二個GENERATE不排隊；terminal後
+任何同request frame、cross-request sequence或late output都是backend protocol failure。
+
+### 6.4 LLM protocol test requirements
+
+Portable tests覆蓋fragment/coalesce、prompt length/hash/UTF-8與max prompt/chunk/aggregate boundary、
+extra/missing key、wrong/duplicate request ID、chunk sequence、byte count/hash、unknown finish reason、
+BUSY discard/alignment、EOF、late terminal、CANCELLED、CANCEL_DEFERRED及sanitized stderr。
+Lifecycle tests覆蓋READY mismatch cleanup、
+persistent child + fresh conversation、TERM→KILL→waitpid、descendant cleanup、same-lock rebuild與
+next-request success。
+
+Pi evidence驗real READY與product lock、engine load count、five-turn history isolation及cleanup count；
+只保存sanitized status、output hash/size、latency、PID/exit與artifact checksum，不保存prompt、CHUNK、
+完整model output或tool payload。

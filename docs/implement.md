@@ -13,7 +13,7 @@
 | `display_spec.md` | Display 內容、lifecycle、Baseline / Complete UX profile |
 | `model_spec.md` | Runtime 模型選型、版本 / 授權固定與階段 gate |
 | `milestone.md` | WHEN + VERIFY──階段、範圍、驗收 |
-| `protocol.md` | 對外 / 跨 process wire format；Audio Protocol v1 已定義，LLM 部分待 M4b final input |
+| `protocol.md` | 對外 / 跨 process wire format；Audio Protocol v1已核准；LLM Protocol v1 Designer complete，與selected baseline在Gate 2B後單輪review |
 
 `arch.md` 未明或無法落實的項目，依 [reviews/README.md](reviews/README.md) §2 以 `arch_review_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有 `history/arch_review_implement.md` 僅保留歷史追蹤。
 
@@ -37,6 +37,8 @@
 | **10** | [ch10_config.md](implement/ch10_config.md) | Config schema | §7.1 |
 | **11** | [ch11_error_logging.md](implement/ch11_error_logging.md) | 錯誤處理與 logging 慣例 | §3.4 / §6.6 / §6.7 |
 | **M4a** | [ch_m4a_audio_production.md](implement/ch_m4a_audio_production.md) | Accepted Audio production adapter、runtime isolation、recovery 與 Gate 3 mapping | §2.4 / §2.8 / §6.4 / §6.8 |
+| **M4b** | [ch_m4b_llm_production.md](implement/ch_m4b_llm_production.md) | Local LLM persistent child、runtime identity、recovery、inheritance 與 Gate 3 planning | §2.7 / §6.3 / §6.4 / §6.8 |
+| **M4b Gate intake** | [m4b_gate2a_intake.md](implement/m4b_gate2a_intake.md) | Gate 2A actual intake、Gemma selection、DELIVERY-019 adaptation與Gate 2B readiness | M4b external Gate 2A / 2B |
 
 各章目前狀態與備註見 [reviews/impl_progress.md](reviews/impl_progress.md) 。
 

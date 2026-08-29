@@ -6,7 +6,7 @@
 
 | 項目 | 固定值 |
 | :--- | :--- |
-| Audio baseline 狀態 | `FINAL REFERENCE LOCKED — CORE M4A GATE 3 PENDING` |
+| Audio baseline 狀態 | `FINAL REFERENCE LOCKED — CORE M4A GATE 3 ACCEPTED` |
 | Audio delivery ID | `POC-audio-DEL-2026-001-R1` |
 | Accepted Audio completion | branch `audio` / tag `audio_m4` / `5694ead4ba6be928fdb4dbdf6da7155b214d72bd` |
 | Corrected Gate 2B delivery | `ca51bce9b4e205d9c9faf004d41c27169f108a3f` |
@@ -15,7 +15,9 @@
 | Core HAL execution | `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf` |
 | Core intake / approval | `RESP-AUDIO-M4-GATE2B-001` / `be19b70b1dd91674e7ff981eb9d6b2dca9741f54` |
 
-`audio_m4` 只固定 POC reference；它不是 Core Tester PASS，也不是 Core M4a Accepted。Core Gate 3 必須對產品 exact SHA 完成 inheritance / delta mapping 與 target acceptance。
+`audio_m4`本身只固定POC reference，不能單獨證明Core Tester PASS；Core M4a已另外以product candidate
+`6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`完成inheritance / delta、target acceptance及Designer final
+confirmation而Accepted。
 
 ## 2. M4a production baseline
 
@@ -136,4 +138,57 @@ The USER owns the remaining unnamed Matcha Chinese/English training-data and voi
 
 Any change to an engine/model/vocoder/voice checksum, VAD endpoint profile, ASR prompt/decoder, runtime package version, native build option or TTS generation profile is a baseline change. It requires a change request, updated provenance and affected POC/Core delta evidence; it cannot be hidden as a packaging or config-only edit.
 
-LLM, Vision and wake-word baselines remain pending their own gates and are not fixed by this Audio section.
+Vision and wake-word baselines remain pending their own gates and are not fixed by this Audio section.
+
+## 6. M4b provisional LLM model record（not a production baseline）
+
+### 6.1 Gate 2A decision
+
+| Item | Gate 2A record |
+| :--- | :--- |
+| Status | `SOLE MODEL FINALIST / INTEGRATION REVISION AND GATE 2B PENDING` |
+| Core ACK | `DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001` |
+| POC closure | branch `llm` / `3c012eb65cc7c8b706fe1c29a3fcafab17696d0f` |
+| Gate 2A execution | `e2b59fac609e0d768ff3554754363900cbed70a9` |
+| Execution surface | SHA-256 `eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1` |
+| Model finalist | `CAND-LRT-G4E2B-MOBILE-R1` / Gemma 4 E2B mobile |
+| Rejected formal Gate 2B candidate | `CAND-LRT-Q25-15B-Q8-R1` / Qwen2.5 1.5B Q8 |
+| Architecture disposition | `No change`：USER澄清`arch.md`的`Gemma3:e2b`為typo，E2B只存在於Gemma 4；後續正名為Gemma 4 E2B |
+
+User選定的是model finalist，不是current product pairing。R1 machine dispositions保留P2
+`FAIL (3/30)`與P8 `FAIL / DEPENDENCY_LIMITED_BY_P2`；P3/P4/P5 PASS。不得把本節當作Gate 2B winner、
+production model/dependency lock或M4b Accepted。
+
+### 6.2 Selected reference identity
+
+下列值只供new integration-qualified revision保持model/runtime lineage；Gate 2B final winner前不構成
+Core product lock：
+
+| Field | POC reference value |
+| :--- | :--- |
+| Driver / runtime | `litert_lm` / LiteRT-LM API `0.16.0` |
+| Runtime wheel SHA-256 | `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
+| Native library SHA-256 | `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` |
+| Model | `gemma-4-E2B-it.litertlm`, 2,588,147,712 bytes |
+| Model SHA-256 | `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` |
+| Model source revision | `litert-community/gemma-4-E2B-it-litert-lm@6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` |
+| Model license | Apache-2.0；final product notice inventory仍待Gate 2B/Core packaging核對 |
+| R1 pairing revision | `litert-lm-v0.16.0-pi-r2` |
+| R1 product profile | input 128 / output 64 / engine 1024 tokens；temperature 0；top-p 1；threads 4 |
+| R1 timeout profile | READY 10s；generate 15s；cancel 500ms；TERM 2s；KILL 1s；rebuild 10s |
+
+### 6.3 Baseline lock conditions
+
+在下列項目全部完成前，`requirements/m4b/`不得出現production lock，factory不得接受real driver作為
+shipping baseline：
+
+1. new versioned/frozen Gemma integration revision使用與development cases分離的precommitted或held-out
+   catalog完成affected P2/P8 qualification並PASS；
+2. replacement Gate 2B packet / lock經review且取得exact-SHA Pi authorization；
+3. Accepted Audio package在Pi 5 4GB、`swap=0`完成P9/P10B combined PASS；
+4. Core final winner ACK固定driver、runtime/model/product config、artifact checksum與notice inventory；
+5. M4B full design review與Tester coverage sign-off完成。
+
+Gate 2B後本節才升格為production baseline，並補齊product lock path、runtime install closure、exact
+PromptBuilder/profile checksum、READY identity與POC→Core inheritance locator。任何Gate 2B FAIL或identity
+drift都維持pending/no-go，不fallback到Qwen、mock或network service。
