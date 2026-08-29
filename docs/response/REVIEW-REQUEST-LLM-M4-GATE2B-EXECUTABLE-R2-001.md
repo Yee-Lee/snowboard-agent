@@ -3,9 +3,9 @@
 - **Status**: `NON-BLOCKING PARALLEL REVIEW / USER AUTHORIZED PI EXECUTION`
 - **Date**: 2026-08-29
 - **Supersedes**: `REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001`
-- **Branch / correction base HEAD**: `llm` / `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`
+- **Branch / correction base HEAD**: `llm` / `d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39`
 - **Packet**: `G2B-PI-COMBINED-001`
-- **Candidate replacement lock SHA-256**: `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`
+- **Candidate replacement lock SHA-256**: `fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`
 - **Requested response**: `docs/reviews/REVIEW-LLM-M4-GATE2B-EXECUTABLE-R2-001.md`
 - **Review scope**: executable and entry validity only; no Pi result or winner proposal
 
@@ -20,6 +20,12 @@ omitted two sherpa wheel sources required by Accepted TTS verification, so TTS r
 LLM residency and zero sessions ran. Cleanup reached zero residue. Review the corrected pre-residency
 input closure for replacement run `G2B-PI-COMBINED-002`; do not reinterpret attempt 001 as candidate
 failure or authorize overwriting its evidence.
+
+Attempt `G2B-PI-COMBINED-002` is also immutable and `INCONCLUSIVE`. It authenticated the corrected
+Audio closure and started all four domains, but Pi memory PSI was disabled at boot; zero sessions ran
+and cooperative cleanup reached zero residue. Review the added pre-residency resource-probe gate and
+the PSI-enabled environment for attempt `G2B-PI-COMBINED-003`; do not reinterpret attempt 002 as a
+candidate failure.
 
 ## Why R2 is required
 
@@ -71,6 +77,7 @@ Qwen from formal Gate 2B. R2 replaces that consumer without changing historical 
   environment and evidence failures remain `INCONCLUSIVE`.
 - Confirm one shared residency runs exactly 20 ordered sessions, in-memory ASR→LLM→TTS transfer,
   19 measured five-second pauses, memory/thermal/PSI/OOM/leak gates and reverse cleanup.
+- Confirm memory/PSI/OOM/thermal probe availability is rejected before any domain residency.
 - Confirm logs and sanitized evidence cannot persist transcript, prompt, speech, credential, endpoint,
   artifact or raw audio content.
 - Confirm a dirty/pre-existing path or drifted external input is rejected and never deleted.
@@ -79,7 +86,7 @@ Qwen from formal Gate 2B. R2 replaces that consumer without changing historical 
 
 ```text
 python3 -m unittest discover -s poc_llm/tests/gate2 -p 'test_gate2b_combined_v1.py'
-Ran 27 tests — OK
+Ran 28 tests — OK
 
 python3 -m py_compile poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py \
   poc_llm/tools/run_gate2b_pi_v1.py

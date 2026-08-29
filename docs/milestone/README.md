@@ -28,7 +28,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
 | Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，請Core ACK語意與selection |
-| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | 保留attempt 001 INCONCLUSIVE；commit/push完整TTS input closure後執行replacement 002 |
+| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | 保留attempt 001/002 INCONCLUSIVE；啟用Pi PSI並以pre-residency probe執行attempt 003 |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -41,7 +41,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `IN_PROGRESS` | attempt 001在residency前發現TTS受控輸入不完整；replacement先驗證完整runtime closure，User授權繼續Pi execution |
+| M4 | `IN_PROGRESS` | attempt 002驗證完整runtime closure後發現Pi PSI未啟用；補pre-residency probe並以測試開機修正環境 |
 
 ## Cumulative P1～P12 rule
 
@@ -86,8 +86,13 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   verifier拒絕不完整受控store；兩個sherpa wheel source未staging，LLM未啟動、session為零且cleanup
   零殘留，故為`INCONCLUSIVE`而非candidate FAIL。其sanitized evidence SHA-256為
   `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`。Replacement lock
-  `c671e2…45d74`會在任何residency前驗證完整TTS input closure，以新run ID `G2B-PI-COMBINED-002`
-  執行；attempt 001不得覆寫。Independent review可後補。Core對`DELIVERY-019/021`的ACK依User裁決
+  `c671e2…45d74`已在任何residency前驗證完整TTS input closure。Attempt 002確實啟動四個domain，
+  但第一筆resource sample發現Pi kernel雖有`CONFIG_PSI=y`，卻以`CONFIG_PSI_DEFAULT_DISABLED=y`
+  且未帶`psi=1`啟動；session仍為零，四domain均cooperative stop且零ALSA/process residue，故仍為
+  `INCONCLUSIVE`。其evidence SHA-256為`1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`。
+  Attempt 003會在任何residency前要求PSI/thermal/OOM/memory probes並使用啟用PSI的可逆測試開機；
+  current lock `fc59e2…61975f`，attempt 001/002不得覆寫。Independent review可後補。Core對
+  `DELIVERY-019/021`的ACK依User裁決
   可於執行期間補入，但final delivery前必須收到。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV

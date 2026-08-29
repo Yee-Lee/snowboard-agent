@@ -29,6 +29,7 @@ from poc_llm.tools.run_gate2b_pi_v1 import (
     ScoredAudioDomain,
     combined_exception_disposition,
     main as gate2b_main,
+    require_resource_probe_preflight,
     scan_owned_logs,
     verify_external_checkouts,
     verify_audio_controlled_inputs,
@@ -557,6 +558,21 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertFalse(evaluate_resources(
             records_value, session_points=points, oom_before=1, oom_after=1
         )[0])
+
+    def test_missing_resource_probe_fails_before_residency(self) -> None:
+        with patch(
+            "poc_llm.tools.run_gate2b_pi_v1.resource_sample",
+            side_effect=RuntimeError("memory PSI is unavailable"),
+        ), self.assertRaisesRegex(EnvironmentInvalid, "before residency"):
+            require_resource_probe_preflight()
+        with patch(
+            "poc_llm.tools.run_gate2b_pi_v1.resource_sample",
+            return_value={},
+        ), patch(
+            "poc_llm.tools.run_gate2b_pi_v1.oom_kill_count",
+            side_effect=RuntimeError("oom counter is unavailable"),
+        ), self.assertRaisesRegex(EnvironmentInvalid, "before residency"):
+            require_resource_probe_preflight()
 
     def test_below_capacity_linear_leak_fails_frozen_p10a_rules(self) -> None:
         records_value, points = resource_values(leak_per_session=5.0)

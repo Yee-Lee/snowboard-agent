@@ -38,6 +38,7 @@ from poc_llm.harness.gate2b_resources_v1 import (
     ResourceSampler,
     evaluate_resources,
     oom_kill_count,
+    resource_sample,
 )
 from poc_llm.harness.pi_artifact_auth import streaming_digest, verify_model_receipt
 from poc_llm.harness.pi_runtime import (
@@ -70,6 +71,16 @@ def scored_generate(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], float]:
         return generate(*args, **kwargs)
     except SCORED_PIPE_ERRORS as error:
         raise CandidateViolation("post-READY scored protocol failure") from error
+
+
+def require_resource_probe_preflight() -> None:
+    """Fail before residency when the frozen P9 probes are unavailable."""
+
+    try:
+        resource_sample({"controller": os.getpid()}, time.monotonic())
+        oom_kill_count()
+    except (OSError, KeyError, RuntimeError, ValueError) as error:
+        raise EnvironmentInvalid("Gate 2B resource probes unavailable before residency") from error
 
 
 def parse_args() -> argparse.Namespace:
@@ -962,6 +973,7 @@ def main() -> int:
             raise PiPacketFailure("Gate 2B candidate is not frozen")
 
         result["environment"] = target_preflight(args.execution_sha)
+        require_resource_probe_preflight()
         preexisting_workers = preexisting_worker_count(args.audio_asr_binary)
         preexisting_audio_owners = audio_device_owner_count()
         if preexisting_workers or preexisting_audio_owners:

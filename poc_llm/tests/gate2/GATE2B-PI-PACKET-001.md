@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r6-audio-runtime-closure-inputs`
+- **Revision**: `2026-08-29-r7-resource-probe-preflight`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -120,11 +120,22 @@ Initial formal attempt `G2B-PI-COMBINED-001` at execution SHA `2dd7d28270afe15d2
 is retained as `INCONCLUSIVE`: the controlled store omitted the two TTS wheel source files required
 by the Accepted Audio startup verifier. VAD and ASR started, TTS rejected the incomplete store, LLM
 did not start, zero sessions ran, and cleanup returned zero residue. Its sanitized evidence SHA-256
-is `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`. The replacement uses a new
-run ID/evidence root and verifies both wheel identities before any domain becomes resident.
+is `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`.
+
+Replacement attempt `G2B-PI-COMBINED-002` at execution SHA
+`d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39` authenticated the complete Audio closure and started all
+four domains, but the first resource sample found `/proc/pressure/memory` unavailable because the Pi
+kernel has `CONFIG_PSI_DEFAULT_DISABLED=y` and was booted without `psi=1`. No session ran; all four
+domains stopped cooperatively with zero process/ALSA residue. It is retained as `INCONCLUSIVE` with
+sanitized evidence SHA-256 `1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`.
+The next attempt uses a new execution SHA/run ID/evidence root, requires every resource probe before
+residency, and may reuse the unchanged authenticated read-only input root. The PSI-enabled reboot
+restores the platform's 2 GiB zram swap and clears the boot-local `/tmp` artifact bind mount; before
+attempt 003 the operator must return swap to zero and recreate the persisted `/var/tmp` artifact root
+as the same read-only `/tmp` mount. Receipt metadata is rechecked without a full model hash.
 
 ```sh
-unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-002 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
+unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-003 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
 ```
 
 Raw resource samples and disposable Audio work data stay outside Git. Sanitized evidence contains

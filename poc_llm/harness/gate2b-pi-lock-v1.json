@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r6-audio-runtime-closure-inputs",
+  "revision":"2026-08-29-r7-resource-probe-preflight",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -25,9 +25,9 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"1afd270121ceb3ea4479d588512838c8b26d03d602d20ef5b332ef3cf2a41641"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"cefc017de05d072f6428c2bf75f3d7dbde3f61a9ecc461204984045253ac9c84"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"ad738ab7e308bd940ab5381b0124ed8b3faebe6d8f24b5a361a3092c8e56a0d6"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"34b53404d60698f008772908ed4cd7b06c1a3685d83dab0c48de38f5b124c7ca"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"784e904c78db64f64b19b34b7a761f08a3333bb291aa2002afadc628ad2c9baa"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"883ec6203e467425a4a2b9069205a7c1b5782a1a64c2f8855ff322236cb7d5a9"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},

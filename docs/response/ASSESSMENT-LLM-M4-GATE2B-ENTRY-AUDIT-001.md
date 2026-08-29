@@ -1,10 +1,10 @@
 # ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001
 
-- **Status**: `INITIAL ATTEMPT INCONCLUSIVE / REPLACEMENT USER AUTHORIZED`
+- **Status**: `TWO INCONCLUSIVE ATTEMPTS RETAINED / ATTEMPT 003 USER AUTHORIZED`
 - **Date**: 2026-08-29
-- **Correction base HEAD**: `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`
-- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r6-audio-runtime-closure-inputs`
-- **Gate 2B replacement lock SHA-256**: `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`
+- **Correction base HEAD**: `d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39`
+- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r7-resource-probe-preflight`
+- **Gate 2B replacement lock SHA-256**: `fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`
 - **Formal credit**: P9 and P10B only
 
 ## Conclusion
@@ -21,8 +21,19 @@ omitted two sherpa-onnx wheel source files required by the Accepted TTS startup 
 started, TTS rejected the incomplete store, LLM never started, zero sessions ran, and cleanup left
 zero process or ALSA residue. The immutable sanitized evidence SHA-256 is
 `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`. The replacement authenticates
-both wheel identities before any residency and uses a new execution SHA, controlled-input root,
+both wheel identities before any residency and used a new execution SHA, controlled-input root,
 evidence root and run ID `G2B-PI-COMBINED-002`.
+
+Attempt 002 authenticated that complete closure and started all four domains, then its first resource
+sample found memory PSI unavailable. The Pi kernel has `CONFIG_PSI=y` and
+`CONFIG_PSI_DEFAULT_DISABLED=y`, but the boot command line lacked `psi=1`; no cgroup memory-pressure
+alternative exists because memory cgroups are disabled. Zero sessions ran, every domain stopped
+cooperatively, and process/ALSA residue was zero. Its immutable sanitized evidence SHA-256 is
+`1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`. Attempt 003 requires all
+frozen resource probes before residency and runs under a reversible PSI-enabled test boot. That
+reboot restored the platform's 2 GiB zram swap and cleared the boot-local `/tmp` artifact bind mount;
+attempt 003 must explicitly restore `swap=0` and the same read-only persisted artifact mount. Neither
+operation downloads or rehashes the model.
 
 ## Entry identities and immutable prior results
 
@@ -81,7 +92,7 @@ LLM READY and combined P9/P10B timing.
 
 ## Workstation verification
 
-The focused Gate 2B replacement suite returns `27/27 PASS`; Python compilation, JSON parsing and
+The focused Gate 2B replacement suite returns `28/28 PASS`; Python compilation, JSON parsing and
 `git diff --check` pass. The suite authenticates every lock entry, excludes Qwen, preserves Gate 2A
 FAILs, rejects artifact/runtime/fixture drift, covers Audio and LLM post-READY failure typing,
 recomputes P9/P10B, exercises partial-start cleanup and requires the Gate 2A-proven private-mount,
@@ -91,7 +102,7 @@ fails closed before residency. These are definition tests only and provide no Pi
 ## Remaining entry work
 
 1. complete replacement verification and User-authorized milestone commit/push;
-2. create a new read-only controlled input root containing the complete Audio closure;
-3. execute immutable replacement `G2B-PI-COMBINED-002` under the User's explicit authorization;
+2. confirm the reversible PSI-enabled Pi boot and complete pre-residency resource probe;
+3. execute immutable replacement `G2B-PI-COMBINED-003` under the User's explicit authorization;
 4. non-blocking independent review of the exact surface; and
 5. User review before any result publication or final winner proposal.

@@ -17,8 +17,8 @@ P10B，連結Gate 1/2A accepted evidence後提出final winner/no-go。
 - Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery；依User裁決可於Gate 2B執行
   期間補入，但final delivery前必須收到，不得因此改寫既有machine result。
 - Core-recorded Accepted Audio handoff ID、full SHA、executable kit與known limits。
-- `G2B-PI-COMBINED-001` initial attempt及其`INCONCLUSIVE`證據不可覆寫；修正版以
-  `G2B-PI-COMBINED-002`執行。Independent executable review可依User裁決後補，Core result ACK
+- `G2B-PI-COMBINED-001/002`及其`INCONCLUSIVE`證據不可覆寫；修正版以
+  `G2B-PI-COMBINED-003`執行。Independent executable review可依User裁決後補，Core result ACK
   必須在final delivery前收到。
 - Pi 5 4GB、`swap=0`、offline、clean exact SHA；combined process ownership固定。
 
@@ -43,8 +43,9 @@ User亦已授權Pi；Audio artifact staging仍是後續execution entry，因此�
 原development-ready consumer只接受全PASS Gate 2A receipt。User已選定Gemma model finalist，
 但final machine receipt保留P2/P8 FAIL，因此不能偽造舊schema receipt。Worktree replacement已建立
 `litert-lm-v0.16.0-pi-g2b-r1`、只含Gemma的model-finalist receipt/consumer、generic held-out-first
-prompt、完整Audio input authentication與post-READY typed failure；修正版lock
-`c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`。User於2026-08-29
+prompt、完整Audio input authentication與post-READY typed failure。Attempt 002 lock為
+`c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`；current preflight lock為
+`fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`。User於2026-08-29
 明確授權完成後直接commit/push並進入Pi staging/execution，independent review可後補；因此M4已改為
 `IN_PROGRESS`。Pi pure preflight重現network namespace繼承host sysfs的已知假陽性，正式packet已補
 private mount與read-only sysfs；該診斷未建立evidence、未載入模型。
@@ -55,7 +56,15 @@ sherpa wheel source。VAD/ASR已啟動、TTS拒絕啟動、LLM未啟動、sessio
 殘留，因此P9/P10B均為`Blocked`、整體`INCONCLUSIVE`，不是candidate failure。Sanitized evidence
 SHA-256為`50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`。Replacement在任何domain
 residency前驗證兩個wheel identity，使用新execution SHA、input/evidence root與run ID
-`G2B-PI-COMBINED-002`；實際P9/P10B仍須該有效evidence才能判定。
+`G2B-PI-COMBINED-002`。
+
+Attempt 002完整驗證Audio closure並啟動VAD/ASR/TTS/LLM，但第一筆residency sample發現Pi的
+`/proc/pressure/memory`不存在。Kernel具有`CONFIG_PSI=y`但預設停用，boot亦未指定`psi=1`；因此
+沒有合法的P9 full-PSI counter。零session執行，四domain均cooperative stop且零process/ALSA
+residue，整體仍為`INCONCLUSIVE`。Sanitized evidence SHA-256為
+`1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`。Attempt 003以可逆`psi=1`
+測試開機提供必要counter，並在residency前驗證memory/PSI/OOM/thermal probes；實際P9/P10B仍須
+該有效evidence才能判定。
 
 ## Work
 
