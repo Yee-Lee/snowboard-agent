@@ -79,6 +79,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md) - Gate 2B real Audio→LLM→Audio executable、Accepted Audio identity、resource/cleanup核對清單
 * [`ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001.md`](response/ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001.md) - Gate 2A model-finalist consumer replacement、Accepted Audio controlled-input provenance與Gate 2B entry audit
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-R2-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-R2-001.md) - 取代舊全PASS provisional consumer；只含Gemma、新integration revision與Pi前review清單
+* [`ASSESSMENT-LLM-M4-GATE2B-20260829-USER-REVIEW.md`](response/ASSESSMENT-LLM-M4-GATE2B-20260829-USER-REVIEW.md) - Attempt 006 immutable result、20/20 combined success、PSS known-runtime-defect分析與User winner waiver
 
 ## 3A. Independent Reviews (位於 `docs/reviews/`)
 
@@ -116,8 +117,10 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`](delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md) - User關閉Gate 2A POC round、選定Gemma唯一model finalist；請Core ACK語意、selection及Gate 2B新integration revision邊界
 * [`DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md`](delivery/DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md) - 要求Core將Engine-loaded與inference-ready分離；固定pre-warm、實際token budget及分離watchdog納入產品child設計，ACK可後至
 * [`DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md`](delivery/DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md) - User裁決從prospective Gate 2B完全移除system-wide Memory PSI採集與gate；保留4GB capacity、swap/OOM、leak、thermal、ownership及cleanup，Core ACK可後至
+* [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md`](delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) - User核准Gemma POC winner與LiteRT-LM resident-retention defect waiver；一次請Core發final ACK並承接產品mitigation
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
+* [`POC-llm-DEL-2026-001-R3.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md) - User-approved Gemma POC winner manifest；固定runtime/model/config/protocol、累積P matrix、known defect與Core action
 
 ## 5. Working Plan (位於 `docs/milestone/`)
 Repo-owned 內部執行工作文件：

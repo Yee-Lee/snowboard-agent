@@ -123,9 +123,10 @@ binary、weights、credential或endpoint。
 
 ## Current execution boundary
 
-Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen不進正式Gate 2B。原始
+Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen未進正式Gate 2B。原始
 machine FAIL/PASS不可改寫；Gemma P2/P8不得因選型裁決轉為PASS。Core對`DELIVERY-019`與closure
-delivery的ACK依User裁決可在Gate 2B execution期間補入，但final delivery前必須收到。新的Gate 2B
+delivery的ACK依User裁決可於執行後合併至`DELIVERY-024`回覆；未ACK不阻擋POC closure，但阻擋production
+model lock。新的Gate 2B
 scored execution仍必須使用versioned/frozen integration-qualified Gemma revision、updated consumer
 boundary及Accepted Audio staging。Initial attempt 001的staging defect不改寫candidate；attempt 002
 lock `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`將兩個TTS wheel source
@@ -140,3 +141,8 @@ PSI；`DELIVERY-023`要求Core更新P9契約語意，ACK可隨執行後補但fin
 
 POC主交付完成後，P1.2 cold-start歸因與未入選candidate的identical Gate 2B envelope可列為
 informational/no-credit backlog。它們不得延誤正式Gate 2B，也不得回溯改寫單一finalist的選型結果。
+
+Gate 2B Attempt 006現已完成20/20 combined sessions。Machine P9/P10B因process-PSS frozen leak rule
+維持FAIL；User將其分類為LiteRT-LM Engine/Session resident-retention known defect、grant waiver並選定
+Gemma為POC winner。`POC-llm-DEL-2026-001-R3`與`DELIVERY-024`是唯一final handoff；Core final ACK前
+不得形成production dependency/model lock，Gate 3須對exact product SHA實作recycle/monitoring策略並複驗。

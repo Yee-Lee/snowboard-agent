@@ -1,10 +1,9 @@
 # LLM POC Workspace
 
-目前狀態只以 [milestone index](../docs/milestone/README.md) 為準：External Gate 0 R2
-已由 Core Designer 對 `0d415d...` 複驗並登錄 `COMPLETE`；Internal M0、M1 已完成，M2
-為 `PLANNED`。本文件不另行建立狀態；M1 授權只涵蓋 frozen contract/schema/fixture、
-candidate pairing preflight 與 deterministic fake，不包含真實 candidate benchmark、
-安裝 runtime、下載模型或提前執行 Pi Gate 2A。
+目前狀態只以 [milestone index](../docs/milestone/README.md) 為準。Gate 1、Gate 2A與Gate 2B POC
+execution已完成；User已選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC winner，Core final ACK
+pending。本文件不另行建立狀態；任何production model lock、persistent-child integration或Gate 3
+acceptance仍由Core文件與exact-SHA驗收控制。
 
 ## Layout
 
@@ -31,6 +30,7 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
 ## Core 2026-08-18 R2 and 2026-08-19 Platform Revision Artifacts
 
 - `deliveries/POC-llm-DEL-2026-001-R2.md`：015 複驗 Initial Manifest。
+- `deliveries/POC-llm-DEL-2026-001-R3.md`：User-approved POC winner manifest與Core final handoff。
 - `tests/gate1/GATE1-PACKET-003.md`：authenticated fail-closed Ubuntu packet；supersedes packet 002。
 - `tests/gate1/GATE1-PACKET-005.md`、`harness/gate1-lock-v5.json`：platform-keyed x86/Pi
   strict-config projection replacement；exact SHA `190a827b...` 已送 Core review，真實執行未授權。
@@ -52,7 +52,8 @@ Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence sch
   immutable preselection、Pi filter、no-backfill、cleanup與Gate 2 carry-over rejection；
   `test_gate1_packet_v5.py` 覆蓋 platform-keyed identity 與 R4 evidence rejection。
 
-Gate 1、Gate 2A、Gate 2B 仍未獲准執行；catalog validator self-test 不是 candidate evidence。
+以上段落保留早期R2 packet狀態；後續Gate 1、Gate 2A及Gate 2B已由新revision、授權與R3 winner
+manifest取代。歷史catalog validator self-test仍不是candidate evidence。
 
 ## Proposed Dual-UTM Environment Preflight
 

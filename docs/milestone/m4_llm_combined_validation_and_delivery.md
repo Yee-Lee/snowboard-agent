@@ -1,6 +1,6 @@
 # LLM M4：Gate 2B Cumulative Audio + LLM Final Validation
 
-狀態：`IN_PROGRESS`
+狀態：`COMPLETE / USER-APPROVED POC WINNER / CORE FINAL ACK PENDING`
 
 Entry authority：`USER AUTHORIZED COMMIT/PUSH + PI STAGING/EXECUTION / REVIEW MAY FOLLOW`
 
@@ -14,12 +14,12 @@ P10B，連結Gate 1/2A accepted evidence後提出final winner/no-go。
 - Accepted Gate 1 cumulative receipt與Gate 2A User-reviewed model-finalist decision；Gemma identity固定。
 - Gemma current Gate 2A integration configuration的P2 FAIL不得直接作Gate 2B baseline；先建立新的
   versioned integration candidate、事前凍結並以precommitted/held-out cases完成entry qualification。
-- Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery；依User裁決可於Gate 2B執行
-  期間補入，但final delivery前必須收到，不得因此改寫既有machine result。
+- Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery；依User裁決可後補並由
+  `DELIVERY-024`一次請求，不阻擋POC closure，但在ACK前不得形成production lock或改寫machine result。
 - Core-recorded Accepted Audio handoff ID、full SHA、executable kit與known limits。
 - `G2B-PI-COMBINED-001`～`005`及其證據不可覆寫；目前修正版以
   `G2B-PI-COMBINED-006`執行。Independent executable review可依User裁決後補，Core result ACK
-  必須在final delivery前收到。
+  必須在production model/runtime lock前收到。
 - Pi 5 4GB、`swap=0`、offline、clean exact SHA；combined process ownership固定。
 
 2026-08-28已確認Accepted Audio source entry：delivery `POC-audio-DEL-2026-001-R1`、annotated
@@ -97,6 +97,16 @@ resource gate維持system-used、`swap=0`、OOM、leak、temperature、throttlin
 `DELIVERY-023`請Core接受此契約調整，ACK可後至但final delivery前須連結。只有兩道門檻都PASS才可
 開始20-session formal run。
 
+Attempt 006（execution SHA `0c75536e6ee99b502c59438989ca852194648946`、surface
+`22f52d8b…14665a`）先通過84項Pi definition tests（1 skip）、zero-residency preflight及一筆完整
+no-credit diagnostic，再完成20/20真實VAD→ASR→LLM→TTS/ALSA sessions。所有functional、schema、
+marker、trap、history、offline、thermal、log hygiene與cleanup觀察均符合；peak system-used
+`2382.969 MiB`、54.0°C、swap/OOM/throttle為零。Frozen leak gate因combined PSS slope
+`5.900893 MiB/session`及late-early median `131.578 MiB`使machine P9/P10B為FAIL。User確認runner已遵循
+fresh Conversation＋deterministic close，將此定性為`KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT
+RETENTION`，保留machine scores並grant waiver，選定Gemma為POC winner。R3 manifest與
+`DELIVERY-024`構成Core final-winner ACK handoff；Gate 3仍須產品exact-SHA mitigation與複驗。
+
 ## Work
 
 - P9/P10B共用一次Audio+LLM load與20 sessions，不建立額外residency-only重複run。
@@ -108,9 +118,10 @@ resource gate維持system-used、`swap=0`、OOM、leak、temperature、throttlin
 
 ## Exit
 
-P9與P10B PASS；Gate 1 P1/P6/P7/P10A/P11/P12、2A P2/P3/P4/P5/P8及2B P9/P10B manifest
-chain完整。Reviewer/Internal Tester/User關閉finding後交Core final winner/no-go。POC狀態在Core final
-ACK前只可為`Ready for internal review`。
+Gate 1、2A與2B manifest chain完整；User已審核Attempt 006、接受known runtime defect waiver並選定
+Gemma POC winner。Machine P9/P10B FAIL與先前P2/P8 FAIL不改寫。M4 POC work完成，對外狀態為
+`USER-APPROVED POC WINNER / CORE FINAL ACK PENDING`；Core ACK前不得鎖入production，Gate 3仍須對
+產品exact SHA完成model/protocol review、resident-memory mitigation及combined驗收。
 
 ## Prohibited
 
