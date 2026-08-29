@@ -1,10 +1,10 @@
 # ASSESSMENT-LLM-M4-GATE2B-ENTRY-AUDIT-001
 
-- **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / WORKTREE PRE-COMMIT`
+- **Status**: `INITIAL ATTEMPT INCONCLUSIVE / REPLACEMENT USER AUTHORIZED`
 - **Date**: 2026-08-29
-- **Base HEAD**: `3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`
-- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r5-gemma-model-finalist-integration`
-- **Gate 2B lock SHA-256**: `73655fdff6cbabda0cb57089382e68d7243a9bf9ff869630add33a1776ceee3d`
+- **Correction base HEAD**: `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`
+- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r6-audio-runtime-closure-inputs`
+- **Gate 2B replacement lock SHA-256**: `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`
 - **Formal credit**: P9 and P10B only
 
 ## Conclusion
@@ -16,10 +16,13 @@ remains rejected; a new generic structured-product prompt/config revision is fro
 model contact is the held-out Accepted Audio 20-session execution. Qwen is not present in the Gate
 2B candidate lock.
 
-Gate 2B remains unexecuted. The User explicitly authorized direct milestone commit/push and Pi
-inventory/staging/execution on 2026-08-29; independent review may follow and does not block this run.
-A clean pushed execution SHA and controlled staging are still required before P9/P10B can receive
-any disposition.
+The initial formal attempt is `INCONCLUSIVE`, not a candidate failure. Its controlled Audio store
+omitted two sherpa-onnx wheel source files required by the Accepted TTS startup verifier. VAD and ASR
+started, TTS rejected the incomplete store, LLM never started, zero sessions ran, and cleanup left
+zero process or ALSA residue. The immutable sanitized evidence SHA-256 is
+`50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`. The replacement authenticates
+both wheel identities before any residency and uses a new execution SHA, controlled-input root,
+evidence root and run ID `G2B-PI-COMBINED-002`.
 
 ## Entry identities and immutable prior results
 
@@ -57,9 +60,9 @@ audit. Running the unchanged Accepted Audio lock builder, which has no diff betw
   `1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2`.
 
 No audio content, transcript or lock is added to Git. The runner now statically authenticates the
-fixture lock/manifest, VAD model, ASR worker/model, TTS archive/vocoder and isolated VAD/TTS runtime
-identities before any domain becomes resident. These hashes are outside both LLM READY and combined
-P9/P10B timing.
+fixture lock/manifest, VAD model, ASR worker/model, TTS archive/vocoder, both sherpa wheel sources and
+isolated VAD/TTS runtime identities before any domain becomes resident. These hashes are outside both
+LLM READY and combined P9/P10B timing.
 
 ## Executable behavior
 
@@ -78,19 +81,17 @@ P9/P10B timing.
 
 ## Workstation verification
 
-The focused Gate 2B suite returns `27/27 PASS`; Python compilation, JSON parsing and
+The focused Gate 2B replacement suite returns `27/27 PASS`; Python compilation, JSON parsing and
 `git diff --check` pass. The suite authenticates every lock entry, excludes Qwen, preserves Gate 2A
 FAILs, rejects artifact/runtime/fixture drift, covers Audio and LLM post-READY failure typing,
 recomputes P9/P10B, exercises partial-start cleanup and requires the Gate 2A-proven private-mount,
-read-only-sysfs offline launch. A Pi pure preflight caught the omitted launch wrapper before any
-formal evidence directory or model load; no scored attempt was consumed. These are definition tests
-only and provide no Pi credit.
+read-only-sysfs offline launch. It additionally requires both TTS wheel sources and proves omission
+fails closed before residency. These are definition tests only and provide no Pi credit.
 
 ## Remaining entry work
 
-1. User-authorized milestone commit/push to create a clean fetchable execution SHA;
-2. read-only Pi inventory, then authorized staging of exact Audio/Core/Gemma inputs and controlled
-   Gate 2A result/receipt paths;
-3. one immutable P9/P10B run under the User's explicit authorization;
+1. complete replacement verification and User-authorized milestone commit/push;
+2. create a new read-only controlled input root containing the complete Audio closure;
+3. execute immutable replacement `G2B-PI-COMBINED-002` under the User's explicit authorization;
 4. non-blocking independent review of the exact surface; and
 5. User review before any result publication or final winner proposal.

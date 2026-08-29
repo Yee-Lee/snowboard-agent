@@ -324,6 +324,16 @@ def verify_audio_controlled_inputs(
             artifact_dir / "models/vocos-16khz-univ.onnx",
             finalists["tts"]["vocoder_sha256"],
         ),
+        "tts_wrapper_wheel_sha256": (
+            artifact_dir
+            / "sources/sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl",
+            finalists["tts"]["wrapper_wheel_sha256"],
+        ),
+        "tts_core_wheel_sha256": (
+            artifact_dir
+            / "sources/sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+            finalists["tts"]["core_wheel_sha256"],
+        ),
     }
     observed: dict[str, Any] = {}
     for name, (path, expected_sha256) in expected_files.items():

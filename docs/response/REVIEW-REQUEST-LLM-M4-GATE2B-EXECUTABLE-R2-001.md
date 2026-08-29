@@ -3,9 +3,9 @@
 - **Status**: `NON-BLOCKING PARALLEL REVIEW / USER AUTHORIZED PI EXECUTION`
 - **Date**: 2026-08-29
 - **Supersedes**: `REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001`
-- **Branch / base HEAD**: `llm` / `3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`
+- **Branch / correction base HEAD**: `llm` / `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`
 - **Packet**: `G2B-PI-COMBINED-001`
-- **Candidate lock SHA-256**: `73655fdff6cbabda0cb57089382e68d7243a9bf9ff869630add33a1776ceee3d`
+- **Candidate replacement lock SHA-256**: `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`
 - **Requested response**: `docs/reviews/REVIEW-LLM-M4-GATE2B-EXECUTABLE-R2-001.md`
 - **Review scope**: executable and entry validity only; no Pi result or winner proposal
 
@@ -14,6 +14,12 @@
 Return `APPROVE` or one bounded finding list. The User has authorized this exact replacement to be
 committed/pushed and executed on Pi without waiting for the response; any finding therefore applies
 to evidence review or an affected replacement run and may not rewrite the frozen attempt.
+
+Initial formal attempt `G2B-PI-COMBINED-001` is immutable and `INCONCLUSIVE`: its controlled store
+omitted two sherpa wheel sources required by Accepted TTS verification, so TTS rejected startup before
+LLM residency and zero sessions ran. Cleanup reached zero residue. Review the corrected pre-residency
+input closure for replacement run `G2B-PI-COMBINED-002`; do not reinterpret attempt 001 as candidate
+failure or authorize overwriting its evidence.
 
 ## Why R2 is required
 
@@ -56,8 +62,9 @@ Qwen from formal Gate 2B. R2 replaces that consumer without changing historical 
   fixtures; validate the held-out first-contact rule.
 - Reproduce the lock and validate all repository artifacts, Gate 2A receipt/result chain, clean exact
   Audio tag/completion and clean exact Core HAL checkout requirements.
-- Confirm fixture-lock/manifest, VAD model, ASR worker/model, TTS archive/vocoder and isolated runtime
-  identities fail closed before residency timing. Static hashes must not enter LLM READY or P9/P10B.
+- Confirm fixture-lock/manifest, VAD model, ASR worker/model, TTS archive/vocoder, both sherpa wheel
+  sources and isolated runtime identities fail closed before residency timing. Static hashes must not
+  enter LLM READY or P9/P10B.
 - Confirm the POC controller imports the exact Core HAL but does not claim to execute the product
   composition root.
 - Confirm post-READY Audio and LLM operation failures become P10B candidate failures, while sampler,

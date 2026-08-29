@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r5-gemma-model-finalist-integration",
+  "revision":"2026-08-29-r6-audio-runtime-closure-inputs",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -25,9 +25,9 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"20e4d4d9f1f727c121f376ef085ce7e1f1a5885221961ca5d8f24db1b4d152ef"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"5ccdb3a6105d590422bfd13220cabb44d4549f6b88804796b1455ce107c184bc"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"d794de95cace81e887f7a6fc47e15f3df9499ef21798a7b8fc8d460fb88c0e22"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"1afd270121ceb3ea4479d588512838c8b26d03d602d20ef5b332ef3cf2a41641"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"cefc017de05d072f6428c2bf75f3d7dbde3f61a9ecc461204984045253ac9c84"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"ad738ab7e308bd940ab5381b0124ed8b3faebe6d8f24b5a361a3092c8e56a0d6"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
@@ -48,8 +48,8 @@
     "artifact_receipt_schema":{"path":"poc_llm/evidence/m4b/pi-artifact-auth-receipt-v2.schema.json","sha256":"0e16445c0d35aafd0ab9746b4a9a8749d0a1e72864145ef010512824170f6852"},
     "gate2a_receipt_schema":{"path":"poc_llm/evidence/m4b/gate2a-model-finalist-receipt-v1.schema.json","sha256":"4408c585b43deb586f8d6a14dc77474a139309e46a385da9e7252fd42a116cbf"},
     "gate2a_receipt":{"path":"poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json","sha256":"adaa71293c3152de6a7a16d10150c3d6714b9acf4fe855b07b62d8dd2611d938"},
-    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"d2340737916910f84867c993f12cdeab447bb32608a9262f3a3368fd8cfd8c5e"},
-    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"b5dcf432b269f8ac96283f6912eee9c58efc27ca4312d7ced4f04404852432ba"},
-    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"0edeea8f4cacf4c409422adb921e679f1ca267bdaefc1e9c022b58504f583a2d"}
+    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"34993ee13a90ef34866cbcf2076c0ae1d7f7a940f97f0db773a47b718f071072"},
+    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"3a6a03a077adcd2a971530f43e88e4cfc9cd7035567d9811aa7ae5ceffea2ad1"},
+    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"baeb5e0f7e14adc97268b9c957267a530ebd25f484d56e4a31cdc0445d76d7a7"}
   }
 }

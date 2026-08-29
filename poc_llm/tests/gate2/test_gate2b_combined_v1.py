@@ -419,6 +419,10 @@ class Gate2BDefinitionTests(unittest.TestCase):
             entry["finalists"]["asr"]["worker_binary_sha256"],
             "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b",
         )
+        self.assertEqual(
+            entry["finalists"]["tts"]["wrapper_wheel_sha256"],
+            "f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f",
+        )
         self.assertEqual(entry["status"], "POC_ACCEPTED_M4_COMPLETE")
 
     def test_external_audio_tag_and_completion_are_distinct_exact_identities(self) -> None:
@@ -660,13 +664,19 @@ class Gate2BDefinitionTests(unittest.TestCase):
             root = Path(directory)
             artifact_dir = root / "artifacts"
             models = artifact_dir / "models"
+            sources = artifact_dir / "sources"
             models.mkdir(parents=True)
+            sources.mkdir()
             paths = {
                 "vad_model": root / "vad.onnx",
                 "asr_binary": root / "asr-worker",
                 "asr_model": root / "asr-model.bin",
                 "tts_archive": models / "matcha-icefall-zh-en.tar.bz2",
                 "tts_vocoder": models / "vocos-16khz-univ.onnx",
+                "tts_wrapper_wheel": sources
+                / "sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl",
+                "tts_core_wheel": sources
+                / "sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
             }
             for name, path in paths.items():
                 path.write_bytes(name.encode())
@@ -710,6 +720,12 @@ class Gate2BDefinitionTests(unittest.TestCase):
             accepted["finalists"]["tts"].update({
                 "archive_sha256":hashlib.sha256(paths["tts_archive"].read_bytes()).hexdigest(),
                 "vocoder_sha256":hashlib.sha256(paths["tts_vocoder"].read_bytes()).hexdigest(),
+                "wrapper_wheel_sha256":hashlib.sha256(
+                    paths["tts_wrapper_wheel"].read_bytes()
+                ).hexdigest(),
+                "core_wheel_sha256":hashlib.sha256(
+                    paths["tts_core_wheel"].read_bytes()
+                ).hexdigest(),
             })
             with patch(
                 "poc_llm.tools.run_gate2b_pi_v1.verify_audio_runtime",
@@ -727,6 +743,20 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     accepted=accepted,
                 )
             self.assertEqual(observed["fixture_count"], 20)
+            paths["tts_wrapper_wheel"].unlink()
+            with self.assertRaisesRegex(Exception, "tts_wrapper_wheel_sha256"):
+                verify_audio_controlled_inputs(
+                    fixture_lock=fixture_lock,
+                    fixture_manifest=fixture_manifest,
+                    artifact_dir=artifact_dir,
+                    tts_runtime_python=root / "tts-python",
+                    asr_binary=paths["asr_binary"],
+                    asr_model=paths["asr_model"],
+                    vad_runtime_python=root / "vad-python",
+                    vad_model=paths["vad_model"],
+                    accepted=accepted,
+                )
+            paths["tts_wrapper_wheel"].write_bytes(b"tts_wrapper_wheel")
             paths["asr_binary"].write_bytes(b"drift")
             with self.assertRaisesRegex(Exception, "asr_binary_sha256"):
                 verify_audio_controlled_inputs(
@@ -791,6 +821,8 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "asr_model_sha256":accepted_entry["finalists"]["asr"]["model_sha256"],
                 "tts_archive_sha256":accepted_entry["finalists"]["tts"]["archive_sha256"],
                 "tts_vocoder_sha256":accepted_entry["finalists"]["tts"]["vocoder_sha256"],
+                "tts_wrapper_wheel_sha256":accepted_entry["finalists"]["tts"]["wrapper_wheel_sha256"],
+                "tts_core_wheel_sha256":accepted_entry["finalists"]["tts"]["core_wheel_sha256"],
                 "vad_runtime":accepted_entry["runtimes"]["vad"],
                 "tts_runtime":accepted_entry["runtimes"]["tts"],
             },"environment":{},"environment_post":{},"runtime":{},

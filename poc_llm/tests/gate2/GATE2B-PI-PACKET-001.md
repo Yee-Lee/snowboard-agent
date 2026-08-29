@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r5-gemma-model-finalist-integration`
+- **Revision**: `2026-08-29-r6-audio-runtime-closure-inputs`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -106,16 +106,25 @@ frozen attempt. The Gate 2A receipt itself is repo-locked; the
 external sanitized result named by it must match byte-for-byte.
 
 `run_gate2b_pi_v1.py` requires the exact LLM execution SHA, accepted Audio/Core roots, controlled
-Audio fixture/artifact/runtime paths, one Gate 2A receipt and its unchanged model receipt. It hashes
-no model during READY or combined timing. The formal command shape is:
+Audio fixture/artifact/runtime paths, one Gate 2A receipt and its unchanged model receipt. The Audio
+pre-residency boundary includes both sherpa-onnx wheel source identities required by the Accepted TTS
+domain, even though execution uses the already-authenticated isolated runtime. It hashes no model
+during READY or combined timing. The formal replacement command shape is:
 
 As in the accepted Gate 2A packet, the offline launch must use a private mount namespace and mount
 read-only sysfs after entering the private network namespace. A network namespace alone clears the
 routes but can inherit the host sysfs view and falsely observe host `wlan0=up`; host Wi-Fi must not
 be disabled to satisfy this check.
 
+Initial formal attempt `G2B-PI-COMBINED-001` at execution SHA `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`
+is retained as `INCONCLUSIVE`: the controlled store omitted the two TTS wheel source files required
+by the Accepted Audio startup verifier. VAD and ASR started, TTS rejected the incomplete store, LLM
+did not start, zero sessions ran, and cleanup returned zero residue. Its sanitized evidence SHA-256
+is `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`. The replacement uses a new
+run ID/evidence root and verifies both wheel identities before any domain becomes resident.
+
 ```sh
-unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-001 --evidence-root <controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
+unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-002 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
 ```
 
 Raw resource samples and disposable Audio work data stay outside Git. Sanitized evidence contains

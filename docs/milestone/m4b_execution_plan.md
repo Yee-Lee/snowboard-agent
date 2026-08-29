@@ -2,7 +2,7 @@
 
 狀態：`GATE 2A POC ROUND COMPLETE / GEMMA MODEL FINALIST / GATE 2B IN_PROGRESS`
 
-Revision：`2026-08-29-gate2b-entry-r2`
+Revision：`2026-08-29-gate2b-input-closure-r3`
 
 Owner：POC Technical Lead；User已授權累積Gate模型；外部接受者為Core Designer。
 
@@ -94,6 +94,10 @@ Surrogate只能debug，不能取得P9/P10B credit。
 
 P9與P10B共用一次4GB `swap=0` offline combined run，避免Audio/LLM重複load：先取idle/residency
 sample，再跑20個ASR fixture→LLM→TTS sessions（5s cadence），最後reverse shutdown與owner zero。
+Initial attempt `G2B-PI-COMBINED-001`因受控store漏放Accepted TTS verifier所需的兩個sherpa wheel
+source而在完整residency前`INCONCLUSIVE`；其evidence固定保留，不提供P credit。Replacement
+`G2B-PI-COMBINED-002`必須在任何domain啟動前驗證完整Audio runtime source closure，並使用新exact
+execution SHA、controlled input root與evidence root。
 
 | Work package | P IDs | Exit |
 | --- | --- | --- |
@@ -120,8 +124,10 @@ Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen不
 machine FAIL/PASS不可改寫；Gemma P2/P8不得因選型裁決轉為PASS。Core對`DELIVERY-019`與closure
 delivery的ACK依User裁決可在Gate 2B execution期間補入，但final delivery前必須收到。新的Gate 2B
 scored execution仍必須使用versioned/frozen integration-qualified Gemma revision、updated consumer
-boundary及Accepted Audio staging。Replacement與consumer已完成27/27定向測試；Pi pure preflight
-亦固定private-mount/read-only-sysfs launch，避免繼承host `wlan0` view。User已
+boundary及Accepted Audio staging。Initial attempt 001的staging defect不改寫candidate；replacement
+lock `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`將兩個TTS wheel source
+納入pre-residency authentication。Pi launch固定private-mount/read-only-sysfs，避免繼承host
+`wlan0` view。User已
 授權直接commit/push與Pi staging/execution，independent review可後補。禁止把current failed
 configuration直接餵入combined scoring。
 

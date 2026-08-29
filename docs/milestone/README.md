@@ -28,7 +28,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
 | Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，請Core ACK語意與selection |
-| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | commit/push exact replacement，完成Pi inventory/staging後執行一次P9/P10B |
+| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | 保留attempt 001 INCONCLUSIVE；commit/push完整TTS input closure後執行replacement 002 |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -41,7 +41,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `IN_PROGRESS` | 新Gemma integration revision與consumer已完成27/27定向驗證；User授權commit/push及Pi staging/execution，review可後補 |
+| M4 | `IN_PROGRESS` | attempt 001在residency前發現TTS受控輸入不完整；replacement先驗證完整runtime closure，User授權繼續Pi execution |
 
 ## Cumulative P1～P12 rule
 
@@ -81,11 +81,14 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
   現有receipt不得改寫，新的integration revision不得覆蓋本輪觀察。
 - **Gate 2B integration entry**：Gemma current product pairing P2 3/30，永久不得直接作combined
-  baseline。Replacement `litert-lm-v0.16.0-pi-g2b-r1`與model-finalist receipt已在worktree完成，
-  只含Gemma並採held-out 20-session first contact；lock `73655f…eee3d`與27/27定向測試已由User
-  授權直接commit/push及Pi執行。Pi pure preflight另補回Gate 2A已驗證的private-mount/read-only-sysfs
-  launch，避免host `wlan0` sysfs假陽性；尚未開始formal attempt。Independent review可後補。Core對`DELIVERY-019/021`的ACK依User
-  裁決可於執行期間補入，但final delivery前必須收到。
+  baseline。Replacement `litert-lm-v0.16.0-pi-g2b-r1`與model-finalist receipt只含Gemma並採held-out
+  20-session first contact。Initial formal `G2B-PI-COMBINED-001`在VAD/ASR啟動後由Accepted TTS
+  verifier拒絕不完整受控store；兩個sherpa wheel source未staging，LLM未啟動、session為零且cleanup
+  零殘留，故為`INCONCLUSIVE`而非candidate FAIL。其sanitized evidence SHA-256為
+  `50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`。Replacement lock
+  `c671e2…45d74`會在任何residency前驗證完整TTS input closure，以新run ID `G2B-PI-COMBINED-002`
+  執行；attempt 001不得覆寫。Independent review可後補。Core對`DELIVERY-019/021`的ACK依User裁決
+  可於執行期間補入，但final delivery前必須收到。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV
   deterministic lock `d7d308…e0f8`與delivered manifest `1b3356…30a2`已完成repo-external靜態

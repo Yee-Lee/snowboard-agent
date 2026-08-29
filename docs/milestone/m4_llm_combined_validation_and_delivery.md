@@ -17,8 +17,9 @@ P10B，連結Gate 1/2A accepted evidence後提出final winner/no-go。
 - Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery；依User裁決可於Gate 2B執行
   期間補入，但final delivery前必須收到，不得因此改寫既有machine result。
 - Core-recorded Accepted Audio handoff ID、full SHA、executable kit與known limits。
-- `G2B-PI-COMBINED-001` executable revision完成且User授權執行；independent executable review可
-  依User裁決後補，Core result ACK必須在final delivery前收到。
+- `G2B-PI-COMBINED-001` initial attempt及其`INCONCLUSIVE`證據不可覆寫；修正版以
+  `G2B-PI-COMBINED-002`執行。Independent executable review可依User裁決後補，Core result ACK
+  必須在final delivery前收到。
 - Pi 5 4GB、`swap=0`、offline、clean exact SHA；combined process ownership固定。
 
 2026-08-28已確認Accepted Audio source entry：delivery `POC-audio-DEL-2026-001-R1`、annotated
@@ -42,12 +43,19 @@ User亦已授權Pi；Audio artifact staging仍是後續execution entry，因此�
 原development-ready consumer只接受全PASS Gate 2A receipt。User已選定Gemma model finalist，
 但final machine receipt保留P2/P8 FAIL，因此不能偽造舊schema receipt。Worktree replacement已建立
 `litert-lm-v0.16.0-pi-g2b-r1`、只含Gemma的model-finalist receipt/consumer、generic held-out-first
-prompt、完整Audio input authentication與post-READY typed failure；定向27/27，lock
-`73655fdff6cbabda0cb57089382e68d7243a9bf9ff869630add33a1776ceee3d`。User於2026-08-29
+prompt、完整Audio input authentication與post-READY typed failure；修正版lock
+`c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`。User於2026-08-29
 明確授權完成後直接commit/push並進入Pi staging/execution，independent review可後補；因此M4已改為
 `IN_PROGRESS`。Pi pure preflight重現network namespace繼承host sysfs的已知假陽性，正式packet已補
-private mount與read-only sysfs；該診斷未建立evidence、未載入模型，formal attempt仍為零。
-實際P9/P10B仍須精確staging與有效evidence才能判定。
+private mount與read-only sysfs；該診斷未建立evidence、未載入模型。
+
+Initial formal attempt `G2B-PI-COMBINED-001`（execution SHA `2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5`）
+已建立immutable evidence，但Accepted TTS verifier在LLM/residency完成前發現controlled store漏放兩個
+sherpa wheel source。VAD/ASR已啟動、TTS拒絕啟動、LLM未啟動、session為零，reverse cleanup為零
+殘留，因此P9/P10B均為`Blocked`、整體`INCONCLUSIVE`，不是candidate failure。Sanitized evidence
+SHA-256為`50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0`。Replacement在任何domain
+residency前驗證兩個wheel identity，使用新execution SHA、input/evidence root與run ID
+`G2B-PI-COMBINED-002`；實際P9/P10B仍須該有效evidence才能判定。
 
 ## Work
 
