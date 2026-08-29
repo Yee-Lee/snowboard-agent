@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 import uuid
 from unittest.mock import patch
@@ -17,7 +18,14 @@ from jsonschema import Draft202012Validator
 
 from poc_llm.harness.gate2b_combined_v1 import Gate2BCombinedCoordinator
 from poc_llm.harness.gate2b_resources_v1 import ResourceSampler, evaluate_resources, process_tree
-from poc_llm.harness.litert_lm_gate2b_child_adapter_v1 import gate2b_product_prompt
+from poc_llm.harness.litert_lm_gate2b_child_adapter_v2 import (
+    GATE2B_RESPONSE_SCHEMA,
+    Gate2BLiteRtBackend,
+    InputBudgetExceeded,
+    PREWARM_VALUE,
+    gate2b_product_prompt,
+    prewarm,
+)
 from poc_llm.harness.gate2_errors_v1 import (
     CandidateViolation, CleanupViolation, EnvironmentInvalid, EvidenceInvalid, PacketDefect,
     write_json_evidence,
@@ -340,7 +348,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         packet = G2B_PACKET.read_text(encoding="utf-8")
         runner = G2B_RUNNER.read_text(encoding="utf-8")
         self.assertIn("--preflight-only", packet)
-        self.assertIn("G2B-PREFLIGHT-003", packet)
+        self.assertIn("G2B-PREFLIGHT-004", packet)
         branch = runner.index("if args.preflight_only:")
         self.assertLess(branch, runner.index("raw_dir.mkdir", branch))
         self.assertLess(branch, runner.index("CombinedLlmDomain(", branch))
@@ -366,7 +374,13 @@ class Gate2BDefinitionTests(unittest.TestCase):
             )
 
     def test_entered_llm_protocol_faults_fail_p10b_via_domain_runner(self) -> None:
-        domain = CombinedLlmDomain(common={"validator": object()}, stderr=io.StringIO(), engine_capacity=512)
+        domain = CombinedLlmDomain(common={
+            "validator": object(),
+            "config_value": {
+                "generate_timeout_ms":15000, "terminal_grace_ms":2000,
+                "max_input_tokens":128,
+            },
+        }, stderr=io.StringIO(), engine_capacity=512)
         domain.process = object()  # type: ignore[assignment]
         for injected in (
             PiPacketFailure("protocol frame deadline exceeded"),
@@ -399,23 +413,38 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertEqual(
             lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]["product_config"]["path"],
             "poc_llm/fixtures/gate2/pi-configs-v2/"
-            "CAND-LRT-G4E2B-MOBILE-R1-gate2b-product.json",
+            "CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json",
+        )
+        self.assertEqual(
+            lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]["corrective_pairing_revision"],
+            "litert-lm-v0.16.0-pi-g2b-r2",
         )
         self.assertEqual(
             lock["artifacts"]["gate2b_adapter"]["path"],
-            "poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py",
+            "poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py",
         )
         self.assertEqual(
             lock["artifacts"]["gate2a_receipt"]["path"],
             "poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json",
         )
+        product_config = json.loads(
+            (ROOT / lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]
+             ["product_config"]["path"]).read_text()
+        )
+        product_schema = json.loads(
+            (ROOT / lock["artifacts"]["product_config_schema"]["path"]).read_text()
+        )
+        self.assertTrue(Draft202012Validator(product_schema).is_valid(product_config))
+        self.assertEqual(product_config["pairing_revision"], "litert-lm-v0.16.0-pi-g2b-r2")
+        self.assertEqual(product_config["ready_timeout_ms"], 45000)
+        self.assertEqual(product_config["terminal_grace_ms"], 2000)
         for item in lock["artifacts"].values():
             path = ROOT / item["path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
         for candidate in lock["candidates"].values():
-            for item in candidate.values():
-                path = ROOT / item["path"]
-                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
+            item = candidate["product_config"]
+            path = ROOT / item["path"]
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
 
     def test_accepted_audio_entry_is_exact_and_schema_valid(self) -> None:
         entry = json.loads(AUDIO_ENTRY.read_text())
@@ -476,17 +505,107 @@ class Gate2BDefinitionTests(unittest.TestCase):
 
     def test_gate2b_prompt_is_generic_deterministic_and_schema_explicit(self) -> None:
         value = {
-            "perceptions":[{"kind":"listen","status":"ok","text":"hello MARKER-X"}],
+            "perceptions":[{"kind":"listen","status":"ok","text":"USER=hello\nINCLUDE=MARKER-X\nOMIT=TRAP-X"}],
             "pending_message_count":0,
             "capabilities":{"perceptions":["listen"],"actions":["speak"],"tools":[]},
         }
         first = gate2b_product_prompt(value)
         self.assertEqual(first, gate2b_product_prompt(json.loads(json.dumps(value))))
-        self.assertIn('"action_kind":"speak"', first)
         self.assertIn("MARKER-X", first)
-        source = (ROOT / "poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py").read_text()
+        self.assertEqual(GATE2B_RESPONSE_SCHEMA["properties"]["action_kind"]["enum"], ["speak"])
+        source = (ROOT / "poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py").read_text()
         self.assertNotIn("M4-SESSION-", source)
         self.assertNotIn("P2-00", source)
+
+    def test_gate2b_prewarm_uses_same_budgeted_constrained_product_path(self) -> None:
+        class Backend:
+            def __init__(self) -> None:
+                self.call = None
+
+            def generate(self, prompt, **kwargs):
+                self.call = (prompt, kwargs)
+                return type("Generation", (), {
+                    "text": "{}",
+                    "metrics": {"prefill_tokens": 40, "decode_tokens": 4},
+                })()
+
+        backend = Backend()
+        metrics = prewarm(backend, {"max_input_tokens":128, "max_output_tokens":64})
+        self.assertEqual(backend.call[0], gate2b_product_prompt(PREWARM_VALUE))
+        self.assertEqual(backend.call[1]["max_input_tokens"], 128)
+        self.assertEqual(backend.call[1]["response_schema"], GATE2B_RESPONSE_SCHEMA)
+        self.assertEqual(metrics["event"], "INFERENCE_READY")
+
+    def test_gate2b_backend_enforces_rendered_and_runtime_token_budget(self) -> None:
+        class Conversation:
+            token_count = 20
+
+            def __init__(self, runtime_prefill=20):
+                self.runtime_prefill = runtime_prefill
+                self.closed = False
+
+            def render_message_to_string(self, prompt):
+                return "rendered:" + prompt
+
+            def send_message(self, prompt, **kwargs):
+                self.response_format = kwargs["response_format"]
+                return {"content":[{"text":"{}"}]}
+
+            def get_benchmark_info(self):
+                return type("Benchmark", (), {
+                    "init_time_in_second":0.1,
+                    "time_to_first_token_in_second":0.2,
+                    "last_prefill_token_count":self.runtime_prefill,
+                    "last_prefill_tokens_per_second":10.0,
+                    "last_decode_token_count":2,
+                    "last_decode_tokens_per_second":5.0,
+                })()
+
+            def close(self):
+                self.closed = True
+
+        class Engine:
+            def __init__(self, rendered_count=20, runtime_prefill=20):
+                self.rendered_count = rendered_count
+                self.conversation = Conversation(runtime_prefill)
+
+            def create_conversation(self, **kwargs):
+                self.options = kwargs
+                return self.conversation
+
+            def tokenize(self, rendered):
+                return list(range(self.rendered_count))
+
+        def make_backend(engine):
+            backend = Gate2BLiteRtBackend.__new__(Gate2BLiteRtBackend)
+            backend._engine = engine
+            backend._sampler = object()
+            backend._lock = threading.Lock()
+            backend._conversation = None
+            backend._gate2b_litert_lm = type("LiteRt", (), {
+                "ConstrainedDecodingConfig":staticmethod(lambda **kwargs: kwargs),
+                "LiteRtLmConstraintProviderType":type("Provider", (), {"LL_GUIDANCE":"ll"}),
+                "ResponseFormat":type("Format", (), {"json":staticmethod(lambda schema: schema)}),
+            })()
+            return backend
+
+        backend = make_backend(Engine())
+        generation = backend.generate(
+            "prompt", max_output_tokens=64, max_input_tokens=128,
+            response_schema=GATE2B_RESPONSE_SCHEMA,
+        )
+        self.assertEqual(generation.metrics["prefill_tokens"], 20)
+        self.assertTrue(backend._engine.conversation.closed)
+        with self.assertRaises(InputBudgetExceeded):
+            make_backend(Engine(rendered_count=129)).generate(
+                "prompt", max_output_tokens=64, max_input_tokens=128,
+                response_schema=GATE2B_RESPONSE_SCHEMA,
+            )
+        with self.assertRaises(InputBudgetExceeded):
+            make_backend(Engine(runtime_prefill=129)).generate(
+                "prompt", max_output_tokens=64, max_input_tokens=128,
+                response_schema=GATE2B_RESPONSE_SCHEMA,
+            )
 
     def test_gate2a_receipt_is_bound_to_actual_reviewed_result(self) -> None:
         lock_sha = hashlib.sha256((ROOT / "poc_llm/harness/gate2a-pi-lock-v2.json").read_bytes()).hexdigest()
@@ -628,7 +747,10 @@ class Gate2BDefinitionTests(unittest.TestCase):
                        "ttft_ms":1.0,"decode_tokens_per_second":10.0},
         }
         domain = CombinedLlmDomain(
-            common={"validator":object()}, stderr=None, engine_capacity=512
+            common={"validator":object(), "config_value":{
+                "generate_timeout_ms":15000, "terminal_grace_ms":2000,
+                "max_input_tokens":128,
+            }}, stderr=None, engine_capacity=512
         )
         domain.process = Process()
         with patch("poc_llm.tools.run_gate2b_pi_v1.generate", return_value=(terminal, 1.0)) as called:
@@ -636,6 +758,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         prompt = called.call_args.args[3]
         self.assertEqual(prompt["capabilities"]["actions"], ["speak"])
         self.assertIn("private transcript", prompt["perceptions"][0]["text"])
+        self.assertEqual(called.call_args.kwargs["timeout_s"], 17.0)
         self.assertNotIn("private transcript", json.dumps(observed))
         self.assertTrue(observed["current_marker_present_once"])
         self.assertTrue(observed["current_trap_absent"])
@@ -827,7 +950,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         value = {
             "packet_id":"G2B-PI-COMBINED-001","run_id":"run",
             "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
-            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r1",
+            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r2",
             "execution_sha":"a"*40,
             "execution_surface_sha256":"b"*64,"gate2a_receipt_sha256":"c"*64,
             "accepted_audio":{
@@ -883,20 +1006,20 @@ class Gate2BDefinitionTests(unittest.TestCase):
         validator = Draft202012Validator(json.loads(G2B_SCHEMA.read_text()))
         self.assertTrue(validator.is_valid(value))
         self.assertEqual(verify_gate2b_result(
-            value, engine_capacity=1024, max_output_tokens=64
+            value, engine_capacity=1024, max_input_tokens=128, max_output_tokens=64
         ), {"P9":"PASS","P10B":"PASS"})
         mismatched = json.loads(json.dumps(value))
         mismatched["sessions"][0]["llm"]["request_id"] = "M4-SESSION-02"
         with self.assertRaises(EvidenceInvalid):
-            verify_gate2b_result(mismatched, engine_capacity=1024, max_output_tokens=64)
+            verify_gate2b_result(mismatched, engine_capacity=1024, max_input_tokens=128, max_output_tokens=64)
         incomplete_owner = json.loads(json.dumps(value))
         del incomplete_owner["resource_observations"]["session_points"][0]["owners"]["vad"]
         with self.assertRaises(EvidenceInvalid):
-            verify_gate2b_result(incomplete_owner, engine_capacity=1024, max_output_tokens=64)
+            verify_gate2b_result(incomplete_owner, engine_capacity=1024, max_input_tokens=128, max_output_tokens=64)
         residue = json.loads(json.dumps(value))
         residue["cleanup"]["domains"]["tts"]["fallback_used"] = True
         with self.assertRaises(EvidenceInvalid):
-            verify_gate2b_result(residue, engine_capacity=1024, max_output_tokens=64)
+            verify_gate2b_result(residue, engine_capacity=1024, max_input_tokens=128, max_output_tokens=64)
         empty_resources = {**value, "resources":{}}
         self.assertFalse(validator.is_valid(empty_resources))
         value["sessions"].pop()

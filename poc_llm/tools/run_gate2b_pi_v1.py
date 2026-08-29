@@ -571,11 +571,7 @@ class CombinedLlmDomain:
             "perceptions": [{
                 "kind": "listen",
                 "status": "ok",
-                "text": (
-                    transcript
-                    + f"\nReply briefly in spoken form and include current session marker {nonce} "
-                    + f"exactly once. Never mention trap {trap} or an earlier session marker."
-                ),
+                "text": f"USER={transcript}\nINCLUDE={nonce}\nOMIT={trap}",
             }],
             "pending_message_count": 0,
             "capabilities": {
@@ -587,7 +583,10 @@ class CombinedLlmDomain:
         self.log_markers.update((transcript, nonce, trap))
         terminal, _wall_ms = scored_generate(
             self.process, self.common["validator"], session_id, value,
-            timeout_s=15.0,
+            timeout_s=(
+                self.common["config_value"]["generate_timeout_ms"]
+                + self.common["config_value"]["terminal_grace_ms"]
+            ) / 1000,
         )
         response = terminal.get("response", {})
         speech = response.get("action_payload", {}).get("text")
@@ -603,6 +602,9 @@ class CombinedLlmDomain:
             or not isinstance(speech, str)
             or not speech.strip()
             or not metric_types
+            or metrics["prefill_tokens"] <= 0
+            or metrics["prefill_tokens"]
+            > self.common["config_value"]["max_input_tokens"]
             or metrics["kv_tokens"] <= 0
             or metrics["kv_tokens"] > self.engine_capacity
             or metrics["kv_tokens"]
@@ -764,7 +766,8 @@ def combined_exception_disposition(
 
 
 def verify_gate2b_result(
-    result: dict[str, Any], *, engine_capacity: int, max_output_tokens: int
+    result: dict[str, Any], *, engine_capacity: int, max_input_tokens: int,
+    max_output_tokens: int
 ) -> dict[str, str]:
     """Independently recompute Gate 2B dispositions from sanitized observations."""
 
@@ -804,6 +807,7 @@ def verify_gate2b_result(
             and all(isinstance(metrics.get(name), int) and not isinstance(metrics.get(name), bool)
                     for name in ("prefill_tokens", "decode_tokens", "kv_tokens"))
             and metrics.get("prefill_tokens", 0) > 0
+            and metrics.get("prefill_tokens", 0) <= max_input_tokens
             and 0 < metrics.get("decode_tokens", 0) <= max_output_tokens
             and 0 < metrics.get("kv_tokens", 0) <= engine_capacity
             and metrics.get("kv_tokens", 0)
@@ -994,13 +998,16 @@ def main() -> int:
             raise PiPacketFailure("Gate 2B runtime wheel mismatch")
         product_config = repo_artifact(candidate["product_config"])
         standard_value = load(product_config)
+        gate2a_parent = candidate.get("gate2a_parent", {})
         if (
-            standard_value["pairing_revision"]
+            gate2a_parent.get("pairing_revision")
             != gate2a["selection"]["gate2b_pairing_revision"]
-            or candidate["product_config"]["sha256"]
+            or gate2a_parent.get("product_config_sha256")
             != gate2a["selection"]["gate2b_product_config_sha256"]
+            or standard_value["pairing_revision"]
+            != candidate.get("corrective_pairing_revision")
         ):
-            raise PiPacketFailure("Gate 2B integration revision mismatch")
+            raise PiPacketFailure("Gate 2B corrective integration ancestry mismatch")
         result["integration_pairing_revision"] = standard_value["pairing_revision"]
         receipt_schema = artifacts["artifact_receipt_schema"]
         receipt = load(args.artifact_receipt)
@@ -1164,6 +1171,7 @@ def main() -> int:
                 after_session=capture_session,
             ))
             sessions_completed = True
+            result["runtime"]["llm_inference_ready_ms"] = llm_domain.ready_ms
         oom_after = oom_kill_count()
         resources_pass, resource_summary = evaluate_resources(
             samples, session_points=sampler.session_points,
@@ -1248,6 +1256,7 @@ def main() -> int:
         verify_gate2b_result(
             result,
             engine_capacity=standard_value["engine_max_num_tokens"],
+            max_input_tokens=standard_value["max_input_tokens"],
             max_output_tokens=standard_value["max_output_tokens"],
         )
     except (

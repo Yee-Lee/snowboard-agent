@@ -17,7 +17,7 @@
         "audio_fixture_id":{"type":"string","minLength":1},"tts_fixture_id":{"type":"string","minLength":1},
         "vad":{"type":"object","additionalProperties":false,"required":["terminal","bounded_sha256"],"properties":{"terminal":{"const":"SUCCESS"},"bounded_sha256":{"$ref":"#/$defs/sha256"}}},
         "asr":{"type":"object","additionalProperties":false,"required":["terminal","transcript_sha256","latency_ms"],"properties":{"terminal":{"const":"SUCCESS"},"transcript_sha256":{"$ref":"#/$defs/sha256"},"latency_ms":{"type":"number","minimum":0}}},
-        "llm":{"type":"object","additionalProperties":false,"required":["terminal","request_id","response_sha256","speech_sha256","prior_marker_leaked","current_marker_present_once","current_trap_absent","metrics"],"properties":{"terminal":{"const":"SUCCESS"},"request_id":{"pattern":"^M4-SESSION-(0[1-9]|1[0-9]|20)$"},"response_sha256":{"$ref":"#/$defs/sha256"},"speech_sha256":{"$ref":"#/$defs/sha256"},"prior_marker_leaked":{"const":false},"current_marker_present_once":{"const":true},"current_trap_absent":{"const":true},"metrics":{"type":"object","required":["prefill_tokens","decode_tokens","kv_tokens","ttft_ms","decode_tokens_per_second"],"properties":{"prefill_tokens":{"type":"integer","minimum":1},"decode_tokens":{"type":"integer","minimum":1,"maximum":64},"kv_tokens":{"type":"integer","minimum":1,"maximum":1024},"ttft_ms":{"type":"number","minimum":0},"decode_tokens_per_second":{"type":"number","exclusiveMinimum":0}}}}},
+        "llm":{"type":"object","additionalProperties":false,"required":["terminal","request_id","response_sha256","speech_sha256","prior_marker_leaked","current_marker_present_once","current_trap_absent","metrics"],"properties":{"terminal":{"const":"SUCCESS"},"request_id":{"pattern":"^M4-SESSION-(0[1-9]|1[0-9]|20)$"},"response_sha256":{"$ref":"#/$defs/sha256"},"speech_sha256":{"$ref":"#/$defs/sha256"},"prior_marker_leaked":{"const":false},"current_marker_present_once":{"const":true},"current_trap_absent":{"const":true},"metrics":{"type":"object","required":["prefill_tokens","decode_tokens","kv_tokens","ttft_ms","decode_tokens_per_second"],"properties":{"prefill_tokens":{"type":"integer","minimum":1,"maximum":128},"decode_tokens":{"type":"integer","minimum":1,"maximum":64},"kv_tokens":{"type":"integer","minimum":1,"maximum":1024},"ttft_ms":{"type":"number","minimum":0},"decode_tokens_per_second":{"type":"number","exclusiveMinimum":0}}}}},
         "tts":{"type":"object","additionalProperties":false,"required":["terminal","pcm_sha256","sample_count","playback_complete","input_speech_sha256"],"properties":{"terminal":{"const":"SUCCESS"},"pcm_sha256":{"$ref":"#/$defs/sha256"},"sample_count":{"type":"integer","minimum":1},"playback_complete":{"const":true},"input_speech_sha256":{"$ref":"#/$defs/sha256"}}},
         "timings_ms":{"type":"object","additionalProperties":false,"required":["vad","asr","llm","tts_playback","end_to_end"],"properties":{"vad":{"type":"number","minimum":0},"asr":{"type":"number","minimum":0},"llm":{"type":"number","minimum":0},"tts_playback":{"type":"number","minimum":0},"end_to_end":{"type":"number","minimum":0}}}
       }
@@ -46,7 +46,7 @@
     "packet_id":{"const":"G2B-PI-COMBINED-001"},
     "run_id":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     "candidate_id":{"enum":["UNKNOWN","CAND-LRT-G4E2B-MOBILE-R1"]},
-    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r1"]},
+    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r2"]},
     "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
     "execution_surface_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
     "gate2a_receipt_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
@@ -68,7 +68,7 @@
       "then":{
         "properties":{
           "candidate_id":{"const":"CAND-LRT-G4E2B-MOBILE-R1"},
-          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r1"},
+          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r2"},
           "accepted_audio":{"$ref":"#/$defs/accepted_audio_pass"},
           "artifact_authentication":{"$ref":"#/$defs/artifact_auth_pass"},
           "sessions":{"minItems":20,"maxItems":20,"uniqueItems":true,"items":{"$ref":"#/$defs/session"}},

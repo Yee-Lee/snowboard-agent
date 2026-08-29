@@ -68,6 +68,15 @@ residue，整體仍為`INCONCLUSIVE`。Sanitized evidence SHA-256為
 Gate 2A chain、runtime wheel、model receipt metadata、offline/swap/ALSA與memory/PSI/OOM/thermal；
 smoke不建立evidence、不消耗formal run ID且零residency。實際P9/P10B仍須其後有效evidence才能判定。
 
+Attempt 003（execution SHA `26e654968bbd4c9b2a9a2796d21cfbc01fba7446`）已進入第一筆combined
+session，但LLM在parent/child同為15秒的deadline邊界失去typed terminal，P10B為immutable `FAIL`。
+後續no-credit cold/warm歸因確認：同一298-token prefill在reboot後首個post-READY request需16.704秒，
+same-boot fresh process/Engine為5.061秒；完整cold output另有schema-invalid及marker缺失。User已授權
+corrective pairing `r2`與重做實驗：128 tokens對rendered prompt硬性執行、speak-only constrained JSON、
+固定non-sensitive pre-warm完成後才發布`INFERENCE_READY`，以及15秒child deadline外2秒terminal-only
+observer grace。`DELIVERY-022`要求Core把pre-warm納入正式child lifecycle；ACK可後至但final交付前須連結。
+Attempt 003不覆寫，corrective result在User review前仍不得發布。
+
 ## Work
 
 - P9/P10B共用一次Audio+LLM load與20 sessions，不建立額外residency-only重複run。

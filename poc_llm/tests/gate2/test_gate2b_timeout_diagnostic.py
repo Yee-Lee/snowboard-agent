@@ -50,7 +50,7 @@ class FakeBackend:
 
 
 class Gate2BTimeoutDiagnosticTests(unittest.TestCase):
-    def test_request_value_matches_formal_domain_input_and_deadline(self) -> None:
+    def test_corrected_domain_uses_compact_input_and_terminal_grace(self) -> None:
         class Process:
             pid = 100
 
@@ -73,7 +73,10 @@ class Gate2BTimeoutDiagnosticTests(unittest.TestCase):
             },
         }
         domain = CombinedLlmDomain(
-            common={"validator": object()}, stderr=None, engine_capacity=1024
+            common={"validator": object(), "config_value":{
+                "generate_timeout_ms":15000, "terminal_grace_ms":2000,
+                "max_input_tokens":128,
+            }}, stderr=None, engine_capacity=1024
         )
         domain.process = Process()
         with patch(
@@ -81,8 +84,12 @@ class Gate2BTimeoutDiagnosticTests(unittest.TestCase):
             return_value=(terminal, 1.0),
         ) as generate:
             domain._run(SESSION_ID, "private transcript", NONCE, TRAP)
-        self.assertEqual(generate.call_args.args[3], request_value("private transcript"))
-        self.assertEqual(generate.call_args.kwargs["timeout_s"], FORMAL_TIMEOUT_SECONDS)
+        value = generate.call_args.args[3]
+        self.assertEqual(
+            value["perceptions"][0]["text"],
+            f"USER=private transcript\nINCLUDE={NONCE}\nOMIT={TRAP}",
+        )
+        self.assertEqual(generate.call_args.kwargs["timeout_s"], 17.0)
 
     def test_request_reproduces_formal_first_session_value(self) -> None:
         transcript = "private transcript"
