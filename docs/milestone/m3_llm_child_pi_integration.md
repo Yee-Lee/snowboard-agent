@@ -30,8 +30,15 @@ post-call marker、窄scored exception matrix與primary-before-rebuild裁決修�
 進行staging與Gate 2A；User於2026-08-29確認Pi可連線並要求繼續，因此M3進入`IN_PROGRESS`，
 但尚未產生Pi credit。完整追蹤見
 `docs/response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`。
-Execution source固定為上述commit；本輪先重建並驗證clean/offline/read-only staging，再按不可變
-packet執行。任何surface drift停止執行並回報，不在Pi修補。
+上述commit是原R4/Core授權surface。P1.2 replacement另以User授權的新clean exact SHA執行，
+該SHA在commit/push後交付Core；本輪重建並驗證clean/offline/read-only staging，再按不可變packet
+執行。任何未在replacement lock中聲明的surface drift皆停止並回報，不在Pi修補。
+
+首次Qwen Gate 2A observation在10秒前未READY，保留為`INCONCLUSIVE`。兩次獨立重開機診斷
+均在約19.2秒READY，且約19.0秒位於native `Engine()`；未證明cache、storage或capacity因果。
+User將後續cause matrix記為deferred P1.2，並授權replacement surface以Qwen-only 30秒操作窗口
+繼續remaining work。它不修改P1 10秒契約、不產生P1/P1.2 credit；Core ACK可在執行期間補齊，
+但Gate 2A closure前仍須取得。
 
 ## Work
 

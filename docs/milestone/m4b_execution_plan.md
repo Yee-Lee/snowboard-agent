@@ -58,8 +58,8 @@ Gate 1完成後，2A不得例行重跑P1/P6/P7/P10A/P11/P12。Gate 2B不得例�
 Gate 1 candidate eligibility要求P1/P7/P10A/P11/P12 PASS且P6 PASS或由P7支持的
 `Conditional escalation`。User/reviewer/Core接受前結果不得對外成為finalist ACK。
 
-Gate 1已取得Core closure ACK。Gate 2 development surface已通過R4 reviewer驗證，User已授權
-milestone commit/push；但未授權Pi execution、artifact staging、benchmark publication或candidate proposal。
+Gate 1已取得Core closure ACK。Gate 2 development surface已通過R4 reviewer驗證，Core與User已授權
+Gate 2A Pi execution。Benchmark publication與candidate proposal仍須User evidence review。
 
 ## Gate 2A — remaining LLM-only acceptance
 
@@ -76,6 +76,10 @@ Entry為Core接受的Gate 1 cumulative receipt與至少一名finalist。Packet�
 Gate 2A startup/cleanup只作remaining case的operation prerequisite，不重新宣告P1/P7。Read-only Gate 1
 model receipt可沿用；Git只需ancestor relation，lock/component digest才控制carry-forward。Metadata或
 execution-surface drift使affected identity Blocked，不能暗中rehash/repair。
+
+Qwen首次true-cold child在10秒前未READY；兩次P1.2診斷約19.2秒READY且延遲位於native
+`Engine()`，原因未定。User已defer歸因matrix，並允許Gate 2A controller使用30秒操作觀察窗口
+抵達remaining cases；P1契約仍為10秒、不得重計或新增credit。Gemma維持10秒。
 
 ## Gate 2B — combined final acceptance
 
@@ -104,10 +108,9 @@ Valid mandatory `FAIL`不得retune/rerun。只有reviewed infrastructure/evidenc
 做一次identical rerun。所有raw evidence在Git外，sanitized manifest不得包含model output、prompt/payload、
 binary、weights、credential或endpoint。
 
-## Current execution stop condition
+## Current execution boundary
 
-R4 reviewer已對Gate 2A lock
-`2a57754362d30d74c616a58a368bb79208493bc1fdb04b2cf1242c5b68fc683e`與Gate 2B lock
-`5c89ca0b3499b8983361594ab41869872f189b1b410bf4f3333cac2a780fe775`放行。本次milestone
-commit/push凍結該source；取得明確Pi授權前，不得啟動Gate 2A、model/runtime staging
-或任何hardware credit run。
+R4 reviewer放行原Gate 2 executable，Core與User其後授權Pi執行。Qwen P1.2 replacement由User
+授權先commit/push與繼續Gate 2A，Core ACK可後至但須在Gate 2A closure前收到。每次candidate
+run仍須clean exact SHA、新boot ID、新run ID、read-only staging、offline/swap-zero preflight及
+新evidence directory。Evidence在User review前不得發布或形成provisional proposal。

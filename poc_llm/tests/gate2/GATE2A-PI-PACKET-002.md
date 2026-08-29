@@ -1,8 +1,8 @@
 # GATE2A-PI-PACKET-002 — Cumulative Remaining LLM-only Validation
 
 - **Packet ID**: `G2A-PI-LLM-002`
-- **Revision**: `2026-08-28-r4-fail-closed-evidence`
-- **Status**: `EXECUTABLE CANDIDATE / USER REVIEW REQUIRED / NOT AUTHORIZED`
+- **Revision**: `2026-08-29-r5-qwen-ready-observation`
+- **Status**: `EXECUTION IN PROGRESS / USER REVIEW REQUIRED`
 - **Entry receipt**: `G1-M4B-CLOSURE-001`, bound to the Core-accepted Gate 1 closure ACK
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
 - **Formal credit carried from Gate 1**: M4B-P1, P6, P7, P10A, P11, P12
@@ -20,6 +20,12 @@ Carry-forward instead verifies the exact Gate 1 lock digest and every shared run
 protocol, fixture, Pi and read-only artifact identity that influences the accepted item. A change to
 an execution artifact named by the lock invalidates only its affected P evidence. Ordinary child
 startup and cleanup used by the remaining cases are operational prerequisites, not new P1/P7 claims.
+
+The preserved Qwen first observation showed a true-cold READY beyond the 10-second P1 contract. Per
+the User's P1.2 disposition, Qwen child launches in this packet may be observed for at most 30 seconds
+only to reach the remaining P2/P3/P4/P5/P8 work. The immutable config still declares 10 seconds;
+evidence records both values plus `P1.2_COLD_READY_OBSERVATION` and `gate_credit=FORBIDDEN`. This does
+not rerun, pass, relax or rewrite P1. Gemma remains on the 10-second operational window.
 
 If an identity changes, only affected P evidence is invalidated and returned to its owning packet.
 Gate 2A must not silently rehash, retune or repair a Gate 1 artifact. P5 is first and only executed
@@ -106,8 +112,10 @@ The final executable revision must bind a runner, cumulative-receipt schema, sep
 16-output performance and 64-output product configs, catalog,
 `p5-continuous-timeout-002.json`, P8 fixtures, result schema and all checksums. Its entry verifier
 must execute an ancestor check plus lock/component digest comparison; direct Gate 1/current `HEAD`
-equality is forbidden. Raw model text remains outside Git. Reviewer approval is required before
-commit/push, Core delivery or Pi execution.
+equality is forbidden. Raw model text remains outside Git. The original executable received R4
+reviewer approval. This bounded READY-observation replacement is User-authorized for commit, delivery
+and continued Gate 2A execution; its review/ACK may follow while execution proceeds, but must be
+received before the completed Gate 2A result is closed.
 
 The executable candidate is `run_gate2a_pi_v2.py`, authenticated by
 `gate2a-pi-lock-v2.json`. It accepts one candidate and one prior Gate 1 artifact-authentication
@@ -115,6 +123,10 @@ receipt per reboot-isolated run. The artifact receipt is checked by schema, Gate
 candidate/runtime/model identity and current filesystem metadata; the model contents are not
 rehash-read. The runner executes only P2/P3/P4/P5/P8, stores no model text, and retains Qwen P7.1
 as `FAIL` in both its entry and result schemas.
+
+The initial `G2A-PI-QWEN-001` pre-READY observation is preserved and never overwritten. Any Qwen
+continuation uses a new boot, run ID, execution surface and evidence directory. A 30-second
+operational observation does not alter the frozen config identity or any P result decision rule.
 
 The runner independently recomputes every P2/P3/P4/P5/P8 disposition from sanitized sample fields
 and cleanup proofs before publication; Gate 2B repeats that verification when consuming the result.
@@ -129,7 +141,7 @@ the exact clean execution SHA:
 
 ```sh
 unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-G4E2B-MOBILE-R1 --execution-sha <execution-sha> --run-id G2A-PI-GEMMA-001 --evidence-root <controlled-evidence-root-outside-git>
-unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-001 --evidence-root <controlled-evidence-root-outside-git>
+unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-002 --evidence-root <new-controlled-evidence-root-outside-git>
 ```
 
 Workstation definition verification for this revision is recorded in the current re-review request plus 136/136 Gate 1

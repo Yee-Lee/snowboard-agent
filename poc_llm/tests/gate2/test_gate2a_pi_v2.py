@@ -29,6 +29,7 @@ from poc_llm.tools.run_gate2a_pi_v2 import (
     p2_valid,
     p5_result_disposition,
     p5_runner_disposition,
+    ready_observation_config,
     valid_run_id as valid_gate2a_run_id,
     p4_summary,
     scan_owned_logs,
@@ -168,6 +169,10 @@ class Gate2APiV2Tests(unittest.TestCase):
         self.assertEqual(lock["packet_id"], "G2A-PI-LLM-002")
         self.assertEqual(lock["executed_items"], list(EXECUTED_ITEMS))
         self.assertEqual(set(lock["candidates"]), set(CANDIDATES))
+        self.assertEqual(lock["ready_observation_ms"], {
+            "default": 10000,
+            CANDIDATES[1]: 30000,
+        })
         for item in lock["artifacts"].values():
             path = ROOT / item["path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
@@ -175,6 +180,36 @@ class Gate2APiV2Tests(unittest.TestCase):
             for item in candidate.values():
                 path = ROOT / item["path"]
                 self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"], path)
+
+    def test_ready_observation_is_controller_only_and_forbids_gate_credit(self) -> None:
+        policy = {"default": 10000, CANDIDATES[1]: 30000}
+        frozen = {"candidate_id": CANDIDATES[1], "ready_timeout_ms": 10000, "threads": 4}
+        observed, metadata = ready_observation_config(frozen, CANDIDATES[1], policy)
+        self.assertEqual(frozen["ready_timeout_ms"], 10000)
+        self.assertEqual(observed["ready_timeout_ms"], 30000)
+        self.assertEqual(observed["threads"], frozen["threads"])
+        self.assertEqual(metadata, {
+            "contract_ms": 10000,
+            "operational_ms": 30000,
+            "workaround": "P1.2_COLD_READY_OBSERVATION",
+            "gate_credit": "FORBIDDEN",
+        })
+
+        gemma, gemma_metadata = ready_observation_config(frozen, CANDIDATES[0], policy)
+        self.assertEqual(gemma["ready_timeout_ms"], 10000)
+        self.assertEqual(gemma_metadata["workaround"], "NONE")
+
+    def test_ready_observation_rejects_contract_or_policy_relaxation(self) -> None:
+        with self.assertRaises(PiPacketFailure):
+            ready_observation_config(
+                {"ready_timeout_ms": 9000}, CANDIDATES[1],
+                {"default": 10000, CANDIDATES[1]: 30000},
+            )
+        with self.assertRaises(PiPacketFailure):
+            ready_observation_config(
+                {"ready_timeout_ms": 10000}, CANDIDATES[1],
+                {"default": 10000, CANDIDATES[1]: 5000},
+            )
 
     def test_candidate_specific_p5_and_product_profiles_are_bounded(self) -> None:
         validator = Draft202012Validator(json.loads(P5_SCHEMA.read_text()))

@@ -1,8 +1,9 @@
 {
   "packet_id":"G2A-PI-LLM-002",
-  "revision":"2026-08-28-r1-executable-cumulative",
+  "revision":"2026-08-29-r2-qwen-ready-observation",
   "executed_items":["P2","P3","P4","P5","P8"],
   "carried_items":["P1","P6.1","P7.1","P10A","P11","P12"],
+  "ready_observation_ms":{"default":10000,"CAND-LRT-Q25-15B-Q8-R1":30000},
   "thresholds":{"p4_ttft_p95_ms":2500,"p4_decode_p50_tokens_per_second":4,"p5_timeout_window_ms":[15000,17000]},
   "runtime":{
     "wheel_path":"/tmp/llm-poc-pi-artifacts-v1/litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
@@ -22,9 +23,10 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md","sha256":"0f0d6b3dd54065b558dfe2c6538e9533611aaa5133480ce92988a9c665f2feb0"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2a_pi_v2.py","sha256":"50b2c1b78f5958cfd70eac2318295f438a9ecb75e4a3736fd36b139852d6d71d"},
-    "runner":{"path":"poc_llm/tools/run_gate2a_pi_v2.py","sha256":"7220db6620b97b57690784859dd2745e41c8309f9d507b15abd37720d9308c22"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md","sha256":"5c1d3df91da9098398729b24232d4690b60ee0e9f4f5391c9b6491524b2d75cc"},
+    "p1_2_packet":{"path":"poc_llm/tests/gate1/P1.2-PI-COLD-READY-ATTRIBUTION-PACKET-001.md","sha256":"98449f94ef1f9e9af4f7fbf9727cf092bb4095e7487929bbcf5f9a0548f32160"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2a_pi_v2.py","sha256":"b6a49ec8cdc9196e67126c8324fcd87c002b4ffc6b085e5e1aa49b57d64375d1"},
+    "runner":{"path":"poc_llm/tools/run_gate2a_pi_v2.py","sha256":"e8fb3a9bb3c5b6a98c32a43cdada4e52daba25f67df0a47615bbfe5d1552ba6f"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "p5_adapter":{"path":"poc_llm/harness/litert_lm_pi_p5_child_adapter_v1.py","sha256":"9211b31d3ff238499001675492e173a40f9655e81b2b20d1a831f2e2c2c264af"},
     "standard_adapter":{"path":"poc_llm/harness/litert_lm_pi_child_adapter_v2.py","sha256":"9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},

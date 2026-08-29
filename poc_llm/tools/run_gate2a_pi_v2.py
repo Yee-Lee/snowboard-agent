@@ -108,6 +108,38 @@ def valid_run_id(value: str) -> bool:
     return RUN_ID_RE.fullmatch(value) is not None
 
 
+def ready_observation_config(
+    config: dict[str, Any],
+    candidate_id: str,
+    policy: dict[str, int],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Apply a controller-only READY window without changing the frozen config identity."""
+
+    contract_ms = config.get("ready_timeout_ms")
+    default_ms = policy.get("default")
+    operational_ms = policy.get(candidate_id, default_ms)
+    if (
+        not isinstance(contract_ms, int)
+        or not isinstance(default_ms, int)
+        or not isinstance(operational_ms, int)
+        or contract_ms != default_ms
+        or operational_ms < contract_ms
+    ):
+        raise PiPacketFailure("Gate 2A READY observation policy mismatch")
+    observed = {**config, "ready_timeout_ms": operational_ms}
+    metadata = {
+        "contract_ms": contract_ms,
+        "operational_ms": operational_ms,
+        "workaround": (
+            "P1.2_COLD_READY_OBSERVATION"
+            if operational_ms != contract_ms
+            else "NONE"
+        ),
+        "gate_credit": "FORBIDDEN",
+    }
+    return observed, metadata
+
+
 def repo_artifact(item: dict[str, str]) -> Path:
     path = (ROOT / item["path"]).resolve()
     if not path.is_file() or streaming_digest(path) != item["sha256"]:
@@ -698,6 +730,10 @@ def main() -> int:
             lock.get("packet_id") != PACKET_ID
             or lock.get("executed_items") != list(EXECUTED_ITEMS)
             or lock.get("carried_items") != ["P1", "P6.1", "P7.1", "P10A", "P11", "P12"]
+            or lock.get("ready_observation_ms") != {
+                "default": 10000,
+                "CAND-LRT-Q25-15B-Q8-R1": 30000,
+            }
             or lock.get("thresholds") != {
                 "p4_ttft_p95_ms": 2500,
                 "p4_decode_p50_tokens_per_second": 4,
@@ -794,6 +830,18 @@ def main() -> int:
             or p5_value["max_output_tokens"] > 512
         ):
             raise PiPacketFailure("Gate 2A candidate config drift")
+        observed_standard_value, ready_observation = ready_observation_config(
+            config_value, args.candidate_id, lock["ready_observation_ms"]
+        )
+        observed_product_value, product_ready_observation = ready_observation_config(
+            product_value, args.candidate_id, lock["ready_observation_ms"]
+        )
+        observed_p5_value, p5_ready_observation = ready_observation_config(
+            p5_value, args.candidate_id, lock["ready_observation_ms"]
+        )
+        if not ready_observation == product_ready_observation == p5_ready_observation:
+            raise PiPacketFailure("Gate 2A candidate READY observation profiles differ")
+        result["isolation"]["ready_observation"] = ready_observation
 
         receipt_schema = artifacts["artifact_receipt_schema"]
         receipt = load(args.artifact_receipt)
@@ -853,7 +901,7 @@ def main() -> int:
         common = {
             "config": standard,
             "config_sha256": candidate["standard_config"]["sha256"],
-            "config_value": config_value,
+            "config_value": observed_standard_value,
             "config_schema": standard_schema,
             "protocol_schema": protocol,
             "prompt_schema": prompt_schema,
@@ -867,7 +915,7 @@ def main() -> int:
             **common,
             "config": product_config,
             "config_sha256": candidate["product_config"]["sha256"],
-            "config_value": product_value,
+            "config_value": observed_product_value,
             "config_schema": product_schema,
         }
 
@@ -1140,7 +1188,7 @@ def main() -> int:
             active, p5_ready_ms = start_p5(
                 config=p5_config,
                 config_sha256=candidate["p5_config"]["sha256"],
-                config_value=p5_value,
+                config_value=observed_p5_value,
                 config_schema=p5_schema,
                 protocol_schema=protocol,
                 prompt_schema=prompt_schema,

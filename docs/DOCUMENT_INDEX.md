@@ -71,6 +71,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md`](response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md) - P1.1、Engine lifecycle、artifact receipt、Pi operator與Gate 2/product影響紀錄
 * [`ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md`](response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md) - 四份獨立reboot replacement receipts；P6.1雙PASS、Gemma P7.1 PASS、Qwen P7.1 SLOW_RECOVERY/FAIL，待User裁決
 * [`ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`](response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md) - Gate 2A進場稽核與worktree remediation；002 runner/lock已通過workstation驗證，待review/commit/Pi execution
+* [`ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md`](response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md) - Qwen兩次約19.2秒true-cold READY與Engine-stage attribution；P1.2 deferred、零Gate credit
 * [`REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md`](response/REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md) - Gate 2A 002 executable worktree reviewer入口、resolved findings、exact surface與核對清單
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md) - Gate 2B real Audio→LLM→Audio executable、Accepted Audio identity、resource/cleanup核對清單
 
@@ -106,6 +107,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](delivery/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) - 已送Core；R3 SHA `4dc76d1…`與surface `568aa7…dc5`已獲cumulative R3 ACK
 * [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md`](delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) - User已裁決；請Core一次接受四份replacement receipts、Gate 1 PASS及Qwen P7.1 defect waiver
 * [`DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md`](delivery/DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md) - 請Core分離P2整合qualification與裸模型選型、保留P3安全邊界、縮限P8為history/KV isolation；ACK可後至且不阻擋已核准的雙candidate frozen execution
+* [`DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md`](delivery/DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md) - 紀錄Qwen P1.2 cold READY finding；Gate 2A限用30秒操作觀察窗口且不改P1或產生credit，Core ACK可後至
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 
@@ -125,6 +127,7 @@ Repo-owned 內部執行工作文件：
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
 * [`GATE1-PI-COMPAT-PACKET-007.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md) - `DESIGN REVIEW`；Pi 5累積P1/P6/P7/P10A/P11/P12 executable packet
 * [`GATE1-P6.1-P7.1-REDESIGN-001.md`](../poc_llm/tests/gate1/GATE1-P6.1-P7.1-REDESIGN-001.md) - legacy P6/P7 replacement；官方async cancel與獨立force-abort/rebuild設計，待User source review後執行
+* [`P1.2-PI-COLD-READY-ATTRIBUTION-PACKET-001.md`](../poc_llm/tests/gate1/P1.2-PI-COLD-READY-ATTRIBUTION-PACKET-001.md) - Qwen true-cold Engine startup補充歸因實驗；目前deferred且禁止Gate credit
 * [`GATE2A-PI-PACKET-002.md`](../poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md) - 只執行Gate 1未涵蓋的P2/P3/P4/P5/P8
 * [`GATE2B-PI-PACKET-001.md`](../poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md) - Accepted Audio整合的P9/P10B及affected-only regression
 * [`env-preflight-arm64-001.json`](../poc_llm/evidence/gate1/env-preflight-arm64-001.json) - ARM64 sanitized attempt history、checksums與結果範圍

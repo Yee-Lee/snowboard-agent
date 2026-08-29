@@ -32,13 +32,13 @@ Owner：POC Technical Lead；External acceptance：Core Designer。
 | P | Area | Owning scored packet | Later-stage rule | Current evidence |
 | --- | --- | --- | --- | --- |
 | P1 | D3 | Gate 1 `007` | 2A/2B do not rescore if identity unchanged | `Accepted Gate 1` |
-| P2 | D4 | Gate 2A `002` | 2B only change-affected regression | `Pending Gate 2A / Pi not authorized` |
-| P3 | D4 | Gate 2A `002` | P10B outputs observed but not relabelled P3 | `Pending Gate 2A / Pi not authorized` |
-| P4 | D5 | Gate 2A `002` | 2B may record hot sanity diagnostic only | `Pending Gate 2A / Pi not authorized` |
-| P5 | D3 | Gate 2A `002` | Pi-only; no workstation or routine 2B rerun | `Pending Gate 2A / Pi not authorized` |
+| P2 | D4 | Gate 2A `002` | 2B only change-affected regression | `Gate 2A execution in progress; User review pending` |
+| P3 | D4 | Gate 2A `002` | P10B outputs observed but not relabelled P3 | `Gate 2A execution in progress; User review pending` |
+| P4 | D5 | Gate 2A `002` | 2B may record hot sanity diagnostic only | `Gate 2A execution in progress; User review pending` |
+| P5 | D3 | Gate 2A `002` | Pi-only; no workstation or routine 2B rerun | `Gate 2A execution in progress; User review pending` |
 | P6 | D3 | Gate 1 `007` | conditional only with same-manifest P7 PASS | `Accepted Gate 1 as P6.1` |
 | P7 | D3 | Gate 1 `007` | 2A/2B ordinary cleanup is not P7 rescore | `Accepted Gate 1 as P7.1; Qwen FAIL waiver retained` |
-| P8 | D4 | Gate 2A `002` | 2B no routine rerun | `Pending Gate 2A / Pi not authorized` |
+| P8 | D4 | Gate 2A `002` | 2B no routine rerun | `Gate 2A execution in progress; User review pending` |
 | P9 | D6 | Gate 2B `001` | Accepted Audio mandatory; surrogate no credit | `Blocked: Gate 2A receipt / Pi authorization and staging` |
 | P10A | D6 | Gate 1 `007` | 2A does not repeat 20-session soak | `Accepted Gate 1` |
 | P10B | D6 | Gate 2B `001` | same run as P9 | `Blocked: Gate 2A receipt / Pi authorization and staging` |

@@ -2,7 +2,7 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-08-28
+最後更新：2026-08-29
 
 ## Current reachability
 
@@ -66,6 +66,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   process residue仍須以本次preflight實測確認。
 - **P1 startup**：Gemma 1024與Qwen 512皆通過initial READY；capacity必須綁exact artifact，禁止恢復
   implicit 4096 default或把144-token protocol envelope當Engine capacity。
+- **P1.2 true-cold startup**：Qwen在兩次reboot-separated、零full-model-hash診斷中約`19.2 s`
+  READY，其中約`19.0 s`位於native `Engine()`。原因尚未歸因；User已defer後續matrix。Gate 2A
+  僅可用Qwen 30秒操作觀察窗口繼續P2/P3/P4/P5/P8，P1仍為10秒且不得新增P credit。
 - **P6**：native cancel已知可能nondeterministic；只有P7完整PASS才允許Conditional escalation。
 - **P4**：完整方法未達negotiable target需Core written decision。
 - **P5**：固定continuous 512-token chunks共用單一outer timer；chunk完成固定CONTINUE，禁止
@@ -89,6 +92,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 - [Gate 1 cumulative packet](../../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md)
 - [Gate 1 P6.1/P7.1 corrective packet](../../poc_llm/tests/gate1/GATE1-P6.1-P7.1-REDESIGN-001.md)
+- [P1.2 cold READY supplemental packet](../../poc_llm/tests/gate1/P1.2-PI-COLD-READY-ATTRIBUTION-PACKET-001.md)
 - [Gate 2A remaining packet](../../poc_llm/tests/gate2/GATE2A-PI-PACKET-002.md)
 - [Gate 2B combined packet](../../poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md)
 - [Cumulative redesign assessment](../response/ASSESSMENT-LLM-M2-GATE1-CUMULATIVE-REDESIGN-001.md)
@@ -99,6 +103,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [Gate 1 P6.1/P7.1 User review](../response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md)
 - [Gate 1 runner lessons](../response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md)
 - [Gate 2A entry audit](../response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md)
+- [P1.2 cold READY assessment](../response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md)
 - [Gate 1 closure delivery draft](../delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md)
 
 ## Governing and historical inputs
