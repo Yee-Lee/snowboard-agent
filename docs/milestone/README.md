@@ -28,7 +28,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
 | Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，請Core ACK語意與selection |
-| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | 先完成零residency/no-credit smoke；通過後執行attempt 003 |
+| Gate 2B | `USER AUTHORIZED / IN_PROGRESS` | P9, P10B | r5先通過exact-SHA static preflight及單session全鏈no-credit diagnostic；兩者通過後才允許attempt 006 |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -41,7 +41,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `IN_PROGRESS` | attempt 001/002永久保留；獨立smoke先驗完整entry/probes，通過才允許attempt 003 |
+| M4 | `IN_PROGRESS` | attempt 001～005永久保留；r5把Accepted Audio controller closure納入entry，並以單session全鏈diagnostic阻擋未收斂runner進入attempt 006 |
 
 ## Cumulative P1～P12 rule
 
@@ -76,6 +76,10 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   early RESULT及結果後adaptive fixture。
 - **Gate 2 R4 review**：source findings已關閉；Gate 2A final evidence亦獲User review。這只完成
   M3 selection，不使failed Gemma integration自動符合Gate 2B consumer。
+- **Gate 2B r5 execution closure**：LLM input/output/Engine/pre-warm與marker行為保持r4不變；新增
+  Accepted Audio `controller-r2` manifest `6bb24f9a…76f4`、wheel inventory、isolated venv及import
+  origin驗證。正式attempt 006前，必須先由同一exact SHA通過static preflight及一次真正
+  VAD→ASR→LLM→TTS/ALSA、resource/log/cleanup全鏈diagnostic；兩種模式都不建立evidence或P credit。
 - **P2/P3/P8 semantics adjustment**：User已裁決P2為完整candidate configuration的整合
   qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
   已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
@@ -90,9 +94,11 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   但第一筆resource sample發現Pi kernel雖有`CONFIG_PSI=y`，卻以`CONFIG_PSI_DEFAULT_DISABLED=y`
   且未帶`psi=1`啟動；session仍為零，四domain均cooperative stop且零ALSA/process residue，故仍為
   `INCONCLUSIVE`。其evidence SHA-256為`1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`。
-  Attempt 003會先用獨立`--preflight-only`驗證全部static entry、model receipt metadata與
-  PSI/thermal/OOM/memory probes；該模式不得建立evidence或啟動domain，通過後才使用啟用PSI的
-  可逆測試開機進入formal run；current lock `da1a8a…84cb90`。Attempt 001/002不得覆寫。
+  歷史attempt 003～005亦不得覆寫；其User review/發布狀態與正式P disposition分開保存。Current
+  r5 lock加入`controller-r2` closure、安全Audio-domain診斷及恰一session的
+  `--diagnostic-session-only`。它先用獨立`--preflight-only`驗證全部static entry、model receipt
+  metadata與PSI/thermal/OOM/memory probes，再以相同四domain/ALSA/controller執行單session；兩者
+  通過才可執行`G2B-PI-COMBINED-006`。Attempt 001～005不得覆寫。
   Independent review可後補。Core對
   `DELIVERY-019/021`的ACK依User裁決
   可於執行期間補入，但final delivery前必須收到。
@@ -100,7 +106,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV
   deterministic lock `d7d308…e0f8`與delivered manifest `1b3356…30a2`已完成repo-external靜態
   provenance audit；replacement runner會在residency計時前驗證全部Audio artifact/runtime identity。
-  User已授權Pi path inventory、staging與execution；既有Audio-only PASS不提供M4B P9/P10B credit。
+  User已授權Pi path inventory、staging與execution；Accepted controller `controller-r2`亦成為runner
+  的manifest-locked execution input。既有Audio-only PASS與單session diagnostic都不提供M4B P9/P10B credit。
 - **Evidence safety**：不commit model、wheel、native binary、raw output、prompt/payload、credential或endpoint。
 - **Post-delivery informational backlog**：正式POC交付完成後，才續作P1.2 cold-start cause matrix，
   並視成本對未入選candidate執行no-credit Gate 2B同包比較；不得延誤或改寫正式單一finalist流程。

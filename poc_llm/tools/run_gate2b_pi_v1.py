@@ -87,6 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fatal-outcome-self-test", action="store_true")
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--diagnostic-session-only", action="store_true")
     parser.add_argument("--packet-lock", type=Path, required=True)
     parser.add_argument("--gate2a-receipt", type=Path, required=True)
     parser.add_argument("--gate2a-result", type=Path, required=True)
@@ -101,6 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--audio-fixture-lock", type=Path, required=True)
     parser.add_argument("--audio-fixture-manifest", type=Path, required=True)
     parser.add_argument("--audio-artifact-dir", type=Path, required=True)
+    parser.add_argument("--audio-controller-closure", type=Path, required=True)
     parser.add_argument("--audio-runtime-python", type=Path, required=True)
     parser.add_argument("--audio-asr-binary", type=Path, required=True)
     parser.add_argument("--audio-asr-model", type=Path, required=True)
@@ -300,11 +302,139 @@ def verify_audio_runtime(
     return observed
 
 
+def verify_audio_controller_runtime(
+    closure_root: Path, expected: dict[str, Any]
+) -> tuple[dict[str, Any], Path]:
+    """Authenticate and expose the accepted Audio controller closure.
+
+    The Gate 2B runner keeps its own system jsonschema dependency, but Core HAL
+    imports must resolve from the isolated, manifest-locked Audio controller
+    venv.  This check runs before any model or domain becomes resident.
+    """
+
+    closure_root = closure_root.resolve()
+    manifest_path = closure_root / "manifest.json"
+    wheel_dir = closure_root / "wheels"
+    venv = closure_root / "venv"
+    venv_python = venv / "bin/python"
+    venv_config = venv / "pyvenv.cfg"
+    if (
+        not manifest_path.is_file()
+        or streaming_digest(manifest_path) != expected["manifest_sha256"]
+        or not wheel_dir.is_dir()
+        or not venv_python.is_file()
+        or not venv_config.is_file()
+        or "include-system-site-packages = false"
+        not in venv_config.read_text(encoding="utf-8")
+    ):
+        raise PiPacketFailure("Accepted Audio controller closure identity mismatch")
+    manifest = load(manifest_path)
+    packages = manifest.get("packages")
+    interpreter = manifest.get("interpreter", {})
+    if (
+        manifest.get("schema") != "sbd.m4a.runtime-closure.v1"
+        or manifest.get("runtime") != expected["runtime"]
+        or interpreter.get("version") != expected["python_version"]
+        or not isinstance(packages, list)
+        or not packages
+    ):
+        raise PiPacketFailure("Accepted Audio controller manifest mismatch")
+    filenames: set[str] = set()
+    package_probe: list[dict[str, str]] = []
+    for item in packages:
+        if not isinstance(item, dict):
+            raise PiPacketFailure("Accepted Audio controller package record mismatch")
+        filename = item.get("filename")
+        distribution = item.get("distribution")
+        version = item.get("version")
+        import_name = item.get("import_name")
+        size = item.get("size")
+        sha256 = item.get("sha256")
+        if (
+            not all(
+                isinstance(value, str) and value
+                for value in (filename, distribution, version, import_name, sha256)
+            )
+            or not isinstance(size, int)
+            or size <= 0
+        ):
+            raise PiPacketFailure("Accepted Audio controller package record mismatch")
+        wheel = wheel_dir / filename
+        if (
+            not wheel.is_file()
+            or wheel.stat().st_size != size
+            or streaming_digest(wheel) != sha256
+        ):
+            raise PiPacketFailure("Accepted Audio controller wheel mismatch")
+        filenames.add(filename)
+        package_probe.append({
+            "distribution": distribution,
+            "version": version,
+            "import_name": import_name,
+        })
+    if {path.name for path in wheel_dir.glob("*.whl")} != filenames:
+        raise PiPacketFailure("Accepted Audio controller wheel inventory mismatch")
+
+    probe_code = (
+        "import importlib,importlib.metadata as m,json,platform,sys;"
+        "from pathlib import Path;"
+        "items=json.loads(sys.argv[1]);"
+        "locations={i['import_name']:str(Path(importlib.import_module(i['import_name'])"
+        ".__file__).resolve()) for i in items};"
+        "versions={i['distribution']:m.version(i['distribution']) for i in items};"
+        "print(json.dumps({'python_version':platform.python_version(),"
+        "'prefix':str(Path(sys.prefix).resolve()),"
+        "'base_prefix':str(Path(sys.base_prefix).resolve()),"
+        "'locations':locations,'versions':versions},sort_keys=True))"
+    )
+    probe = subprocess.run(
+        [str(venv_python), "-I", "-c", probe_code, json.dumps(package_probe)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PIP_NO_INDEX": "1",
+            "NO_PROXY": "*",
+        },
+    )
+    try:
+        observed = json.loads(probe.stdout)
+    except (json.JSONDecodeError, TypeError) as error:
+        raise PiPacketFailure("Accepted Audio controller import probe failed") from error
+    expected_versions = {
+        item["distribution"]: item["version"] for item in package_probe
+    }
+    prefix = Path(str(observed.get("prefix", ""))).resolve()
+    locations = observed.get("locations")
+    if (
+        probe.returncode != 0
+        or observed.get("python_version") != expected["python_version"]
+        or prefix != venv
+        or observed.get("base_prefix") == observed.get("prefix")
+        or observed.get("versions") != expected_versions
+        or not isinstance(locations, dict)
+        or any(not Path(value).resolve().is_relative_to(venv) for value in locations.values())
+    ):
+        raise PiPacketFailure("Accepted Audio controller import identity mismatch")
+    python_major_minor = ".".join(expected["python_version"].split(".")[:2])
+    site_packages = venv / "lib" / f"python{python_major_minor}" / "site-packages"
+    if not site_packages.is_dir() or any(
+        name.split(".", 1)[0] in sys.modules
+        for name in (item["import_name"] for item in package_probe)
+    ):
+        raise PiPacketFailure("Accepted Audio controller activation order mismatch")
+    sys.path.insert(0, str(site_packages))
+    return dict(expected), site_packages
+
+
 def verify_audio_controlled_inputs(
     *,
     fixture_lock: Path,
     fixture_manifest: Path,
     artifact_dir: Path,
+    controller_closure: Path,
     tts_runtime_python: Path,
     asr_binary: Path,
     asr_model: Path,
@@ -371,6 +501,11 @@ def verify_audio_controlled_inputs(
     ):
         raise PiPacketFailure("Accepted Audio fixture provenance mismatch")
     observed["fixture_count"] = len(lock_records)
+    observed["controller_runtime"], _controller_site = (
+        verify_audio_controller_runtime(
+            controller_closure, accepted["runtimes"]["controller"]
+        )
+    )
     observed["vad_runtime"] = verify_audio_runtime(
         vad_runtime_python, accepted["runtimes"]["vad"]
     )
@@ -505,9 +640,15 @@ class TranscriptAsrDomain:
 class ScoredAudioDomain:
     """Classify an accepted Audio domain's post-READY session fault as P10B behavior."""
 
-    def __init__(self, name: str, accepted_domain: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        accepted_domain: Any,
+        diagnostics: list[dict[str, Any]] | None = None,
+    ) -> None:
         self.name = name
         self.accepted = accepted_domain
+        self.diagnostics = diagnostics if diagnostics is not None else []
 
     async def start(self) -> None:
         await self.accepted.start()
@@ -522,6 +663,26 @@ class ScoredAudioDomain:
         try:
             return await self.accepted.run(session)
         except Exception as error:
+            safe_codes = {
+                "pyalsaaudio==0.11.0 is required for core.audio.driver=alsa":
+                    "CORE_ALSA_BINDING_UNAVAILABLE",
+                "M4 Matcha PCM protocol mismatch": "TTS_PCM_PROTOCOL_MISMATCH",
+                "M4 Matcha PCM length is invalid": "TTS_PCM_LENGTH_INVALID",
+                "M4 Matcha PCM checksum mismatch": "TTS_PCM_CHECKSUM_MISMATCH",
+                "Matcha worker closed its protocol stream": "TTS_PROTOCOL_STREAM_CLOSED",
+            }
+            process = getattr(self.accepted, "process", None)
+            returncode = getattr(process, "returncode", None)
+            self.diagnostics.append({
+                "domain": self.name.lower(),
+                "error_type": type(error).__name__,
+                "error_code": (
+                    "OPERATION_TIMEOUT"
+                    if isinstance(error, TimeoutError)
+                    else safe_codes.get(str(error), "UNMAPPED_ACCEPTED_RUNTIME_ERROR")
+                ),
+                "worker_returncode": returncode if isinstance(returncode, int) else None,
+            })
             raise CandidateViolation(
                 f"Gate 2B accepted {self.name} session failed"
             ) from error
@@ -771,6 +932,7 @@ def initial_result(args: argparse.Namespace) -> dict[str, Any]:
         "resource_observations": {},
         "cleanup": {},
         "log_hygiene": {},
+        "domain_diagnostics": [],
         "partial_trace": [],
         "p_results": {"P9": "Blocked", "P10B": "Blocked"},
         "violations": [],
@@ -785,6 +947,90 @@ def combined_exception_disposition(
     if combined_entered and error_result(error) == "FAIL":
         return {"P9": "Blocked", "P10B": "FAIL"}, "FAIL"
     return {"P9": "Blocked", "P10B": "Blocked"}, "INCONCLUSIVE"
+
+
+def evaluate_single_session_resources(
+    records: list[dict[str, Any]],
+    *,
+    session_points: list[dict[str, Any]],
+    oom_before: int,
+    oom_after: int,
+) -> tuple[bool, dict[str, Any]]:
+    """Check every non-soak P9 invariant without claiming leak credit."""
+
+    if len(records) < 2 or len(session_points) != 1:
+        raise EnvironmentInvalid("Gate 2B diagnostic resource coverage is incomplete")
+    gaps = [
+        records[index]["monotonic_s"] - records[index - 1]["monotonic_s"]
+        for index in range(1, len(records))
+    ]
+    owner_names = {"controller", "vad", "asr", "tts", "llm"}
+    owner_sets_complete = all(
+        set(record.get("owners", {})) == owner_names
+        and all(
+            owner.get("root_present") is True
+            and owner.get("process_count", 0) >= 1
+            and owner.get("rss_kib", 0) > 0
+            and owner.get("pss_kib", 0) > 0
+            and owner.get("threads", 0) > 0
+            for owner in record["owners"].values()
+        )
+        for record in records
+    )
+    summary = {
+        "sample_count": len(records),
+        "session_point_count": len(session_points),
+        "peak_system_used_mib": max(item["system_used_mib"] for item in records),
+        "peak_temperature_c": max(item["temperature_c"] for item in records),
+        "max_sample_start_gap_s": round(max(gaps), 6),
+        "psi_full_total_delta": records[-1]["psi_full_total"]
+        - records[0]["psi_full_total"],
+        "oom_kill_delta": oom_after - oom_before,
+        "owner_sets_complete": owner_sets_complete,
+        "swap_zero_for_all_samples": all(
+            item["swap_total_kib"] == 0 for item in records
+        ),
+        "throttled_zero_for_all_samples": all(
+            item["throttled"] == "throttled=0x0" for item in records
+        ),
+    }
+    passed = (
+        summary["peak_system_used_mib"] <= 3584
+        and summary["peak_temperature_c"] < 80
+        and summary["max_sample_start_gap_s"] <= 0.5
+        and summary["psi_full_total_delta"] == 0
+        and summary["oom_kill_delta"] == 0
+        and summary["owner_sets_complete"]
+        and summary["swap_zero_for_all_samples"]
+        and summary["throttled_zero_for_all_samples"]
+        and session_points[0].get("session_index") == 1
+    )
+    return passed, summary
+
+
+def single_session_diagnostic_output(result: dict[str, Any]) -> dict[str, Any]:
+    """Return only sanitized, no-credit convergence observations."""
+
+    return {
+        "mode": "diagnostic-single-session",
+        "packet_id": result["packet_id"],
+        "run_id": result["run_id"],
+        "candidate_id": result["candidate_id"],
+        "integration_pairing_revision": result["integration_pairing_revision"],
+        "execution_sha": result["execution_sha"],
+        "execution_surface_sha256": result["execution_surface_sha256"],
+        "session": result["sessions"][0] if len(result["sessions"]) == 1 else None,
+        "resources": result["resources"],
+        "cleanup": result["cleanup"],
+        "log_hygiene": result["log_hygiene"],
+        "domain_diagnostics": result["domain_diagnostics"],
+        "partial_trace": result["partial_trace"],
+        "violations": result["violations"],
+        "p_results": {"P9": "Blocked", "P10B": "Blocked"},
+        "formal_credit": False,
+        "evidence_created": False,
+        "result": result["result"],
+    }
 
 
 def verify_gate2b_result(
@@ -886,11 +1132,20 @@ def main() -> int:
     if args.fatal_outcome_self_test:
         return 4
     result = initial_result(args)
+    if args.preflight_only and args.diagnostic_session_only:
+        result["violations"].append("Gate 2B execution modes are mutually exclusive")
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+        return 2
     if not valid_run_id(args.run_id):
         result["violations"].append("Gate 2B run ID is not a safe slug")
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))
         return 2
-    raw_dir = args.evidence_root / args.run_id
+    evidence_dir = args.evidence_root / args.run_id
+    raw_dir = (
+        Path(f"/tmp/llm-poc-g2b-001/diagnostic-{args.run_id}")
+        if args.diagnostic_session_only
+        else evidence_dir
+    )
     install_root = Path(f"/tmp/llm-poc-g2b-001/install-{args.run_id}")
     work_dir = Path(f"/tmp/llm-poc-g2b-001/work-{args.run_id}")
     result_schema: Path | None = None
@@ -907,8 +1162,14 @@ def main() -> int:
     combined_entered = False
     sessions_completed = False
     preflight_succeeded = False
+    diagnostic_succeeded = False
     try:
-        if raw_dir.exists() or install_root.exists() or work_dir.exists():
+        if (
+            raw_dir.exists()
+            or evidence_dir.exists()
+            or install_root.exists()
+            or work_dir.exists()
+        ):
             raise PiPacketFailure("Gate 2B run-owned path is dirty")
         if raw_dir.resolve().is_relative_to(ROOT):
             raise PiPacketFailure("Gate 2B controlled evidence must remain outside Git")
@@ -968,6 +1229,7 @@ def main() -> int:
                 fixture_lock=args.audio_fixture_lock,
                 fixture_manifest=args.audio_fixture_manifest,
                 artifact_dir=args.audio_artifact_dir,
+                controller_closure=args.audio_controller_closure,
                 tts_runtime_python=args.audio_runtime_python,
                 asr_binary=args.audio_asr_binary,
                 asr_model=args.audio_asr_model,
@@ -1117,6 +1379,7 @@ def main() -> int:
                 args.audio_root, args.audio_vad_runtime_python, args.audio_vad_model,
                 work_dir / "vad-bounded", args.operation_timeout,
             ),
+            result["domain_diagnostics"],
         )
         accepted_asr = bindings["PersistentAsrDomain"](
             args.audio_asr_binary, args.audio_asr_model,
@@ -1129,6 +1392,7 @@ def main() -> int:
                 args.audio_root, args.audio_artifact_dir, args.audio_runtime_python,
                 work_dir / "tts", audio, audio_config, args.operation_timeout,
             ),
+            result["domain_diagnostics"],
         )
 
         protocol = artifacts["protocol_schema"]
@@ -1185,20 +1449,36 @@ def main() -> int:
                 except Exception as error:
                     raise EnvironmentInvalid("Gate 2B session resource probe failed") from error
 
-            sessions = asyncio.run(coordinator.run(
-                records,
-                cadence_s=args.cadence_seconds,
-                on_resident=start_sampling,
-                before_shutdown=stop_sampling,
-                after_session=capture_session,
-            ))
+            if args.diagnostic_session_only:
+                sessions = asyncio.run(coordinator.run_single_diagnostic(
+                    records[0],
+                    on_resident=start_sampling,
+                    before_shutdown=stop_sampling,
+                    after_session=capture_session,
+                ))
+            else:
+                sessions = asyncio.run(coordinator.run(
+                    records,
+                    cadence_s=args.cadence_seconds,
+                    on_resident=start_sampling,
+                    before_shutdown=stop_sampling,
+                    after_session=capture_session,
+                ))
             sessions_completed = True
             result["runtime"]["llm_inference_ready_ms"] = llm_domain.ready_ms
         oom_after = oom_kill_count()
-        resources_pass, resource_summary = evaluate_resources(
-            samples, session_points=sampler.session_points,
-            oom_before=oom_before, oom_after=oom_after
-        )
+        if args.diagnostic_session_only:
+            resources_pass, resource_summary = evaluate_single_session_resources(
+                samples,
+                session_points=sampler.session_points,
+                oom_before=oom_before,
+                oom_after=oom_after,
+            )
+        else:
+            resources_pass, resource_summary = evaluate_resources(
+                samples, session_points=sampler.session_points,
+                oom_before=oom_before, oom_after=oom_after
+            )
         (raw_dir / "resource-samples.json").write_text(
             json.dumps(samples, sort_keys=True), encoding="utf-8"
         )
@@ -1226,9 +1506,14 @@ def main() -> int:
             "llm": llm_domain.cleanup,
             "domains": coordinator.cleanup_proofs,
         }
-        p10b_pass = (
-            len(sessions) == 20
-            and [item["session_id"] for item in sessions] == EXPECTED_AUDIO_SESSIONS
+        expected_session_ids = (
+            EXPECTED_AUDIO_SESSIONS[:1]
+            if args.diagnostic_session_only
+            else EXPECTED_AUDIO_SESSIONS
+        )
+        session_path_pass = (
+            len(sessions) == len(expected_session_ids)
+            and [item["session_id"] for item in sessions] == expected_session_ids
             and all(
                 item["vad"]["terminal"] == "SUCCESS"
                 and item["asr"]["terminal"] == "SUCCESS"
@@ -1242,10 +1527,13 @@ def main() -> int:
                 for item in sessions
             )
             and coordinator.stop_order == ["llm", "tts", "asr", "vad"]
-            and len(coordinator.cadence_pause_elapsed_ms) == 19
-            and all(value >= 5000 for value in coordinator.cadence_pause_elapsed_ms)
             and all(process_absence.values())
             and result["cleanup"]["audio_device_owner_count"] == 0
+        )
+        p10b_pass = (
+            session_path_pass
+            and len(coordinator.cadence_pause_elapsed_ms) == 19
+            and all(value >= 5000 for value in coordinator.cadence_pause_elapsed_ms)
         )
         asr_stderr_path = work_dir / "asr/base-q8.stderr.log"
         if not asr_stderr_path.is_file():
@@ -1262,25 +1550,55 @@ def main() -> int:
         result["log_hygiene"] = hygiene
         if not hygiene["passed"]:
             result["violations"].append("CandidateViolation: owned log hygiene")
+            session_path_pass = False
             p10b_pass = False
-        result["p_results"]["P9"] = "PASS" if resources_pass else "FAIL"
-        result["p_results"]["P10B"] = "PASS" if p10b_pass and resources_pass else "FAIL"
         verify_model_receipt(
             receipt["model"], Path(standard_value["model_path"]),
             standard_value["model_sha256"],
         )
         result["artifact_authentication"]["metadata_unchanged"] = True
         result["environment_post"] = target_preflight(args.execution_sha)
-        result["result"] = (
-            "PASS" if result["p_results"] == {"P9": "PASS", "P10B": "PASS"}
-            else "FAIL"
-        )
-        verify_gate2b_result(
-            result,
-            engine_capacity=standard_value["engine_max_num_tokens"],
-            max_input_tokens=standard_value["max_input_tokens"],
-            max_output_tokens=standard_value["max_output_tokens"],
-        )
+        if args.diagnostic_session_only:
+            cleanup_pass = (
+                result["cleanup"].get("reverse_order")
+                == ["llm", "tts", "asr", "vad"]
+                and result["cleanup"].get("process_groups_absent")
+                == {"vad": True, "asr": True, "tts": True, "llm": True}
+                and result["cleanup"].get("audio_device_owner_count") == 0
+                and all(
+                    proof.get("cooperative_stop") is True
+                    and proof.get("fallback_used") is False
+                    and proof.get("process_group_absent") is True
+                    and proof.get("error_type") is None
+                    for proof in result["cleanup"].get("domains", {}).values()
+                )
+                and len(result["cleanup"].get("domains", {})) == 4
+            )
+            diagnostic_succeeded = (
+                resources_pass
+                and session_path_pass
+                and cleanup_pass
+                and hygiene["passed"]
+                and result["domain_diagnostics"] == []
+            )
+            result["p_results"] = {"P9": "Blocked", "P10B": "Blocked"}
+            result["result"] = "PASS" if diagnostic_succeeded else "FAIL"
+        else:
+            result["p_results"]["P9"] = "PASS" if resources_pass else "FAIL"
+            result["p_results"]["P10B"] = (
+                "PASS" if p10b_pass and resources_pass else "FAIL"
+            )
+            result["result"] = (
+                "PASS"
+                if result["p_results"] == {"P9": "PASS", "P10B": "PASS"}
+                else "FAIL"
+            )
+            verify_gate2b_result(
+                result,
+                engine_capacity=standard_value["engine_max_num_tokens"],
+                max_input_tokens=standard_value["max_input_tokens"],
+                max_output_tokens=standard_value["max_output_tokens"],
+            )
     except (
         PiPacketFailure, OSError, subprocess.SubprocessError, KeyError, TypeError,
         ValueError, RuntimeError, json.JSONDecodeError,
@@ -1330,25 +1648,44 @@ def main() -> int:
         if owns_work_dir and work_dir.exists():
             shutil.rmtree(work_dir)
         if owns_raw_dir and raw_dir.exists():
-            resource_samples = raw_dir / "resource-samples.json"
-            if samples and not resource_samples.exists():
-                resource_samples.write_text(
-                    json.dumps(samples, sort_keys=True), encoding="utf-8"
-                )
-            if result_schema is not None:
-                errors = list(Draft202012Validator(load(result_schema)).iter_errors(result))
-                if errors:
-                    result["violations"].append("Gate 2B result schema validation failed")
+            if args.diagnostic_session_only:
+                shutil.rmtree(raw_dir)
+            else:
+                resource_samples = raw_dir / "resource-samples.json"
+                if samples and not resource_samples.exists():
+                    resource_samples.write_text(
+                        json.dumps(samples, sort_keys=True), encoding="utf-8"
+                    )
+                if result_schema is not None:
+                    errors = list(
+                        Draft202012Validator(load(result_schema)).iter_errors(result)
+                    )
+                    if errors:
+                        result["violations"].append(
+                            "Gate 2B result schema validation failed"
+                        )
+                        result["result"] = "INCONCLUSIVE"
+                try:
+                    write_json_evidence(raw_dir / "gate2b-sanitized.json", result)
+                except EvidenceInvalid as error:
+                    evidence = sanitized_error(error)
+                    result["violations"].append(
+                        f"{evidence['category']}: {evidence['error_type']}"
+                    )
                     result["result"] = "INCONCLUSIVE"
-            try:
-                write_json_evidence(raw_dir / "gate2b-sanitized.json", result)
-            except EvidenceInvalid as error:
-                evidence = sanitized_error(error)
-                result["violations"].append(
-                    f"{evidence['category']}: {evidence['error_type']}"
-                )
-                result["result"] = "INCONCLUSIVE"
-        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+        if args.diagnostic_session_only:
+            if not diagnostic_succeeded:
+                result["result"] = "FAIL"
+            result["p_results"] = {"P9": "Blocked", "P10B": "Blocked"}
+            print(json.dumps(
+                single_session_diagnostic_output(result),
+                sort_keys=True,
+                separators=(",", ":"),
+            ))
+        else:
+            print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+    if args.diagnostic_session_only:
+        return 0 if diagnostic_succeeded else 1
     return 0 if result["result"] == "PASS" else 1 if result["result"] == "FAIL" else 2
 
 

@@ -42,6 +42,9 @@ probe proved prompt-only marker wording insufficient and never entered formal Au
 Attempt 004 then proved that a 64-token output ceiling can truncate otherwise constrained JSON; an
 identical-input no-credit reproduction completed at 72 tokens. The corrected output ceiling is 128,
 within the unchanged 1024-token Engine capacity and independent of the 128-token input limit.
+Pairing `r5` preserves this LLM lifecycle and every r4 token/deadline/marker setting unchanged; it
+only authenticates and activates the Accepted Audio `controller-r2` runtime closure for the combined
+controller. It does not add or alter a Core pre-warm requirement.
 
 ## Watchdog and state requirements
 

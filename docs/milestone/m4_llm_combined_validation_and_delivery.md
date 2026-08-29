@@ -17,8 +17,8 @@ P10B，連結Gate 1/2A accepted evidence後提出final winner/no-go。
 - Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery；依User裁決可於Gate 2B執行
   期間補入，但final delivery前必須收到，不得因此改寫既有machine result。
 - Core-recorded Accepted Audio handoff ID、full SHA、executable kit與known limits。
-- `G2B-PI-COMBINED-001/002`及其`INCONCLUSIVE`證據不可覆寫；修正版以
-  `G2B-PI-COMBINED-003`執行。Independent executable review可依User裁決後補，Core result ACK
+- `G2B-PI-COMBINED-001`～`005`及其證據不可覆寫；目前修正版以
+  `G2B-PI-COMBINED-006`執行。Independent executable review可依User裁決後補，Core result ACK
   必須在final delivery前收到。
 - Pi 5 4GB、`swap=0`、offline、clean exact SHA；combined process ownership固定。
 
@@ -83,6 +83,14 @@ Attempt 004（execution SHA `a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f`）在sess
 cooperative cleanup且零殘留，P10B為immutable `FAIL`、P9未計分。相同transcript hash的no-credit
 reproduction將ceiling提高為128後於72 tokens完成valid schema、marker exactly-once及trap absent。
 Pairing `r4`只將output ceiling改為128並補sanitized invariant diagnostic；input 128與Engine 1024不變。
+
+目前pairing `r5`不改動r4的LLM input/output/Engine/pre-warm、deadline或marker行為，只把Accepted
+Audio `controller-r2`納入manifest-locked execution closure，驗證完整wheel inventory、isolated venv、
+package版本及import origin，並加入不輸出private error text的Audio-domain diagnostic code。為避免
+fail-fast每輪只揭露下一層，正式attempt 006前新增兩個硬門檻：同一exact SHA的零residency static
+preflight，以及一次使用相同VAD/ASR/LLM/TTS、Core controller、真實ALSA、resource/log/cleanup路徑的
+no-credit diagnostic。Diagnostic只執行第一筆固定fixture、刪除所有暫存資料、不得建立formal evidence，
+且P9/P10B保持`Blocked`；只有兩道門檻都PASS才可開始20-session formal run。
 
 ## Work
 

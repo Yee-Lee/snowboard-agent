@@ -9,6 +9,7 @@
     "leak_calculation":{"type":"object","additionalProperties":false,"required":["slope_mib_per_session","late_early_median_delta_mib"],"properties":{"slope_mib_per_session":{"type":"number","maximum":4.0},"late_early_median_delta_mib":{"type":"number","maximum":64.0}}},
     "domain_cleanup":{"type":"object","additionalProperties":false,"required":["root_pid","cooperative_stop","fallback_used","process_group_absent","error_type"],"properties":{"root_pid":{"type":"integer","minimum":1},"cooperative_stop":{"const":true},"fallback_used":{"const":false},"process_group_absent":{"const":true},"error_type":{"type":"null"}}},
     "log_scan":{"type":"object","additionalProperties":false,"required":["passed","scanned_files","static_marker_count","runtime_marker_count"],"properties":{"passed":{"const":true},"scanned_files":{"type":"array","minItems":4,"items":{"type":"object","additionalProperties":false,"required":["name","sha256"],"properties":{"name":{"type":"string","minLength":1},"sha256":{"$ref":"#/$defs/sha256"}}}},"static_marker_count":{"const":7},"runtime_marker_count":{"type":"integer","minimum":80}}},
+    "domain_diagnostic":{"type":"object","additionalProperties":false,"required":["domain","error_type","error_code","worker_returncode"],"properties":{"domain":{"enum":["vad","tts"]},"error_type":{"type":"string","minLength":1},"error_code":{"enum":["CORE_ALSA_BINDING_UNAVAILABLE","TTS_PCM_PROTOCOL_MISMATCH","TTS_PCM_LENGTH_INVALID","TTS_PCM_CHECKSUM_MISMATCH","TTS_PROTOCOL_STREAM_CLOSED","OPERATION_TIMEOUT","UNMAPPED_ACCEPTED_RUNTIME_ERROR"]},"worker_returncode":{"type":["integer","null"]}}},
     "session":{
       "type":"object","additionalProperties":false,
       "required":["session_id","audio_fixture_id","tts_fixture_id","vad","asr","llm","tts","timings_ms"],
@@ -36,17 +37,17 @@
       "properties":{"reused_receipt_sha256":{"$ref":"#/$defs/sha256"},"model_sha256":{"$ref":"#/$defs/sha256"},"model_size_bytes":{"type":"integer","minimum":1},"full_model_hash_count":{"const":0},"metadata_unchanged":{"const":true}}
     },
     "accepted_audio_pass":{
-      "type":"object","additionalProperties":false,"required":["audio_completion_sha","audio_tag","audio_tag_object_sha","core_hal_execution_sha","delivery_id","manifest_sha256","status","core_response_id","core_response_sha","fixture_lock_sha256","fixture_manifest_sha256","fixture_count","vad_model_sha256","asr_binary_sha256","asr_model_sha256","tts_archive_sha256","tts_vocoder_sha256","tts_wrapper_wheel_sha256","tts_core_wheel_sha256","vad_runtime","tts_runtime"],
-      "properties":{"audio_completion_sha":{"const":"5694ead4ba6be928fdb4dbdf6da7155b214d72bd"},"audio_tag":{"const":"audio_m4"},"audio_tag_object_sha":{"const":"24b2571a23dde2f77027242b61142b0c1a59924c"},"core_hal_execution_sha":{"const":"6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf"},"delivery_id":{"const":"POC-audio-DEL-2026-001-R1"},"manifest_sha256":{"const":"74e2737f5c965d1691a130176e6e0955dec207134d00686212de4cad60404fad"},"status":{"const":"POC_ACCEPTED_M4_COMPLETE"},"core_response_id":{"const":"RESP-AUDIO-M4-GATE2B-001"},"core_response_sha":{"const":"be19b70b1dd91674e7ff981eb9d6b2dca9741f54"},"fixture_lock_sha256":{"const":"d7d3086c578511763b60074ef7c049e37ef814094e399ad3562e3be2fda0e0f8"},"fixture_manifest_sha256":{"const":"1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2"},"fixture_count":{"const":20},"vad_model_sha256":{"const":"1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"},"asr_binary_sha256":{"const":"64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"},"asr_model_sha256":{"const":"c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"},"tts_archive_sha256":{"const":"271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef"},"tts_vocoder_sha256":{"const":"b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"},"tts_wrapper_wheel_sha256":{"const":"f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f"},"tts_core_wheel_sha256":{"const":"4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa"},"vad_runtime":{"const":{"package":"onnxruntime","version":"1.29.0","python_version":"3.13.5","isolated":true}},"tts_runtime":{"const":{"package":"sherpa-onnx","version":"1.13.5","python_version":"3.13.5","isolated":true}}}
+      "type":"object","additionalProperties":false,"required":["audio_completion_sha","audio_tag","audio_tag_object_sha","core_hal_execution_sha","delivery_id","manifest_sha256","status","core_response_id","core_response_sha","fixture_lock_sha256","fixture_manifest_sha256","fixture_count","vad_model_sha256","asr_binary_sha256","asr_model_sha256","tts_archive_sha256","tts_vocoder_sha256","tts_wrapper_wheel_sha256","tts_core_wheel_sha256","controller_runtime","vad_runtime","tts_runtime"],
+      "properties":{"audio_completion_sha":{"const":"5694ead4ba6be928fdb4dbdf6da7155b214d72bd"},"audio_tag":{"const":"audio_m4"},"audio_tag_object_sha":{"const":"24b2571a23dde2f77027242b61142b0c1a59924c"},"core_hal_execution_sha":{"const":"6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf"},"delivery_id":{"const":"POC-audio-DEL-2026-001-R1"},"manifest_sha256":{"const":"74e2737f5c965d1691a130176e6e0955dec207134d00686212de4cad60404fad"},"status":{"const":"POC_ACCEPTED_M4_COMPLETE"},"core_response_id":{"const":"RESP-AUDIO-M4-GATE2B-001"},"core_response_sha":{"const":"be19b70b1dd91674e7ff981eb9d6b2dca9741f54"},"fixture_lock_sha256":{"const":"d7d3086c578511763b60074ef7c049e37ef814094e399ad3562e3be2fda0e0f8"},"fixture_manifest_sha256":{"const":"1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2"},"fixture_count":{"const":20},"vad_model_sha256":{"const":"1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"},"asr_binary_sha256":{"const":"64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"},"asr_model_sha256":{"const":"c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9"},"tts_archive_sha256":{"const":"271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef"},"tts_vocoder_sha256":{"const":"b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"},"tts_wrapper_wheel_sha256":{"const":"f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f"},"tts_core_wheel_sha256":{"const":"4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa"},"controller_runtime":{"const":{"runtime":"controller-r2","manifest_sha256":"6bb24f9a0a2f2a66a522706b22222081fbf009b28c9dc0942a22d714114276f4","python_version":"3.13.5","isolated":true}},"vad_runtime":{"const":{"package":"onnxruntime","version":"1.29.0","python_version":"3.13.5","isolated":true}},"tts_runtime":{"const":{"package":"sherpa-onnx","version":"1.13.5","python_version":"3.13.5","isolated":true}}}
     }
   },
   "type":"object","additionalProperties":false,
-  "required":["packet_id","run_id","candidate_id","integration_pairing_revision","execution_sha","execution_surface_sha256","gate2a_receipt_sha256","accepted_audio","environment","environment_post","runtime","artifact_authentication","sessions","soak","resources","resource_observations","cleanup","log_hygiene","partial_trace","p_results","violations","result","publication_status"],
+  "required":["packet_id","run_id","candidate_id","integration_pairing_revision","execution_sha","execution_surface_sha256","gate2a_receipt_sha256","accepted_audio","environment","environment_post","runtime","artifact_authentication","sessions","soak","resources","resource_observations","cleanup","log_hygiene","domain_diagnostics","partial_trace","p_results","violations","result","publication_status"],
   "properties":{
     "packet_id":{"const":"G2B-PI-COMBINED-001"},
     "run_id":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     "candidate_id":{"enum":["UNKNOWN","CAND-LRT-G4E2B-MOBILE-R1"]},
-    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r4"]},
+    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r5"]},
     "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
     "execution_surface_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
     "gate2a_receipt_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
@@ -56,7 +57,7 @@
     "sessions":{"type":"array","maxItems":20},
     "soak":{"type":"object"},"resources":{"type":"object"},"resource_observations":{"type":"object"},
     "cleanup":{"type":"object"},
-    "log_hygiene":{"type":"object"},"partial_trace":{"type":"array","maxItems":20},
+    "log_hygiene":{"type":"object"},"domain_diagnostics":{"type":"array","maxItems":20,"items":{"$ref":"#/$defs/domain_diagnostic"}},"partial_trace":{"type":"array","maxItems":20},
     "p_results":{"type":"object","additionalProperties":false,"required":["P9","P10B"],"properties":{"P9":{"enum":["PASS","FAIL","Blocked"]},"P10B":{"enum":["PASS","FAIL","Blocked"]}}},
     "violations":{"type":"array","items":{"type":"string"}},
     "result":{"enum":["PASS","FAIL","INCONCLUSIVE"]},
@@ -68,7 +69,7 @@
       "then":{
         "properties":{
           "candidate_id":{"const":"CAND-LRT-G4E2B-MOBILE-R1"},
-          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r4"},
+          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r5"},
           "accepted_audio":{"$ref":"#/$defs/accepted_audio_pass"},
           "artifact_authentication":{"$ref":"#/$defs/artifact_auth_pass"},
           "sessions":{"minItems":20,"maxItems":20,"uniqueItems":true,"items":{"$ref":"#/$defs/session"}},
@@ -85,6 +86,7 @@
           "resource_observations":{"type":"object","additionalProperties":false,"required":["continuous_samples","session_points","oom_before","oom_after"],"properties":{"continuous_samples":{"type":"array","minItems":2,"items":{"allOf":[{"$ref":"#/$defs/resource_sample"},{"required":["collection_duration_s"]}]}},"session_points":{"type":"array","minItems":20,"maxItems":20,"items":{"allOf":[{"$ref":"#/$defs/resource_sample"},{"required":["session_index"]}]}},"oom_before":{"type":"integer","minimum":0},"oom_after":{"type":"integer","minimum":0}}},
           "cleanup":{"$ref":"#/$defs/cleanup_pass"},
           "log_hygiene":{"$ref":"#/$defs/log_scan"},
+          "domain_diagnostics":{"maxItems":0},
           "partial_trace":{"maxItems":0},
           "p_results":{"properties":{"P9":{"const":"PASS"},"P10B":{"const":"PASS"}}},
           "violations":{"maxItems":0}

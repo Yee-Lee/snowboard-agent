@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r11-prewarm-budget-marker-output`
+- **Revision**: `2026-08-29-r12-controller-closure-diagnostic`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -25,7 +25,7 @@ checkout `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`.
 The User reviewed the final Gate 2A evidence and selected Gemma as the sole model finalist. Qwen is
 excluded from formal Gate 2B. Gemma's immutable P2/P8 FAIL observations remain in the entry receipt;
 they are not relabelled as PASS. Attempt 003 tested pairing `r1` and remains an immutable FAIL. The
-User-authorized corrective execution binds pairing `r4`: compact product input, actual rendered-token
+User-authorized corrective execution binds pairing `r5`: compact product input, actual rendered-token
 enforcement, constrained speak-only JSON/current-marker pattern, and inference pre-warm. Pairing `r2`
 was rejected by a public no-credit probe because prompt-only marker instructions remained ambiguous;
 it never entered Audio residency or formal evidence. Because r3 follows an
@@ -36,7 +36,8 @@ the Gate 2A semantic split may arrive during execution but is mandatory before f
 ## 2. Single combined execution
 
 P9 and P10B share one 4GB `swap=0` offline execution so Audio and LLM models are not loaded twice.
-The POC combined controller imports the exact clean Core HAL checkout and starts the accepted
+The POC combined controller imports the exact clean Core HAL checkout through the Accepted Audio
+`controller-r2` closure and starts the accepted
 VAD/ASR/TTS components plus the User-reviewed model-finalist LLM child. This is the contracted POC
 boundary; it does not claim that the Core product composition root is under test. It then performs:
 
@@ -79,7 +80,7 @@ protocol pipe, or a post-READY VAD/ASR/TTS session failure, and other observed
 candidate/resource/cleanup violations are `FAIL`. Installer, LLM stderr and accepted ASR stderr are
 all scanned against static and runtime-sensitive markers before disposable work is removed.
 
-Pairing `r4` does not publish READY after Engine construction alone. It runs one fixed public,
+Pairing `r5` does not publish READY after Engine construction alone. It runs one fixed public,
 non-sensitive request through the same compact prompt, rendered-token check, constrained JSON path,
 and a disposable Conversation; output and KV/history are discarded. Only successful completion
 publishes protocol READY, whose meaning is therefore `INFERENCE_READY`. The 45-second READY budget
@@ -107,12 +108,13 @@ product-qualification boundary before final acceptance.
 ## 5. Reviewer and execution gate
 
 The executable candidate binds the Accepted Audio entry schema, immutable Gemma model-finalist
-receipt plus its `r1` ancestry, Gate 2B corrective `r4` adapter/config, runner, artifact-independent coordinator,
+receipt plus its `r1` ancestry, Gate 2B corrective `r5` adapter/config, runner, artifact-independent coordinator,
 sampler/calculations, result schema and all repository checksums in `gate2b-pi-lock-v1.json`.
 External Audio and Core checkouts
 must be clean and exact. Before residency timing, the runner verifies the exact 20-WAV fixture lock
-and delivered fixture manifest, VAD model, ASR worker/model, TTS archive/vocoder and both isolated
-Audio runtime identities. These one-time static checks are outside LLM READY and P9/P10B timing. The
+and delivered fixture manifest, VAD model, ASR worker/model, TTS archive/vocoder, the
+`controller-r2` manifest/wheel inventory/isolated venv/import origins, and both isolated model
+runtime identities. These one-time static checks are outside LLM READY and P9/P10B timing. The
 entry verifier hashes and schema-validates the actual User-reviewed Gate 2A result named by its
 receipt; a receipt without its bound result cannot authorize Gate 2B. On 2026-08-29 the User
 explicitly authorized this completed replacement to be committed/pushed and executed on Pi without
@@ -123,7 +125,8 @@ external sanitized result named by it must match byte-for-byte.
 `run_gate2b_pi_v1.py` requires the exact LLM execution SHA, accepted Audio/Core roots, controlled
 Audio fixture/artifact/runtime paths, one Gate 2A receipt and its unchanged model receipt. The Audio
 pre-residency boundary includes both sherpa-onnx wheel source identities required by the Accepted TTS
-domain, even though execution uses the already-authenticated isolated runtime. It hashes no model
+domain and the controller closure required by Core ALSA playback, even though execution uses the
+already-authenticated isolated runtimes. It hashes no model
 during READY or combined timing. The formal replacement command shape is:
 
 As in the accepted Gate 2A packet, the offline launch must use a private mount namespace and mount
@@ -159,8 +162,10 @@ ceiling before closing JSON; the parent correctly rejected the malformed respons
 four domains cooperatively with zero process/ALSA residue. Sanitized evidence SHA-256 is
 `665fba87700480f59ddc49323820ebdbfc3d1d8f16f501982e10c34ca690529e`. A no-credit reproduction
 using the identical transcript hash completed valid schema/marker/trap output at 72 decode tokens
-when the ceiling was 128. Pairing `r4` changes only that ceiling and adds sanitized parent invariant
-diagnostics; Engine capacity remains 1024 and the input ceiling remains 128.
+when the ceiling was 128. Pairing `r4` changed only that ceiling and added sanitized parent invariant
+diagnostics. Pairing `r5` leaves all LLM behavior unchanged and adds the previously omitted Accepted
+Audio `controller-r2` closure plus sanitized Audio-domain diagnostics; Engine capacity remains 1024
+and the input ceiling remains 128.
 
 The corrective attempt uses a new execution SHA/run ID/evidence root, requires every resource probe before
 residency, and may reuse the unchanged authenticated read-only input root. The PSI-enabled reboot
@@ -169,16 +174,26 @@ attempt 003 the operator must return swap to zero and recreate the persisted `/v
 as the same read-only `/tmp` mount. Receipt metadata is rechecked without a full model hash.
 
 Before creating corrective evidence or loading any domain, execute the exact command below once with
-`--preflight-only`, replace the run ID with `G2B-PREFLIGHT-005`, and use a fresh outside-Git placeholder
+`--preflight-only`, replace the run ID with `G2B-PREFLIGHT-006`, and use a fresh outside-Git placeholder
 evidence root. Every other argument must remain byte-for-byte identical to the formal invocation.
 The mode authenticates source/lock, Audio/Core, all controlled inputs, Gate 2A chain, runtime wheel,
 model receipt metadata, offline/swap/sysfs/ALSA state and live memory/PSI/OOM/thermal probes. It must
 return `result=PASS`, `formal_credit=false`, `evidence_created=false`, leave the placeholder absent,
-and perform zero Audio/LLM residency. Failure does not consume `G2B-PI-COMBINED-005`; fix the
+and perform zero Audio/LLM residency. Failure does not consume `G2B-PI-COMBINED-006`; fix the
 environment and repeat only this smoke preflight.
 
+After static preflight passes, execute the same exact-SHA command with
+`--diagnostic-session-only`, run ID `G2B-DIAGNOSTIC-006`, and another absent placeholder evidence
+root. This mode uses the same four accepted domains, coordinator, first frozen fixture, real
+VAD→ASR→LLM→TTS data flow, Core `controller-r2`, direct ALSA playback, continuous/session resource
+sampling, owned-log scan and reverse cleanup as formal mode. It runs exactly one session, performs
+no cadence/leak judgment, returns `formal_credit=false` and `evidence_created=false`, removes all
+temporary data and leaves P9/P10B `Blocked`. Formal `G2B-PI-COMBINED-006` is prohibited unless this
+probe returns `result=PASS`, all four stages complete, resource and log checks pass, and cleanup is
+zero-residue. Formal mode still rejects any catalog other than all 20 sessions.
+
 ```sh
-unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-005 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
+unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-006 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-controller-closure <accepted-controller-r2-root> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'
 ```
 
 Raw resource samples and disposable Audio work data stay outside Git. Sanitized evidence contains

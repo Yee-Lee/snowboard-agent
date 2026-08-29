@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r11-prewarm-budget-marker-output",
+  "revision":"2026-08-29-r12-controller-closure-diagnostic",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -22,16 +22,16 @@
   "candidates":{
     "CAND-LRT-G4E2B-MOBILE-R1":{
       "gate2a_parent":{"pairing_revision":"litert-lm-v0.16.0-pi-g2b-r1","product_config_sha256":"78d55bdee44bbc4f22b12533674f74026324c118127f8878a0a0072e3f9734cd"},
-      "corrective_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r4",
-      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json","sha256":"c609b8bdc6be70a0a7631d3875223b56d90df37418304ebe264713f2f39afadb"}
+      "corrective_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r5",
+      "product_config":{"path":"poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json","sha256":"c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"}
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"df2c04d2c50a7ecce09639d401591d671c6cee6b8982519acbe543bc05083836"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"5e47c59e5510168a7e9fd3e619a258e718dd92bcd59d69dd07e51d10f04b729e"},
-    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"e0352e6601c0e99a2991692413042ad69410ffa41f519bc1cc85b81ecb4958fc"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"01859815cb6170fc2f8b5d40fff135c95e1d786a45ea0ab14cfc3a2f62a7faca"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"df91da94b2a56f8949ab069790115e78b3c120bd1daeaa7ec8d8e48fd2fd4689"},
+    "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"0bb4cacbbca8125155c5466603aebee2e990cadf7474f60f835be05a45258ae8"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
-    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
+    "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"717e4428ba212776465eae5e4663999d9b7f7d4f824534e22234d38fcedb2751"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
     "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1"},
     "gate2b_adapter":{"path":"poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py","sha256":"68f68ffd79370d77aea016a728c2ccf37d628ce39a6fa7603979769b7d1d1afe"},
@@ -43,15 +43,15 @@
     "runtime_helpers_v2":{"path":"poc_llm/harness/pi_runtime_v2.py","sha256":"1f583738312dfd23a22c1f0a5e30b86cb0704dc07f18b2eed42a99d251e67d5d"},
     "gate1_helper_runner":{"path":"poc_llm/tools/run_gate1_pi_compat_v7.py","sha256":"acc7b027bfc995f5e8e5d748d5baca405fc6c1c96e564e20a8983f8f5bb5cc16"},
     "installer":{"path":"poc_llm/tools/install_gate1_arm64_wheel_v2.py","sha256":"aa8c127ec5214e4926d12968b1e0a2d767f7934c141d144b7a392df124ee0e74"},
-    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json","sha256":"9118e6101f46165bfe475515e9a7796c98bd500bb5dffc13cee643de4809a8a5"},
+    "product_config_schema":{"path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json","sha256":"ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34"},
     "protocol_schema":{"path":"poc_llm/contracts/m1/protocol-frame-pi.schema.json","sha256":"e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
     "prompt_schema":{"path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
     "response_schema":{"path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
     "artifact_receipt_schema":{"path":"poc_llm/evidence/m4b/pi-artifact-auth-receipt-v2.schema.json","sha256":"0e16445c0d35aafd0ab9746b4a9a8749d0a1e72864145ef010512824170f6852"},
     "gate2a_receipt_schema":{"path":"poc_llm/evidence/m4b/gate2a-model-finalist-receipt-v1.schema.json","sha256":"4408c585b43deb586f8d6a14dc77474a139309e46a385da9e7252fd42a116cbf"},
     "gate2a_receipt":{"path":"poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json","sha256":"adaa71293c3152de6a7a16d10150c3d6714b9acf4fe855b07b62d8dd2611d938"},
-    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"34993ee13a90ef34866cbcf2076c0ae1d7f7a940f97f0db773a47b718f071072"},
-    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"3a6a03a077adcd2a971530f43e88e4cfc9cd7035567d9811aa7ae5ceffea2ad1"},
-    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"40e3279bcf69faf7cb488b3f62a8d4d92999b78e2c8c5d5f5da4df099e2e7279"}
+    "accepted_audio_entry_schema":{"path":"poc_llm/evidence/m4b/accepted-audio-entry-v1.schema.json","sha256":"2a6e7d125be8d27f1671c615af3ff8c293f173fc9cbaec784a11f9f82d03858a"},
+    "accepted_audio_entry":{"path":"poc_llm/fixtures/gate2/accepted-audio-entry-001.json","sha256":"6250f326572399f8e641b71e7d6e4741eacb040a231e91c475f8e08167c8a541"},
+    "result_schema":{"path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"138764947dfebe0e149e3b7346a23ed40751f35bfd8ec64b84b2119f4689d1a2"}
   }
 }

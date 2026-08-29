@@ -40,6 +40,7 @@
     },
     "runtimes":{
       "const":{
+        "controller":{"runtime":"controller-r2","manifest_sha256":"6bb24f9a0a2f2a66a522706b22222081fbf009b28c9dc0942a22d714114276f4","python_version":"3.13.5","isolated":true},
         "vad":{"package":"onnxruntime","version":"1.29.0","python_version":"3.13.5","isolated":true},
         "tts":{"package":"sherpa-onnx","version":"1.13.5","python_version":"3.13.5","isolated":true}
       }

@@ -102,10 +102,50 @@ class Gate2BCombinedCoordinator:
         before_shutdown: Callable[[], None] | None = None,
         after_session: Callable[[int], None] | None = None,
     ) -> list[dict[str, Any]]:
-        if len(records) != 20 or cadence_s < 0:
-            raise ValueError("Gate 2B requires exactly 20 sessions and nonnegative cadence")
+        return await self._run_records(
+            records,
+            expected_count=20,
+            cadence_s=cadence_s,
+            on_resident=on_resident,
+            before_shutdown=before_shutdown,
+            after_session=after_session,
+        )
+
+    async def run_single_diagnostic(
+        self,
+        record: dict[str, Any],
+        *,
+        on_resident: Callable[[], None] | None = None,
+        before_shutdown: Callable[[], None] | None = None,
+        after_session: Callable[[int], None] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Exercise the exact combined boundary once without formal credit."""
+
+        return await self._run_records(
+            [record],
+            expected_count=1,
+            cadence_s=0.0,
+            on_resident=on_resident,
+            before_shutdown=before_shutdown,
+            after_session=after_session,
+        )
+
+    async def _run_records(
+        self,
+        records: list[dict[str, Any]],
+        *,
+        expected_count: int,
+        cadence_s: float,
+        on_resident: Callable[[], None] | None,
+        before_shutdown: Callable[[], None] | None,
+        after_session: Callable[[int], None] | None,
+    ) -> list[dict[str, Any]]:
+        if len(records) != expected_count or cadence_s < 0:
+            raise ValueError(
+                f"Gate 2B requires exactly {expected_count} sessions and nonnegative cadence"
+            )
         session_ids = [record.get("session_id") for record in records]
-        if len(set(session_ids)) != 20:
+        if len(set(session_ids)) != expected_count:
             raise ValueError("Gate 2B session IDs must be unique")
         started: list[tuple[str, PersistentDomain]] = []
         run_started = time.monotonic()

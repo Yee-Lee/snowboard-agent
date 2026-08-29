@@ -37,11 +37,14 @@ from poc_llm.tools.run_gate2b_pi_v1 import (
     CombinedLlmDomain,
     ScoredAudioDomain,
     combined_exception_disposition,
+    evaluate_single_session_resources,
     main as gate2b_main,
     require_resource_probe_preflight,
     scan_owned_logs,
+    single_session_diagnostic_output,
     verify_external_checkouts,
     verify_audio_controlled_inputs,
+    verify_audio_controller_runtime,
     verify_audio_runtime,
     verify_gate2a_entry,
     verify_audio_kit,
@@ -177,18 +180,87 @@ def resource_values(leak_per_session: float = 0.0) -> tuple[list[dict], list[dic
 
 
 class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
+    async def test_single_session_diagnostic_uses_same_domains_and_cleanup(self) -> None:
+        events: list[str] = []
+        pauses: list[float] = []
+
+        async def pause(value: float) -> None:
+            pauses.append(value)
+
+        vad, asr, tts, llm = (
+            Vad("vad", events), Asr("asr", events),
+            Tts("tts", events), Llm("llm", events),
+        )
+        coordinator = Gate2BCombinedCoordinator(
+            vad, asr, llm, tts, pause=pause
+        )
+        result = await coordinator.run_single_diagnostic(records()[0])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["session_id"], "M4-SESSION-01")
+        self.assertEqual(
+            events,
+            [
+                "start:vad", "start:asr", "start:tts", "start:llm",
+                "stop:llm", "stop:tts", "stop:asr", "stop:vad",
+            ],
+        )
+        self.assertEqual(pauses, [])
+        self.assertEqual(len(llm.inputs), 1)
+        self.assertEqual(len(tts.inputs), 1)
+
+    async def test_formal_coordinator_still_rejects_one_session(self) -> None:
+        events: list[str] = []
+
+        async def pause(_value: float) -> None:
+            pass
+
+        coordinator = Gate2BCombinedCoordinator(
+            Vad("vad", events), Asr("asr", events), Llm("llm", events),
+            Tts("tts", events), pause=pause,
+        )
+        with self.assertRaisesRegex(ValueError, "exactly 20"):
+            await coordinator.run(records()[:1])
+        self.assertEqual(events, [])
+
     async def test_post_ready_audio_stage_fault_is_candidate_violation(self) -> None:
         events: list[str] = []
         accepted = Vad("vad", events)
+        diagnostics: list[dict] = []
 
         async def fail(_session: dict) -> dict:
             raise RuntimeError("private backend detail")
 
         accepted.run = fail  # type: ignore[method-assign]
-        wrapped = ScoredAudioDomain("VAD", accepted)
+        wrapped = ScoredAudioDomain("VAD", accepted, diagnostics)
         await wrapped.start()
         with self.assertRaises(CandidateViolation):
             await wrapped.run({"session_id":"M4-SESSION-01"})
+        self.assertEqual(diagnostics, [{
+            "domain":"vad", "error_type":"RuntimeError",
+            "error_code":"UNMAPPED_ACCEPTED_RUNTIME_ERROR",
+            "worker_returncode":None,
+        }])
+        await wrapped.stop()
+
+    async def test_audio_controller_dependency_error_has_sanitized_code(self) -> None:
+        events: list[str] = []
+        accepted = Tts("tts", events)
+        diagnostics: list[dict] = []
+
+        async def fail(_session: dict) -> dict:
+            raise RuntimeError(
+                "pyalsaaudio==0.11.0 is required for core.audio.driver=alsa"
+            )
+
+        accepted.run = fail  # type: ignore[method-assign]
+        wrapped = ScoredAudioDomain("TTS", accepted, diagnostics)
+        await wrapped.start()
+        with self.assertRaises(CandidateViolation):
+            await wrapped.run({"session_id":"M4-SESSION-01"})
+        self.assertEqual(
+            diagnostics[0]["error_code"], "CORE_ALSA_BINDING_UNAVAILABLE"
+        )
+        self.assertNotIn("pyalsaaudio", json.dumps(diagnostics))
         await wrapped.stop()
 
     async def test_real_pipeline_keeps_private_text_in_memory_and_stops_reverse(self) -> None:
@@ -349,12 +421,59 @@ class Gate2BDefinitionTests(unittest.TestCase):
         packet = G2B_PACKET.read_text(encoding="utf-8")
         runner = G2B_RUNNER.read_text(encoding="utf-8")
         self.assertIn("--preflight-only", packet)
-        self.assertIn("G2B-PREFLIGHT-005", packet)
+        self.assertIn("G2B-PREFLIGHT-006", packet)
+        self.assertIn("--audio-controller-closure", packet)
         branch = runner.index("if args.preflight_only:")
         self.assertLess(branch, runner.index("raw_dir.mkdir", branch))
         self.assertLess(branch, runner.index("CombinedLlmDomain(", branch))
         self.assertIn('"formal_credit": False', runner[branch:])
         self.assertIn('"evidence_created": False', runner[branch:])
+
+    def test_single_session_mode_is_no_credit_and_cannot_create_evidence(self) -> None:
+        source = G2B_RUNNER.read_text(encoding="utf-8")
+        packet = G2B_PACKET.read_text(encoding="utf-8")
+        self.assertIn("--diagnostic-session-only", source)
+        self.assertIn("run_single_diagnostic", source)
+        self.assertIn('"formal_credit": False', source)
+        self.assertIn('"evidence_created": False', source)
+        self.assertIn("--diagnostic-session-only", packet)
+
+    def test_single_session_resource_gate_excludes_only_soak_leak_credit(self) -> None:
+        continuous, points = resource_values()
+        passed, summary = evaluate_single_session_resources(
+            continuous,
+            session_points=points[:1],
+            oom_before=1,
+            oom_after=1,
+        )
+        self.assertTrue(passed)
+        self.assertEqual(summary["session_point_count"], 1)
+        points[0]["session_index"] = 2
+        passed, _summary = evaluate_single_session_resources(
+            continuous,
+            session_points=points[:1],
+            oom_before=1,
+            oom_after=1,
+        )
+        self.assertFalse(passed)
+
+    def test_single_session_output_is_sanitized_and_blocks_gate_credit(self) -> None:
+        value = {
+            "packet_id":"G2B-PI-COMBINED-001", "run_id":"diagnostic",
+            "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
+            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r5",
+            "execution_sha":"a" * 40, "execution_surface_sha256":"b" * 64,
+            "sessions":[valid_result_session(1)], "resources":{"sample_count":2},
+            "cleanup":{}, "log_hygiene":{"passed":True},
+            "domain_diagnostics":[], "partial_trace":[], "violations":[],
+            "result":"PASS",
+        }
+        output = single_session_diagnostic_output(value)
+        serialized = json.dumps(output)
+        self.assertNotIn("private", serialized)
+        self.assertFalse(output["formal_credit"])
+        self.assertFalse(output["evidence_created"])
+        self.assertEqual(output["p_results"], {"P9":"Blocked","P10B":"Blocked"})
 
     def test_run_id_is_single_safe_slug(self) -> None:
         self.assertTrue(valid_gate2b_run_id("G2B-PI-COMBINED-001"))
@@ -418,7 +537,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         )
         self.assertEqual(
             lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]["corrective_pairing_revision"],
-            "litert-lm-v0.16.0-pi-g2b-r4",
+            "litert-lm-v0.16.0-pi-g2b-r5",
         )
         self.assertEqual(
             lock["artifacts"]["gate2b_adapter"]["path"],
@@ -436,7 +555,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
             (ROOT / lock["artifacts"]["product_config_schema"]["path"]).read_text()
         )
         self.assertTrue(Draft202012Validator(product_schema).is_valid(product_config))
-        self.assertEqual(product_config["pairing_revision"], "litert-lm-v0.16.0-pi-g2b-r4")
+        self.assertEqual(product_config["pairing_revision"], "litert-lm-v0.16.0-pi-g2b-r5")
         self.assertEqual(product_config["max_output_tokens"], 128)
         self.assertEqual(product_config["ready_timeout_ms"], 45000)
         self.assertEqual(product_config["terminal_grace_ms"], 2000)
@@ -911,6 +1030,9 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 ).hexdigest(),
             })
             with patch(
+                "poc_llm.tools.run_gate2b_pi_v1.verify_audio_controller_runtime",
+                return_value=(accepted["runtimes"]["controller"], root),
+            ), patch(
                 "poc_llm.tools.run_gate2b_pi_v1.verify_audio_runtime",
                 side_effect=[accepted["runtimes"]["vad"], accepted["runtimes"]["tts"]],
             ):
@@ -918,6 +1040,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     fixture_lock=fixture_lock,
                     fixture_manifest=fixture_manifest,
                     artifact_dir=artifact_dir,
+                    controller_closure=root / "controller-r2",
                     tts_runtime_python=root / "tts-python",
                     asr_binary=paths["asr_binary"],
                     asr_model=paths["asr_model"],
@@ -932,6 +1055,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     fixture_lock=fixture_lock,
                     fixture_manifest=fixture_manifest,
                     artifact_dir=artifact_dir,
+                    controller_closure=root / "controller-r2",
                     tts_runtime_python=root / "tts-python",
                     asr_binary=paths["asr_binary"],
                     asr_model=paths["asr_model"],
@@ -946,6 +1070,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     fixture_lock=fixture_lock,
                     fixture_manifest=fixture_manifest,
                     artifact_dir=artifact_dir,
+                    controller_closure=root / "controller-r2",
                     tts_runtime_python=root / "tts-python",
                     asr_binary=paths["asr_binary"],
                     asr_model=paths["asr_model"],
@@ -974,6 +1099,67 @@ class Gate2BDefinitionTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "isolation"):
                 verify_audio_runtime(runtime_python, runtime_expected)
 
+    def test_controller_runtime_authenticates_wheels_venv_and_import_origins(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            closure = Path(directory) / "controller-r2"
+            wheels = closure / "wheels"
+            venv = closure / "venv"
+            site = venv / "lib/python3.13/site-packages"
+            wheels.mkdir(parents=True)
+            site.mkdir(parents=True)
+            (venv / "bin").mkdir()
+            (venv / "bin/python").write_text("stub")
+            (venv / "pyvenv.cfg").write_text(
+                "include-system-site-packages = false\n"
+            )
+            wheel = wheels / "fake_controller-1.0-py3-none-any.whl"
+            wheel.write_bytes(b"locked controller wheel")
+            module_path = site / "g2b_fake_controller.py"
+            module_path.write_text("VERSION = '1.0'\n")
+            manifest = {
+                "schema":"sbd.m4a.runtime-closure.v1",
+                "runtime":"controller-r2",
+                "interpreter":{"path":"/usr/bin/python3.13","version":"3.13.5"},
+                "packages":[{
+                    "distribution":"fake-controller", "version":"1.0",
+                    "filename":wheel.name,
+                    "sha256":hashlib.sha256(wheel.read_bytes()).hexdigest(),
+                    "size":wheel.stat().st_size,
+                    "source_locator":"controlled://fake", "license_reference":"MIT",
+                    "import_name":"g2b_fake_controller",
+                }],
+            }
+            manifest_path = closure / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest, sort_keys=True))
+            expected = {
+                "runtime":"controller-r2",
+                "manifest_sha256":hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+                "python_version":"3.13.5", "isolated":True,
+            }
+            probe = {
+                "python_version":"3.13.5", "prefix":str(venv.resolve()),
+                "base_prefix":"/usr", "locations":{
+                    "g2b_fake_controller":str(module_path.resolve())
+                }, "versions":{"fake-controller":"1.0"},
+            }
+            completed = subprocess.CompletedProcess(
+                [], 0, stdout=json.dumps(probe), stderr=""
+            )
+            with patch(
+                "poc_llm.tools.run_gate2b_pi_v1.subprocess.run",
+                return_value=completed,
+            ):
+                observed, site_path = verify_audio_controller_runtime(
+                    closure, expected
+                )
+            self.assertEqual(observed, expected)
+            self.assertEqual(site_path, site)
+            self.assertEqual(sys.path[0], str(site))
+            sys.path.pop(0)
+            wheel.write_bytes(b"drift")
+            with self.assertRaisesRegex(Exception, "wheel"):
+                verify_audio_controller_runtime(closure, expected)
+
     def test_gate2b_pass_schema_requires_20_sessions_and_both_p_items(self) -> None:
         accepted_entry = json.loads(AUDIO_ENTRY.read_text())
         continuous, points = resource_values()
@@ -983,7 +1169,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         value = {
             "packet_id":"G2B-PI-COMBINED-001","run_id":"run",
             "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
-            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r4",
+            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r5",
             "execution_sha":"a"*40,
             "execution_surface_sha256":"b"*64,"gate2a_receipt_sha256":"c"*64,
             "accepted_audio":{
@@ -1006,6 +1192,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                 "tts_vocoder_sha256":accepted_entry["finalists"]["tts"]["vocoder_sha256"],
                 "tts_wrapper_wheel_sha256":accepted_entry["finalists"]["tts"]["wrapper_wheel_sha256"],
                 "tts_core_wheel_sha256":accepted_entry["finalists"]["tts"]["core_wheel_sha256"],
+                "controller_runtime":accepted_entry["runtimes"]["controller"],
                 "vad_runtime":accepted_entry["runtimes"]["vad"],
                 "tts_runtime":accepted_entry["runtimes"]["tts"],
             },"environment":{},"environment_post":{},"runtime":{},
@@ -1032,7 +1219,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     "llm.stderr","base-q8.stderr.log",
                 )
             ],"static_marker_count":7,"runtime_marker_count":80},
-            "partial_trace":[],
+            "domain_diagnostics":[],"partial_trace":[],
             "p_results":{"P9":"PASS","P10B":"PASS"},
             "violations":[],"result":"PASS","publication_status":"REVIEW_REQUIRED",
         }
@@ -1094,6 +1281,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
                     "--audio-fixture-lock", str(raw / "fixture-lock.json"),
                     "--audio-fixture-manifest", str(raw / "fixture-manifest.json"),
                     "--audio-artifact-dir", str(raw / "artifacts"),
+                    "--audio-controller-closure", str(raw / "controller-r2"),
                     "--audio-runtime-python", str(raw / "tts-python"),
                     "--audio-asr-binary", str(raw / "asr"), "--audio-asr-model", str(raw / "asr-model"),
                     "--audio-vad-runtime-python", str(raw / "vad-python"),
