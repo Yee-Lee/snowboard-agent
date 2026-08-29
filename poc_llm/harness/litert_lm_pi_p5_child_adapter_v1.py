@@ -28,6 +28,9 @@ from poc_llm.harness.pi_artifact_auth import streaming_digest
 from poc_llm.harness.pi_runtime import protocol_validator
 
 
+HEALTH_MAX_OUTPUT_TOKENS = 16
+
+
 def event(name: str, **fields: int) -> None:
     suffix = "".join(f" {key}={value}" for key, value in fields.items())
     print(
@@ -170,7 +173,9 @@ class LiteRtContinuousBackend:
             continuous = not self._continuous_claimed
             self._continuous_claimed = True
         if not continuous:
-            return self._chunk(prompt, max_output_tokens, 0)
+            return self._chunk(
+                prompt, min(max_output_tokens, HEALTH_MAX_OUTPUT_TOKENS), 0
+            )
         ordinal = 0
         try:
             while True:

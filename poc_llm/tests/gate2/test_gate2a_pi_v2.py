@@ -30,6 +30,7 @@ from poc_llm.tools.run_gate2a_pi_v2 import (
     p5_result_disposition,
     p5_runner_disposition,
     ready_observation_config,
+    terminal_observation_timeout_s,
     valid_run_id as valid_gate2a_run_id,
     p4_summary,
     scan_owned_logs,
@@ -210,6 +211,46 @@ class Gate2APiV2Tests(unittest.TestCase):
                 {"ready_timeout_ms": 10000}, CANDIDATES[1],
                 {"default": 10000, CANDIDATES[1]: 5000},
             )
+
+    def test_terminal_observer_waits_for_frozen_child_timeout_frame(self) -> None:
+        config = {"generate_timeout_ms": 15000, "cancel_timeout_ms": 500}
+        self.assertEqual(terminal_observation_timeout_s(config), 17.5)
+        self.assertEqual(config["generate_timeout_ms"], 15000)
+        with self.assertRaises(PiPacketFailure):
+            terminal_observation_timeout_s({
+                "generate_timeout_ms": 15000, "cancel_timeout_ms": -1,
+            })
+
+    def test_p5_health_probe_caps_output_without_changing_primary_profile(self) -> None:
+        class HealthEngine(Engine):
+            def __init__(self, *_args, **_kwargs):
+                super().__init__()
+                self.output_limits: list[int] = []
+
+            def create_conversation(self, **kwargs) -> Conversation:
+                self.output_limits.append(kwargs["max_output_tokens"])
+                value = Conversation(blocking=False)
+                self.created.append(value)
+                return value
+
+        fake_module = types.SimpleNamespace(
+            Backend=types.SimpleNamespace(CPU=lambda **_kwargs: object()),
+            Engine=HealthEngine,
+            SamplerConfig=lambda **_kwargs: object(),
+        )
+        with patch.dict(sys.modules, {"litert_lm": fake_module}), \
+                patch("sys.stderr", io.StringIO()):
+            from poc_llm.harness.litert_lm_pi_p5_child_adapter_v1 import LiteRtContinuousBackend
+
+            backend = LiteRtContinuousBackend({
+                "model_path":"/model", "threads":4, "engine_max_num_tokens":512,
+                "temperature":0.0, "top_p":1.0,
+            })
+            backend._continuous_claimed = True
+            generation = backend.generate("health", max_output_tokens=256)
+            self.assertEqual(generation.text, "chunk")
+            self.assertEqual(backend._engine.output_limits, [16])
+            backend.close()
 
     def test_candidate_specific_p5_and_product_profiles_are_bounded(self) -> None:
         validator = Draft202012Validator(json.loads(P5_SCHEMA.read_text()))

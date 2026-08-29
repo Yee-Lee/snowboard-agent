@@ -140,6 +140,21 @@ def ready_observation_config(
     return observed, metadata
 
 
+def terminal_observation_timeout_s(config: dict[str, Any]) -> float:
+    """Wait beyond the child timer only long enough to observe its terminal frame."""
+
+    generate_ms = config.get("generate_timeout_ms")
+    cancel_ms = config.get("cancel_timeout_ms")
+    if (
+        not isinstance(generate_ms, int)
+        or not isinstance(cancel_ms, int)
+        or generate_ms <= 0
+        or cancel_ms < 0
+    ):
+        raise PiPacketFailure("Gate 2A terminal observation timeout config invalid")
+    return (generate_ms + cancel_ms + 2000) / 1000
+
+
 def repo_artifact(item: dict[str, str]) -> Path:
     path = (ROOT / item["path"]).resolve()
     if not path.is_file() or streaming_digest(path) != item["sha256"]:
@@ -842,6 +857,7 @@ def main() -> int:
         if not ready_observation == product_ready_observation == p5_ready_observation:
             raise PiPacketFailure("Gate 2A candidate READY observation profiles differ")
         result["isolation"]["ready_observation"] = ready_observation
+        product_terminal_timeout_s = terminal_observation_timeout_s(product_value)
 
         receipt_schema = artifacts["artifact_receipt_schema"]
         receipt = load(args.artifact_receipt)
@@ -967,6 +983,7 @@ def main() -> int:
                             validator,
                             f"{entry['id']}-{repetition}",
                             catalog_input(entry),
+                            timeout_s=product_terminal_timeout_s,
                         )
                         p2.append({
                             "id": entry["id"],
@@ -1115,6 +1132,7 @@ def main() -> int:
                         validator,
                         entry["id"].lower(),
                         p8_input(p8_fixture["prompt_template"], entry),
+                        timeout_s=product_terminal_timeout_s,
                     )
                     encoded = json.dumps(
                         terminal.get("response", {}), sort_keys=True, ensure_ascii=True

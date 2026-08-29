@@ -1,7 +1,7 @@
 # GATE2A-PI-PACKET-002 — Cumulative Remaining LLM-only Validation
 
 - **Packet ID**: `G2A-PI-LLM-002`
-- **Revision**: `2026-08-29-r6-private-sysfs-evidence-owner`
+- **Revision**: `2026-08-29-r7-terminal-observer-health-cap`
 - **Status**: `EXECUTION IN PROGRESS / USER REVIEW REQUIRED`
 - **Entry receipt**: `G1-M4B-CLOSURE-001`, bound to the Core-accepted Gate 1 closure ACK
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
@@ -45,6 +45,11 @@ reference normalizer boundary; require the documented fallback and no exception 
 results. Scan all owned logs for prompt, raw output, payload, credential, endpoint, hidden-context and
 fixture-marker leakage. One failure is P2/P3 `FAIL`; no averaging.
 
+The child `generate_timeout_ms` remains frozen at 15000. The Controller frame observer waits only the
+additional frozen cancel/terminal margin (`cancel_timeout_ms + 2000 ms`) so a child-owned
+`ERROR/TIMEOUT` is classified as candidate configuration behavior instead of an observation race.
+This margin never extends generation, suppresses the child timer or permits a late `RESULT`.
+
 ### G2A-WP02 — P4 performance
 
 Using the fixed standard input and 128/16-token envelope, record three independent cold samples, then
@@ -72,13 +77,18 @@ cancels. Completion and cancellation compete in one final lock-protected arbitra
 the active conversation and enters the between-chunks state before declaring completion. Both
 cancel-first reservation and conversation close are coordinated until the native cancel call
 returns. `native_cancel_once` is emitted only after success; `native_cancel_failed` records a raised
-native call and makes P5 fail. Neither completion nor close may overtake a reserved native call. Both
 predeclared observations require at least one real model chunk, no hung worker, READY
 recovery, then one unchanged standard-config rebuild probe and zero residue. An early `RESULT` is a
 packet/adapter defect and makes the evidence `INCONCLUSIVE`; a candidate generation error, wrong or
 late terminal, failed timeout cancellation, hang or failed recovery is `FAIL`. There is no fast-model
 terminal case and no post-result replacement disposition to request. No workstation model result is
 accepted.
+
+The same-child health probe occurs only after the primary terminal and is not a scored generation.
+It uses the same resident Engine but caps its output at 16 tokens, independent of the 256/512-token
+primary continuous-chunk profile. Event-marker disposition still includes both lifecycles: exactly
+one primary native cancel is allowed, while any health-probe timeout/cancel remains a P5 recovery
+failure.
 
 ### G2A-WP04 — P8 history isolation
 
