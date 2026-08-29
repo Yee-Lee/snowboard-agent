@@ -5,7 +5,7 @@
 - **Supersedes**: `REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001`
 - **Branch / correction base HEAD**: `llm` / `d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39`
 - **Packet**: `G2B-PI-COMBINED-001`
-- **Candidate replacement lock SHA-256**: `fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`
+- **Candidate replacement lock SHA-256**: `da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`
 - **Requested response**: `docs/reviews/REVIEW-LLM-M4-GATE2B-EXECUTABLE-R2-001.md`
 - **Review scope**: executable and entry validity only; no Pi result or winner proposal
 
@@ -78,6 +78,8 @@ Qwen from formal Gate 2B. R2 replaces that consumer without changing historical 
 - Confirm one shared residency runs exactly 20 ordered sessions, in-memory ASR→LLM→TTS transfer,
   19 measured five-second pauses, memory/thermal/PSI/OOM/leak gates and reverse cleanup.
 - Confirm memory/PSI/OOM/thermal probe availability is rejected before any domain residency.
+- Confirm `--preflight-only` authenticates the full formal entry with no evidence directory, formal
+  credit, model/domain residency or formal run-ID consumption.
 - Confirm logs and sanitized evidence cannot persist transcript, prompt, speech, credential, endpoint,
   artifact or raw audio content.
 - Confirm a dirty/pre-existing path or drifted external input is rejected and never deleted.
@@ -86,7 +88,7 @@ Qwen from formal Gate 2B. R2 replaces that consumer without changing historical 
 
 ```text
 python3 -m unittest discover -s poc_llm/tests/gate2 -p 'test_gate2b_combined_v1.py'
-Ran 28 tests — OK
+Ran 29 tests — OK
 
 python3 -m py_compile poc_llm/harness/litert_lm_gate2b_child_adapter_v1.py \
   poc_llm/tools/run_gate2b_pi_v1.py

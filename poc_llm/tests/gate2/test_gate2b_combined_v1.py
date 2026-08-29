@@ -336,6 +336,17 @@ class Gate2BDefinitionTests(unittest.TestCase):
         self.assertIn("mount -t sysfs -o ro sysfs /sys", packet)
         self.assertNotIn("unshare --user --map-root-user --net -- env -i", packet)
 
+    def test_no_credit_preflight_precedes_evidence_and_residency(self) -> None:
+        packet = G2B_PACKET.read_text(encoding="utf-8")
+        runner = G2B_RUNNER.read_text(encoding="utf-8")
+        self.assertIn("--preflight-only", packet)
+        self.assertIn("G2B-PREFLIGHT-003", packet)
+        branch = runner.index("if args.preflight_only:")
+        self.assertLess(branch, runner.index("raw_dir.mkdir", branch))
+        self.assertLess(branch, runner.index("CombinedLlmDomain(", branch))
+        self.assertIn('"formal_credit": False', runner[branch:])
+        self.assertIn('"evidence_created": False', runner[branch:])
+
     def test_run_id_is_single_safe_slug(self) -> None:
         self.assertTrue(valid_gate2b_run_id("G2B-PI-COMBINED-001"))
         for value in ("../escape", "/tmp/escape", "nested/run", "", "a" * 129):

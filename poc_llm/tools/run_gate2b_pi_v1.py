@@ -86,6 +86,7 @@ def require_resource_probe_preflight() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fatal-outcome-self-test", action="store_true")
+    parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--packet-lock", type=Path, required=True)
     parser.add_argument("--gate2a-receipt", type=Path, required=True)
     parser.add_argument("--gate2a-result", type=Path, required=True)
@@ -879,6 +880,7 @@ def main() -> int:
     owns_work_dir = False
     combined_entered = False
     sessions_completed = False
+    preflight_succeeded = False
     try:
         if raw_dir.exists() or install_root.exists() or work_dir.exists():
             raise PiPacketFailure("Gate 2B run-owned path is dirty")
@@ -982,30 +984,14 @@ def main() -> int:
             "preexisting_combined_workers": preexisting_workers,
             "preexisting_audio_device_owners": preexisting_audio_owners,
         })
-        raw_dir.mkdir(parents=True, exist_ok=False)
-        owns_raw_dir = True
-        work_dir.mkdir(parents=True, exist_ok=False)
-        owns_work_dir = True
-        runtime = lock["runtime"]
-        owns_install_root = True
-        install = subprocess.run(
-            [
-                "python3", str(artifacts["installer"]),
-                "--wheel", runtime["wheel_path"],
-                "--wheel-sha256", runtime["wheel_sha256"],
-                "--target", str(install_root),
-            ],
-            cwd=ROOT, text=True, capture_output=True, check=False, timeout=300,
-        )
-        (raw_dir / "offline-install.stdout").write_text(install.stdout, encoding="utf-8")
-        (raw_dir / "offline-install.stderr").write_text(install.stderr, encoding="utf-8")
-        if install.returncode != 0 or json.loads(install.stdout).get("result") != "PASS":
-            raise PiPacketFailure("Gate 2B offline LLM runtime installation failed")
-        result["runtime"] = native_library_preflight_v2(
-            install_root / "litert_lm/liblitert-lm.so",
-            runtime["native_library_sha256"],
-        )
 
+        runtime = lock["runtime"]
+        runtime_wheel = Path(runtime["wheel_path"])
+        if (
+            not runtime_wheel.is_file()
+            or streaming_digest(runtime_wheel) != runtime["wheel_sha256"]
+        ):
+            raise PiPacketFailure("Gate 2B runtime wheel mismatch")
         product_config = repo_artifact(candidate["product_config"])
         standard_value = load(product_config)
         if (
@@ -1038,6 +1024,48 @@ def main() -> int:
             "full_model_hash_count": 0,
             "metadata_unchanged": False,
         }
+        if args.preflight_only:
+            preflight_succeeded = True
+            print(json.dumps({
+                "mode": "preflight-only",
+                "packet_id": PACKET_ID,
+                "execution_sha": args.execution_sha,
+                "execution_surface_sha256": result["execution_surface_sha256"],
+                "candidate_id": candidate_id,
+                "accepted_audio_authenticated": True,
+                "artifact_receipt_authenticated": True,
+                "full_model_hash_count": 0,
+                "resource_probes_available": True,
+                "preexisting_combined_workers": preexisting_workers,
+                "preexisting_audio_device_owners": preexisting_audio_owners,
+                "formal_credit": False,
+                "evidence_created": False,
+                "result": "PASS",
+            }, sort_keys=True, separators=(",", ":")))
+            return 0
+
+        raw_dir.mkdir(parents=True, exist_ok=False)
+        owns_raw_dir = True
+        work_dir.mkdir(parents=True, exist_ok=False)
+        owns_work_dir = True
+        owns_install_root = True
+        install = subprocess.run(
+            [
+                "python3", str(artifacts["installer"]),
+                "--wheel", runtime["wheel_path"],
+                "--wheel-sha256", runtime["wheel_sha256"],
+                "--target", str(install_root),
+            ],
+            cwd=ROOT, text=True, capture_output=True, check=False, timeout=300,
+        )
+        (raw_dir / "offline-install.stdout").write_text(install.stdout, encoding="utf-8")
+        (raw_dir / "offline-install.stderr").write_text(install.stderr, encoding="utf-8")
+        if install.returncode != 0 or json.loads(install.stdout).get("result") != "PASS":
+            raise PiPacketFailure("Gate 2B offline LLM runtime installation failed")
+        result["runtime"] = native_library_preflight_v2(
+            install_root / "litert_lm/liblitert-lm.so",
+            runtime["native_library_sha256"],
+        )
 
         bindings = load_audio_bindings(args.audio_root)
         fixture_lock = bindings["load_fixture_lock"](
@@ -1247,6 +1275,8 @@ def main() -> int:
             except PiPacketFailure as cleanup_error:
                 result["violations"].append(str(cleanup_error))
     finally:
+        if preflight_succeeded:
+            return 0
         if sampler is not None and sampler._thread is not None and sampler._thread.is_alive():
             try:
                 samples = sampler.stop()

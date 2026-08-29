@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r7-resource-probe-preflight`
+- **Revision**: `2026-08-29-r8-no-credit-smoke-preflight`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -133,6 +133,15 @@ residency, and may reuse the unchanged authenticated read-only input root. The P
 restores the platform's 2 GiB zram swap and clears the boot-local `/tmp` artifact bind mount; before
 attempt 003 the operator must return swap to zero and recreate the persisted `/var/tmp` artifact root
 as the same read-only `/tmp` mount. Receipt metadata is rechecked without a full model hash.
+
+Before creating formal evidence or loading any domain, execute the exact command below once with
+`--preflight-only`, replace the run ID with `G2B-PREFLIGHT-003`, and use a fresh outside-Git placeholder
+evidence root. Every other argument must remain byte-for-byte identical to the formal invocation.
+The mode authenticates source/lock, Audio/Core, all controlled inputs, Gate 2A chain, runtime wheel,
+model receipt metadata, offline/swap/sysfs/ALSA state and live memory/PSI/OOM/thermal probes. It must
+return `result=PASS`, `formal_credit=false`, `evidence_created=false`, leave the placeholder absent,
+and perform zero Audio/LLM residency. Failure does not consume `G2B-PI-COMBINED-003`; fix the
+environment and repeat only this smoke preflight.
 
 ```sh
 unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OPENBLAS_NUM_THREADS=1 PYTHONNOUSERSITE=1 sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2b_pi_v1.py --packet-lock poc_llm/harness/gate2b-pi-lock-v1.json --gate2a-receipt poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.json --gate2a-result <user-reviewed-gate2a-sanitized.json> --artifact-receipt <unchanged-model-receipt.json> --accepted-audio-entry poc_llm/fixtures/gate2/accepted-audio-entry-001.json --execution-sha <clean-execution-sha> --run-id G2B-PI-COMBINED-003 --evidence-root <new-controlled-evidence-root> --audio-root <clean-audio-completion-root> --core-root <clean-core-hal-root> --audio-fixture-dir <accepted-fixture-dir> --audio-fixture-lock <accepted-fixture-lock.json> --audio-fixture-manifest <accepted-delivered-fixture-manifest.json> --audio-artifact-dir <accepted-audio-artifact-dir> --audio-runtime-python <accepted-tts-python> --audio-asr-binary <accepted-whisper-worker> --audio-asr-model <accepted-base-q8-model> --audio-vad-runtime-python <accepted-vad-python> --audio-vad-model <accepted-silero-model> --input-device hw:0,0 --output-device hw:0,0 --input-channel 0'

@@ -3,8 +3,8 @@
 - **Status**: `TWO INCONCLUSIVE ATTEMPTS RETAINED / ATTEMPT 003 USER AUTHORIZED`
 - **Date**: 2026-08-29
 - **Correction base HEAD**: `d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39`
-- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r7-resource-probe-preflight`
-- **Gate 2B replacement lock SHA-256**: `fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`
+- **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r8-no-credit-smoke-preflight`
+- **Gate 2B replacement lock SHA-256**: `da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`
 - **Formal credit**: P9 and P10B only
 
 ## Conclusion
@@ -33,7 +33,9 @@ cooperatively, and process/ALSA residue was zero. Its immutable sanitized eviden
 frozen resource probes before residency and runs under a reversible PSI-enabled test boot. That
 reboot restored the platform's 2 GiB zram swap and cleared the boot-local `/tmp` artifact bind mount;
 attempt 003 must explicitly restore `swap=0` and the same read-only persisted artifact mount. Neither
-operation downloads or rehashes the model.
+operation downloads or rehashes the model. Before formal attempt 003, the exact invocation runs once
+as `--preflight-only`: it performs every static/receipt/environment/resource check, produces no
+evidence, consumes no formal run ID and starts no Audio/LLM domain. Only a PASS permits residency.
 
 ## Entry identities and immutable prior results
 
@@ -92,7 +94,7 @@ LLM READY and combined P9/P10B timing.
 
 ## Workstation verification
 
-The focused Gate 2B replacement suite returns `28/28 PASS`; Python compilation, JSON parsing and
+The focused Gate 2B replacement suite returns `29/29 PASS`; Python compilation, JSON parsing and
 `git diff --check` pass. The suite authenticates every lock entry, excludes Qwen, preserves Gate 2A
 FAILs, rejects artifact/runtime/fixture drift, covers Audio and LLM post-READY failure typing,
 recomputes P9/P10B, exercises partial-start cleanup and requires the Gate 2A-proven private-mount,

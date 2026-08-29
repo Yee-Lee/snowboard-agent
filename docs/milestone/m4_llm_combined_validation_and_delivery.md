@@ -44,8 +44,9 @@ User亦已授權Pi；Audio artifact staging仍是後續execution entry，因此�
 但final machine receipt保留P2/P8 FAIL，因此不能偽造舊schema receipt。Worktree replacement已建立
 `litert-lm-v0.16.0-pi-g2b-r1`、只含Gemma的model-finalist receipt/consumer、generic held-out-first
 prompt、完整Audio input authentication與post-READY typed failure。Attempt 002 lock為
-`c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`；current preflight lock為
-`fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`。User於2026-08-29
+`c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`；current revision另加入
+不建立evidence、不載入domain的`--preflight-only` smoke，lock
+`da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`。User於2026-08-29
 明確授權完成後直接commit/push並進入Pi staging/execution，independent review可後補；因此M4已改為
 `IN_PROGRESS`。Pi pure preflight重現network namespace繼承host sysfs的已知假陽性，正式packet已補
 private mount與read-only sysfs；該診斷未建立evidence、未載入模型。
@@ -63,8 +64,9 @@ Attempt 002完整驗證Audio closure並啟動VAD/ASR/TTS/LLM，但第一筆resid
 沒有合法的P9 full-PSI counter。零session執行，四domain均cooperative stop且零process/ALSA
 residue，整體仍為`INCONCLUSIVE`。Sanitized evidence SHA-256為
 `1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce`。Attempt 003以可逆`psi=1`
-測試開機提供必要counter，並在residency前驗證memory/PSI/OOM/thermal probes；實際P9/P10B仍須
-該有效evidence才能判定。
+測試開機提供必要counter。它必須先以獨立smoke驗證source/lock、Audio/Core/controlled inputs、
+Gate 2A chain、runtime wheel、model receipt metadata、offline/swap/ALSA與memory/PSI/OOM/thermal；
+smoke不建立evidence、不消耗formal run ID且零residency。實際P9/P10B仍須其後有效evidence才能判定。
 
 ## Work
 

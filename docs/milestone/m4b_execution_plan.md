@@ -129,8 +129,9 @@ scored execution仍必須使用versioned/frozen integration-qualified Gemma revi
 boundary及Accepted Audio staging。Initial attempt 001的staging defect不改寫candidate；attempt 002
 lock `c671e2438833c6bc26dec32ca5f49909e325d25d8e134ef3fcb0b996da845d74`將兩個TTS wheel source
 納入pre-residency authentication。Attempt 002證明Pi的PSI default-disabled boot不符合P9 measurement
-entry；attempt 003 lock `fc59e26d2739c24be39e09c495dcd637bf073ba7370162af0a8b444a9d61975f`
-另在residency前fail-close所有resource probes。Pi launch固定private-mount/
+entry；attempt 003先以獨立no-credit/no-evidence/zero-residency smoke fail-close全部static entry與
+resource probes，lock `da1a8a58adc86d412b960f3ee3107e5040ca75a0efe9a13570bb70271f84cb90`；
+PASS後才允許formal evidence/run ID。Pi launch固定private-mount/
 read-only-sysfs，避免繼承host `wlan0` view。User已
 授權直接commit/push與Pi staging/execution，independent review可後補。禁止把current failed
 configuration直接餵入combined scoring。
