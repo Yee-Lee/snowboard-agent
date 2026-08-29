@@ -42,10 +42,12 @@ User亦已授權Pi；Audio artifact staging仍是後續execution entry，因此�
 原development-ready consumer只接受全PASS Gate 2A receipt。User已選定Gemma model finalist，
 但final machine receipt保留P2/P8 FAIL，因此不能偽造舊schema receipt。Worktree replacement已建立
 `litert-lm-v0.16.0-pi-g2b-r1`、只含Gemma的model-finalist receipt/consumer、generic held-out-first
-prompt、完整Audio input authentication與post-READY typed failure；定向26/26，lock
-`8cc7067a3d7ac9f0b668f90e80bfc8bf5560957a72910bcca5dfe3f5e3195a76`。User於2026-08-29
+prompt、完整Audio input authentication與post-READY typed failure；定向27/27，lock
+`73655fdff6cbabda0cb57089382e68d7243a9bf9ff869630add33a1776ceee3d`。User於2026-08-29
 明確授權完成後直接commit/push並進入Pi staging/execution，independent review可後補；因此M4已改為
-`IN_PROGRESS`。實際P9/P10B仍須精確staging與有效evidence才能判定。
+`IN_PROGRESS`。Pi pure preflight重現network namespace繼承host sysfs的已知假陽性，正式packet已補
+private mount與read-only sysfs；該診斷未建立evidence、未載入模型，formal attempt仍為零。
+實際P9/P10B仍須精確staging與有效evidence才能判定。
 
 ## Work
 

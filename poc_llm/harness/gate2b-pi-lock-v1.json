@@ -25,8 +25,8 @@
     }
   },
   "artifacts":{
-    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"d02006bf12a632bd4f35a645deef5871020e92e23883bcaee527c9cdef4d8cde"},
-    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"6db06949d25eef66d510f154a4ca743fffd36d4606bb45d7d8447ec945dd825c"},
+    "packet":{"path":"poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md","sha256":"20e4d4d9f1f727c121f376ef085ce7e1f1a5885221961ca5d8f24db1b4d152ef"},
+    "packet_tests":{"path":"poc_llm/tests/gate2/test_gate2b_combined_v1.py","sha256":"5ccdb3a6105d590422bfd13220cabb44d4549f6b88804796b1455ce107c184bc"},
     "runner":{"path":"poc_llm/tools/run_gate2b_pi_v1.py","sha256":"d794de95cace81e887f7a6fc47e15f3df9499ef21798a7b8fc8d460fb88c0e22"},
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},

@@ -4,7 +4,7 @@
 - **Date**: 2026-08-29
 - **Base HEAD**: `3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`
 - **Packet**: `G2B-PI-COMBINED-001`, revision `2026-08-29-r5-gemma-model-finalist-integration`
-- **Gate 2B lock SHA-256**: `8cc7067a3d7ac9f0b668f90e80bfc8bf5560957a72910bcca5dfe3f5e3195a76`
+- **Gate 2B lock SHA-256**: `73655fdff6cbabda0cb57089382e68d7243a9bf9ff869630add33a1776ceee3d`
 - **Formal credit**: P9 and P10B only
 
 ## Conclusion
@@ -78,11 +78,13 @@ P9/P10B timing.
 
 ## Workstation verification
 
-The focused Gate 2B suite returns `26/26 PASS`; Python compilation, JSON parsing and
+The focused Gate 2B suite returns `27/27 PASS`; Python compilation, JSON parsing and
 `git diff --check` pass. The suite authenticates every lock entry, excludes Qwen, preserves Gate 2A
 FAILs, rejects artifact/runtime/fixture drift, covers Audio and LLM post-READY failure typing,
-recomputes P9/P10B and exercises partial-start cleanup. These are definition tests only and provide
-no Pi credit.
+recomputes P9/P10B, exercises partial-start cleanup and requires the Gate 2A-proven private-mount,
+read-only-sysfs offline launch. A Pi pure preflight caught the omitted launch wrapper before any
+formal evidence directory or model load; no scored attempt was consumed. These are definition tests
+only and provide no Pi credit.
 
 ## Remaining entry work
 

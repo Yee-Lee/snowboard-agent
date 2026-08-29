@@ -41,7 +41,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
-| M4 | `IN_PROGRESS` | 新Gemma integration revision與consumer已完成26/26定向驗證；User授權commit/push及Pi staging/execution，review可後補 |
+| M4 | `IN_PROGRESS` | 新Gemma integration revision與consumer已完成27/27定向驗證；User授權commit/push及Pi staging/execution，review可後補 |
 
 ## Cumulative P1～P12 rule
 
@@ -82,8 +82,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   現有receipt不得改寫，新的integration revision不得覆蓋本輪觀察。
 - **Gate 2B integration entry**：Gemma current product pairing P2 3/30，永久不得直接作combined
   baseline。Replacement `litert-lm-v0.16.0-pi-g2b-r1`與model-finalist receipt已在worktree完成，
-  只含Gemma並採held-out 20-session first contact；lock `8cc706…95a76`與26/26定向測試已由User
-  授權直接commit/push及Pi執行，independent review可後補。Core對`DELIVERY-019/021`的ACK依User
+  只含Gemma並採held-out 20-session first contact；lock `73655f…eee3d`與27/27定向測試已由User
+  授權直接commit/push及Pi執行。Pi pure preflight另補回Gate 2A已驗證的private-mount/read-only-sysfs
+  launch，避免host `wlan0` sysfs假陽性；尚未開始formal attempt。Independent review可後補。Core對`DELIVERY-019/021`的ACK依User
   裁決可於執行期間補入，但final delivery前必須收到。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認。20-WAV

@@ -120,7 +120,8 @@ Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen不
 machine FAIL/PASS不可改寫；Gemma P2/P8不得因選型裁決轉為PASS。Core對`DELIVERY-019`與closure
 delivery的ACK依User裁決可在Gate 2B execution期間補入，但final delivery前必須收到。新的Gate 2B
 scored execution仍必須使用versioned/frozen integration-qualified Gemma revision、updated consumer
-boundary及Accepted Audio staging。Worktree replacement與consumer已完成26/26定向測試；User已
+boundary及Accepted Audio staging。Replacement與consumer已完成27/27定向測試；Pi pure preflight
+亦固定private-mount/read-only-sysfs launch，避免繼承host `wlan0` view。User已
 授權直接commit/push與Pi staging/execution，independent review可後補。禁止把current failed
 configuration直接餵入combined scoring。
 

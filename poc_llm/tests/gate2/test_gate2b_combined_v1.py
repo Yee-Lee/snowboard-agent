@@ -48,6 +48,7 @@ G2A_RECEIPT = ROOT / "poc_llm/fixtures/gate2/gate2a-gemma-model-finalist-001.jso
 G2B_SCHEMA = ROOT / "poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json"
 G2B_RUNNER = ROOT / "poc_llm/tools/run_gate2b_pi_v1.py"
 G2B_LOCK = ROOT / "poc_llm/harness/gate2b-pi-lock-v1.json"
+G2B_PACKET = ROOT / "poc_llm/tests/gate2/GATE2B-PI-PACKET-001.md"
 
 
 class Domain:
@@ -326,6 +327,14 @@ class Gate2BCombinedTests(unittest.IsolatedAsyncioTestCase):
 
 
 class Gate2BDefinitionTests(unittest.TestCase):
+    def test_formal_launch_uses_private_read_only_sysfs(self) -> None:
+        packet = G2B_PACKET.read_text(encoding="utf-8")
+        self.assertIn(
+            "unshare --user --map-root-user --mount --net -- env -i", packet
+        )
+        self.assertIn("mount -t sysfs -o ro sysfs /sys", packet)
+        self.assertNotIn("unshare --user --map-root-user --net -- env -i", packet)
+
     def test_run_id_is_single_safe_slug(self) -> None:
         self.assertTrue(valid_gate2b_run_id("G2B-PI-COMBINED-001"))
         for value in ("../escape", "/tmp/escape", "nested/run", "", "a" * 129):
