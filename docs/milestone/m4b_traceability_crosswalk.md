@@ -1,6 +1,6 @@
 # M4b Delivery Taxonomy and Cumulative Traceability Crosswalk
 
-狀態：`CONTROLLED / CUMULATIVE GATES ACCEPTED / GATE 2 DEVELOPMENT READINESS APPROVED`
+狀態：`CONTROLLED / GATE 2A USER-CLOSED / GEMMA MODEL FINALIST / CORE ACK PENDING`
 
 Owner：POC Technical Lead；External acceptance：Core Designer。
 
@@ -23,8 +23,8 @@ Owner：POC Technical Lead；External acceptance：Core Designer。
 | --- | --- | --- | --- | --- |
 | Gate 0 | M0 | none | contract/readiness receipts | POC / PM / Core |
 | Gate 1 | M2 | P1, P6, P7, P10A, P11, P12 | `G1-PI-COMPAT-007`; stability/Core-fit；最多2 finalists | Test Controller + Technical Lead / Reviewer + User + Core |
-| Gate 2A | M3 | P2, P3, P4, P5, P8 | `G2A-PI-LLM-002`; combine Gate 1 receipt；最多1 provisional finalist | Test Controller + Technical Lead / Reviewer + User + Core |
-| Gate 2B | M4 | P9, P10B | `G2B-PI-COMBINED-001`; Accepted Audio；final winner/no-go | Test Controller + Technical Lead / Reviewer + User + Core |
+| Gate 2A | M3 | P2, P3, P4, P5, P8 | final machine dispositions immutable；User選Gemma model finalist；Core ACK pending | Test Controller + Technical Lead / User / Core |
+| Gate 2B | M4 | P9, P10B | new integration-qualified Gemma revision + Accepted Audio；final winner/no-go | Test Controller + Technical Lead / Reviewer + User + Core |
 | Gate 3 | Core production | Core `M4B-*` | product exact-SHA acceptance | Core Developer / Tester / Designer |
 
 ## P1～P12 ownership
@@ -32,16 +32,16 @@ Owner：POC Technical Lead；External acceptance：Core Designer。
 | P | Area | Owning scored packet | Later-stage rule | Current evidence |
 | --- | --- | --- | --- | --- |
 | P1 | D3 | Gate 1 `007` | 2A/2B do not rescore if identity unchanged | `Accepted Gate 1` |
-| P2 | D4 | Gate 2A `002` | 2B only change-affected regression | `Gate 2A execution in progress; User review pending` |
-| P3 | D4 | Gate 2A `002` | P10B outputs observed but not relabelled P3 | `Gate 2A execution in progress; User review pending` |
-| P4 | D5 | Gate 2A `002` | 2B may record hot sanity diagnostic only | `Gate 2A execution in progress; User review pending` |
-| P5 | D3 | Gate 2A `002` | Pi-only; no workstation or routine 2B rerun | `Gate 2A execution in progress; User review pending` |
+| P2 | D4 | Gate 2A `002` | failed pairing cannot enter 2B；new revision uses held-out qualification | `Gemma FAIL 3/30; Qwen FAIL 0/30; immutable` |
+| P3 | D4 | Gate 2A `002` | safety boundary remains independently mandatory | `PASS both candidates` |
+| P4 | D5 | Gate 2A `002` | 2B may record hot sanity diagnostic only | `Gemma PASS; Qwen Core threshold decision required` |
+| P5 | D3 | Gate 2A `002` | Pi-only; no workstation or routine 2B rerun | `PASS both candidates` |
 | P6 | D3 | Gate 1 `007` | conditional only with same-manifest P7 PASS | `Accepted Gate 1 as P6.1` |
 | P7 | D3 | Gate 1 `007` | 2A/2B ordinary cleanup is not P7 rescore | `Accepted Gate 1 as P7.1; Qwen FAIL waiver retained` |
-| P8 | D4 | Gate 2A `002` | 2B no routine rerun | `Gate 2A execution in progress; User review pending` |
-| P9 | D6 | Gate 2B `001` | Accepted Audio mandatory; surrogate no credit | `Blocked: Gate 2A receipt / Pi authorization and staging` |
+| P8 | D4 | Gate 2A `002` | current FAIL retained；new integration qualification before 2B | `FAIL both; DEPENDENCY_LIMITED_BY_P2; no observed prior-state leak` |
+| P9 | D6 | Gate 2B `001` | Accepted Audio mandatory; surrogate no credit | `Blocked: new Gemma integration revision / Core ACK / Pi authorization and staging` |
 | P10A | D6 | Gate 1 `007` | 2A does not repeat 20-session soak | `Accepted Gate 1` |
-| P10B | D6 | Gate 2B `001` | same run as P9 | `Blocked: Gate 2A receipt / Pi authorization and staging` |
+| P10B | D6 | Gate 2B `001` | same run as P9 | `Blocked: new Gemma integration revision / Core ACK / Pi authorization and staging` |
 | P11 | D8 | Gate 1 `007` | later packets authenticate receipt; drift returns to P11 | `Accepted Gate 1` |
 | P12 | D8 | Gate 1 `007` | later run observes current offline state without rescoring accepted P12 | `Accepted Gate 1` |
 

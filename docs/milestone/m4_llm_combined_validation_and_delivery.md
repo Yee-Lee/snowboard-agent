@@ -9,7 +9,10 @@ P10B，連結Gate 1/2A accepted evidence後提出final winner/no-go。
 
 ## Entry
 
-- Accepted Gate 1 cumulative receipt與Gate 2A receipt；provisional candidate identity固定。
+- Accepted Gate 1 cumulative receipt與Gate 2A User-reviewed model-finalist decision；Gemma identity固定。
+- Gemma current Gate 2A integration configuration的P2 FAIL不得直接作Gate 2B baseline；先建立新的
+  versioned integration candidate、事前凍結並以precommitted/held-out cases完成entry qualification。
+- Core ACK `DELIVERY-019`及Gate 2A closure/model-finalist delivery。
 - Core-recorded Accepted Audio handoff ID、full SHA、executable kit與known limits。
 - `G2B-PI-COMBINED-001` executable revision及Reviewer/User/Core review完成。
 - Pi 5 4GB、`swap=0`、offline、clean exact SHA；combined process ownership固定。
@@ -32,7 +35,9 @@ partial-allocation fallback與runner proof保留均成立。Shared Gate 2B score
 pipe現已轉為typed candidate FAIL並完成fault matrix。R4 reviewer已重現59/59 Gate 2與
 136/136 Gate 1，關閉R3-F2並授權exact milestone commit/push。Gate 2A receipt、Pi授權與
 Audio artifact staging仍是後續的execution entry，因此尚未產生P9/P10B credit。
-本次commit只凍結development-ready source；Gate 2A receipt、Pi授權與Audio/LLM staging未齊備前，
+原development-ready consumer只接受全PASS Gate 2A receipt。User已選定Gemma model finalist，
+但final machine receipt保留P2/P8 FAIL，因此不能偽造舊schema receipt或直接執行。新的Gemma
+integration revision、consumer boundary、Core closure ACK、Pi授權與Audio/LLM staging未齊備前，
 M4保持`NOT_STARTED`。
 
 ## Work

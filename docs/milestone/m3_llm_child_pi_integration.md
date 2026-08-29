@@ -1,12 +1,14 @@
 # LLM M3：Gate 2A Remaining LLM-only Pi Validation
 
-狀態：`IN_PROGRESS`
+狀態：`COMPLETE / USER MODEL-FINALIST DECISION / CORE ACK PENDING`
 
 ## Goal
 
 消費Gate 1 cumulative receipt，只在Pi完成尚未驗證的P2、P3、P4、P5、P8，與Gate 1的
 P1/P6.1/P7.1/P10A/P11/P12合併形成完整2A decision。Gemma為normal finalist；Qwen以User
-defect waiver保留candidate資格且P7.1維持FAIL。2A最多提出一名provisional finalist。
+defect waiver保留candidate資格且P7.1維持FAIL。2A最多提出一名provisional finalist。依User核准的
+P2/P3/P8語意分離，M3可完成模型選型，但P2失敗的tested integration configuration不得被稱為
+product baseline或直接進入Gate 2B scoring。
 
 ## Entry
 
@@ -37,8 +39,8 @@ post-call marker、窄scored exception matrix與primary-before-rebuild裁決修�
 首次Qwen Gate 2A observation在10秒前未READY，保留為`INCONCLUSIVE`。兩次獨立重開機診斷
 均在約19.2秒READY，且約19.0秒位於native `Engine()`；未證明cache、storage或capacity因果。
 User將後續cause matrix記為deferred P1.2，並授權replacement surface以Qwen-only 30秒操作窗口
-繼續remaining work。它不修改P1 10秒契約、不產生P1/P1.2 credit；Core ACK可在執行期間補齊，
-但Gate 2A closure前仍須取得。
+繼續remaining work。它不修改P1 10秒契約、不產生P1/P1.2 credit。Core ACK可後至雙candidate
+execution與User review；它仍是external Gate closure及Gate 2B新revision entry所需的書面紀錄。
 
 `G2A-PI-QWEN-002`其後在零model access時因host sysfs mount仍顯示`wlan0=up`而preflight
 `INCONCLUSIVE`；network namespace實際route為零。Replacement packet以private mount namespace
@@ -56,10 +58,17 @@ probe已通過；正式retry必須使用新boot、`QWEN-003`、新evidence root�
 
 ## Exit
 
-P2/P3/P5/P8 PASS，P4方法完整且PASS或有written threshold decision。Qwen若被提名為provisional，
-必須明載P7.1 FAIL及User/Core written workaround disposition，不得把waiver轉為PASS。
-Reviewer/Internal Tester/User review完成後才提交provisional proposal；Core只可發provisional ACK，
-不是final winner。
+2026-08-29 final surface `e2b59fac609e0d768ff3554754363900cbed70a9`完成兩名candidate的
+reboot-isolated Pi execution。Qwen machine disposition為P2 FAIL、P3 PASS、P4
+`Core threshold decision required`、P5 PASS、P8 FAIL；Gemma為P2 FAIL、P3/P4/P5 PASS、P8 FAIL。
+兩者P8皆為`DEPENDENCY_LIMITED_BY_P2`，沒有觀察到prior-state leakage，stored receipt不改寫。
+
+User已審核完整sanitized evidence並選定Gemma為唯一**model finalist**、排除Qwen正式Gate 2B、
+關閉M3/Gate 2A POC execution與selection round。Gemma current prompt/config仍因P2 FAIL而不是
+deliverable product baseline；Gate 2B scoring前必須建立、事前凍結及review新的integration-qualified
+candidate revision，不得用調整後重跑覆蓋本輪證據。完整裁決見
+`docs/response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md`；Core external ACK由
+`docs/delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`請求。
 
 ## Prohibited
 

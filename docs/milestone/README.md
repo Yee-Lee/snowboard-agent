@@ -6,7 +6,7 @@
 
 ## Current reachability
 
-狀態：`GATE1 CLOSED / GATE2A IN_PROGRESS / CORE+USER PI AUTHORIZED / EXECUTION SHA FROZEN`。
+狀態：`GATE1 CLOSED / GATE2A POC ROUND CLOSED / GEMMA MODEL FINALIST / CORE ACK PENDING / GATE2B NOT_STARTED`。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -27,8 +27,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | --- | --- | --- | --- |
 | Gate 0 | `COMPLETE` | none | retained receipt |
 | Gate 1 | `CLOSED / CORE ACK` | P1, P6.1, P7.1, P10A, P11, P12 | accepted receipts；Gemma finalist＋Qwen defect waiver |
-| Gate 2A | `IN_PROGRESS / PI AUTHORIZED` | P2, P3, P4, P5, P8 | Core授權exact `ed7aaca…`；先完成clean/offline/read-only staging與preflight，再依packet執行 |
-| Gate 2B | `DEVELOPMENT READINESS APPROVED / NOT_STARTED` | P9, P10B | R4已關閉shared scored boundary；待Gate 2A receipt、Pi授權與staging |
+| Gate 2A | `POC ROUND CLOSED / USER SELECTED / CORE ACK PENDING` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫，請Core ACK語意與selection |
+| Gate 2B | `DEVELOPMENT READINESS APPROVED / NOT_STARTED` | P9, P10B | 先建立integration-qualified Gemma revision與consumer boundary，再取得review、Pi授權及staging |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
@@ -40,13 +40,14 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M0 | `COMPLETE` | readiness execution/review complete |
 | M1 | `COMPLETE` | frozen candidates/contract harness signed off |
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
-| M3 | `IN_PROGRESS` | R4 review、pushed exact SHA及Core/User Pi授權均到位；正在執行staging/preflight與Gate 2A |
-| M4 | `NOT_STARTED` | Development readiness已通過R4 review；待Gate 2A receipt、Pi授權與staging |
+| M3 | `COMPLETE` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core external ACK pending |
+| M4 | `NOT_STARTED` | Development readiness已通過R4 review；待新Gemma integration revision、Core ACK、Pi授權與staging |
 
 ## Cumulative P1～P12 rule
 
 - Gate 1 accepted evidence：P1/P6/P7/P10A/P11/P12。
-- Gate 2A accepted evidence：P2/P3/P4/P5/P8。
+- Gate 2A immutable evidence：Gemma P2/P8 FAIL、P3/P4/P5 PASS；Qwen P2/P8 FAIL、P3/P5 PASS、
+  P4需Core threshold decision。User以語意分離完成model selection，不改寫machine results。
 - Gate 2B accepted evidence：P9/P10B。
 - Execution commit為ancestor且execution-surface lock、runtime/model/config/protocol/fixture、
   Pi/environment及manifest identity相同時不重跑；evidence/docs commit不造成失效。
@@ -57,29 +58,31 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Open dependencies and risks
 
-- **Qwen P7.1 defect**：rebuild READY `18152.025 ms`，維持`FAIL / SLOW_RECOVERY`；User保留其
-  Gate 2A candidate資格尋求workaround，但不得把waiver改寫為PASS。
+- **Qwen disposition**：P7.1 rebuild READY `18152.025 ms`維持`FAIL / SLOW_RECOVERY`；Gate 2A
+  P2 0/30且P4未達TTFT target。User已排除Qwen正式Gate 2B，不得把waiver或machine result改寫為PASS。
 - **Core closure ACK**：`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`已接受四份replacement
   receipts、User Qwen defect waiver、兩名Gate 2A candidates並關閉Gate 1。
-- **Pi operator state**：Core於`ACK-LLM-POC-M3-GATE2-PI-AUTH`授權exact `ed7aaca…`執行；User於
-  2026-08-29確認Pi可連線並要求繼續。模型/runtime、clean SHA、read-only staging、offline/swap及
-  process residue仍須以本次preflight實測確認。
+- **Gate 2A Pi observations**：final exact `e2b59fac…`完成Qwen `004`及Gemma `002`；兩次均
+  clean/read-only/offline/`swap=0`、零full-model rehash、log hygiene PASS且cleanup零殘留。
 - **P1 startup**：Gemma 1024與Qwen 512皆通過initial READY；capacity必須綁exact artifact，禁止恢復
   implicit 4096 default或把144-token protocol envelope當Engine capacity。
 - **P1.2 true-cold startup**：Qwen在兩次reboot-separated、零full-model-hash診斷中約`19.2 s`
   READY，其中約`19.0 s`位於native `Engine()`。原因尚未歸因；User已defer後續matrix。Gate 2A
   僅可用Qwen 30秒操作觀察窗口繼續P2/P3/P4/P5/P8，P1仍為10秒且不得新增P credit。
 - **P6**：native cancel已知可能nondeterministic；只有P7完整PASS才允許Conditional escalation。
-- **P4**：完整方法未達negotiable target需Core written decision。
+- **P4**：Gemma TTFT P95 `727.983 ms`、decode P50 `11.293 tok/s`為PASS；Qwen未達TTFT target且
+  保留`Core threshold decision required`，但已不進正式Gate 2B。
 - **P5**：固定continuous 512-token chunks共用單一outer timer；chunk完成固定CONTINUE，禁止
   early RESULT及結果後adaptive fixture。
-- **Gate 2 R4 review**：R3-F1/F2已關閉；Condition lifetime、post-call outcome、窄typed boundary、
-  primary-before-rebuild及runner/verifier一致性均通過可重複實驗。Core已另行授權Gate 2A Pi
-  execution；benchmark publication、candidate proposal與Gate 2B仍須先完成User evidence review。
+- **Gate 2 R4 review**：source findings已關閉；Gate 2A final evidence亦獲User review。這只完成
+  M3 selection，不使failed Gemma integration自動符合Gate 2B consumer。
 - **P2/P3/P8 semantics adjustment**：User已裁決P2為完整candidate configuration的整合
   qualification、P3為deterministic safety boundary、P8只判history/KV isolation。`DELIVERY-019`
-  已請Core確認；ACK可後至，不阻擋相同frozen surface完成雙candidate比較，但現有receipt
-  不得改寫，User review前不發布結果、不提名provisional finalist。
+  已請Core確認；final evidence已獲User核准，Gemma以model finalist身分入選。Core ACK仍待補，
+  現有receipt不得改寫，新的integration revision不得覆蓋本輪觀察。
+- **Gate 2B integration entry**：Gemma current product pairing P2 3/30，不能直接作combined baseline。
+  必須建立versioned/frozen candidate、以precommitted或held-out cases完成entry qualification，並更新
+  Gate 2B consumer boundary後才可請求execution review與Pi授權。
 - **Accepted Audio**：Audio annotated tag `audio_m4`（tag object `24b2571a…`）指向accepted completion
   `5694ead4…`與Core acceptance
   `RESP-AUDIO-M4-GATE2B-001` / `be19b70b…`已確認；Pi上實體artifact staging與LLM combined
@@ -107,19 +110,21 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [Gate 2A entry audit](../response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md)
 - [P1.2 cold READY assessment](../response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md)
 - [Qwen Gate 2A preflight assessment](../response/ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md)
+- [Gate 2A final User review](../response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md)
 - [Gate 1 closure delivery draft](../delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md)
+- [Gate 2A closure and Gemma finalist delivery](../delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md)
 
 ## Governing and historical inputs
 
-2026-08-29 entry audit：`docs/pm_handoff/`五份直屬Income均仍具治理效力。M4b
-contract與Core task boundary控制最終交付；cumulative R3 ACK控制跨gate累積與
-carry-forward；Gate 1 closure ACK控制兩名Gate 2A candidate及Qwen waiver。本輪無檔案可歸檔。
+2026-08-29 round-close audit：`docs/pm_handoff/`四份直屬Income仍具治理效力。M4b contract與
+Core task boundary控制最終交付；cumulative R3 ACK控制跨gate累積與carry-forward；Gate 1 closure
+ACK繼續驗證carried evidence。Gate 2 Pi authorization已完成其M3用途並原文移入history。
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
 - [Gate 1 closure ACK](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
-- [Gate 2A Pi authorization](../pm_handoff/ACK-LLM-POC-M3-GATE2-PI-AUTH.md)
+- [Gate 2A Pi authorization (historical)](../pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md)
 - [ARM64-to-Pi transition ACK (historical)](../pm_handoff/history/ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md)
 - [LLM POC workflow](../llm_poc_workflow.md)
 - [Document index](../DOCUMENT_INDEX.md)

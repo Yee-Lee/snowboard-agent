@@ -8,7 +8,6 @@
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
 * [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) - Core接受cumulative boundary、R3 replacement SHA與execution；Gate 1 closure仍待completed manifest review
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core接受四份P6.1/P7.1 receipts、Qwen defect waiver與雙candidate Gate 2A entry；Gate 1 closed
-* [`ACK-LLM-POC-M3-GATE2-PI-AUTH.md`](pm_handoff/ACK-LLM-POC-M3-GATE2-PI-AUTH.md) - Core確認R4、exact milestone commit與兩層lock，授權Gate 2A Pi staging/execution；evidence須先交User review
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
@@ -40,6 +39,7 @@
 * `ACK-LLM-M2-ARM64-TO-PI-TRANSITION-001.md` - (已完成) ARM64到Pi transition與candidate freeze已執行
 * `DELIVERY-016-CORE-LLM-POC-PACKETS-ACK-R2.md` - (已取代) 舊physical-Pi packet delivery已由cumulative R3 ACK取代
 * `RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md` - (已取代) 舊packet source disposition已由cumulative R3 ACK取代
+* [`ACK-LLM-POC-M3-GATE2-PI-AUTH.md`](pm_handoff/history/ACK-LLM-POC-M3-GATE2-PI-AUTH.md) - (已完成) Core Gate 2A Pi staging/execution授權；final evidence已完成User review
 
 ## 3. Response (位於 `docs/response/`)
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
@@ -73,6 +73,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`](response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md) - Gate 2A進場稽核與worktree remediation；002 runner/lock已通過workstation驗證，待review/commit/Pi execution
 * [`ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md`](response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md) - Qwen兩次約19.2秒true-cold READY與Engine-stage attribution；P1.2 deferred、零Gate credit
 * [`ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md`](response/ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md) - QWEN-002 private-sysfs offline preflight finding；零model access、replacement preserves early evidence
+* [`ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md`](response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md) - final-surface雙candidate Pi evidence、immutable P dispositions、User選定Gemma model finalist並關閉M3 POC round
 * [`REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md`](response/REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md) - Gate 2A 002 executable worktree reviewer入口、resolved findings、exact surface與核對清單
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md) - Gate 2B real Audio→LLM→Audio executable、Accepted Audio identity、resource/cleanup核對清單
 
@@ -109,6 +110,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md`](delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) - User已裁決；請Core一次接受四份replacement receipts、Gate 1 PASS及Qwen P7.1 defect waiver
 * [`DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md`](delivery/DELIVERY-019-PM-LLM-POC-P2-P3-P8-SEMANTICS-ADJUSTMENT.md) - 請Core分離P2整合qualification與裸模型選型、保留P3安全邊界、縮限P8為history/KV isolation；ACK可後至且不阻擋已核准的雙candidate frozen execution
 * [`DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md`](delivery/DELIVERY-020-PM-LLM-POC-P1.2-QWEN-READY-WORKAROUND.md) - 紀錄Qwen P1.2 cold READY finding；Gate 2A限用30秒操作觀察窗口且不改P1或產生credit，Core ACK可後至
+* [`DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md`](delivery/DELIVERY-021-PM-LLM-POC-GATE2A-CLOSURE-GEMMA-FINALIST.md) - User關閉Gate 2A POC round、選定Gemma唯一model finalist；請Core ACK語意、selection及Gate 2B新integration revision邊界
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 

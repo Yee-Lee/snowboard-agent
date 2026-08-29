@@ -1,8 +1,8 @@
 # M4b Authoritative POC Execution Plan
 
-狀態：`CUMULATIVE GATE REDESIGN / REVIEWER CHECK REQUIRED / NO NEW EXECUTION`
+狀態：`GATE 2A POC ROUND COMPLETE / GEMMA MODEL FINALIST / GATE 2B ENTRY BLOCKED`
 
-Revision：`2026-08-26-cumulative-p1-p12-r1`
+Revision：`2026-08-29-gate2a-user-closure-r1`
 
 Owner：POC Technical Lead；User已授權累積Gate模型；外部接受者為Core Designer。
 
@@ -81,9 +81,15 @@ Qwen首次true-cold child在10秒前未READY；兩次P1.2診斷約19.2秒READY�
 `Engine()`，原因未定。User已defer歸因matrix，並允許Gate 2A controller使用30秒操作觀察窗口
 抵達remaining cases；P1契約仍為10秒、不得重計或新增credit。Gemma維持10秒。
 
+2026-08-29兩名candidate均完成final-surface Pi observation。User保留machine dispositions、採用
+`DELIVERY-019`語意分離，並選定Gemma為唯一model finalist。Gemma current integration仍為P2 FAIL；
+P8 FAIL加註`DEPENDENCY_LIMITED_BY_P2`且沒有observed history pollution。M3/Gate 2A POC execution與
+selection round完成，但Core external ACK及新的integration-qualified Gemma revision仍是Gate 2B entry。
+
 ## Gate 2B — combined final acceptance
 
-Entry為accepted Gate 1/2A receipts及Core-recorded Accepted Audio handoff ID/full SHA/executable kit。
+Entry為accepted Gate 1 receipt、User-reviewed Gate 2A model-finalist decision、新的integration-qualified
+Gemma revision及Core-recorded Accepted Audio handoff ID/full SHA/executable kit。
 Surrogate只能debug，不能取得P9/P10B credit。
 
 P9與P10B共用一次4GB `swap=0` offline combined run，避免Audio/LLM重複load：先取idle/residency
@@ -110,10 +116,11 @@ binary、weights、credential或endpoint。
 
 ## Current execution boundary
 
-R4 reviewer放行原Gate 2 executable，Core與User其後授權Pi執行。Qwen P1.2 replacement由User
-授權先commit/push與繼續Gate 2A，Core ACK可後至但須在Gate 2A closure前收到。每次candidate
-run仍須clean exact SHA、新boot ID、新run ID、read-only staging、offline/swap-zero preflight及
-新evidence directory。Evidence在User review前不得發布或形成provisional proposal。
+Gate 2A final evidence已獲User review，Gemma為唯一model finalist，Qwen不進正式Gate 2B。原始
+machine FAIL/PASS不可改寫；Gemma P2/P8不得因選型裁決轉為PASS。Core對`DELIVERY-019`與closure
+delivery的ACK可在POC round關閉後補入，但新的Gate 2B scored execution必須先有versioned、frozen、
+reviewed integration-qualified Gemma revision、updated consumer boundary、Accepted Audio staging及
+獨立Pi授權。禁止把current failed configuration直接餵入combined scoring。
 
 POC主交付完成後，P1.2 cold-start歸因與未入選candidate的identical Gate 2B envelope可列為
 informational/no-credit backlog。它們不得延誤正式Gate 2B，也不得回溯改寫單一finalist的選型結果。
