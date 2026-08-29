@@ -246,7 +246,7 @@ def run_worker(
     ]
     process = subprocess.Popen(
         argv,
-        cwd=ROOT,
+        cwd=install_root.parent,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -427,6 +427,8 @@ def main() -> int:
             )
             del transcript, value
 
+        environment_post = target_preflight(args.execution_sha)
+
         report.update({
             "execution_sha": args.execution_sha,
             "formal_packet_lock_sha256": args.packet_lock_sha256,
@@ -437,6 +439,14 @@ def main() -> int:
                     "routes_offline"
                 ),
                 "throttled_prelaunch": environment.get("throttled_prelaunch"),
+            },
+            "environment_post": {
+                "git_sha": environment_post.get("git_sha"),
+                "swap_total_bytes": environment_post.get("swap_total_bytes"),
+                "routes_offline": environment_post.get("network", {}).get(
+                    "routes_offline"
+                ),
+                "throttled": environment_post.get("throttled_prelaunch"),
             },
             "audio_input": {
                 "fixture_id": record["fixture_id"],
