@@ -114,3 +114,6 @@ R4 reviewer放行原Gate 2 executable，Core與User其後授權Pi執行。Qwen P
 授權先commit/push與繼續Gate 2A，Core ACK可後至但須在Gate 2A closure前收到。每次candidate
 run仍須clean exact SHA、新boot ID、新run ID、read-only staging、offline/swap-zero preflight及
 新evidence directory。Evidence在User review前不得發布或形成provisional proposal。
+
+POC主交付完成後，P1.2 cold-start歸因與未入選candidate的identical Gate 2B envelope可列為
+informational/no-credit backlog。它們不得延誤正式Gate 2B，也不得回溯改寫單一finalist的選型結果。

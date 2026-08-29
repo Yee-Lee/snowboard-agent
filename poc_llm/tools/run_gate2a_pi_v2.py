@@ -775,13 +775,13 @@ def main() -> int:
         result["carried_results"] = {
             item: carried[item] for item in ("P1", "P6.1", "P7.1", "P10A", "P11", "P12")
         }
+        raw_dir.mkdir(parents=True, exist_ok=False)
+        owns_raw_dir = True
         result["isolation"] = isolation_state(args.max_prelaunch_uptime_s)
         result["isolation"]["prior_receipts_checked"] = enforce_isolation(
             args.evidence_root, result["isolation"], args.candidate_id
         )
         result["environment"] = target_preflight(args.execution_sha)
-        raw_dir.mkdir(parents=True, exist_ok=False)
-        owns_raw_dir = True
 
         runtime = lock["runtime"]
         owns_install_root = True

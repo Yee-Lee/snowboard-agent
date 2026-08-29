@@ -34,6 +34,16 @@ this result for later cold-boot integration work without claiming a cache, stora
   execution-surface digest and evidence directory.
 - Benchmark publication, semantic adjudication and provisional proposal remain blocked on User review.
 
+## Execution amendment after first preflight
+
+`G2A-PI-QWEN-002` stopped `INCONCLUSIVE` before runtime installation or model access because the
+route-isolated user network namespace inherited a host sysfs mount that still reported `wlan0=up`.
+The replacement command adds a private mount namespace and mounts read-only sysfs there; a no-model
+probe confirmed namespace-local loopback only, zero routes, swap zero and clean throttling without
+disabling host Wi-Fi. The runner also creates its controlled evidence directory before environment
+preflight so every later accepted run ID preserves an early failure. The retry is `QWEN-003` on a
+new boot and exact replacement SHA; this amendment changes no model, fixture, threshold or P credit.
+
 ## Core ACK requested
 
 Please acknowledge P1.2 as a deferred supplemental experiment and accept the 30-second value strictly

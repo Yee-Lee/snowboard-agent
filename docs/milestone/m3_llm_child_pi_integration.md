@@ -40,6 +40,11 @@ User將後續cause matrix記為deferred P1.2，並授權replacement surface以Qw
 繼續remaining work。它不修改P1 10秒契約、不產生P1/P1.2 credit；Core ACK可在執行期間補齊，
 但Gate 2A closure前仍須取得。
 
+`G2A-PI-QWEN-002`其後在零model access時因host sysfs mount仍顯示`wlan0=up`而preflight
+`INCONCLUSIVE`；network namespace實際route為零。Replacement packet以private mount namespace
+重新掛載read-only sysfs，且在environment preflight前取得evidence directory ownership。No-model
+probe已通過；正式retry必須使用新boot、`QWEN-003`、新evidence root及新exact SHA。
+
 ## Work
 
 - P2/P3：10 valid model cases×3；10 invalid normalizer fixtures×3；100% exact schema/fallback/log hygiene。

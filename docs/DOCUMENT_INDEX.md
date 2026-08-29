@@ -72,6 +72,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md`](response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md) - 四份獨立reboot replacement receipts；P6.1雙PASS、Gemma P7.1 PASS、Qwen P7.1 SLOW_RECOVERY/FAIL，待User裁決
 * [`ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md`](response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md) - Gate 2A進場稽核與worktree remediation；002 runner/lock已通過workstation驗證，待review/commit/Pi execution
 * [`ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md`](response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md) - Qwen兩次約19.2秒true-cold READY與Engine-stage attribution；P1.2 deferred、零Gate credit
+* [`ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md`](response/ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md) - QWEN-002 private-sysfs offline preflight finding；零model access、replacement preserves early evidence
 * [`REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md`](response/REVIEW-REQUEST-LLM-M3-GATE2A-EXECUTABLE-002.md) - Gate 2A 002 executable worktree reviewer入口、resolved findings、exact surface與核對清單
 * [`REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md`](response/REVIEW-REQUEST-LLM-M4-GATE2B-EXECUTABLE-001.md) - Gate 2B real Audio→LLM→Audio executable、Accepted Audio identity、resource/cleanup核對清單
 

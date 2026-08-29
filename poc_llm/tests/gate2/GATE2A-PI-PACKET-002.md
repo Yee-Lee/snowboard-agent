@@ -1,7 +1,7 @@
 # GATE2A-PI-PACKET-002 — Cumulative Remaining LLM-only Validation
 
 - **Packet ID**: `G2A-PI-LLM-002`
-- **Revision**: `2026-08-29-r5-qwen-ready-observation`
+- **Revision**: `2026-08-29-r6-private-sysfs-evidence-owner`
 - **Status**: `EXECUTION IN PROGRESS / USER REVIEW REQUIRED`
 - **Entry receipt**: `G1-M4B-CLOSURE-001`, bound to the Core-accepted Gate 1 closure ACK
 - **Formal credit executed here**: M4B-P2, P3, P4, P5, P8
@@ -128,6 +128,12 @@ The initial `G2A-PI-QWEN-001` pre-READY observation is preserved and never overw
 continuation uses a new boot, run ID, execution surface and evidence directory. A 30-second
 operational observation does not alter the frozen config identity or any P result decision rule.
 
+The offline launch uses a private user, mount and network namespace. It mounts a read-only sysfs
+inside that namespace before invoking the runner, so `/sys/class/net` and route checks describe the
+isolated network rather than the host mount's live Wi-Fi state. Disabling host Wi-Fi is forbidden.
+The runner owns its evidence directory before boot/environment preflight, so every accepted run ID
+preserves a sanitized `INCONCLUSIVE` record even when no model is accessed.
+
 The runner independently recomputes every P2/P3/P4/P5/P8 disposition from sanitized sample fields
 and cleanup proofs before publication; Gate 2B repeats that verification when consuming the result.
 Pre-READY, probe, sampler, filesystem, method and evidence failures are `INCONCLUSIVE`. A scored
@@ -140,8 +146,8 @@ After review, run one command after each clean reboot, substituting the accepted
 the exact clean execution SHA:
 
 ```sh
-unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-G4E2B-MOBILE-R1 --execution-sha <execution-sha> --run-id G2A-PI-GEMMA-001 --evidence-root <controlled-evidence-root-outside-git>
-unshare --user --map-root-user --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-002 --evidence-root <new-controlled-evidence-root-outside-git>
+unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-G4E2B-MOBILE-R1 --execution-sha <execution-sha> --run-id G2A-PI-GEMMA-001 --evidence-root <controlled-evidence-root-outside-git>'
+unshare --user --map-root-user --mount --net -- env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin sh -ec 'mount -t sysfs -o ro sysfs /sys; exec python3 poc_llm/tools/run_gate2a_pi_v2.py --packet-lock poc_llm/harness/gate2a-pi-lock-v2.json --gate1-entry poc_llm/fixtures/gate2/gate1-closure-entry-001.json --artifact-receipt <gate1-artifact-receipt.json> --candidate-id CAND-LRT-Q25-15B-Q8-R1 --execution-sha <execution-sha> --run-id G2A-PI-QWEN-003 --evidence-root <new-controlled-evidence-root-outside-git>'
 ```
 
 Workstation definition verification for this revision is recorded in the current re-review request plus 136/136 Gate 1

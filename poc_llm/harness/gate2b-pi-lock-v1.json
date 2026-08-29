@@ -1,6 +1,6 @@
 {
   "packet_id":"G2B-PI-COMBINED-001",
-  "revision":"2026-08-29-r2-consume-p1-2-gate2a-lock",
+  "revision":"2026-08-29-r3-consume-private-sysfs-gate2a-lock",
   "session_count":20,
   "cadence_seconds":5,
   "fault_schedule":[],
@@ -34,7 +34,7 @@
     "gate2_errors":{"path":"poc_llm/harness/gate2_errors_v1.py","sha256":"e4ee3125760a51d76c6af086416d1ad509770656c655bbbd72f760d576413e8d"},
     "coordinator":{"path":"poc_llm/harness/gate2b_combined_v1.py","sha256":"1162c9b1fe0c35acd9bb7112ad680d9a9121625192e2e1f7859c0d95db4505fe"},
     "resources":{"path":"poc_llm/harness/gate2b_resources_v1.py","sha256":"4136dd9b7cdd8515e1242f4c9af1372c9d4069449e0a36fe61a36db13b296c37"},
-    "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"2def5de0c487c707f1a41c1858f7a23b2aee9cd427ca100be549453349a6a609"},
+    "gate2a_lock":{"path":"poc_llm/harness/gate2a-pi-lock-v2.json","sha256":"cf6636f576bebd2b6814b75d0615a884d65b678347088b7091f068bf56982249"},
     "standard_adapter":{"path":"poc_llm/harness/litert_lm_pi_child_adapter_v2.py","sha256":"9da19b49ca0a43346f7ea0825c610134b673620c0b099b7e6480d4cadce8bd4a"},
     "pi_child_base":{"path":"poc_llm/harness/litert_lm_pi_child_adapter.py","sha256":"345755c21c45bd565ee598752682f8bb0a6421e8ed64f5b57057cb514e3c0ee0"},
     "child_base":{"path":"poc_llm/harness/litert_lm_child_adapter.py","sha256":"eac85d35c7a2833efefb59010b57b00188016709079b4a84fedee932a895ce46"},

@@ -87,6 +87,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   authorization仍待完成，不把
   既有Audio-only PASS誤作M4B P9/P10B credit。
 - **Evidence safety**：不commit model、wheel、native binary、raw output、prompt/payload、credential或endpoint。
+- **Post-delivery informational backlog**：正式POC交付完成後，才續作P1.2 cold-start cause matrix，
+  並視成本對未入選candidate執行no-credit Gate 2B同包比較；不得延誤或改寫正式單一finalist流程。
 
 ## Active packets
 
@@ -104,6 +106,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 - [Gate 1 runner lessons](../response/ASSESSMENT-LLM-M2-GATE1-RUNNER-EXECUTION-LESSONS-001.md)
 - [Gate 2A entry audit](../response/ASSESSMENT-LLM-M3-GATE2A-ENTRY-AUDIT-001.md)
 - [P1.2 cold READY assessment](../response/ASSESSMENT-LLM-M3-P1.2-COLD-READY-DIAGNOSTIC-001.md)
+- [Qwen Gate 2A preflight assessment](../response/ASSESSMENT-LLM-M3-GATE2A-QWEN-PREFLIGHT-001.md)
 - [Gate 1 closure delivery draft](../delivery/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md)
 
 ## Governing and historical inputs

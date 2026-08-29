@@ -763,6 +763,38 @@ class Gate2APiV2Tests(unittest.TestCase):
             if install.exists():
                 shutil.rmtree(install)
 
+    def test_preflight_failure_is_preserved_before_model_access(self) -> None:
+        run_id = f"g2a-preflight-{uuid.uuid4().hex}"
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory)
+            argv = [
+                "run_gate2a_pi_v2.py", "--packet-lock", str(LOCK),
+                "--gate1-entry", str(ENTRY),
+                "--artifact-receipt", str(evidence / "unused-receipt.json"),
+                "--candidate-id", CANDIDATES[1], "--execution-sha", "a" * 40,
+                "--run-id", run_id, "--evidence-root", str(evidence),
+            ]
+            output = io.StringIO()
+            with patch.object(sys, "argv", argv), patch("sys.stdout", output), \
+                    patch("poc_llm.tools.run_gate2a_pi_v2.ancestor_check"), \
+                    patch("poc_llm.tools.run_gate2a_pi_v2.isolation_state", return_value={
+                        "boot_id_sha256": "b" * 64,
+                        "prelaunch_uptime_s": 1.0,
+                        "preexisting_adapter_processes": 0,
+                    }), patch(
+                        "poc_llm.tools.run_gate2a_pi_v2.target_preflight",
+                        side_effect=PiPacketFailure("controlled preflight failure"),
+                    ):
+                self.assertEqual(gate2a_main(), 2)
+            preserved = evidence / run_id / "gate2a-sanitized.json"
+            self.assertTrue(preserved.is_file())
+            value = json.loads(preserved.read_text(encoding="utf-8"))
+            self.assertEqual(value["result"], "INCONCLUSIVE")
+            self.assertEqual(value["executed_results"], {
+                item: "Blocked" for item in EXECUTED_ITEMS
+            })
+            self.assertEqual(value["artifact_authentication"], {})
+
 
 if __name__ == "__main__":
     unittest.main()
