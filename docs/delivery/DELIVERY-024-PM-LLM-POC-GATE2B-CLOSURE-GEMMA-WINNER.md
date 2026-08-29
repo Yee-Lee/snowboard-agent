@@ -8,6 +8,7 @@
 - **Pairing**: `litert-lm-v0.16.0-pi-g2b-r5`
 - **Formal run**: `G2B-PI-COMBINED-006`
 - **Execution SHA**: `0c75536e6ee99b502c59438989ca852194648946`
+- **Closure content commit**: `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae`
 - **Execution surface SHA-256**: `22f52d8b8b5b6d0aacbe2959c49441ccee30a0bacb68b9b8fcfc04877c14665a`
 - **Sanitized evidence SHA-256**: `f5f5b3acd15e32bb0208da9f838cec4415469c28c12a45b25f8c2f5f55ad33fa`
 - **Winner manifest**: `POC-llm-DEL-2026-001-R3`
@@ -84,5 +85,8 @@ Please respond once with:
    `docs/protocol.md` work; and
 5. the Gate 2B final-winner ACK, or one bounded blocking finding if Core cannot accept the waiver.
 
-The closure commit SHA will be supplied after this delivery, winner manifest, milestone state and
-round-close audit are committed and pushed together.
+The closure content, winner manifest, milestone state and round-close audit are immutable at
+`5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae` on the pushed `llm` branch. The subsequent provenance
+addendum changes only this locator and the matching R3 locator; its exact commit and file SHA-256
+values are supplied by the Core relay envelope so that it does not rely on an impossible
+self-referential Git SHA.

@@ -3,7 +3,8 @@
 - **Delivery ID**: `POC-llm-DEL-2026-001-R3`
 - **Date**: 2026-08-29
 - **Repository / branch**: `poc_llm/snowboard-agent` / `llm`
-- **Delivery HEAD**: supplied in the post-commit response; not self-prefilled
+- **Closure content commit**: `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae`
+- **Publication locator**: pushed `llm` descendant identified by the Core relay envelope
 - **Status**: `USER-APPROVED POC WINNER / CORE FINAL ACK PENDING`
 - **Winner**: `CAND-LRT-G4E2B-MOBILE-R1` / Gemma 4 E2B mobile
 - **Known defect**: `LiteRT-LM Engine/Session resident retention / USER WAIVED FOR POC`
@@ -32,6 +33,11 @@
 No model, wheel, native library, raw prompt/output/audio or credential is committed in Git. Core
 must acquire and authenticate the exact artifacts through the recorded source/receipt chain; runtime
 download and network fallback remain prohibited.
+
+The closure content, this winner identity and the round-close audit are fixed by the closure content
+commit above. The publication locator is intentionally carried by the external Core relay envelope:
+a Git commit cannot contain its own SHA. Core must verify the relay's exact publication commit and
+this file's SHA-256 before intake.
 
 ## Frozen product boundary
 
