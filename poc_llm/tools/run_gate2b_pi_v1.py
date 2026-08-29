@@ -571,7 +571,10 @@ class CombinedLlmDomain:
             "perceptions": [{
                 "kind": "listen",
                 "status": "ok",
-                "text": f"USER={transcript}\nINCLUDE={nonce}\nOMIT={trap}",
+                "text": (
+                    f"USER={transcript}\nREQUIRED_LITERAL={nonce}"
+                    f"\nFORBIDDEN_LITERAL={trap}"
+                ),
             }],
             "pending_message_count": 0,
             "capabilities": {

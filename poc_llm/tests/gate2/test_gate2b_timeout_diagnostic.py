@@ -87,7 +87,7 @@ class Gate2BTimeoutDiagnosticTests(unittest.TestCase):
         value = generate.call_args.args[3]
         self.assertEqual(
             value["perceptions"][0]["text"],
-            f"USER=private transcript\nINCLUDE={NONCE}\nOMIT={TRAP}",
+            f"USER=private transcript\nREQUIRED_LITERAL={NONCE}\nFORBIDDEN_LITERAL={TRAP}",
         )
         self.assertEqual(generate.call_args.kwargs["timeout_s"], 17.0)
 

@@ -24,6 +24,7 @@ from poc_llm.harness.litert_lm_gate2b_child_adapter_v2 import (
     InputBudgetExceeded,
     PREWARM_VALUE,
     gate2b_product_prompt,
+    gate2b_response_schema,
     prewarm,
 )
 from poc_llm.harness.gate2_errors_v1 import (
@@ -417,7 +418,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         )
         self.assertEqual(
             lock["candidates"]["CAND-LRT-G4E2B-MOBILE-R1"]["corrective_pairing_revision"],
-            "litert-lm-v0.16.0-pi-g2b-r2",
+            "litert-lm-v0.16.0-pi-g2b-r3",
         )
         self.assertEqual(
             lock["artifacts"]["gate2b_adapter"]["path"],
@@ -435,7 +436,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
             (ROOT / lock["artifacts"]["product_config_schema"]["path"]).read_text()
         )
         self.assertTrue(Draft202012Validator(product_schema).is_valid(product_config))
-        self.assertEqual(product_config["pairing_revision"], "litert-lm-v0.16.0-pi-g2b-r2")
+        self.assertEqual(product_config["pairing_revision"], "litert-lm-v0.16.0-pi-g2b-r3")
         self.assertEqual(product_config["ready_timeout_ms"], 45000)
         self.assertEqual(product_config["terminal_grace_ms"], 2000)
         for item in lock["artifacts"].values():
@@ -505,14 +506,25 @@ class Gate2BDefinitionTests(unittest.TestCase):
 
     def test_gate2b_prompt_is_generic_deterministic_and_schema_explicit(self) -> None:
         value = {
-            "perceptions":[{"kind":"listen","status":"ok","text":"USER=hello\nINCLUDE=MARKER-X\nOMIT=TRAP-X"}],
+            "perceptions":[{"kind":"listen","status":"ok","text":"USER=hello\nREQUIRED_LITERAL=G2BN0001\nFORBIDDEN_LITERAL=G2BT0001"}],
             "pending_message_count":0,
             "capabilities":{"perceptions":["listen"],"actions":["speak"],"tools":[]},
         }
         first = gate2b_product_prompt(value)
         self.assertEqual(first, gate2b_product_prompt(json.loads(json.dumps(value))))
-        self.assertIn("MARKER-X", first)
+        self.assertIn("G2BN0001", first)
         self.assertEqual(GATE2B_RESPONSE_SCHEMA["properties"]["action_kind"]["enum"], ["speak"])
+        self.assertEqual(
+            gate2b_response_schema(value)["properties"]["action_payload"]
+            ["properties"]["text"]["pattern"],
+            "G2BN0001",
+        )
+        invalid = json.loads(json.dumps(value))
+        invalid["perceptions"][0]["text"] = (
+            "USER=hello\nREQUIRED_LITERAL=unsafe.*\nFORBIDDEN_LITERAL=G2BT0001"
+        )
+        with self.assertRaisesRegex(ValueError, "literal identity"):
+            gate2b_response_schema(invalid)
         source = (ROOT / "poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py").read_text()
         self.assertNotIn("M4-SESSION-", source)
         self.assertNotIn("P2-00", source)
@@ -533,7 +545,9 @@ class Gate2BDefinitionTests(unittest.TestCase):
         metrics = prewarm(backend, {"max_input_tokens":128, "max_output_tokens":64})
         self.assertEqual(backend.call[0], gate2b_product_prompt(PREWARM_VALUE))
         self.assertEqual(backend.call[1]["max_input_tokens"], 128)
-        self.assertEqual(backend.call[1]["response_schema"], GATE2B_RESPONSE_SCHEMA)
+        self.assertEqual(
+            backend.call[1]["response_schema"], gate2b_response_schema(PREWARM_VALUE)
+        )
         self.assertEqual(metrics["event"], "INFERENCE_READY")
 
     def test_gate2b_backend_enforces_rendered_and_runtime_token_budget(self) -> None:
@@ -950,7 +964,7 @@ class Gate2BDefinitionTests(unittest.TestCase):
         value = {
             "packet_id":"G2B-PI-COMBINED-001","run_id":"run",
             "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
-            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r2",
+            "integration_pairing_revision":"litert-lm-v0.16.0-pi-g2b-r3",
             "execution_sha":"a"*40,
             "execution_surface_sha256":"b"*64,"gate2a_receipt_sha256":"c"*64,
             "accepted_audio":{

@@ -72,7 +72,8 @@ Attempt 003（execution SHA `26e654968bbd4c9b2a9a2796d21cfbc01fba7446`）已進�
 session，但LLM在parent/child同為15秒的deadline邊界失去typed terminal，P10B為immutable `FAIL`。
 後續no-credit cold/warm歸因確認：同一298-token prefill在reboot後首個post-READY request需16.704秒，
 same-boot fresh process/Engine為5.061秒；完整cold output另有schema-invalid及marker缺失。User已授權
-corrective pairing `r2`與重做實驗：128 tokens對rendered prompt硬性執行、speak-only constrained JSON、
+corrective pairing `r3`與重做實驗：128 tokens對rendered prompt硬性執行、speak-only constrained JSON與
+current-marker pattern、
 固定non-sensitive pre-warm完成後才發布`INFERENCE_READY`，以及15秒child deadline外2秒terminal-only
 observer grace。`DELIVERY-022`要求Core把pre-warm納入正式child lifecycle；ACK可後至但final交付前須連結。
 Attempt 003不覆寫，corrective result在User review前仍不得發布。

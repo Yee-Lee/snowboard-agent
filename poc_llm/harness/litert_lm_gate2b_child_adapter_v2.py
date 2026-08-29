@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -53,7 +55,7 @@ PREWARM_VALUE = {
     "perceptions": [{
         "kind": "listen",
         "status": "ok",
-        "text": "USER=Say ready.\nINCLUDE=G2BW0000\nOMIT=G2BX0000",
+        "text": "USER=Say ready.\nREQUIRED_LITERAL=G2BW0000\nFORBIDDEN_LITERAL=G2BX0000",
     }],
     "pending_message_count": 0,
     "capabilities": {
@@ -164,14 +166,48 @@ def _product_text(value: dict[str, Any]) -> str:
     return perceptions[0]["text"]
 
 
+def _product_parts(value: dict[str, Any]) -> tuple[str, str, str]:
+    text = _product_text(value)
+    try:
+        user, required, forbidden = text.rsplit("\n", 2)
+    except ValueError as error:
+        raise ValueError("Gate 2B product literal profile mismatch") from error
+    if (
+        not user.startswith("USER=")
+        or not required.startswith("REQUIRED_LITERAL=")
+        or not forbidden.startswith("FORBIDDEN_LITERAL=")
+    ):
+        raise ValueError("Gate 2B product literal profile mismatch")
+    required_value = required.removeprefix("REQUIRED_LITERAL=")
+    forbidden_value = forbidden.removeprefix("FORBIDDEN_LITERAL=")
+    if (
+        re.fullmatch(r"G2B[A-Z][0-9]{4}", required_value) is None
+        or re.fullmatch(r"G2B[A-Z][0-9]{4}", forbidden_value) is None
+        or required_value == forbidden_value
+    ):
+        raise ValueError("Gate 2B product literal identity mismatch")
+    return user.removeprefix("USER="), required_value, forbidden_value
+
+
 def gate2b_product_prompt(value: dict[str, Any]) -> str:
     """Render the compact, generic instruction used by pre-warm and scoring."""
 
+    _product_parts(value)
     return (
-        "Return JSON only. Briefly answer USER in speech. Copy INCLUDE exactly once "
-        "into text. Never copy OMIT. Keep next_perceptions as listen.\n"
+        "Return JSON only. Briefly answer USER in speech. The action_payload.text MUST "
+        "contain the exact value after REQUIRED_LITERAL= exactly once and MUST NOT contain "
+        "the value after FORBIDDEN_LITERAL=. Keep next_perceptions as listen.\n"
         + _product_text(value)
     )
+
+
+def gate2b_response_schema(value: dict[str, Any]) -> dict[str, Any]:
+    """Bind the controlled current-session marker into constrained decoding."""
+
+    _user, required, _forbidden = _product_parts(value)
+    schema = copy.deepcopy(GATE2B_RESPONSE_SCHEMA)
+    schema["properties"]["action_payload"]["properties"]["text"]["pattern"] = required
+    return schema
 
 
 class Gate2BChild(PiChild):
@@ -185,7 +221,7 @@ class Gate2BChild(PiChild):
                 gate2b_product_prompt(value),
                 max_output_tokens=self.config["max_output_tokens"],
                 max_input_tokens=self.config["max_input_tokens"],
-                response_schema=GATE2B_RESPONSE_SCHEMA,
+                response_schema=gate2b_response_schema(value),
             )
         except Exception as caught:  # Sanitized by the inherited protocol boundary.
             error = caught
@@ -200,7 +236,7 @@ def prewarm(backend: Gate2BLiteRtBackend, config: dict[str, Any]) -> dict[str, i
         prompt,
         max_output_tokens=config["max_output_tokens"],
         max_input_tokens=config["max_input_tokens"],
-        response_schema=GATE2B_RESPONSE_SCHEMA,
+        response_schema=gate2b_response_schema(PREWARM_VALUE),
     )
     if generation.metrics.get("decode_tokens", 0) <= 0:
         raise RuntimeError("Gate 2B pre-warm produced no decode tokens")

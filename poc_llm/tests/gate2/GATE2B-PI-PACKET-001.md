@@ -1,7 +1,7 @@
 # GATE2B-PI-PACKET-001 — Cumulative Audio + LLM Final Validation
 
 - **Packet ID**: `G2B-PI-COMBINED-001`
-- **Revision**: `2026-08-29-r9-prewarm-budget-correction`
+- **Revision**: `2026-08-29-r10-prewarm-budget-marker-schema`
 - **Status**: `USER AUTHORIZED COMMIT/PUSH + PI EXECUTION / RESULT REVIEW REQUIRED`
 - **Entry receipts**: User-reviewed Gemma model-finalist receipt and Core-accepted Audio handoff
 - **Formal credit executed here**: M4B-P9, P10B
@@ -25,8 +25,10 @@ checkout `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`.
 The User reviewed the final Gate 2A evidence and selected Gemma as the sole model finalist. Qwen is
 excluded from formal Gate 2B. Gemma's immutable P2/P8 FAIL observations remain in the entry receipt;
 they are not relabelled as PASS. Attempt 003 tested pairing `r1` and remains an immutable FAIL. The
-User-authorized corrective execution binds pairing `r2`: compact product input, actual rendered-token
-enforcement, constrained speak-only JSON, and inference pre-warm. Because this revision follows an
+User-authorized corrective execution binds pairing `r3`: compact product input, actual rendered-token
+enforcement, constrained speak-only JSON/current-marker pattern, and inference pre-warm. Pairing `r2`
+was rejected by a public no-credit probe because prompt-only marker instructions remained ambiguous;
+it never entered Audio residency or formal evidence. Because r3 follows an
 observed r1 failure, it is corrective integration qualification rather than a new held-out model-
 capability claim. Core ACK of
 the Gate 2A semantic split may arrive during execution but is mandatory before final Gate 2 delivery.
@@ -77,14 +79,16 @@ protocol pipe, or a post-READY VAD/ASR/TTS session failure, and other observed
 candidate/resource/cleanup violations are `FAIL`. Installer, LLM stderr and accepted ASR stderr are
 all scanned against static and runtime-sensitive markers before disposable work is removed.
 
-Pairing `r2` does not publish READY after Engine construction alone. It runs one fixed public,
+Pairing `r3` does not publish READY after Engine construction alone. It runs one fixed public,
 non-sensitive request through the same compact prompt, rendered-token check, constrained JSON path,
 and a disposable Conversation; output and KV/history are discarded. Only successful completion
 publishes protocol READY, whose meaning is therefore `INFERENCE_READY`. The 45-second READY budget
 includes model construction plus pre-warm and is a startup/availability cost. Each scored request
 retains the 15-second child deadline. The controller waits an additional 2-second terminal-only grace
 so a child TIMEOUT/ERROR is observed and typed; that grace never turns a late generation into PASS.
-Every scored benchmark must report `1 <= prefill_tokens <= 128`.
+Every scored benchmark must report `1 <= prefill_tokens <= 128`. The controlled current-session
+nonce is also inserted as a JSON Schema `pattern` for `action_payload.text`; the exact-once check,
+forbidden literal and all prior-session literals are still independently verified after generation.
 
 ## 4. Final cumulative decision
 
@@ -103,7 +107,7 @@ product-qualification boundary before final acceptance.
 ## 5. Reviewer and execution gate
 
 The executable candidate binds the Accepted Audio entry schema, immutable Gemma model-finalist
-receipt plus its `r1` ancestry, Gate 2B corrective `r2` adapter/config, runner, artifact-independent coordinator,
+receipt plus its `r1` ancestry, Gate 2B corrective `r3` adapter/config, runner, artifact-independent coordinator,
 sampler/calculations, result schema and all repository checksums in `gate2b-pi-lock-v1.json`.
 External Audio and Core checkouts
 must be clean and exact. Before residency timing, the runner verifies the exact 20-WAV fixture lock
@@ -146,7 +150,7 @@ and the request later proved to have 298 prefill tokens despite a declared 128-t
 reboot-cold no-credit reproduction completed the identical request in 16.704 seconds; the complete
 output was schema-invalid and omitted the current marker. Same-boot fresh-process reproduction was
 5.061 seconds, establishing the need to separate Engine-loaded from inference-ready. Attempt 003 is
-not rewritten by pairing `r2`.
+not rewritten by pairing `r3`.
 
 The corrective attempt uses a new execution SHA/run ID/evidence root, requires every resource probe before
 residency, and may reuse the unchanged authenticated read-only input root. The PSI-enabled reboot

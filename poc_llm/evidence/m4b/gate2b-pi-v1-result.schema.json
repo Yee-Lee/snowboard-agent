@@ -46,7 +46,7 @@
     "packet_id":{"const":"G2B-PI-COMBINED-001"},
     "run_id":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     "candidate_id":{"enum":["UNKNOWN","CAND-LRT-G4E2B-MOBILE-R1"]},
-    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r2"]},
+    "integration_pairing_revision":{"enum":["","litert-lm-v0.16.0-pi-g2b-r3"]},
     "execution_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
     "execution_surface_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
     "gate2a_receipt_sha256":{"type":"string","pattern":"^$|^[0-9a-f]{64}$"},
@@ -68,7 +68,7 @@
       "then":{
         "properties":{
           "candidate_id":{"const":"CAND-LRT-G4E2B-MOBILE-R1"},
-          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r2"},
+          "integration_pairing_revision":{"const":"litert-lm-v0.16.0-pi-g2b-r3"},
           "accepted_audio":{"$ref":"#/$defs/accepted_audio_pass"},
           "artifact_authentication":{"$ref":"#/$defs/artifact_auth_pass"},
           "sessions":{"minItems":20,"maxItems":20,"uniqueItems":true,"items":{"$ref":"#/$defs/session"}},

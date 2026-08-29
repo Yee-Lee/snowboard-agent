@@ -34,9 +34,11 @@ not rewritten by this delivery.
 
 The diagnostic also found two independent integration defects: the declared 128-token input profile
 actually reached 298 prefill tokens, and the complete output was schema-invalid and omitted the
-current marker. Pre-warm does not excuse either defect. Pairing `r2` separately enforces the rendered
+current marker. Pre-warm does not excuse either defect. Pairing `r3` separately enforces the rendered
 input budget with the model tokenizer and uses LiteRT-LM LLGuidance constrained decoding for the
-frozen speak-only response structure; marker/trap behavior remains scored model behavior.
+frozen speak-only response structure and controlled current-marker pattern. Exact-once, forbidden-
+literal and prior-marker behavior remain independently scored. The preceding `r2` public no-credit
+probe proved prompt-only marker wording insufficient and never entered formal Audio residency.
 
 ## Watchdog and state requirements
 
