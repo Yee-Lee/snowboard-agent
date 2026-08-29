@@ -12,15 +12,15 @@
 
 ---
 
-### Milestone gate 判讀（Core Team，2026-08-26）
+### Milestone gate 判讀（Core Team，2026-08-29）
 
 | Gate | 目前狀態 | 外部 contract 影響 |
 | :--- | :--- | :--- |
 | **M3 POC contract readiness** | **Ready** | Audio Accepted with Conditions；Display v0.3 已由 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 design input；LLM 不在 M3 scope。 |
 | **M3 開發進場** | **Development Ready / Approved** | PM-009 技術 finding 已收斂，`TR_spec_M3_I` coverage sign-off Resolved；Developer 可建立工作包後實作。 |
 | **M3 最終 delivery / acceptance** | **Accepted** | Fixed implementation SHA `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`；USER核准transition direct review與免再次freeze；CR_M3_I及20張target cards已收斂。 |
-| **M4a / M4b POC進場** | **M4a design + test spec approved / Development active；M4b replacement ACK resolved** | Audio已在`audio_m4` / `5694ead4ba6be928fdb4df6da7155b214d72bd`完成；Core `IR_review_M4A_I`與`TR_spec_M4_I`均Resolved，Developer可建立M4A-WP-09～13。M4b以`DELIVERY-017`的replacement SHA `4dc76d1574daa7a9f7f56b98a8d65e00258fd46c`取代R2；Core ACK已完成。 |
-| **歸檔狀態** | **`DELIVERY-015`／`017`已由同一Core ACK完成歸檔；`016` hold已由`017`關閉歸檔** | Audio既有要求均已歸檔；M4b cumulative Gate boundary與replacement identity已歸檔結案。 |
+| **M4a / M4b進度** | **M4a Core Gate 3 Accepted；M4b Gate 2A Pi execution authorized** | M4a product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已由Tester與Designer完成final reconciliation。M4b Gate 1已關閉；POC exact SHA `ed7aaca2e187b2287d442d6841e1ab2610b67570`及locks已核對，Gate 2A可執行但尚無Pi result、provisional finalist或Gate 2B授權。 |
+| **歸檔狀態** | **Active handoff = 0** | `DELIVERY-018`已於`237f404` ACK並歸檔；根目錄重複副本已移除。後續M4b執行由`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`及新evidence追蹤，不重開已完成handoff。 |
 
 2026-08-20 補充：PM-019 已以 `DELIVERY-AUDIO-POC-M4A-G1B-ASR-RECOVERY-ACK-002`
 授權 whisper.cpp small Q8_0 primary 與受條件 Q5_1 fallback；本 ACK 不等於
@@ -36,10 +36,10 @@ provisional integration等待M2B reviewed selection，production lock仍等待Au
 `audio_m4`完成。Core production lock現由`docs/model_spec.md`固定，後續依
 `docs/implement/ch_m4a_audio_production.md`進入Gate 3；POC evidence不取代Core Tester PASS。
 
-2026-08-21 `DELIVERY-007-PM-LLM-POC-M2-GATE1-PLATFORM-CONFIG-CHANGE-REQUEST`
-已由`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受並歸檔。
-R5限Gate 1-owned repository revision；不得修改frozen M1 protected paths。Candidate manifest、
-真實x86/Pi Gate 1 execution與Gate 2A仍未放行。
+2026-08-29更新：Gate 1 closure ACK保留Gemma為正常
+finalist，Qwen則維持P7.1 `FAIL / SLOW_RECOVERY`並依User waiver進Gate 2A。POC已將
+reviewed Gate 2 execution surface提交為`ed7aaca2e187b2287d442d6841e1ab2610b67570`；
+Core只授權Gate 2A P2/P3/P4/P5/P8實體執行，沒有預先核准result、candidate或Gate 2B。
 
 判讀依據：`docs/milestones/M3.md` §5.3 明確排除真實 ASR / TTS / LLM；`docs/milestones/M4.md` §6.2 才將 model baseline 與 LiteRT-LM child protocol 列為進場相依。
 

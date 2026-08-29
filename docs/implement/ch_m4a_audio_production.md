@@ -1,6 +1,6 @@
 # M4a Accepted Audio production integration
 
-狀態：Reviewer design approval complete；Tester test-spec revision active，後續待 Designer coverage sign-off。
+狀態：M4a Gate 3 Accepted；Core candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9` 已完成 Tester exact-SHA 驗收與 Designer final confirmation。
 
 本章將 `audio_m4` Accepted reference 落成 Core Gate 3 可實作的 ASR/TTS adapter、runtime identity、failure convergence 與驗收映射。權威 baseline 見 `docs/model_spec.md`，child wire schema 見 `docs/protocol.md`；既有公開 Protocol、Listen / Speak worker 與 Audio HAL 契約不變。
 
@@ -33,6 +33,8 @@ Core controller (no candidate native imports)
 兩個 adapter 各自擁有 process group、IPC、active request及stderr ring/tail。ASR supervisor是process-group leader；它啟動native whisper worker時不得再建立nested session/process group，確保parent對單一PGID的TERM/KILL涵蓋全部descendant。child不得開 listener、network、Audio HAL或任意檔案路徑；所有工作目錄由 parent 建立為 `0700` 的 per-process temporary directory，normal/error/cancel/force-abort後刪除 bounded WAV/PCM暫存。
 
 VAD與TTS runtime分離是 production contract，不是可選優化：Accepted closure分別使用不同 native stack / NumPy，混入controller或同一venv會撤銷identity sign-off。
+
+Offline launch另有不可由部署或使用者設定放寬的production invariant：parent建立任一Audio child環境時必須強制`ORT_DISABLE_TELEMETRY=1`，覆寫所有繼承值；ASR supervisor與TTS worker的direct module entry也必須在任何直接或間接ONNX Runtime / sherpa native初始化前強制相同值。不得改用runtime API、shell-only export、destination filter或失敗DNS作為zero-attempt替代。這是內部launch invariant，不新增public config、wire schema或dependency identity。
 
 ## 3. Files and ownership
 

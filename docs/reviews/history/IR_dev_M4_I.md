@@ -1,7 +1,7 @@
 ---
 requestor: "Developer"
 owner: "Designer"
-status: "Open"
+status: "Resolved"
 ---
 
 # IR_dev_M4_I — ONNX Runtime telemetry offline boundary and correction timing
@@ -134,3 +134,18 @@ existing no-network child contract plus regression coverage is sufficient.
 Developer is implementing the locked correction without modifying the rejected
 candidate or asking Tester to restart/reuse the failed run. Any protected change
 will be delivered only through a new USER-approved append-only candidate.
+
+## Designer disposition — Resolved
+
+Designer adopts the proposed minimum correction as an explicit production
+launch invariant in `docs/implement/ch_m4a_audio_production.md`. Parent child
+environment creation and both direct ASR/TTS entrypoints must force
+`ORT_DISABLE_TELEMETRY=1` before native runtime initialization; inherited values,
+runtime API calls, shell-only exports and destination filtering cannot relax the
+zero-attempt contract. This adds no public config, protocol or dependency change.
+
+Candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9` implements that exact boundary
+and its conflicting-value regressions. Tester independently completed all three
+portable minors and the rebooted formal Pi suite with zero IPv4/IPv6 attempts,
+zero downloader calls and zero cleanup deltas. No protected path changed after
+freeze. The timing/design question and `TRDEV-M4A-005` are therefore Resolved.

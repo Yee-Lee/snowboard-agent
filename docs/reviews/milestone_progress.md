@@ -6,7 +6,7 @@
 * **Permanent development branch**: `core`
 * **M3 gate status**: `Accepted — Designer transition direct review complete`
 * **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
-* **Last updated**: 2026-08-25
+* **Last updated**: 2026-08-29
 * **Owner**: Designer
 
 ---
@@ -106,10 +106,10 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 
 | Gate | 狀態 | 阻擋 |
 | :--- | :--- | :--- |
-| M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — FIRST CANDIDATE MATRIX PENDING` | `PM-OUT-260818-018`已由`f87c5e6`收斂：日常fast loop只跑主要版本與affected tests；建立首個M4 frozen candidate時才跑3.11 / 3.12 / 3.13 portable matrix。通用manual handshake、debug授權鏈與六項dry-run不再是Blocking；M3不重跑 |
+| M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow，不重跑已Accepted的M4A-only結果。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
-| M4a Audio | `DESIGN + TEST SPEC APPROVED — DEVELOPMENT ACTIVE` | Audio `audio_m4`固定於`5694ead4ba6be928fdb4df6da7155b214d72bd`；`IR_review_M4A_I`與`TR_spec_M4_I`均Resolved，13個M4A Test ID及T1～T12 coverage已由Designer終局核准。Developer可建立M4A-WP-09～13；Pi／combined formal rows仍維持Pending，real M4a+M4b resource row等待Accepted LLM input |
-| M4b LLM | `GATE 1 R5 PLATFORM-CONFIG REVISION AUTHORIZED — REAL EXECUTION BLOCKED` | 已複驗`llm` / `341ccc012d87847fed1d3a68e5ef7cc68eb872ba`的`M2-G1-PLATFORM-CONFIG-001`：R4 candidate只有單一config，無法同時驗證x86與Pi strict identity。`DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001`接受finding並授權Gate 1-owned R5 platform-keyed config/schema/lock/runner regression；frozen M1 protected paths不得修改。R5 exact-SHA intake前不得發行candidate manifest或跑真實x86/Pi；Gate 2A/2B及017整合診斷邊界不變 |
+| M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
+| M4b LLM | `GATE 1 CLOSED — GATE 2A PI EXECUTION AUTHORIZED` | Core已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`接受Gate 1：Gemma正常finalist，Qwen維持P7.1 `FAIL / SLOW_RECOVERY`並以User defect waiver保留。POC milestone SHA `ed7aaca2e187b2287d442d6841e1ab2610b67570`之Gate 2A/2B locks重現為`2a577543…`／`5c89ca0b…`；R4 review無Blocking。`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`授權以clean reboot執行P2/P3/P4/P5/P8；目前尚無Pi Gate 2A credit、provisional finalist或Gate 2B授權。 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -144,7 +144,7 @@ Core Designer (contract owner) [DELIVERY-LLM-POC-M4B-CONTRACT-001]
     Gate 3: Core product implementation → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。最新Gate 1 scope ACK為`docs/outsource/deliveries/DELIVERY-LLM-POC-M4B-GATE1-PLATFORM-CONFIG-REVISION-ACK-001.md`；R5 repository revision待POC回交，真實Gate 1尚未開始。017仍只作Core test-stage preflight，不作Pi Gate 2A的獨立授權Gate。
+Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。Gate 1已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`關閉；Gemma與帶Qwen defect waiver的兩名candidate依累積Gate規則進入Gate 2A。POC R4 execution surface已提交為`ed7aaca2e187b2287d442d6841e1ab2610b67570`並由`DELIVERY-LLM-POC-M4B-GATE2A-PI-AUTH-001`授權實體執行。017仍只作Core integration diagnostic，不產生Gate 2A credit。
 
 ---
 
