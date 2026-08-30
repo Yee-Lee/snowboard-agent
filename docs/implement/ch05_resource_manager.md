@@ -59,7 +59,9 @@ src/sbd/core/resource_manager/
 4. 進入 main startup supervision scope，立即監督 `bus.wait_fatal()`。
 5. 建空 `WorkerCatalog`。
 6. 建 `ResourceManager(config, logger, bus, worker_catalog)` 並 register specs。
-7. 在同一 supervision scope 內 `await rm.start_all()`；StateManager start 後，RM 必須在進入 CORE phase 前把 `sm.wait_stopped()` 交給 main supervision。
+7. 在同一supervision scope內先建立`rm.wait_fatal()` task再`await rm.start_all()`；StateManager start後，
+   RM必須在進入CORE phase前把`sm.wait_stopped()`交給main supervision。Runtime同時監督
+   `bus.wait_fatal()`、`rm.wait_fatal()`與`sm.wait_stopped()`，任一fatal完成皆exit 4。
 8. startup 成功後才啟用 OS signal bridge；Bus / SM 監督沿用到 process 結束。
 
 `config` / `logger` / `EventBus` 不放 managed registry：`config` 已在 RM 前完成；`logger` 是 RM 錯誤報告前提；`EventBus` 無 lifecycle。RM 仍保有引用，供 factory dependency injection。
@@ -452,10 +454,19 @@ class RecoveryTicket:
     keys: tuple[ResourceKey, ...]
 
 class RecoveryControl(Protocol):
-    def begin_recovery(self, keys: tuple[str, ...]) -> RecoveryTicket: ...
+    def begin_recovery(self, keys: tuple[ResourceKey, ...]) -> RecoveryTicket: ...
     async def wait_recovery(self, ticket: RecoveryTicket) -> None: ...
     def recovery_ready(self) -> bool: ...
     async def prepare_shutdown(self) -> None: ...
+
+class ScheduleRecovery(Protocol):
+    def __call__(self, keys: tuple[ResourceKey, ...]) -> RecoveryTicket: ...
+
+class WaitRecovery(Protocol):
+    async def __call__(self, ticket: RecoveryTicket) -> None: ...
+
+class ResourceFatalMonitor(Protocol):
+    async def wait_fatal(self) -> NoReturn: ...
 ```
 
 RM 內部：
@@ -464,9 +475,15 @@ RM 內部：
 _recovery_ready = asyncio.Event()   # startup 後 set
 _recovery_generation = 0
 _active_recovery: _RecoveryBatch | None = None
+_fatal_ready = asyncio.Event()
+_fatal_error: RecoveryFatalError | None = None
 ```
 
 `recovery_ready()` 只讀 Event 狀態，無 await、無 IO。
+`wait_fatal()`由main在RM建構後、任何resource start前建立supervised task；正常runtime永不return。
+第一個recovery fatal被latched後set event並raise同一`RecoveryFatalError`，後續錯誤不得覆寫。這使M4b
+planned recycle即使尚無下一個`generate()`／SM ticket waiter，failure仍立即進Level 3，不形成unobserved
+background-task exception。
 
 ### 6.2 begin_recovery()
 
@@ -479,16 +496,32 @@ _active_recovery: _RecoveryBatch | None = None
 
 空 key 不應呼叫；若發生，回一個 already-complete ticket 但不改 barrier，並記 debug。
 
+`begin_recovery()`另允許M4b LLM planned recycle共用同一barrier，但只限composition root注入
+adapter的窄化`ScheduleRecovery` closure，且keys必須exact等於
+`("backend.cognition.reasoner.llm",)`。呼叫前adapter須已完成目前wire terminal與Conversation
+cleanup、確認無active native inference並原子設定`RECYCLE_PENDING`；不得由Reasoner直接取得RM、
+不得在active request中排程，也不得用此路徑recycle其他resource。下一個LLM admission須等待同一
+ticket，不能在舊child繼續工作。
+
+Composition root的schedule closure先檢查exact tuple，再委派同一RM instance的`begin_recovery()`；
+另注入只委派`wait_recovery(ticket)`的wait closure。兩者都不暴露`recovery_ready`、
+`prepare_shutdown`或registry方法。LLM factory只保存這兩個窄介面與回傳ticket，不以polling猜barrier
+狀態。Planned path可在目前LLM result交付後由下一個generate等待；無論是否出現下一個generate，
+main-owned`wait_fatal()`都監督該batch failure。
+
 ### 6.3 Recovery hook 完成語意
 
 每個 hook 必須：
-1. 建 replacement 或重新啟動被破壞的 child/backend。
+1. 建 replacement或重新啟動被破壞的child/backend；LLM `RECYCLE_PENDING`則先對舊child執行
+   SHUTDOWN → bounded TERM/KILL → waitpid，destructive `DESTROYED` path不得假裝再做cooperative success。
 2. 完成 READY handshake。
 3. 只在 READY 後把 owner reference 原子切到 replacement。
 4. 清理舊 IPC handle / process object。
 5. return。
 
 Hook 不 publish Event、不修改 capability map。若 replacement factory/start 失敗，cleanup 其局部資源後 raise。
+LLM READY只代表`INFERENCE_READY`，所以hook須重做same-lock authenticate、Engine load、mandatory
+pre-warm、Conversation/output/KV discard與resource baseline；Engine construction本身不滿足步驟2。
 
 `_run_recovery` 以 RM 擁有的 overall `recovery_timeout_seconds` 包住整批；成功才：
 1. set ready Event；
@@ -497,8 +530,12 @@ Hook 不 publish Event、不修改 capability map。若 replacement factory/star
 failure / timeout：
 - ready Event 保持 clear；
 - batch future set `RecoveryFatalError`；
+- 先以同一exception latch `_fatal_error`並set `_fatal_ready`，使main supervision必然被喚醒；
 - 不重試、不降 capability、不換 null；
 - Ch 4 waiter 將 exception 交 main，Level 3 結束 process。
+
+Ch 4 destructive waiter與main fatal monitor可能同時觀察同一failure；兩者引用同一latched root cause，
+main只需形成一次Level 3 disposition。Success不觸發fatal monitor。
 
 ### 6.4 wait_recovery()
 
@@ -588,6 +625,11 @@ class RecoveryFatalError(ResourceManagerError): ...
 24. late-fill 順序：external_message / voice_wake 的 setter 呼叫嚴格早於 receiver arm；SM 在第一個 wake / external Signal 前已持有對應 control。
 25. startup coherence gate（§4.5）：read disabled、read optional start failure、external source enabled/disabled、default-perception worker 不可用等組合下——enabled 且 required 的 source 指向缺席 first-turn worker 為 fatal；optional source 指向缺席 worker 被降級且其 buffer store 被 stop；gate 後 seal 的 `required_kinds` 不再要求被降級 source 的 first-turn worker，seal 成功。
 26. seal 必要 kind 推導：僅 `{reasoner, rest} U enabled-after-gate first-turn workers U default_perceptions`；optional 且不在此集合的 kind（如 read disabled）缺席不使 seal 失敗。
+27. LLM planned recycle只接受exact recoverable key、terminal-clean owner state與single active ticket；active inference、wrong key、Reasoner raw RM access皆拒絕。
+28. Planned recycle hook先清舊child再重做authenticate/load/pre-warm；Engine-loaded不set barrier，只有new `INFERENCE_READY`原子切換後成功。
+29. 下一個LLM admission等待同一ticket；replacement/pre-warm/cleanup failure保持barrier clear並傳遞`RecoveryFatalError`，不在舊child繼續。
+30. Planned recovery在沒有SM waiter與後續LLM request時失敗，`wait_fatal()`仍立即raise同一latched
+    `RecoveryFatalError`；main supervision進exit 4，沒有unretrieved task warning或第二份不同root cause。
 
 Fake factory / Lifecycle 以 call log 與 `asyncio.Event` 控制，不碰實體硬體。
 
@@ -595,6 +637,8 @@ Fake factory / Lifecycle 以 call log 與 `asyncio.Event` 控制，不碰實體�
 
 - Ch 4：`RecoveryControl`、single active ticket、prepare-shutdown 已固定。
 - Ch 6：一次 convergence 聚合全部 `destroyed_backends`，只呼叫一次 `begin_recovery()`；unknown key 直接 fatal。
+- Main：與`bus.wait_fatal()`、`sm.wait_stopped()`同時監督`rm.wait_fatal()`；正常shutdown取消該waiter，
+  recovery failure以同一root cause走exit 4。
 - Ch 10：需要 startup per-resource timeout、stop timeout、`recovery_timeout_seconds`、recovery shutdown cleanup timeout。
 - Ch 11：`StartupError` / `RecoveryFatalError` / `ShutdownReport` log 格式，以及 startup 前 Bus / SM fatal supervision 的工具 API。
-- `docs/protocol.md`：child READY / shutdown / cancel/result wire schema；Audio v1已固定，其他domain仍待gate。本章只依賴「hook return代表READY」語意。
+- `docs/protocol.md`：Audio v1與LLM `snowboard.llm/1` wire已固定；LLM hook return的READY必須是完成pre-warm的`INFERENCE_READY`。

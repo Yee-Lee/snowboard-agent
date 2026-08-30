@@ -215,7 +215,10 @@ STARTING
 
 ### 4.4 Exact wire schema
 
-LLM frame一律使用`protocol_version="snowboard.llm/1"`。READY只在§4.1完成後送出；
+Selected Pi wire authority是execution SHA`0c755...`的
+`poc_llm/contracts/m1/protocol-frame-pi.schema.json`，SHA-256
+`e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e`。LLM frame一律使用
+`protocol_version="snowboard.llm/1"`。READY只在§4.1完成後送出；
 `state="READY"`等同`INFERENCE_READY`：
 
 ```json
@@ -237,13 +240,16 @@ LLM frame一律使用`protocol_version="snowboard.llm/1"`。READY只在§4.1完�
 Parent以structured `ReasoningInput`送GENERATE，不傳已rendered prompt；child才套用frozen chat
 template並執行tokenizer boundary。`input` exact schema沿用Ch 2b：perceptions最多16筆、
 `pending_message_count >= 0`，capabilities分為unique perceptions/actions/tools；tool只傳name、
-description與JSON input schema，不傳handler：
+description與JSON input schema，不傳handler。POC schema authority是execution SHA
+`0c75536e6ee99b502c59438989ca852194648946`的
+`poc_llm/contracts/m1/prompt-input.schema.json`，SHA-256
+`aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6`：
 
 ```json
 {
   "type": "GENERATE",
   "protocol_version": "snowboard.llm/1",
-  "request_id": "session01.turn01.reason01",
+  "request_id": "llm.1.1",
   "input": {
     "perceptions": [{"kind":"listen","status":"ok","text":"<private>"}],
     "pending_message_count": 0,
@@ -256,7 +262,29 @@ description與JSON input schema，不傳handler：
 }
 ```
 
-成功result只帶Ch 9可正規化的`speak/tool/rest` response與sanitized metrics。Metrics exact keys為
+Core product projection另固定下列比JSON Schema更窄的canonical invariant：
+
+- `input` exact keys為`perceptions/pending_message_count/capabilities`；不得含session、turn、
+  correlation、pending message ID、`PerceptionResult.extra`或任何handler/control；
+- perception exact keys為`kind/status/text`，kind依`listen/read/look`排序且不可重複，status只允許
+  `ok/timeout/error`，text是最多4096 code point的string；Ch 1的`None`映射成空string但status不變；
+- pending count是非bool integer；perception/action arrays分別依`listen/read/look`與
+  `speak/tool/rest` canonical order，無duplicate；`rest`必須存在；
+- tool依name排序且name不可重複；每筆exact keys為`name/description/input_schema`，name符合Ch 9
+  dotted pattern、description非空、input schema是Ch 9已驗證的closed JSON object；
+- `tool` action與tools須同時存在或同時缺席；`speak/tool`只有在至少一個available perception時可列入；
+- parent在write前完成上述驗證，以`ensure_ascii=False, sort_keys=True`和compact separators編碼，
+  newline前UTF-8仍須`<=16 KiB`。排序只固定sender bytes；receiver不得依賴JSON member order。
+
+本地well-formed private content超過4096 code point／16 KiB時，在write前形成sanitized
+`ReasoningInputTooLarge`且child side effect為零；它是Reasoner可走P5的input-boundary結果，不得
+偽裝成IPC protocol failure。Unknown/duplicate kind、negative count、invalid static tool schema或缺rest
+則是`ReasoningInputContractError`，走ERROR而非P5；空content的static projection超過16 KiB須在startup
+preflight fatal。
+
+成功result只帶Ch 9可正規化的`speak/tool/rest` response與sanitized metrics。Base response authority
+是同一execution SHA的`poc_llm/contracts/m1/response.schema.json`，SHA-256
+`4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2`。Metrics exact keys為
 `init_ms`、`ttft_ms`、`prefill_tokens`、`prefill_tokens_per_second`、`decode_tokens`、
 `decode_tokens_per_second`、`kv_tokens`；`prefill_tokens`須在1～128、`decode_tokens`在1～128、
 `kv_tokens`在1～1024，否則parent拒絕result：
@@ -265,7 +293,7 @@ description與JSON input schema，不傳handler：
 {
   "type": "RESULT",
   "protocol_version": "snowboard.llm/1",
-  "request_id": "session01.turn01.reason01",
+  "request_id": "llm.1.1",
   "response": {
     "action_kind": "speak",
     "action_payload": {"text":"<private validated text>"},
@@ -285,7 +313,8 @@ description與JSON input schema，不傳handler：
 ```
 
 `metrics`在wire可省略以相容schema，但production parent必須要求它存在並套用上述boundary；
-缺失不得當作成功。Response exact action規則：`speak` payload只有nonblank `text`且
+缺失不得當作成功。所有時間/rate必須是finite、非bool number；時間`>=0`，token rate`>0`。
+Response exact action規則：`speak` payload只有nonblank `text`且
 `next_perceptions`非空；`tool` payload只有合法dotted `name`與object `arguments`且
 `next_perceptions`非空；`rest` payload與`next_perceptions`皆空。Parent仍須用Ch 9 product
 validator及capability/tool allowlist再次驗證，child自稱valid不具權威。
@@ -293,9 +322,9 @@ validator及capability/tool allowlist再次驗證，child自稱valid不具權威
 Control與terminal：
 
 ```json
-{"type":"CANCEL","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01"}
-{"type":"CANCELLED","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01","state":"READY"}
-{"type":"ERROR","protocol_version":"snowboard.llm/1","request_id":"session01.turn01.reason01","code":"TIMEOUT","state":"READY"}
+{"type":"CANCEL","protocol_version":"snowboard.llm/1","request_id":"llm.1.1"}
+{"type":"CANCELLED","protocol_version":"snowboard.llm/1","request_id":"llm.1.1","state":"READY"}
+{"type":"ERROR","protocol_version":"snowboard.llm/1","request_id":"llm.1.1","code":"TIMEOUT","state":"READY"}
 {"type":"PING","protocol_version":"snowboard.llm/1"}
 {"type":"PONG","protocol_version":"snowboard.llm/1","state":"READY"}
 {"type":"SHUTDOWN","protocol_version":"snowboard.llm/1"}
@@ -308,6 +337,19 @@ ERROR code只允許`BUSY`、`INVALID_REQUEST`、`TIMEOUT`、`GENERATION_FAILED`�
 state=`FATAL`並進Level 2 termination/rebuild，不得同child繼續。`INVALID_REQUEST`可在READY或
 GENERATING拒絕該frame，但不得改變目前active request。每個request恰有一個RESULT、CANCELLED
 或ERROR terminal；late/duplicate/wrong-ID frame皆protocol failure。
+
+Core parent對code的產品映射固定為：
+
+- write前local input rejection、active request的`INVALID_REQUEST/READY`（例如rendered input
+  超過128 token）、`TIMEOUT/READY`與`GENERATION_FAILED/READY`，只有在Conversation/reference
+  cleanup已證明且child確實回READY時才是Reasoner可翻譯的P5結果；explicit backend refusal若runtime
+  有typed signal，也正規化成`GENERATION_FAILED/READY`，wire不新增private refusal text；
+- `BUSY`、active request收到`INVALID_REQUEST/GENERATING`，或production parent收到任何第二request
+  rejection，代表single-flight/desync違約並走protocol failure，不可P5；
+- `CANCELLED`由取消來源決定：Reasoner自身deadline可在cleanup後P5，session interrupt/shutdown則
+  不publish fallback Fact；
+- `CANCEL_FAILED`、`PROTOCOL_ERROR`、wrong/late/duplicate frame、EOF或cleanup未證明一律fatal，
+  terminate/waitpid並交RM recovery。
 
 ## 5. State / terminal rules
 

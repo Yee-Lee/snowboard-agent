@@ -171,13 +171,23 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | Model SHA-256 | `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` |
 | Quantization | artifact-embedded mobile 2/4/8-bit mixture |
 | Runtime / model license | Apache-2.0 in exact upstream/runtime metadata; preserve license text, source attribution and notices |
-| Product config SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
+| POC runtime product-config reference SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
+| General prompt / response schema SHA-256 | `aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6` / `4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` |
+| Selected Pi protocol schema SHA-256 | `e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` |
 | Protocol | `snowboard.llm/1`；wire contract見`docs/protocol.md` §4 |
 
 Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
 startup must authenticate the exact source revision, filename, size and checksum with network and
 runtime download disabled. Extra/missing artifact, version/hash mismatch, system-site fallback,
 alternate model or endpoint is a startup failure before Engine construction.
+
+The `c4557...` file locks the POC runtime/token/sampling/deadline/offline profile. Its POC absolute
+`runtime_path/model_path` and `test_profile` are provenance-only and are never deployment inputs.
+Core uses `LLMConfig` absolute paths and authenticates them against the locked digests. Gate 2B's
+marker harness narrowed real combined execution to `listen -> speak -> listen`; Core's product
+renderer is the generic deterministic renderer and capability-bound `speak/tool/rest` schema fixed in
+`implement/ch_m4b_llm_production.md` §3.2. This is an explicit Core integration delta covered by
+M4B-OUT/M4B-INH, not a rewrite of the POC machine result.
 
 ### 6.3 Frozen product profile
 
@@ -207,11 +217,25 @@ RETENTION`; no root cause or upstream exact-platform reproduction is asserted.
 Core Gate 3 must not inherit the waiver as product PASS. The product design/test must:
 
 1. monitor `MemAvailable`, per-owner PSS attribution and zero owner/process/ALSA residue;
-2. define a bounded Engine/process recycle trigger and maximum interval without recycling during an
-   active request;
+2. recycle the LLM child after at most 8 inference attempts, or when owner PSS has increased by at
+   least 48 MiB from its post-pre-warm baseline, or when target `MemAvailable` is below 768 MiB;
+   evaluate the trigger after every terminal cleanup and never recycle during an active request;
 3. account for rebuild plus mandatory pre-warm as unavailability and keep the RM recovery barrier
    closed until replacement `INFERENCE_READY`;
 4. repeat the 4 GB, `swap=0`, offline 20-session combined envelope on one exact Core product SHA;
 5. preserve machine P9/P10B FAIL and the User waiver as separate evidence fields; and
 6. close the cancellation false-pass risk by asserting typed cancellation outcome, joined worker,
    single native cancel, discarded Conversation, healthy replacement and zero unhandled-thread warning.
+
+The fixed interval is below the observed Attempt 006 owner-LLM slope envelope
+(`5.484794 MiB/session × 8 = 43.878352 MiB`) and the 48 MiB PSS trigger remains below the frozen
+64 MiB late-minus-early limit. Missing target PSS or `MemAvailable` samples is a preflight failure;
+portable tests use an injected sampler. A trigger only schedules recovery for
+`backend.cognition.reasoner.llm`; replacement must retain the exact locked runtime/model/profile.
+Changing any of the three thresholds is a baseline change under §6.3.
+
+Recycle does not replace the frozen leak predicates: across all 20 unfiltered session samples,
+combined PSS and system-used must each remain at or below `4 MiB/session` slope and `64 MiB`
+late-minus-early median delta using the r14 formulas; each child generation's post-pre-warm
+owner-PSS delta must also remain `<=64 MiB`. A single over-limit generation remains FAIL even if the
+subsequent replacement succeeds.

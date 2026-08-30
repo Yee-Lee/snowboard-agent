@@ -41,7 +41,9 @@ arch.md §6.8 A 明訂 Null Object 對象為 core 資源；worker（Perception /
 
 **不為 worker / InputSource / Adaptor 建立 Null Object**。core 內也只有有需要以無害行為維持呼叫鏈的 `audio` / `display` / `camera` 提供 null；`gpio` 的登錄失敗與實體未接線等價，不建立 `NullGPIO`。擴張此範圍違背架構政策變更。
 
-**Config `required` 標記**：屬 Ch 10 config schema 待決欄位——每個 worker / InputSource / Adaptor 在 config 中標 `required: true|false`，預設值待 Ch 10 定案。實作面：Resource Manager 於建立階段讀取欄位、依上表分歧。
+**Config `required` 標記**：Ch 10 `ComponentPolicy`已定案各worker/InputSource的
+`enabled/required` defaults；Reasoner固定required、不另提供欄位，Adaptor固定optional。Resource Manager
+於建立階段讀取已定schema、依上表分歧，不得自行推導另一組default。
 
 **Capability Map 範圍（AR-Impl-5 已定案，2026-07-29）**：`capability_map` 內容為「跨模組決策所需、啟動時決定的靜態能力」，範圍限 **core 資源 + perception kind + action kind**。Adaptor / InputSource 屬 runtime-varying 能力（連線可能斷線、daemon 可能停），不塞進 map，改由各自 Protocol 自帶 `is_available()` 查詢介面。map 只在 startup 計算一次；runtime recovery 成功或失敗都不修改，recovery 失敗 / timeout 直接 Level 3，下一個 process 重新計算。
 
@@ -340,7 +342,7 @@ class Reasoner:
         turn_id: int,
         correlation_id: int,
         perception_results: tuple[PerceptionResult, ...],
-        pending_message_ids: tuple[str, ...],
+        pending_message_count: int,
     ) -> None: ...
 ```
 
@@ -349,7 +351,7 @@ class Reasoner:
 - **呼叫者**：SM，於 THINK Entry 呼叫（arch.md §4.6）
 - **識別符**：SM 傳入 `(session_id, turn_id, correlation_id)`；reasoner publish `LLMResponse` 時原樣填回
 - **`perception_results`**：本 turn 所有 perception worker 的 `PerceptionResult`（含 `status` $\in$ `{ok, timeout, error}`），順序由 SM 收集完成順序決定；reasoner 不假設順序有意義
-- **`pending_message_ids`**：本 turn 起始時 external_message buffer 內 pending 訊息的 `message_id` 清單（payload-free；來源見 arch.md §5.1 / §2.7）——供 reasoner 決定 `next_perceptions` 是否含 `read`；reasoner 不解讀 `message_id` 本身
+- **`pending_message_count`**：本 turn 起始時 external_message buffer 內 pending 訊息數（來源見 arch.md §5.1 / §2.7）——只供 reasoner 決定 `next_perceptions` 是否含 `read`；不得傳入 `message_id`、payload或可反查內容
 - **Fact 分支（Ch 1 §1.8）**：成功或可翻譯的 LLM 失敗只 publish 一個 `LLMResponse`；不可翻譯失敗由 reasoner 主動 publish 一個 `ErrorOccurred`，task completion 不重複補發；進入收斂後不 publish 正常終態 Fact
 - **P5 降級**：LLM engine timeout / 解析失敗 / 拒答時，reasoner 應內部降級產出合理 `LLMResponse`（例：`action_kind="speak"` + apology text + `next_perceptions=("listen",)`）；不 raise
 - **Exception 處理**：不可翻譯錯誤 publish `ErrorOccurred` 後讓 exception 逸出；`CancelledError` re-raise 不 publish（同 §2.3 / §2.4）

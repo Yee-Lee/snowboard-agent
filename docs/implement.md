@@ -37,7 +37,7 @@
 | **10** | [ch10_config.md](implement/ch10_config.md) | Config schema | §7.1 |
 | **11** | [ch11_error_logging.md](implement/ch11_error_logging.md) | 錯誤處理與 logging 慣例 | §3.4 / §6.6 / §6.7 |
 | **M4a** | [ch_m4a_audio_production.md](implement/ch_m4a_audio_production.md) | Accepted Audio production adapter、runtime isolation、recovery 與 Gate 3 mapping | §2.4 / §2.8 / §6.4 / §6.8 |
-| **M4b** | [ch_m4b_llm_production.md](implement/ch_m4b_llm_production.md) | Local LLM persistent child、runtime identity、recovery、inheritance 與 Gate 3 planning | §2.7 / §6.3 / §6.4 / §6.8 |
+| **M4b** | [ch_m4b_llm_production.md](implement/ch_m4b_llm_production.md) | Design review approved：structured child、generic renderer、runtime lock、bounded recycle、inheritance與Tester coverage handoff | §2.7 / §6.3 / §6.4 / §6.8 |
 | **M4b Gate intake** | [m4b_gate2a_intake.md](implement/m4b_gate2a_intake.md) | Gate 2A historical intake、Gemma selection與DELIVERY-019 adaptation lineage | M4b external Gate 2A / 2B |
 
 各章目前狀態與備註見 [reviews/impl_progress.md](reviews/impl_progress.md) 。

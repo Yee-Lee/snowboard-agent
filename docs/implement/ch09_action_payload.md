@@ -239,7 +239,7 @@ Validator可供Reasoner與SM共用同一instance，因它無mutable call state�
 
 | 層 | 責任 | 不合時處置 |
 | --- | --- | --- |
-| Reasoner normalizer | 解析LLM輸出、呼叫validator、建立LLMResponse | P5 apology speak或rest |
+| Reasoner normalizer | 驗證LLM adapter的structured mapping、呼叫validator、建立LLMResponse | P5 apology speak或rest |
 | StateManager THINK Exit | 獨立驗證kind、payload、next_perceptions與catalog target | 內部 ReasonerContractViolation 診斷 + 直接transition ERROR；非fatal |
 | Action worker | Defensive讀取與dispatch | 可翻譯錯誤 -> ActionCompleted(error) |
 
@@ -284,7 +284,7 @@ class UnknownTool(ToolRegistryError): ...
 class ToolArgumentsInvalid(ToolRegistryError): ...
 ```
 
-* Reasoner normalizer遇LLM schema不合：WARNING，記action kind/path/reason，不記 raw model output。
+* Reasoner normalizer遇LLM schema不合：WARNING，記action kind/path/reason，不記 structured response內容或child raw model output。
 * SM獨立驗證仍遇schema / payload不合：記一筆不含payload的ERROR自檢診斷後進 ERROR state；不publish `ErrorOccurred`，也不進main fatal path。
 * Duplicate / invalid registration：startup fatal，由Ch 5 rollback。
 * Runtime unknown tool若在SM驗證階段發現，走上述非fatal自檢ERROR；若只在Tool worker defensive路徑發現，記ERROR並產 `ActionCompleted(error)`。
