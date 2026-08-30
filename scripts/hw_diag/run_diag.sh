@@ -1,8 +1,14 @@
-#!/bin/bash
-# 自動化硬體診斷工具捷徑
-# 取得目前腳本所在目錄的上一層（專案根目錄）
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$PROJECT_ROOT"
+#!/bin/sh
+set -eu
 
-echo "啟動自動化硬體診斷 (hw_diag.py)..."
-PYTHONPATH=src .venv/bin/python3 scripts/hw_diag/hw_diag.py
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+PYTHON="$REPO_ROOT/.venv/bin/python"
+
+if [ ! -x "$PYTHON" ]; then
+    echo "ERROR: project Python is unavailable: $PYTHON" >&2
+    exit 2
+fi
+
+cd "$REPO_ROOT"
+exec "$PYTHON" "$REPO_ROOT/scripts/hw_diag.py" "$@"

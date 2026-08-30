@@ -409,3 +409,61 @@ zero and privacy hits are zero. Generate formal `inheritance.json` only afterwar
 with `scripts/m4a_inheritance.py`; the Tester remains its sole formal writer.
 The real M4a+M4b combined resource locator stays `Pending` until an Accepted M4b
 input exists.
+
+## Repository hygiene and PM-025 hardware diagnostic correction（2026-08-30）
+
+USER已核准在M4b Tester建立新spec前先收斂目前`tests/`／`scripts/`邊界。本工作不改產品HAL、
+M4a Accepted結論或M4b設計契約；它只修正test discovery污染、generated cache、工具分類與
+`PM-OUT-260830-025`的診斷工具假綠燈風險。
+
+| Work package | Estimate | Files / output | Done when |
+| :--- | ---: | :--- | :--- |
+| M4-HYG-01 Pytest authority | 0.25 day | `pyproject.toml`、移除重複`pytest.ini` | bare `pytest --collect-only`與明確`tests/`收集集合相同，不再收進`docs/outsource/**/poc_llm/tests` |
+| M4-HYG-02 Scripts inventory | 0.25 day | `scripts/README.md`、M3 runner disposition、清除ignored cache | active candidate／M4a、diagnostic與legacy用途可定位；不移動current Test-ID files或改寫歷史evidence |
+| PM-025-WP-01 Automated diagnostic | 0.75 day | `scripts/hw_diag.py` | Audio以已知tone acoustic loopback、Camera以payload/訊號、GPIO以chip/line transaction、Display以ABI/SPI transaction全自動判定；每步bounded且finally cleanup |
+| PM-025-WP-02 Manual button separation | 0.25 day | `scripts/run_button.py` | conversation pin實體按壓有獨立bounded工具，不混入automated `hw_diag`結果 |
+| PM-025-WP-03 Regression | 0.5 day | `tests/test_pm_025_hw_diag.py` | injected HAL證明success/failure、threshold、timeout、cleanup與GPIO edge；無Pi時不製造hardware PASS |
+
+### Fixed diagnostic boundary
+
+- `hw_diag`必須是zero-interaction；不得等待operator按button或以硬編碼人工`pass`形成結果。
+- Audio不得以播放silence作喇叭PASS；使用固定頻率tone，並由產品mic回錄後比較baseline/tone能量。
+  預設speaker tone長度固定為0.5秒。
+- GPIO不得要求jumper或人工按鍵；自動結果只claim gpiochip access與設定中的conversation input line
+  request／release，並明記無電氣刺激時不驗實體pin電位或button circuit。
+- SSD1351無readback，故只能記`driver/ABI/SPI transaction PASS`與`visual panel unverified` limitation，
+  不得把無exception改寫為肉眼顯示正常。
+- `run_button.py`是獨立manual diagnostic；timeout或未按下即non-zero，不影響automated summary。
+- Camera必須驗exact payload size／format與非單色luma range，並把本地artifact寫到Git外output directory。
+- config由caller以`--config`明確提供；不得偷偷改device、format、ABI或pin。所有start成功的HAL都須在
+  success、threshold failure、timeout、exception與cancellation路徑執行bounded stop／unregister。
+
+### Planned verification
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_pm_025_hw_diag.py
+PYTHONPATH=src .venv/bin/python -m pytest --collect-only -q -p no:cacheprovider
+PYTHONPATH=src .venv/bin/python -m pytest --collect-only -q -p no:cacheprovider tests
+```
+
+實機命令不需GPIO jumper或人工操作；Developer本機regression不宣稱Audio、OLED、Camera或GPIO
+physical circuit PASS。
+
+### Developer result（2026-08-30）
+
+- `tests/test_pm_025_hw_diag.py`：`8 passed`；涵蓋tone成功／silence失敗、camera訊號與cancellation
+  cleanup、GPIO input-line request／failure／release、display transaction failure，以及獨立bounded manual button。
+- `tests/test_regression_guard.py`：`3 passed`。
+- bare與明確`tests/`的`--collect-only` node集合完全相同；`docs/outsource/**/poc_llm/tests`不再被收集。
+- `py_compile`及兩個CLI的`--help`均通過；`git diff --check`通過。
+- 本機只有project不支援的Python 3.14.6；診斷性執行`-m 'not rpi'`結果為
+  `442 passed, 15 failed, 28 deselected`。其中6筆為candidate gate正確拒絕`--python 3.14`，另9筆為
+  macOS沒有Linux `/proc` process-group proof；不將此結果宣稱為portable gate PASS。
+- Python 3.11／3.12／3.13 portable matrix仍須在對應環境執行。
+- Pi diagnostic（非formal acceptance）：在remote source HEAD
+  `237f404ce348bcd1f24b83f1dffd2c44c5127e3b`、Python 3.13.5與config SHA-256
+  `4d16d1a37007fcf29daebaf2d39c6ce427597bede0ccb0c2c0a396e582b0c7f7`，由
+  `scripts/hw_diag/run_diag.sh`隔離副本啟動後，Audio／Display transaction／Camera／GPIO line均PASS；
+  summary位於Pi `/tmp/snowboard-hw-diag-live-20260830-2/summary.json`。最終Python script SHA-256
+  `29b593495f60e2206af080b1198898bfc005a4c5df3762c7f72ecc2c87d4a76b`另以Audio-only重跑PASS，
+  summary明記`tone_hz=440.0`、`tone_seconds=0.5`與`tone_gain_ratio=16.661`；沒有寫入formal evidence。
