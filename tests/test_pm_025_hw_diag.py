@@ -8,7 +8,7 @@ import struct
 from pathlib import Path
 from types import SimpleNamespace
 
-from scripts import hw_diag, run_button
+from scripts.hw_diag import hw_diag, run_button
 
 
 def _format(sample_rate: int = 16_000):

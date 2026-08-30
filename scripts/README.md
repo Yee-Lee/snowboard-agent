@@ -19,22 +19,24 @@ Tester寫入`docs/outsource/evidence/`；Developer工具輸出不得改名為正
 
 | Script | Scope |
 | :--- | :--- |
-| `hw_diag.py` | Zero-interaction Audio acoustic loopback、Display transaction、Camera signal與GPIO driver/line診斷 |
-| `hw_diag/run_diag.sh` | Pi執行捷徑；使用repo `.venv`並將所有參數傳給`hw_diag.py` |
-| `run_button.py` | 獨立manual conversation-button測試；不併入automated summary |
+| `hw_diag/hw_diag.py` | Zero-interaction Audio acoustic loopback、Display transaction、Camera signal與GPIO driver/line診斷 |
+| `hw_diag/run_diag.sh` | 全自動Pi執行捷徑；零參數時使用repo `.venv`與`config.m3.local.yaml` |
+| `hw_diag/run_button.py` | 獨立manual conversation-button測試；不併入automated summary |
+| `hw_diag/run_button.sh` | Manual button執行捷徑；零參數時使用repo `.venv`與`config.m3.local.yaml` |
 
-兩個工具都要求caller明確提供`--config`。`hw_diag.py`的GPIO測項會自動開啟gpiochip、request設定中的
+兩個shell捷徑預設使用repo root的`config.m3.local.yaml`，日常操作不需提供參數；只有改用其他
+config時才傳入`--config PATH`。`hw_diag.py`的GPIO測項會自動開啟gpiochip、request設定中的
 conversation input line，套用edge/debounce後釋放；不要求jumper或按鍵，但也不claim實體pin電位或
 按鍵電路PASS。OLED沒有readback，因此只可能claim ABI/SPI transaction，不claim visual panel PASS。
 
 Audio speaker會播放0.5秒440 Hz tone。全自動診斷範例：
 
 ```bash
-timeout 90s scripts/hw_diag/run_diag.sh \
-  --config config.m3.local.yaml
+timeout 90s scripts/hw_diag/run_diag.sh
 ```
 
-`run_diag.sh`不選擇或改寫config；`--component`、timeout與output參數都原樣傳給Python CLI。
+`run_diag.sh`不改寫config；未傳`--config`時才注入repo預設檔。`--component`、timeout與output
+參數都原樣傳給Python CLI。
 
 只跑特定component可重複傳入`--component`。輸出預設寫到`/tmp/snowboard-hw-diag-*`，包含
 sanitized summary、Audio baseline/tone capture及Camera capture；這些是local diagnostic artifacts，
@@ -43,8 +45,7 @@ sanitized summary、Audio baseline/tone capture及Camera capture；這些是loca
 實體conversation button另跑：
 
 ```bash
-timeout 70s .venv/bin/python scripts/run_button.py \
-  --config config.m3.local.yaml --timeout-seconds 60
+timeout 70s scripts/hw_diag/run_button.sh
 ```
 
 ## M3 history

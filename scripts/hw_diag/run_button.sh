@@ -22,4 +22,4 @@ if [ "$has_config" -eq 0 ]; then
 fi
 
 cd "$REPO_ROOT"
-exec "$PYTHON" "$SCRIPT_DIR/hw_diag.py" "$@"
+exec "$PYTHON" "$SCRIPT_DIR/run_button.py" "$@"

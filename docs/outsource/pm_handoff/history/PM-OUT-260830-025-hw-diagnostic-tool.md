@@ -46,4 +46,12 @@ implementation因此收斂為：
   acceptance evidence。
 - `scripts/hw_diag/run_diag.sh`只負責使用repo `.venv`啟動Python CLI並轉交參數，不隱式選擇config。
 
+## Operator convenience refinement（2026-08-30）
+
+USER後續要求將工具集中並移除日常參數輸入。Current Core將Python工具移至
+`scripts/hw_diag/hw_diag.py`與`scripts/hw_diag/run_button.py`，並提供零參數
+`scripts/hw_diag/run_diag.sh`及`scripts/hw_diag/run_button.sh`；兩個wrapper在caller未指定
+`--config`時使用repo root的`config.m3.local.yaml`。此follow-up取代本單上方的原始path與
+caller必須明確提供config之操作要求，但不改變zero-interaction與manual button分離邊界。
+
 本修正不改產品HAL／架構，也不產生formal Pi acceptance；實機執行方式見`scripts/README.md`。

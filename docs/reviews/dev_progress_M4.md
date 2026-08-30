@@ -420,8 +420,8 @@ M4a Accepted結論或M4b設計契約；它只修正test discovery污染、genera
 | :--- | ---: | :--- | :--- |
 | M4-HYG-01 Pytest authority | 0.25 day | `pyproject.toml`、移除重複`pytest.ini` | bare `pytest --collect-only`與明確`tests/`收集集合相同，不再收進`docs/outsource/**/poc_llm/tests` |
 | M4-HYG-02 Scripts inventory | 0.25 day | `scripts/README.md`、M3 runner disposition、清除ignored cache | active candidate／M4a、diagnostic與legacy用途可定位；不移動current Test-ID files或改寫歷史evidence |
-| PM-025-WP-01 Automated diagnostic | 0.75 day | `scripts/hw_diag.py` | Audio以已知tone acoustic loopback、Camera以payload/訊號、GPIO以chip/line transaction、Display以ABI/SPI transaction全自動判定；每步bounded且finally cleanup |
-| PM-025-WP-02 Manual button separation | 0.25 day | `scripts/run_button.py` | conversation pin實體按壓有獨立bounded工具，不混入automated `hw_diag`結果 |
+| PM-025-WP-01 Automated diagnostic | 0.75 day | `scripts/hw_diag/hw_diag.py` | Audio以已知tone acoustic loopback、Camera以payload/訊號、GPIO以chip/line transaction、Display以ABI/SPI transaction全自動判定；每步bounded且finally cleanup |
+| PM-025-WP-02 Manual button separation | 0.25 day | `scripts/hw_diag/run_button.py` | conversation pin實體按壓有獨立bounded工具，不混入automated `hw_diag`結果 |
 | PM-025-WP-03 Regression | 0.5 day | `tests/test_pm_025_hw_diag.py` | injected HAL證明success/failure、threshold、timeout、cleanup與GPIO edge；無Pi時不製造hardware PASS |
 
 ### Fixed diagnostic boundary
@@ -467,3 +467,9 @@ physical circuit PASS。
   summary位於Pi `/tmp/snowboard-hw-diag-live-20260830-2/summary.json`。最終Python script SHA-256
   `29b593495f60e2206af080b1198898bfc005a4c5df3762c7f72ecc2c87d4a76b`另以Audio-only重跑PASS，
   summary明記`tone_hz=440.0`、`tone_seconds=0.5`與`tone_gain_ratio=16.661`；沒有寫入formal evidence。
+
+### Operator convenience refinement（2026-08-30）
+
+依USER follow-up，Python工具集中至`scripts/hw_diag/`；`run_diag.sh`與新增的`run_button.sh`
+在未傳`--config`時固定使用repo root的`config.m3.local.yaml`。因此Pi日常操作分別為
+`scripts/hw_diag/run_diag.sh`與`scripts/hw_diag/run_button.sh`，不再要求operator填寫參數。
