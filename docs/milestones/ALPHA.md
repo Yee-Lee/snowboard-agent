@@ -25,6 +25,7 @@ ALPHA 固定為以下能力的產品化收斂，必須在同一候選 SHA 全數
 
 * 固定 hardware revision、config、model、runtime、dependency、license、checksum，全部記入 `ALPHA.md` Evidence 欄位。
 * 定義可重現的 session lifecycle（重複 session、soak 測試、failure / recovery / shutdown、resource / thermal 觀察）。
+* 使用 M4 Accepted 的完整 Voice-only 路徑執行一次 LLM 品質把關與 POC triggering review；review 不預設調參，也不以主觀偏好改寫已通過的 M4 baseline。
 * Privacy：log 不含 transcript、prompt、raw model output、credential 或完整 audio payload。
 * Manifest：列出所有 artifact / model / config / dependency 的版本、來源、授權、checksum 與已知限制。
 
@@ -61,7 +62,34 @@ ALPHA 固定為以下能力的產品化收斂，必須在同一候選 SHA 全數
 | Designer Code Review | Designer 最終 Code Review 無 Blocking finding（`CR_ALPHA` 若有則需 Resolved） |
 | Exact SHA | ALPHA Accepted 必須對應單一候選 SHA；不以不同 SHA 拼接通過結論 |
 | Manifest 完整 | 所有 artifact / model / config / dependency 的版本、來源、授權、checksum 已全數固定並記入 Evidence |
+| LLM quality disposition | POC triggering review 已完成並記錄 `NO_TRIGGER`、`BACKLOG` 或 `TRIGGER_CHANGE_REQUEST`；不得留有未處置的 Blocking 品質 finding |
 | 分開記錄 | `M4 Accepted` 與 `ALPHA Accepted` 各自獨立記錄，不得以前者推定後者 |
+
+### 3.3 LLM 品質把關與 POC triggering review
+
+本 review 在 M4 Accepted 後、ALPHA candidate freeze 前執行。目的不是預先尋找可調參項目，
+而是用完整 ASR → LLM → TTS 產品路徑確認是否存在值得啟動獨立 POC 的明確品質問題。
+
+只有同時具備下列輸入，才可提出 POC trigger：
+
+1. 可在受控 case 或 session 重現的具體症狀；
+2. 可量化的現況基線與產品影響；
+3. 初步 root-cause hypothesis，能區分 ASR、Core integration、prompt / template、context 與 model capability；
+4. 預期改善指標、允許變更的 surface，以及獨立的 development / held-out 評估方式。
+
+Review 必須選擇並記錄一個 disposition：
+
+| Disposition | 判讀與後續 |
+| :--- | :--- |
+| `NO_TRIGGER` | 未發現明確、可重現且值得處理的品質問題；不建立 POC，繼續 ALPHA。 |
+| `BACKLOG` | 問題存在但不阻擋 Voice-only ALPHA；記錄限制與後續觸發條件，不在 ALPHA candidate 內調參。 |
+| `TRIGGER_CHANGE_REQUEST` | 問題具明確產品影響且需要實驗；先建立 change request，再以既有 repository 的短期 worktree 執行 POC。 |
+
+POC 不得直接在 ALPHA candidate 上進行參數搜尋。若勝出方案改動 model、runtime、prompt、chat
+template、PromptBuilder、response schema、token / sampling profile或其他 M4b frozen baseline，必須依
+`model_spec.md` 建立新 lock，回到受影響的 M4b / M4 exact-SHA 驗證；通過後才能重新進入 ALPHA。
+受控評估不得把 private transcript、prompt或raw model output提交至 Git；evidence 只保存核准的
+catalog identity、sanitized metric與disposition。
 
 ---
 
@@ -76,6 +104,7 @@ ALPHA 固定為以下能力的產品化收斂，必須在同一候選 SHA 全數
 | log 不含 transcript / prompt / raw model output / credential | Privacy 要求（M4c、`arch.md`） | `ALPHA-T-005` |
 | Manifest：artifact / model / config / dependency 全數固定 | ALPHA 固定化要求 | `ALPHA-T-006` |
 | Session Display 只呈現已驗證內容，privacy mapping 正確 | `display_spec.md`、M4c | `ALPHA-T-007` |
+| LLM 品質把關完成，且 POC trigger 有明確、可稽核 disposition | ALPHA §3.3；M4b frozen baseline change policy | `ALPHA-T-008` |
 
 > Test ID 為規劃佔位，Tester 建立 `test_spec_ALPHA.md` 時對應補全。
 
@@ -99,6 +128,7 @@ python -m pytest -v -m rpi tests/milestones/test_alpha_voice_only.py
 * [ ] 刻意觸發 failure（ASR 失敗、LLM timeout、TTS 失敗）各一次，確認 recovery 路徑
 * [ ] 正常關機 / 異常關機，確認無 orphan child、無殘留 fullscreen owner
 * [ ] 審核 log：確認不含 transcript / prompt / raw model output / credential / 完整 audio
+* [ ] 完成 LLM quality / POC triggering review，保存 `NO_TRIGGER`、`BACKLOG` 或 `TRIGGER_CHANGE_REQUEST` disposition
 
 ### 5.3 Evidence Index（ALPHA Accepted 時填入）
 
@@ -112,6 +142,7 @@ python -m pytest -v -m rpi tests/milestones/test_alpha_voice_only.py
 | config hash | *(待填)* |
 | 自動化測試 log 路徑 | *(待填)* |
 | 人工 checklist 記錄路徑 | *(待填)* |
+| LLM quality review disposition / evidence locator | *(待填)* |
 | known limits | *(待填)* |
 
 ---

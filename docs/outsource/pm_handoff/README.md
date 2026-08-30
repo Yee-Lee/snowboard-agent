@@ -8,7 +8,7 @@
 
 | Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| （無） | — | — | — | **No open handoff** | — |
+| [`NOTE-ASR-POSTPROCESS-POC-001`](NOTE-ASR-POSTPROCESS-POC-001.md) | ASR transcript postprocess POC 研議 | 無 | Post-M4 / Product convergence | **Under Consideration / 研議中** | 尚未要求 response |
 
 ---
 
