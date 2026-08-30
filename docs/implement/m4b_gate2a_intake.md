@@ -1,11 +1,12 @@
 # M4b Gate 2A result intake and decision contract
 
-狀態：**Gate 2A intake complete — Gemma sole model finalist；integration revision / Gate 2B pending**。
+狀態：**Historical Gate 2A intake complete；Gate 2B later closed with Gemma POC winner Accepted**。
 
 本文件保存Core Designer對LLM POC Gate 2A完成回交的fail-closed intake與decision record。一般判定
 規則仍保留於後續各節；實際結果以§0及
-`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`為準。它不授權Gate 2B、不取代POC immutable
-manifest / raw evidence，也不把User的model-finalist選擇改寫成current product-config PASS。
+`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`為準。它在建立當時不授權Gate 2B、不取代POC
+immutable manifest / raw evidence，也不把User的model-finalist選擇改寫成current product-config
+PASS。後續現況由`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`與`model_spec.md` §6控制。
 
 ## 0. Actual Gate 2A intake（2026-08-29）
 
@@ -224,6 +225,6 @@ Surrogate、Core M4a mock、Audio branch HEAD、8GB informational run或Gate 2A 
 - [x] Gate 2A actual ACK已建立，完整保留P2/P8 FAIL與model-finalist限定語意。
 - [x] Gate 2B Accepted Audio identities與surrogate prohibition已固定。
 
-待外部完成：integration-qualified Gemma revision、focused P2/P8 PASS、Gate 2A consumer receipt、
-replacement Gate 2B lock review與physical Pi authorization。Gate 2A execution與model-selection
-intake已完成；Gate 2B與M4b product acceptance仍未完成。
+上述checklist保存Gate 2B進場前的歷史條件；後續revision、Pi execution與winner closure已由final
+winner ACK收斂。M4b Core product implementation、single design/test review與Gate 3 exact-SHA
+acceptance仍未完成。

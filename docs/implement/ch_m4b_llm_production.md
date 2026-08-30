@@ -1,6 +1,6 @@
 # M4b Local LLM production integration planning
 
-狀態：**Gate 2A integrated — Gemma sole model finalist；architecture / integration revision / Gate 2B pending**。
+狀態：**Gemma POC winner baseline integrated；Core M4b design review / implementation / Gate 3 pending**。
 
 Architecture change：**No**。Persistent child、LiteRT-LM runtime、Reasoner、Resource Manager與三級
 收斂邊界不變。USER已於2026-08-29澄清`arch.md`的`Gemma3:e2b`是文字typo；E2B指Gemma 4 E2B，
@@ -9,15 +9,20 @@ Architecture change：**No**。Persistent child、LiteRT-LM runtime、Reasoner�
 
 本章把 `docs/milestones/M4.md` 的 M4b 範圍轉成 Core product 可實作的
 persistent-child、runtime identity、failure convergence、POC inheritance 與 Gate 3
-驗收設計。架構仍以 `docs/arch.md` 為權威；LLM wire schema 草案見
-`docs/protocol.md` §6；最終 engine / model / quantization / artifact identity 必須等
-Gate 2B final winner ACK 後才寫入 `docs/model_spec.md`。
+驗收設計。架構仍以 `docs/arch.md` 為權威；LLM winner lifecycle與wire schema見
+`docs/protocol.md` §4，測試要求見§6；final engine / model / quantization / artifact identity已由
+`docs/model_spec.md` §6固定。
 
 Gate 2A已在execution SHA `e2b59fac609e0d768ff3554754363900cbed70a9`、surface SHA-256
 `eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1`完成。User選定
 `CAND-LRT-G4E2B-MOBILE-R1`（Gemma 4 E2B mobile）為sole model finalist並排除Qwen；Core decision見
-`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`。Gemma R1 P2/P8仍FAIL，故這是model-selection
-input，不是Core production baseline。
+`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`。Gemma R1 P2/P8仍FAIL的歷史不可改寫；後續
+`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`已接受R3 winner baseline，但該POC waiver
+不等於Core product Gate 3 PASS。
+
+本章原先在Gate 2A後形成的Phase A schema與work-package內容保留為規劃脈絡。若與後續winner
+`docs/protocol.md` §4或`docs/model_spec.md` §6衝突，後兩者為implementation authority；單輪
+`IR_review_M4B_I`須把舊Phase A seam收斂到`protocol_version="snowboard.llm/1"`後才可交Developer。
 
 ## 1. Planning boundary
 
@@ -31,17 +36,15 @@ input，不是Core production baseline。
   exact-SHA evidence 欄位；
 - Gate 3 工作包與 test-spec coverage skeleton。
 
-### 1.2 尚不可固定
+### 1.2 仍待Core收斂
 
-- final winner、production pairing、quantization/profile checksum、artifact lock與完整notice結論；
-- Gemma integration-qualified revision的PromptBuilder / chat template / product prompt / config identity；
-- Gate 2B P9 / P10B combined結果與final winner；
-- product dependency、model lock與shipping READY exact identity；
 - Core Tester PASS、M4b Accepted、M4c entry或整體M4 acceptance。
+- machine-readable Core lock、offline installation closure與redistribution notice inventory；
+- bounded recycle、pre-warm、cancellation與4 GB combined resource defect的產品化處置；
+- `snowboard.llm/1`實作、single design/test review及完整Gate 3 evidence。
 
-Gate 2A已確認LiteRT-LM / Gemma 4 E2B方向，但Gate 2B final ACK前仍不得把reference identity寫成
-production baseline。任何runtime偏離LiteRT-LM仍須另開`AR_impl`；不得只靠config或adapter名稱私下
-改變runtime架構。
+Gate 2B final ACK已固定LiteRT-LM / Gemma 4 E2B POC winner reference。任何runtime或locked identity
+偏離仍須另開change request／必要時`AR_impl`；不得只靠config或adapter名稱私下改變runtime架構。
 
 ### 1.3 Gate 2A product implication
 
@@ -222,16 +225,18 @@ def parse_event(value: Mapping[str, object], *, active_request_id: int) -> LLMEv
 def validate_result(result: LLMResult, chunks: Sequence[LLMChunk]) -> LLMGeneration: ...
 ```
 
-`LLMEvent`是`LLMChunk | LLMResult | LLMRequestError | LLMCancelled |
+以上Phase A型別是Gate 2A時的historical planning seam，不得直接實作；current exact-key schema、
+string request ID、structured `ReasoningInput`與READY identity以`docs/protocol.md` §4.4為準。
+`LLMEvent`原規劃為`LLMChunk | LLMResult | LLMRequestError | LLMCancelled |
 LLMCancelDeferred | LLMBusy`的closed union。所有parser要求exact keys、`type(value) is int`
-（拒絕bool）、lowercase SHA-256、positive request ID與`docs/protocol.md` §6 bounds。錯誤訊息只含
+（拒絕bool）、lowercase SHA-256與`docs/protocol.md` §4.4 bounds。錯誤訊息只含
 stage / field / reason，不含prompt、chunk、output、payload或私人path。
 
 Phase A可呼叫現有`encode_control`、`read_control`、`require_schema`、`require_sha256`，但不得為了
 消除既有`AudioProtocolError`名稱而重構`FramedProcess`或改動M4a adapter。LLM codec在boundary把
 共用transport的`AdapterError`正規化為sanitized `LLMProtocolError`；M4a behavior與其既有tests
 保持逐項不變。Audio專用`read_exact_payload()`含even-length / 64 MiB PCM規則，LLM prompt不得
-重用；Phase A fake child依§6獨立做positive 256 KiB UTF-8 payload length/hash read。
+重用；Phase A fake child須依current §4.4 structured schema重整，不沿用舊256 KiB prompt-payload framing。
 `FramedProcess`的workdir prefix、READY owner與real lifecycle extension留到Gate 2A provisional
 ACK後的M4B-WP-02。
 
@@ -245,7 +250,7 @@ ACK後的M4B-WP-02。
 Parent維護`STOPPED → STARTING → READY ↔ BUSY → DESTROYED`：
 
 1. `start()`先驗tracked lock、isolated runtime、artifact/config identity與private work root，再spawn
-   child；只有收到`docs/protocol.md` §6 exact READY且全部identity吻合才return。
+   child；只有收到`docs/protocol.md` §4.4 exact READY且全部identity吻合才return。
 2. 同一已驗證child上的重複`start()`為idempotent；`stop()`在`STOPPED`為no-op。
 3. READY identity missing/mismatch、invalid first frame、EOF或startup timeout時，parent先完成
    TERM → bounded wait → 必要時KILL → waitpid、關streams、刪workdir，才raise
@@ -300,7 +305,8 @@ Parent只回`LLMGeneration(text, finish_reason)`；Core product validator仍由R
 
 ## 7. Config and strict identity
 
-現有`LLMConfig`只是placeholder。Gate 2B winner後的最小形狀預定為：
+現有`LLMConfig`只是placeholder。下列Gate 2A草案只保留shape參考；exact value與新增pre-warm／
+recycle欄位須由`model_spec.md` §6及single design review收斂：
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -329,7 +335,7 @@ class LLMConfig:
 
 ## 8. Product lock, packaging and offline closure
 
-Gate 2B final ACK後，`requirements/m4b/`逐項保存：POC delivery/full SHA、candidate/pairing ID、
+Gate 2B final ACK已到位；`requirements/m4b/`仍須逐項保存：POC delivery/full SHA、candidate/pairing ID、
 engine/runtime/model/quantization/profile、source/artifact SHA-256、filename/size、target OS/arch/Python、
 license與notice locator、Gate 2 evidence locator/checksum。Model、wheel、native binary、raw prompt/output與
 POC evidence payload保持Git-external。
@@ -458,12 +464,12 @@ M4b Accepted只關閉M4b子gate。M4c仍須在M4a與M4b均通過後接線，整�
 resource、offline、privacy與session regression；不得拼接M4a歷史candidate與另一個M4b-only SHA
 宣告M4完成。
 
-## 13. Combined Reviewer handoff（queued after Gate 2B）
+## 13. Combined Reviewer handoff（ready after Gate 2B winner ACK）
 
 Reviewer單輪完整審查輸入固定為：
 
 - 本章§1～§6、§10.1、§11.1、§12及本節；
-- `docs/protocol.md` §1與§6；
+- `docs/protocol.md` §1、§4與§6；
 - `docs/milestones/M4.md` §6.2.2；
 - `docs/implement/m4b_gate2a_intake.md`；
 - `docs/model_spec.md` M4b final baseline、replacement Gate 2B lock與Core final winner ACK；

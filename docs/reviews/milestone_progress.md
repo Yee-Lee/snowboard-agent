@@ -109,7 +109,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow；M4A Accepted不回退，但final M4 candidate須對未變更M4A scope建立inheritance，並在final SHA重跑受新composition影響的Audio/resource/offline/privacy/session regression，不無差別重跑已Accepted的M4A-only target rows。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
-| M4b LLM | `GATE 2A CLOSED — GEMMA MODEL FINALIST / INTEGRATION REVISION PENDING` | Gate 2A execution `e2b59fac609e0d768ff3554754363900cbed70a9`／surface `eccbcdc1…`已由User review，Core以`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`接受Gemma 4 E2B為sole model finalist並排除Qwen。Gemma R1 P2 `FAIL (3/30)`、P8 `FAIL / DEPENDENCY_LIMITED_BY_P2`不改寫；依`DELIVERY-019`須做最多兩個bounded prompt/config development revisions並以separate catalog使affected P2/P8 PASS。Gate 2B packet/review/Pi authorization、P9/P10B、final baseline、single IR/TR、implementation與Core Gate 3仍Pending。 |
+| M4b LLM | `GEMMA POC WINNER ACCEPTED — CORE GATE 3 PENDING` | Gate 2B execution SHA`0c75536e6ee99b502c59438989ca852194648946`完成20/20 full-chain sessions；machine P9/P10B因combined PSS slope/delta維持`FAIL`，User以known LiteRT-LM resident-retention defect waiver選定Gemma。Core已驗證closure `5ffdd9e...`及publication `485bb2a...`並由`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`接受R3；`M4B-G2B-F01`已關閉且不重跑Pi。`model_spec.md`與`protocol.md`已納入產品設計input；Gate 3仍須protocol design review、Tester test-spec coverage review、persistent-child implementation及產品exact-SHA驗證。 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -139,13 +139,16 @@ Core Designer (contract owner) [DELIVERY-LLM-POC-M4B-CONTRACT-001]
       → Gate 1 R5: platform-keyed config/acquisition identity + frozen runner/lock regression
         → Core R5 exact-SHA intake後，才可依環境／operator授權進行candidate manifest與真實Gate 1 run
           → authenticated x86 pre-screen + 最多兩名Pi compatibility → Core Gate 1 finalist ACK
-    Gate 2A: P2/P3/P4/P5/P8 final-surface evidence → User選Gemma model finalist；R1 P2/P8 FAIL保留
-      → DELIVERY-019 new frozen integration revision + separate P2/P8 qualification
-    Gate 2B: replacement packet accepted + Accepted Audio reference + P9 / P10B combined → final winner ACK
+    Gate 2A: LLM-only P1~P8 / P10A / P11 / P12 → sole model-finalist ACK
+      → 若tested pairing未通過P2/P8，另建完整versioned integration revision
+        → freeze後以precommitted / held-out catalog重跑P2/P3/P4/P5/P8
+    Gate 2B: Accepted Audio reference + qualified revision + P9 / P10B combined → final winner ACK
     Gate 3: Core product implementation → Core Tester exact-SHA 驗收
 ```
 
-Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`。Gate 1由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`關閉；Gate 2A closure SHA為`3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`，User selection與machine results由Core provisional ACK接受。019／021已歸檔；後續不重開Gate 2A，而以new integration revision、replacement Gate 2B entry及final winner delivery追蹤。017仍只作Core integration diagnostic，不產生Gate 2A credit。
+Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract-plan-review.md`；Gate 0 R2維持接受。Gate 1已由`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001`關閉。Gate 2A replacement execution／closure為`e2b59fac609e0d768ff3554754363900cbed70a9`／`3c012eb65cc7c8b706fe1c29a3fcafab17696d0f`。Gate 2B已由User授權在`0c75536e6ee99b502c59438989ca852194648946`執行並以defect waiver選定Gemma POC winner；Core驗證closure `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae`與publication `485bb2a7c07d86a09899f09358c744edd733f875`後已發final winner ACK。POC Gate 2B關閉，Core Gate 3仍Pending。017仍只作Core integration diagnostic，不產生Gate 2A / 2B credit。
+
+Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` workstation regression為200 passed但帶1個`PytestUnhandledThreadExceptionWarning`。POC `LiteRtAsyncBackend.generate()`目前先catch `RuntimeError`、後catch其子類`Cancelled`，會把cancel outcome包為`BackendFailure`；既有測試只join thread而未assert第一個worker outcome。新Gemma revision／Core persistent-child實作須將`Cancelled`分支置前，並assert worker terminal、join、single native cancel、conversation discard、healthy replacement及zero unhandled-thread warning；不得沿用此false-pass測試形狀。
 
 ---
 
@@ -188,8 +191,8 @@ Revision response：`docs/outsource/responses/PM-OUT-260817-015-llm-poc-contract
 11. ~~Designer完成最終Code/Test Review（CR_M3_I）。~~ — **Done**（CR-M3-001～006全部Pass；M3 Accepted）
 12. ~~M4a Core Gate 3 exact-SHA驗收與Designer final confirmation。~~ — **Done**（candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；tag `core_m4a`）
 13. ~~M4b pre-Gate-2A Designer Phase A~~ — **Done**：完成`ch_m4b_llm_production.md`、LLM Protocol v1、exact protocol/fake seam、Reviewer/Tester handoff、`m4b_gate2a_intake.md`與milestone crosswalk；此結論不等於M4b Design Ready。
-13a. **M4b single review policy** — Queued：依USER決策不開generic-only round；Gate 2B final ACK後以單一`IR_review_M4B_I`與`TR_spec_M4B_I`覆蓋generic + selected full scope。
+13a. **M4b single review policy** — Ready：依USER決策不開generic-only round；以單一`IR_review_M4B_I`與`TR_spec_M4B_I`覆蓋generic + selected full scope。
 14. ~~LLM POC Gate 2A intake~~ — **Done**：019／021由`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`處理並歸檔；Gemma sole model finalist，Qwen排除，R1 FAIL不可改寫。
-14a. **DELIVERY-019 integration qualification** — Pending：最多一個prompt-only與一個有root-cause依據的config development revision；freeze後以與R1/development cases分離的catalog取得P2/P8 PASS。禁止normalizer repair、retry/best-of、threshold relaxation與scored-case prompt leakage。
-15. **LLM POC Gate 2B / final winner** — Blocked by 14a：review replacement packet / lock並另行Pi authorization；只用Accepted Audio package跑P9/P10B。Core final ACK後才固定production `model_spec.md`；runtime若偏離LiteRT-LM先開`AR_impl`。
-16. **M4b full design/test/development** — Blocked by 15：單一IR/TR收斂後交Developer執行WP-01～06，再走portable candidate、Pi exact-SHA acceptance與Designer final review。
+14a. ~~DELIVERY-019 integration qualification~~ — **Done / preserved as lineage**：bounded revision與Gate 2A machine dispositions不可改寫；後續winner identity由R3 manifest固定。
+15. ~~LLM POC Gate 2B / final winner~~ — **Done with known-defect waiver**：Attempt 006 machine P9/P10B仍FAIL；User選定Gemma，Core final winner ACK已固定`model_spec.md` §6。此結論不授予Core product PASS。
+16. **M4b full design/test/development** — Ready for single IR/TR：先把Gate 2A Phase A seam收斂到`protocol.md` §4.4，再交Developer執行WP-01～06，走portable candidate、Pi exact-SHA acceptance與Designer final review。

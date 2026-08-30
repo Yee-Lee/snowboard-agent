@@ -138,57 +138,80 @@ The USER owns the remaining unnamed Matcha Chinese/English training-data and voi
 
 Any change to an engine/model/vocoder/voice checksum, VAD endpoint profile, ASR prompt/decoder, runtime package version, native build option or TTS generation profile is a baseline change. It requires a change request, updated provenance and affected POC/Core delta evidence; it cannot be hidden as a packaging or config-only edit.
 
-Vision and wake-word baselines remain pending their own gates and are not fixed by this Audio section.
+LLM, Vision and wake-word baselines remain pending their own gates and are not fixed by this Audio section.
 
-## 6. M4b provisional LLM model record（not a production baseline）
+## 6. M4b LLM POC winner baseline
 
-### 6.1 Gate 2A decision
+### 6.1 Authority and status
 
-| Item | Gate 2A record |
+| Item | Fixed value |
 | :--- | :--- |
-| Status | `SOLE MODEL FINALIST / INTEGRATION REVISION AND GATE 2B PENDING` |
-| Core ACK | `DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001` |
-| POC closure | branch `llm` / `3c012eb65cc7c8b706fe1c29a3fcafab17696d0f` |
-| Gate 2A execution | `e2b59fac609e0d768ff3554754363900cbed70a9` |
-| Execution surface | SHA-256 `eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1` |
-| Model finalist | `CAND-LRT-G4E2B-MOBILE-R1` / Gemma 4 E2B mobile |
-| Rejected formal Gate 2B candidate | `CAND-LRT-Q25-15B-Q8-R1` / Qwen2.5 1.5B Q8 |
-| Architecture disposition | `No change`：USER澄清`arch.md`的`Gemma3:e2b`為typo，E2B只存在於Gemma 4；後續正名為Gemma 4 E2B |
+| Status | `POC FINAL WINNER ACCEPTED — CORE M4B GATE 3 PENDING` |
+| Core ACK | `DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001` |
+| POC execution SHA | `0c75536e6ee99b502c59438989ca852194648946` |
+| POC closure content | `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae` |
+| POC publication locator | `485bb2a7c07d86a09899f09358c744edd733f875` |
+| Winner manifest | `POC-llm-DEL-2026-001-R3` |
+| Formal evidence | `G2B-PI-COMBINED-006`; sanitized SHA-256 `f5f5b3acd15e32bb0208da9f838cec4415469c28c12a45b25f8c2f5f55ad33fa` |
 
-User選定的是model finalist，不是current product pairing。R1 machine dispositions保留P2
-`FAIL (3/30)`與P8 `FAIL / DEPENDENCY_LIMITED_BY_P2`；P3/P4/P5 PASS。不得把本節當作Gate 2B winner、
-production model/dependency lock或M4b Accepted。
+This fixes the POC reference input; it is not Core product Gate 3 PASS. Product implementation,
+machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 
-### 6.2 Selected reference identity
+### 6.2 Runtime and model identity
 
-下列值只供new integration-qualified revision保持model/runtime lineage；Gate 2B final winner前不構成
-Core product lock：
-
-| Field | POC reference value |
+| Field | Fixed value |
 | :--- | :--- |
-| Driver / runtime | `litert_lm` / LiteRT-LM API `0.16.0` |
-| Runtime wheel SHA-256 | `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
+| Candidate / pairing | `CAND-LRT-G4E2B-MOBILE-R1` / `litert-lm-v0.16.0-pi-g2b-r5` |
+| Platform | Raspberry Pi 5 4 GB / Debian 13 aarch64 / CPU / 4 threads |
+| Runtime | LiteRT-LM API `0.16.0`; source tag commit `924e79c91542761242244e4f1651851f822e4cbb` |
+| Runtime wheel | `litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl`; SHA-256 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
 | Native library SHA-256 | `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` |
-| Model | `gemma-4-E2B-it.litertlm`, 2,588,147,712 bytes |
+| Model source | `litert-community/gemma-4-E2B-it-litert-lm@6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` |
+| Model file | `gemma-4-E2B-it.litertlm`; 2,588,147,712 bytes |
 | Model SHA-256 | `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` |
-| Model source revision | `litert-community/gemma-4-E2B-it-litert-lm@6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` |
-| Model license | Apache-2.0；final product notice inventory仍待Gate 2B/Core packaging核對 |
-| R1 pairing revision | `litert-lm-v0.16.0-pi-r2` |
-| R1 product profile | input 128 / output 64 / engine 1024 tokens；temperature 0；top-p 1；threads 4 |
-| R1 timeout profile | READY 10s；generate 15s；cancel 500ms；TERM 2s；KILL 1s；rebuild 10s |
+| Quantization | artifact-embedded mobile 2/4/8-bit mixture |
+| Runtime / model license | Apache-2.0 in exact upstream/runtime metadata; preserve license text, source attribution and notices |
+| Product config SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
+| Protocol | `snowboard.llm/1`；wire contract見`docs/protocol.md` §4 |
 
-### 6.3 Baseline lock conditions
+Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
+startup must authenticate the exact source revision, filename, size and checksum with network and
+runtime download disabled. Extra/missing artifact, version/hash mismatch, system-site fallback,
+alternate model or endpoint is a startup failure before Engine construction.
 
-在下列項目全部完成前，`requirements/m4b/`不得出現production lock，factory不得接受real driver作為
-shipping baseline：
+### 6.3 Frozen product profile
 
-1. new versioned/frozen Gemma integration revision使用與development cases分離的precommitted或held-out
-   catalog完成affected P2/P8 qualification並PASS；
-2. replacement Gate 2B packet / lock經review且取得exact-SHA Pi authorization；
-3. Accepted Audio package在Pi 5 4GB、`swap=0`完成P9/P10B combined PASS；
-4. Core final winner ACK固定driver、runtime/model/product config、artifact checksum與notice inventory；
-5. M4B full design review與Tester coverage sign-off完成。
+| Setting | Value |
+| :--- | :--- |
+| Rendered input | maximum 128 exact-model tokens, enforced before generation and checked against runtime prefill metrics |
+| Output / Engine capacity | 128 / 1024 tokens |
+| Sampling | temperature `0.0`, top-p `1.0` |
+| Readiness | authenticate → Engine load → fixed public pre-warm → disposable Conversation close/state discard → `INFERENCE_READY` |
+| READY / generation / terminal grace | 45,000 / 15,000 / 2,000 ms；grace只收terminal，不接受late success |
+| Cancel / TERM / KILL / rebuild READY | 500 / 2,000 / 1,000 / 10,000 ms |
+| Output | constrained `speak/tool/rest` JSON；current marker、forbidden/prior marker與allowlist獨立驗證 |
+| Conversation | every operation uses a fresh single-turn Conversation and deterministic close; no cross-operation hidden history/KV |
+| Network | runtime download `false`, network fallback `false`, fallback model `null` |
 
-Gate 2B後本節才升格為production baseline，並補齊product lock path、runtime install closure、exact
-PromptBuilder/profile checksum、READY identity與POC→Core inheritance locator。任何Gate 2B FAIL或identity
-drift都維持pending/no-go，不fallback到Qwen、mock或network service。
+Any change to model/runtime/native/config/chat template/prompt builder/constrained-output schema,
+token limits, sampling, thread count, deadlines, readiness path or fallback/offline behavior is a
+baseline change. It requires a change request, new lock and affected POC/Core delta evidence.
+
+### 6.4 Accepted defect and Core delta
+
+Attempt 006 machine P9/P10B remain `FAIL`: combined PSS slope was `5.900893 MiB/session` and
+late-minus-early median delta `131.578 MiB`, above the frozen `4 MiB/session` / `64 MiB` limits.
+The User accepted this for POC winner selection as `KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT
+RETENTION`; no root cause or upstream exact-platform reproduction is asserted.
+
+Core Gate 3 must not inherit the waiver as product PASS. The product design/test must:
+
+1. monitor `MemAvailable`, per-owner PSS attribution and zero owner/process/ALSA residue;
+2. define a bounded Engine/process recycle trigger and maximum interval without recycling during an
+   active request;
+3. account for rebuild plus mandatory pre-warm as unavailability and keep the RM recovery barrier
+   closed until replacement `INFERENCE_READY`;
+4. repeat the 4 GB, `swap=0`, offline 20-session combined envelope on one exact Core product SHA;
+5. preserve machine P9/P10B FAIL and the User waiver as separate evidence fields; and
+6. close the cancellation false-pass risk by asserting typed cancellation outcome, joined worker,
+   single native cancel, discarded Conversation, healthy replacement and zero unhandled-thread warning.

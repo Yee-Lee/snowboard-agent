@@ -376,7 +376,7 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 
 - **In-flight 集合成員**：SM 呼叫 `reason()` 後、直到對應 asyncio task 真正 done 且 completion notice 使 handle 移除，reasoner 屬於 SM 的 in-flight 集合
 - **單一實例**：reasoner 為 process 內單一 instance；同時只會有一個 in-flight `reason()`（THINK 狀態是 SM 序列狀態，不可能重入）
-- **`start()` 必須等 LLM child READY**；`stop()` / `force_abort()` return 前必須確認 child 與 descendant 已退出
+- **`start()` 必須等 LLM child完成Engine load、mandatory disposable pre-warm與cleanup後的`INFERENCE_READY`（wire可仍名`READY`）**；`ENGINE_LOADED`不可使start return或解除recovery barrier；`stop()` / `force_abort()` return前必須確認child與descendant已退出
 
 ### 依賴注入
 
