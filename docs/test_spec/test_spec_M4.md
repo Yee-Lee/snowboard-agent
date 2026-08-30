@@ -636,3 +636,807 @@ M4a 子 gate 結論文件必須包含（由 Tester 填入，引用 runner 標準
 
 正式 target result 使用單一 `pi_acceptance_run_id`，不拼接多個 run ID；
 debug run ID 不得列入里程碑結論。
+
+---
+
+# M4b Gate 3 測試規格
+
+## 概述與範圍
+
+本章節定義 M4b 子 gate 的 Core Gate 3 驗收標準，共 15 個 Test ID。
+測試覆蓋來源為 `docs/implement/ch_m4b_llm_production.md`（簡稱 ch_m4b）、
+`docs/protocol.md` §4 / §6、`docs/model_spec.md` §6、
+`docs/milestones/M4.md` §6.2 / §6.4。
+
+**M4b Gate 3 通過條件**：Core Tester 對 Core product exact SHA 完成可攜矩陣（CPython 3.11 /
+3.12 / 3.13 各 0 Fail / Blocked / Skip / XFail）與 Pi target acceptance（單一 run ID），
+Designer final review 無 Blocking，才可標記 M4b 子 gate Accepted。POC waiver 不取代
+Core product PASS；機器 P9 / P10B FAIL 與 User waiver 分欄保存，不得混為 Core PASS 欄位。
+
+> **注意**：M4b 與 M4a 共用 `candidate_gate.py` runner contract（命令形狀、result schema、
+> Privacy Domain 分離語意）；本章 T1–T3 / T9 定義直接沿用 M4a 規格同名節，不重複抄錄。
+> M4b portable suite marker 統一使用 `not rpi`；Pi target suite marker 使用 `rpi`；
+> evidence 套件以 `m4b` 子目錄區分。
+
+### M4b formal suite 與 timeout 收斂
+
+M4b 對 T1 的 suite placeholder 固定替換如下，不得沿用 M4a-only suite：
+
+| T1 placeholder | M4b exact value | 必含範圍 |
+| :--- | :--- | :--- |
+| `<m4a-portable-suite>` | `tests/m4b_portable_suite.txt` | 本章所有 Portable case，加上受 M4b composition 影響的 M4a protocol / lifecycle regression |
+| `<m4a-rpi-suite>` | `tests/milestones/test_m4_local_voice.py` | 沿用M4 §6.4 canonical target suite並擴充本章所有Pi-scoped Test ID；每個required M4B card都在同一次pytest execution產生 |
+
+三個 portable command 各使用 runner-level `--timeout-seconds 300`；唯一正式 Pi `accept`
+command 使用 runner-level `--timeout-seconds 9000`。下列各 Test ID 的 `Case watchdog` 是該測項
+內部的 bounded timeout，不是第二次 `candidate_gate.py accept`，也不得用多個正式 result 拼接 PASS。
+`tests/m4b_portable_suite.txt`與`tests/milestones/test_m4_local_voice.py`均為candidate protected input；
+前者必須逐行列出tracked test file，後者須收集所有Pi-scoped ID且不得以selection條件漏收。
+Portable runner regression另須證明M4b target suite取得caller-supplied candidate SHA、acceptance run ID、
+card root及preflight locator，card finalization沿用T2且不從HEAD推導identity；timeout／failure只產一份
+formal Fail result與raw logs，不留下可被後續accept重用的Pass card。
+正式acceptance成功時，所有`M4B-`prefix card的subset須exact等於
+`{M4B-RDY-001,M4B-GEN-001,M4B-OUT-001,M4B-P5-001,M4B-CAN-001,M4B-REC-001,`
+`M4B-HIST-001,M4B-PRIV-001,M4B-OFF-001,M4B-RES-001,M4B-PKG-001}`；缺卡、重複卡或
+額外unknown M4B card均Fail。canonical M4 suite既有或composition-required的M4A card可共存，但不得
+代替任何M4B card。`M4B-LOCK-001`只由同run preflight與portable result證明，CFG／IPC／INH則由
+portable matrix／evidence review證明，不虛構Pi card。
+
+---
+
+## M4B-CFG-001 — Config strict equality / factory isolation
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable |
+| **Contract basis** | `ch_m4b` §7；`ch10_config.md` LLMConfig shape |
+| **Suite marker** | `not rpi` |
+| **Case watchdog** | 60 秒；formal portable runner 仍使用本章統一的 300 秒 suite timeout |
+| **Evidence** | runner `result.json` + JUnit；`counts.failed=skipped=xfailed=0` |
+
+**Config value cases（table-driven）**：
+
+| Case | Input | Expected outcome |
+| :--- | :--- | :--- |
+| `litert_lm` valid — exact values | `driver="litert_lm"`；`profile_id="litert-lm-v0.16.0-pi-g2b-r5"`；四個 absolute path 均存在；timeout / recycle 值完全符合 §7 | `LLMConfig` 建立成功 |
+| `mock` driver | `driver="mock"`；四個path與`profile_id`皆None | 成功；不讀lock、不import native runtime、不建workdir、不啟用target sampler |
+| Unknown driver | `driver="gemma"` 或其他非 `mock`/`litert_lm` | `ConfigValueError`；不 fallback |
+| Wrong `profile_id` | `profile_id` 不等於 `"litert-lm-v0.16.0-pi-g2b-r5"` | `ConfigValueError` |
+| Wrong `recycle_max_inference_attempts` | 數值≠8 | `ConfigValueError` |
+| Wrong `recycle_owner_pss_delta_mib` | 數值≠48 | `ConfigValueError` |
+| Wrong `recycle_min_mem_available_mib` | 數值≠768 | `ConfigValueError` |
+| Wrong `generation_timeout_seconds` | 數值≠15.0 | `ConfigValueError` |
+| Wrong `terminal_grace_seconds` | 數值≠2.0 | `ConfigValueError` |
+| Wrong `child_ready_timeout_seconds` | 數值≠45.0 | `ConfigValueError` |
+| Wrong `rebuild_ready_timeout_seconds` | 數值≠10.0 | `ConfigValueError` |
+| Wrong `child_terminate_timeout_seconds` | 數値≠2.0 | `ConfigValueError` |
+| Wrong `child_kill_wait_timeout_seconds` | 數值≠1.0 | `ConfigValueError` |
+| Wrong Reasoner abort timeout | `cancel.abort_timeout_seconds.by_kind.cognition.reasoner` 缺失或≠0.5 | `ConfigValueError`；不得改用15秒generation timeout |
+| Recovery timeout too short | `resource.recovery_timeout_seconds` 無法涵蓋10秒rebuild READY與舊child最長cleanup | `ConfigValueError`；repository product default維持30秒 |
+| Outer / child / grace 分層 | injected clocks捕捉`cognition.reason_timeout_seconds`、15秒generation與2秒terminal grace | 三個獨立timer依序作用；Reasoner outer timeout不得取代child deadline或terminal-only grace |
+| Invalid real path | 四個real path任一為relative path、directory或missing file | `ConfigValueError`；native import / child spawn / workdir / sampler / RM registration皆為0 |
+| YAML override `recycle_*` | YAML 試圖修改任一 recycle 閾值 | `UnknownConfigKey` 或 `ConfigValueError` |
+| Lazy import before factory | `driver="litert_lm"`；factory 尚未呼叫 | `sys.modules` 中無 `litert_lm` / `litert_lm_api` |
+
+**Factory narrow interface cases**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Public adapter surface | `LLMEngineAdapter` exact async methods為`start/stop/abort/force_abort/generate(value: ReasoningInput)`；`generate`只回`LLMGeneration`，不得回raw text／iterator |
+| Public value surface | `LLMGenerationMetrics` exact 7 fields、`LLMGeneration` exact `response/metrics`、`LLMResourceSample` exact `owner_pss_bytes/mem_available_bytes`；皆為immutable value，不帶session/prompt/path |
+| Factory signature | `make_llm_adapter(cfg, *, schedule_recovery=None, wait_recovery=None, resource_sampler=None)`；三個port皆keyword-only，不接受額外owner／fallback參數 |
+| `schedule_recovery` / `wait_recovery` / `resource_sampler` 三者皆非 None → real branch | factory進入real分支；lazy import`litert_lm.adapter`；shape/path/lock parse先於native import、child spawn、workdir、sampler與RM registration |
+| Real driver任一介面為 None | `ConfigValueError`；zero side effect；不得silent fallback成mock |
+| `mock` 下三者皆須為 None | 任一非 None 時 `ConfigValueError` |
+| `ResourceSpec` ownership — real | composition把factory回傳的同一adapter identity同時登記為`ResourceSpec.instance`與`recovery_hook` owner；`key="backend.cognition.reasoner.llm"`；`recoverable=True` |
+| `ResourceSpec` — mock | `recoverable=False`；force-abort report 為空 |
+
+**Config／spawn isolation cases**：
+
+| Case | Assertion |
+| :--- | :--- |
+| YAML覆寫locked identity | candidate/runtime/model/config checksum、source、license或fallback任一key → `UnknownConfigKey`／`ConfigValueError`；side effect = 0 |
+| YAML覆寫frozen runtime profile | 128/128/1024、temperature、top-p、threads、deadline或offline flag任一key → fail closed；不得只靠整檔hash跳過逐欄cross-check |
+| Spawn environment | injected spawn capture：`PYTHONNOUSERSITE=1`、bytecode write disabled、移除`PYTHONPATH/PYTHONHOME/LD_PRELOAD`；`LD_LIBRARY_PATH`若存在只含verified closure |
+
+---
+
+## M4B-LOCK-001 — Product lock / artifact identity
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi preflight |
+| **Contract basis** | `ch_m4b` §8；`requirements/m4b/llm-artifacts.json` schema；`model_spec.md` §6.2 |
+| **Suite marker** | Portable: `not rpi`；Pi: `preflight` command（runner preflight mode） |
+| **Case watchdog** | Portable 60秒；Pi preflight外層watchdog 120秒 |
+| **Evidence** | Portable: runner result + JUnit；Pi: runner `preflight.json`（含 `checksums.*`）+ `m4b_llm_product.py preflight` sanitized JSON |
+
+**Lock schema negative matrix（table-driven）**：
+
+| Case | Injection | Expected outcome |
+| :--- | :--- | :--- |
+| Missing lock file | `artifact_lock_path` 不存在 | fail closed；child spawn = 0；native import = 0；workdir = 0 |
+| Unreadable lock file | `artifact_lock_path` permission denied | fail closed；同上 |
+| Extra unknown key | lock JSON 含額外 top-level key | fail closed；side effect = 0 |
+| Missing required key | 任一 `lock`/`poc_reference`/`candidate`/`runtime`/`model`/`product_profile`/`runtime_closure`/`licenses` object 缺失 | fail closed |
+| Nested extra / missing key | 上述任一object或runtime manifest entry增加unknown key，或刪除required field | fail closed；side effect = 0 |
+| Wrong `schema_version` | `schema_version` ≠ 1 | fail closed |
+| Wrong `protocol_version` | `protocol_version` ≠ `"snowboard.llm/1"` | fail closed |
+| Wrong POC authority | final ACK ID、execution/closure/publication full SHA、R3 manifest ID、formal evidence ID或sanitized digest任一不符 | fail closed |
+| Wrong `candidate_id` | 不等於 `CAND-LRT-G4E2B-MOBILE-R1` | fail closed |
+| Wrong `pairing_revision` | 不等於 `litert-lm-v0.16.0-pi-g2b-r5` | fail closed |
+| Wrong platform | 不等於 `pi-debian13-aarch64` | fail closed |
+| Wrong runtime identity | API version、source commit、wheel filename/size、SPDX任一不符 | fail closed |
+| Wrong runtime wheel SHA-256 | 不等於 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` | fail closed |
+| Wrong native library SHA-256 | 不等於 `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` | fail closed |
+| Wrong model provenance | source repository/revision、filename、embedded quantization或SPDX任一不符 | fail closed |
+| Wrong model SHA-256 | 不等於 `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c` | fail closed |
+| Wrong model size | 不等於 `2588147712` | fail closed |
+| Wrong `config_sha256` | 不等於`c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e`，或內容任一frozen欄不符 | fail closed |
+| Wrong Pi protocol schema SHA-256 | 不等於`e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` | fail closed |
+| Wrong prompt/response schema SHA-256 | 不等於`aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6`／`4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` | fail closed |
+| Wrong pre-warm prompt SHA-256 | 不等於`4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d` | fail closed |
+| Wrong frozen profile value | config-schema digest、128/128/1024、temperature 0.0、top-p 1.0、4 threads、任一deadline或offline/fallback flag不符 | fail closed |
+| Wrong runtime closure | manifest locator、computed manifest digest、interpreter/distribution/native file relative path/size/digest任一不符或仍是placeholder | fail closed |
+| Wrong license locator | runtime/model source metadata、Apache-2.0 license或notice locator缺失／不符 | fail closed |
+| Absolute path in lock body | lock JSON 含 `/tmp/` 或其他 absolute deployment path | fail closed |
+| Valid lock — exact Accepted identity | 完整正確 lock；`driver="litert_lm"` | Portable: factory 成功；Pi: runner `preflight.json` `status=Pass`；`checksums.artifact_manifest.sha256` 存在且非空 |
+
+**Pi preflight assertions**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Exact product SHA 與 frozen candidate 吻合 | `candidate_sha` 欄位符合外部指定 40-hex |
+| Protected paths clean | 依runbook精確檢查`src/`、`tests/`、candidate/acceptance runner與workflow、dependency/lock/package metadata及runner實際讀取的config contract；一般`docs/`異動不阻擋 |
+| Exact target platform | Raspberry Pi 5 4 GB、Debian 13 aarch64、CPU profile與deployed CPython 3.13全數吻合；錯一項即preflight fail |
+| Runtime manifest — no extra / missing files | `llm-runtime-rpi-cp313.json` 每個 file entry 以 open-no-follow / regular-file 方式 streaming SHA 驗證；symlink / extra / missing → fail closed |
+| System-site import disabled | `PYTHONNOUSERSITE=1`；no system-site resolver |
+| Target sampler capability | child啟動前read-only證明`/proc/meminfo`與owner `smaps_rollup`可讀；缺任一能力即preflight fail，不啟動acceptance |
+
+---
+
+## M4B-IPC-001 — `snowboard.llm/1` wire contract
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable |
+| **Contract basis** | `protocol.md` §4.4；`ch_m4b` §3.1 |
+| **Suite marker** | `not rpi` |
+| **Case watchdog** | 60秒；formal portable runner仍使用本章統一的300秒suite timeout |
+| **Evidence** | runner result + JUnit；`counts.failed=skipped=xfailed=0` |
+
+**Frame / schema cases（table-driven）**：
+
+| Category | Case | Expected outcome |
+| :--- | :--- | :--- |
+| Schema | 任何 frame 缺 `protocol_version` 或值 ≠ `"snowboard.llm/1"` | protocol failure；parent TERM / KILL / waitpid；不轉 P5 |
+| Schema | extra key in any frame | protocol failure |
+| Schema | READY / RESULT / CANCELLED / ERROR / PING / PONG / SHUTDOWN / SHUTDOWN_ACK任一缺required key，或出現unknown `type` | protocol failure；不得接受partial frame |
+| Schema | invalid UTF-8 / JSON | protocol failure |
+| Bounds — control line | 恰 16 KiB（含 `\n`）— inclusive max | accepted |
+| Bounds — control line | 16 KiB + 1 byte — exceeded | protocol failure |
+| Fragment / coalesce | fragmented read（分批到達） | 正確 reassemble |
+| Fragment / coalesce | 兩個完整JSON control line在同一 `read` 到達 | 依newline正確分離；不得合併object或遺失第二個frame |
+| Control | PING → PONG | exact-key PING在合法狀態得到exact-key PONG；PONG `state="READY"`；兩者皆無request ID |
+| Control | SHUTDOWN → SHUTDOWN_ACK | exact-key exchange後bounded child exit / waitpid / stream與workdir cleanup |
+| Control | GENERATING時收到SHUTDOWN | 不直接shutdown；parent須先走cancel convergence，child不emit假的SHUTDOWN_ACK |
+| Request ID format / length | 不符合`^llm\.\d+\.\d+$`或UTF-8長度超過128 | protocol failure |
+| Request ID monotonicity | 同一 child 內 counter 不嚴格遞增 | protocol failure |
+| Request ID — duplicate | 重用已使用過的 request_id | protocol failure |
+| Request ID embeds private data | request_id 含 session ID / prompt fragment | fail closed（構造測試） |
+| Duplicate terminal | 同 request_id 出現第二個 RESULT / CANCELLED / ERROR | protocol failure |
+| Late terminal | terminal 後同 request_id 再送任何 frame | protocol failure |
+| Wrong request_id in terminal | terminal request_id 與 active request 不符 | protocol failure |
+| BUSY | active request 未 terminal 前送 GENERATE | child 回 `BUSY`（`state="GENERATING"`）；parent 不排隊 |
+| EOF | child pipe 提前 EOF | parent termination proof；不轉 P5 |
+| Privacy — stdout / stderr / caplog | 掃描 Domain B sentinels | 無 perception text、response、tool args、credential、private path |
+
+**Child authority boundary**：
+
+| Injection | Assertion |
+| :--- | :--- |
+| Child／runtime嘗試listen socket或network fallback | fail closed；listener/network attempt不成為產品能力；由OFF evidence計數為0 |
+| Model回傳valid `tool` intent | child只回mapping；ToolRegistry handler／validator／execution call count = 0，仍由parent Reasoner處理 |
+| Child嘗試開Audio／Display HAL | HAL open call count = 0；跨模組side effect視為contract failure |
+| Frame／child CLI夾帶任意artifact path | exact-key／allowlist拒絕；實際artifact path只來自已驗lock與`LLMConfig` |
+| Process ownership | spawn使用`start_new_session=True`且top-level child PID=PGID；descendant不得逃離owner process group |
+
+**GENERATE canonical input cases**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Perception cardinality layer恰16 — inclusive max | isolated list-bound validator判定未超過16；full PromptBuilder仍須另套kind enum／duplicate invariant，不得把16筆duplicate資料宣告產品success |
+| 三個unique kinds（listen/read/look） | full canonical PromptBuilder accepted；這是目前kind enum下可達的產品success上限 |
+| 17 perception — exceeded | `ReasoningInputContractError`；child side effect = 0；不得截斷成16筆 |
+| perception text 恰 4096 code points | accepted |
+| perception text 4097 code points | `ReasoningInputTooLarge`；child side effect = 0 |
+| 渲染後 `> 16 KiB` UTF-8 | `ReasoningInputTooLarge`；child side effect = 0 |
+| `None` text → `""` / status 保留 | `None` 映射為空 string；`status` 不改變 |
+| `pending_message_count` 為 bool | `ReasoningInputContractError` |
+| `pending_message_count` 為float／string／None | `ReasoningInputContractError` |
+| `pending_message_count < 0` | `ReasoningInputContractError` |
+| `input` / perception 含extra或private key | session、turn、correlation、pending message ID、`extra`或control/handler任一存在即`ReasoningInputContractError`；child side effect = 0 |
+| invalid perception `status` | 非`ok/timeout/error`即`ReasoningInputContractError` |
+| unknown capability perception／action | `ReasoningInputContractError`；不得保留或fallback成已知kind |
+| `rest` 缺席 | `ReasoningInputContractError` |
+| duplicate perception kind | `ReasoningInputContractError` |
+| perception / action未依canonical order或有duplicate action | sender canonicalize為`listen/read/look`與`speak/tool/rest`；receiver語意不依JSON member order |
+| tool 存在但 `tool` action 缺席（或反之） | `ReasoningInputContractError` |
+| `speak` / `tool` 存在但 available perceptions 為空 | `ReasoningInputContractError` |
+| tool name duplicate / order錯誤 | tool依name排序且name唯一；違約為`ReasoningInputContractError` |
+| tool description空白或`input_schema`不是validated closed JSON object | `ReasoningInputContractError` |
+| handler / validator附在tool或input | `ReasoningInputContractError`；private callable/control不得encode |
+| sort_keys / compact separators / ensure_ascii=False | 以 injected writer capture 驗 encode 參數 |
+| Empty private content但static tool projection已超過16 KiB | startup preflight fatal；child spawn／write = 0；不得延後成user-turn P5 |
+
+**RESULT exact keys / metrics bounds cases**：
+
+| Case | Assertion |
+| :--- | :--- |
+| 缺 `metrics` | parent視為protocol failure；不建立`LLMGeneration`、不轉P5 |
+| RESULT缺required key或多extra key | parent protocol failure；不建立`LLMGeneration` |
+| 任一 metric 為 NaN / Infinity | protocol failure；不建立`LLMGeneration` |
+| 任一 metric 為bool | protocol failure；bool不得當作int/number |
+| `init_ms`或`ttft_ms` < 0 | protocol failure |
+| 任一token rate ≤ 0 | protocol failure |
+| `prefill_tokens` 0 或 129 | protocol failure |
+| `decode_tokens` 0 或 129 | protocol failure |
+| `kv_tokens` 0 或 1025 | protocol failure |
+| `prefill_tokens` 1 和 128（boundary success） | accepted |
+| `decode_tokens` 1 和 128（boundary success） | accepted |
+| `kv_tokens` 1 和 1024（boundary success） | accepted |
+| 15 秒 generation deadline 後收到 RESULT（在 2 秒 grace 內） | 仍是 timeout，不得轉 Pass |
+| 2 秒 grace 後任何 terminal | protocol failure |
+
+**ERROR code mapping**：
+
+| Error code | State | Expected parent action |
+| :--- | :--- | :--- |
+| `BUSY` | `GENERATING` | protocol failure（desync）；fatal |
+| `INVALID_REQUEST` + `READY` | `READY` | Reasoner 可翻譯 P5 |
+| active request收到`INVALID_REQUEST` | `GENERATING` | protocol failure（desync）；fatal；不得P5且不得改變原active request |
+| `TIMEOUT` + `READY` | `READY` | cleanup proof 後 Reasoner 可 P5；否則 fatal |
+| `GENERATION_FAILED` + `READY` | `READY` | cleanup proof 後 Reasoner 可 P5 |
+| `CANCEL_FAILED` + `FATAL` | `FATAL` | fatal；Level 2 |
+| `PROTOCOL_ERROR` + `FATAL` | `FATAL` | fatal；Level 2 |
+| Unknown / unlisted code | — | protocol failure；fatal |
+
+**M4a protocol / lifecycle regression guard**：
+
+`tests/m4b_portable_suite.txt`須明列M4b實作直接影響的既有M4a framed-child、process-group、
+cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 Fail / Skip / XFail。
+這是`M4B-IPC-001`的required assertion，不得只在inheritance文字聲稱「M4a仍通過」。
+
+---
+
+## M4B-RDY-001 — Startup / pre-warm / READY identity
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable double + Pi |
+| **Contract basis** | `protocol.md` §4.1；`ch_m4b` §4；`model_spec.md` §6.3 |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`engine_load_latency_ms`、`ready_latency_ms`、`prewarm_latency_ms`、`prewarm_prompt_sha256`） |
+
+**Startup state / admission cases**：
+
+| Case | Scope | Assertion |
+| :--- | :--- | :--- |
+| Startup exact state trace | Portable | `STOPPED→AUTHENTICATING→STARTING→ENGINE_LOADED→PREWARMING→READY`；不得跳過authenticate/pre-warm/baseline或提前admit |
+| `ENGINE_LOADED` 不 admit GENERATE | Portable | child 收到 GENERATE 在 pre-warm 前回 `BUSY`（`state="GENERATING"`）或 `INVALID_REQUEST`；不 emit READY；`start()` 不 return |
+| Pre-warm failure → 不 emit READY | Portable | inject pre-warm Conversation return error；child terminate / parent TERM→KILL→waitpid；`start()` raise；不 READY；無 orphan |
+| Pre-warm prompt SHA-256 | Portable | injected prompt capture；`sha256(prompt_bytes) == "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d"` |
+| Pre-warm public input exact value | Portable | capture的structured input exact等於§3.2固定JSON；不得加入history、scored example或private marker |
+| Pre-warm 使用同一 renderer / tokenizer / constrained-output path | Portable | injected renderer call capture；與 production GENERATE 使用同一 code path；不 fake |
+| Pre-warm Conversation 確實 close / reference discard | Portable | injected Conversation mock；`close()` call count ≥ 1；output / KV reference 設為 None |
+| Pre-warm output有效後丟棄 | Portable + Pi | dynamic schema PASS且decode tokens > 0後才算pre-warm成功；result不存入任何field、不進log/evidence |
+| READY exact keys | Portable + Pi | exact keys：`type / protocol_version / state / identity`；identity exact keys：`candidate_id / pairing_revision / platform / runtime_sha256 / model_sha256 / config_sha256` |
+| READY identity — `candidate_id` mismatch | Portable | parent TERM → bounded wait → KILL → waitpid；IPC / workdir 清除；`start()` raise |
+| READY identity — `pairing_revision` mismatch | Portable | 同上 |
+| READY identity — `platform` mismatch | Portable | 同上 |
+| READY identity — `runtime_sha256` mismatch | Portable | 同上 |
+| READY identity — `model_sha256` mismatch | Portable | 同上 |
+| READY identity — `config_sha256` mismatch | Portable | 同上 |
+| 每個 mismatch 後 next-success | Portable | 同一 owner 重建全新 child 並完成一次 generation |
+| Idempotent `start()` — 已在 READY | Portable | 第二次 `start()` no-op；child spawn count = 1 |
+| Nonterminal `start()` reentry | Portable | AUTHENTICATING／STARTING／ENGINE_LOADED／PREWARMING任一狀態重入皆拒絕；不得spawn第二個child |
+| Startup timeout／invalid first frame | Portable | TERM→bounded KILL→waitpid、IPC/workdir cleanup後`start()` raise；不留下半啟動child |
+| Initial resource baseline barrier | Portable + Pi | pre-warm cleanup、READY identity與完整owner sample都成功且baseline只建一次後`start()`才return |
+| Rebuild READY（recovery hook） | Portable | hook 只在新 child 完成 `INFERENCE_READY` 後原子切換 reference；舊 child reference 清除 |
+| Pi READY identity exact values | Pi | `runtime_sha256 = "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"`；`model_sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"`；`config_sha256 = "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"`；card另保存public pre-warm digest與分離的engine-load/pre-warm timing |
+| Model full hash 在 spawn 前完成 | Portable | injected hash capture；不在 READY path 重做 |
+| Native library SHA-256 在 child 驗證 | Pi | loaded native library open-no-follow / regular-file / `sha256 == "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"` |
+
+---
+
+## M4B-GEN-001 — Single-flight generation / persistent Engine / fresh Conversation
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable double + Pi |
+| **Contract basis** | `ch_m4b` §4（步驟 4–5）；`protocol.md` §4.2 |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`child_pid`、`engine_load_count`、`conversation_count`、`init_ms`、`ttft_ms`、`prefill_tokens`、`decode_tokens`、`kv_tokens`） |
+
+**Required assertions**：
+
+| Case | Scope | Assertion |
+| :--- | :--- | :--- |
+| Single-flight：第二個 concurrent `generate()` 回 BUSY | Portable | 第一個 generate 進行中時，第二個 `generate()` 不排隊、立即 raise `AdapterError(BUSY)` |
+| Persistent Engine：連續兩 turn 不重載 | Portable + Pi | Engine / process load count = 1；PID 不變（未觸發 recycle） |
+| Fresh Conversation：每 turn 建立新 Conversation | Portable + Pi | 每次generate使Conversation count +1；`close()`在finally執行；Pi card的conversation count與turn count一致 |
+| Child completion → READY 狀態 | Portable | terminal 後 child 回 `state="READY"`；parent state machine 轉 READY；下一次 generate 可接受 |
+| RESULT 完整欄位後建立 `LLMGeneration` | Portable | partial / missing metrics → 不建立 `LLMGeneration`；走 P5 / ERROR |
+| 成功 result 含完整 metrics | Portable + Pi | `init_ms / ttft_ms / prefill_tokens_per_second / decode_tokens_per_second` 全為 finite、non-bool number；`init_ms / ttft_ms ≥ 0`；rates `> 0`；三個token count均為non-bool int且在各自boundary內 |
+| Rendered input 恰 128 tokens — boundary success | Portable | injected tokenizer mock；accepted |
+| Rendered input 129 tokens — exceeded | Portable | `ReasoningInputTooLarge`；child side effect = 0 |
+| Runtime prefill_tokens > 128 | Portable | parent 拒絕 RESULT；走 protocol failure |
+| Wire 無 CHUNK / partial output | Portable | injected wire capture；零 intermediate output frame |
+| Child background thread 不自行寫 wire | Portable | injected thread monitor；wire write 只來自 control loop |
+
+---
+
+## M4B-OUT-001 — Output schema / marker / allowlist
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §3.2 / §6；`protocol.md` §4.4；`ch09_action_payload.md` |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`catalog_case_count`、`schema_pass_count`、`current_marker_exactly_once`、`prior_marker_hits=0`、`forbidden_literal_hits=0`、`tool_handler_calls=0`） |
+
+**Constrained-output catalog（table-driven）**：
+
+| Case | Scope | Expected outcome |
+| :--- | :--- | :--- |
+| `speak` — valid nonblank text + nonempty next_perceptions | Portable + Pi | `LLMGeneration.response.action_kind == "speak"`；Reasoner validator PASS |
+| `speak` — blank text (`""` / whitespace) | Portable | Reasoner P5 fallback |
+| `speak` — missing `next_perceptions` | Portable | Reasoner P5 fallback |
+| `speak` — `next_perceptions` 含 unavailable perception | Portable | Reasoner P5 fallback |
+| `tool` — valid name + object arguments + nonempty next_perceptions | Portable + Pi | Reasoner validator PASS（sealed registry）；Pi只驗tool intent，不執行handler |
+| `tool` — invalid dotted name | Portable | Reasoner P5 |
+| `tool` — `arguments` 非 JSON object | Portable | Reasoner P5 |
+| `tool` — name 不在 capability allowlist | Portable | Reasoner P5 |
+| `rest` — empty payload + empty next_perceptions | Portable + Pi | Reasoner validator PASS |
+| `rest` — 含非空 payload | Portable | Reasoner P5 |
+| `rest` — 含非空 next_perceptions | Portable | Reasoner P5 |
+| Empty output（`{}`） | Portable | Reasoner P5 |
+| Explicit refusal（模型拒答） | Portable | P5 apology-speak；log 不含 raw output |
+| Bad JSON | Portable | P5；log 不含 raw output |
+| Unknown `action_kind` | Portable | P5 |
+| `action_kind` 在 input 無 available branch | Portable | P5 |
+| Top-level missing／extra key或duplicate `next_perceptions` | Portable | strict schema／Reasoner拒絕；P5；不得把partial mapping交付SM |
+| Dynamic schema沒有合法branch或constraint provider拒絕 | Portable | startup/pre-request fail closed；unconstrained decode call count = 0 |
+
+**Current-marker / forbidden-marker / prior-marker（catalog）**：
+
+| Case | Scope | Assertion |
+| :--- | :--- | :--- |
+| current-request marker 在 output exactly-once | Portable + Pi | fixed catalog中marker present且不重複 |
+| forbidden literal | Portable + Pi | Portable注入違約output驗Reasoner fail closed；Pi fixed catalog驗forbidden literal absence |
+| prior-marker（前一 turn marker） | Portable + Pi | 後一turn output不得出現；違約時Reasoner fail closed／P5 |
+| marker failure不得bypass Reasoner validator | Portable | 斷言Reasoner validator call count ≥ 1 |
+
+**Child constrained decoder / Reasoner independence**：
+
+| Assertion |
+| :--- |
+| Production renderer對non-ASCII structured input產生exact bytes：inner JSON使用`ensure_ascii=True`、`sort_keys=True`、compact separators，外層prefix逐字等於§3.2；不得加入history、scored example或retry text |
+| `_build_response_schema` branch order固定`speak`、tool name排序、`rest`；top-level exact keys固定`action_kind/action_payload/next_perceptions` |
+| child 自稱 schema-valid 不等於 Reasoner PASS；Reasoner 仍獨立 validate |
+| sealed tool registry validator 由 Reasoner 呼叫，不傳入 child |
+| PromptBuilder只輸出bounded semantic `ReasoningInput`；selected chat template／raw prompt render call count = 0 |
+
+---
+
+## M4B-P5-001 — P5 fallback / fatal boundary
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §6（步驟 2）；`protocol.md` §4.4 code mapping |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`case`、`converged_to`） |
+
+**Recoverable P5 cases**：
+
+| Injection | Scope | Expected convergence | Next-success |
+| :--- | :--- | :--- | :--- |
+| `INVALID_REQUEST / READY`（rendered input > 128 token） | Portable | `ReasoningInputTooLarge` → Reasoner P5 | 同 child 下一 turn 成功 |
+| `GENERATION_FAILED / READY`（cleanup 已證明） | Portable | Reasoner P5；log 不含 raw output | 同 child 下一 turn 成功 |
+| `TIMEOUT / READY`（cooperative cancel 成功，Conversation discard 已證明） | Portable + Pi | Reasoner P5；不得與Level 2 destructive timeout混判 | 同 child 下一 turn 成功 |
+| Local `ReasoningInputTooLarge`（4097 code points／private projection >16 KiB） | Portable | write與child side effect皆為0；Reasoner P5 | 同 child下一turn成功 |
+| Empty / refusal / bad JSON（child wire-valid 但 Reasoner 驗失敗） | Portable | Reasoner P5 apology-speak | 同 child 下一 turn 成功 |
+
+**Fatal cases（不得轉 P5）**：
+
+| Injection | Expected outcome |
+| :--- | :--- |
+| `CANCEL_FAILED / FATAL` | parent TERM→KILL→waitpid；RM recovery；不 P5 |
+| `PROTOCOL_ERROR / FATAL` | 同上 |
+| Recovery barrier cleanup 未能證明 | 不 P5；adapter raise sanitized non-P5 failure |
+| `ReasoningInputContractError` | 發布一個sanitized `ErrorOccurred`並進ERROR；不P5、不啟動child side effect |
+| `BUSY` / desync（single-flight 違約） | protocol failure；fatal；不 P5 |
+| Recovery / rebuild 失敗 | `RecoveryFatalError`；Level 3；exit 4；不 P5 |
+
+**No-request RM fatal monitor**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Background recovery failure 發生時無 active request / SM waiter | `rm.wait_fatal()` main supervision 立即進 Level 3；exit 4；不 unobserved |
+
+---
+
+## M4B-CAN-001 — Cancel / TERM / KILL / waitpid / Level 3
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §5；`protocol.md` §4.3 / §4.4 |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`case`、`native_cancel_calls`、`worker_joined`、`term_sent`、`kill_sent`、`waitpid_exit_code`、`orphan_count=0`、`recovery_ready`） |
+
+**Cooperative cancel path**：
+
+| Injection | Scope | Assertion |
+| :--- | :--- | :--- |
+| Reasoner timeout → `abort()` | Portable | 只送一次 CANCEL；等 typed `CANCELLED`；worker joined；Conversation / output / reference discard；child 回 READY；下一 turn 成功 |
+| LiteRT-LM `Cancelled` 子類先於 `RuntimeError` 父類捕捉 | Portable | 捕捉順序測試；零 `PytestUnhandledThreadExceptionWarning` |
+| CANCELLED 後 Reasoner 可 P5 | Portable | P5 apology-speak；log 不含 raw output |
+| Session interrupt / shutdown CANCELLED | Portable | 不 publish fallback Fact |
+| Shutdown撞上RECOVERING | Portable | main先呼叫RM-owned`prepare_shutdown()`取消／等待recovery，再依reverse order `stop()`；adapter不另取control、不建立第二個recovery batch |
+
+**Level 2 destructive path**：
+
+| Injection | Scope | Assertion |
+| :--- | :--- | :--- |
+| Native cancel 未在 500 ms 完成 → Level 2 | Portable | `abort()` pending；Level 1 上限到期 → `force_abort()` |
+| `force_abort()` — PGID 全滅 | Portable | SIGTERM PGID → 2 秒 → SIGKILL → 1 秒 → waitpid；state = `DESTROYED`；`ForceAbortReport(destroyed_backends=("backend.cognition.reasoner.llm",))` |
+| Orphan / descendant = 0 | Portable | process / thread / fd / workdir = 0，且outer operation task在同一Level 2 timeout內done |
+| Next-success after recovery | Portable | RM `rebuild()` 後 READY；same-lock pre-warm；下一 turn 成功 |
+| Actual child SIGTERM → waitpid | Pi | real child SIGTERM；waitpid exit proof；recovery READY；一次成功 generation |
+| Actual TERM-ignoring child → SIGKILL | Pi | controlled child／descendant忽略TERM；2秒後單次KILL PGID、1秒bounded waitpid；zero orphan後recovery READY |
+
+**Level 3**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Rebuild / replacement failure或timeout | `RecoveryFatalError` → Level 3；exit 4；測試結束無 orphan |
+| Stable key 驗證 | `ForceAbortReport.destroyed_backends == ("backend.cognition.reasoner.llm",)`；Converger聚合後交同一RM key |
+
+---
+
+## M4B-REC-001 — Resource recycle / RecoveryTicket / same-lock rebuild
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §0.3 / §4 / §5.2；`model_spec.md` §6.4 |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 600秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`trigger_reason`、`generation_count`、`ticket_id`、`resource_samples_locator`、`prewarm_timings_locator`） |
+
+**Trigger threshold cases（raw bytes，table-driven）**：
+
+| Case | Injection | Expected outcome |
+| :--- | :--- | :--- |
+| `inference_attempts >= 8` — exact boundary | 注入 deterministic sampler；第 8 次 terminal 後 | `RECYCLE_PENDING` 設定；RecoveryTicket 建立；本次 result 仍可交 Reasoner |
+| `inference_attempts = 7` — below threshold | 同上 | 不觸發 recycle |
+| attempt outcome計數 | success、TIMEOUT、CANCELLED、GENERATION_FAILED各建立一次production Conversation並進inference | 四者都使attempt counter +1；cleanup失敗另走destructive path但不得回滾既有counter |
+| `owner_pss_bytes - prewarm_owner_pss_bytes >= 48 * 1024**2` — exact raw-byte delta | 注入baseline與48 MiB delta sampler | trigger |
+| `owner_pss_bytes - prewarm_owner_pss_bytes = 48 * 1024**2 - 1` — below | 注入baseline與delta sampler | 不觸發 |
+| `mem_available_bytes < 768 * 1024**2` — below | 注入 768 MiB - 1 sampler | trigger |
+| `mem_available_bytes = 768 * 1024**2` — at threshold | 注入 768 MiB sampler | 不觸發 |
+| 四捨五入 MiB 使比較失準 | 未四捨五入 raw bytes 比較 | 不觸發（精確邊界） |
+| Unique owner PSS | PGID leader與多層live descendants含重複發現路徑 | 依unique PID只加總一次`smaps_rollup` PSS；不得只看parent或sum RSS |
+| Sample failure（PID消失、任一owner unreadable、missing欄、negative、bool或其他non-int） | 注入 broken sampler matrix | destructive recovery；不沿用前值、不交 result；adapter raise sanitized failure |
+| Cleanup／sample無法證明 | injection cleanup或sampler failure | destructive path；不交result；Reasoner只發布一個sanitized`ErrorOccurred`；後續`abort()`不得回cooperative success，`force_abort()`回同一destroyed key且不得預開第二個recovery batch |
+
+**Recycle timing / atomicity**：
+
+| Case | Assertion |
+| :--- | :--- |
+| 不在 active request 中 recycle | generation 中注入觸發樣本；recycle 只在 terminal 後執行 |
+| 先設 `RECYCLE_PENDING` 再交 result | Reasoner 收到 result 前 ticket 已存在 |
+| 下一個 `generate()` 等 ticket | `wait_recovery(ticket)` 在 `generate()` 內；不直接 fallback |
+| Recovery hook 使用同一 RM key | `schedule_recovery(("backend.cognition.reasoner.llm",))` call capture |
+| Recovery hook 重走 authenticate / load / pre-warm | injected child factory；pre-warm call count + 1 |
+| Planned recovery先收斂舊child | SHUTDOWN → bounded TERM → bounded KILL → waitpid；IPC/workdir/descendant cleanup完成後才建replacement |
+| 只有新 `INFERENCE_READY` 後原子切換 reference | barrier 在 READY 前保持 closed；new child 的 attempt counter 從 0 開始 |
+| 舊 child 永不重新 admit | 舊 child DESTROYED 後 generate 不送舊 PID |
+| Planned path 可與後續 Action 重疊 | injected timeline；舊 LLM child 先 exit |
+| schedule／舊child termination失敗 | 立即Level 3／exit 4；不得另開第二個recovery batch或交付本次result |
+| stale／wrong RecoveryTicket | `wait_recovery()`不得解除barrier；fatal原樣傳遞，不admit舊child |
+
+**Baseline**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Baseline 只建立一次（pre-warm cleanup 後） | injected sampler；baseline call count = 1 per child generation |
+| Replacement 建立自己的新 baseline | 第二個 child；baseline 再次呼叫 |
+
+**Pi target recycle observation（至少 2 次 replacement）**：
+
+| Assertion |
+| :--- |
+| 20 accepted sessions 中觀察到 attempt 8 / attempt 16 各觸發一次 planned recycle |
+| 每次 replacement 保留同一 exact lock / pre-warm |
+| RecoveryTicket 阻擋下一次 admission 直到 READY |
+| evidence 保存 child_generation / trigger_reason / pre-post baseline / ticket / pre-warm timing |
+
+---
+
+## M4B-HIST-001 — History isolation / no hidden KV
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §6（步驟 4）；`protocol.md` §4.2 |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`turn_count`、`conversation_count`、`child_pid_stable`、`current_marker_pass_count`、`prior_marker_hits=0`） |
+
+**Five-turn isolation catalog（table-driven）**：
+
+每個case使用fixed current/prior marker catalog：前一turn先植入prior sentinel，後一turn要求目前
+marker exactly-once、prior sentinel absent且action/schema符合後一turn的預期。單純「模型剛好沒重複」
+不算PASS；每列都須同時有current positive oracle與prior negative oracle：
+
+| Contamination injection | Assertion |
+| :--- | :--- |
+| Turn 1 perception text 含特定 sentinel | Turn 2 current marker exactly-once且不含該sentinel |
+| Turn 1 model 回傳 `tool` action | Turn 2依current catalog回指定`speak/rest`，不沿用Turn 1 tool intent／arguments |
+| Turn 1 model 回傳 `speak` payload 含特定詞 | Turn 2 current marker／expected action成立且不含該詞 |
+| Turn 1 `next_perceptions` 含 `read` | Turn 2 exact `next_perceptions`只取Turn 2 input allowlist，不因Turn 1加入`read` |
+| Turn 1 KV state（inject pre-filled Conversation） | Turn 2為fresh instance、current marker PASS、prior marker absent且不繼承KV |
+
+**Persistent Engine / planned generation switch**：
+
+| Case | Assertion |
+| :--- | :--- |
+| 未觸發 recycle — child PID 不變 | 五 turn 中 PID stable |
+| 觸發 planned recycle — generation 切換僅在預期邊界 | child_generation 在 attempt 8 後 +1；不提前 |
+
+---
+
+## M4B-PRIV-001 — Privacy / no-log contract
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable + Pi |
+| **Contract basis** | `ch_m4b` §6（步驟 6）；`protocol.md` §4.1；`ch_m4b` §3.1 codec rules |
+| **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
+| **Case watchdog** | Portable 60秒；Pi 60秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`scanned_locators`、`paths_digest`、`hits=0`）；不得保存absolute private path |
+
+**Domain B sentinel scan（table-driven）**：
+
+| Prohibited content | Sentinel type | Expected outcome |
+| :--- | :--- | :--- |
+| perception text | 固定 test fixture 字串 | 不出現於 stdout / stderr / caplog / exception message |
+| model response / raw output | 固定 test fixture 字串 | 不出現 |
+| tool arguments | 固定 test fixture 字串 | 不出現 |
+| credential / secret | 固定 test sentinel | 不出現 |
+| private work path（absolute） | 固定 test workdir prefix | 不出現 |
+| request_id → response reverse-mapping | log 只含不可逆 hash | 無法從 log 反推 response |
+| prompt text（pre-warm 或 production） | 固定 pre-warm sentinel | 不出現 |
+| codec error 含 perception text | error message 掃描 | 不出現 |
+
+上述sentinel matrix必須分別走success、input rejection、generation error、timeout、cancel、protocol
+failure、cleanup failure與recovery failure；每條路徑掃描product stdout/stderr、caplog、exception、
+structured product result、telemetry、product raw log及公開前evidence。Formal runner Domain A欄位仍依T9保留，
+但不得把private work path、prompt、response或payload放進`command`或test-specific card。
+
+**允許記錄（白名單）**：public digest、timing、token count、child_generation、trigger reason、resource sample 數值、PID / exit code、artifact checksum、request_id 本身（不反查）。
+
+---
+
+## M4B-OFF-001 — Offline isolation / network-zero / no system-site
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Pi（`rpi` marker） |
+| **Contract basis** | `ch_m4b` §8；`model_spec.md` §6.2；`docs/milestones/M4.md` §6.4 |
+| **Case watchdog** | 600秒；受formal Pi suite-level 9000秒timeout外層限制 |
+| **Evidence** | runner acceptance result card；額外欄位 `test_id`、`network_attempts=0`、`downloader_calls=0`、`session_status="Pass"`、`session_result_sha256`；不得保存raw response |
+| **Pending** | 正式 Pi 執行前 spec tracker 標 `Pending`；不以 portable mock 或其他離線模擬取代 |
+
+**Required assertions**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Network namespace disabled | real LiteRT-LM Engine session 在 `ip netns exec <offline-ns>` 或等效隔離下完成 |
+| Zero network attempt | 斷言無 DNS query / TCP connect / HTTP request |
+| No downloader | `m4b_llm_product.py` install / preflight 及任何 downloader 未被呼叫；call count = 0 |
+| No system-site import | child 使用 isolated runtime closure；`sys.path` 不含 system-site；無 `PYTHONPATH` / `PYTHONHOME` / `LD_PRELOAD` 逃逸 |
+| Allowlisted child environment | `PYTHONNOUSERSITE=1`、bytecode write disabled；`LD_LIBRARY_PATH`若存在只能指向verified closure |
+| Loaded-path attestation | runtime module／distribution實際loaded path位於verified closure；native library path與digest吻合，不接受READY自報取代 |
+| No runtime fallback | product config的runtime download/network fallback為false、fallback model為null；不得改用alternate model或endpoint |
+| Session PASS | 至少一次完整 generation（speak / tool / rest 任一）PASS；log 無 private content |
+
+---
+
+## M4B-RES-001 — 4 GB 20-session combined resource soak
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Pi（`rpi` marker）；同一 Core product SHA 含 M4a（與 M4b 相同 SHA） |
+| **Contract basis** | `model_spec.md` §6.4；`ch_m4b` §10.2（`M4B-RES-001`）；`docs/milestones/M4.md` §6.4 條款 3 |
+| **Case watchdog** | 3600秒；受formal Pi suite-level 9000秒timeout外層限制 |
+| **Evidence** | runner acceptance result card；額外欄位 `test_id`、`session_count`、`generation_count`、`r14_formula_version`、`combined_pss_slope_mib_per_session`、`system_used_slope_mib_per_session`、`combined_pss_late_minus_early_median_delta_mib`、`system_used_late_minus_early_median_delta_mib`、`max_generation_delta_mib`、`swap_used_zero`、`oom_kill_delta=0`、`throttled_zero`、`thermal_max_celsius`、`resource_samples_locator`、`cleanup_locator` |
+| **Pending** | 正式 Pi 執行前 spec tracker 標 `Pending`；不以 M4-REG-001 或 portable mock 取代 |
+
+**r14 frozen gate（所有 20 samples 不得刪除 / 分段重算）**：
+
+Portable verifier regression須以tracked sanitized r14 vector重現Attempt 006已接受的四個輸出：combined
+PSS slope `5.900893 MiB/session`、combined late-minus-early median `131.578 MiB`、system-used slope
+`0.101957 MiB/session`、system-used late-minus-early median `32.750 MiB`（僅容許fixture明定的浮點
+tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；target card固定
+`r14_formula_version="2026-08-29-r14-user-resource-adjustment"`。
+
+| Metric | Gate | Assertion |
+| :--- | :--- | :--- |
+| Combined PSS slope | ≤ 4 MiB/session | r14 公式；20 session 完整 samples |
+| system_used slope | ≤ 4 MiB/session | r14 公式；20 session 完整 samples |
+| late-minus-early combined PSS median delta | ≤ 64 MiB | r14 公式 |
+| late-minus-early system_used median delta | ≤ 64 MiB | r14 公式 |
+| 每個 child generation 的 post-prewarm owner-PSS baseline-to-clean-terminal delta | ≤ 64 MiB | 任一越界即 FAIL，即使後續 recycle 成功 |
+
+**Additional assertions**：
+
+| Metric | Assertion |
+| :--- | :--- |
+| `system_used = MemTotal - MemAvailable`；每 sample ≤ 3584 MiB | 任一 sample 超標即 FAIL |
+| `swap_used = 0` | 任一 sample 非零即 FAIL |
+| Memory PSI excluded | `/proc/pressure/memory` read count = 0；result／sample無PSI欄位且PASS不依賴`psi=1` |
+| Zero OOM kill / throttle | run前後kernel OOM-kill counter/log delta = 0；每sample throttled bit = 0 |
+| Temperature < 80°C | 每 sample 記錄；超標即 FAIL |
+| 20 accepted sessions | session_count = 20；0 rejected |
+| Combined functional validity | 每session的schema/current-marker/prior-marker/history及Audio→LLM→TTS terminal均PASS；resource數值不得掩蓋functional failure |
+| Accepted M4a composition identity | 同一product SHA保留M4a Accepted lock／inheritance，並通過本章列出的affected M4a protocol/lifecycle/audio regression |
+| 至少 2 次 replacement（3 個 child generation） | generation_count ≥ 3；attempt 8 / 16 各排程一次 recycle |
+| Per-sample owner accounting | 每筆保存timestamp、session、child generation、Core/controller、VAD、ASR、TTS、LLM各owner的unique-PID PSS/RSS/CPU/thread、MemTotal/MemAvailable/system-used、swap、temperature、throttled與trigger；combined PSS不得重複PID，raw sample count與20 sessions對齊且無missing sample；sum RSS只作diagnostic，不得取代PSS或system-used gate |
+| Cleanup residue | 20 session 後 owner process / descendant / thread / fd / workdir / ALSA handle residue = 0 |
+| 48 MiB early trigger 不放寬 64 MiB gate | trigger 不得視為已合規；整體斜率仍須達標 |
+| Recycle 不刪 pre-trigger sample | 完整 20 samples 保存；不分 generation 重算斜率 |
+| Machine P9 / P10B FAIL 與 User waiver 分欄 | evidence 欄位 `poc_p9_p10b_status="FAIL"` / `user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"` |
+
+---
+
+## M4B-PKG-001 — Offline install / lock / notices
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Portable review + Pi install |
+| **Contract basis** | `ch_m4b` §8；`requirements/m4b/THIRD_PARTY_NOTICES.md` |
+| **Suite marker** | Portable: `not rpi`；Pi: runner `accept` mode |
+| **Case watchdog** | Portable 60秒；Pi 600秒；兩者皆受formal suite-level timeout外層限制 |
+| **Evidence** | Portable: runner result + JUnit；Pi: runner acceptance result card（`test_id`、`install_inventory_locator`、`install_inventory_sha256`、`file_count`）；locator須run-root-relative且不得暴露absolute private path |
+
+**Required assertions**：
+
+| Case | Scope | Assertion |
+| :--- | :--- | :--- |
+| `llm-artifacts.json` schema 完整 | Portable | 8個top-level object（`lock/poc_reference/candidate/runtime/model/product_profile/runtime_closure/licenses`）均存在且無extra；所有required fields存在；SHA為64-hex、Git SHA為40-hex |
+| `install` — caller-supplied inputs | Portable + Pi | 只接受 checksum-matching offline inputs；`--no-index --no-deps`（或 selected runtime 等價）；拒絕 network / existing output |
+| `install` — same-filesystem staging → atomic rename | Pi | staging 完整自驗後 atomic rename；failure 刪 staging；不覆寫既有 install |
+| `preflight` — read-only inventory | Pi | 每個 file open-no-follow / regular-file / streaming SHA；拒絕 symlink / extra / missing |
+| `preflight` — POC path provenance-only | Pi | checksum-matching product config內的POC `runtime_path/model_path/test_profile`只供provenance；open call count = 0，實際deployment path只取`LLMConfig`並驗digest |
+| Wheel / native / model inventory exact match | Pi | 實際安裝 wheel、native library、model 與 lock 完全一致；零多餘或缺少 |
+| Controller dependency isolation | Portable | selected runtime/native package不在Core controller`[project.dependencies]`；controller-side import graph無native runtime，只有isolated child可import |
+| No moving identity／overwrite | Portable + Pi | install/preflight不讀branch HEAD；拒絕existing install/output且preflight read-only，不覆寫caller artifact/config |
+| Sanitized command output | Portable + Pi | install/preflight stdout只含status、public digest／count；不含model/prompt/output、credential或absolute private path |
+| `THIRD_PARTY_NOTICES.md` 完整 | Portable review | LiteRT-LM runtime、Gemma 4 E2B、所有 dependency 均有 license / notice entry；Apache-2.0 清楚標注 |
+
+---
+
+## M4B-INH-001 — POC → Product inheritance / delta index
+
+| 欄位 | 契約 |
+| :--- | :--- |
+| **Scope** | Evidence review（Tester 核對 `docs/outsource/evidence/<M4-delivery>/m4b/inheritance.json`）+ Portable（generator schema regression） |
+| **Contract basis** | `ch_m4b` §9；`docs/milestones/M4.md` §6.4 條款 2 |
+| **Suite marker** | Generator schema test: `not rpi`；Evidence review: Tester 手動核對 |
+| **Case watchdog** | Portable generator test 60秒；formal portable runner仍使用本章統一的300秒suite timeout |
+| **Evidence** | Portable: runner result + JUnit；Evidence review: Tester 簽核紀錄 |
+| **Pending** | 正式 `inheritance.json` 只在 Gate 3 完成後由 Tester 產生；開發期間只跑 generator schema regression |
+
+**Inheritance identity（required fields per row）**：
+
+| Field | Assertion |
+| :--- | :--- |
+| `area` | exact member of `{P1,P2,P3,P4,P5,P6.1,P7.1,P8,P9,P10A,P10B,P11,P12}`；覆蓋概念P1～P12且不得自造area |
+| `core_ack_id` | `DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001` |
+| `poc_delivery_id` | `POC-llm-DEL-2026-001-R3` |
+| `poc_execution_sha` | `0c75536e6ee99b502c59438989ca852194648946` |
+| `poc_closure_sha` / `poc_publication_sha` | `5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae` / `485bb2a7c07d86a09899f09358c744edd733f875` |
+| `poc_evidence_id` | `G2B-PI-COMBINED-006` |
+| `poc_manifest_locator` / `poc_manifest_sha256` | resolver取得R3 manifest bytes；digest為64 lowercase hex且內容吻合 |
+| `poc_evidence_locator` / `poc_evidence_sha256` | resolver取得formal evidence bytes；digest為64 lowercase hex且內容吻合 |
+| `poc_machine_result` | 非空、由上述resolved immutable content解析出的原始machine status；不得由waiver改寫 |
+| `user_waiver` | 無waiver時為JSON `null`；有waiver時與User核准字串exact一致，與`poc_machine_result`分欄 |
+| `candidate_id` / `pairing_revision` | `CAND-LRT-G4E2B-MOBILE-R1` / `litert-lm-v0.16.0-pi-g2b-r5` |
+| `classification` | `inherit` / `delta` / `waiver` 其中之一 |
+| `inheritance_reason` | 含具體 delta_test_id 或明確技術理由；裸「沿用 POC」fail closed |
+| `product_sha` | 40 lowercase hex；所有列相同；等於外部指定 frozen candidate SHA |
+| `delta_test_id` | exact member of `{M4B-CFG-001,M4B-LOCK-001,M4B-IPC-001,M4B-RDY-001,M4B-GEN-001,M4B-OUT-001,M4B-P5-001,M4B-CAN-001,M4B-REC-001,M4B-HIST-001,M4B-PRIV-001,M4B-OFF-001,M4B-RES-001,M4B-PKG-001,M4B-INH-001}` |
+| `delta_result` | `PASS` / `FAIL` / `BLOCKED`；`PASS`只可由runner/card `status="Pass"`正規化，`FAIL`對應`status="Fail"`，不得以字串大小寫差異繞過 |
+| `result_locator` | resolver取得正式result／failure record，且其中candidate SHA、Test ID、run ID及上述status mapping與本列相符；不得只驗非空字串 |
+| `portable_run_id` | portable delta填三版本共用run ID；非portable delta填JSON `null` |
+| `acceptance_run_id` | Pi delta填單一正式`pi_acceptance_run_id`；portable/evidence-only delta填JSON `null`；不得使用debug run ID |
+
+**Specific area assertions**：
+
+| Area | Required classification / assertion |
+| :--- | :--- |
+| P1 / P6.1 / P7.1 lifecycle | Core delta rows至少分別指向`M4B-RDY-001`、`M4B-CAN-001`與`M4B-REC-001` |
+| P2 / P3 result quality | 指向`M4B-OUT-001` fixed product catalog；P2舊pairing machine FAIL保持原文，replacement結果另列，不得覆寫歷史 |
+| P4 performance | 指向`M4B-GEN-001` target timing/token result；繼承candidate selection數據但不自訂新門檻 |
+| P5 timeout | 指向`M4B-P5-001`及直接cancel cleanup的`M4B-CAN-001` |
+| P8 history | 指向`M4B-HIST-001`；舊pairing `FAIL / DEPENDENCY_LIMITED_BY_P2`與replacement marker結果分欄 |
+| P9 / P10B | `poc_machine_result="FAIL"`；`classification="waiver"`；`user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"`；Core product `M4B-RES-001`結果仍以獨立delta row填列 |
+| P10A | 原始machine PASS可inherit，但Core persistent-child composition差異須有`M4B-GEN-001`／`M4B-REC-001` locator |
+| Gate 2B narrow listen→speak harness vs Core generic renderer | 至少兩個獨立delta row，分別以單值`delta_test_id="M4B-OUT-001"`與`"M4B-INH-001"`記錄；不得把兩個ID塞進單一字串欄位 |
+| P11 provenance | 至少有`M4B-LOCK-001`與`M4B-PKG-001`的獨立delta row |
+| P12 offline | 至少有`M4B-OFF-001`與`M4B-PRIV-001`的獨立delta row |
+
+**Locator resolver seam（Portable）**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Valid local bytes | resolver取得content；`sha256(content)`等於對應manifest／evidence SHA欄；accepted |
+| Missing／unreadable file或directory instead of file | resolver失敗；fail closed |
+| Wrong content hash | `sha256(content)`不等於對應`poc_manifest_sha256`／`poc_evidence_sha256`；fail closed |
+| Moving revision | branch、tag-only或其他無40-hex immutable revision的locator；fail closed |
+| Git-controlled locator | 只接受`<repo>@<40hex>:<path>`或核准的等價immutable scheme，且resolved bytes通過同一hash oracle |
+
+**Generator seam tests（Portable）**：
+
+| Case | Assertion |
+| :--- | :--- |
+| Generator 不讀 `git rev-parse HEAD` | 斷言 `product_sha` 來自外部注入，非 HEAD-derived |
+| Generator 不寫 `docs/outsource/evidence/` | fast loop 使用 temp output |
+| Mixed `product_sha` | fail closed |
+| Wrong Core ACK／POC delivery／execution-closure-publication SHA | fail closed；不得以branch、short SHA或Core ACK冒充POC delivery identity |
+| 缺欄 / locator不存在 / wrong checksum / wrong candidate-pairing identity | fail closed |
+| machine result被waiver覆寫或共用同一欄 | fail closed |
+| target row缺`acceptance_run_id`、portable row缺`portable_run_id`或任一使用debug run ID | fail closed |
+| Non-empty locator 但 resolver 失敗 | fail closed；非空字串不足以通過 |
+
+**M4a regression coverage（此測試同時驗 M4a contract 未被改寫）**：
+
+M4B-IPC-001的regression guard要求M4b development後重跑受影響M4a測項並保持PASS。
+`inheritance.json`另以top-level `m4a_regressions` array保存，每列exact fields為
+`m4a_test_id / product_sha / portable_run_id / result_locator / result`；`result`須為`PASS`且locator
+解析出的runner `status="Pass"`、candidate SHA、run ID及Test ID吻合。此array不使用M4B row的`delta_test_id`欄，避免把
+M4a ID冒充為15個M4B Test ID之一。
+
+---
+
+## M4b 里程碑結論欄位
+
+M4b 子 gate 結論文件必須包含（由 Tester 填入，引用 runner 標準欄位）：
+
+| 欄位 | 說明 |
+| :--- | :--- |
+| `candidate_sha` | 40-character product delivery SHA；M4a / M4b / M4c 共用同一 SHA |
+| `portable_run_id` | M4b portable matrix 的 run ID（三版本共用） |
+| `portable_matrix_index` | `<m4b-portable-root>/matrix-index.json` 路徑（runner 產生） |
+| `pi_preflight_locator` | 同一candidate SHA／`pi_acceptance_run_id`的`preflight.json` locator |
+| `pi_acceptance_run_id` | M4b target acceptance 的 run ID（不得混用 debug run ID） |
+| `pi_result_locators` | M4b 各 Pi acceptance result card run-root-relative locator（含 RES / OFF） |
+| `inheritance_index_locator` | `docs/outsource/evidence/<M4-delivery>/m4b/inheritance.json` |
+| `offline_result_locator` | M4B-OFF-001 acceptance result card locator（`Pending` 直到 Pi 執行） |
+| `m4b_res_locator` | M4B-RES-001 acceptance result card locator（`Pending` 直到 Pi 執行） |
+| `poc_p9_p10b_status` | `FAIL`（機器 Attempt 006 結果；不得改寫） |
+| `user_waiver` | `KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION` |
+
+正式 target result 使用單一 `pi_acceptance_run_id`，不拼接多個 run ID；
+debug run ID 不得列入里程碑結論。
+M4b Accepted 只關閉 M4b 子 gate；M4c 仍須在 M4a + M4b 均通過後接線，
+整體 M4 要求三個子 gate 在同一 exact SHA 收斂。
