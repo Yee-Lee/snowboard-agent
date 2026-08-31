@@ -6,6 +6,7 @@ import hashlib
 import json
 import stat
 import subprocess
+import sys
 import zipfile
 from dataclasses import replace
 from pathlib import Path
@@ -68,6 +69,28 @@ def test_m4b_pkg_001_controller_has_no_selected_runtime_dependency() -> None:
     project = (Path(__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
     dependencies = project.partition("dependencies = [")[2].partition("]")[0].lower()
     assert "litert" not in dependencies and "gemma" not in dependencies
+
+
+def test_m4b_pkg_001_worker_import_does_not_load_controller_factory() -> None:
+    worker = Path(__file__).parent.parent / "src/sbd/cognition/litert_lm/worker.py"
+    code = (
+        "import runpy,sys;"
+        f"runpy.run_path({str(worker)!r},run_name='m4b_worker_import_probe');"
+        "assert 'sbd.cognition.factory' not in sys.modules;"
+        "assert 'sbd.core.config.loader' not in sys.modules"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-I", "-B", "-c", code],
+        capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_m4b_pkg_001_cognition_public_factory_export_remains_lazy() -> None:
+    from sbd.cognition import make_llm_adapter as exported
+    from sbd.cognition.factory import make_llm_adapter
+
+    assert exported is make_llm_adapter
 
 
 def test_m4b_pkg_001_notice_names_runtime_model_and_license() -> None:

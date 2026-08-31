@@ -295,7 +295,25 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
         asr = make_asr_adapter(config.perception.listen.adapter)
         tts = make_tts_adapter(config.action.tts)
         output = make_audio_output(config.core.audio)
-        await asr.start(); await adapter.start(); await tts.start(); await output.start()
+        await asr.start()
+        try:
+            await adapter.start()
+        except BaseException:
+            await asr.stop()
+            raise
+        try:
+            await tts.start()
+        except BaseException:
+            await adapter.stop()
+            await asr.stop()
+            raise
+        try:
+            await output.start()
+        except BaseException:
+            await tts.stop()
+            await adapter.stop()
+            await asr.stop()
+            raise
         assert adapter.startup_evidence is not None
         initial_child = adapter._child
         assert initial_child is not None
