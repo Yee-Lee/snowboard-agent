@@ -402,7 +402,24 @@ def _extract_wheel(wheel: Path, destination: Path, closure: RuntimeClosure) -> N
                 files[name] = info
             if set(files) != set(expected):
                 raise ProductFailure("runtime wheel inventory mismatch")
-            destination.mkdir(parents=True, mode=0o700)
+            try:
+                destination_metadata = os.lstat(destination)
+            except FileNotFoundError:
+                destination.mkdir(parents=True, mode=0o700)
+            except OSError as error:
+                raise ProductFailure("runtime wheel destination is unsafe") from error
+            else:
+                if (
+                    not stat.S_ISDIR(destination_metadata.st_mode)
+                    or stat.S_ISLNK(destination_metadata.st_mode)
+                ):
+                    raise ProductFailure("runtime wheel destination is unsafe")
+                try:
+                    if any(destination.iterdir()):
+                        raise ProductFailure("runtime wheel destination is not empty")
+                    destination.chmod(0o700)
+                except OSError as error:
+                    raise ProductFailure("runtime wheel destination is unsafe") from error
             for name in sorted(files):
                 target = destination.joinpath(*PurePosixPath(name).parts)
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -463,6 +480,7 @@ def _verify_venv(
     probe_code = (
         "import importlib.util,json,pathlib,site,sys,sysconfig;"
         "spec=importlib.util.find_spec('litert_lm');"
+        "extension_spec=importlib.util.find_spec('_bz2');"
         "print(json.dumps({"
         "'implementation':sys.implementation.name,"
         "'version':'.'.join(map(str,sys.version_info[:3])),"
@@ -471,9 +489,10 @@ def _verify_venv(
         "'enable_user_site':site.ENABLE_USER_SITE,"
         "'paths':sys.path,"
         "'stdlib':sysconfig.get_path('stdlib'),"
-        "'platstdlib':sysconfig.get_path('platstdlib'),"
+        "'platstdlib':sysconfig.get_path('platstdlib',vars={'base':sys.base_prefix,'platbase':sys.base_prefix}),"
+        "'venv_platstdlib':sysconfig.get_path('platstdlib'),"
         "'json_path':__import__('json').__file__,"
-        "'extension_path':__import__('_json').__file__,"
+        "'extension_path':None if extension_spec is None else extension_spec.origin,"
         "'module_origin':None if spec is None else spec.origin"
         "},sort_keys=True))"
     )
@@ -490,13 +509,13 @@ def _verify_venv(
         raise ProductFailure("runtime interpreter isolation probe failed") from error
     expected_keys = {
         "implementation", "version", "prefix", "base_prefix", "enable_user_site",
-        "paths", "stdlib", "platstdlib", "json_path", "extension_path",
+        "paths", "stdlib", "platstdlib", "venv_platstdlib", "json_path", "extension_path",
         "module_origin",
     }
     product_site = install_root / "lib/python3.13/site-packages"
     string_fields = {
         "implementation", "version", "prefix", "base_prefix", "stdlib",
-        "platstdlib", "json_path", "extension_path", "module_origin",
+        "platstdlib", "venv_platstdlib", "json_path", "extension_path", "module_origin",
     }
     if (
         probe.returncode != 0
@@ -510,6 +529,7 @@ def _verify_venv(
         or identity["enable_user_site"] is not False
         or identity["stdlib"] != EXPECTED_PYTHON_ABI["stdlib"]
         or identity["platstdlib"] != EXPECTED_PYTHON_ABI["platstdlib"]
+        or Path(identity["venv_platstdlib"]) != install_root / "lib/python3.13"
         or type(identity["paths"]) is not list
         or type(identity["module_origin"]) is not str
         or not Path(identity["module_origin"]).is_relative_to(product_site)

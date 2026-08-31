@@ -88,6 +88,47 @@ def test_m4b_pkg_001_safe_exact_wheel_extraction(tmp_path: Path) -> None:
     assert (output / row.relative_path).read_bytes() == payload
 
 
+def test_m4b_pkg_001_safe_exact_wheel_extraction_accepts_empty_venv_site_packages(
+    tmp_path: Path,
+) -> None:
+    payload = b"module"
+    row = RuntimeFile("package/module.py", len(payload), hashlib.sha256(payload).hexdigest())
+    closure = RuntimeClosure(tmp_path / "manifest", "a" * 64, (row,))
+    wheel = tmp_path / "runtime.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(row.relative_path, payload)
+    output = tmp_path / "runtime"
+    output.mkdir()
+
+    _extract_wheel(wheel, output, closure)
+
+    assert stat.S_IMODE(output.stat().st_mode) == 0o700
+    assert (output / row.relative_path).read_bytes() == payload
+
+
+@pytest.mark.parametrize("unsafe", ["nonempty", "symlink"])
+def test_m4b_pkg_001_wheel_extraction_rejects_unsafe_existing_destination(
+    tmp_path: Path, unsafe: str,
+) -> None:
+    payload = b"module"
+    row = RuntimeFile("package/module.py", len(payload), hashlib.sha256(payload).hexdigest())
+    closure = RuntimeClosure(tmp_path / "manifest", "a" * 64, (row,))
+    wheel = tmp_path / "runtime.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(row.relative_path, payload)
+    output = tmp_path / "runtime"
+    if unsafe == "nonempty":
+        output.mkdir()
+        (output / "unexpected").write_bytes(b"x")
+    else:
+        target = tmp_path / "target"
+        target.mkdir()
+        output.symlink_to(target, target_is_directory=True)
+
+    with pytest.raises(ProductFailure, match="destination"):
+        _extract_wheel(wheel, output, closure)
+
+
 @pytest.mark.parametrize("entry", ["../escape", "/absolute"])
 def test_m4b_pkg_001_rejects_unsafe_or_extra_wheel_entry(tmp_path: Path, entry: str) -> None:
     closure = RuntimeClosure(tmp_path / "manifest", "a" * 64, (
@@ -267,7 +308,8 @@ def test_m4b_pkg_001_install_inventory_binds_exact_abi_digest(tmp_path: Path) ->
 
 def _venv_probe(
     install_root: Path, *, paths: list[str] | None = None,
-    extension_path: str = "/usr/lib/python3.13/lib-dynload/_json.cpython-313-aarch64-linux-gnu.so",
+    extension_path: str = "/usr/lib/python3.13/lib-dynload/_bz2.cpython-313-aarch64-linux-gnu.so",
+    venv_platstdlib: str | None = None,
 ) -> str:
     site = install_root / "lib/python3.13/site-packages"
     return json.dumps({
@@ -282,6 +324,7 @@ def _venv_probe(
         ],
         "stdlib": "/usr/lib/python3.13",
         "platstdlib": "/usr/lib/python3.13",
+        "venv_platstdlib": venv_platstdlib or str(install_root / "lib/python3.13"),
         "json_path": "/usr/lib/python3.13/json/__init__.py",
         "extension_path": extension_path,
         "module_origin": str(site / "litert_lm/__init__.py"),
@@ -329,6 +372,15 @@ def test_m4b_pkg_001_venv_rejects_dynamic_stdlib_extension_escape(tmp_path: Path
     root, runtime = _venv(tmp_path)
     runner = lambda argv, **kwargs: subprocess.CompletedProcess(
         argv, 0, _venv_probe(root, extension_path="/usr/local/lib/python3.13/_json.so"), "",
+    )
+    with pytest.raises(ProductFailure, match="isolation mismatch"):
+        _verify_venv(root, runtime, runner=runner)
+
+
+def test_m4b_pkg_001_venv_rejects_platstdlib_escape(tmp_path: Path) -> None:
+    root, runtime = _venv(tmp_path)
+    runner = lambda argv, **kwargs: subprocess.CompletedProcess(
+        argv, 0, _venv_probe(root, venv_platstdlib="/tmp/escaped-python"), "",
     )
     with pytest.raises(ProductFailure, match="isolation mismatch"):
         _verify_venv(root, runtime, runner=runner)

@@ -641,3 +641,23 @@ PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider \
 - **Candidate-ready, not Accepted:** 尚未建立commit／push／candidate SHA，也未執行Pi。下一步須依workflow
   展示完整candidate commit title／body／files並取得USER明確確認，再push同一immutable SHA，交Tester執行
   三minor portable sign-off；Designer freeze後才在Pi以新run ID執行preflight／acceptance。
+
+### Provisional candidate Pi packaging correction（2026-08-31）
+
+- USER核准的provisional candidate `60cb29de9640996f0253f7d4292a1c33929bcd29`已push至`origin/core`；同SHA
+  portable matrix在CPython 3.11／3.12／3.13各為`242/242 PASS`。Pi repository亦已fast-forward至同一SHA、
+  protected paths clean，固定target為CPython 3.13.5／Debian 13／aarch64，canonical M4 Pi suite收集8項。
+- Git外LiteRT-LM 0.16.0 aarch64 wheel與Gemma 4 E2B model已在Pi取得並以tracked size／SHA-256完整核對；
+  winner product config亦精確符合`c4557b...`。首次real installer diagnostic因標準`venv --without-pip`預先
+  建立空`site-packages`而fail closed，揭露portable fake runner未模擬的real-target gap。
+- installer現只允許既有、非symlink且為空的site-packages，並拒絕non-empty／symlink destination；target
+  stdlib probe改用Pi實際dynamic `_bz2` extension，而非在Debian build中屬built-in且無`__file__`的`_json`。
+  ABI probe亦分開驗base platstdlib `/usr/lib/python3.13`與isolated venv platstdlib位於product root。
+- 修正版以Pi `/tmp` standalone diagnostic執行，不修改candidate checkout：real install `Pass`（14 runtime
+  files、23 inventory files），後續model／config／ABI／inventory／platform／candidate read-only product
+  preflight亦`Pass`。該diagnostic不構成formal preflight、Tester PASS或candidate freeze。
+- Post-correction Developer regression：M4B portable `246/246 PASS`；repository `-m 'not rpi' tests`
+  `667/667 PASS`（collection `667/696`、另29項Pi）；修正檔`py_compile`與`git diff --check`亦PASS。
+- 上述修改觸及installer與portable regression，依append-only規則使`60cb29d...`不再可送正式target gate；
+  完整portable／non-Pi regression通過並取得USER commit確認後，必須建立新candidate SHA、重新執行三minor
+  matrix，再交Designer review／freeze。禁止amend、rebase、reset或force-push改寫舊candidate。
