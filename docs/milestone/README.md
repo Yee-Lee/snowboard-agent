@@ -1,214 +1,35 @@
-# Audio POC Milestone Index
+# ASR Product R1 Milestone Index
 
-本檔是 milestone 狀態的唯一入口。M0 是 readiness gate，M1–M4 是四個正式交付 milestone。
-唯一永久開發分支為 `audio`；已完成 gate 以不可移動的 `audio_mN` annotated tag
-對應其 exact completion commit，避免與其他團隊 tag 混用。M2A/M2B 是 M2 內部
-substages，不建立獨立 milestone tag。
+This file is the single source of truth for AR1 status.
 
-## Current Status
+Last updated: 2026-08-31
 
-最後更新：2026-08-25
+Overall reachability: `ON_TRACK`
 
-最終交付可達性：`ON_TRACK / DELIVERED`
+Active milestone: `AR1M0 — Contract Intake and Research Readiness`
 
-M0 readiness 與 M1 frozen baseline 已完成。M2 的 SenseVoice、Matcha 及 Whisper
-small Q8 歷史 evidence 均保留原產生時的 disposition 與 immutable tested SHA。
-SenseVoice 歷史結果為 `REJECT`；Matcha risk-focused M2 screen 已完成，lifecycle、
-network-disabled P12 與 User 10-prompt quality 均通過，列為 M3 TTS finalist；pinned
-作者模型卡的 Apache-2.0 授權已證實。未具名 training-data lineage 由 User 接受為產品
-風險，component notice bundle 轉為 Gate 3 packaging 義務。依 User 核准範圍不做
-allocator/page 級微調。small Q8
-舊 diagnostic 不構成 formal qualification 或 selection。
+The contract and receipt are committed on `asr_r1`. The legacy Audio tree is
+isolated and recoverable at `audio_m4`. AR1M0 remains incomplete: minimal
+schemas/tests, exact control provenance, candidate identity tracking,
+fixture-audit planning, and data-safety verification remain open.
 
-Core/User 已於 2026-08-21 接受
-[`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003`](../pm_handoff/DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003.md)。
-ACK-003 將 Audio M2 拆成 `M2A Baseline Survey` 與
-`M2B Optimization Feasibility`，並取代 ACK-001/ACK-002 的 ASR execution order
-與 quality/performance elimination gates。CER、sentence correctness、latency、RTF、
-RSS 在 M2A/M2B 改為 comparative observations；歷史 evidence 不回溯重標。
+No real model acquisition, build, or execution is authorized. No AR1 tag exists.
 
-M2A baseline survey 已完成：八個 authorized/optional ASR rows 的 official artifact、
-runtime identity、budget 與 deterministic fixture-selection rules 已固定並有本地 validator/
-tests。Common Voice 26.0 `zh-TW` CC0-1.0 已由 User-authenticated download 取得，exact
-12 source clips 已保存於 Git-ignored controlled evidence，且 sanitized source lock 記錄
-member path、size 與逐檔 SHA-256。Pi 上 frozen labels、delivered manifest 與 50 ASR WAV
-已傳回並驗證，exact internal eight source lock 亦已固定。Internal 8 以 frozen bounds
-連續裁切並保留 pause；Common Voice 12 以 pinned GStreamer/mpg123 runtime 衍生，20 筆
-16 kHz mono S16_LE WAV、duration 與 checksum 已鎖定。六個 required candidate rows
-已在 Pi 完成 bounded execution，並形成單一 comparative scorecard。Review 選出
-small Q8、base Q5、medium Q5 三列 shortlist；沒有下 `PASS`、`FAIL`、winner 或
-production baseline 判定。small Q5 與其他反直覺結果均保留兩次 diagnostic recheck，
-且 diagnostic 不會混入正式 scorecard。
-
-後續 A/B grouping handoff 已從 immutable small Q8 與 base Q8 sanitized formal rows
-完成 40-record 可重算 packet，沒有新 inference 或 retrospective filtering。small Q8
-在 B 相對 A 的整句率增加 50 percentage points、CER 改善 16.952227 points；base Q8
-整句率無 A/B gap、CER 改善 3.675334 points。A 的 exact outcomes 集中在兩筆一般
-Taiwan Mandarin，domain categories 皆未 exact；這只形成 domain-handling 假設，不宣稱
-語料、講者或錄音品質因果，也不改 M2A frozen scorecard/shortlist。
-
-M2B 只允許 M2A shortlist 進場，且每次 probe 相對 named baseline 只改一個變因；
-輸出 primary、fallback、exact recipe 與 benefit/cost/regression delta table，交由
-Core/User comparative review。C-v1 formal task-adjusted scoring 已在 Pi 完成，raw CER
-保留；固定 prompt 改善 Internal，但兩個模型的 Common Voice adjusted edits 均增加 1，
-此 external regression 不隱藏。User audio review 發現一筆 frozen reference mismatch；
-append-only erratum 已套用且原始 evidence 保留。24 筆 blind-first audit 已完成：23 筆
-label confirmed、1 筆 erratum，無 audio-quality、speaker-slip 或 pending findings；
-bounded scorecard 已可在完整限制下對外引用。M2 Gate reviewer 已接受 base Q8 primary、
-small Q8 fallback 與 exact recipe，並正式授權 WebRTC 2.0.10 primary、Silero 6.2.1
-conditional fallback。WebRTC level 3、300/500 ms padding、start/end recall 95%/90%、
-boundary 與 false-start gates 已在任何 real result 前固定。WebRTC 及 triggered Silero
-初次 run 後查明 WebRTC engine state/scoring 不符產品語意，且 Silero adapter 漏掉官方
-64-sample context；舊 no-go 已撤回，immutable SHA/evidence 保留。User 確認 160 ms
-startup mask、500/600 ms capture padding 與 pause-one-utterance 語意後，corrected WebRTC
-fixed debounce 不前進；corrected Silero 的 end retention 為 98%、silence/noise activation
-為 1/10 分鐘，cleanup 與 thermal 均 bounded。User exact-capture audit 確認低音量句首漏字，
-提出 Silero conditional M3 finalist 與 target-mic blocker。
-
-Reviewer 已正式接受 `REQ-AUDIO-M2-GATE-CLOSURE-002`。VAD 的 method correction、Silero 作為 conditional finalist、以及 `M3-ENTRY-LOCK-002` 皆已獲准。M2 標記為 `COMPLETE`。Core 隨後以 `RESP-AUDIO-M3-RISK-FOCUSED-GATES-001` 接受 M3 risk-focused gates 與 packet minimum，授權 POC 準備 exact packet；M3.1 remediation framework 亦獲條件式接受，但只有合格的 front-end blocker 才可另行啟動。M3 的 drain、packet identity 與 packaging finding 均已 append-only 關閉；final Pi run 為單一 Audio/Core SHA、零 FAIL，User 已核准 reviewed PASS disposition。Core commit `5aac035...` 已正式關閉 M3 / Gate 2A。M4 的 P9.1、independent combined 20-session、offline 及 corrected 12-case failure/recovery 均在 Pi 完成 reviewed technical PASS；每個 injection/recovery 及 final cleanup 均為零。Core Designer 以 committed response `be19b70b1dd91674e7ff981eb9d6b2dca9741f54` 接受 corrected Audio SHA `ca51bce9b4e205d9c9faf004d41c27169f108a3f`、portable kit 與三個 final references，blocking findings 為零並批准 closure。`POC-audio-DEL-2026-001-R1` 現為 `POC Accepted`，M4 標記 `COMPLETE`。
-
-| Milestone | 狀態 | 摘要 | 文件 |
-| --- | --- | --- | --- |
-| M0 | `COMPLETE` | Pi worktree SHA/clean check、environment pre-test、SSH、timeout/cancel/cleanup 與 checksum transfer 已通過 | [M0](m0_remote_environment.md) |
-| M1 | `COMPLETE` | Option A 實作基準通過 Core ACK-004；100-item fixture、VAD timing labels 與 metrics 已凍結 | [M1](m1_test_and_audio_baseline.md) |
-| M2 | `COMPLETE` | ASR/TTS/VAD closure 已獲 reviewer 接受；Silero conditional finalist 與 M3-ENTRY-LOCK-002 生效 | [M2](m2_candidate_evaluation.md) |
-| M3 | `COMPLETE` | Final Pi/HAL qualification、User publication approval 與 Core Gate 2A Mechanical ACK 均完成 | [M3](m3_real_hardware_integration.md) |
-| M4 | `COMPLETE / POC ACCEPTED` | P9.1、combined 20/20、offline、failure/recovery 12/12 PASS；Core zero-findings acceptance 與 Designer approval 已 committed | [M4](m4_combined_validation_and_delivery.md) |
-
-## Current M2 substage status
-
-| Substage / parallel track | 狀態 | Exit contribution |
+| Milestone | Status | File |
 | --- | --- | --- |
-| M2A Baseline Survey | `COMPLETE / OBSERVATIONS REVIEWED` | 六個 required rows、單一 scorecard、small Q8/base Q5/medium Q5 shortlist；A/B 40-record supplemental packet 已提交 intake |
-| M2B Optimization Feasibility | `COMPLETE / ACCEPTED FOR M3` | Reviewer 接受 base Q8 primary、small Q8 fallback，均為 P0+greedy+固定 prompt；Common Voice +1 edit regression 保留為 trade-off |
-| Matcha TTS qualification | `COMPLETE / M3 FINALIST` | lifecycle、P12、10-prompt quality 與 material resource risk 均通過；legal limitation 保留至 redistribution/product/final-winner 決策 |
-| VAD scope and evaluation | `COMPLETE / SILERO CONDITIONAL FINALIST` | Corrected Silero start/end retention 78%/98%、silence/noise activation 1/10 分鐘；低音量句首漏字保留為 M3 target-mic blocker，不增加 tuning matrix |
+| AR1M0 | `IN_PROGRESS` | [AR1M0](ar1_m0_research_readiness.md) |
+| AR1M1 | `NOT_STARTED` | [AR1M1](ar1_m1_runtime_feasibility.md) |
+| AR1M2 | `NOT_STARTED` | [AR1M2](ar1_m2_candidate_evaluation.md) |
+| AR1M3 | `NOT_STARTED` | [AR1M3](ar1_m3_integrated_qualification.md) |
+| AR1M4 | `NOT_STARTED` | [AR1M4](ar1_m4_outcome_handoff.md) |
 
-## Core M4a Contract Mapping
+## Risks
 
-| Contract stage | POC milestone disposition |
-| --- | --- |
-| Contract intake SHA | Gate 1 planning/proposal 與既有 ACK intake 可由 committed SHA 追溯；ACK-003 intake 隨本次 milestone 修正提交 |
-| Gate 0：M3 P4 final selection | `PASSED` — Core ACK-004 已接受 Option A 實作基準 |
-| Gate 1：planning + initial authorization | `ACCEPTED / SUPERSEDED IN PART` — Gate 1A、ACK-001 與 ACK-002 歷史授權及 evidence 保留；ASR execution order 與 elimination gates 由 ACK-003 取代 |
-| M2A：baseline survey | `COMPLETE / REVIEWED` — 六個 required rows 與 exact 8+12 PCM 形成單一 scorecard；shortlist 為 small Q8、base Q5、medium Q5 |
-| M2B：optimization feasibility | `ACCEPTED FOR M3` — Reviewer 接受 base Q8 primary、small Q8 fallback 與 prompt recipe；完整 delta/regression 保留，不是 production lock |
-| Gate 2A：POC qualification/selection | `COMPLETE / CORE ACKNOWLEDGED` — Core commit `5aac035...` 接受 complete return；Silero VAD、base-Q8 ASR、Matcha TTS 為唯一 M4 finalists。 |
-| Gate 2B：final reference | `COMPLETE / POC ACCEPTED` — Core `be19b70...` 接受 corrected delivery、20 sessions、failure/offline、portable kit 與三個 final references |
-| Gate 3：Core production implementation | M2A 期間只允許 generic scaffold；M2B reviewed selection 後才可 provisional candidate integration；M4 final handoff 後才可 production lock |
+- Exact PengChengStarling and WeNet identities remain open.
+- Fixtures require prior-use and coverage audit.
+- Streaming schemas, harness, and adapters do not exist yet.
+- Official aarch64/Pi compatibility is unproven.
 
-## Open risks and next authorized work
+## Next authorized work
 
-- `GATE 2B PACKAGE / CORE ACCEPTED / ZERO BLOCKING FINDINGS`：
-  `POC-audio-DEL-2026-001-R1` 已彙整 machine-readable manifest、technical report、portable
-  conformance kit、ASR semantic-pattern report、rejected evidence 與 data-safety boundary。
-  Core `be19b70...` 已書面確認 exact intake、review findings、三個 finalist license
-  disposition 與 Designer approval。Matcha pinned Apache-2.0 模型授權已接受；未具名
-  training-data lineage 為 User-owned Accepted Risk，component notice bundle 為 Gate 3
-  packaging obligation，不再阻擋 Audio M4。
-
-- `P9.1 / COMBINED / FAILURE TECHNICAL PASS`：Audio `8be3bc0...`、`26f33a3...`，
-  Core `6c7fc8c...`。
-  P9.1 20/20、886 samples、peak `3339.688 MiB`、max start gap `0.254273 s`、cleanup 全零；
-  User 已確認 PASS。Independent combined 20/20、offline、peak `979.109 MiB`、`58.95 °C`、
-  無 throttling且 cleanup 全零。Corrected failure catalog 的 VAD/ASR/TTS error、timeout、cancel、
-  force-abort 共 12/12 expected terminal、12/12 recovery SUCCESS，逐案與 final cleanup 全零。
-  User 在取得 consolidated results 後指示完成報告並交付 Core，結果已正式納入 Gate 2B package。
-
-- `P9.1 SAMPLER TIMESTAMP METHOD / FIX VERIFIED LOCALLY`：candidate `ffcfaa8...`
-  完成 20 sessions、cleanup 全零、peak used `3330.422 MiB`、zero swap 且無 throttling；888 筆
-  中一筆 completion timestamp gap 為 `0.532864 s`。timestamp 原在同步 `/proc` collection
-  後記錄，錯把 collection cost 混入 sampling interval。修正改在 collection 前記時，另存
-  collection duration，保留 `0.25 s` schedule 與 `0.5 s` gate；213-test regression 通過。
-  User 已授權修正後下一個唯一 SHA 及正式重跑，不繼承 draft FAIL 的 partial credit。
-
-- `P9.1 SAMPLER EVIDENCE REJECTED / FIX VERIFIED LOCALLY`：candidate `d36490f...`
-  完成 corrected catalog 20 sessions 且 cleanup 全零，但背景 sampler 在第 340 筆因 transient
-  P9 PID 消失而死亡，runner 又誤報固定 `0.5 s` interval，因此該 draft PASS 已拒絕且不發布。
-  append-only 修正改為 `0.25 s` monotonic sampling、驗證實際 gap、容忍 PID exit race，並對
-  任何 sampler thread failure fail closed；完整 212-test regression 通過。User 已預先授權
-  此修正產生的下一個唯一 SHA，必須以該 SHA 從 session 01 重跑。
-
-- `P9.1 CATALOG CORRECTION / USER APPROVED`：candidate `b7b25ff...` 的 sessions 01–07
-  已完成正確 sequential residency，session 08 因誤納 M2 已知 hard-failure
-  `asr-pause-037` 停止，cleanup 全零。`M4-P9.1-CATALOG-CORRECTION-001` 固定以同類別下一筆
-  `asr-pause-038` 取代；既有 M2 evidence 已證明其兩個 event 合併為單一完整 capture。
-  新 candidate 必須從 session 01 重跑，不繼承 partial credit。
-
-- `P9.1 USER APPROVED / NEW CANDIDATE NEXT`：candidate `79185f992dd1510a9e8298242cec66b237081c52`
-  在 package-aligned、zero-swap Pi 上的 P9 draft result 為 `FAIL`。完整 Audio overlap
-  `8.459 s`，其中 base-Q8 ASR `6.028 s`，不能符合 immutable `6.0 s` worker lifetime。
-  User 已判定原設計不符合實際使用狀態；Audio POC 的
-  `P9.1-REALISTIC-TURN-RESIDENCY-DESIGN-001` 以 sequential turn lifecycle 取代 full-session
-  overlap，已獲 User 明確確認。runner/packet 與 fail-closed tests 已完成；下一步建立新
-  immutable candidate。在 P9.1 reviewed PASS 前不執行 independent combined/failure formal runs。
-
-- `P9.1 IMPLEMENTATION AFTER CONFIRMATION`：Core 已以
-  [`RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001`](../pm_handoff/RESP-AUDIO-M3-GATE2A-MECHANICAL-ACK-001.md)
-  關閉 M3 / Gate 2A。User 已核准 internal M4 plan/catalog；packet/schema/local fake scaffold、
-  candidate-SHA-bound fixture lock、P9 client，以及 pinned HAL persistent
-  runner 已建立並通過 local regression。原 P9 已在 Pi 執行但方法被 User 判定為設計缺陷，
-  不產生 M4 credit。P9.1 design 確認後，Audio 才修改 packet/runner、cut 新 immutable
-  candidate，並依 P9.1、independent combined、failure 的順序重新執行。
-- `HARDWARE SESSION`：Pi 5、VoiceHAT `hw:0,0`、目標距離 `0.8–1.0 m`。十個 capture、
-  PCM recovery、LIFE-01～06、VAD、direct/HAL ASR 與六句 TTS 已完成；selected evidence
-  cleanup 全零，final shutdown 無 worker/device owner 且 `throttled=0x0`。
-- `IMPLEMENTATION`：final execution 固定 Audio
-  `f7b9694d1477f26513880526e0718d2b3c5766b3`、Core
-  `6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf`、Core ACK commit
-  `cae21217b2f7d812511bde77edb2cd1eb65e8f06`。22-result summary 為單一 SHA、零 FAIL；
-  Small Q8 與 M3.1 均未啟動。
-- `CLOSED CORE BLOCKER`：16 kHz mono S16_LE → 48 kHz stereo S32_LE data adaptation
-  本身正確，但 success completion 缺 ALSA drain，`close()` 前不保證 physical consumption。
-  修正不改 gain/resampler/format/buffer；POC 不增加自有 resampler。
-- `HISTORICAL P9 ARTIFACT / METHOD SUPERSEDED`：固定
-  `M4B-P9-RESIDENCY-SURROGATE-001`、protocol、source SHA 與 checksum 已收到，附件
-  regression 6 項通過；Core ACK 已固定於
-  `caf4f7ba867e4ebc1972df0ade86c605a873a286`。artifact identity 由 P9.1 沿用，但原本
-  full-session overlap 方法已由 User 指示取代；歷史 draft failure 保留且不產生 M4 credit。
-- `CONTINGENCY / NOT ACTIVATED`：M3 final target-mic evidence 未形成 gain、pre-roll 或
-  front-end blocker；M3.1 framework 維持待命但不啟動。
-- `CLOSED M3 TARGET-MIC RISK`：Silero 在 `0.8–1.0 m` 的 final low-volume case 保留 speech，
-  direct/HAL ASR 均 exact；silence、startup、impact、cough 與 cleanup regression 均未出現。
-- `RISK`：Matcha risk-focused screen 已通過；M2 的 `tts-013` 歷史評分為 4，M3 target
-  AudioOutput 六句皆為 5/5 且無 critical misread。Legal lineage 仍須在 redistribution、product adoption
-  或 Gate 2B final-winner approval 前關閉。
-- `RISK`：大型/optional rows 可能受 Pi resource 或 schedule 限制；省略必須留下
-  evidence-backed reason。
-- `RISK`：Vosk upstream source/model 為 Apache-2.0，但官方 0.3.45 aarch64 wheel
-  METADATA 標示 license `UNKNOWN` 且未附 notice；完整 dependency closure 已固定，僅供
-  internal survey，若進入 shortlist 仍須在再散布或產品採用前完成 legal review。
-- `BOUNDARY`：M2A observations 不得標成 PASS/FAIL/winner；歷史 results 不得重標。
-- `BOUNDARY`：Artifact mismatch、unknown provenance/license、runtime network access、
-  OOM、bounded timeout 或 incomplete cleanup 仍 fail closed 並保留 observation。
-
-## Status Rules
-
-允許狀態：
-
-- `NOT_STARTED`
-- `PLANNED / NEXT`
-- `IN_PROGRESS`
-- `GATE_REVIEW`
-- `COMPLETE`
-- `BLOCKED`
-- `CHANGE_REQUESTED`
-
-狀態變更時必須同時更新：
-
-1. 最終交付可達性：`ON_TRACK`、`AT_RISK` 或 `NOT_REACHABLE`。
-2. 已取得 evidence 與未關閉 exit conditions。
-3. 新風險、blocker 或 change request。
-4. 下一個獲准工作，不默認展開後續 milestone。
-
-## Governing Documents
-
-- [工作流程與合作方式](../audio_poc_workflow.md)
-- [POC 開發指引](../specs/audio_poc_development_guide.md)
-- [最終繳交清單](../specs/audio_poc_delivery_checklist.md)
-- [M3 Audio 要求](../specs/core_audio_m3_requirements.md)
-
-## Reference Material (Non-authoritative)
-
-- [M3 Audio 設計修訂提案](../poc/poc_audio_m3_design_changes.md)
-- [M4a Audio POC 計畫](../poc/poc_audio_m4_audio_poc_plan.md)
+Complete only AR1M0 readiness artifacts and local fake/unit verification.

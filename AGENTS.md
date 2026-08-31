@@ -1,71 +1,47 @@
-# Audio POC Agent Guide
+# ASR Product R1 Agent Guide
 
-This repository is an isolated Raspberry Pi 5 audio POC. Every agent must work
-backward from the final delivery gate rather than optimizing for a one-off demo.
+This repository evaluates low-latency, local, streaming ASR on Raspberry Pi 5
+CPU-only hardware.
 
-## Read by task and milestone
+## Read first
 
-Do this at the beginning of a new work session, after a context reset, or when
-the milestone state changes:
+At a new session, context reset, or milestone change, read:
 
-1. `docs/milestone/README.md` — current status and active milestone.
-2. The active `docs/milestone/m*.md` file — entry/exit gate and scope.
-3. `docs/audio_poc_workflow.md` — authority for scope, evidence, roles and
-   Git/Pi workflow.
+1. `docs/milestone/README.md`.
+2. The active `docs/milestone/ar1_m*.md` file.
+3. `docs/workflow.md`.
 
-Read these only when the task needs them:
+Read the relevant file under `docs/specs/` before changing evaluation, runtime
+protocol, fixtures, or the outcome checklist. The inbound contract is under
+`docs/handoff/inbound/`.
 
-- `docs/specs/audio_poc_delivery_checklist.md` — milestone entry, gate
-  review, delivery-manifest work, or a task that claims to close a final item.
-- `docs/specs/audio_poc_development_guide.md` — POC code, wrappers,
-  fixtures, candidate comparison, or combined-pipeline work.
-- `docs/specs/core_audio_m3_requirements.md` — M3 work or any change that
-  touches the Audio HAL contract.
-- `poc_audio/README.md` — workstation/Pi checkout preparation or remote test
-  execution.
+## Required behavior
 
-Do not reread unchanged documents during the same task merely by habit. Follow
-links from the active milestone only when the current task needs that detail.
+- The permanent development branch is `asr_r1`.
+- The immutable historical control is `audio_m4` at
+  `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`.
+- AR1 milestone tags are `asr_r1_m0` through `asr_r1_m4`. Create an annotated
+  tag only after formal completion; never move it.
+- Candidate SHAs become immutable when published, submitted, or used for Pi
+  evidence. Append fixes; never rewrite a submitted SHA.
+- Real execution requires milestone entry, exact identities, a clean SHA, a
+  frozen packet, and reviewed evidence.
+- Hardware results are `PASS`, `FAIL`, or `INCONCLUSIVE` only after review.
+- Keep models, binaries, private audio, sensitive transcripts, credentials,
+  endpoints, raw results, and operator configuration out of Git.
+- Do not modify the Snowboard product composition root.
+- Post-process and second-scorer work is diagnostic only and does not enter the
+  formal AR1M3 comparison.
+- Preserve failed evidence and never relax a method after seeing results.
 
-## Required Working Behavior
+## Git commits
 
-- M0 is a readiness gate. M1–M4 are the four delivery milestones.
-- Treat `docs/milestone/README.md` as the single source of truth for current
-  milestone status. Do not silently start a later milestone.
-- Before doing work, identify which final checklist item it advances. Do not do
-  work with no delivery contribution.
-- Hardware results are `PASS`, `FAIL`, or `INCONCLUSIVE` only after evidence is
-  reviewed. A verbal report or successful demo is not a pass.
-- Never relax a frozen gate after seeing candidate results. Raise a change
-  request when the final goal is no longer reachable under current assumptions.
-- Keep POC orchestration out of the product composition root. Do not add
-  barge-in, AEC, wake word, or unrelated product features.
-- Do not commit models, large results, private audio, secrets, or sensitive
-  transcripts.
-- Use `audio` as the only persistent development branch. Local WIP commits may
-  be squashed before a candidate is published, but a published or submitted
-  candidate SHA is immutable and must never be rewritten with reset or rebase.
-- Write commit subjects and bodies in English, include a bullet-list body, and
-  keep the complete commit message to roughly 60 words or fewer.
-- Record rejected validation evidence and append fixes on top of the rejected
-  candidate. Converge those new fixes into the next candidate without altering
-  any previously submitted SHA.
-- Create immutable annotated tags `audio_m0`, `audio_m1`, and so on only when
-  the matching milestone or readiness gate is formally complete. The
-  `audio_` prefix prevents collisions with other teams. Never move an existing
-  milestone tag.
-- An agent may place a PM-authorized delivery or handoff file at the exact path
-  requested in another repository. This is a delivery-only exception: do not
-  alter any other file, index, workflow, status, response, ACK, branch, tag, or
-  Git history in the receiving repository, and do not commit or push it. The
-  receiving team owns intake and all repository changes after delivery.
-- At every milestone gate, update the milestone index, remaining-delivery
-  assessment, risks, and any required adjustment request.
+Use `[work_type][AR1Mx/stage]: concise title` with a concise English bullet-list
+body near 60 words. Commit complete, reviewable work segments, not every
+investigation step.
 
-## Final Outcome
+## Final outcome
 
-The POC must deliver one approved VAD, ASR, and TTS baseline, or an explicit
-evidence-backed no-go. The result must be reproducible on Raspberry Pi 5,
-offline, cancellable, clean after failure, integrated with a pinned M3 Audio HAL
-SHA, and proven with at least 20 combined sessions. Submission is only ready for
-internal review until all blocking findings are closed.
+AR1M4 submits exactly `SUPPORTED`, `NOT_SUPPORTED`, or `INCONCLUSIVE`. User owns
+the product decision. AR1 cannot accept a Core gate, create `ALPHA.R1`, or
+select M5.

@@ -40,18 +40,22 @@ htmlcov/
 # Operator-specific remote access and raw hardware-test evidence
 # Keep connection endpoints, account/key selection, and unsanitized run output
 # outside version control. Publish only reviewed, sanitized summaries.
-poc_audio/ssh/*.conf
-poc_audio/evidence/m0/[0-9]*/
-poc_audio/evidence/m1/[0-9]*/
-poc_audio/evidence/m2/[0-9]*/
-poc_audio/evidence/m3_option_a/[0-9]*/
+asr_r1/ssh/
+asr_r1/evidence/raw/
+asr_r1/evidence/runs/
 
 # Controlled fixture audio stays local. Track only project-authored prompts,
 # metadata/checksum indexes, authorization records, and sanitized summaries.
-poc_audio/fixtures/artifacts/
+asr_r1/fixtures/audio/
 
 # Gate candidate sources/models/voices are controlled provenance artifacts.
 # Keep only the handling policy in Git; exact locators and hashes belong in
 # sanitized proposal manifests.
-poc_audio/artifacts/*
-!poc_audio/artifacts/README.md
+asr_r1/artifacts/
+asr_r1/controlled/
+*.onnx
+*.pt
+*.pth
+*.gguf
+*.wav
+*.flac
