@@ -6,7 +6,12 @@ from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.rest import Rest
 from sbd.action.speak import Speak, make_tts_adapter
 from sbd.action.tool import Tool, ToolRegistry
-from sbd.cognition.llm import LLMGeneration, MockLLMEngineAdapter
+from sbd.cognition.llm import (
+    LLMGeneration,
+    LLMGenerationMetrics,
+    MockLLMEngineAdapter,
+)
+from sbd.cognition.factory import make_llm_adapter
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
 from sbd.core.audio import make_audio_input, make_audio_output
@@ -51,8 +56,12 @@ class M2Composition:
         )
         self.llm_outcomes = llm_outcomes or (
             LLMGeneration(
-                '{"action_kind":"rest","action_payload":{},'
-                '"next_perceptions":[]}'
+                {
+                    "action_kind": "rest",
+                    "action_payload": {},
+                    "next_perceptions": [],
+                },
+                LLMGenerationMetrics(0.0, 1.0, 1, 1.0, 1, 1.0, 1),
             ),
         )
         self.button: MockButtonInputSource | None = None
@@ -78,7 +87,17 @@ class M2Composition:
         gpio = make_gpio(config.core.gpio)
         asr = make_asr_adapter(config.perception.listen.adapter)
         vision = MockVisionAdapter()
-        llm = MockLLMEngineAdapter(self.llm_outcomes)
+        if config.cognition.llm.driver == "mock":
+            llm = MockLLMEngineAdapter(self.llm_outcomes)
+        else:
+            from sbd.cognition.litert_lm.resource import ProcLLMResourceSampler
+
+            llm = make_llm_adapter(
+                config.cognition.llm,
+                schedule_recovery=rm.begin_recovery,
+                wait_recovery=rm.wait_recovery,
+                resource_sampler=ProcLLMResourceSampler(),
+            )
         tts = make_tts_adapter(config.action.tts)
         external = ExternalMessageSource(
             bus=bus,
@@ -148,6 +167,8 @@ class M2Composition:
         rm.register(ResourceSpec(
             key="backend.cognition.reasoner.llm", phase=StartPhase.BACKEND,
             factory=lambda resolver: llm,
+            recoverable=config.cognition.llm.driver == "litert_lm",
+            recovery_hook=(llm if config.cognition.llm.driver == "litert_lm" else None),
         ))
         rm.register(ResourceSpec(
             key="backend.action.speak.tts", phase=StartPhase.BACKEND,
@@ -207,6 +228,7 @@ class M2Composition:
                 bus,
                 rm.reasoner_capability_of,
                 self.action_validator,
+                config.cognition.reason_timeout_seconds,
             ),
             required=True,
         ))

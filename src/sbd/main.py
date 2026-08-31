@@ -72,6 +72,7 @@ async def run_app(
     rm: ResourceManager | None = None
     sm: StateManager | None = None
     fatal_bus_task: asyncio.Task[None] | None = None
+    fatal_rm_task: asyncio.Task[None] | None = None
     stopped_task: asyncio.Task[None] | None = None
     signal_installed: list[signal.Signals] = []
     shutdown_enqueued = False
@@ -93,6 +94,7 @@ async def run_app(
             )
         )
         rm = ResourceManager(config, bus)
+        fatal_rm_task = asyncio.create_task(rm.wait_fatal())
         sm = StateManager(
             config,
             bus,
@@ -133,6 +135,7 @@ async def run_app(
 
         supervised: set[asyncio.Task[object]] = {
             fatal_bus_task,
+            fatal_rm_task,
             stopped_task,
         }
         done, _ = await asyncio.wait(
@@ -145,6 +148,8 @@ async def run_app(
         # caused another supervised task to complete in the same loop turn.
         if fatal_bus_task in done:
             root_error = fatal_bus_task.exception()
+        if root_error is None and fatal_rm_task in done:
+            root_error = fatal_rm_task.exception()
         if root_error is None and stopped_task in done:
             root_error = stopped_task.exception()
 
@@ -170,11 +175,11 @@ async def run_app(
         for sig in signal_installed:
             loop.remove_signal_handler(sig)
 
-        for waiter in (fatal_bus_task, stopped_task):
+        for waiter in (fatal_bus_task, fatal_rm_task, stopped_task):
             if waiter is not None and not waiter.done():
                 waiter.cancel()
         await asyncio.gather(
-            *(waiter for waiter in (fatal_bus_task, stopped_task) if waiter is not None),
+            *(waiter for waiter in (fatal_bus_task, fatal_rm_task, stopped_task) if waiter is not None),
             return_exceptions=True,
         )
 

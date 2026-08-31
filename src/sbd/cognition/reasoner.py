@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Callable
 
-from sbd.adaptor.errors import AdapterError
+from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
 from sbd.cognition.llm import LLMEngineAdapter
-from sbd.cognition.prompt_builder import PromptBuilder, ReasoningInput
+from sbd.cognition.llm_child_protocol import (
+    ReasoningInputContractError,
+    ReasoningInputTooLarge,
+)
+from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ErrorOccurred, LLMResponse, PerceptionResult
 from sbd.core.lifecycle import ForceAbortReport
@@ -38,6 +42,7 @@ class Reasoner(WorkerRuntime):
         bus: EventBus,
         capability_of: Callable[[str], bool],
         action_validator: ActionPayloadValidator,
+        reason_timeout_seconds: float = _REASON_TIMEOUT_SECONDS,
     ) -> None:
         super().__init__()
         self._llm = llm
@@ -45,6 +50,7 @@ class Reasoner(WorkerRuntime):
         self._bus = bus
         self._capability_of = capability_of
         self._action_validator = action_validator
+        self._reason_timeout_seconds = reason_timeout_seconds
 
     async def start(self) -> None:
         await self._llm.start()
@@ -71,38 +77,34 @@ class Reasoner(WorkerRuntime):
             unexpected: Exception | None = None
             response: LLMResponse | None = None
             try:
-                prompt = self._prompt_builder.build(
-                    ReasoningInput(
-                        perceptions=perception_results,
-                        pending_message_ids=pending_message_ids,
-                        available_perceptions=self._available(_PERCEPTION_KINDS),
-                        available_actions=self._available(_ACTION_KINDS),
-                        tool_schemas=(),
-                    )
+                value = self._prompt_builder.build(
+                    perceptions=perception_results,
+                    pending_message_count=len(pending_message_ids),
+                    available_perceptions=self._available(_PERCEPTION_KINDS),
+                    available_actions=self._available(_ACTION_KINDS),
                 )
                 try:
-                    async with asyncio.timeout(_REASON_TIMEOUT_SECONDS):
+                    async with asyncio.timeout(self._reason_timeout_seconds):
                         generation = await self._await_operation(
-                            self._llm.generate(prompt)
+                            self._llm.generate(value)
                         )
-                    if not generation.text.strip() or generation.finish_reason == "refused":
-                        response = self._fallback(
-                            session_id, turn_id, correlation_id
-                        )
-                    else:
-                        response = self._normalize(
-                            generation.text,
-                            session_id,
-                            turn_id,
-                            correlation_id,
-                        )
+                    response = self._normalize(
+                        generation.response,
+                        session_id,
+                        turn_id,
+                        correlation_id,
+                    )
                 except TimeoutError:
                     await self._llm.abort()
                     response = self._fallback(
                         session_id, turn_id, correlation_id
                     )
+                except ReasoningInputContractError:
+                    raise
                 except (
-                    AdapterError,
+                    ReasoningInputTooLarge,
+                    AdapterRejected,
+                    AdapterTimeout,
                     ValueError,
                     TypeError,
                 ):
@@ -130,19 +132,12 @@ class Reasoner(WorkerRuntime):
 
     def _normalize(
         self,
-        raw: str,
+        raw: Mapping[str, object],
         session_id: str,
         turn_id: int,
         correlation_id: int,
     ) -> LLMResponse:
-        try:
-            value = json.loads(raw)
-        except (json.JSONDecodeError, RecursionError) as exc:
-            logger.warning(
-                "LLM response parse failed reason=%s", type(exc).__name__
-            )
-            raise ValueError("invalid model response") from exc
-        if type(value) is not dict or set(value) != {
+        if type(raw) is not dict or set(raw) != {
             "action_kind",
             "action_payload",
             "next_perceptions",
@@ -151,25 +146,29 @@ class Reasoner(WorkerRuntime):
                 "LLM response schema rejected path=$ reason=exact fields"
             )
             raise ValueError("invalid model response")
-        action_kind = value["action_kind"]
-        payload = value["action_payload"]
-        requested = value["next_perceptions"]
+        action_kind = raw["action_kind"]
+        payload = raw["action_payload"]
+        requested = raw["next_perceptions"]
         if type(action_kind) is not str or type(payload) is not dict:
             raise ValueError("invalid model response")
         if type(requested) is not list or any(
             type(kind) is not str for kind in requested
         ):
             raise ValueError("invalid model response")
+        if len(requested) != len(set(requested)):
+            raise ValueError("duplicate next perception")
         self._action_validator.validate(action_kind, payload)
         if action_kind == "rest":
+            if requested:
+                raise ValueError("rest cannot request a perception")
             return LLMResponse(
                 "rest", {}, (), session_id, turn_id, correlation_id
             )
         if action_kind not in _ACTION_KINDS or not self._capability_of(action_kind):
             raise ValueError("unavailable action")
-        next_perceptions = self._dedupe_available(requested)
-        if not next_perceptions:
+        if not requested or any(not self._capability_of(kind) for kind in requested):
             raise ValueError("no available next perception")
+        next_perceptions = tuple(requested)
         return LLMResponse(
             action_kind,
             payload,

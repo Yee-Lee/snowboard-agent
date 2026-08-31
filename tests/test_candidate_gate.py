@@ -10,7 +10,13 @@ from pathlib import Path
 
 import pytest
 
-from scripts.candidate_gate import GateFailure, _network_attempt_count
+from scripts.candidate_gate import (
+    GateFailure,
+    M4B_CARD_REQUIRED,
+    _network_attempt_count,
+    _validate_m4b_card,
+    validate_m4b_product_preflight,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -444,3 +450,211 @@ def test_m4a_network_trace_counts_only_inet_attempts(tmp_path: Path) -> None:
     assert _network_attempt_count(trace) == 2
     with pytest.raises(GateFailure, match="did not produce"):
         _network_attempt_count(tmp_path / "absent.log")
+
+
+def test_m4b_acceptance_cards_require_every_test_spec_evidence_field() -> None:
+    assert set(M4B_CARD_REQUIRED) == {
+        "M4B-RDY-001", "M4B-GEN-001", "M4B-OUT-001", "M4B-P5-001",
+        "M4B-CAN-001", "M4B-REC-001", "M4B-HIST-001", "M4B-PRIV-001",
+        "M4B-OFF-001", "M4B-RES-001", "M4B-PKG-001",
+    }
+    for test_id, fields in M4B_CARD_REQUIRED.items():
+        with pytest.raises(GateFailure, match="required evidence"):
+            _validate_m4b_card({"candidate_sha": "a" * 40, "test_id": test_id})
+        assert fields
+
+
+def test_m4b_ready_card_accepts_only_exact_sanitized_identity() -> None:
+    card = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-RDY-001",
+        "engine_load_latency_ms": 1.0,
+        "ready_latency_ms": 2.0,
+        "prewarm_latency_ms": 1.0,
+        "prewarm_prompt_sha256": "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d",
+        "ready_identity": {
+            "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+            "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+            "platform": "pi-debian13-aarch64",
+            "runtime_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+            "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+            "config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
+        },
+    }
+    _validate_m4b_card(card)
+    card["ready_identity"]["candidate_id"] = "wrong"
+    with pytest.raises(GateFailure, match="identity"):
+        _validate_m4b_card(card)
+
+
+def test_m4b_card_rejects_private_absolute_path_and_unsafe_locator() -> None:
+    private = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-PRIV-001",
+        "scanned_locators": ["logs/product.log"],
+        "paths_digest": "b" * 64,
+        "hits": 0,
+        "debug": "/tmp/private-model",
+    }
+    with pytest.raises(GateFailure, match="absolute private path"):
+        _validate_m4b_card(private)
+    package = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-PKG-001",
+        "install_inventory_sha256": "b" * 64,
+        "python_abi_attestation_sha256": "c" * 64,
+        "abi_status": "Pass",
+        "file_count": 1,
+        "resource_samples_locator": "../private/inventory.json",
+    }
+    with pytest.raises(GateFailure, match="invalid evidence locator"):
+        _validate_m4b_card(package)
+
+
+def test_m4b_package_card_requires_sanitized_exact_abi_digest() -> None:
+    card = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-PKG-001",
+        "install_inventory_sha256": "b" * 64,
+        "python_abi_attestation_sha256": "c" * 64,
+        "abi_status": "Pass",
+        "file_count": 20,
+    }
+    _validate_m4b_card(card)
+    for field, wrong in (
+        ("python_abi_attestation_sha256", "bad"),
+        ("abi_status", "Fail"),
+        ("file_count", 0),
+    ):
+        changed = dict(card)
+        changed[field] = wrong
+        with pytest.raises(GateFailure, match="ABI evidence"):
+            _validate_m4b_card(changed)
+
+
+def test_m4b_resource_card_temperature_gate_is_exclusive() -> None:
+    card = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-RES-001",
+        "session_count": 20,
+        "generation_count": 3,
+        "r14_formula_version": "2026-08-29-r14-user-resource-adjustment",
+        "combined_pss_slope_mib_per_session": 1.0,
+        "system_used_slope_mib_per_session": 1.0,
+        "combined_pss_late_minus_early_median_delta_mib": 1.0,
+        "system_used_late_minus_early_median_delta_mib": 1.0,
+        "max_generation_delta_mib": 1.0,
+        "max_system_used_mib": 3584.0,
+        "swap_used_zero": True,
+        "oom_kill_delta": 0,
+        "throttled_zero": True,
+        "thermal_max_celsius": 79.999,
+        "resource_samples_locator": "m4b/resource-samples.json",
+        "cleanup_locator": "m4b/cleanup.json",
+        "poc_p9_p10b_status": "FAIL",
+        "user_waiver": "KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION",
+    }
+    _validate_m4b_card(card)
+    card["thermal_max_celsius"] = 80.0
+    with pytest.raises(GateFailure, match="frozen gate"):
+        _validate_m4b_card(card)
+
+
+def test_m4b_lifecycle_cards_reject_false_pass_values() -> None:
+    cards = [{
+        "candidate_sha": "a" * 40, "test_id": "M4B-CAN-001",
+        "case": "cooperative-cancel-and-level2", "native_cancel_calls": 1,
+        "worker_joined": True, "term_sent": True, "kill_sent": False,
+        "waitpid_exit_code": -15, "orphan_count": 0, "recovery_ready": True,
+    }, {
+        "candidate_sha": "a" * 40, "test_id": "M4B-REC-001",
+        "trigger_reason": "attempt-limit-8-and-16", "generation_count": 3,
+        "ticket_id": 2, "resource_samples_locator": "m4b/resource-samples.json",
+        "prewarm_timings_locator": "m4b/prewarm-timings.json",
+    }, {
+        "candidate_sha": "a" * 40, "test_id": "M4B-HIST-001",
+        "turn_count": 20, "conversation_count": 20, "child_pid_stable": True,
+        "current_marker_pass_count": 20, "prior_marker_hits": 0,
+    }]
+    for card in cards:
+        _validate_m4b_card(card)
+    mutations = (
+        (0, "native_cancel_calls", 2),
+        (1, "ticket_id", 3),
+        (2, "child_pid_stable", False),
+    )
+    for index, field, wrong in mutations:
+        changed = dict(cards[index])
+        changed[field] = wrong
+        with pytest.raises(GateFailure, match="not fully passing"):
+            _validate_m4b_card(changed)
+
+
+def test_m4b_privacy_card_digest_binds_every_scanned_locator() -> None:
+    locators = ["cards/M4B-*.json", "m4b/*.json", "stdout", "stderr", "caplog"]
+    card = {
+        "candidate_sha": "a" * 40, "test_id": "M4B-PRIV-001",
+        "scanned_locators": locators,
+        "paths_digest": hashlib.sha256("\n".join(locators).encode()).hexdigest(),
+        "hits": 0,
+    }
+    _validate_m4b_card(card)
+    card["scanned_locators"] = [*locators, "unbound"]
+    with pytest.raises(GateFailure, match="scan identity"):
+        _validate_m4b_card(card)
+
+
+def test_m4b_runner_preflight_binds_sanitized_python_abi_and_inventory() -> None:
+    candidate = "a" * 40
+    value = {
+        "status": "Pass",
+        "candidate_sha": candidate,
+        "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+        "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+        "platform": "pi-debian13-aarch64",
+        "python": "CPython 3.13.5",
+        "artifact_lock_sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99",
+        "runtime_manifest_sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+        "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+        "product_config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
+        "runtime_file_count": 14,
+        "install_file_count": 20,
+        "python_abi_attestation_sha256": "b" * 64,
+        "install_inventory_sha256": "c" * 64,
+    }
+    assert validate_m4b_product_preflight(value, candidate) == ("b" * 64, "c" * 64)
+    for field, wrong in (
+        ("candidate_sha", "d" * 40),
+        ("python", "CPython 3.13"),
+        ("runtime_manifest_sha256", "d" * 64),
+        ("model_sha256", "e" * 64),
+        ("runtime_file_count", 15),
+        ("python_abi_attestation_sha256", "bad"),
+        ("install_file_count", 0),
+    ):
+        changed = dict(value)
+        changed[field] = wrong
+        with pytest.raises(GateFailure, match="identity|ABI evidence"):
+            validate_m4b_product_preflight(changed, candidate)
+    for field, value_to_add in (
+        ("private_path", "/tmp/private-runtime"),
+        ("unexpected", "metadata"),
+    ):
+        changed = dict(value)
+        changed[field] = value_to_add
+        with pytest.raises(GateFailure, match="identity"):
+            validate_m4b_product_preflight(changed, candidate)
+
+
+def test_m4b_package_card_rejects_unsanitized_extra_fields() -> None:
+    card = {
+        "candidate_sha": "a" * 40,
+        "test_id": "M4B-PKG-001",
+        "install_inventory_sha256": "b" * 64,
+        "python_abi_attestation_sha256": "c" * 64,
+        "abi_status": "Pass",
+        "file_count": 20,
+        "session_count": 20,
+    }
+    with pytest.raises(GateFailure, match="evidence fields"):
+        _validate_m4b_card(card)

@@ -1,6 +1,6 @@
 # M4b Local LLM production design
 
-狀態：**Design review approved；Tester coverage、implementation與Core Gate 3 pending**。
+狀態：**Design與Tester coverage review approved；implementation in progress；target CPython ABI test-spec delta與Core Gate 3 pending**。
 
 Architecture change：**No**。Persistent child、LiteRT-LM runtime、Reasoner、Resource Manager與三級
 收斂邊界不變。USER已於2026-08-29澄清`arch.md`的`Gemma3:e2b`是文字typo；E2B指Gemma 4 E2B，
@@ -46,16 +46,16 @@ fallback或recovery policy。
 Ch 5既有`prepare_shutdown()`同時固定shutdown期間取消recovery orchestration、清理未READY replacement
 及cleanup失敗升Level 3的語意；它與`rm.wait_fatal()`共同構成本輪所引用的RM surface，不新增LLM owner。
 
-### 0.2 Design approval and remaining Development Ready blocker
+### 0.2 Design/test approval and Development Ready closure
 
 Designer已完成§3.1 structured seam、startup/pre-warm、single-flight generation、typed terminal、
 planned recycle state machine、real config、tracked lock responsibility、offline package/preflight、
 license/notices與known resident-retention defect的可驗證產品處置。
 
 Reviewer已於2026-08-30完成本章、`protocol.md` §4/§6、`model_spec.md` §6、Ch 2b/5/6/9/10與
-M4 gate的單輪審查；`IR_review_M4B_I`以Blocking 0標記`Resolved`並歸檔。設計審查已通過，剩餘
-Development Ready blocker只有Tester新增§10完整M4B Test IDs，再由Designer以`TR_spec_M4B_I`
-確認100% coverage；在該單Resolved前不交Developer，也不宣告Gate 3 PASS或Accepted。
+M4 gate的單輪審查；`IR_review_M4B_I`以Blocking 0標記`Resolved`並歸檔。Tester其後新增§10完整
+M4B Test IDs，Designer於2026-08-30以`TR_spec_M4B_I` Round II確認100% coverage、Blocking 0並歸檔。
+M4b因此為Development Ready並可交Developer執行WP-01～06；此狀態不宣告Gate 3 PASS或Accepted。
 
 ### 0.3 Bounded recycle policy
 
@@ -590,7 +590,7 @@ Gate 2B final ACK已到位。`requirements/m4b/llm-artifacts.json`為strict exac
 | `runtime` | API `0.16.0`、source commit`924e79...`、exact wheel filename/digest、native library digest`9b3a...`、Apache-2.0 |
 | `model` | exact source repo/revision、filename、size`2588147712`、digest`181938...`、embedded mobile quantization、Apache-2.0 |
 | `product_profile` | POC config locator/digest`c4557b...`、config-schema digest`ce8fa...`、prompt/response/Pi-protocol schema locators與digests`aca834...`/`4be45e...`/`e1af3b...`、pre-warm prompt digest`4f3bc3...`、128/128/1024、0.0/1.0/4與all deadlines/offline flags |
-| `runtime_closure` | `llm-runtime-rpi-cp313.json` relative locator及其implementation-time computed digest；manifest列出isolated interpreter、installed distribution與native files的relative path/size/digest，不接受placeholder |
+| `runtime_closure` | `llm-runtime-rpi-cp313.json` relative locator及其computed digest；manifest只列product-owned LiteRT-LM distribution/native payload的exact relative path/size/digest，不列target-owned CPython launcher或stdlib，不接受placeholder |
 | `licenses` | runtime/model各自source metadata locator、SPDX`Apache-2.0`、repository-relative license/notice locator |
 
 Known shortened digests above are prose labels only；JSON須保存`model_spec.md` §6與§3.2列出的完整值。
@@ -598,15 +598,53 @@ Lock parser逐欄比較，不以lock內自稱identity取代expected constants。
 prompt/output與POC evidence payload保持Git-external；tracked lock、runtime manifest、license text與notices
 不得包含它們或使用者absolute path。
 
+### 8.1 Target CPython ABI boundary（`IR_dev_M4B_I` disposition）
+
+採用**target ABI boundary**，不建立或宣稱self-contained CPython distribution。這是既有platform
+boundary的具體化，不改變persistent-child architecture：Debian 13 aarch64的CPython base runtime、stdlib、
+`lib-dynload`與Debian loader可解析的platform system libraries屬target image dependency；LiteRT-LM wheel、
+bundled native library、model與product config仍是Core exact product closure。
+
+固定支援面如下：
+
+- install只接受regular、non-symlink、root-owned `/usr/bin/python3.13`作base interpreter；exact runtime為
+  `CPython 3.13.5`，`SOABI="cpython-313-aarch64-linux-gnu"`、
+  `MULTIARCH="aarch64-linux-gnu"`、`sys.abiflags=""`、64-bit little-endian；錯一項即在staging前fail closed；
+- `sysconfig`的stdlib／platstdlib須解析至`/usr/lib/python3.13`，dynamic stdlib extension只能來自其
+  `lib-dynload`；這些target-owned bytes不複製進`llm-runtime-rpi-cp313.json`，也不以generated
+  install inventory冒充tracked authority；
+- preflight以`dpkg-query`要求exact package set
+  `python3.13-minimal / libpython3.13-minimal / python3.13 / libpython3.13-stdlib / python3.13-venv`
+  全部為`install ok installed`、版本皆屬`3.13.5-*`且五者version字串完全相同。Debian revision是
+  target-run observed identity而非Core artifact baseline；canonical sorted package tuples、base executable
+  SHA-256、exact `sys.version`、SOABI/MULTIARCH、stdlib roots與glibc version共同形成
+  `python_abi_attestation_sha256`；
+- install使用上述base建立`--copies --without-pip` venv。`pyvenv.cfg`須綁
+  `/usr/bin/python3.13`且`include-system-site-packages=false`；product `runtime_python`仍指向
+  `<install-root>/bin/python`。Venv launcher與`pyvenv.cfg`可進run-specific install inventory，但不進14-file
+  tracked payload manifest；
+- install、Pi preflight與正式acceptance開始時必須重算同一ABI attestation並exact相等；任一package
+  update、launcher digest、stdlib root、ABI或glibc drift都撤銷該install／preflight，不得沿用先前PASS；
+- 「no system-site」禁止的是user/system third-party `site-packages`／`dist-packages`與environment escape，
+  不是禁止Python stdlib或platform ABI library。Child固定`-I`、`PYTHONNOUSERSITE=1`、移除
+  `PYTHONPATH/PYTHONHOME/LD_PRELOAD`；`sys.path`不得含`/usr/local/.../site-packages`、
+  `/usr/lib/python3/dist-packages`或任何product root外第三方package path；`litert_lm`及其native library
+  必須只從verified product site-packages載入。
+
+Product installer不得呼叫`apt`、修改target packages或下載base runtime。未安裝exact target ABI時是
+preflight/environment failure，不得把target bytes捕捉後寫回tracked manifest。CPython patch、SOABI、
+package major/minor或stdlib boundary日後改變，須更新本設計與affected test spec並建立新candidate；單純
+Debian package revision更新也必須產生新的ABI attestation並重走preflight/acceptance，不能拼接evidence。
+
 `m4b_llm_product.py`只提供：
 
 - `install`：接受caller-supplied、checksum-matching offline inputs；在new same-filesystem staging建立
-  isolated runtime，使用no-index/no-deps或selected runtime等價的locked安裝方式；驗完才atomic
-  rename，拒絕existing output；
+  isolated venv與product payload；先驗§8.1 target ABI，再以no-index/no-deps或selected runtime等價的
+  locked安裝方式處理exact wheel；驗完才atomic rename，拒絕existing output；
 - `preflight`：read-only驗install inventory、model/runtime/config/notice identity、Pi 5 / Debian 13 /
-  CPython 3.13、Core candidate SHA與protected paths clean；runtime manifest每筆file以open-no-follow／
-  regular-file檢查及streaming SHA驗證，拒絕symlink、extra/missing file與system-site import；在child啟動前
-  fail closed。
+  §8.1 CPython ABI attestation、Core candidate SHA與protected paths clean；runtime manifest每個
+  product-payload entry以open-no-follow／regular-file及streaming SHA驗證，拒絕symlink、extra/missing
+  payload、ABI drift與system-site import；在child啟動前fail closed。
 
 兩個subcommand都不得下載、解析branch HEAD、fallback、輸出private path或覆寫既有install。
 正式target acceptance另在network-disabled environment執行並證明zero network attempt；單純DNS失敗
@@ -695,6 +733,11 @@ portable matrix與target acceptance，且Designer final review無Blocking，才�
 所有WP共同entry是`IR_review_M4B_I=Resolved`與`TR_spec_M4B_I=Resolved`；在此之前只允許
 Designer文件工作，不開始Developer implementation。
 
+Developer實作期間的`IR_dev_M4B_I`已揭露target CPython closure authority缺口；§8.1採target ABI
+boundary修訂後，portable implementation可繼續，但`IR_dev_M4B_I`須由Developer確認`Resolved`，且
+`TR_spec_M4B_II`須由Designer複審`Resolved`，才可將WP-02／04／06標target-ready、建立provisional
+candidate或進行任何Pi Gate 3 execution。本delta不重開其餘13個Test ID。
+
 | WP | Scope | Exit |
 | :--- | :--- | :--- |
 | M4B-WP-01 | `llm.py` structured types、`llm_child_protocol.py` codec/state、deterministic child double | M4B-IPC/RDY portable assertions全綠；無real runtime import |
@@ -757,8 +800,9 @@ Reviewer至少一次核對：
 10. Tester handoff能直接形成§10的15個Test ID，r14 4/64 gates不被recycle重設，且M4A accepted
     behavior／same-SHA boundary無矛盾。
 
-Reviewer已依本節清單完成`IR_review_M4B_I`並以Blocking 0核准M4b完整design。此結論仍不等於
-Tester coverage sign-off、Developer實作完成、Core Tester PASS或M4b Accepted；下一個owner是Tester。
+Reviewer已依本節清單完成`IR_review_M4B_I`並以Blocking 0核准M4b完整design；後續Tester coverage
+亦由Designer以`TR_spec_M4B_I` Round II核准。這些結論仍不等於Developer實作完成、Core Tester PASS
+或M4b Accepted；下一個owner是Developer。
 
 ## 14. Designer completion audit and delivery manifest
 
@@ -783,9 +827,9 @@ Reviewer已依§13清單完成Reviewer-owned `IR_review_M4B_I`，Blocking 0且�
 審查單依workflow歸檔。其Advisory所指的`prepare_shutdown()`已由Ch 5 §6.5完整定義，本章§0.1亦補上
 surface交叉引用，不改變已核准契約。
 
-下一個owner是Tester：新增`docs/test_spec/test_spec_M4.md`的M4B coverage並提交`TR_spec_M4B_I`。
-Designer不代寫Tester-owned spec，亦不修改Developer-owned`dev_progress_M4.md`或建立runtime lock／
-production source；在`TR_spec_M4B_I=Resolved`前不得標Development Ready或開始WP-01～06。
+Tester已新增`docs/test_spec/test_spec_M4.md`的M4B coverage；Designer以`TR_spec_M4B_I` Round II完成
+coverage sign-off並歸檔。下一個owner是Developer：依§11先更新Developer-owned`dev_progress_M4.md`，
+再執行WP-01～06；本次Designer不建立runtime lock／production source，也不宣告Gate 3 PASS。
 
 ### 14.3 Self-check evidence
 

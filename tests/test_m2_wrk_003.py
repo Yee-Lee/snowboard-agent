@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import asyncio
-import json
 
 import pytest
 
 from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.tool import ToolRegistry
 from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
-from sbd.cognition.llm import LLMGeneration, MockLLMEngineAdapter
+from sbd.cognition.llm import (
+    LLMGeneration,
+    LLMGenerationMetrics,
+    MockLLMEngineAdapter,
+)
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
 from sbd.core.event_bus import EventBus
@@ -29,14 +32,17 @@ def _response(
     next_perceptions: list[str],
 ) -> LLMGeneration:
     return LLMGeneration(
-        json.dumps(
-            {
-                "action_kind": kind,
-                "action_payload": payload,
-                "next_perceptions": next_perceptions,
-            }
-        )
+        {
+            "action_kind": kind,
+            "action_payload": payload,
+            "next_perceptions": next_perceptions,
+        },
+        _metrics(),
     )
+
+
+def _metrics() -> LLMGenerationMetrics:
+    return LLMGenerationMetrics(0.0, 1.0, 1, 1.0, 1, 1.0, 1)
 
 
 def _bus_records() -> tuple[EventBus, list[LLMResponse], list[ErrorOccurred]]:
@@ -60,8 +66,8 @@ def test_m2_wrk_003_prompt_is_canonical_opaque_and_turn_stateless() -> None:
         bus, responses, errors = _bus_records()
         llm = MockLLMEngineAdapter(
             (
-                _response("speak", {"text": "ok"}, ["listen", "missing", "listen"]),
-                _response("rest", {}, ["look"]),
+                _response("speak", {"text": "ok"}, ["listen"]),
+                _response("rest", {}, []),
             )
         )
         available = {"listen", "read", "speak"}
@@ -86,24 +92,22 @@ def test_m2_wrk_003_prompt_is_canonical_opaque_and_turn_stateless() -> None:
             (),
         )
 
-        first = json.loads(llm.prompts[0])
-        second = json.loads(llm.prompts[1])
-        assert [item["kind"] for item in first["perceptions"]] == [
+        first = llm.inputs[0]
+        second = llm.inputs[1]
+        assert [item.kind for item in first.perceptions] == [
             "listen",
             "read",
             "look",
         ]
-        assert [item["status"] for item in first["perceptions"]] == [
+        assert [item.status for item in first.perceptions] == [
             "timeout",
             "error",
             "ok",
         ]
-        assert first["pending_messages"] == {
-            "count": 2,
-            "opaque_ids": ["opaque-2", "opaque-1"],
-        }
-        assert [item["text"] for item in second["perceptions"]] == ["new turn"]
-        assert "seen" not in llm.prompts[1]
+        assert first.pending_message_count == 2
+        assert not hasattr(first, "pending_message_ids")
+        assert [item.text for item in second.perceptions] == ["new turn"]
+        assert all(item.text != "seen" for item in second.perceptions)
         assert responses[0].next_perceptions == ("listen",)
         assert responses[0].session_id == "s" and responses[0].correlation_id == 7
         assert responses[1].action_kind == "rest"
@@ -120,7 +124,7 @@ def test_m2_wrk_003_clean_failures_fallback_without_raw_output(caplog) -> None:
             (
                 AdapterTimeout("timeout-raw-secret"),
                 AdapterRejected("rejected-raw-secret"),
-                LLMGeneration("bad-json-raw-secret"),
+                LLMGeneration({"invalid": "bad-json-raw-secret"}, _metrics()),
             )
         )
         validator = _validator()
@@ -147,7 +151,7 @@ def test_m2_wrk_003_clean_failures_fallback_without_raw_output(caplog) -> None:
 
         rest_bus, rest_responses, rest_errors = _bus_records()
         rest_reasoner = Reasoner(
-            MockLLMEngineAdapter((LLMGeneration(""),)),
+            MockLLMEngineAdapter((LLMGeneration({}, _metrics()),)),
             PromptBuilder(),
             rest_bus,
             set().__contains__,

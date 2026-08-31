@@ -44,9 +44,11 @@ class WorkerRuntime:
                 raise
         finally:
             operation = active.operation_task
-            if operation is not None and not operation.done():
-                operation.cancel()
+            if operation is not None:
+                if not operation.done():
+                    operation.cancel()
                 await asyncio.gather(operation, return_exceptions=True)
+                active.operation_task = None
             active.done.set()
             if self._active is active:
                 self._active = None
@@ -60,9 +62,12 @@ class WorkerRuntime:
         if active.cancel_requested.is_set():
             operation.cancel()
         try:
-            return await operation
+            # A caller-owned deadline must not cancel the backend operation
+            # before the worker has invoked its typed abort protocol.  The
+            # operation remains owned by this runtime until terminal cleanup.
+            return await asyncio.shield(operation)
         finally:
-            if active.operation_task is operation:
+            if active.operation_task is operation and operation.done():
                 active.operation_task = None
 
     def _may_publish(self) -> bool:

@@ -49,8 +49,11 @@ def validate_config(config: 'AppConfig'):
     check_timeout(config.perception.timeout_seconds.look, "perception.timeout_seconds.look")
     check_timeout(config.cognition.reason_timeout_seconds, "cognition.reason_timeout_seconds")
     check_timeout(config.cognition.llm.child_ready_timeout_seconds, "cognition.llm.child_ready_timeout_seconds")
+    check_timeout(config.cognition.llm.generation_timeout_seconds, "cognition.llm.generation_timeout_seconds")
+    check_timeout(config.cognition.llm.terminal_grace_seconds, "cognition.llm.terminal_grace_seconds")
     check_timeout(config.cognition.llm.child_terminate_timeout_seconds, "cognition.llm.child_terminate_timeout_seconds")
     check_timeout(config.cognition.llm.child_kill_wait_timeout_seconds, "cognition.llm.child_kill_wait_timeout_seconds")
+    check_timeout(config.cognition.llm.rebuild_ready_timeout_seconds, "cognition.llm.rebuild_ready_timeout_seconds")
     for name, value in (
         ("perception.listen.adapter.child_ready_timeout_seconds", config.perception.listen.adapter.child_ready_timeout_seconds),
         ("perception.listen.adapter.child_terminate_timeout_seconds", config.perception.listen.adapter.child_terminate_timeout_seconds),
@@ -184,7 +187,7 @@ def validate_config(config: 'AppConfig'):
 
     # Real drivers require valid paths
     check_model_path(config.perception.look.adapter.driver, config.perception.look.adapter.model_path, "perception.look.adapter.model_path")
-    check_model_path(config.cognition.llm.driver, config.cognition.llm.model_path, "cognition.llm.model_path")
+    _validate_m4b_llm(config)
     _validate_m4a_asr(config.perception.listen.adapter)
     _validate_m4a_tts(config.action.tts)
 
@@ -272,6 +275,67 @@ def _validate_m4a_asr(asr) -> None:
             raise ConfigValueError(f"{path}.{field} must be {expected!r}")
     for field in ("model_path", "worker_path", "runtime_python", "vad_model_path", "artifact_lock_path"):
         _required_absolute_path(getattr(asr, field), f"{path}.{field}")
+
+
+def _validate_m4b_llm(config) -> None:
+    llm = config.cognition.llm
+    path = "cognition.llm"
+    real_fields = (
+        llm.runtime_python,
+        llm.model_path,
+        llm.product_config_path,
+        llm.artifact_lock_path,
+        llm.profile_id,
+    )
+    if llm.driver == "mock":
+        if any(value is not None for value in real_fields):
+            raise ConfigValueError(f"{path} mock cannot contain real-only fields")
+    elif llm.driver == "litert_lm":
+        for field in (
+            "runtime_python", "model_path", "product_config_path",
+            "artifact_lock_path",
+        ):
+            _required_absolute_path(getattr(llm, field), f"{path}.{field}")
+        if llm.profile_id != "litert-lm-v0.16.0-pi-g2b-r5":
+            raise ConfigValueError(
+                f"{path}.profile_id must be 'litert-lm-v0.16.0-pi-g2b-r5'"
+            )
+    else:
+        raise ConfigValueError(f"{path}.driver is unsupported: {llm.driver}")
+
+    exact = {
+        "child_ready_timeout_seconds": 45.0,
+        "generation_timeout_seconds": 15.0,
+        "terminal_grace_seconds": 2.0,
+        "child_terminate_timeout_seconds": 2.0,
+        "child_kill_wait_timeout_seconds": 1.0,
+        "rebuild_ready_timeout_seconds": 10.0,
+        "recycle_max_inference_attempts": 8,
+        "recycle_owner_pss_delta_mib": 48,
+        "recycle_min_mem_available_mib": 768,
+    }
+    for field, expected in exact.items():
+        actual = getattr(llm, field)
+        expected_type = int if isinstance(expected, int) else float
+        if type(actual) is not expected_type or actual != expected:
+            raise ConfigValueError(f"{path}.{field} must be {expected!r}")
+
+    abort_timeout = config.cancel.abort_timeout_seconds.by_kind.get(
+        "cognition.reasoner"
+    )
+    if type(abort_timeout) not in (int, float) or abort_timeout != 0.5:
+        raise ConfigValueError(
+            "cancel.abort_timeout_seconds.by_kind.cognition.reasoner must be 0.5"
+        )
+    minimum_recovery = (
+        llm.rebuild_ready_timeout_seconds
+        + llm.child_terminate_timeout_seconds
+        + llm.child_kill_wait_timeout_seconds
+    )
+    if config.resource.recovery_timeout_seconds <= minimum_recovery:
+        raise ConfigValueError(
+            "resource.recovery_timeout_seconds cannot cover LLM rebuild and cleanup"
+        )
 
 
 def _validate_m4a_tts(tts) -> None:

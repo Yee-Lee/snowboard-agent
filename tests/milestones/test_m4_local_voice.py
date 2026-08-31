@@ -90,6 +90,9 @@ def _inputs() -> tuple[str, Any, Path, Path]:
     pcm_path = Path(_required_env("SBD_M4A_ASR_PCM")).resolve()
     card_root = Path(_required_env("SBD_M4A_CARD_ROOT")).resolve()
     assert config_path.is_file() and not config_path.is_symlink()
+    config_reference = runner_preflight["checksums"]["config"]
+    assert config_path == Path(config_reference["path"]).resolve()
+    assert _sha256(config_path) == config_reference["sha256"]
     assert pcm_path.is_file() and not pcm_path.is_symlink()
     assert card_root.is_dir() and not card_root.is_symlink()
     assert card_root.name == "cards", "formal card root must be runner-owned"
@@ -500,3 +503,7 @@ def test_m4a_priv_001_scan_product_cards_and_logs() -> None:
     )
     assert hits == []
     _write_card(cards, "M4A-PRIV-001", candidate, scanned_paths=scanned, hits=0)
+
+
+# M4b shares this canonical exact-SHA acceptance execution and card root.
+from tests.m4b_target_cases import test_m4b_exact_product_gate3_cards  # noqa: E402,F401

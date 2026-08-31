@@ -722,6 +722,29 @@ def test_rm_005_invalid_returned_replacement_is_cleaned() -> None:
     asyncio.run(run())
 
 
+def test_rm_005_background_recovery_failure_is_latched_without_request_waiter() -> None:
+    async def run() -> None:
+        class FailedHook:
+            async def rebuild(self, bus, config):
+                raise RuntimeError("controlled rebuild failure")
+
+        rm = ResourceManager(DEFAULT_CONFIG, EventBus())
+        rm.register(ResourceSpec(
+            key="backend.a", phase=StartPhase.BACKEND,
+            factory=lambda resolver: DummyResource("backend.a"),
+            recoverable=True, recovery_hook=FailedHook(),
+        ))
+        register_default_listen(rm)
+        await rm.start()
+        rm.begin_recovery(("backend.a",))
+        with pytest.raises(RecoveryFatalError, match="controlled rebuild failure"):
+            await asyncio.wait_for(rm.wait_fatal(), timeout=1)
+        with pytest.raises(RecoveryFatalError, match="controlled rebuild failure"):
+            await rm.wait_fatal()
+
+    asyncio.run(run())
+
+
 def test_rm_regression_capability_preflight_and_phase_failure_policy() -> None:
     async def run() -> None:
         rm = ResourceManager(DEFAULT_CONFIG, EventBus())

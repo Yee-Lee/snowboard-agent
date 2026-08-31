@@ -36,3 +36,6 @@ testpaths = [
 markers = [
     "rpi: Raspberry Pi only tests",
 ]
+filterwarnings = [
+    "error::pytest.PytestUnhandledThreadExceptionWarning",
+]

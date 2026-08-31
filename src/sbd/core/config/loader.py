@@ -92,6 +92,7 @@ def _overlay_dict(
             if path.startswith((
                 "root.core.audio.", "root.core.display.",
                 "root.perception.listen.adapter.", "root.action.tts.",
+                "root.cognition.llm.",
             )):
                 raise _DriverConfigValueError(
                     f"{path} must be one of {choices}, got {overlay!r}"

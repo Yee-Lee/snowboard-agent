@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "payload_scope": "product-owned-litert-lm",
+  "platform": "pi-debian13-aarch64",
+  "python": {"implementation": "CPython", "version": "3.13.5"},
+  "distribution": {"name": "litert-lm-api", "version": "0.16.0"},
+  "source_wheel": {
+    "filename": "litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",
+    "size_bytes": 46085754,
+    "sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"
+  },
+  "files": [
+    {"relative_path":"litert_lm/__init__.py","size_bytes":2545,"sha256":"6fd72b12ddef4c64c0c78df62002083fb6404a39f1cf71815d429f92f392bdf0"},
+    {"relative_path":"litert_lm/_ffi.py","size_bytes":22068,"sha256":"be300a5fb939356ee2ebf78e76b8aa40358cc8af8faf3ffe71a1d73c6e4550b9"},
+    {"relative_path":"litert_lm/_messages.py","size_bytes":7727,"sha256":"9cabe70cf26c07fd34283cade50abbd6056ac63329c2e6e513575939707821c4"},
+    {"relative_path":"litert_lm/benchmark.py","size_bytes":4838,"sha256":"c1bc8961dfbb45a43448fae4cd698c0a0d81edac1d592dc029e2853e60b8adc6"},
+    {"relative_path":"litert_lm/conversation.py","size_bytes":18519,"sha256":"eb45d74fa60318388bb44572c3d1e6ceef65e1ad863b3278c0636d57edf8bbd4"},
+    {"relative_path":"litert_lm/engine.py","size_bytes":17050,"sha256":"da40bdd89d66a16537861a674f8a97aba19a78219e351509bd0d94804751c91a"},
+    {"relative_path":"litert_lm/interfaces.py","size_bytes":34452,"sha256":"23a47a8b921beb717a8299be459007ac7a0c68787538befe12142c6d912906a3"},
+    {"relative_path":"litert_lm/liblitert-lm.so","size_bytes":131217040,"sha256":"9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"},
+    {"relative_path":"litert_lm/session.py","size_bytes":6319,"sha256":"786ea19f5ed01134db650ee2c6dd1585d88808bf34c927109bdde664ff31ca75"},
+    {"relative_path":"litert_lm/tools.py","size_bytes":3789,"sha256":"acbd43a0f8498b6a61e6fa67af39e4a1bd0abf547a3fb594171de9f03d7e62f3"},
+    {"relative_path":"litert_lm/utils.py","size_bytes":3254,"sha256":"ddd9486650eb963dddc47f07e1ac29af3e24fb21c388a97f8b4e840f99c6624c"},
+    {"relative_path":"litert_lm_api-0.16.0.dist-info/METADATA","size_bytes":906,"sha256":"61418790e1681e08720bfce61f9cbff9ab9fa3373ab84e5af47fd5967ad0b7a3"},
+    {"relative_path":"litert_lm_api-0.16.0.dist-info/RECORD","size_bytes":1093,"sha256":"f2cc0a97f35d261ebbe43a52ea9bdd5e6212d7e8dc052c034c939b8785f2098b"},
+    {"relative_path":"litert_lm_api-0.16.0.dist-info/WHEEL","size_bytes":111,"sha256":"02a00643f059cd48b88240900282090ea0b08edf837ec4605dadce114014e43b"}
+  ]
+}

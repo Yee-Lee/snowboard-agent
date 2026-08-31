@@ -163,6 +163,7 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | :--- | :--- |
 | Candidate / pairing | `CAND-LRT-G4E2B-MOBILE-R1` / `litert-lm-v0.16.0-pi-g2b-r5` |
 | Platform | Raspberry Pi 5 4 GB / Debian 13 aarch64 / CPU / 4 threads |
+| Base Python ABI | target-owned `/usr/bin/python3.13`；CPython `3.13.5`；SOABI `cpython-313-aarch64-linux-gnu`；MULTIARCH `aarch64-linux-gnu`；stdlib `/usr/lib/python3.13`；exact per-run ABI attestation見M4b design §8.1 |
 | Runtime | LiteRT-LM API `0.16.0`; source tag commit `924e79c91542761242244e4f1651851f822e4cbb` |
 | Runtime wheel | `litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl`; SHA-256 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
 | Native library SHA-256 | `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` |
@@ -178,8 +179,10 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 
 Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
 startup must authenticate the exact source revision, filename, size and checksum with network and
-runtime download disabled. Extra/missing artifact, version/hash mismatch, system-site fallback,
-alternate model or endpoint is a startup failure before Engine construction.
+runtime download disabled. Target-owned CPython/stdlib是platform ABI dependency，不屬LiteRT-LM tracked
+payload manifest；install、preflight與acceptance仍須對M4b design §8.1的exact ABI attestation一致。
+Extra/missing artifact、version/hash/ABI mismatch、third-party system-site fallback、alternate model或endpoint
+都是Engine construction前的startup failure。
 
 The `c4557...` file locks the POC runtime/token/sampling/deadline/offline profile. Its POC absolute
 `runtime_path/model_path` and `test_profile` are provenance-only and are never deployment inputs.

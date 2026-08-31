@@ -67,6 +67,8 @@ class ResourceManager:
         self._recovery_generation = 0
         self._active_recovery_task: asyncio.Task[None] | None = None
         self._active_recovery_ticket: RecoveryTicket | None = None
+        self._fatal_recovery = asyncio.Event()
+        self._fatal_recovery_error: RecoveryFatalError | None = None
         self._shutting_down = False
         self._startup_complete = False
         self._disabled_sources: set[str] = set()
@@ -453,7 +455,10 @@ class ResourceManager:
                         )
         except Exception as exc:
             self._recovery_ready.clear()
-            raise RecoveryFatalError(f"Recovery failed: {exc}") from exc
+            fatal = RecoveryFatalError(f"Recovery failed: {exc}")
+            self._fatal_recovery_error = fatal
+            self._fatal_recovery.set()
+            raise fatal from exc
         else:
             self._recovery_ready.set()
 
@@ -476,6 +481,14 @@ class ResourceManager:
 
     def recovery_ready(self) -> bool:
         return self._recovery_ready.is_set()
+
+    async def wait_fatal(self) -> None:
+        """Raise the first latched background recovery failure."""
+        await self._fatal_recovery.wait()
+        assert self._fatal_recovery_error is not None
+        if self._active_recovery_task is not None and self._active_recovery_task.done():
+            self._active_recovery_task.exception()
+        raise self._fatal_recovery_error
 
     async def prepare_shutdown(self) -> None:
         self._shutting_down = True

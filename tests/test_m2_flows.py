@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import signal
 import subprocess
@@ -14,7 +13,7 @@ from pathlib import Path
 from queue import Empty, Queue
 from threading import Thread
 
-from sbd.cognition.llm import LLMGeneration
+from sbd.cognition.llm import LLMGeneration, LLMGenerationMetrics
 from sbd.core.config.defaults import DEFAULT_CONFIG
 from sbd.core.event_bus import EventBus
 from sbd.core.events import (
@@ -35,11 +34,15 @@ from sbd.core.state_manager.convergence import (
 
 
 def _generation(kind: str, payload: dict, next_perceptions: list[str]) -> LLMGeneration:
-    return LLMGeneration(json.dumps({
+    return LLMGeneration({
         "action_kind": kind,
         "action_payload": payload,
         "next_perceptions": next_perceptions,
-    }))
+    }, _metrics())
+
+
+def _metrics() -> LLMGenerationMetrics:
+    return LLMGenerationMetrics(0.0, 1.0, 1, 1.0, 1, 1.0, 1)
 
 
 @dataclass
@@ -264,7 +267,7 @@ def test_m2_flow_008_default_process_sigint_exits_zero_from_idle() -> None:
 def test_m2_flow_004_bad_llm_fallback_continues_to_rest() -> None:
     async def run() -> None:
         app = await _start_app((
-            LLMGeneration("bad-json-raw-secret"),
+            LLMGeneration({"invalid": "bad-json-raw-secret"}, _metrics()),
             _generation("rest", {}, []),
         ))
         try:

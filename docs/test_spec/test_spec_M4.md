@@ -702,9 +702,10 @@ portable matrix／evidence review證明，不虛構Pi card。
 | `mock` driver | `driver="mock"`；四個path與`profile_id`皆None | 成功；不讀lock、不import native runtime、不建workdir、不啟用target sampler |
 | Unknown driver | `driver="gemma"` 或其他非 `mock`/`litert_lm` | `ConfigValueError`；不 fallback |
 | Wrong `profile_id` | `profile_id` 不等於 `"litert-lm-v0.16.0-pi-g2b-r5"` | `ConfigValueError` |
-| Wrong `recycle_max_inference_attempts` | 數值≠8 | `ConfigValueError` |
-| Wrong `recycle_owner_pss_delta_mib` | 數值≠48 | `ConfigValueError` |
-| Wrong `recycle_min_mem_available_mib` | 數值≠768 | `ConfigValueError` |
+| YAML explicit locked recycle values | YAML明列`recycle_max_inference_attempts=8`、`recycle_owner_pss_delta_mib=48`、`recycle_min_mem_available_mib=768` | `LLMConfig`建立成功；與省略欄位時的locked defaults完全相同 |
+| Wrong `recycle_max_inference_attempts` | 以7／9代表低於／高於8的mutation | `ConfigValueError` |
+| Wrong `recycle_owner_pss_delta_mib` | 以47／49代表低於／高於48的mutation | `ConfigValueError` |
+| Wrong `recycle_min_mem_available_mib` | 以767／769代表低於／高於768的mutation | `ConfigValueError` |
 | Wrong `generation_timeout_seconds` | 數值≠15.0 | `ConfigValueError` |
 | Wrong `terminal_grace_seconds` | 數值≠2.0 | `ConfigValueError` |
 | Wrong `child_ready_timeout_seconds` | 數值≠45.0 | `ConfigValueError` |
@@ -715,7 +716,8 @@ portable matrix／evidence review證明，不虛構Pi card。
 | Recovery timeout too short | `resource.recovery_timeout_seconds` 無法涵蓋10秒rebuild READY與舊child最長cleanup | `ConfigValueError`；repository product default維持30秒 |
 | Outer / child / grace 分層 | injected clocks捕捉`cognition.reason_timeout_seconds`、15秒generation與2秒terminal grace | 三個獨立timer依序作用；Reasoner outer timeout不得取代child deadline或terminal-only grace |
 | Invalid real path | 四個real path任一為relative path、directory或missing file | `ConfigValueError`；native import / child spawn / workdir / sampler / RM registration皆為0 |
-| YAML override `recycle_*` | YAML 試圖修改任一 recycle 閾值 | `UnknownConfigKey` 或 `ConfigValueError` |
+| YAML recycle value drift | 三個合法欄名任一值偏離8／48／768 | `ConfigValueError`；native import / child spawn / workdir / sampler / RM registration皆為0 |
+| Unknown YAML recycle key | 與三個合法欄名不同的未知`recycle_*`欄名 | `UnknownConfigKey`；上述side effect皆為0 |
 | Lazy import before factory | `driver="litert_lm"`；factory 尚未呼叫 | `sys.modules` 中無 `litert_lm` / `litert_lm_api` |
 
 **Factory narrow interface cases**：
@@ -749,7 +751,7 @@ portable matrix／evidence review證明，不虛構Pi card。
 | **Contract basis** | `ch_m4b` §8；`requirements/m4b/llm-artifacts.json` schema；`model_spec.md` §6.2 |
 | **Suite marker** | Portable: `not rpi`；Pi: `preflight` command（runner preflight mode） |
 | **Case watchdog** | Portable 60秒；Pi preflight外層watchdog 120秒 |
-| **Evidence** | Portable: runner result + JUnit；Pi: runner `preflight.json`（含 `checksums.*`）+ `m4b_llm_product.py preflight` sanitized JSON |
+| **Evidence** | Portable: runner result + JUnit；Pi protected raw evidence為runner `preflight.json`（`checksums.m4b_artifact_manifest`、`m4b_python_abi_attestation_sha256`、`m4b_install_inventory_sha256`）與`m4b_llm_product.py preflight` sanitized JSON；兩者的candidate SHA、ABI digest與install-inventory digest須一致。公開欄位只保存digest／status，不公開exact package tuple或absolute private product path |
 
 **Lock schema negative matrix（table-driven）**：
 
@@ -777,10 +779,21 @@ portable matrix／evidence review證明，不虛構Pi card。
 | Wrong prompt/response schema SHA-256 | 不等於`aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6`／`4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` | fail closed |
 | Wrong pre-warm prompt SHA-256 | 不等於`4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d` | fail closed |
 | Wrong frozen profile value | config-schema digest、128/128/1024、temperature 0.0、top-p 1.0、4 threads、任一deadline或offline/fallback flag不符 | fail closed |
-| Wrong runtime closure | manifest locator、computed manifest digest、interpreter/distribution/native file relative path/size/digest任一不符或仍是placeholder | fail closed |
+| Wrong runtime closure | manifest locator／computed digest不符，或14-file product-owned LiteRT-LM distribution/native payload任一relative path／size／digest不符、extra／missing／symlink／placeholder | fail closed；tracked manifest不得含target-owned CPython launcher、stdlib、`lib-dynload`、venv launcher或`pyvenv.cfg` |
 | Wrong license locator | runtime/model source metadata、Apache-2.0 license或notice locator缺失／不符 | fail closed |
 | Absolute path in lock body | lock JSON 含 `/tmp/` 或其他 absolute deployment path | fail closed |
-| Valid lock — exact Accepted identity | 完整正確 lock；`driver="litert_lm"` | Portable: factory 成功；Pi: runner `preflight.json` `status=Pass`；`checksums.artifact_manifest.sha256` 存在且非空 |
+| Valid lock — exact Accepted identity | 完整正確 lock；`driver="litert_lm"` | Portable: factory 成功；Pi: product preflight `status="Pass"`、`runtime_file_count=14`，runner `preflight.json` `status="Pass"`且`checksums.m4b_artifact_manifest.sha256`存在並綁定該product preflight bytes |
+
+**Target CPython ABI boundary（table-driven）**：
+
+| Case | Injection / oracle | Expected outcome |
+| :--- | :--- | :--- |
+| Exact controlled target ABI | regular、non-symlink、root-owned`/usr/bin/python3.13`；exact `CPython 3.13.5`／`sys.version`；SOABI`cpython-313-aarch64-linux-gnu`；MULTIARCH`aarch64-linux-gnu`；`sys.abiflags=""`；64-bit little-endian；stdlib／platstdlib均為`/usr/lib/python3.13`；glibc identity可取得；五個§8.1 Debian packages皆`install ok installed`、版本皆為同一`3.13.5-*`字串 | install前capture canonical attestation；sorted package tuples、base executable SHA-256及全部ABI欄位形成`python_abi_attestation_sha256` |
+| Wrong base interpreter | path非exact `/usr/bin/python3.13`、missing、symlink、non-regular或owner非root | staging／native import／child spawn／network side effect全為0 |
+| Wrong Python ABI | patch／exact `sys.version`、SOABI、MULTIARCH、abiflags、word size或endianness任一不符 | fail closed；side effect同上 |
+| Wrong stdlib boundary | stdlib或platstdlib不等於`/usr/lib/python3.13`，或dynamic stdlib extension逃出其`lib-dynload` | fail closed；不得把該target bytes寫入tracked manifest |
+| Wrong Debian package set | 五個required package任一missing、非installed、duplicate、版本非`3.13.5-*`或五者version字串mixed | fail closed；side effect同上 |
+| Target ABI drift | install後base executable digest、package tuple／revision、exact Python identity、stdlib root或glibc任一改變 | preflight及acceptance-start均Fail；child spawn=0；舊PASS preflight/card不得重用 |
 
 **Pi preflight assertions**：
 
@@ -788,9 +801,10 @@ portable matrix／evidence review證明，不虛構Pi card。
 | :--- | :--- |
 | Exact product SHA 與 frozen candidate 吻合 | `candidate_sha` 欄位符合外部指定 40-hex |
 | Protected paths clean | 依runbook精確檢查`src/`、`tests/`、candidate/acceptance runner與workflow、dependency/lock/package metadata及runner實際讀取的config contract；一般`docs/`異動不阻擋 |
-| Exact target platform | Raspberry Pi 5 4 GB、Debian 13 aarch64、CPU profile與deployed CPython 3.13全數吻合；錯一項即preflight fail |
-| Runtime manifest — no extra / missing files | `llm-runtime-rpi-cp313.json` 每個 file entry 以 open-no-follow / regular-file 方式 streaming SHA 驗證；symlink / extra / missing → fail closed |
-| System-site import disabled | `PYTHONNOUSERSITE=1`；no system-site resolver |
+| Exact target platform | Raspberry Pi 5 4 GB、Debian 13 aarch64、CPU profile與上述exact CPython 3.13.5 ABI attestation全數吻合；錯一項即preflight fail |
+| Runtime manifest — exact product payload | `llm-runtime-rpi-cp313.json`只列14個product-owned LiteRT-LM distribution/native file；每個entry以open-no-follow／regular-file方式streaming SHA驗證；symlink／extra／missing或含target-owned interpreter／stdlib／venv files → fail closed |
+| ABI reconciliation | product preflight重算的`python_abi_attestation_sha256`須與install inventory及runner `m4b_python_abi_attestation_sha256`完全相同；install inventory digest亦須與runner欄位相同 |
+| System-site boundary | `-I`、`PYTHONNOUSERSITE=1`且移除`PYTHONPATH/PYTHONHOME/LD_PRELOAD`；允許`/usr/lib/python3.13` stdlib／`lib-dynload`與platform ABI libraries，但拒絕system/user third-party `site-packages`／`dist-packages`；`litert_lm`與native library只能從verified product site-packages載入 |
 | Target sampler capability | child啟動前read-only證明`/proc/meminfo`與owner `smaps_rollup`可讀；缺任一能力即preflight fail，不啟動acceptance |
 
 ---
@@ -811,7 +825,8 @@ portable matrix／evidence review證明，不虛構Pi card。
 | :--- | :--- | :--- |
 | Schema | 任何 frame 缺 `protocol_version` 或值 ≠ `"snowboard.llm/1"` | protocol failure；parent TERM / KILL / waitpid；不轉 P5 |
 | Schema | extra key in any frame | protocol failure |
-| Schema | READY / RESULT / CANCELLED / ERROR / PING / PONG / SHUTDOWN / SHUTDOWN_ACK任一缺required key，或出現unknown `type` | protocol failure；不得接受partial frame |
+| Schema | READY / GENERATE / CANCEL / RESULT / CANCELLED / ERROR / PING / PONG / SHUTDOWN / SHUTDOWN_ACK任一缺required key，或出現unknown `type` | protocol failure；不得接受partial frame |
+| Schema | GENERATE／CANCEL任一required value為wrong type，或含missing／extra key | receiver fail closed；不得呼叫inference／native cancel；parent注入測試須收斂child並視為fatal protocol failure |
 | Schema | invalid UTF-8 / JSON | protocol failure |
 | Bounds — control line | 恰 16 KiB（含 `\n`）— inclusive max | accepted |
 | Bounds — control line | 16 KiB + 1 byte — exceeded | protocol failure |
@@ -827,7 +842,7 @@ portable matrix／evidence review證明，不虛構Pi card。
 | Duplicate terminal | 同 request_id 出現第二個 RESULT / CANCELLED / ERROR | protocol failure |
 | Late terminal | terminal 後同 request_id 再送任何 frame | protocol failure |
 | Wrong request_id in terminal | terminal request_id 與 active request 不符 | protocol failure |
-| BUSY | active request 未 terminal 前送 GENERATE | child 回 `BUSY`（`state="GENERATING"`）；parent 不排隊 |
+| Direct malformed GENERATE while active | 直接繞過parent admission向child注入第二個GENERATE | child回`BUSY`（`state="GENERATING"`）；parent將此違約frame映射為fatal protocol failure，不得拿本case替代GEN的zero-write assertion |
 | EOF | child pipe 提前 EOF | parent termination proof；不轉 P5 |
 | Privacy — stdout / stderr / caplog | 掃描 Domain B sentinels | 無 perception text、response、tool args、credential、private path |
 
@@ -892,9 +907,9 @@ portable matrix／evidence review證明，不虛構Pi card。
 
 | Error code | State | Expected parent action |
 | :--- | :--- | :--- |
-| `BUSY` | `GENERATING` | protocol failure（desync）；fatal |
+| direct-injected `BUSY` | `GENERATING` | protocol failure（desync）；fatal；只驗child defensive mapping，不代表parent single-flight admission合規 |
 | `INVALID_REQUEST` + `READY` | `READY` | Reasoner 可翻譯 P5 |
-| active request收到`INVALID_REQUEST` | `GENERATING` | protocol failure（desync）；fatal；不得P5且不得改變原active request |
+| direct-injected `INVALID_REQUEST` | `GENERATING` | active request期間直接注入時為protocol failure（desync）；fatal；不得P5且不得改變原active request；只驗child defensive mapping |
 | `TIMEOUT` + `READY` | `READY` | cleanup proof 後 Reasoner 可 P5；否則 fatal |
 | `GENERATION_FAILED` + `READY` | `READY` | cleanup proof 後 Reasoner 可 P5 |
 | `CANCEL_FAILED` + `FATAL` | `FATAL` | fatal；Level 2 |
@@ -917,14 +932,14 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | **Contract basis** | `protocol.md` §4.1；`ch_m4b` §4；`model_spec.md` §6.3 |
 | **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
 | **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
-| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`engine_load_latency_ms`、`ready_latency_ms`、`prewarm_latency_ms`、`prewarm_prompt_sha256`） |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`engine_load_latency_ms`、`ready_latency_ms`、`prewarm_latency_ms`、`prewarm_prompt_sha256`、sanitized六欄`ready_identity`） |
 
 **Startup state / admission cases**：
 
 | Case | Scope | Assertion |
 | :--- | :--- | :--- |
 | Startup exact state trace | Portable | `STOPPED→AUTHENTICATING→STARTING→ENGINE_LOADED→PREWARMING→READY`；不得跳過authenticate/pre-warm/baseline或提前admit |
-| `ENGINE_LOADED` 不 admit GENERATE | Portable | child 收到 GENERATE 在 pre-warm 前回 `BUSY`（`state="GENERATING"`）或 `INVALID_REQUEST`；不 emit READY；`start()` 不 return |
+| Non-READY parent admission | Portable | 以`AUTHENTICATING／STARTING／ENGINE_LOADED／PREWARMING`逐態呼叫`generate()`皆local fail closed；child GENERATE wire write與inference call count皆為0；不 emit／admit READY且`start()`不return |
 | Pre-warm failure → 不 emit READY | Portable | inject pre-warm Conversation return error；child terminate / parent TERM→KILL→waitpid；`start()` raise；不 READY；無 orphan |
 | Pre-warm prompt SHA-256 | Portable | injected prompt capture；`sha256(prompt_bytes) == "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d"` |
 | Pre-warm public input exact value | Portable | capture的structured input exact等於§3.2固定JSON；不得加入history、scored example或private marker |
@@ -932,19 +947,20 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | Pre-warm Conversation 確實 close / reference discard | Portable | injected Conversation mock；`close()` call count ≥ 1；output / KV reference 設為 None |
 | Pre-warm output有效後丟棄 | Portable + Pi | dynamic schema PASS且decode tokens > 0後才算pre-warm成功；result不存入任何field、不進log/evidence |
 | READY exact keys | Portable + Pi | exact keys：`type / protocol_version / state / identity`；identity exact keys：`candidate_id / pairing_revision / platform / runtime_sha256 / model_sha256 / config_sha256` |
-| READY identity — `candidate_id` mismatch | Portable | parent TERM → bounded wait → KILL → waitpid；IPC / workdir 清除；`start()` raise |
-| READY identity — `pairing_revision` mismatch | Portable | 同上 |
-| READY identity — `platform` mismatch | Portable | 同上 |
-| READY identity — `runtime_sha256` mismatch | Portable | 同上 |
-| READY identity — `model_sha256` mismatch | Portable | 同上 |
-| READY identity — `config_sha256` mismatch | Portable | 同上 |
+| READY identity — `candidate_id` mismatch | Portable + Pi controlled | parent TERM → bounded wait → KILL → waitpid；IPC / workdir 清除；`start()` raise |
+| READY identity — `pairing_revision` mismatch | Portable + Pi controlled | 同上 |
+| READY identity — `platform` mismatch | Portable + Pi controlled | 同上 |
+| READY identity — `runtime_sha256` mismatch | Portable + Pi controlled | 同上 |
+| READY identity — `model_sha256` mismatch | Portable + Pi controlled | 同上 |
+| READY identity — `config_sha256` mismatch | Portable + Pi controlled | 同上 |
 | 每個 mismatch 後 next-success | Portable | 同一 owner 重建全新 child 並完成一次 generation |
 | Idempotent `start()` — 已在 READY | Portable | 第二次 `start()` no-op；child spawn count = 1 |
 | Nonterminal `start()` reentry | Portable | AUTHENTICATING／STARTING／ENGINE_LOADED／PREWARMING任一狀態重入皆拒絕；不得spawn第二個child |
 | Startup timeout／invalid first frame | Portable | TERM→bounded KILL→waitpid、IPC/workdir cleanup後`start()` raise；不留下半啟動child |
 | Initial resource baseline barrier | Portable + Pi | pre-warm cleanup、READY identity與完整owner sample都成功且baseline只建一次後`start()`才return |
+| Initial baseline sample failure | Portable | missing field、unreadable owner、bool、negative逐列注入；parent不得向caller emit／admit READY或讓`start()`return，須TERM→bounded KILL→waitpid並清除IPC／reader／fd／workdir；orphan=0，隨後同owner next-start成功 |
 | Rebuild READY（recovery hook） | Portable | hook 只在新 child 完成 `INFERENCE_READY` 後原子切換 reference；舊 child reference 清除 |
-| Pi READY identity exact values | Pi | `runtime_sha256 = "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"`；`model_sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"`；`config_sha256 = "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"`；card另保存public pre-warm digest與分離的engine-load/pre-warm timing |
+| Pi READY identity exact values | Pi | `candidate_id = "CAND-LRT-G4E2B-MOBILE-R1"`；`pairing_revision = "litert-lm-v0.16.0-pi-g2b-r5"`；`platform = "pi-debian13-aarch64"`；`runtime_sha256 = "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00"`；`model_sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"`；`config_sha256 = "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"`；card保存sanitized六欄READY identity、public pre-warm digest與分離的engine-load/pre-warm timing |
 | Model full hash 在 spawn 前完成 | Portable | injected hash capture；不在 READY path 重做 |
 | Native library SHA-256 在 child 驗證 | Pi | loaded native library open-no-follow / regular-file / `sha256 == "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"` |
 
@@ -964,11 +980,11 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 
 | Case | Scope | Assertion |
 | :--- | :--- | :--- |
-| Single-flight：第二個 concurrent `generate()` 回 BUSY | Portable | 第一個 generate 進行中時，第二個 `generate()` 不排隊、立即 raise `AdapterError(BUSY)` |
+| Single-flight：第二個 concurrent `generate()` 回 BUSY | Portable | 第一個generate進行中時，第二個`generate()`不排隊、立即raise `AdapterError(BUSY)`；總GENERATE wire write仍為1、active request identity不變、第一個request只收一個terminal且不受影響；完成後next-success |
 | Persistent Engine：連續兩 turn 不重載 | Portable + Pi | Engine / process load count = 1；PID 不變（未觸發 recycle） |
 | Fresh Conversation：每 turn 建立新 Conversation | Portable + Pi | 每次generate使Conversation count +1；`close()`在finally執行；Pi card的conversation count與turn count一致 |
 | Child completion → READY 狀態 | Portable | terminal 後 child 回 `state="READY"`；parent state machine 轉 READY；下一次 generate 可接受 |
-| RESULT 完整欄位後建立 `LLMGeneration` | Portable | partial / missing metrics → 不建立 `LLMGeneration`；走 P5 / ERROR |
+| RESULT metrics違約為fatal protocol failure | Portable | 缺metrics、partial metrics、NaN／bool／越界由table代表；不建立`LLMGeneration`、fallback `LLMResponse` count=0且不轉P5；依IPC/CAN收斂TERM／KILL／waitpid，建立same-key `RecoveryTicket`，replacement後next-success |
 | 成功 result 含完整 metrics | Portable + Pi | `init_ms / ttft_ms / prefill_tokens_per_second / decode_tokens_per_second` 全為 finite、non-bool number；`init_ms / ttft_ms ≥ 0`；rates `> 0`；三個token count均為non-bool int且在各自boundary內 |
 | Rendered input 恰 128 tokens — boundary success | Portable | injected tokenizer mock；accepted |
 | Rendered input 129 tokens — exceeded | Portable | `ReasoningInputTooLarge`；child side effect = 0 |
@@ -1089,7 +1105,9 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | LiteRT-LM `Cancelled` 子類先於 `RuntimeError` 父類捕捉 | Portable | 捕捉順序測試；零 `PytestUnhandledThreadExceptionWarning` |
 | CANCELLED 後 Reasoner 可 P5 | Portable | P5 apology-speak；log 不含 raw output |
 | Session interrupt / shutdown CANCELLED | Portable | 不 publish fallback Fact |
-| Shutdown撞上RECOVERING | Portable | main先呼叫RM-owned`prepare_shutdown()`取消／等待recovery，再依reverse order `stop()`；adapter不另取control、不建立第二個recovery batch |
+| Shutdown撞上RECOVERING — cleanup success | Portable | injected recovery hook卡在pre-warm；main呼叫RM-owned`prepare_shutdown()`取消／等待recovery，完整清除partial replacement與舊child後再依reverse order `stop()`；adapter不另取control、不建立第二個recovery batch |
+| Shutdown撞上RECOVERING — cleanup exception | Portable | cancellation cleanup raise時，`prepare_shutdown()`與`rm.wait_fatal()`觀察同一latched root cause；`RecoveryFatalError`→Level 3、main exit 4一次；partial replacement／舊child皆無orphan、zero unretrieved-task warning且不建立第二batch |
+| Shutdown撞上RECOVERING — cleanup timeout | Portable | cancellation cleanup超過bounded timeout時與exception case相同收斂；TERM／KILL／waitpid清除partial replacement與舊child，exit 4一次且zero unretrieved-task warning |
 
 **Level 2 destructive path**：
 
@@ -1106,7 +1124,7 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 
 | Case | Assertion |
 | :--- | :--- |
-| Rebuild / replacement failure或timeout | `RecoveryFatalError` → Level 3；exit 4；測試結束無 orphan |
+| Rebuild / replacement failure或timeout | `RecoveryFatalError` → Level 3；`prepare_shutdown()`／`rm.wait_fatal()`保留同一latched root cause，exit 4恰一次；partial replacement與舊child皆無orphan，不建立第二個recovery batch且無unretrieved-task warning |
 | Stable key 驗證 | `ForceAbortReport.destroyed_backends == ("backend.cognition.reasoner.llm",)`；Converger聚合後交同一RM key |
 
 ---
@@ -1316,7 +1334,7 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | **Contract basis** | `ch_m4b` §8；`requirements/m4b/THIRD_PARTY_NOTICES.md` |
 | **Suite marker** | Portable: `not rpi`；Pi: runner `accept` mode |
 | **Case watchdog** | Portable 60秒；Pi 600秒；兩者皆受formal suite-level timeout外層限制 |
-| **Evidence** | Portable: runner result + JUnit；Pi: runner acceptance result card（`test_id`、`install_inventory_locator`、`install_inventory_sha256`、`file_count`）；locator須run-root-relative且不得暴露absolute private path |
+| **Evidence** | Portable: runner result + JUnit；Pi protected raw evidence保存exact install inventory與product preflight；公開acceptance card exact額外欄位為`install_inventory_sha256`、`python_abi_attestation_sha256`、`abi_status="Pass"`、`file_count`，只公開digest／status／count，不含package tuple、base／stdlib／product absolute path或raw attestation；card locator沿用run-root-relative T2 contract |
 
 **Required assertions**：
 
@@ -1324,13 +1342,20 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | :--- | :--- | :--- |
 | `llm-artifacts.json` schema 完整 | Portable | 8個top-level object（`lock/poc_reference/candidate/runtime/model/product_profile/runtime_closure/licenses`）均存在且無extra；所有required fields存在；SHA為64-hex、Git SHA為40-hex |
 | `install` — caller-supplied inputs | Portable + Pi | 只接受 checksum-matching offline inputs；`--no-index --no-deps`（或 selected runtime 等價）；拒絕 network / existing output |
+| `install` — target ABI before side effect | Portable + Pi | 在建立staging、native import、child spawn或network call前驗證M4B-LOCK-001 exact target ABI；wrong patch／ABI／ownership／package set／stdlib root時上述side effect count皆為0 |
+| `install` — target-owned venv boundary | Pi | exact base以`--copies --without-pip`建立venv；`pyvenv.cfg`綁`/usr/bin/python3.13`且`include-system-site-packages=false`；launcher與`pyvenv.cfg`只進run-specific install inventory，不得進14-file tracked payload manifest |
 | `install` — same-filesystem staging → atomic rename | Pi | staging 完整自驗後 atomic rename；failure 刪 staging；不覆寫既有 install |
-| `preflight` — read-only inventory | Pi | 每個 file open-no-follow / regular-file / streaming SHA；拒絕 symlink / extra / missing |
+| `install inventory` — exact ABI binding | Portable + Pi | protected inventory exact fields含canonical `python_abi_attestation`、其`python_abi_attestation_sha256`及全部installed files；attestation digest可由canonical bytes重算，missing／extra key、unsafe／duplicate path、digest mismatch均Fail |
+| `preflight` — read-only inventory | Pi | 每個 product-owned file open-no-follow／regular-file／streaming SHA；拒絕symlink／extra／missing；target-owned stdlib不冒充14-file payload，但launcher／`pyvenv.cfg`仍受install inventory保護 |
+| Install→preflight→acceptance ABI reconciliation | Pi | 三段各自重算target ABI；`python_abi_attestation_sha256`及install inventory digest exact一致後才可啟動child／finalize PKG card |
+| Post-install ABI drift | Portable + Pi | package revision／tuple、base executable digest、exact Python identity、stdlib root或glibc任一漂移使preflight與acceptance-start Fail；child spawn=0，舊preflight與PASS card不得重用 |
+| Stdlib positive / third-party negative | Portable + Pi | verified venv可import target stdlib與`lib-dynload`；拒絕`/usr/lib/python3/dist-packages`、`/usr/local/.../site-packages`、user site及任一product root外第三方package；`litert_lm`／native loaded path須位於verified product root |
 | `preflight` — POC path provenance-only | Pi | checksum-matching product config內的POC `runtime_path/model_path/test_profile`只供provenance；open call count = 0，實際deployment path只取`LLMConfig`並驗digest |
 | Wheel / native / model inventory exact match | Pi | 實際安裝 wheel、native library、model 與 lock 完全一致；零多餘或缺少 |
 | Controller dependency isolation | Portable | selected runtime/native package不在Core controller`[project.dependencies]`；controller-side import graph無native runtime，只有isolated child可import |
+| No target mutation / capture | Portable + Pi | installer不得呼叫`apt`、修改target packages、下載base runtime，或把CPython／stdlib／`lib-dynload` bytes寫回tracked manifest；call／written-entry count皆為0 |
 | No moving identity／overwrite | Portable + Pi | install/preflight不讀branch HEAD；拒絕existing install/output且preflight read-only，不覆寫caller artifact/config |
-| Sanitized command output | Portable + Pi | install/preflight stdout只含status、public digest／count；不含model/prompt/output、credential或absolute private path |
+| Sanitized command/card output | Portable + Pi | install/preflight stdout與公開PKG card只含status、public digest／count；exact package/path inventory只留protected raw preflight，不含model/prompt/output、credential或absolute private path |
 | `THIRD_PARTY_NOTICES.md` 完整 | Portable review | LiteRT-LM runtime、Gemma 4 E2B、所有 dependency 均有 license / notice entry；Apache-2.0 清楚標注 |
 
 ---
@@ -1364,9 +1389,10 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | `classification` | `inherit` / `delta` / `waiver` 其中之一 |
 | `inheritance_reason` | 含具體 delta_test_id 或明確技術理由；裸「沿用 POC」fail closed |
 | `product_sha` | 40 lowercase hex；所有列相同；等於外部指定 frozen candidate SHA |
-| `delta_test_id` | exact member of `{M4B-CFG-001,M4B-LOCK-001,M4B-IPC-001,M4B-RDY-001,M4B-GEN-001,M4B-OUT-001,M4B-P5-001,M4B-CAN-001,M4B-REC-001,M4B-HIST-001,M4B-PRIV-001,M4B-OFF-001,M4B-RES-001,M4B-PKG-001,M4B-INH-001}` |
-| `delta_result` | `PASS` / `FAIL` / `BLOCKED`；`PASS`只可由runner/card `status="Pass"`正規化，`FAIL`對應`status="Fail"`，不得以字串大小寫差異繞過 |
-| `result_locator` | resolver取得正式result／failure record，且其中candidate SHA、Test ID、run ID及上述status mapping與本列相符；不得只驗非空字串 |
+| `delta_test_id` | exact member of `{M4B-CFG-001,M4B-LOCK-001,M4B-IPC-001,M4B-RDY-001,M4B-GEN-001,M4B-OUT-001,M4B-P5-001,M4B-CAN-001,M4B-REC-001,M4B-HIST-001,M4B-PRIV-001,M4B-OFF-001,M4B-RES-001,M4B-PKG-001}`；不得以`M4B-INH-001`建立self-row |
+| `delta_result` | final Gate 3只允許`PASS` / `FAIL`；`PASS`只可由下列scope-aware proof的`status="Pass"`正規化，`FAIL`對應`status="Fail"`；Accepted output不得含`BLOCKED` |
+| `result_proof_kind` | exact member of`target_card / lock_preflight_reconciliation / portable_reconciliation`，且須與`delta_test_id` scope吻合 |
+| `result_locator` | resolver取得下列scope-aware proof；proof內candidate SHA、run ID、Test ID/status binding與本列相符，且所有被引用bytes digest可重算；不得把non-empty locator或suite-level `result.json`冒充Test-ID card |
 | `portable_run_id` | portable delta填三版本共用run ID；非portable delta填JSON `null` |
 | `acceptance_run_id` | Pi delta填單一正式`pi_acceptance_run_id`；portable/evidence-only delta填JSON `null`；不得使用debug run ID |
 
@@ -1381,9 +1407,24 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | P8 history | 指向`M4B-HIST-001`；舊pairing `FAIL / DEPENDENCY_LIMITED_BY_P2`與replacement marker結果分欄 |
 | P9 / P10B | `poc_machine_result="FAIL"`；`classification="waiver"`；`user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"`；Core product `M4B-RES-001`結果仍以獨立delta row填列 |
 | P10A | 原始machine PASS可inherit，但Core persistent-child composition差異須有`M4B-GEN-001`／`M4B-REC-001` locator |
-| Gate 2B narrow listen→speak harness vs Core generic renderer | 至少兩個獨立delta row，分別以單值`delta_test_id="M4B-OUT-001"`與`"M4B-INH-001"`記錄；不得把兩個ID塞進單一字串欄位 |
+| Gate 2B narrow listen→speak harness vs Core generic renderer | 以一或多個`delta_test_id="M4B-OUT-001"`的獨立row記錄具體產品delta reason；不得建立`M4B-INH-001` self-row或把多個ID塞進單一字串欄位 |
 | P11 provenance | 至少有`M4B-LOCK-001`與`M4B-PKG-001`的獨立delta row |
 | P12 offline | 至少有`M4B-OFF-001`與`M4B-PRIV-001`的獨立delta row |
+
+`M4B-INH-001`是整份index的generator schema＋Tester evidence-review gate；其PASS由本節驗證與
+Tester簽核得出，不寫回`inheritance.json`要求自身證明自身。
+
+**Scope-aware result proof（formal Gate 3）**：
+
+| Proof kind | Applicable row | Required oracle |
+| :--- | :--- | :--- |
+| `target_card` | 有Pi acceptance card的Test ID | 指向同一正式acceptance run已finalize的test-specific card；card直接含`candidate_sha / run_id / test_id / status`且digest可重算 |
+| `lock_preflight_reconciliation` | `M4B-LOCK-001` | Tester record同時綁定同一acceptance run的runner `preflight.json`與`m4b_llm_product.py preflight` sanitized identity record；保存兩個locator／digest、candidate SHA、acceptance run ID、`test_id="M4B-LOCK-001"`與reconciled status，並要求兩者`python_abi_attestation_sha256`／install-inventory digest exact相同；exact package/path attestation只由protected raw evidence解析，不寫入公開index |
+| `portable_reconciliation` | CFG／IPC或其他無target card而需入列的portable Test ID | Tester record綁三個正式minor共用portable run ID，逐minor保存runner result與JUnit locator／digest、candidate SHA、Python minor、Test ID coverage及reconciled status；suite `result.json`本身不宣稱含Test ID |
+
+任一reconciliation未完成、引用debug／不同run、混合SHA／Test ID、digest mismatch或其底層任一結果
+不是相同status時均fail closed。Development期間的blocked狀態只存在review/tracker，不輸出至final
+`inheritance.json`。
 
 **Locator resolver seam（Portable）**：
 
@@ -1399,6 +1440,9 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 
 | Case | Assertion |
 | :--- | :--- |
+| Valid finalized target card | `target_card`直接解析同一candidate SHA／acceptance run／Test ID／PASS與content digest；accepted |
+| Valid LOCK preflight reconciliation | 同一acceptance run的runner preflight與product sanitized preflight locator／digest、identity及`M4B-LOCK-001` binding全吻合；accepted |
+| Valid three-minor portable reconciliation | CPython 3.11／3.12／3.13 result＋JUnit locator／digest、共用run ID、candidate SHA、Test ID coverage與PASS全吻合；accepted |
 | Generator 不讀 `git rev-parse HEAD` | 斷言 `product_sha` 來自外部注入，非 HEAD-derived |
 | Generator 不寫 `docs/outsource/evidence/` | fast loop 使用 temp output |
 | Mixed `product_sha` | fail closed |
@@ -1407,6 +1451,10 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | machine result被waiver覆寫或共用同一欄 | fail closed |
 | target row缺`acceptance_run_id`、portable row缺`portable_run_id`或任一使用debug run ID | fail closed |
 | Non-empty locator 但 resolver 失敗 | fail closed；非空字串不足以通過 |
+| Raw suite result冒充Test-ID card | fail closed；須依scope使用target card或Tester reconciliation |
+| `M4B-INH-001` self-row | fail closed；index不得自我證明 |
+| Unresolved／mixed reconciliation | locator或digest未解析、SHA／run／Test ID混用、三minor不完整任一成立即fail closed |
+| Accepted output含`BLOCKED` | fail closed；final Gate 3只允許PASS／FAIL |
 
 **M4a regression coverage（此測試同時驗 M4a contract 未被改寫）**：
 
@@ -1428,6 +1476,8 @@ M4b 子 gate 結論文件必須包含（由 Tester 填入，引用 runner 標準
 | `portable_run_id` | M4b portable matrix 的 run ID（三版本共用） |
 | `portable_matrix_index` | `<m4b-portable-root>/matrix-index.json` 路徑（runner 產生） |
 | `pi_preflight_locator` | 同一candidate SHA／`pi_acceptance_run_id`的`preflight.json` locator |
+| `python_abi_attestation_sha256` | install、product preflight、runner preflight與acceptance-start重算後一致的64-hex target ABI digest |
+| `install_inventory_sha256` | product preflight、runner preflight與M4B-PKG-001 card一致的64-hex protected install inventory digest |
 | `pi_acceptance_run_id` | M4b target acceptance 的 run ID（不得混用 debug run ID） |
 | `pi_result_locators` | M4b 各 Pi acceptance result card run-root-relative locator（含 RES / OFF） |
 | `inheritance_index_locator` | `docs/outsource/evidence/<M4-delivery>/m4b/inheritance.json` |

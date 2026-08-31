@@ -20,7 +20,7 @@
 | **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
 | **Ch 11** | [ch11_error_logging.md](../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
 | **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Accepted | Designer | Core candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成Tester exact-SHA驗收與Designer final confirmation |
-| **M4b production** | [ch_m4b_llm_production.md](../implement/ch_m4b_llm_production.md) | Design review approved；Tester coverage pending | Designer | `IR_review_M4B_I` Blocking 0／Resolved；WP-01～06須等`TR_spec_M4B_I`，尚未宣告Development Ready或Gate 3 PASS |
+| **M4b production** | [ch_m4b_llm_production.md](../implement/ch_m4b_llm_production.md) | Implementation in progress；target ABI spec delta pending | Designer | `IR_dev_M4B_I`已由Designer選定target ABI boundary並`Revised`；`TR_spec_M4B_II`等待Tester局部修訂，candidate／Pi Gate 3仍阻擋 |
 | **Child Protocol v1** | [protocol.md](../protocol.md) | Audio approved；LLM `snowboard.llm/1` design approved | Designer | LLM winner lifecycle、pre-warm與exact wire schema已由`IR_review_M4B_I`核准 |
 
 ## 跨章節 Gate 與備註
@@ -29,13 +29,14 @@
 * M4a production design與test-spec coverage sign-off均已完成；Accepted Audio POC evidence仍不取代Core exact-SHA驗收。
 * Gate 2A的Gemma R1 P2/P8 FAIL與Qwen exclusion維持immutable history；Gate 2B後User以known resident-retention defect waiver選定Gemma POC winner。此waiver不等於Core Gate 3 PASS；若runtime偏離LiteRT-LM仍須先處理change request／`AR_impl`。
 
-## M4b Designer post-Gate-2B design approval（2026-08-30）
+## M4b Designer post-Gate-2B design/test approval（2026-08-30）
 
 ### Current decision
 
-Gate 2B final winner ACK已固定POC baseline；Designer的post-Gate-2B planning已完成，Reviewer亦已在
-`IR_review_M4B_I`以Blocking 0／`Resolved`核准完整設計。但在Tester coverage 100%前，不宣告Core
-M4b Development Ready、Gate 3 PASS或Accepted。已核准的single-review scope包含：
+Gate 2B final winner ACK已固定POC baseline；Designer的post-Gate-2B planning已完成，Reviewer已在
+`IR_review_M4B_I`以Blocking 0／`Resolved`核准完整設計；Tester coverage亦由Designer在
+`TR_spec_M4B_I` Round II以Blocking 0／`Resolved`核准。M4b現為Development Ready，但不宣告
+Gate 3 PASS或Accepted。已核准的single-review scope包含：
 
 1. `docs/implement/ch_m4b_llm_production.md` 的process ownership、lifecycle、config、packaging、
    inheritance、coverage與work-package gates；
@@ -46,8 +47,8 @@ M4b Development Ready、Gate 3 PASS或Accepted。已核准的single-review scope
 
 依USER減少多輪的決策，本輪未開generic-only review。Reviewer已用單一`IR_review_M4B_I`完成Phase A、
 DELIVERY-019 adaptation、selected baseline、protocol/driver/config/lock/packaging、structured Reasoner
-seam、planned recycle與WP-01～06審查，並保持POC waiver與Core product PASS分離。下一個owner是Tester：
-一次補完整M4B test spec，Designer以`TR_spec_M4B_I`確認下列15項coverage 100%後才交Developer：
+seam、planned recycle與WP-01～06審查，並保持POC waiver與Core product PASS分離。Tester已一次補齊
+完整M4B test spec，Designer確認下列15項coverage 100%後交Developer：
 `M4B-CFG`、`M4B-LOCK`、`M4B-IPC`、`M4B-RDY`、`M4B-GEN`、
 `M4B-OUT`、`M4B-P5`、`M4B-CAN`、`M4B-REC`、`M4B-HIST`、`M4B-PRIV`、`M4B-OFF`、
 `M4B-RES`、`M4B-PKG`、`M4B-INH`。
@@ -71,14 +72,16 @@ seam、planned recycle與WP-01～06審查，並保持POC waiver與Core product P
 - 20-session不因recycle分段重算：combined PSS與system-used仍各自套r14 slope`<=4 MiB/session`及
   late-minus-early delta`<=64 MiB`，每generation owner PSS delta亦`<=64 MiB`。
 
-### Remaining Development Ready blockers
+### Development Ready closure and remaining Gate 3 work
 
 - Reviewer gate已完成：`IR_review_M4B_I`為Blocking 0／`Resolved`，並已歸檔；
-- Tester尚未將15項coverage落入`docs/test_spec/test_spec_M4.md`並由`TR_spec_M4B_I`確認100%；
-- Developer WP-01～06、machine-readable lock、offline package closure與Core exact-SHA Gate 3均尚未開始。
+- Tester已將15項coverage落入`docs/test_spec/test_spec_M4.md`；`TR_spec_M4B_I` Round II為
+  Blocking 0／`Resolved`並已歸檔；
+- Developer已開始WP-01～06；`IR_dev_M4B_I`揭露target CPython authority缺口，Designer已選定
+  target ABI boundary並開`TR_spec_M4B_II`；WP-02／04／06 target-ready、candidate與Gate 3等待該delta收斂。
 
 Gate 2A provisional ACK、Gate 2B final review與final winner ACK均保留為append-only lineage。下一步
-是Tester完成M4B test spec，再由Designer執行`TR_spec_M4B_I` coverage sign-off。
+是Tester修訂ABI boundary的LOCK/PKG assertions；Developer可並行收斂不受阻的portable implementation。
 
 ### Reviewer approval confirmation（2026-08-30）
 

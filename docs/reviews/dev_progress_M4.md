@@ -473,3 +473,171 @@ physical circuit PASS。
 依USER follow-up，Python工具集中至`scripts/hw_diag/`；`run_diag.sh`與新增的`run_button.sh`
 在未傳`--config`時固定使用repo root的`config.m3.local.yaml`。因此Pi日常操作分別為
 `scripts/hw_diag/run_diag.sh`與`scripts/hw_diag/run_button.sh`，不再要求operator填寫參數。
+
+## M4b Local LLM production integration（2026-08-30）
+
+### Entry and delivery boundary
+
+- **Entry state:** `IR_review_M4B_I`與`TR_spec_M4B_I`均為`Resolved`；Designer已標記
+  `DEVELOPMENT READY`。Accepted input固定為Gemma candidate
+  `CAND-LRT-G4E2B-MOBILE-R1`與pairing`litert-lm-v0.16.0-pi-g2b-r5`。
+- **Implementation authority:** `docs/implement/ch_m4b_llm_production.md`、`docs/protocol.md` §4、
+  `docs/test_spec/test_spec_M4.md`的15個M4B Test ID。
+- **Non-claim:** Developer fast loop不構成portable matrix、Pi target PASS、candidate freeze或M4b Accepted；
+  POC P9/P10B machine FAIL與User waiver保持分欄。
+
+### Work packages
+
+| Work package | Estimate | Files / symbols | Dependency | Affected tests | Exit evidence | Status |
+| :--- | ---: | :--- | :--- | :--- | :--- | :--- |
+| M4B-WP-01 Structured protocol seam | 1.5 days | `src/sbd/cognition/llm.py` structured values；`src/sbd/cognition/llm_child_protocol.py` exact codec/state；`tests/fakes/m4b_llm_child.py` deterministic child double | Resolved design/test-spec reviews | `M4B-IPC-001`、`M4B-RDY-001` portable；existing Reasoner/contract regressions | exact frame/key/type/boundary/state tests PASS；controller不import real runtime | Developer complete — Tester pending |
+| M4B-WP-02 Strict config / lock / factory / package | 2.0 days | config models/defaults/validation；`src/sbd/cognition/litert_lm/` factory/lock；`requirements/m4b/`；`scripts/m4b_llm_product.py` | WP-01 public types；exact CPython closure disposition | `M4B-CFG-001`、`M4B-LOCK-001`、`M4B-PKG-001` portable | valid exact config/lock accepted；negative matrix zero side effect；offline inventory deterministic | Developer complete — target-ready；Pi preflight pending candidate |
+| M4B-WP-03 Parent lifecycle / recovery | 3.0 days | `litert_lm/adapter.py`、resource sampler、RecoveryTicket ports、process-group cleanup | WP-01 codec；WP-02 verified identity | `M4B-RDY-001`、`M4B-CAN-001`、`M4B-REC-001`；affected M4a lifecycle | startup/pre-warm/admission/cancel/recycle/replacement deterministic cases PASS；zero orphan | Developer complete — Tester/Pi pending |
+| M4B-WP-04 Isolated winner worker | 2.5 days | `litert_lm/worker.py`、renderer/tokenizer/constrained-output binding、fresh Conversation | WP-02 runtime closure；WP-03 parent lifecycle | `M4B-GEN-001`、`M4B-OUT-001`、`M4B-HIST-001` focused portable/Pi | preflight identity and controlled target smoke executable；no controller native import | Developer complete — target-ready；Pi execution pending frozen candidate |
+| M4B-WP-05 Reasoner / composition / fatal supervision | 2.5 days | `reasoner.py`、`prompt_builder.py`、M4 composition、RM hook/barrier、main `rm.wait_fatal()` | WP-03 lifecycle；WP-04 structured generation | `M4B-P5-001`、`M4B-PRIV-001`、CAN/REC regression | P5/fatal split、same-owner recovery、next-success、privacy and no-request fatal monitor PASS | Developer complete — Tester pending |
+| M4B-WP-06 Candidate / resource / inheritance closure | 3.0 days | `tests/m4b_portable_suite.txt`、canonical M4 target suite、resource collector/verifier、M4b inheritance generator | WP-01～05 executable；complete product closure | `M4B-OFF-001`、`M4B-RES-001`、`M4B-INH-001`；full affected suite | primary-minor Developer fast loop PASS；formal target fields/cards and inheritance inputs ready for Tester | Developer tooling complete — candidate-ready；snapshot／Pi gates pending |
+
+### Implementation order and gates
+
+1. WP-01先固定public structured values與pure codec；不等待real LiteRT-LM或Pi，且不得以double宣稱target PASS。
+2. WP-02在任何native import、spawn、workdir、sampler或RM registration前完成config／lock fail-closed。
+3. WP-03只透過窄ports取得recovery control；replacement在`INFERENCE_READY`前不得admit。
+4. WP-04僅於isolated child lazy import selected runtime；每次GENERATE建立fresh Conversation。
+5. WP-05保留Reasoner對product schema與P5的authority，child不得執行tool handler。
+6. WP-06保留完整20-session samples與r14 4/64 gates；正式evidence由Tester對USER核准candidate SHA產生。
+
+### Developer fast-loop commands
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_m4b_ipc_001.py tests/test_m4b_rdy_001.py
+PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_contracts.py tests/test_config.py tests/test_m4a_ipc_001.py
+```
+
+每個WP完成時更新本表status與實跑輸出；不得以code review或`assert True`替代執行證據。
+
+### WP-01～06 Developer completion evidence（2026-08-30）
+
+- 新增structured `LLMGenerationMetrics`／`LLMGeneration`／resource/recovery ports；Protocol的
+  `generate()`已改為`ReasoningInput`；raw-text bridge已移除，production與Mock皆使用required structured metrics。
+- 新增pure `snowboard.llm/1` codec：canonical GENERATE、CANCEL、READY六欄identity、typed terminal、
+  finite metric/token bounds、16 KiB framing、sanitized failure及child-side exact-schema parser。
+- deterministic child double驗四個non-READY state zero-write、single-flight總GENERATE write=1、monotonic
+  request identity、typed single CANCEL與next admission。
+- Strict config、Accepted product lock、14-file LiteRT wheel inventory、notice inventory、offline install/preflight WIP、
+  parent process-group owner、resource sampler、8/48/768 recycle、fresh-Conversation worker與dynamic response schema均已落地。
+- Reasoner已分離P5與fatal contract；real LLM在composition以同一instance作`ResourceSpec.instance`／recovery hook，
+  `ResourceManager.wait_fatal()`由main常駐監督background recovery failure。
+- `tests/m4b_portable_suite.txt`收集163項（含15個M4B modules與受影響M4a regression）並實跑全部PASS；
+  canonical Pi suite collect 8個test functions且包含M4b exact-product 11-card collector，但未在本機執行Pi測項。
+- Primary local CPython 3.12完整`-m 'not rpi' tests`收集575項並實跑exit 0；此結果是Developer fast loop，
+  不取代Tester對candidate SHA的3.11／3.12／3.13正式matrix。
+- Tracked sanitized r14 20-sample vector重現`5.900893 / 131.578 / 0.101957 / 32.750`四個凍結輸出；
+  inheritance generator拒絕mixed SHA、self-row、unresolved proof與waiver改寫。
+- `py_compile`與`git diff --check`通過；這些portable結果不消除product closure缺口。
+- **Blocking:** implement/test spec要求tracked manifest列出isolated interpreter的relative path／size／digest，
+  但Accepted authority只固定Debian 13 aarch64與CPython 3.13，未固定patch/package revision、source
+  artifact、stdlib/native dependency closure或deterministic inventory。標準`venv --copies`仍引用host
+  stdlib，generated inventory也不能替代tracked authority。`IR_dev_M4B_I`已請Designer決定self-contained
+  runtime artifact或明定target ABI boundary；在Resolved前，WP-02／04 target readiness／06 handoff及
+  provisional candidate均不得宣稱complete。
+
+### Workstation shutdown checkpoint（2026-08-30）
+
+- USER要求暫停；Developer已停止編輯、測試與任何長時間程序，未建立commit或candidate SHA。
+- `IR_dev_M4B_I`已由Developer接受Designer選定的Option 2 target ABI boundary、標記`Resolved`，並移至
+  `docs/reviews/history/IR_dev_M4B_I.md`。原self-contained CPython closure blocker因此解除。
+- 新契約固定target-owned `/usr/bin/python3.13`、CPython 3.13.5、SOABI／MULTIARCH／stdlib boundary、
+  五個Debian套件同版tuple、base executable digest與glibc identity；product-owned tracked manifest只保留
+  14-file LiteRT-LM payload。
+- **尚未完成：** `scripts/m4b_llm_product.py`仍只驗CPython 3.13 minor，尚未實作canonical
+  `PythonABIAttestation`、install inventory attestation、preflight／acceptance drift compare、exact package及
+  isolation negative matrix；tracked manifest仍寫`python.version=3.13`且其lock digest尚未重算。
+- **Tester dependency：** `TR_spec_M4B_II.md`仍為`Open`，`M4B-LOCK-001`／`M4B-PKG-001`仍保留舊
+  interpreter-in-manifest oracle；在其Resolved前不得宣稱WP-02／04／06 target-ready或建立provisional candidate。
+- `tests/m4b_target_cases.py`有一批尚未驗證的WIP：20-session marker／intent／cancel／P5/cards已接線，
+  但recycle後prewarm擷取、per-generation PSS delta、swap／OOM／thermal／throttled與cleanup仍須改成真實量測；
+  檔內暫存的無效recovery yield及fabricated zero evidence必須移除。
+- 停機前最後已知綠燈仍是先前的163項M4B portable與575項`not rpi`；上述target-runner與ABI裁決後的
+  最新WIP尚未重跑，不能引用舊結果證明目前worktree通過。
+- **安全接續點：** 先完成Option 2 ABI capture/compare與LOCK/PKG tests，再修正target resource evidence，
+  依序跑focused tests、163項M4B portable、全體`not rpi` regression及`git diff --check`。
+
+### Workstation resume and Developer closure（2026-08-30）
+
+- 已依Option 2完成canonical `PythonABIAttestation`：固定`/usr/bin/python3.13`、CPython 3.13.5、
+  SOABI／MULTIARCH／64-bit little-endian／stdlib與`lib-dynload`、glibc、base executable digest及五個
+  Debian package同版tuple；install、preflight與acceptance均重算並拒絕任一drift。
+- product-owned runtime manifest已收斂為exact 14-file LiteRT-LM payload；`--copies --without-pip` venv、
+  protected install inventory、stdlib positive／system-user third-party negative isolation、native pre-import
+  authentication及strict product config逐欄cross-check均已有portable positive／negative assertions。
+- canonical Pi runner已移除fabricated cleanup/resource evidence，改採20個real kernel/process samples、
+  exact owner PID分帳、swap／OOM／thermal／throttle與cleanup delta；固定attempt 8／16 recycle、三個generation
+  baseline／pre-warm／ticket及r14 4/64 gates。Pi suite以`-m rpi --collect-only`收集8項，未在本機執行。
+- cooperative cancel現只在typed terminal、worker join及terminal resource/recycle cleanup均完成後return；
+  並行及terminal後才進入的`abort()`共用同一convergence event、只送一次CANCEL，且同child下一輪成功。
+- 最新Developer fast loop：M4B portable `215/215 PASS`；repository `-m 'not rpi' tests`
+  `633/633 PASS`；M4B Python modules `py_compile`與`git diff --check`均PASS。這些測試使用double，沒有讀取
+  工作站另一路徑的Gemma／LiteRT-LM POC artifacts。
+- **Remaining external gate:** `TR_spec_M4B_II.md`仍為Tester-owned `Open`，故WP-02／04／06不得標
+  target-ready、不得建立provisional candidate或執行Pi Gate 3。其Resolved後仍須USER核准candidate commit，
+  再由Tester對同一SHA完成三minor portable matrix與Pi target acceptance；目前不宣稱M4b Accepted。
+
+### Pre-shutdown completion-audit checkpoint（2026-08-30）
+
+- USER要求工作站關機前停在可恢復段落；Developer已停止長時間驗證，不執行Pi、不建立commit／candidate，
+  且不留下刻意啟動的背景程序。
+- 本輪完成production lifecycle hardening：Reasoner timeout保留operation ownership；cancel／force-abort／rebuild
+  均等待或強制收斂並清理child；replacement前重新驗證runtime與config；cleanup residue改為fail closed。
+- worker補齊request identity連續性、pre-bind CANCEL、native cancel failure與result/error race的typed terminal；
+  interpreter建立、ABI probe與worker啟動均明確使用`-B`，避免runtime inventory受bytecode污染。
+- output schema authority已收斂：child只限制tool arguments為object，sealed ToolRegistry／Reasoner負責完整schema；
+  target evidence改驗exact thread／fd identities、privacy markers與artifact digest、真實resource上限及固定card欄位。
+- inheritance與candidate gate已拒絕area證據缺漏、duplicate／wrong-scope proof及結構正確但語意不足的card；
+  formal runner固定candidate `src`與preflight config path／digest，避免繼承外部`PYTHONPATH`或config。
+- 上述各區focused tests均已通過；先前完整M4B portable `215/215`與non-Pi `633/633`曾通過，但在最後一批
+  audit patches及`PytestUnhandledThreadExceptionWarning`升級為error後尚未完整重跑，因此列為stale evidence，
+  不用來宣稱目前worktree完成。
+- **恢復後必做：** `py_compile`與`git diff --check`；完整M4B portable；完整`-m 'not rpi'`；Pi suite
+  `--collect-only`確認exact 8項；再整理Developer handoff。`TR_spec_M4B_II.md`仍為Tester-owned `Open`，
+  在Resolved前不得宣稱WP-02／04／06 target-ready、建立provisional candidate或執行Pi Gate 3。
+
+### Post-restart Developer verification and handoff（2026-08-31）
+
+- 以`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`隔離工作站全域ROS pytest plugins後，完整M4B portable suite
+  實跑`231/231 PASS`；新增的thread warning policy會將`PytestUnhandledThreadExceptionWarning`升級為error。
+- 完整repository `-m 'not rpi' tests`實跑`651/651 PASS`；collection為`651/680`、另有29項Pi測試。
+  M4 canonical Pi入口`tests/milestones/test_m4_local_voice.py -m rpi --collect-only`精確收集8項，包含唯一
+  `test_m4b_exact_product_gate3_cards`，但依role gate未在本機執行Pi或載入Gemma／LiteRT-LM artifacts。
+- M4B／LiteRT-LM Python source與test以AST parse完成syntax check；`git diff --check`通過。程式與測試中未找到
+  TODO、FIXME、NotImplemented、placeholder、WIP或`assert True`殘留；target evidence中的`fabricated`只存在於
+  必須拒絕fabricated counter的negative test名稱。
+- WP-01～06的Developer-owned source、portable tests、candidate/evidence tooling與受影響M4a regressions均已完成；
+  本輪沒有發現需再修改的Developer code。此結論只代表implementation handoff ready，不代表target PASS或M4b Accepted。
+- **External gate remains:** `docs/reviews/TR_spec_M4B_II.md`仍為Tester-owned `Open`；而
+  `docs/test_spec/test_spec_M4.md`的`M4B-LOCK-001` negative matrix仍保留舊的
+  `interpreter/distribution/native file relative path/size/digest` runtime-closure oracle，尚未依Option 2改為
+  product-owned 14-file payload＋target ABI attestation。Tester修訂、Designer複審並Resolved前，不得將
+  WP-02／04／06標target-ready、建立provisional candidate、執行Pi Gate 3或宣稱M4b Accepted。
+- 未建立commit或candidate SHA。外部gate解除後，下一步是先向USER展示完整commit title／body／files並取得
+  明確同意，再建立provisional candidate，交Tester執行CPython 3.11／3.12／3.13 matrix與同SHA Pi acceptance。
+
+### Resolved-ABI Developer re-entry and candidate readiness（2026-08-31）
+
+- Designer已將`TR_spec_M4B_II`標記`Resolved`並歸檔至`docs/reviews/history/`；WP-02／04／06的
+  test-spec blocker解除，Developer重新依核准的`M4B-LOCK-001`／`M4B-PKG-001`逐項audit實作與tests。
+- audit補強target venv probe：除stdlib與product site外，dynamic stdlib extension亦必須位於
+  `/usr/lib/python3.13/lib-dynload`；wrong implementation／abiflags／base digest／sys.version／glibc、
+  missing／non-regular／symlink／non-root base及wrong package revision均有table-driven fail-closed assertion。
+- product preflight validator改為exact 14-key sanitized schema，固定lock／14-file manifest／model／config digest，
+  拒絕unknown／absolute private metadata；M4B-PKG draft card只允許四個核准evidence欄位，不再攜帶
+  session／generation等未規範資料。Target card仍在acceptance finalization後繼承runner公共欄位。
+- install regression直接捕捉唯一`/usr/bin/python3.13 -I -B -m venv --copies --without-pip`命令與clean env，
+  證明無apt／pip installer／download路徑，且tracked 14-file manifest不被target bytes改寫。
+- 最新Developer fast loop：LOCK／PKG／candidate focused suite PASS；M4B portable `242/242 PASS`；repository
+  `-m 'not rpi' tests` `663/663 PASS`（collection `663/692`、另29項Pi）；canonical M4 Pi suite
+  `-m rpi --collect-only`精確8項；M4B source/tests AST parse及`git diff --check` PASS。
+- **Candidate-ready, not Accepted:** 尚未建立commit／push／candidate SHA，也未執行Pi。下一步須依workflow
+  展示完整candidate commit title／body／files並取得USER明確確認，再push同一immutable SHA，交Tester執行
+  三minor portable sign-off；Designer freeze後才在Pi以新run ID執行preflight／acceptance。

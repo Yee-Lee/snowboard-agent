@@ -32,7 +32,9 @@ DEFAULT_CONFIG = AppConfig(
     cancel=CancelConfig(
         abort_timeout_seconds=TimeoutMap(
             default=2.0,
-            by_kind=MappingProxyType({})
+            by_kind=MappingProxyType({
+                "cognition.reasoner": 0.5
+            })
         ),
         force_abort_timeout_seconds=TimeoutMap(
             default=1.0,

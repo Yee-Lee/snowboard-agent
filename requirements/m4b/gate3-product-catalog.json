@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "catalog_id": "M4B-CORE-GATE3-PRODUCT-001",
+  "provenance": {
+    "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
+    "source_locator": "poc_llm/fixtures/gate2/gate2a-public-catalog-002.json",
+    "source_sha256": "b4a2bb2c4a9596c668b0ef19379fc546bd861771368ba0823f338b0b060b525b"
+  },
+  "resource_marker_profile": {
+    "session_count": 20,
+    "current_format": "M4BC{session:04d}",
+    "forbidden_format": "M4BX{session:04d}",
+    "instruction_format": "Briefly answer the transcript and include {current} exactly once. Do not include {forbidden} or any marker from an earlier session. Transcript: {transcript}"
+  },
+  "intent_cases": [
+    {
+      "id": "CORE-OUT-SPEAK-001",
+      "expected_kind": "speak",
+      "text": "Please give a short greeting.",
+      "actions": ["speak", "rest"],
+      "tools": []
+    },
+    {
+      "id": "CORE-OUT-TOOL-001",
+      "expected_kind": "tool",
+      "text": "Turn on the light using the available tool.",
+      "actions": ["tool", "rest"],
+      "tools": [
+        {
+          "name": "device.light.on",
+          "description": "Turn on the light.",
+          "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "CORE-OUT-REST-001",
+      "expected_kind": "rest",
+      "text": "No action is needed.",
+      "actions": ["rest"],
+      "tools": []
+    }
+  ]
+}

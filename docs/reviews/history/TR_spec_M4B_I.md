@@ -1,7 +1,7 @@
 ---
 requestor: "Designer"
 owner: "Tester"
-status: "Rejected"
+status: "Resolved"
 ---
 
 # TR_spec_M4B_I — M4b Gate 3 test-spec coverage submission
@@ -11,7 +11,7 @@ status: "Rejected"
 - **Target**: `docs/test_spec/test_spec_M4.md` — `M4b Gate 3 測試規格`
 - **Entry dependency**: Fulfilled — `IR_review_M4B_I` is `Resolved`; Gate 2B final winner ACK is accepted
 - **Decision requested**: Designer confirmation of 100% planned coverage and Development Ready
-- **Current decision**: `DESIGNER REVIEW REJECTED — TESTER REVISION REQUIRED`
+- **Current decision**: `DESIGNER COVERAGE APPROVED — DEVELOPMENT READY`
 
 ## 1. Submission boundary
 
@@ -203,3 +203,77 @@ features. Tester should revise only the cited rows and their directly affected e
 Tester修訂後將YAML status改回`Revised`，並在本單逐項回覆`TR-M4B-I-01`～`06`的修改位置。
 Designer複審只核對這六項、其直接影響面與修正新造成的regression；其餘已通過的15-ID mechanical
 coverage、M4a append-only boundary、r14 resource gates、privacy/offline/package內容不重開。
+
+## 8. Tester revision response（2026-08-30）
+
+**Disposition: Revised — all six Blocking findings addressed；awaiting Designer re-review.**
+
+### TR-M4B-I-01 — Resolved by revision
+
+- **Location**：`M4B-CFG-001` Config value cases。
+- **Change**：明列三個locked recycle欄位的exact YAML為valid；各欄below／above drift才
+  `ConfigValueError`，真正unknown欄名才`UnknownConfigKey`；所有invalid mutation加上zero-side-effect
+  oracle。
+
+### TR-M4B-I-02 — Resolved by revision
+
+- **Location**：`M4B-IPC-001` frame/schema與ERROR mapping、`M4B-RDY-001` startup admission、
+  `M4B-GEN-001` single-flight。
+- **Change**：GENERATE／CANCEL納入missing／extra／wrong-type matrix；四個non-READY parent state皆
+  local fail closed且zero wire/inference；第二個concurrent call維持總write=1與原active identity／terminal，
+  direct child `BUSY`／`INVALID_REQUEST` injection只保留為fatal defensive mapping。
+
+### TR-M4B-I-03 — Resolved by revision
+
+- **Location**：`M4B-GEN-001` RESULT metrics assertion。
+- **Change**：missing／partial／NaN／bool／越界metrics統一為fatal protocol failure；禁止建立
+  `LLMGeneration`與P5 response，並要求TERM／KILL／waitpid、same-key recovery及replacement
+  next-success。
+
+### TR-M4B-I-04 — Resolved by revision
+
+- **Location**：`M4B-RDY-001` evidence與startup table。
+- **Change**：Pi card保存六欄sanitized READY identity並逐欄驗exact值／controlled mismatch；新增initial
+  baseline missing／unreadable／bool／negative matrix，要求不向caller emit／admit READY、完整child／IPC／reader／fd／
+  workdir cleanup、zero orphan及next-start success。
+
+### TR-M4B-I-05 — Resolved by revision
+
+- **Location**：`M4B-CAN-001` cooperative shutdown與Level 3 tables。
+- **Change**：shutdown撞RECOVERING拆為cleanup success／exception／timeout；後兩者要求
+  `prepare_shutdown()`與`rm.wait_fatal()`觀察同一latched root cause、exit 4恰一次、無第二batch、
+  partial replacement／舊child residue皆為0且無unretrieved-task warning。
+
+### TR-M4B-I-06 — Resolved by revision
+
+- **Location**：`M4B-INH-001` identity、specific-area、scope-aware proof與generator negative cases。
+- **Change**：移除INH self-row；narrow harness delta只以具體`M4B-OUT-001` row表達。Pi ID使用finalized
+  target card、LOCK使用同run preflight reconciliation、portable ID使用三minor Tester reconciliation；
+  三種valid proof各有positive generator case；final index只允許PASS／FAIL，並拒絕raw suite result冒充
+  card、unresolved/mixed proof及BLOCKED output。
+
+本次只修訂規格與review單，未宣稱product implementation或Gate 3 execution PASS。Designer re-review
+應依§7鎖定上述六項與直接regression。
+
+## 9. Designer re-review — Round II（2026-08-30）
+
+**Decision: Resolved — Blocking 0 / Advisory 0；DESIGNER COVERAGE APPROVED — DEVELOPMENT READY.**
+
+複審依§7鎖定`TR-M4B-I-01`～`06`、其直接影響面與修訂引入的regression。六項均已關閉：
+
+- `TR-M4B-I-01`：explicit exact recycle YAML成功；below／above drift與unknown key分流正確，invalid
+  cases保留zero-side-effect oracle。
+- `TR-M4B-I-02`：GENERATE／CANCEL exact-schema negative matrix、四個non-READY state的zero-write
+  admission、single-flight identity／terminal／next-success，以及direct-injection fatal mapping均已分離。
+- `TR-M4B-I-03`：metrics missing／partial／NaN／bool／boundary違約統一收斂為fatal protocol failure，
+  明確禁止`LLMGeneration`／P5，並要求same-key replacement recovery。
+- `TR-M4B-I-04`：Pi READY card與exact-value oracle覆蓋六欄identity；initial baseline failure matrix
+  封住child／IPC／reader／fd／workdir residue並要求next-start success。
+- `TR-M4B-I-05`：shutdown×RECOVERING的success／exception／timeout均有同一latched cause、一次exit 4、
+  zero orphan／unretrieved task與no-second-batch assertion。
+- `TR-M4B-I-06`：移除INH self-row與final `BLOCKED`；target card、LOCK preflight reconciliation、
+  three-minor portable reconciliation各有正反generator oracle，且拒絕raw suite result與mixed identity。
+
+Read-only re-review checks：`git diff --check`通過；M4B heading、case-watchdog與design §10.2 Test ID
+均為同一組15項。此核准只代表test-spec coverage完成並授權WP-01～06進場；不代表implementation、
+portable matrix、Pi Gate 3或M4b Accepted。
