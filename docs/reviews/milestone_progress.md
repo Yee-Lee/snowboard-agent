@@ -159,7 +159,12 @@ Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` wor
 | Gate | 狀態 | 阻擋 / 備註 |
 | :--- | :--- | :--- |
 | ALPHA Design Ready | `PENDING` | 阻擋：M4 Accepted；需 Tester 完成 `test_spec_ALPHA.md` 並由 Designer 簽核（`TR_spec_ALPHA_I`） |
-| ALPHA Accepted | `PENDING` | 阻擋：ALPHA Design Ready；Tester 驗收 + Designer CR；ALPHA Accepted 是 M5 entry 唯一 baseline SHA |
+| ALPHA Accepted | `PENDING` | 阻擋：ALPHA Design Ready；Tester 驗收 + Designer CR；是 M5 baseline selection 的原線候選 |
+| ASR Product R1 outcome contract | `AUTHORED / AUDIO DELIVERY PENDING` | `DELIVERY-AUDIO-POC-ASR-PRODUCT-R1-CONTRACT-001`已在Core建立；依User順序先完成Core內部紀錄，尚未複製至Audio `docs/pm_handoff/` |
+| Audio `asr-r1` worktree | `CREATED / INTAKE NOT STARTED` | 當前實體路徑 `/home/yee/workspace/snowboard/asr_r1`，branch `audio`，建立點 `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`；目標common-Git hub路徑尚未遷移 |
+| Core `core-r1` worktree | `NOT CREATED` | 不等待ALPHA Accepted；User確認fork checkpoint後，從已commit的Core full SHA建立`candidate/asr-r1`，單向同步`core → candidate/asr-r1` |
+| ALPHA.R1 | `CONDITIONAL / NOT DESIGN READY` | 規劃見`docs/milestones/ALPHA_R1.md`；POC evidence不取代Core design / test / exact-SHA acceptance |
+| M5 baseline selection | `PENDING` | M5只能選定`ALPHA`或`ALPHA.R1`其一Accepted exact SHA；不得並行進入或拼接evidence |
 | BETA Design Ready | `PENDING` | 阻擋：M7 Accepted 且 ALPHA Accepted；需 Tester 完成 `test_spec_BETA.md` 並由 Designer 簽核（`TR_spec_BETA_I`） |
 | BETA Accepted | `PENDING` | 阻擋：BETA Design Ready；Tester 對同一 Beta 候選 SHA 重跑 M4 ~ M7 regression + Designer CR |
 
@@ -175,6 +180,14 @@ Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` wor
 | update / rollback | **不引入** | 外部獨立處理 |
 
 **Architecture change: No**（`PM-OUT-260814-012` `OUT-ROADMAP-2026-001` 聲明）
+
+### ASR Product R1 待辦順序
+
+1. ~~完成 Core 內部 outcome contract、`ALPHA_R1.md`、roadmap 與 M5 dependency 一致性紀錄。~~ — **Done**
+2. 決定 common-Git workspace hub 遷移時點；未完成前不直接移動 `.git/` 內部。
+3. 將 Core contract 原樣複製至 Audio `docs/pm_handoff/`；不修改 Audio index、status、code 或 Git history。
+4. Audio POC 自行 intake、commit receipt、規劃與執行；Core 等待 final outcome handoff。
+5. User 指定 Core fork checkpoint 時，另行建立 `core-r1/ → candidate/asr-r1`；不需等待 ALPHA Accepted。
 
 ## 下一動作順序
 

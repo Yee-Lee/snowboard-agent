@@ -41,7 +41,20 @@ M1 純軟體核心
 
 > `ALPHA` 與 `BETA` 為產品成熟度 Gate，不是功能 milestone。`M4 Accepted` 不推定 `ALPHA Accepted`；`M7 Accepted` 不推定 `BETA Accepted`。詳見 `docs/milestones/ALPHA.md` 與 `docs/milestones/BETA.md`。
 
-後一階段必須在前一階段驗收通過後開始。若前一階段只完成部分功能，不以 feature flag 或「已知失敗」跳過其 gate。
+ASR Product R1 若由 User 開線，使用獨立但不取代原線的條件式產品路徑：
+
+```text
+shared Core fork SHA
+ ├── original: M4 → ALPHA ──┐
+ └── R1: M4a.R1 → M4b.R1 → M4c.R1 → M4.R1 → ALPHA.R1 ──┴── M5 baseline selection → M5
+```
+
+R1 branch 可在原 `ALPHA Accepted` 前建立與前進，但只能從已 commit 的明確 Core fork
+SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
+`docs/milestones/ALPHA_R1.md` 完成唯一 baseline selection；`ALPHA` 與 `ALPHA.R1`
+不得同時進入 M5。
+
+每條已開立的產品線內，後一階段必須在該線前一階段驗收通過後開始。若前一階段只完成部分功能，不以 feature flag 或「已知失敗」跳過其 gate。
 
 ### 1.4 共同完成條件
 
@@ -76,7 +89,8 @@ M1 純軟體核心
 | **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 selected Display profile | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display_spec.md` selected profile、Core 已採用的 Audio / Display POC contract |
 | **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、M2B後的provisional model recipe與Gate 2B後的final model baseline |
 | **ALPHA** | Voice-only 產品化收斂 Gate：固定 hardware / config / model / dependency / manifest，驗證可重現 session / soak / failure / recovery / shutdown / resource / privacy | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted exact SHA |
-| **M5** | 依 ALPHA Accepted exact SHA 擴充 MQTT 外部訊息、read 流程與實際 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
+| **ALPHA.R1** | 條件式 ASR Product R1 Voice-only 收斂 Gate；不改寫或取代原 ALPHA 結論 | Raspberry Pi 5 | `docs/milestones/ALPHA_R1.md`；M4.R1 Accepted exact SHA |
+| **M5** | 依 baseline selection 選定的唯一 ALPHA 或 ALPHA.R1 Accepted exact SHA 擴充 MQTT、read 與 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
 | **M7** | 正式 Display 版面、資產、動畫與視覺 UX 完整化 | Raspberry Pi 5 | `Ch 8`、M7 開發前核准的 `display_spec.md` revision |
 | **BETA** | 全能力產品收斂 Gate：在同一 Beta 候選 SHA 重跑 M4 ~ M7 regression，涵蓋長時間穩定、診斷、manifest inventory | Raspberry Pi 5 | `docs/milestones/BETA.md`；M7 Accepted exact SHA |
@@ -84,7 +98,7 @@ M1 純軟體核心
 ---
 
 
-> **注意**：各階段詳細規劃已拆分至 `docs/milestones/M{x}.md`，Agent 只應讀取當前進行中 Milestone 的檔案。
+> **注意**：各階段詳細規劃已拆分至 `docs/milestones/M{x}.md`；產品收斂 Gate 另見 `ALPHA.md`、`ALPHA_R1.md` 與 `BETA.md`。Agent 只應讀取當前進行中或任務直接影響的檔案。
 
 ## 10. 規劃維護原則
 

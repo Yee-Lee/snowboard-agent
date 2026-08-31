@@ -8,6 +8,8 @@
 
 ---
 
+> **與 ALPHA.R1 的關係**：條件式 ASR Product R1 可在本 Gate Accepted 前開立獨立候選線。`ALPHA` 與 `ALPHA.R1` 是兩個完整候選；只有後續 baseline selection 選定的一個 Accepted exact SHA 可進入 M5。見 `docs/milestones/ALPHA_R1.md`。
+
 ## 1. 範圍（ALPHA Scope）
 
 ALPHA 固定為以下能力的產品化收斂，必須在同一候選 SHA 全數通過：
@@ -149,7 +151,7 @@ python -m pytest -v -m rpi tests/milestones/test_alpha_voice_only.py
 
 ## 6. 後置效果
 
-* **M5 entry**：必須引用 `ALPHA Accepted exact SHA`，不得引用 M4 Accepted SHA 或任何部分通過結論。
+* **M5 entry**：必須先完成 `M5-BASELINE-SELECTION-R1`；若未建立 / 未採用 R1，引用 `ALPHA Accepted exact SHA`；若 User 選定 R1，引用 `ALPHA.R1 Accepted exact SHA`。不得引用 M4 部分結論、同時引用兩個 baseline 或拼接 evidence。
 * **Architecture change**：本 Gate 不引入 systemd / supervisor / deployment；若未來需要，須另開 AR_impl 審查並修訂 `arch.md`。
 
 ---

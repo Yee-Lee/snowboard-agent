@@ -6,9 +6,7 @@
 
 ## 1. 進行中 / 待處理 Handoffs (Active Handoffs)
 
-| Handoff ID | 標題 / 範疇 | 關聯 Feedback ID | 對應 Milestone | 狀態 | 對應 Response 路徑 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| [`NOTE-ASR-POSTPROCESS-POC-001`](NOTE-ASR-POSTPROCESS-POC-001.md) | ASR transcript postprocess POC 研議 | 無 | Post-M4 / Product convergence | **Under Consideration / 研議中** | 尚未要求 response |
+目前無進行中或待處理的 handoff。
 
 ---
 
@@ -57,6 +55,7 @@ revision，使用precommitted或held-out catalog重跑受影響Gate 2A surface�
 
 | Handoff ID | 標題 / 範疇 | 原 Legacy ID | 結案狀態 | 回覆 / 交付對照 |
 | :--- | :--- | :--- | :--- | :--- |
+| [`NOTE-ASR-POSTPROCESS-POC-001`](history/NOTE-ASR-POSTPROCESS-POC-001.md) | ASR transcript postprocess POC 研議 | 無 | **Abandoned — 暫不續議；未來須以新 request 重議** | 無需 response |
 | [`PM-OUT-260830-025-hw-diagnostic-tool`](history/PM-OUT-260830-025-hw-diagnostic-tool.md) | Hardware Diagnostic Tool | 無 | **Resolved** | Automated: `scripts/hw_diag/run_diag.sh`；manual button: `scripts/hw_diag/run_button.sh`；regression: `tests/test_pm_025_hw_diag.py` |
 | [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER`](history/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) | Gate 2B closure / Gemma POC winner | `POC-llm-DEL-2026-001-R3` | **Resolved — Gemma POC winner Accepted；Core Gate 3 Pending** | Final ACK: [`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md) |
 | [`DELIVERY-LLM-POC-M4B-GATE2B-WINNER-HANDOFF-001`](history/DELIVERY-LLM-POC-M4B-GATE2B-WINNER-HANDOFF-001.md) | Immutable closure / publication provenance supplement | `DELIVERY-024` | **Resolved — ancestry, diff scope and enclosure digests verified** | Final ACK: [`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md) |
@@ -123,6 +122,7 @@ revision，使用precommitted或held-out catalog重跑受影響Gate 2A surface�
 docs/outsource/pm_handoff/
 ├── README.md                                  # 本管理總覽表
 └── history/                                   # 已結案 / 已取代 Hand-offs 歸檔目錄
+    ├── NOTE-ASR-POSTPROCESS-POC-001.md
     ├── CR-AUDIO-M3-CORE-HAL-OUTPUT-ADAPTATION-001.md
     ├── CR-AUDIO-M3-CORE-HAL-PLAYBACK-DRAIN-001.md
     ├── CR-AUDIO-M3-P4-REPRO-002.md

@@ -2,8 +2,13 @@
 
 - **Note ID**: `NOTE-ASR-POSTPROCESS-POC-001`
 - **日期**: 2026-08-30
-- **狀態**: **Under Consideration / 研議中**
+- **狀態**: **Abandoned / 暫不續議**
 - **範圍**: ASR transcript 交付 LLM 前是否需要獨立 postprocess POC
+
+## 結案決定（2026-08-31）
+
+本案暫不啟動，也不再作為 Core 或 POC 的待辦事項。現行產品路徑維持不變；若未來出現
+新的可重現產品症狀、量化證據或技術條件，可提出新的 request 重新研議，不直接重開本 note。
 
 ## 目前判斷
 
@@ -30,7 +35,7 @@ ASR raw transcript -> protocol / safety validation -> LLM
 優先處理來源仍是 VAD、endpoint、Whisper prompt / decoder 或 LLM clarification；不得以
 postprocess 推測缺字、補寫句子或進行無證據的語意修正。
 
-## 若後續核准：worktree 工作方法
+## 歷史提案：若後續曾獲核准的 worktree 工作方法
 
 POC 應使用現有 `snowboard-agent` repository 的 Git worktree，不重新 clone。暫定方式為：
 
@@ -55,4 +60,4 @@ git worktree add \
 - 結案後以標準 `git worktree` 命令檢查並移除短期 worktree；在確認 tracked 資產與必要證據
   已有保留位置前，不處理既有 `poc_audio` checkout。
 
-本 note 不構成 POC 啟動、branch push、產品設計變更或測試授權。
+本 note 已結案歸檔，不構成 POC 啟動、branch push、產品設計變更或測試授權。
