@@ -291,11 +291,66 @@ def test_m4a_ipc_001_asr_child_rejects_second_begin_as_busy(
     monkeypatch.setattr(supervisor.select, "select", lambda *values: ([object()], [], []))
     monkeypatch.setattr(supervisor, "read_control", lambda: next(commands))
     monkeypatch.setattr(supervisor, "emit", lambda value: events.append(value))
+    monkeypatch.setattr(supervisor, "_exit_after_shutdown_ack", lambda: None)
 
     assert supervisor.main() == 0
     assert {"protocol": 1, "event": "BUSY", "request_id": 2} in events
     assert {"protocol": 1, "event": "CANCELLED", "request_id": 1} in events
     assert events[-1] == {"protocol": 1, "event": "SHUTDOWN_ACK"}
+
+
+def test_m4a_ipc_001_asr_child_releases_native_state_before_shutdown_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sbd.perception.listen.whispercpp import supervisor
+
+    for name in ("vad", "worker", "model", "lock"):
+        (tmp_path / name).write_bytes(name.encode())
+    args = SimpleNamespace(
+        vad_model=tmp_path / "vad", asr_binary=tmp_path / "worker",
+        asr_model=tmp_path / "model", runtime_lock=tmp_path / "lock",
+        profile_sha256="a" * 64, work_dir=tmp_path,
+    )
+    order: list[str] = []
+
+    class Native:
+        pid = 1234
+        def stop(self) -> None: order.append("native.stop")
+        def terminate(self) -> None: order.append("native.terminate")
+
+    class Executor:
+        def __init__(self, *args, **kwargs): pass
+        def shutdown(self, *, wait, cancel_futures):
+            order.append(f"shutdown:{wait}:{cancel_futures}")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(supervisor, "parse_args", lambda: args)
+    monkeypatch.setattr(
+        supervisor, "Silero", lambda path: SimpleNamespace(probability=lambda frame: 0.0),
+    )
+    monkeypatch.setattr(supervisor, "NativeWorker", lambda *values: Native())
+    monkeypatch.setattr(supervisor.concurrent.futures, "ThreadPoolExecutor", Executor)
+    monkeypatch.setattr(supervisor.gc, "collect", lambda: order.append("collect"))
+    monkeypatch.setattr(
+        supervisor, "_exit_after_shutdown_ack", lambda: order.append("exit"),
+    )
+    monkeypatch.setattr(supervisor.os, "getpid", lambda: 1234)
+    monkeypatch.setattr(supervisor.os, "getpgrp", lambda: 1234)
+    monkeypatch.setattr(supervisor.os, "getpgid", lambda pid: 1234)
+    monkeypatch.setattr(supervisor.select, "select", lambda *values: ([object()], [], []))
+    monkeypatch.setattr(
+        supervisor, "read_control",
+        lambda: {"protocol": 1, "op": "SHUTDOWN"},
+    )
+    monkeypatch.setattr(
+        supervisor, "emit", lambda value: order.append(value["event"]),
+    )
+
+    assert supervisor.main() == 0
+    assert order[:6] == [
+        "READY", "shutdown:True:True", "native.stop", "collect",
+        "SHUTDOWN_ACK", "exit",
+    ]
 
 
 @pytest.mark.parametrize("fragmented_begin", [False, True])
@@ -464,6 +519,53 @@ def test_m4a_ipc_001_tts_child_rejects_second_generate_as_busy(
     assert {"protocol": 1, "event": "CANCEL_DEFERRED", "request_id": 1} in events
 
 
+def test_m4a_ipc_001_tts_child_joins_executor_before_shutdown_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sbd.action.speak.matcha import worker
+
+    model = tmp_path / "matcha"
+    (model / "espeak-ng-data").mkdir(parents=True)
+    for name in ("model-steps-3.onnx", "lexicon.txt", "tokens.txt"):
+        (model / name).write_bytes(name.encode())
+    for name in ("vocoder", "lock"):
+        (tmp_path / name).write_bytes(name.encode())
+    args = SimpleNamespace(
+        model_dir=model, vocoder=tmp_path / "vocoder",
+        runtime_lock=tmp_path / "lock", profile_sha256="a" * 64,
+        work_dir=tmp_path,
+    )
+    order: list[str] = []
+
+    class Executor:
+        def __init__(self, *args, **kwargs): pass
+        def shutdown(self, *, wait, cancel_futures):
+            order.append(f"shutdown:{wait}:{cancel_futures}")
+
+    commands = iter(({"protocol": 1, "op": "SHUTDOWN"},))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(worker, "parse_args", lambda: args)
+    monkeypatch.setattr(worker, "load_tts", lambda *values: object())
+    monkeypatch.setattr(worker.concurrent.futures, "ThreadPoolExecutor", Executor)
+    monkeypatch.setattr(worker.gc, "collect", lambda: order.append("collect"))
+    monkeypatch.setattr(
+        worker, "_exit_after_shutdown_ack", lambda: order.append("exit"),
+    )
+    monkeypatch.setattr(worker.os, "getpid", lambda: 1234)
+    monkeypatch.setattr(worker.os, "getpgrp", lambda: 1234)
+    monkeypatch.setattr(worker.select, "select", lambda *values: ([object()], [], []))
+    monkeypatch.setattr(worker, "read_control", lambda: next(commands))
+    monkeypatch.setattr(
+        worker, "emit",
+        lambda value, payload=None: order.append(value["event"]),
+    )
+
+    assert worker.main() == 0
+    assert order[:5] == [
+        "READY", "shutdown:True:True", "collect", "SHUTDOWN_ACK", "exit",
+    ]
+
+
 def test_m4a_ipc_001_ready_mismatch_terminates_group_and_removes_workdir(tmp_path: Path) -> None:
     async def run() -> None:
         script = _child_script(tmp_path, mismatch=True)
@@ -503,7 +605,10 @@ def test_m4a_ipc_001_clean_shutdown_rejects_lingering_descendant(
         await process.start()
         descendant_pid = int(pid_file.read_text())
         await asyncio.sleep(0.1)
-        with pytest.raises(AudioProtocolError, match="remained alive"):
+        with pytest.raises(
+            AudioProtocolError,
+            match="child shutdown process-group exit timed out",
+        ):
             await process.stop()
         assert process.state is ChildState.DESTROYED
         assert not process._live_process_group_members(process.pid or -1)

@@ -10,7 +10,7 @@
     "session_count": 20,
     "current_format": "M4BC{session:04d}",
     "forbidden_format": "M4BX{session:04d}",
-    "instruction_format": "Briefly answer the transcript and include {current} exactly once. Do not include {forbidden} or any marker from an earlier session. Transcript: {transcript}"
+    "instruction_format": "Include {current} once; omit {forbidden}/prior markers. Answer: {transcript}"
   },
   "intent_cases": [
     {

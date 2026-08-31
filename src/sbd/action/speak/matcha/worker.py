@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -74,6 +75,11 @@ def emit(value: dict[str, Any], payload: bytes | None = None) -> None:
     if payload is not None:
         sys.stdout.buffer.write(payload)
     sys.stdout.buffer.flush()
+
+
+def _exit_after_shutdown_ack() -> None:
+    """Exit the isolated child without re-entering native module teardown."""
+    os._exit(0)
 
 
 def read_control() -> dict[str, Any] | None:
@@ -192,7 +198,11 @@ def main() -> int:
             if op == "SHUTDOWN":
                 if set(command) != {"protocol", "op"} or future is not None:
                     return 3
+                executor.shutdown(wait=True, cancel_futures=True)
+                engine = None
+                gc.collect()
                 emit({"protocol": 1, "event": "SHUTDOWN_ACK"})
+                _exit_after_shutdown_ack()
                 return 0
             if op == "GENERATE":
                 if set(command) != {"protocol", "op", "request_id", "text", "voice_id"}:

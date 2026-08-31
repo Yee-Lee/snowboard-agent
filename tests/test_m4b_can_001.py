@@ -163,6 +163,34 @@ def test_m4b_can_001_workdir_residue_is_fatal_cleanup_failure(
     asyncio.run(scenario())
 
 
+def test_m4b_can_001_child_pipe_cleanup_is_bounded() -> None:
+    async def scenario() -> None:
+        lock = LLMArtifactLock.load(
+            Path(__file__).parent.parent / "requirements/m4b/llm-artifacts.json",
+        )
+        child = SubprocessLLMChild(
+            replace(LLMConfig(), child_kill_wait_timeout_seconds=0.01), lock, 1,
+        )
+
+        class Writer:
+            def __init__(self) -> None:
+                self.closed = False
+
+            def close(self) -> None:
+                self.closed = True
+
+            async def wait_closed(self) -> None:
+                await asyncio.Event().wait()
+
+        writer = Writer()
+        child._process = SimpleNamespace(stdin=writer)
+        await asyncio.wait_for(child._cleanup(), 0.1)
+        assert writer.closed is True
+        assert child._process is None
+
+    asyncio.run(scenario())
+
+
 def test_m4b_can_001_generation_deadline_sends_cancel_then_uses_terminal_grace() -> None:
     async def scenario() -> None:
         adapter, children, _ = _adapter()

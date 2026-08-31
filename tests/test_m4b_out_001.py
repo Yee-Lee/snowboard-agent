@@ -11,7 +11,8 @@ from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.tool import RegisteredTool, ToolRegistry
 from sbd.cognition.llm import MockLLMEngineAdapter
 from sbd.cognition.litert_lm.worker import (
-    _build_response_schema, _prewarm, _render_prompt, _validate_product_response,
+    _build_response_schema, _litert_constraint_schema, _prewarm, _render_prompt,
+    _validate_product_response,
 )
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
@@ -47,6 +48,23 @@ def test_m4b_out_001_branch_order_and_tool_schema_are_deterministic() -> None:
         "type": "object",
     }
     assert all(branch["additionalProperties"] is False for branch in branches)
+
+
+def test_m4b_out_001_litert_projection_only_removes_unsupported_unique_items() -> None:
+    value = {
+        "perceptions": [], "pending_message_count": 0,
+        "capabilities": {
+            "perceptions": ["listen", "look"],
+            "actions": ["speak", "rest"], "tools": [],
+        },
+    }
+    exact = _build_response_schema(value)
+    projected = _litert_constraint_schema(exact)
+
+    next_perceptions = exact["oneOf"][0]["properties"]["next_perceptions"]
+    assert next_perceptions["uniqueItems"] is True
+    assert "uniqueItems" not in str(projected)
+    assert _build_response_schema(value) == exact
 
 
 @pytest.mark.parametrize("response", [

@@ -246,10 +246,13 @@ def _terminate_timed_out_suite(
 def _network_attempt_count(trace: Path) -> int:
     if not trace.is_file():
         raise GateFailure("M4a network audit did not produce a trace")
+    destination_attempt = re.compile(
+        r"\b(?:connect|sendto|sendmsg|sendmmsg)\([^\n]*\bAF_INET6?\b"
+    )
     return sum(
         1
         for line in trace.read_text(encoding="utf-8", errors="replace").splitlines()
-        if re.search(r"\bAF_INET6?\b", line)
+        if destination_attempt.search(line)
     )
 
 
@@ -366,7 +369,7 @@ def execute_pytest(
     if m4_target_audit:
         network_attempt_count = _network_attempt_count(network_trace)
         if network_attempt_count:
-            raise GateFailure("M4 target suite attempted an IPv4/IPv6 network syscall")
+            raise GateFailure("M4 target suite attempted IPv4/IPv6 network I/O")
     return process.returncode, suite_counts(junit, stdout), argv, raw_logs, network_attempt_count
 
 

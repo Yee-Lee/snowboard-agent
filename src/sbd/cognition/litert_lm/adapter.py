@@ -317,8 +317,11 @@ class SubprocessLLMChild:
                 if stream is not None:
                     stream.close()
                     try:
-                        await stream.wait_closed()
-                    except (BrokenPipeError, ConnectionResetError):
+                        await asyncio.wait_for(
+                            stream.wait_closed(),
+                            self._cfg.child_kill_wait_timeout_seconds,
+                        )
+                    except (TimeoutError, BrokenPipeError, ConnectionResetError):
                         pass
             self._process = None
         if self._workdir is not None:

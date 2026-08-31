@@ -141,6 +141,25 @@ def _build_response_schema(value: Mapping[str, object]) -> dict[str, object]:
     return {"oneOf": branches}
 
 
+def _litert_constraint_schema(value: object) -> object:
+    """Project the exact product schema onto LiteRT-LM 0.16.0's surface.
+
+    LLGuidance in the selected runtime rejects ``uniqueItems`` before
+    inference.  The worker still validates uniqueness against the exact
+    product contract after decoding, so this projection only removes the
+    unsupported native keyword; it does not relax delivered responses.
+    """
+    if type(value) is dict:
+        return {
+            key: _litert_constraint_schema(item)
+            for key, item in value.items()
+            if key != "uniqueItems"
+        }
+    if type(value) is list:
+        return [_litert_constraint_schema(item) for item in value]
+    return value
+
+
 class LiteRTRuntime:
     """Narrow wrapper around one persistent Engine and fresh Conversations."""
 
@@ -229,6 +248,7 @@ class LiteRTRuntime:
 
     def generate(self, value: Mapping[str, object]) -> tuple[dict[str, object], dict[str, object]]:
         schema = _build_response_schema(value)
+        constraint_schema = _litert_constraint_schema(schema)
         prompt = _render_prompt(value)
         conversation = self._engine.create_conversation(
             automatic_tool_calling=False,
@@ -239,7 +259,8 @@ class LiteRTRuntime:
             if self._activate(conversation):
                 raise WorkerCancelled("generation cancelled before inference")
             rendered = conversation.render_message_to_string(prompt)
-            if len(self._engine.tokenize(rendered)) > 128:
+            rendered_token_count = len(self._engine.tokenize(rendered))
+            if rendered_token_count > 128:
                 raise WorkerInputTooLarge("rendered input exceeds token limit")
             with self._lock:
                 cancel_requested = self._cancel_requested
@@ -249,7 +270,7 @@ class LiteRTRuntime:
                 raw = conversation.send_message(
                     prompt,
                     max_output_tokens=128,
-                    response_format=self._response_format.json(schema),
+                    response_format=self._response_format.json(constraint_schema),
                 )
             except self._cancelled_error as error:
                 raise WorkerCancelled("native inference cancelled") from error

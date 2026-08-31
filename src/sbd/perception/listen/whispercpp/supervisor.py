@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -68,6 +69,11 @@ def emit(value: dict[str, Any]) -> None:
         raise RuntimeError("CONTROL_BOUND")
     sys.stdout.buffer.write(encoded)
     sys.stdout.buffer.flush()
+
+
+def _exit_after_shutdown_ack() -> None:
+    """Exit the isolated child without re-entering native module teardown."""
+    os._exit(0)
 
 
 def read_control() -> dict[str, Any] | None:
@@ -381,8 +387,12 @@ def main() -> int:
             if op == "SHUTDOWN":
                 if set(command) != {"protocol", "op"} or active_id is not None:
                     return 3
+                executor.shutdown(wait=True, cancel_futures=True)
                 native.stop()
+                vad = None
+                gc.collect()
                 emit({"protocol": 1, "event": "SHUTDOWN_ACK"})
+                _exit_after_shutdown_ack()
                 return 0
             if op == "BEGIN":
                 required = {"protocol", "op", "request_id", "format", "frame_bytes"}

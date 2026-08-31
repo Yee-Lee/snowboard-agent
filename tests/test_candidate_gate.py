@@ -379,7 +379,7 @@ def test_m4a_acceptance_strace_proves_zero_network_and_rejects_attempt(
         "#!/usr/bin/env python3\n"
         "import os,pathlib,subprocess,sys\n"
         "trace=pathlib.Path(sys.argv[sys.argv.index('-o')+1])\n"
-        "trace.write_text('socket(AF_INET, SOCK_STREAM, 0) = 3\\n' "
+        "trace.write_text('connect(3, {sa_family=AF_INET, sin_port=htons(443)}, 16) = -1 ENETUNREACH\\n' "
         "if os.environ.get('SBD_TEST_NETWORK_ATTEMPT') else '')\n"
         "command=sys.argv[sys.argv.index('--')+1:]\n"
         "raise SystemExit(subprocess.run(command).returncode)\n",
@@ -410,7 +410,7 @@ def test_m4a_acceptance_strace_proves_zero_network_and_rejects_attempt(
     monkeypatch.setenv("SBD_TEST_NETWORK_ATTEMPT", "1")
     failed_result, failed_output = acceptance("m4a-net-attempt")
     assert failed_result.returncode != 0
-    assert "network syscall" in failed_result.stderr
+    assert "network I/O" in failed_result.stderr
     assert "AF_INET" in (
         failed_output / "logs" / "network.trace.log"
     ).read_text(encoding="utf-8")
@@ -439,13 +439,17 @@ def test_debug_needs_no_acceptance_failure_bundle(candidate_repo: tuple[Path, st
     assert "failed_acceptance" not in evidence
 
 
-def test_m4a_network_trace_counts_only_inet_attempts(tmp_path: Path) -> None:
+def test_m4a_network_trace_counts_only_destination_bearing_inet_attempts(
+    tmp_path: Path,
+) -> None:
     trace = tmp_path / "network.trace.log"
     write(
         trace,
         "1 socket(AF_UNIX, SOCK_STREAM, 0) = 3\n"
-        "2 socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = -1 ENETUNREACH\n"
-        "3 socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP) = -1 ENETUNREACH\n",
+        "2 socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = 3\n"
+        "3 socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP) = 4\n"
+        "4 connect(3, {sa_family=AF_INET, sin_port=htons(443)}, 16) = -1 ENETUNREACH\n"
+        "5 sendto(4, \"dns\", 3, 0, {sa_family=AF_INET6, sin6_port=htons(53)}, 28) = -1 ENETUNREACH\n",
     )
     assert _network_attempt_count(trace) == 2
     with pytest.raises(GateFailure, match="did not produce"):

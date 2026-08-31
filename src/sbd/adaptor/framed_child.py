@@ -251,6 +251,7 @@ class FramedProcess:
             return
         if self.state is not ChildState.READY:
             raise AudioProtocolError("clean shutdown is legal only from READY")
+        timeout_stage = "acknowledgement"
         try:
             await self.send({"protocol": 1, "op": "SHUTDOWN"})
             ack = await asyncio.wait_for(self.receive(), self._terminate_timeout)
@@ -258,6 +259,7 @@ class FramedProcess:
             if ack["event"] != "SHUTDOWN_ACK":
                 raise AudioProtocolError("child did not acknowledge shutdown")
             assert self._process is not None
+            timeout_stage = "process-group exit"
             await asyncio.wait_for(
                 self._wait_process_group_exit(self._process, self._process.pid),
                 self._terminate_timeout,
@@ -269,7 +271,7 @@ class FramedProcess:
         except TimeoutError as error:
             await self.force_terminate()
             raise AudioProtocolError(
-                "child process group remained alive after shutdown",
+                f"child shutdown {timeout_stage} timed out",
             ) from error
         except BaseException:
             await self.force_terminate()

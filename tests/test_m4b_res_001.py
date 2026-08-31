@@ -39,7 +39,12 @@ def test_m4b_res_001_rejects_missing_sample_instead_of_resegmenting() -> None:
 
 def test_m4b_res_001_gate3_catalog_identity_and_three_generic_intents() -> None:
     catalog = load_gate3_catalog(VECTOR.with_name("gate3-product-catalog.json"))
-    assert catalog["resource_marker_profile"]["session_count"] == 20
+    profile = catalog["resource_marker_profile"]
+    assert profile["session_count"] == 20
+    assert profile["instruction_format"] == (
+        "Include {current} once; omit {forbidden}/prior markers. Answer: "
+        "{transcript}"
+    )
     assert [case["expected_kind"] for case in catalog["intent_cases"]] == [
         "speak", "tool", "rest",
     ]

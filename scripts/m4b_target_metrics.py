@@ -12,7 +12,7 @@ from typing import Mapping
 
 
 R14_VERSION = "2026-08-29-r14-user-resource-adjustment"
-CATALOG_SHA256 = "05c226a02fd2c91b15d55f9c79eaed9554342234796372c7cc3d54d72f1161f2"
+CATALOG_SHA256 = "96fa83acae829107b4c851c3ba90d8a021bc76c7f2ef37cd47d066b46fa6a56d"
 
 
 class MetricsError(ValueError):
