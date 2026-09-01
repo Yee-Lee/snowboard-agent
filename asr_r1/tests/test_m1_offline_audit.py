@@ -2,10 +2,18 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from asr_r1.m1_offline_audit import _network_syscall_lines
+from asr_r1.m1_offline_audit import _network_syscall_lines, _strace_argv
 
 
 class M1OfflineAuditTest(unittest.TestCase):
+    def test_strace_suppresses_non_syscall_signal_lines(self) -> None:
+        argv = _strace_argv(
+            "/usr/bin/strace", Path("external.trace"), ["runtime", "probe"]
+        )
+        self.assertIn("trace=network", argv)
+        self.assertIn("signal=none", argv)
+        self.assertEqual(["runtime", "probe"], argv[-2:])
+
     def test_empty_trace_has_no_network_syscalls(self) -> None:
         with TemporaryDirectory() as temporary:
             trace = Path(temporary) / "trace"

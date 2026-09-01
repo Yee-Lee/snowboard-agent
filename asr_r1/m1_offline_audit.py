@@ -31,6 +31,22 @@ def _network_syscall_lines(trace: Path) -> list[str]:
     return [line for line in lines if line.strip()]
 
 
+def _strace_argv(strace: str, trace: Path, command: list[str]) -> list[str]:
+    return [
+        strace,
+        "-f",
+        "-qq",
+        "-e",
+        "trace=network",
+        "-e",
+        "signal=none",
+        "-o",
+        str(trace),
+        "--",
+        *command,
+    ]
+
+
 def run_offline_audit(
     candidate_id: str,
     trace_path: Path,
@@ -52,17 +68,7 @@ def run_offline_audit(
 
     method, selected = _row(candidate_id)
     run = run_monitored(
-        [
-            strace,
-            "-f",
-            "-qq",
-            "-e",
-            "trace=network",
-            "-o",
-            str(trace),
-            "--",
-            *command,
-        ],
+        _strace_argv(strace, trace, command),
         selected["command"]["timeout_seconds"],
         repo_root,
     )
