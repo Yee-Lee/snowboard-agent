@@ -519,7 +519,7 @@ def test_m4a_ipc_001_tts_child_rejects_second_generate_as_busy(
     assert {"protocol": 1, "event": "CANCEL_DEFERRED", "request_id": 1} in events
 
 
-def test_m4a_ipc_001_tts_child_joins_executor_before_shutdown_ack(
+def test_m4a_ipc_001_tts_child_ack_precedes_native_runtime_teardown(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from sbd.action.speak.matcha import worker
@@ -547,7 +547,6 @@ def test_m4a_ipc_001_tts_child_joins_executor_before_shutdown_ack(
     monkeypatch.setattr(worker, "parse_args", lambda: args)
     monkeypatch.setattr(worker, "load_tts", lambda *values: object())
     monkeypatch.setattr(worker.concurrent.futures, "ThreadPoolExecutor", Executor)
-    monkeypatch.setattr(worker.gc, "collect", lambda: order.append("collect"))
     monkeypatch.setattr(
         worker, "_exit_after_shutdown_ack", lambda: order.append("exit"),
     )
@@ -561,9 +560,8 @@ def test_m4a_ipc_001_tts_child_joins_executor_before_shutdown_ack(
     )
 
     assert worker.main() == 0
-    assert order[:5] == [
-        "READY", "shutdown:True:True", "collect", "SHUTDOWN_ACK", "exit",
-    ]
+    assert order[:3] == ["READY", "SHUTDOWN_ACK", "exit"]
+    assert "shutdown:True:True" not in order
 
 
 def test_m4a_ipc_001_ready_mismatch_terminates_group_and_removes_workdir(tmp_path: Path) -> None:

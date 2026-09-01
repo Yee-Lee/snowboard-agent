@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
@@ -134,10 +135,16 @@ class AlsaAudioOutput:
         if self._pcm is None:
             raise RuntimeError("ALSA playback is unavailable")
         remaining = memoryview(chunk)
+        underrun_recovered = False
         while remaining:
+            assert self._pcm is not None
             written = self._pcm.write(remaining.tobytes())
             if not isinstance(written, int):
                 raise OSError("ALSA write returned a non-integer frame count")
+            if written == -errno.EPIPE and not underrun_recovered:
+                self._reopen_after_underrun()
+                underrun_recovered = True
+                continue
             if written < 0:
                 raise OSError(f"ALSA write failed with status {written}")
             if written == 0:
@@ -146,6 +153,13 @@ class AlsaAudioOutput:
             if consumed > len(remaining):
                 raise OSError("ALSA write returned an invalid frame count")
             remaining = remaining[consumed:]
+
+    def _reopen_after_underrun(self) -> None:
+        pcm, self._pcm = self._pcm, None
+        self._native_info = None
+        if pcm is not None and hasattr(pcm, "close"):
+            pcm.close()
+        self._open_worker()
 
     def _drain_worker(self) -> None:
         if self._pcm is None:

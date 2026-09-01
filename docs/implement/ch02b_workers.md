@@ -286,7 +286,7 @@ src/sbd/cognition/litert_lm/
   `Conversation`。Child control loop保持在main thread收CANCEL；每request只建立一個background thread，
   該thread呼叫winner已驗證的同步`send_message(prompt, response_format=ResponseFormat.json(schema))`。
   Worker outcome回control loop後須先join thread，再由control loop送唯一terminal；不對parent暴露文字chunk。
-- Chat-template rendered input以exact model tokenizer在inference前強制`<=128` tokens，runtime `prefill_tokens`亦須`<=128`；output ceiling 128、Engine capacity 1024分別驗證。Constrained JSON與runtime capability/tool allowlist各自fail closed；current/forbidden/prior marker只屬固定Gate 3 catalog assertion，不注入一般production request。
+- Chat-template rendered input以exact model tokenizer在inference前強制`<=128` tokens，runtime `prefill_tokens`亦須`<=128`；output ceiling 128、Engine capacity 1024分別驗證。Constrained JSON與runtime capability/tool allowlist各自fail closed。Core Gate 3以current-turn expected action/schema/allowlist作正向oracle，並以fresh Conversation與prior-state absence作history oracle；Gate 2B current/forbidden/prior marker只屬POC narrow harness evidence，不注入或擴張一般production request。
 - Generation deadline固定15秒；parent另有最多2秒terminal-observation-only grace，只能接收child-owned `TIMEOUT`/`ERROR`，不得接受逾時result。Engine-load/pre-warm、first-token、generation與terminal observation使用不同watchdog/telemetry。
 - `abort()`送cooperative CANCEL；child control loop對active Conversation最多呼叫一次`cancel_process()`。
   只有typed worker outcome、thread join、Conversation close與READY terminal全成立時才return；native cancel

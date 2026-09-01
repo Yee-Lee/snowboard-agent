@@ -557,11 +557,54 @@ def test_m4b_resource_card_temperature_gate_is_exclusive() -> None:
         "cleanup_locator": "m4b/cleanup.json",
         "poc_p9_p10b_status": "FAIL",
         "user_waiver": "KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION",
+        "schema_pass_count": 20,
+        "reasoner_validation_pass_count": 20,
+        "current_input_binding_pass_count": 20,
+        "nonblank_speak_count": 20,
+        "next_perception_pass_count": 20,
+        "tts_terminal_pass_count": 20,
     }
     _validate_m4b_card(card)
     card["thermal_max_celsius"] = 80.0
     with pytest.raises(GateFailure, match="frozen gate"):
         _validate_m4b_card(card)
+    card["thermal_max_celsius"] = 79.999
+    for field in (
+        "schema_pass_count", "reasoner_validation_pass_count",
+        "current_input_binding_pass_count", "nonblank_speak_count",
+        "next_perception_pass_count", "tts_terminal_pass_count",
+    ):
+        changed = dict(card)
+        changed[field] = 19
+        with pytest.raises(GateFailure, match="fixed identity"):
+            _validate_m4b_card(changed)
+
+
+def test_m4b_output_card_requires_complete_semantic_evidence_and_rejects_markers() -> None:
+    card = {
+        "candidate_sha": "a" * 40, "test_id": "M4B-OUT-001",
+        "catalog_case_count": 23, "schema_pass_count": 23,
+        "expected_action_pass_count": 23,
+        "reasoner_validation_pass_count": 23,
+        "current_input_binding_pass_count": 23,
+        "tool_handler_calls": 0,
+    }
+    _validate_m4b_card(card)
+    for field, wrong in (
+        ("schema_pass_count", 22),
+        ("expected_action_pass_count", 22),
+        ("reasoner_validation_pass_count", 22),
+        ("current_input_binding_pass_count", 22),
+    ):
+        changed = dict(card)
+        changed[field] = wrong
+        with pytest.raises(
+            GateFailure, match="not fully passing|nonzero fail-closed",
+        ):
+            _validate_m4b_card(changed)
+    changed = {**card, "current_marker_exactly_once": True}
+    with pytest.raises(GateFailure, match="obsolete marker"):
+        _validate_m4b_card(changed)
 
 
 def test_m4b_lifecycle_cards_reject_false_pass_values() -> None:
@@ -577,8 +620,9 @@ def test_m4b_lifecycle_cards_reject_false_pass_values() -> None:
         "prewarm_timings_locator": "m4b/prewarm-timings.json",
     }, {
         "candidate_sha": "a" * 40, "test_id": "M4B-HIST-001",
-        "turn_count": 20, "conversation_count": 20, "child_pid_stable": True,
-        "current_marker_pass_count": 20, "prior_marker_hits": 0,
+        "turn_count": 5, "conversation_count": 5,
+        "conversation_close_count": 5, "current_semantic_pass_count": 5,
+        "prior_state_hits": 0, "child_pid_stable": True,
     }]
     for card in cards:
         _validate_m4b_card(card)
@@ -586,11 +630,16 @@ def test_m4b_lifecycle_cards_reject_false_pass_values() -> None:
         (0, "native_cancel_calls", 2),
         (1, "ticket_id", 3),
         (2, "child_pid_stable", False),
+        (2, "conversation_close_count", 4),
+        (2, "current_semantic_pass_count", 4),
+        (2, "prior_state_hits", 1),
     )
     for index, field, wrong in mutations:
         changed = dict(cards[index])
         changed[field] = wrong
-        with pytest.raises(GateFailure, match="not fully passing"):
+        with pytest.raises(
+            GateFailure, match="not fully passing|nonzero fail-closed",
+        ):
             _validate_m4b_card(changed)
 
 

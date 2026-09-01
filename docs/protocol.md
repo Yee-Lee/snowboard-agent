@@ -195,8 +195,10 @@ STARTING
   inference前fail closed；runtime benchmark回報的`prefill_tokens`也必須在`1..128`。
 - Output ceiling為128 tokens；Engine capacity為1024 tokens。兩者不得與rendered input limit
   混用。
-- Constrained output、schema validation、current-request marker exactly-once、forbidden literal、
-  prior-marker absence與product allowlist是獨立判定；pre-warm或token limit通過不能替代任一項。
+- Constrained output、Reasoner schema validation、current-turn action / capability binding與product
+  allowlist是獨立判定；pre-warm或token limit通過不能替代任一項。Gate 2B
+  narrow harness的current / forbidden / prior literal是不可改寫的POC evidence，不是Core
+  generic renderer的production欄位或Gate 3 exact-literal contract。
 - 每次user operation建立fresh single-turn Conversation並在`finally` deterministic close；不得
   跨request/session重用Conversation、hidden history或KV state。
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
-import gc
 import hashlib
 import importlib.metadata
 import json
@@ -198,9 +197,6 @@ def main() -> int:
             if op == "SHUTDOWN":
                 if set(command) != {"protocol", "op"} or future is not None:
                     return 3
-                executor.shutdown(wait=True, cancel_futures=True)
-                engine = None
-                gc.collect()
                 emit({"protocol": 1, "event": "SHUTDOWN_ACK"})
                 _exit_after_shutdown_ack()
                 return 0

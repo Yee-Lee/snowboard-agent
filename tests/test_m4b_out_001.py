@@ -145,6 +145,57 @@ def test_m4b_out_001_tool_schema_is_object_only_and_reasoner_keeps_authority() -
     asyncio.run(scenario())
 
 
+@pytest.mark.parametrize(("kind", "payload", "next_perceptions", "capabilities"), [
+    ("speak", {"text": "current semantic reply"}, ["listen"], {"speak", "listen"}),
+    (
+        "tool", {"name": "device.current.action", "arguments": {}},
+        ["listen"], {"tool", "listen"},
+    ),
+    ("rest", {}, [], set()),
+])
+def test_m4b_out_001_fixed_semantic_cases_pass_reasoner_without_dispatch(
+    kind: str, payload: dict[str, object], next_perceptions: list[str],
+    capabilities: set[str],
+) -> None:
+    handler_calls = 0
+
+    async def handler(arguments):
+        nonlocal handler_calls
+        handler_calls += 1
+        return {}
+
+    def validate(arguments):
+        if arguments:
+            raise ValueError("expected empty arguments")
+
+    tools = ToolRegistry()
+    tools.register(RegisteredTool(
+        name="device.current.action", description="Current semantic action",
+        input_schema={
+            "type": "object", "properties": {}, "required": [],
+            "additionalProperties": False,
+        },
+        validate=validate, handler=handler,
+    ))
+    tools.seal()
+
+    async def scenario() -> None:
+        bus, responses, errors = _bus_records()
+        reasoner = Reasoner(
+            MockLLMEngineAdapter((_response(kind, payload, next_perceptions),)),
+            PromptBuilder(tools.schemas()), bus, capabilities.__contains__,
+            ActionPayloadValidator(tools=tools),
+        )
+        await reasoner.reason("current", 1, 1, (), ())
+        assert errors == [] and len(responses) == 1
+        assert responses[0].action_kind == kind
+        assert responses[0].action_payload == payload
+        assert responses[0].next_perceptions == tuple(next_perceptions)
+        assert handler_calls == 0
+
+    asyncio.run(scenario())
+
+
 def test_m4b_out_001_prewarm_requires_schema_valid_nonempty_decode() -> None:
     class Runtime:
         def generate(self, value):

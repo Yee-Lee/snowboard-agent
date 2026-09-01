@@ -4,18 +4,25 @@
   "provenance": {
     "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
     "source_locator": "poc_llm/fixtures/gate2/gate2a-public-catalog-002.json",
-    "source_sha256": "b4a2bb2c4a9596c668b0ef19379fc546bd861771368ba0823f338b0b060b525b"
+    "source_sha256": "b4a2bb2c4a9596c668b0ef19379fc546bd861771368ba0823f338b0b060b525b",
+    "inheritance": "Gate 2B marker evidence is historical and harness-only; Core inherits no marker constraint."
   },
-  "resource_marker_profile": {
+  "combined_session_profile": {
     "session_count": 20,
-    "current_format": "M4BC{session:04d}",
-    "forbidden_format": "M4BX{session:04d}",
-    "instruction_format": "Include {current} once; omit {forbidden}/prior markers. Answer: {transcript}"
+    "perception_kind": "listen",
+    "prompt_template": "Give a brief spoken acknowledgement of this current transcript: {transcript}",
+    "actions": ["speak", "rest"],
+    "expected_kind": "speak",
+    "expected_tool_name": null,
+    "expected_next_perceptions": ["listen"]
   },
   "intent_cases": [
     {
       "id": "CORE-OUT-SPEAK-001",
       "expected_kind": "speak",
+      "expected_tool_name": null,
+      "expected_next_perceptions": ["listen"],
+      "perception_kind": "listen",
       "text": "Please give a short greeting.",
       "actions": ["speak", "rest"],
       "tools": []
@@ -23,6 +30,9 @@
     {
       "id": "CORE-OUT-TOOL-001",
       "expected_kind": "tool",
+      "expected_tool_name": "device.light.on",
+      "expected_next_perceptions": ["listen"],
+      "perception_kind": "listen",
       "text": "Turn on the light using the available tool.",
       "actions": ["tool", "rest"],
       "tools": [
@@ -41,6 +51,9 @@
     {
       "id": "CORE-OUT-REST-001",
       "expected_kind": "rest",
+      "expected_tool_name": null,
+      "expected_next_perceptions": [],
+      "perception_kind": "listen",
       "text": "No action is needed.",
       "actions": ["rest"],
       "tools": []

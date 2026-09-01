@@ -202,7 +202,7 @@ M4B-OUT/M4B-INH, not a rewrite of the POC machine result.
 | Readiness | authenticate → Engine load → fixed public pre-warm → disposable Conversation close/state discard → `INFERENCE_READY` |
 | READY / generation / terminal grace | 45,000 / 15,000 / 2,000 ms；grace只收terminal，不接受late success |
 | Cancel / TERM / KILL / rebuild READY | 500 / 2,000 / 1,000 / 10,000 ms |
-| Output | constrained `speak/tool/rest` JSON；current marker、forbidden/prior marker與allowlist獨立驗證 |
+| Output | constrained `speak/tool/rest` JSON；Reasoner schema、current-turn action/capability binding與allowlist獨立驗證；Gate 2B marker僅為POC evidence |
 | Conversation | every operation uses a fresh single-turn Conversation and deterministic close; no cross-operation hidden history/KV |
 | Network | runtime download `false`, network fallback `false`, fallback model `null` |
 

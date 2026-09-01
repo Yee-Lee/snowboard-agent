@@ -19,15 +19,16 @@ from scripts.m4b_llm_product import verify_installed_python_abi
 from scripts.m4b_target_metrics import (
     kernel_resource_sample, load_gate3_catalog, network_isolated,
     owner_resource_accounting, privacy_hits, process_group_members,
-    r14_late_early_delta, r14_slope,
+    r14_late_early_delta, r14_slope, validate_current_semantic_binding,
 )
 from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.speak import make_tts_adapter
-from sbd.action.tool import ToolRegistry
+from sbd.action.tool import RegisteredTool, ToolRegistry
 from sbd.adaptor.errors import AdapterTimeout
 from sbd.cognition.factory import make_llm_adapter
 from sbd.cognition.litert_lm.adapter import AdapterState
 from sbd.cognition.litert_lm.resource import ProcLLMResourceSampler
+from sbd.cognition.llm import LLMGeneration, MockLLMEngineAdapter
 from sbd.cognition.prompt_builder import ReasoningInput, ReasoningPerception
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
@@ -245,7 +246,7 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
     initial_kernel = _kernel_sample()
     sampler = ProcLLMResourceSampler()
     catalog = load_gate3_catalog(ROOT / "requirements/m4b/gate3-product-catalog.json")
-    marker_profile = catalog["resource_marker_profile"]
+    session_profile = catalog["combined_session_profile"]
     intent_cases = catalog["intent_cases"]
     evidence_root = cards.parent / "m4b"
     evidence_root.mkdir()
@@ -278,10 +279,24 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
     prewarm_timings: list[dict[str, object]] = []
     recorded_startup_generations: set[int] = set()
     resource_samples: list[dict[str, object]] = []
-    current_markers: list[str] = []
-    marker_pass_count = 0
-    prior_marker_hits = 0
-    forbidden_literal_hits = 0
+    counts = {
+        "out_schema": 0,
+        "out_expected_action": 0,
+        "out_reasoner": 0,
+        "out_current_binding": 0,
+        "resource_schema": 0,
+        "resource_reasoner": 0,
+        "resource_current_binding": 0,
+        "resource_nonblank_speak": 0,
+        "resource_next_perception": 0,
+        "resource_tts_terminal": 0,
+        "history_current_semantic": 0,
+        "prior_state_hits": 0,
+        "tool_handler_calls": 0,
+    }
+    prior_canaries: list[str] = []
+    history_prior_responses: list[dict[str, object]] = []
+    history_pids: list[int] = []
     private_values: list[str] = []
     max_generation_delta_mib = 0.0
     initial_pid = 0
@@ -337,15 +352,103 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
             })
 
         record_startup()
+
+        async def validate_with_reasoner(
+            result: LLMGeneration,
+            case: dict[str, object],
+            text: str,
+        ) -> LLMResponse:
+            tools = ToolRegistry()
+            for schema in case.get("tools", []):
+                assert type(schema) is dict
+
+                def validate(arguments: dict[str, object]) -> None:
+                    if arguments:
+                        raise ValueError("expected empty arguments")
+
+                async def handler(arguments: dict[str, object]) -> dict[str, object]:
+                    counts["tool_handler_calls"] += 1
+                    return {}
+
+                tools.register(RegisteredTool(
+                    name=schema["name"], description=schema["description"],
+                    input_schema=schema["input_schema"], validate=validate,
+                    handler=handler,
+                ))
+            tools.seal()
+            responses: list[LLMResponse] = []
+            bus = EventBus()
+
+            async def capture(response: LLMResponse) -> None:
+                responses.append(response)
+
+            bus.subscribe(LLMResponse, capture)
+            capabilities = {
+                *case["actions"], *case["expected_next_perceptions"],
+            }
+            reasoner = Reasoner(
+                MockLLMEngineAdapter((result,)), PromptBuilder(tools.schemas()),
+                bus, capabilities.__contains__, ActionPayloadValidator(tools=tools),
+            )
+            await reasoner.reason(
+                "m4b-semantic", 1, 1,
+                (PerceptionResult(case["perception_kind"], "ok", text),), (),
+            )
+            assert len(responses) == 1
+            response = responses[0]
+            assert response.action_kind == case["expected_kind"]
+            assert response.next_perceptions == tuple(case["expected_next_perceptions"])
+            assert response.action_payload == result.response["action_payload"]
+            if response.action_kind == "tool":
+                assert response.action_payload["name"] == case["expected_tool_name"]
+            return response
+
+        def record_history_transition(
+            response: dict[str, object], case: dict[str, object], canary: str,
+        ) -> None:
+            serialized = json.dumps(response, sort_keys=True)
+            counts["prior_state_hits"] += sum(
+                previous in serialized for previous in prior_canaries
+            )
+            for previous in history_prior_responses:
+                previous_kind = previous["action_kind"]
+                if previous_kind != case["expected_kind"]:
+                    counts["prior_state_hits"] += int(
+                        response["action_kind"] == previous_kind
+                    )
+                previous_payload = previous["action_payload"]
+                if previous_kind == "tool" and type(previous_payload) is dict:
+                    previous_tool = previous_payload.get("name")
+                    if previous_tool != case["expected_tool_name"]:
+                        counts["prior_state_hits"] += int(previous_tool in serialized)
+                if previous_kind == "speak" and case["expected_kind"] != "speak":
+                    previous_speech = previous_payload.get("text")
+                    counts["prior_state_hits"] += int(previous_speech in serialized)
+                for previous_next in previous["next_perceptions"]:
+                    if previous_next not in case["expected_next_perceptions"]:
+                        counts["prior_state_hits"] += int(
+                            previous_next in response["next_perceptions"]
+                        )
+            assert counts["prior_state_hits"] == 0
+            counts["history_current_semantic"] += 1
+            history_prior_responses.append(response)
+            prior_canaries.append(canary)
+
         try:
             for index in range(20):
                 transcript = (await asr.transcribe(_pcm_frames(pcm_path))).text
                 private_values.append(transcript)
-                current = marker_profile["current_format"].format(session=index + 1)
-                forbidden = marker_profile["forbidden_format"].format(session=index + 1)
-                instruction = marker_profile["instruction_format"].format(
-                    current=current, forbidden=forbidden, transcript=transcript,
-                )
+                canary = hashlib.sha256(
+                    f"{candidate}:history:{index + 1}".encode()
+                ).hexdigest()
+                instruction = session_profile["prompt_template"].format(
+                    transcript=transcript,
+                ) + f" Current private canary: {canary}."
+                case = {
+                    **session_profile,
+                    "text": instruction,
+                    "tools": [],
+                }
                 value = ReasoningInput(
                     (ReasoningPerception("listen", "ok", instruction),),
                     0, ("listen",), ("speak", "rest"), (),
@@ -354,20 +457,33 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
                 record_startup()
                 assert set(result.response) == {"action_kind", "action_payload", "next_perceptions"}
                 assert result.metrics.decode_tokens > 0
-                assert result.response["action_kind"] == "speak"
+                counts["out_schema"] += 1
+                counts["resource_schema"] += 1
+                validate_current_semantic_binding(result.response, case)
+                counts["out_expected_action"] += 1
+                counts["out_current_binding"] += 1
+                counts["resource_current_binding"] += 1
+                await validate_with_reasoner(result, case, instruction)
+                counts["out_reasoner"] += 1
+                counts["resource_reasoner"] += 1
                 speech = result.response["action_payload"]["text"]
                 assert isinstance(speech, str) and speech.strip()
-                assert speech.count(current) == 1
-                marker_pass_count += 1
-                prior_marker_hits += sum(marker in speech for marker in current_markers)
-                forbidden_literal_hits += int(forbidden in speech)
-                assert prior_marker_hits == 0 and forbidden_literal_hits == 0
-                current_markers.append(current)
+                counts["resource_nonblank_speak"] += 1
+                assert result.response["next_perceptions"] == ["listen"]
+                counts["resource_next_perception"] += 1
+                if index >= 18:
+                    record_history_transition(result.response, case, canary)
                 private_values.append(speech)
                 await _speak(tts, output, speech)
+                counts["resource_tts_terminal"] += 1
                 response_digests.append(hashlib.sha256(json.dumps(result.response, sort_keys=True).encode()).hexdigest())
                 child = adapter._child
                 assert child is not None
+                if index >= 18:
+                    history_pids.append(child.pid)
+                if index < 18:
+                    prior_canaries.append(canary)
+                private_values.append(canary)
                 sample = sampler.sample(child_pid=child.pid, child_pgid=child.pgid)
                 assert adapter._baseline is not None
                 generation_delta_mib = (
@@ -402,23 +518,29 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
                 })
             scheduled_ticket_count_after_sessions = generation
             assert scheduled_ticket_count_after_sessions == 2
-            for case in intent_cases:
+            for case_index, case in enumerate(intent_cases, 1):
+                canary = hashlib.sha256(
+                    f"{candidate}:history:intent:{case_index}".encode()
+                ).hexdigest()
+                instruction = case["text"] + f" Current private canary: {canary}."
+                effective_case = {**case, "text": instruction}
                 result = await adapter.generate(ReasoningInput(
-                    (ReasoningPerception("listen", "ok", case["text"]),), 0,
-                    ("listen",), tuple(case["actions"]), tuple(case["tools"]),
+                    (ReasoningPerception(case["perception_kind"], "ok", instruction),), 0,
+                    tuple(case["expected_next_perceptions"]),
+                    tuple(case["actions"]), tuple(case["tools"]),
                 ))
-                assert result.response["action_kind"] == case["expected_kind"]
-                if case["expected_kind"] == "tool":
-                    assert result.response["action_payload"] == {
-                        "name": "device.light.on", "arguments": {},
-                    }
-                    assert result.response["next_perceptions"] == ["listen"]
-                elif case["expected_kind"] == "rest":
-                    assert result.response["action_payload"] == {}
-                    assert result.response["next_perceptions"] == []
-                else:
-                    assert result.response["action_payload"]["text"].strip()
-                    assert result.response["next_perceptions"] == ["listen"]
+                assert set(result.response) == {"action_kind", "action_payload", "next_perceptions"}
+                counts["out_schema"] += 1
+                validate_current_semantic_binding(result.response, effective_case)
+                counts["out_expected_action"] += 1
+                counts["out_current_binding"] += 1
+                await validate_with_reasoner(result, effective_case, instruction)
+                counts["out_reasoner"] += 1
+                child = adapter._child
+                assert child is not None
+                history_pids.append(child.pid)
+                record_history_transition(result.response, effective_case, canary)
+                private_values.append(canary)
             cancellable = ReasoningInput(
                 (ReasoningPerception("listen", "ok", "Give a detailed response that can be cancelled."),),
                 0, ("listen",), ("speak", "rest"), (),
@@ -520,10 +642,11 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
           response_digests=response_digests, **common)
     _card(cards, "M4B-OUT-001", candidate,
           catalog_case_count=20 + len(intent_cases),
-          schema_pass_count=20 + len(intent_cases),
-          current_marker_exactly_once=marker_pass_count == 20,
-          prior_marker_hits=prior_marker_hits,
-          forbidden_literal_hits=forbidden_literal_hits, tool_handler_calls=0, **common)
+          schema_pass_count=counts["out_schema"],
+          expected_action_pass_count=counts["out_expected_action"],
+          reasoner_validation_pass_count=counts["out_reasoner"],
+          current_input_binding_pass_count=counts["out_current_binding"],
+          tool_handler_calls=counts["tool_handler_calls"], **common)
     _card(cards, "M4B-P5-001", candidate, case="ReasoningInputTooLarge", converged_to="P5", **common)
     _card(cards, "M4B-CAN-001", candidate, case="cooperative-cancel-and-level2",
           native_cancel_calls=adapter.last_cancel_evidence.native_cancel_calls,
@@ -534,14 +657,12 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
     _card(cards, "M4B-REC-001", candidate, trigger_reason="attempt-limit-8-and-16",
           ticket_id=scheduled_ticket_count_after_sessions, resource_samples_locator=resource_locator,
           prewarm_timings_locator=prewarm_locator, **common)
-    stable_within_generation = all(
-        len({pid for pid, item_generation in zip(child_pids, child_generations, strict=True) if item_generation == generation_id}) == 1
-        for generation_id in set(child_generations)
-    )
-    _card(cards, "M4B-HIST-001", candidate, turn_count=20,
-          conversation_count=20, child_pid_stable=stable_within_generation,
-          current_marker_pass_count=marker_pass_count,
-          prior_marker_hits=prior_marker_hits, **common)
+    stable_within_generation = len(set(history_pids)) == 1
+    _card(cards, "M4B-HIST-001", candidate, turn_count=5,
+          conversation_count=5, conversation_close_count=5,
+          current_semantic_pass_count=counts["history_current_semantic"],
+          prior_state_hits=counts["prior_state_hits"],
+          child_pid_stable=stable_within_generation, **common)
     session_result_sha256 = hashlib.sha256("".join(response_digests).encode()).hexdigest()
     _card(cards, "M4B-OFF-001", candidate, network_attempts=0, downloader_calls=0,
           session_status="Pass", session_result_sha256=session_result_sha256, **common)
@@ -557,7 +678,13 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
           throttled_zero=throttled_zero,
           thermal_max_celsius=thermal_max_celsius, resource_samples_locator=resource_locator,
           cleanup_locator=cleanup_locator, poc_p9_p10b_status="FAIL",
-          user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION", **common)
+          user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION",
+          schema_pass_count=counts["resource_schema"],
+          reasoner_validation_pass_count=counts["resource_reasoner"],
+          current_input_binding_pass_count=counts["resource_current_binding"],
+          nonblank_speak_count=counts["resource_nonblank_speak"],
+          next_perception_pass_count=counts["resource_next_perception"],
+          tts_terminal_pass_count=counts["resource_tts_terminal"], **common)
     _card(cards, "M4B-PKG-001", candidate,
           install_inventory_sha256=preflight["install_inventory_sha256"],
           python_abi_attestation_sha256=preflight["python_abi_attestation_sha256"],

@@ -1,6 +1,6 @@
 # M4b Local LLM production design
 
-狀態：**Design與Tester coverage review approved；implementation in progress；target CPython ABI test-spec delta與Core Gate 3 pending**。
+狀態：**Design與quality-oracle test-spec delta approved；implementation in progress；Core Gate 3 pending**。
 
 Architecture change：**No**。Persistent child、LiteRT-LM runtime、Reasoner、Resource Manager與三級
 收斂邊界不變。USER已於2026-08-29澄清`arch.md`的`Gemma3:e2b`是文字typo；E2B指Gemma 4 E2B，
@@ -55,7 +55,12 @@ license/notices與known resident-retention defect的可驗證產品處置。
 Reviewer已於2026-08-30完成本章、`protocol.md` §4/§6、`model_spec.md` §6、Ch 2b/5/6/9/10與
 M4 gate的單輪審查；`IR_review_M4B_I`以Blocking 0標記`Resolved`並歸檔。Tester其後新增§10完整
 M4B Test IDs，Designer於2026-08-30以`TR_spec_M4B_I` Round II確認100% coverage、Blocking 0並歸檔。
-M4b因此為Development Ready並可交Developer執行WP-01～06；此狀態不宣告Gate 3 PASS或Accepted。
+Developer的`IR_dev_M4B_II`後續以實體Pi單次debug證明原current-marker oracle與已核准generic
+renderer契約不相容；本修訂選定「Core semantic current-turn oracle + fresh-Conversation /
+prior-state oracle」，不改寫Gate 2B POC歷史。`IR_dev_M4B_II`已由Developer確認並歸檔，
+`TR_spec_M4B_III`亦已完成Tester修訂與Designer final confirmation，Blocking 0 / `Resolved`。
+M4b Developer可繼續收斂implementation並準備candidate scope；此狀態不宣告Gate 3 PASS或
+Accepted，provisional candidate commit仍須依workflow取得USER另行明確同意。
 
 ### 0.3 Bounded recycle policy
 
@@ -436,8 +441,12 @@ async iterator、讓worker thread自行寫wire，或以thread不再alive取代ou
 它走同一renderer、exact model chat template/tokenizer、dynamic speak schema與Conversation cleanup；
 application prompt SHA-256固定為
 `4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d`。Model output只要求通過
-dynamic schema且decode token >0，隨後完整丟棄。Gate 2B current/forbidden/prior marker是Gate 3 fixed
-catalog的獨立品質assertion，不是每個production request都注入的hidden欄位。
+dynamic schema且decode token >0，隨後完整丟棄。Gate 2B current/forbidden/prior marker只屬
+narrow POC harness的不可改寫歷史evidence。Core generic renderer只承諾`speak.text`非空，不承諾
+任意literal回顯；Gate 3不得私增required/forbidden literal欄位、marker-specific schema
+pattern、prompt injection或post-hoc repair。Core品質正向oracle固定為當前turn的expected
+`action_kind`、current capability/tool/`next_perceptions` binding、exact response schema與Reasoner
+validation；history oracle另結合fresh Conversation/close結構證據與prior-turn state負向證據。
 
 ## 4. Parent adapter lifecycle
 
@@ -516,8 +525,10 @@ Parent回`LLMGeneration(response, metrics)`；Reasoner與`ActionPayloadValidator
 3. Constrained decoder或child聲稱schema-valid不取代Reasoner validator。Unknown/empty/bad mapping、
    unavailable action/tool或剔除後空next perceptions仍走既有P5/SM contract。
 4. 每次GENERATE建立fresh single-turn Conversation並在finally close。Gate 3至少以五組污染前一turn
-   的case驗後一turn只依目前`ReasoningInput`；未觸發recycle時child PID與Engine load count不變，
-   觸發時則只允許預期generation切換且重新pre-warm。
+   的case驗後一turn只依目前`ReasoningInput`；每列必須同時有current-turn exact expected
+   action/schema/allowlist正向oracle、fresh Conversation/close證據與prior action/tool/perception/
+   canary負向oracle，不以current literal回顯作入場條件。未觸發recycle時child PID與Engine
+   load count不變，觸發時則只允許預期generation切換且重新pre-warm。
 5. PromptBuilder只建立bounded semantic `ReasoningInput`，不render selected chat template。Child
    renderer只接收已定義perception、payload-free pending count、capability與sealed tool schema。
 6. Prompt、perception text、model response、tool arguments、credential與private path不得進stdout、
@@ -659,10 +670,10 @@ POC PASS不等於Core PASS。Gate 2B final ACK後，Designer建立逐項mapping�
 | POC area | Core Gate 3 disposition |
 | :--- | :--- |
 | P1 / P6 / P7 lifecycle | 以Core parent、Ch 6、RM barrier重跑；POC只繼承candidate行為與已知限制 |
-| P2 / P3 result quality | 繼承fixed catalog比較；用Core PromptBuilder / validator重跑bounded product catalog |
+| P2 / P3 result quality | 繼承POC fixed catalog結果作歷史；Core以generic PromptBuilder / validator重跑bounded semantic intent catalog，不繼承narrow marker schema |
 | P4 performance | 繼承candidate selection數據；在Core product topology量測delta，不自行改門檻 |
 | P5 timeout | 以config-driven Reasoner timeout與Core child cleanup重跑 |
-| P8 history | 以persistent engine + fresh conversation在Core exact SHA重跑 |
+| P8 history | 以persistent engine + fresh Conversation/close、current semantic binding與prior-state absence在Core exact SHA重跑 |
 | P9 / P10B combined | 以Accepted M4a product input重跑Core-ownedcomposition/resource/session；不得用surrogate |
 | P11 provenance | 驗product lock、offline install與完整notice inventory |
 | P12 offline | 在Core exact SHA下重跑network-disabled product session |
@@ -703,11 +714,11 @@ Reviewer核准完整M4b design後，Tester在`docs/test_spec/test_spec_M4.md`新
 | `M4B-IPC-001` | portable | `snowboard.llm/1` exact keys/state/request/terminal/metrics/privacy |
 | `M4B-RDY-001` | portable double + Pi | ENGINE_LOADED不admit、fixed input/prompt digest、mandatory same-renderer pre-warm、discard、READY/rebuild READY |
 | `M4B-GEN-001` | portable double + Pi | structured input、single result、persistent Engine、fresh Conversation、token/metric bounds |
-| `M4B-OUT-001` | portable + Pi | speak/tool/rest exact schema、current marker、forbidden/prior marker、allowlist |
+| `M4B-OUT-001` | portable + Pi | speak/tool/rest exact schema、current-turn expected action/capability/tool binding、allowlist、Reasoner validation |
 | `M4B-P5-001` | portable + Pi | invalid/refusal/recoverable error/clean timeout fallback；fatal/recovery failure不被掩蓋 |
 | `M4B-CAN-001` | portable + Pi | typed cancel、TERM/KILL/waitpid、single cancel、worker join、next success、Level 3 |
 | `M4B-REC-001` | portable + Pi | unique-owner PSS/raw-byte 8/48/768 triggers、missing sample、terminal-only schedule/wait、ticket identity、no old-child admit、same-lock/pre-warm replacement、no-next-request failure仍由RM fatal monitor exit 4 |
-| `M4B-HIST-001` | portable + Pi | five-turn isolation；normal child PID stable，planned generation switch only at expected boundary |
+| `M4B-HIST-001` | portable + Pi | five-turn current-semantic/prior-state isolation + fresh Conversation/close；normal child PID stable，planned generation switch only at expected boundary |
 | `M4B-PRIV-001` | portable + Pi | input/output/tool/credential/path不進product log/evidence；public digest/metrics allowed |
 | `M4B-OFF-001` | Pi | network-disabled real inference、no downloader/fallback/system-site import |
 | `M4B-RES-001` | Pi | same-SHA M4a+M4b 4 GB 20-session；三generation、r14 4/64 gates、swap/OOM/thermal/cleanup |
@@ -733,10 +744,13 @@ portable matrix與target acceptance，且Designer final review無Blocking，才�
 所有WP共同entry是`IR_review_M4B_I=Resolved`與`TR_spec_M4B_I=Resolved`；在此之前只允許
 Designer文件工作，不開始Developer implementation。
 
-Developer實作期間的`IR_dev_M4B_I`已揭露target CPython closure authority缺口；§8.1採target ABI
-boundary修訂後，portable implementation可繼續，但`IR_dev_M4B_I`須由Developer確認`Resolved`，且
-`TR_spec_M4B_II`須由Designer複審`Resolved`，才可將WP-02／04／06標target-ready、建立provisional
-candidate或進行任何Pi Gate 3 execution。本delta不重開其餘13個Test ID。
+Developer實作期間的`IR_dev_M4B_I`／`TR_spec_M4B_II`已將target CPython closure收斂為target ABI
+boundary並歸檔。`IR_dev_M4B_II`揭露的Core generic renderer / fixed marker不相容由本修訂
+選定revised acceptance claim；`TR_spec_M4B_III`已完成`M4B-OUT-001`、`M4B-HIST-001`、
+`M4B-RES-001`及其直接candidate-card/catalog欄位修訂，並由Designer以Blocking 0
+標記`Resolved`。Developer可繼續收斂implementation與handoff，完成scope核對後再向USER請求
+provisional candidate commit授權；其餘12個Test ID、runtime/model/config/renderer digest、lifecycle、
+resource threshold與M4a Accepted契約不重開。
 
 | WP | Scope | Exit |
 | :--- | :--- | :--- |
@@ -795,6 +809,7 @@ Reviewer至少一次核對：
 7. unique-owner sampler、raw-byte 8/48/768 trigger、terminal-only schedule/wait、RecoveryTicket、
    main-owned RM fatal monitor與new READY形成single-owner閉環；
 8. Gate 2B narrow listen/speak marker harness與Core generic speak/tool/rest renderer明確列為product delta；
+   Core只驗current semantic binding、fresh Conversation與prior-state absence，不要求generic speak回顯marker；
    Gate 2A／P9／P10B machine FAIL、User waiver與Core product result分欄，沒有evidence mutation；
 9. Gemma 4 E2B typo clarification有記錄；任何非LiteRT-LM runtime仍另開`AR_impl`；
 10. Tester handoff能直接形成§10的15個Test ID，r14 4/64 gates不被recycle重設，且M4A accepted

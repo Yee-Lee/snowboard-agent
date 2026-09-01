@@ -381,6 +381,11 @@ def _write(value: Mapping[str, object]) -> None:
     sys.stdout.buffer.flush()
 
 
+def _exit_after_shutdown_ack() -> None:
+    """Exit without re-entering the selected runtime's native teardown."""
+    os._exit(0)
+
+
 def _read_line() -> dict[str, object]:
     raw = sys.stdin.buffer.readline(MAX_CONTROL_BYTES + 1)
     if not raw or len(raw) > MAX_CONTROL_BYTES or not raw.endswith(b"\n"):
@@ -571,6 +576,7 @@ def run(args: argparse.Namespace) -> int:
                 _write({"type": "PONG", "protocol_version": PROTOCOL_VERSION, "state": "READY"})
             elif frame == {"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION} and worker is None:
                 _write({"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION})
+                _exit_after_shutdown_ack()
                 return 0
             else:
                 raise ValueError("invalid control operation")

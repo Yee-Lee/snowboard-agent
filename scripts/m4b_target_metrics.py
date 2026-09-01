@@ -12,7 +12,7 @@ from typing import Mapping
 
 
 R14_VERSION = "2026-08-29-r14-user-resource-adjustment"
-CATALOG_SHA256 = "96fa83acae829107b4c851c3ba90d8a021bc76c7f2ef37cd47d066b46fa6a56d"
+CATALOG_SHA256 = "9539cc4d4e0a0a83db55b5a557978ccab7d2011ee5af2c401eb67221c4d2ce6a"
 
 
 class MetricsError(ValueError):
@@ -28,7 +28,7 @@ def load_gate3_catalog(path: Path) -> dict[str, object]:
     if hashlib.sha256(raw_bytes).hexdigest() != CATALOG_SHA256:
         raise MetricsError("Gate 3 catalog checksum mismatch")
     if type(value) is not dict or set(value) != {
-        "schema_version", "catalog_id", "provenance", "resource_marker_profile",
+        "schema_version", "catalog_id", "provenance", "combined_session_profile",
         "intent_cases",
     }:
         raise MetricsError("Gate 3 catalog has missing or extra fields")
@@ -38,13 +38,19 @@ def load_gate3_catalog(path: Path) -> dict[str, object]:
         "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
         "source_locator": "poc_llm/fixtures/gate2/gate2a-public-catalog-002.json",
         "source_sha256": "b4a2bb2c4a9596c668b0ef19379fc546bd861771368ba0823f338b0b060b525b",
+        "inheritance": "Gate 2B marker evidence is historical and harness-only; Core inherits no marker constraint.",
     }:
         raise MetricsError("Gate 3 catalog provenance mismatch")
-    profile = value["resource_marker_profile"]
+    profile = value["combined_session_profile"]
     if type(profile) is not dict or set(profile) != {
-        "session_count", "current_format", "forbidden_format", "instruction_format",
-    } or profile["session_count"] != 20:
-        raise MetricsError("Gate 3 marker profile mismatch")
+        "session_count", "perception_kind", "prompt_template", "actions",
+        "expected_kind", "expected_tool_name", "expected_next_perceptions",
+    } or profile["session_count"] != 20 or "{transcript}" not in profile["prompt_template"]:
+        raise MetricsError("Gate 3 combined session profile mismatch")
+    _validate_semantic_case(
+        profile, expected_kind="speak", require_identity=False,
+        extra_fields={"session_count", "prompt_template"},
+    )
     cases = value["intent_cases"]
     if type(cases) is not list or len(cases) != 3:
         raise MetricsError("Gate 3 intent catalog mismatch")
@@ -52,18 +58,89 @@ def load_gate3_catalog(path: Path) -> dict[str, object]:
     for item, kind in zip(cases, expected, strict=True):
         if (
             type(item) is not dict
-            or set(item) != {"id", "expected_kind", "text", "actions", "tools"}
-            or item["expected_kind"] != kind
-            or type(item["id"]) is not str
-            or re.fullmatch(r"CORE-OUT-[A-Z]+-001", item["id"]) is None
-            or type(item["text"]) is not str
-            or not item["text"].strip()
-            or type(item["actions"]) is not list
-            or kind not in item["actions"]
-            or type(item["tools"]) is not list
+            or re.fullmatch(r"CORE-OUT-[A-Z]+-001", str(item.get("id"))) is None
         ):
             raise MetricsError("Gate 3 intent case mismatch")
+        _validate_semantic_case(item, expected_kind=kind)
     return value
+
+
+def _validate_semantic_case(
+    item: object,
+    *,
+    expected_kind: str | None = None,
+    require_identity: bool = True,
+    extra_fields: set[str] | None = None,
+) -> None:
+    required = {
+        "perception_kind", "actions", "expected_kind", "expected_tool_name",
+        "expected_next_perceptions",
+    }
+    if require_identity:
+        required.update({"id", "text", "tools"})
+    if type(item) is not dict or set(item) != required | (extra_fields or set()):
+        raise MetricsError("Gate 3 semantic case fields mismatch")
+    kind = item["expected_kind"]
+    tool_name = item["expected_tool_name"]
+    next_perceptions = item["expected_next_perceptions"]
+    if (
+        kind not in {"speak", "tool", "rest"}
+        or (expected_kind is not None and kind != expected_kind)
+        or type(item["perception_kind"]) is not str
+        or not item["perception_kind"]
+        or type(item["actions"]) is not list
+        or kind not in item["actions"]
+        or type(next_perceptions) is not list
+        or len(next_perceptions) != len(set(next_perceptions))
+        or any(value not in {"listen", "read", "look"} for value in next_perceptions)
+        or (kind == "rest") != (next_perceptions == [])
+        or (kind == "tool") != (type(tool_name) is str and bool(tool_name))
+    ):
+        raise MetricsError("Gate 3 semantic case mismatch")
+    if require_identity:
+        if (
+            type(item["text"]) is not str or not item["text"].strip()
+            or type(item["tools"]) is not list
+            or (kind == "tool") != bool(item["tools"])
+        ):
+            raise MetricsError("Gate 3 semantic case input mismatch")
+        if kind == "tool" and (
+            len(item["tools"]) != 1
+            or type(item["tools"][0]) is not dict
+            or item["tools"][0].get("name") != tool_name
+        ):
+            raise MetricsError("Gate 3 semantic tool mismatch")
+
+
+def validate_current_semantic_binding(
+    response: object,
+    case: Mapping[str, object],
+) -> None:
+    """Fail closed unless a constrained result exactly matches the current case."""
+    if type(response) is not dict or set(response) != {
+        "action_kind", "action_payload", "next_perceptions",
+    }:
+        raise MetricsError("Gate 3 response schema mismatch")
+    kind = response["action_kind"]
+    payload = response["action_payload"]
+    requested = response["next_perceptions"]
+    if kind != case["expected_kind"] or requested != case["expected_next_perceptions"]:
+        raise MetricsError("Gate 3 current semantic binding mismatch")
+    if kind == "speak":
+        valid_payload = (
+            type(payload) is dict and set(payload) == {"text"}
+            and type(payload["text"]) is str and bool(payload["text"].strip())
+        )
+    elif kind == "tool":
+        valid_payload = (
+            type(payload) is dict and set(payload) == {"name", "arguments"}
+            and payload["name"] == case["expected_tool_name"]
+            and type(payload["arguments"]) is dict
+        )
+    else:
+        valid_payload = payload == {} and requested == []
+    if not valid_payload:
+        raise MetricsError("Gate 3 current action payload mismatch")
 
 
 def r14_slope(values: Iterable[float]) -> float:
@@ -249,5 +326,5 @@ __all__ = [
     "CATALOG_SHA256", "MetricsError", "R14_VERSION", "load_gate3_catalog",
     "kernel_resource_sample", "network_isolated", "owner_resource_accounting",
     "privacy_hits", "process_group_members", "r14_late_early_delta", "r14_slope",
-    "verify_r14_vector",
+    "validate_current_semantic_binding", "verify_r14_vector",
 ]

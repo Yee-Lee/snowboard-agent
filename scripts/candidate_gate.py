@@ -388,8 +388,9 @@ M4B_CARD_REQUIRED = {
         "response_digests",
     },
     "M4B-OUT-001": {
-        "catalog_case_count", "schema_pass_count", "current_marker_exactly_once",
-        "prior_marker_hits", "forbidden_literal_hits", "tool_handler_calls",
+        "catalog_case_count", "schema_pass_count", "expected_action_pass_count",
+        "reasoner_validation_pass_count", "current_input_binding_pass_count",
+        "tool_handler_calls",
     },
     "M4B-P5-001": {"case", "converged_to"},
     "M4B-CAN-001": {
@@ -401,8 +402,8 @@ M4B_CARD_REQUIRED = {
         "resource_samples_locator", "prewarm_timings_locator",
     },
     "M4B-HIST-001": {
-        "turn_count", "conversation_count", "child_pid_stable",
-        "current_marker_pass_count", "prior_marker_hits",
+        "turn_count", "conversation_count", "conversation_close_count",
+        "current_semantic_pass_count", "prior_state_hits", "child_pid_stable",
     },
     "M4B-PRIV-001": {"scanned_locators", "paths_digest", "hits"},
     "M4B-OFF-001": {
@@ -418,6 +419,9 @@ M4B_CARD_REQUIRED = {
         "swap_used_zero", "oom_kill_delta", "throttled_zero",
         "thermal_max_celsius", "resource_samples_locator", "cleanup_locator",
         "poc_p9_p10b_status", "user_waiver",
+        "schema_pass_count", "reasoner_validation_pass_count",
+        "current_input_binding_pass_count", "nonblank_speak_count",
+        "next_perception_pass_count", "tts_terminal_pass_count",
     },
     "M4B-PKG-001": {
         "install_inventory_sha256", "python_abi_attestation_sha256",
@@ -446,12 +450,19 @@ def _validate_m4b_card(draft: dict[str, Any]) -> None:
     required = M4B_CARD_REQUIRED.get(test_id)
     if required is None or not required.issubset(draft):
         raise GateFailure("M4b acceptance card is missing required evidence fields")
+    obsolete_marker_fields = {
+        "current_format", "forbidden_format", "instruction_format",
+        "current_marker_exactly_once", "current_marker_pass_count",
+        "prior_marker_hits", "forbidden_literal_hits",
+    }
+    if obsolete_marker_fields & set(draft):
+        raise GateFailure("M4b acceptance card contains an obsolete marker field")
     if _draft_contains_absolute(draft):
         raise GateFailure("M4b acceptance card contains an absolute private path")
     zero_fields = {
-        "M4B-OUT-001": ("prior_marker_hits", "forbidden_literal_hits", "tool_handler_calls"),
+        "M4B-OUT-001": ("tool_handler_calls",),
         "M4B-CAN-001": ("orphan_count",),
-        "M4B-HIST-001": ("prior_marker_hits",),
+        "M4B-HIST-001": ("prior_state_hits",),
         "M4B-PRIV-001": ("hits",),
         "M4B-OFF-001": ("network_attempts", "downloader_calls"),
         "M4B-RES-001": ("oom_kill_delta",),
@@ -501,7 +512,9 @@ def _validate_m4b_card(draft: dict[str, Any]) -> None:
             type(draft["catalog_case_count"]) is not int
             or draft["catalog_case_count"] != 23
             or draft["schema_pass_count"] != draft["catalog_case_count"]
-            or draft["current_marker_exactly_once"] is not True
+            or draft["expected_action_pass_count"] != draft["catalog_case_count"]
+            or draft["reasoner_validation_pass_count"] != draft["catalog_case_count"]
+            or draft["current_input_binding_pass_count"] != draft["catalog_case_count"]
         ):
             raise GateFailure("M4b output catalog card is not fully passing")
     elif test_id == "M4B-P5-001":
@@ -527,10 +540,11 @@ def _validate_m4b_card(draft: dict[str, Any]) -> None:
             raise GateFailure("M4b recovery card is not fully passing")
     elif test_id == "M4B-HIST-001":
         if (
-            draft["turn_count"] != 20
-            or draft["conversation_count"] != 20
+            draft["turn_count"] != 5
+            or draft["conversation_count"] != 5
+            or draft["conversation_close_count"] != 5
             or draft["child_pid_stable"] is not True
-            or draft["current_marker_pass_count"] != 20
+            or draft["current_semantic_pass_count"] != 5
         ):
             raise GateFailure("M4b history card is not fully passing")
     elif test_id == "M4B-OFF-001":
@@ -547,6 +561,11 @@ def _validate_m4b_card(draft: dict[str, Any]) -> None:
             or draft["throttled_zero"] is not True
             or draft["poc_p9_p10b_status"] != "FAIL"
             or draft["user_waiver"] != "KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"
+            or any(draft[name] != 20 for name in (
+                "schema_pass_count", "reasoner_validation_pass_count",
+                "current_input_binding_pass_count", "nonblank_speak_count",
+                "next_perception_pass_count", "tts_terminal_pass_count",
+            ))
         ):
             raise GateFailure("M4b resource card fixed identity mismatch")
         for name, maximum in (

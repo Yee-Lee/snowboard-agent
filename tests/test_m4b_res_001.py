@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from scripts.m4b_target_metrics import (
     load_gate3_catalog,
     owner_resource_accounting,
     process_group_members,
+    validate_current_semantic_binding,
     verify_r14_vector,
 )
 
@@ -39,15 +41,65 @@ def test_m4b_res_001_rejects_missing_sample_instead_of_resegmenting() -> None:
 
 def test_m4b_res_001_gate3_catalog_identity_and_three_generic_intents() -> None:
     catalog = load_gate3_catalog(VECTOR.with_name("gate3-product-catalog.json"))
-    profile = catalog["resource_marker_profile"]
+    profile = catalog["combined_session_profile"]
     assert profile["session_count"] == 20
-    assert profile["instruction_format"] == (
-        "Include {current} once; omit {forbidden}/prior markers. Answer: "
-        "{transcript}"
-    )
+    assert "{transcript}" in profile["prompt_template"]
+    assert "harness-only" in catalog["provenance"]["inheritance"]
     assert [case["expected_kind"] for case in catalog["intent_cases"]] == [
         "speak", "tool", "rest",
     ]
+    serialized = json.dumps(catalog, sort_keys=True)
+    assert all(field not in serialized for field in {
+        "resource_marker_profile", "current_format", "forbidden_format",
+        "instruction_format",
+    })
+
+
+@pytest.mark.parametrize(("response", "case", "matches"), [
+    (
+        {"action_kind": "speak", "action_payload": {"text": "semantic reply"},
+         "next_perceptions": ["listen"]},
+        {"expected_kind": "speak", "expected_tool_name": None,
+         "expected_next_perceptions": ["listen"]},
+        True,
+    ),
+    (
+        {"action_kind": "rest", "action_payload": {}, "next_perceptions": []},
+        {"expected_kind": "speak", "expected_tool_name": None,
+         "expected_next_perceptions": ["listen"]},
+        False,
+    ),
+    (
+        {"action_kind": "tool", "action_payload": {"name": "prior.tool", "arguments": {}},
+         "next_perceptions": ["listen"]},
+        {"expected_kind": "tool", "expected_tool_name": "current.tool",
+         "expected_next_perceptions": ["listen"]},
+        False,
+    ),
+])
+def test_m4b_res_001_current_semantic_binding_is_marker_free_and_fail_closed(
+    response: dict[str, object], case: dict[str, object], matches: bool,
+) -> None:
+    if matches:
+        validate_current_semantic_binding(response, case)
+    else:
+        with pytest.raises(MetricsError):
+            validate_current_semantic_binding(response, case)
+
+
+def test_m4b_res_001_catalog_rejects_obsolete_marker_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import m4b_target_metrics
+
+    value = json.loads(VECTOR.with_name("gate3-product-catalog.json").read_text())
+    value["resource_marker_profile"] = value.pop("combined_session_profile")
+    path = tmp_path / "catalog.json"
+    payload = (json.dumps(value, indent=2) + "\n").encode()
+    path.write_bytes(payload)
+    monkeypatch.setattr(m4b_target_metrics, "CATALOG_SHA256", hashlib.sha256(payload).hexdigest())
+    with pytest.raises(MetricsError, match="missing or extra"):
+        m4b_target_metrics.load_gate3_catalog(path)
 
 
 def test_m4b_res_001_kernel_sample_uses_real_swap_oom_thermal_throttle_fields() -> None:

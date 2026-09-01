@@ -994,7 +994,7 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 
 ---
 
-## M4B-OUT-001 — Output schema / marker / allowlist
+## M4B-OUT-001 — Output schema / current semantic binding / allowlist
 
 | 欄位 | 契約 |
 | :--- | :--- |
@@ -1002,21 +1002,21 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | **Contract basis** | `ch_m4b` §3.2 / §6；`protocol.md` §4.4；`ch09_action_payload.md` |
 | **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
 | **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
-| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`catalog_case_count`、`schema_pass_count`、`current_marker_exactly_once`、`prior_marker_hits=0`、`forbidden_literal_hits=0`、`tool_handler_calls=0`） |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`catalog_case_count=23`、`schema_pass_count=23`、`expected_action_pass_count=23`、`reasoner_validation_pass_count=23`、`current_input_binding_pass_count=23`、`tool_handler_calls=0`）；catalog identity由candidate SHA內tracked bytes與runner固定digest綁定 |
 
 **Constrained-output catalog（table-driven）**：
 
 | Case | Scope | Expected outcome |
 | :--- | :--- | :--- |
-| `speak` — valid nonblank text + nonempty next_perceptions | Portable + Pi | `LLMGeneration.response.action_kind == "speak"`；Reasoner validator PASS |
+| `speak` — valid nonblank text + current nonempty next_perceptions | Portable + Pi | `LLMGeneration.response.action_kind == "speak"`；text nonblank；`next_perceptions` exact等於case的current expected list；Reasoner validator PASS；不要求literal回顯 |
 | `speak` — blank text (`""` / whitespace) | Portable | Reasoner P5 fallback |
 | `speak` — missing `next_perceptions` | Portable | Reasoner P5 fallback |
 | `speak` — `next_perceptions` 含 unavailable perception | Portable | Reasoner P5 fallback |
-| `tool` — valid name + object arguments + nonempty next_perceptions | Portable + Pi | Reasoner validator PASS（sealed registry）；Pi只驗tool intent，不執行handler |
+| `tool` — valid current name + object arguments + current nonempty next_perceptions | Portable + Pi | `action_kind == "tool"`；name exact等於case的`expected_tool_name`；`next_perceptions` exact等於current expected list；Reasoner validator PASS（sealed registry）；Pi只驗tool intent，不執行handler |
 | `tool` — invalid dotted name | Portable | Reasoner P5 |
 | `tool` — `arguments` 非 JSON object | Portable | Reasoner P5 |
 | `tool` — name 不在 capability allowlist | Portable | Reasoner P5 |
-| `rest` — empty payload + empty next_perceptions | Portable + Pi | Reasoner validator PASS |
+| `rest` — empty payload + empty next_perceptions | Portable + Pi | `action_kind == "rest"`；payload / `next_perceptions` exact empty；Reasoner validator PASS |
 | `rest` — 含非空 payload | Portable | Reasoner P5 |
 | `rest` — 含非空 next_perceptions | Portable | Reasoner P5 |
 | Empty output（`{}`） | Portable | Reasoner P5 |
@@ -1027,14 +1027,37 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | Top-level missing／extra key或duplicate `next_perceptions` | Portable | strict schema／Reasoner拒絕；P5；不得把partial mapping交付SM |
 | Dynamic schema沒有合法branch或constraint provider拒絕 | Portable | startup/pre-request fail closed；unconstrained decode call count = 0 |
 
-**Current-marker / forbidden-marker / prior-marker（catalog）**：
+**Current semantic binding（catalog）**：
 
 | Case | Scope | Assertion |
 | :--- | :--- | :--- |
-| current-request marker 在 output exactly-once | Portable + Pi | fixed catalog中marker present且不重複 |
-| forbidden literal | Portable + Pi | Portable注入違約output驗Reasoner fail closed；Pi fixed catalog驗forbidden literal absence |
-| prior-marker（前一 turn marker） | Portable + Pi | 後一turn output不得出現；違約時Reasoner fail closed／P5 |
-| marker failure不得bypass Reasoner validator | Portable | 斷言Reasoner validator call count ≥ 1 |
+| current expected action | Portable + Pi | 每個accepted case的`action_kind` exact等於當前case `expected_kind`；不可用schema-valid但語意錯誤的`rest`或P5計數 |
+| current tool binding | Portable + Pi | tool case的name exact等於當前case `expected_tool_name`，arguments通過sealed registry；不得沿用先前case tool |
+| current perception binding | Portable + Pi | `next_perceptions` exact等於當前case `expected_next_perceptions`，不只驗subset；與prior case不同時可觀察stale binding |
+| independent Reasoner validation | Portable + Pi | `reasoner_validation_pass_count == schema_pass_count == expected_action_pass_count == current_input_binding_pass_count == catalog_case_count`；child schema-valid不取代Reasoner |
+| no exact-literal gate | Portable + Pi | schema-valid、current-semantic PASS但不含任意marker的`speak`必須PASS；catalog、wire與response schema不得出現required/forbidden-literal欄位或marker pattern |
+
+**Canonical Gate 3 product catalog（`requirements/m4b/gate3-product-catalog.json`）**：
+
+- top-level exact keys為`schema_version/catalog_id/provenance/combined_session_profile/intent_cases`；
+  pre-candidate修訂後仍為`schema_version == 1`、`catalog_id == "M4B-CORE-GATE3-PRODUCT-001"`，
+  但tracked bytes SHA-256必須exact等於
+  `9539cc4d4e0a0a83db55b5a557978ccab7d2011ee5af2c401eb67221c4d2ce6a`；舊marker shape從未
+  形成provisional/frozen candidate或正式evidence，不構成已發佈identity rewrite；
+- `provenance` exact保留Gate 2B execution SHA、source locator、source digest與
+  `inheritance == "Gate 2B marker evidence is historical and harness-only; Core inherits no marker constraint."`；
+  不得把POC `REQUIRED_LITERAL/FORBIDDEN_LITERAL`、pattern或scored marker複製進Core case；
+- `combined_session_profile` exact keys為`session_count/perception_kind/prompt_template/actions/
+  expected_kind/expected_tool_name/expected_next_perceptions`；值固定`session_count=20`、
+  `perception_kind="listen"`、`actions=["speak","rest"]`、`expected_kind="speak"`、
+  `expected_tool_name=null`、`expected_next_perceptions=["listen"]`，`prompt_template`必須只有
+  一個`{transcript}`語意slot且不含marker/literal指令；
+- 每個`intent_cases` item exact keys為`id/perception_kind/text/actions/tools/expected_kind/
+  expected_tool_name/expected_next_perceptions`；`speak/tool/rest`三列的expected kind分別exact，
+  tool列`expected_tool_name == "device.light.on"`，非tool列為JSON `null`，`speak/tool`的
+  expected next perceptions為`["listen"]`、`rest`為`[]`；
+- obsolete `resource_marker_profile/current_format/forbidden_format/instruction_format`或任一
+  `current_marker*/prior_marker*/forbidden_literal*`欄位均fail closed。
 
 **Child constrained decoder / Reasoner independence**：
 
@@ -1197,28 +1220,37 @@ cancel／recovery與candidate-runner tests；三個Python minor的JUnit均須0 F
 | **Contract basis** | `ch_m4b` §6（步驟 4）；`protocol.md` §4.2 |
 | **Suite marker** | Portable: `not rpi`；Pi: `rpi` |
 | **Case watchdog** | Portable 60秒；Pi 300秒；兩者皆受formal suite-level timeout外層限制 |
-| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`turn_count`、`conversation_count`、`child_pid_stable`、`current_marker_pass_count`、`prior_marker_hits=0`） |
+| **Evidence** | Portable: runner result + JUnit；Pi: result card（`test_id`、`turn_count=5`、`conversation_count=5`、`conversation_close_count=5`、`current_semantic_pass_count=5`、`prior_state_hits=0`、`child_pid_stable=true`） |
 
 **Five-turn isolation catalog（table-driven）**：
 
-每個case使用fixed current/prior marker catalog：前一turn先植入prior sentinel，後一turn要求目前
-marker exactly-once、prior sentinel absent且action/schema符合後一turn的預期。單純「模型剛好沒重複」
-不算PASS；每列都須同時有current positive oracle與prior negative oracle：
+每個case使用fixed semantic catalog：前一turn植入一種prior state，後一turn同時驗
+current expected action/payload/next-perception正向oracle、Reasoner PASS、fresh Conversation create/close與
+prior-state負向oracle。單純「模型剛好沒重複」、空output、P5或schema-valid但錯誤的
+current action都不算PASS；不要求current literal回顯。Pi的五個transition由20-session
+combined row的最後兩turn與三個intent case組成，均在attempt-8/16 planned recycle之後的
+同一第三generation內執行，因此`child_pid_stable=true`可觀察而不改寫resource samples：
 
-| Contamination injection | Assertion |
-| :--- | :--- |
-| Turn 1 perception text 含特定 sentinel | Turn 2 current marker exactly-once且不含該sentinel |
-| Turn 1 model 回傳 `tool` action | Turn 2依current catalog回指定`speak/rest`，不沿用Turn 1 tool intent／arguments |
-| Turn 1 model 回傳 `speak` payload 含特定詞 | Turn 2 current marker／expected action成立且不含該詞 |
-| Turn 1 `next_perceptions` 含 `read` | Turn 2 exact `next_perceptions`只取Turn 2 input allowlist，不因Turn 1加入`read` |
-| Turn 1 KV state（inject pre-filled Conversation） | Turn 2為fresh instance、current marker PASS、prior marker absent且不繼承KV |
+| Contamination injection | Scope | Current positive + prior negative assertion |
+| :--- | :--- | :--- |
+| Turn 1 perception text 含private canary | Portable + Pi | Turn 2 expected action/payload/next perceptions與Reasoner均PASS；serialized current result不含該canary |
+| Turn 1 model 回傳 `tool` action | Portable + Pi | Turn 2依current case回指定`speak/rest`，不沿用Turn 1 tool name／arguments |
+| Turn 1 model 回傳 `speak` payload 含private content | Portable + Pi | Turn 2 current expected action成立；當current不為`speak`時serialized result不含前一speak content |
+| Turn 1 `next_perceptions` 含 `read/look` | Portable + Pi | Turn 2 `next_perceptions` exact等於current `expected_next_perceptions`，不沿用prior member |
+| Turn 1 KV state（inject pre-filled Conversation） | Portable | 連續五turn的Conversation object identity全異，每個`close()` exact一次；current semantic全PASS且不繼承KV |
+
+Pi card的`conversation_count/conversation_close_count`是scope-aware reconciliation count：只有五個
+current-semantic transition均取得matching terminal，且同一candidate的portable runtime structural proof PASS時
+才可各填5；不為此新增wire/runtime private telemetry。Portable runtime fake必須以五個
+相異object identity與每個close count=1證明create/close path；該proof或任一target transition失敗時
+card不得用request-attempt count補齊。
 
 **Persistent Engine / planned generation switch**：
 
 | Case | Assertion |
 | :--- | :--- |
 | 未觸發 recycle — child PID 不變 | 五 turn 中 PID stable |
-| 觸發 planned recycle — generation 切換僅在預期邊界 | child_generation 在 attempt 8 後 +1；不提前 |
+| 觸發 planned recycle — generation 切換僅在預期邊界 | resource 20-session的child_generation只在attempt 8/16後 +1；HIST五turn均位於同一第三generation，不提前 |
 
 ---
 
@@ -1286,7 +1318,7 @@ structured product result、telemetry、product raw log及公開前evidence。Fo
 | **Scope** | Pi（`rpi` marker）；同一 Core product SHA 含 M4a（與 M4b 相同 SHA） |
 | **Contract basis** | `model_spec.md` §6.4；`ch_m4b` §10.2（`M4B-RES-001`）；`docs/milestones/M4.md` §6.4 條款 3 |
 | **Case watchdog** | 3600秒；受formal Pi suite-level 9000秒timeout外層限制 |
-| **Evidence** | runner acceptance result card；額外欄位 `test_id`、`session_count`、`generation_count`、`r14_formula_version`、`combined_pss_slope_mib_per_session`、`system_used_slope_mib_per_session`、`combined_pss_late_minus_early_median_delta_mib`、`system_used_late_minus_early_median_delta_mib`、`max_generation_delta_mib`、`swap_used_zero`、`oom_kill_delta=0`、`throttled_zero`、`thermal_max_celsius`、`resource_samples_locator`、`cleanup_locator` |
+| **Evidence** | runner acceptance result card；額外欄位 `test_id`、`session_count`、`generation_count`、`r14_formula_version`、`combined_pss_slope_mib_per_session`、`system_used_slope_mib_per_session`、`combined_pss_late_minus_early_median_delta_mib`、`system_used_late_minus_early_median_delta_mib`、`max_generation_delta_mib`、`max_system_used_mib`、`swap_used_zero`、`oom_kill_delta=0`、`throttled_zero`、`thermal_max_celsius`、`resource_samples_locator`、`cleanup_locator`、`schema_pass_count=20`、`reasoner_validation_pass_count=20`、`current_input_binding_pass_count=20`、`nonblank_speak_count=20`、`next_perception_pass_count=20`、`tts_terminal_pass_count=20` |
 | **Pending** | 正式 Pi 執行前 spec tracker 標 `Pending`；不以 M4-REG-001 或 portable mock 取代 |
 
 **r14 frozen gate（所有 20 samples 不得刪除 / 分段重算）**：
@@ -1314,8 +1346,8 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | Memory PSI excluded | `/proc/pressure/memory` read count = 0；result／sample無PSI欄位且PASS不依賴`psi=1` |
 | Zero OOM kill / throttle | run前後kernel OOM-kill counter/log delta = 0；每sample throttled bit = 0 |
 | Temperature < 80°C | 每 sample 記錄；超標即 FAIL |
-| 20 accepted sessions | session_count = 20；0 rejected |
-| Combined functional validity | 每session的schema/current-marker/prior-marker/history及Audio→LLM→TTS terminal均PASS；resource數值不得掩蓋functional failure |
+| 20 accepted sessions | `session_count = 20`；不存在rejected/P5/partial session；下列六個functional count全為20 |
+| Combined functional validity | 每session均為exact response schema + Reasoner validation + current `speak` binding + nonblank text + exact `next_perceptions=["listen"]` + Audio→LLM→TTS terminal PASS；resource數值不得掩蓋任一functional failure |
 | Accepted M4a composition identity | 同一product SHA保留M4a Accepted lock／inheritance，並通過本章列出的affected M4a protocol/lifecycle/audio regression |
 | 至少 2 次 replacement（3 個 child generation） | generation_count ≥ 3；attempt 8 / 16 各排程一次 recycle |
 | Per-sample owner accounting | 每筆保存timestamp、session、child generation、Core/controller、VAD、ASR、TTS、LLM各owner的unique-PID PSS/RSS/CPU/thread、MemTotal/MemAvailable/system-used、swap、temperature、throttled與trigger；combined PSS不得重複PID，raw sample count與20 sessions對齊且無missing sample；sum RSS只作diagnostic，不得取代PSS或system-used gate |
@@ -1323,6 +1355,22 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | 48 MiB early trigger 不放寬 64 MiB gate | trigger 不得視為已合規；整體斜率仍須達標 |
 | Recycle 不刪 pre-trigger sample | 完整 20 samples 保存；不分 generation 重算斜率 |
 | Machine P9 / P10B FAIL 與 User waiver 分欄 | evidence 欄位 `poc_p9_p10b_status="FAIL"` / `user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"` |
+
+**Semantic result-card exactness**：
+
+- `M4B-OUT-001`的`catalog_case_count` exact為23（20個combined speak session +
+  `speak/tool/rest`三個intent case）；`schema_pass_count/expected_action_pass_count/
+  reasoner_validation_pass_count/current_input_binding_pass_count`均exact為23；
+- `M4B-HIST-001`的`turn_count/conversation_count/conversation_close_count/
+  current_semantic_pass_count`均exact為5，`prior_state_hits=0`且`child_pid_stable=true`；
+- `M4B-RES-001`的`schema_pass_count/reasoner_validation_pass_count/
+  current_input_binding_pass_count/nonblank_speak_count/next_perception_pass_count/
+  tts_terminal_pass_count`均exact為20；其中任一小於20都是Fail，不得用resource PASS補齊；
+- 三張card與catalog均禁止`current_format/forbidden_format/instruction_format/
+  current_marker_exactly_once/current_marker_pass_count/prior_marker_hits/forbidden_literal_hits`；
+  出現任一obsolete欄位即fail closed；
+- card只保存上述counts/status、relative evidence locator、public digest與既有sanitized
+  resource identity；不得保存transcript、model output、private canary、tool arguments或absolute path。
 
 ---
 
@@ -1401,13 +1449,13 @@ tolerance）。無法重現即表示公式漂移，`M4B-RES-001`不得進Pi；ta
 | Area | Required classification / assertion |
 | :--- | :--- |
 | P1 / P6.1 / P7.1 lifecycle | Core delta rows至少分別指向`M4B-RDY-001`、`M4B-CAN-001`與`M4B-REC-001` |
-| P2 / P3 result quality | 指向`M4B-OUT-001` fixed product catalog；P2舊pairing machine FAIL保持原文，replacement結果另列，不得覆寫歷史 |
+| P2 / P3 result quality | 指向`M4B-OUT-001` fixed Core semantic product catalog與23/23 schema/action/Reasoner/current-binding證據；P2舊pairing machine FAIL保持原文，replacement結果另列，不得覆寫歷史 |
 | P4 performance | 指向`M4B-GEN-001` target timing/token result；繼承candidate selection數據但不自訂新門檻 |
 | P5 timeout | 指向`M4B-P5-001`及直接cancel cleanup的`M4B-CAN-001` |
-| P8 history | 指向`M4B-HIST-001`；舊pairing `FAIL / DEPENDENCY_LIMITED_BY_P2`與replacement marker結果分欄 |
+| P8 history | 指向`M4B-HIST-001`的5/5 current semantic + fresh create/close + zero prior-state evidence；舊pairing `FAIL / DEPENDENCY_LIMITED_BY_P2`與Core replacement結果分欄，不得把POC marker PASS改稱Core literal contract |
 | P9 / P10B | `poc_machine_result="FAIL"`；`classification="waiver"`；`user_waiver="KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"`；Core product `M4B-RES-001`結果仍以獨立delta row填列 |
 | P10A | 原始machine PASS可inherit，但Core persistent-child composition差異須有`M4B-GEN-001`／`M4B-REC-001` locator |
-| Gate 2B narrow listen→speak harness vs Core generic renderer | 以一或多個`delta_test_id="M4B-OUT-001"`的獨立row記錄具體產品delta reason；不得建立`M4B-INH-001` self-row或把多個ID塞進單一字串欄位 |
+| Gate 2B narrow listen→speak harness vs Core generic renderer | 以一或多個`delta_test_id="M4B-OUT-001"`的獨立row記錄具體產品delta reason；明記POC required/forbidden marker schema為harness-only，Core只繼承runtime/model baseline並以semantic catalog重驗；不得建立`M4B-INH-001` self-row或把多個ID塞進單一字串欄位 |
 | P11 provenance | 至少有`M4B-LOCK-001`與`M4B-PKG-001`的獨立delta row |
 | P12 offline | 至少有`M4B-OFF-001`與`M4B-PRIV-001`的獨立delta row |
 
@@ -1478,6 +1526,7 @@ M4b 子 gate 結論文件必須包含（由 Tester 填入，引用 runner 標準
 | `pi_preflight_locator` | 同一candidate SHA／`pi_acceptance_run_id`的`preflight.json` locator |
 | `python_abi_attestation_sha256` | install、product preflight、runner preflight與acceptance-start重算後一致的64-hex target ABI digest |
 | `install_inventory_sha256` | product preflight、runner preflight與M4B-PKG-001 card一致的64-hex protected install inventory digest |
+| `gate3_product_catalog_sha256` | tracked `requirements/m4b/gate3-product-catalog.json` SHA-256，exact為`9539cc4d4e0a0a83db55b5a557978ccab7d2011ee5af2c401eb67221c4d2ce6a`；與runner固定constant、OUT/HIST/RES所用bytes一致 |
 | `pi_acceptance_run_id` | M4b target acceptance 的 run ID（不得混用 debug run ID） |
 | `pi_result_locators` | M4b 各 Pi acceptance result card run-root-relative locator（含 RES / OFF） |
 | `inheritance_index_locator` | `docs/outsource/evidence/<M4-delivery>/m4b/inheritance.json` |

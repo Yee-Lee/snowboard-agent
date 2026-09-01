@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import time
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -85,5 +87,35 @@ def test_m4b_rec_001_rebuild_cancellation_cleans_partial_replacement() -> None:
         assert children[1].terminated == 1
         assert adapter.state is AdapterState.STOPPED
         assert adapter._child is None
+
+    asyncio.run(scenario())
+
+
+def test_m4b_rec_001_rebuild_ready_timeout_starts_after_authentication() -> None:
+    async def scenario() -> None:
+        adapter, children, _ = _adapter()
+        original_lock = adapter._lock
+
+        class Closure:
+            def verify_install(self, root: Path) -> None:
+                time.sleep(0.02)
+
+        class Lock:
+            identity = original_lock.identity
+            runtime_closure = Closure()
+
+            def verify_config_paths(self, cfg) -> None:
+                time.sleep(0.02)
+
+        adapter._lock = Lock()  # type: ignore[assignment]
+        adapter._cfg = replace(
+            adapter._cfg,
+            runtime_python=Path("/product/runtime/bin/python"),
+            rebuild_ready_timeout_seconds=0.01,
+        )
+        await adapter.start()
+        await adapter.rebuild()
+        assert len(children) == 2
+        assert adapter.state is AdapterState.READY
 
     asyncio.run(scenario())

@@ -109,7 +109,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow；M4A Accepted不回退，但final M4 candidate須對未變更M4A scope建立inheritance，並在final SHA重跑受新composition影響的Audio/resource/offline/privacy/session regression，不無差別重跑已Accepted的M4A-only target rows。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
-| M4b LLM | `IMPLEMENTATION IN PROGRESS — TARGET ABI SPEC DELTA OPEN` | Gate 2B winner lineage與P9/P10B machine FAIL/User waiver不變。`IR_review_M4B_I`／`TR_spec_M4B_I`均Resolved；Developer已完成多數portable implementation，但`IR_dev_M4B_I`確認self-contained CPython closure authority缺口。Designer已選定target ABI boundary並修訂設計；`TR_spec_M4B_II`等待Tester局部修訂LOCK/PKG assertions。WP-02／04／06 target-ready、candidate與Pi Gate 3在該delta Resolved前阻擋。 |
+| M4b LLM | `IMPLEMENTATION IN PROGRESS — DESIGN/SPEC GATES RESOLVED` | Gate 2B winner lineage與P9/P10B machine FAIL/User waiver不變。Target ABI與quality-oracle delta均Resolved；`TR_spec_M4B_III`已以OUT 23/23、HIST 5/5、RES六組20/20、marker-free catalog/card契約由Designer Blocking 0通過並歸檔。Developer可收斂implementation/handoff並準備candidate scope；provisional candidate commit仍須USER明確授權，formal portable/Pi gate仍依外部指定SHA執行。 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
@@ -208,4 +208,7 @@ Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` wor
 14. ~~LLM POC Gate 2A intake~~ — **Done**：019／021由`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`處理並歸檔；Gemma sole model finalist，Qwen排除，R1 FAIL不可改寫。
 14a. ~~DELIVERY-019 integration qualification~~ — **Done / preserved as lineage**：bounded revision與Gate 2A machine dispositions不可改寫；後續winner identity由R3 manifest固定。
 15. ~~LLM POC Gate 2B / final winner~~ — **Done with known-defect waiver**：Attempt 006 machine P9/P10B仍FAIL；User選定Gemma，Core final winner ACK已固定`model_spec.md` §6。此結論不授予Core product PASS。
-16. **M4b development** — Design與Round I test coverage review完成；Developer已進行WP-01～06。`IR_dev_M4B_I`的target CPython authority缺口已由Designer採target ABI boundary修訂，下一步由Tester以`TR_spec_M4B_II`收斂LOCK/PKG delta；其後才能進portable candidate、Pi exact-SHA acceptance與Designer final review。
+16. **M4b development** — Design、target ABI與quality-oracle test-spec gates均已Resolved；Developer
+    可收斂WP-01～06 implementation/handoff與candidate scope。下一個版控動作是Designer核對
+    candidate files/message後取得USER明確commit授權；之後才對該完整SHA進formal
+    portable matrix、Pi exact-SHA acceptance與Designer final review。

@@ -159,6 +159,7 @@ class SubprocessLLMChild:
         self.pgid = 0
         self.startup_evidence: LLMStartupEvidence | None = None
         self.termination_evidence: LLMTerminationEvidence | None = None
+        self._stop_lock = asyncio.Lock()
 
     async def start(self) -> Mapping[str, object]:
         assert self._cfg.runtime_python is not None
@@ -225,25 +226,26 @@ class SubprocessLLMChild:
         return await read_frame(self._process.stdout)
 
     async def stop(self) -> None:
-        process = self._process
-        if process is None:
+        async with self._stop_lock:
+            process = self._process
+            if process is None:
+                await self._cleanup()
+                return
+            try:
+                await self.send({"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION})
+                frame = await asyncio.wait_for(self.receive(), self._cfg.child_terminate_timeout_seconds)
+                if frame != {"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION}:
+                    raise LLMProtocolError(stage="SHUTDOWN", field="$", reason="invalid acknowledgement")
+                await asyncio.wait_for(
+                    self._wait_process_group_exit(process, process.pid),
+                    self._cfg.child_terminate_timeout_seconds,
+                )
+                if process.returncode != 0:
+                    raise LLMFatalError("child exited nonzero")
+            except BaseException:
+                await self.force_terminate()
+                raise
             await self._cleanup()
-            return
-        try:
-            await self.send({"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION})
-            frame = await asyncio.wait_for(self.receive(), self._cfg.child_terminate_timeout_seconds)
-            if frame != {"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION}:
-                raise LLMProtocolError(stage="SHUTDOWN", field="$", reason="invalid acknowledgement")
-            await asyncio.wait_for(
-                self._wait_process_group_exit(process, process.pid),
-                self._cfg.child_terminate_timeout_seconds,
-            )
-            if process.returncode != 0:
-                raise LLMFatalError("child exited nonzero")
-        except BaseException:
-            await self.force_terminate()
-            raise
-        await self._cleanup()
 
     async def force_terminate(self) -> None:
         process = self._process
@@ -385,7 +387,7 @@ class LiteRTLMAdapter:
             raise LLMFatalError("start requires STOPPED")
         await self._start_replacement()
 
-    async def _start_replacement(self) -> None:
+    async def _start_replacement(self, *, ready_timeout: float | None = None) -> None:
         self._set_state(AdapterState.AUTHENTICATING)
         self._generation += 1
         closure = self._lock.runtime_closure
@@ -404,7 +406,12 @@ class LiteRTLMAdapter:
         child = self._child_factory(self._cfg, self._lock, self._generation)
         self._set_state(AdapterState.STARTING)
         try:
-            ready = await child.start()
+            startup = child.start()
+            ready = (
+                await startup
+                if ready_timeout is None
+                else await asyncio.wait_for(startup, ready_timeout)
+            )
             self._set_state(AdapterState.ENGINE_LOADED)
             self._set_state(AdapterState.PREWARMING)
             parse_ready(ready, expected_identity=self._lock.identity)
@@ -625,7 +632,13 @@ class LiteRTLMAdapter:
             except BaseException:
                 await old.force_terminate()
         self._child = None
-        await asyncio.wait_for(self._start_replacement(), self._cfg.rebuild_ready_timeout_seconds)
+        # Authentication includes full model/runtime hashes and deliberately
+        # precedes the bounded replacement READY window.  The contract excludes
+        # those pre-spawn hashes from READY timing; only child load and pre-warm
+        # consume rebuild_ready_timeout_seconds.
+        await self._start_replacement(
+            ready_timeout=self._cfg.rebuild_ready_timeout_seconds,
+        )
 
 
 __all__ = [

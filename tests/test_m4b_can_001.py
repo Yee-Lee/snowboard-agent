@@ -11,6 +11,7 @@ import pytest
 from sbd.cognition.prompt_builder import PromptBuilder
 from sbd.cognition.reasoner import Reasoner
 from sbd.cognition.litert_lm.adapter import LLMFatalError, SubprocessLLMChild
+from sbd.cognition.llm_child_protocol import PROTOCOL_VERSION
 from sbd.cognition.litert_lm.lock import LLMArtifactLock
 from sbd.core.config.models import LLMConfig
 from sbd.core.state_manager.convergence import CancelTimeoutPolicy, DefaultSessionConverger
@@ -187,6 +188,43 @@ def test_m4b_can_001_child_pipe_cleanup_is_bounded() -> None:
         await asyncio.wait_for(child._cleanup(), 0.1)
         assert writer.closed is True
         assert child._process is None
+
+    asyncio.run(scenario())
+
+
+def test_m4b_can_001_concurrent_clean_stop_is_idempotent() -> None:
+    async def scenario() -> None:
+        lock = LLMArtifactLock.load(
+            Path(__file__).parent.parent / "requirements/m4b/llm-artifacts.json",
+        )
+        child = SubprocessLLMChild(LLMConfig(), lock, 1)
+        process = SimpleNamespace(returncode=None, pid=101)
+        child._process = process
+        sends = 0
+
+        async def send(frame) -> None:
+            nonlocal sends
+            sends += 1
+            assert frame == {"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION}
+            await asyncio.sleep(0)
+
+        async def receive():
+            return {"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION}
+
+        async def wait_exit(owner, pgid) -> None:
+            assert owner is process and pgid == 101
+            process.returncode = 0
+
+        async def cleanup() -> None:
+            child._process = None
+
+        child.send = send  # type: ignore[method-assign]
+        child.receive = receive  # type: ignore[method-assign]
+        child._wait_process_group_exit = wait_exit  # type: ignore[method-assign]
+        child._cleanup = cleanup  # type: ignore[method-assign]
+
+        await asyncio.gather(child.stop(), child.stop())
+        assert sends == 1
 
     asyncio.run(scenario())
 

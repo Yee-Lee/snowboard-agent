@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import struct
 from concurrent.futures import ThreadPoolExecutor
 
@@ -233,3 +234,35 @@ def test_m3_audo_008() -> None:
     asyncio.run(scenario())
     assert sink.drains == 1
     assert sink.closed == 1
+
+
+def test_m3_audo_009_reopens_once_after_alsa_underrun(monkeypatch: pytest.MonkeyPatch) -> None:
+    output = AlsaAudioOutput(_passthrough_config())
+    underrun = _FakePCM()
+    replacement = _FakePCM()
+    underrun.write = lambda payload: -errno.EPIPE  # type: ignore[method-assign]
+    output._pcm = underrun
+
+    def reopen() -> None:
+        output._pcm = replacement
+
+    monkeypatch.setattr(output, "_open_worker", reopen)
+    output._write_worker(bytes(16))
+
+    assert underrun.closed == 1
+    assert replacement.payloads == [bytes(16)]
+
+
+def test_m3_audo_010_rejects_repeated_alsa_underrun(monkeypatch: pytest.MonkeyPatch) -> None:
+    output = AlsaAudioOutput(_passthrough_config())
+    first = _FakePCM()
+    second = _FakePCM()
+    first.write = lambda payload: -errno.EPIPE  # type: ignore[method-assign]
+    second.write = lambda payload: -errno.EPIPE  # type: ignore[method-assign]
+    output._pcm = first
+    monkeypatch.setattr(output, "_open_worker", lambda: setattr(output, "_pcm", second))
+
+    with pytest.raises(OSError, match="status -32"):
+        output._write_worker(bytes(8))
+
+    assert first.closed == 1

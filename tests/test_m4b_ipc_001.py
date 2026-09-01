@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import json
 import math
+from types import SimpleNamespace
 
 import pytest
 
@@ -62,6 +63,42 @@ def test_m4b_ipc_001_worker_request_identity_is_monotonic_per_generation() -> No
     for request_id in ("llm.3.1", "llm.3.3", "llm.4.2", "llm.0.2"):
         with pytest.raises(ValueError, match="identity sequence"):
             _advance_request_identity(request_id, generation, counter)
+
+
+def test_m4b_ipc_001_shutdown_ack_precedes_native_runtime_teardown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sbd.cognition.litert_lm import worker
+
+    order: list[str] = []
+
+    class Runtime:
+        def close(self) -> None:
+            order.append("runtime.close")
+
+    runtime = Runtime()
+    args = SimpleNamespace(
+        model="model", runtime_root="runtime", native_sha256="a" * 64,
+        startup_evidence="evidence", candidate_id="candidate",
+        pairing_revision="revision", platform="platform",
+        runtime_sha256="b" * 64, model_sha256="c" * 64,
+        config_sha256="d" * 64,
+    )
+    monkeypatch.setattr(worker, "LiteRTRuntime", lambda **kwargs: runtime)
+    monkeypatch.setattr(worker, "_prewarm", lambda value: None)
+    monkeypatch.setattr(worker, "_write_startup_evidence", lambda *args, **kwargs: None)
+    monkeypatch.setattr(worker.select, "select", lambda *args: ([object()], [], []))
+    monkeypatch.setattr(
+        worker, "_read_line",
+        lambda: {"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION},
+    )
+    monkeypatch.setattr(worker, "_write", lambda value: order.append(str(value["type"])))
+    monkeypatch.setattr(
+        worker, "_exit_after_shutdown_ack", lambda: order.append("direct-exit"),
+    )
+
+    assert worker.run(args) == 0
+    assert order == ["READY", "SHUTDOWN_ACK", "direct-exit", "runtime.close"]
 
 
 def _identity() -> LLMReadyIdentity:
