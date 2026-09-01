@@ -221,12 +221,34 @@ def verify(
     for path in [
         "docs/specs/evaluation.md",
         "docs/specs/data_safety.md",
-        "docs/specs/fixture_policy.md",
         "docs/specs/outcome_checklist.md",
         "docs/specs/streaming_protocol.md",
     ]:
         text = resolve_repo_resource(root, path).read_text(encoding="utf-8")
         _require("Status: `AUTHORITATIVE / FROZEN AT AR1M0`" in text, f"{path} is not frozen", failures)
+
+    fixture_policy = resolve_repo_resource(
+        root, "docs/specs/fixture_policy.md"
+    ).read_text(encoding="utf-8")
+    _require(
+        "Status: `AUTHORITATIVE / BASELINE FROZEN AT AR1M0 / "
+        "SCHEDULE REVISED AT AR1M1 EXIT`" in fixture_policy,
+        "fixture policy does not preserve the frozen M0 baseline and M1 revision",
+        failures,
+    )
+    fixture_revision = _json(
+        resolve_repo_resource(
+            root, "asr_r1/manifests/m1_fixture_schedule_revision.json"
+        )
+    )
+    _require(
+        fixture_revision.get("baseline_plan_reference")
+        == "asr_r1/manifests/fixture_reuse_audit_plan.json"
+        and fixture_revision.get("status")
+        == "USER_APPROVED_EFFECTIVE_AT_AR1M1_EXIT",
+        "fixture scheduling revision is not bound to the frozen M0 plan",
+        failures,
+    )
 
     milestone = resolve_repo_resource(
         root, "docs/milestone/ar1_m0_research_readiness.md"

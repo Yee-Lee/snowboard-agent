@@ -46,6 +46,7 @@ def verify(root: Path, require_clean: bool = False) -> list[str]:
         "asr_r1/sherpa_adapter.py",
         "asr_r1/manifests/m1_baseline_method.json",
         "asr_r1/manifests/m1_fixture_coverage_audit.json",
+        "asr_r1/manifests/m1_fixture_schedule_revision.json",
         "asr_r1/manifests/m1_identity_screening.json",
         "asr_r1/manifests/m1_postprocess_research.json",
         "asr_r1/manifests/m1_smoke_fixture.json",
@@ -123,8 +124,32 @@ def verify(root: Path, require_clean: bool = False) -> list[str]:
     milestone = resolve_repo_resource(
         root, "docs/milestone/ar1_m1_runtime_feasibility.md"
     ).read_text(encoding="utf-8")
-    _require("Status: `IN_PROGRESS`" in milestone, "AR1M1 must remain in progress", failures)
+    _require("Status: `COMPLETE`" in milestone, "AR1M1 must be complete", failures)
     _require("not Raspberry Pi 5" in milestone, "M1 milestone lacks Pi boundary", failures)
+
+    schedule = _json(root, "asr_r1/manifests/m1_fixture_schedule_revision.json")
+    _require(
+        schedule.get("status") == "USER_APPROVED_EFFECTIVE_AT_AR1M1_EXIT"
+        and schedule.get("formal_result") is False,
+        "M1 fixture scheduling revision is not effective and non-formal",
+        failures,
+    )
+    revised_gates = schedule.get("revised_gates", [])
+    _require(
+        [gate.get("gate") for gate in revised_gates]
+        == ["AR1M1_EXIT", "AR1M2_ENTRY_BEFORE_FORMAL_EXECUTION"],
+        "fixture scheduling revision gates changed",
+        failures,
+    )
+
+    m2 = resolve_repo_resource(
+        root, "docs/milestone/ar1_m2_candidate_evaluation.md"
+    ).read_text(encoding="utf-8")
+    _require(
+        "Status: `IN_PROGRESS — ENTRY GATES`" in m2,
+        "AR1M2 entry gates must be active",
+        failures,
+    )
 
     if require_clean:
         status = subprocess.run(

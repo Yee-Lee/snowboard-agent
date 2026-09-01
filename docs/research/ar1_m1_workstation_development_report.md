@@ -1,6 +1,6 @@
 # AR1M1 Workstation Development Report
 
-Status: `DRAFT / NON-FORMAL X86 WORKSTATION DEVELOPMENT EVIDENCE / NOT PI 5`
+Status: `FINAL / NON-FORMAL X86 WORKSTATION DEVELOPMENT EVIDENCE / NOT PI 5`
 
 Date: 2026-09-01
 
@@ -140,8 +140,8 @@ The portable C ABI and Q8_0 artifact load quickly, but inference is the limiting
 stage. Decode used only about 0.92–0.93 effective core, and repeated development
 runs placed full-utterance RTF from about 8.7 to 10.5. The clean fail-closed
 native-final run recorded RTF 9.399. TTFT exceeded ten seconds, and the paced
-stream accumulated more than 18
-seconds of delivery backlog. Peak RSS sat immediately below the reference,
+stream accumulated more than 18 seconds of delivery backlog. Peak RSS sat
+immediately below the reference,
 leaving effectively no safe product headroom under an approximately 1 GB ASR
 allowance.
 
@@ -158,8 +158,7 @@ not an interpretation change to this result.
 The large model reduced peak RSS to roughly 295 MB and produced a first partial
 in about one second, but cold load still took tens of seconds. Native
 full-utterance RTF remained slightly above one. The paced stream finished close
-to audio
-duration by using more parallel CPU during parts of the run, yet 14 deadline
+to audio duration by using more parallel CPU during parts of the run, yet 14 deadline
 misses and approximately 350 ms maximum delivery lateness expose uneven chunk
 cost rather than consistently bounded streaming work.
 
@@ -174,8 +173,8 @@ guarantee sustained full-sentence throughput or cheap process recovery.
 This is the smallest operational row in the current set. It loaded in a few
 seconds, stayed near 145 MB RSS, used about 1.57 cores during unpaced decode,
 and the clean native-final run recorded RTF 0.220. Its TTFT was about 763 ms,
-only two chunks exceeded the
-strict 5 ms delivery tolerance, and speech-end-to-final was about 10 ms.
+only two chunks exceeded the strict 5 ms delivery tolerance, and
+speech-end-to-final was about 10 ms.
 
 The engineering surface is therefore inexpensive enough for broader quality
 testing. That is not a quality conclusion: AISHELL domain/language coverage may
@@ -238,16 +237,17 @@ offline closure, and prevent later teams from repeating expensive paths under
 the false assumption that model quantization or a successful three-second
 transcript implies product feasibility.
 
-## Remaining before M1 exit
+## Handoff to M2 entry
 
-- Review and commit this sanitized clean-SHA workstation closeout. No further
-  workstation model rerun is planned unless runtime or measurement code changes
-  or review identifies a defect.
-- Close the documented fixture coverage gaps for intent taxonomy, English
-  entities, volume conditions, and speech in noise. Role and holdout freeze
-  still requires User review.
-- Run the same-SHA critical smoke and lifecycle packet on a real Pi 5 to
-  establish
-  aarch64, CPU-only resource, thermal/throttling, and hardware behavior.
+- No further workstation model rerun is planned unless runtime or measurement
+  code changes or review identifies a defect.
+- At M2 entry, close the documented fixture coverage gaps for intent taxonomy,
+  English entities, volume conditions, and speech in noise. Role and holdout
+  freeze still requires User review before formal execution.
+- Before formal scoring, run the critical smoke and lifecycle packet at an
+  immutable delivery SHA on a real Pi 5 to establish aarch64, CPU-only resource,
+  thermal/throttling, and hardware behavior.
 - Keep all current values non-formal until evidence review; workstation results
   never substitute for Pi formal scoring or integrated qualification.
+
+The User approved this scheduling boundary and AR1M1 closure on 2026-09-01.

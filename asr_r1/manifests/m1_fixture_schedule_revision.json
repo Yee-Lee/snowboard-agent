@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "decision_id": "AR1M1-FIXTURE-SCHEDULE-REVISION-001",
+  "status": "USER_APPROVED_EFFECTIVE_AT_AR1M1_EXIT",
+  "decision_date": "2026-09-01",
+  "formal_result": false,
+  "scope": "Scheduling revision only; fixture coverage, authorization, separation, and review requirements are unchanged.",
+  "baseline_plan_reference": "asr_r1/manifests/fixture_reuse_audit_plan.json",
+  "reason": "The User directed AR1M1 closure after complete workstation development verification and moved minimum fixture gap collection to AR1M2 entry before formal execution.",
+  "revised_gates": [
+    {
+      "gate": "AR1M1_EXIT",
+      "required_state": "Historical sources audited, one authorized regression smoke fixture frozen and verified, the product coverage matrix completed at metadata level, and every unresolved gap documented with a minimum closure action.",
+      "collection": "NO_ADDITIONAL_GAP_COLLECTION_REQUIRED_FOR_M1_EXIT"
+    },
+    {
+      "gate": "AR1M2_ENTRY_BEFORE_FORMAL_EXECUTION",
+      "required_state": "Collect or derive only the minimum authorized prerecorded audio or annotations needed for every documented gap; complete identity, reference, checksum, sensitivity, license, controlled-locator, and prior-use records; obtain User review and freeze disjoint fixture roles before formal execution.",
+      "collection": "MINIMUM_DOCUMENTED_GAP_CLOSURE_REQUIRED"
+    }
+  ],
+  "unchanged_invariants": [
+    "Raw or private audio and sensitive transcripts remain outside Git.",
+    "Previously tuned, scored, or reviewed material is not eligible for final holdout.",
+    "No result may retroactively change a fixture role or trigger selective replacement.",
+    "No formal AR1M2 result may be viewed before the fixture packet and roles are frozen.",
+    "Any later method or coverage blocker preserves failed evidence and requires a reviewed new packet and complete rerun."
+  ],
+  "role_assignment": null,
+  "holdout_proposal": null,
+  "user_review_required_before_role_freeze": true
+}

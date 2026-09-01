@@ -4,10 +4,10 @@ Status: `PRE-EXECUTION RESEARCH BASELINE / SUPERSEDED FOR EXECUTION STATUS`
 
 Date: 2026-09-01
 
-This document separates the confirmed AR1M1 target and completed metadata
-research from work that still requires real model execution. It contains no
-score, ranking, hardware disposition, qualification decision, or final product
-outcome.
+This document preserves the confirmed AR1M1 target and completed metadata
+research that preceded execution. Real workstation execution is complete and
+is reported separately. This baseline contains no score, ranking, hardware
+disposition, qualification decision, or final product outcome.
 
 ## Confirmed M1 target
 
@@ -88,7 +88,8 @@ Real workstation development probes have since exercised all five exact rows.
 Their sanitized, explicitly non-formal measurements and engineering breakdown
 are maintained in
 [`AR1M1 Workstation Development Report`](ar1_m1_workstation_development_report.md).
-Those development runs do not establish reviewed clean-SHA evidence, Pi 5
-behavior, Taiwan Mandarin quality, a formal comparison, or a qualification
-decision. This document remains the pre-execution identity and feasibility
-baseline rather than the current execution-status source.
+The clean-SHA workstation packet establishes non-formal development behavior,
+but does not establish Pi 5 behavior, Taiwan Mandarin quality, a formal
+comparison, or target-hardware qualification. This document remains the
+pre-execution identity and feasibility baseline rather than the current
+execution-status source.

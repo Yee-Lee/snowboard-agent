@@ -1,28 +1,31 @@
 # AR1M1: Runtime Feasibility and Integration Readiness
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE`
 
 Entry date: 2026-09-01
+
+Completion date: 2026-09-01
 
 Entry baseline: `asr_r1_m0` /
 `53d6c853486d625b1af9e37f7126a248f6d591f8`
 
-AR1M1 starts with metadata-only official-source screening and fixture audit.
-This entry does not authorize real artifact acquisition, build, installation,
-import, model load, inference, benchmark, or Pi execution. Each real probe must
-first fix an exact candidate/runtime row, controlled inputs and dependency
-closure, frozen smoke fixture and method, clean full SHA, evidence location,
-timeouts, and cleanup.
+AR1M1 started with metadata-only official-source screening and fixture audit.
+Each real workstation probe then fixed an exact candidate/runtime row,
+controlled inputs and dependency closure, frozen smoke fixture and method,
+clean full SHA, evidence location, timeouts, and cleanup.
 
-Bring up each official model/runtime on workstation and Pi 5 CPU-only hardware.
-Run native and thin Python-adapter smoke tests with one frozen, approximately
-three-second PCM fixture. Record partial/final behavior, diagnostic latency,
-RTF, RSS/PSS, persistent reset, cancel, cleanup, and offline closure.
+The completed M1 scope is official model/runtime workstation development and
+non-formal feasibility verification. It runs native and thin Python-adapter
+smoke tests with one frozen, approximately three-second PCM fixture and records
+partial/final behavior, diagnostic latency, RTF, RSS/PSS, persistent reset,
+cancel, cleanup, and offline closure. It does not claim Raspberry Pi 5
+execution, formal scores, comparative rankings, or target-hardware
+qualification.
 
 ## Workstation development gate
 
-Before scheduling Pi smoke, the workstation must pass the complete non-formal
-functional suite for the candidate: exact-identity and dependency preflight,
+The workstation must pass the complete non-formal functional suite for the
+candidate: exact-identity and dependency preflight,
 native and thin-adapter startup, timestamped PCM input, partial/final events,
 N-best fallback when supported, session isolation, persistent reset, cancel,
 timeout, typed error, recovery, cleanup, bounded shutdown, offline closure, and
@@ -30,10 +33,11 @@ telemetry sanity checks. These runs may expose diagnostic timing and resources,
 but they cannot publish formal scores, rankings, advance claims, or Pi
 dispositions.
 
-The Pi 5 then repeats the frozen critical smoke and lifecycle cases at the same
-clean SHA to establish aarch64, CPU-only, resource, temperature/throttling, and
-hardware behavior. Only Pi evidence may support target-runtime feasibility;
-workstation success is necessary but not sufficient.
+At AR1M2 entry, before formal scoring, the Pi 5 repeats the frozen critical
+smoke and lifecycle cases at an immutable delivery SHA to establish aarch64,
+CPU-only, resource, temperature/throttling, and hardware behavior. Only Pi
+evidence may support target-runtime feasibility; completed M1 workstation
+development remains necessary but not sufficient.
 
 ## Minimum-cost probe order
 
@@ -50,9 +54,9 @@ Apply the same fail-closed order to every candidate:
    verify identities before unpack, install, import, or load. Stop on mismatch.
 4. Run the cheapest official native workstation startup and one frozen smoke;
    then run the thin adapter and complete non-formal functional/lifecycle suite.
-5. Advance only a workstation-complete row to the same-SHA Pi smoke. Preserve
-   every failed or conditional row; do not spend a higher-cost stage to answer a
-   question already closed by a lower-cost stage.
+5. Preserve every failed or conditional row and hand workstation-complete rows
+   to the AR1M2 entry gate. Do not spend a higher-cost stage to answer a question
+   already closed by a lower-cost stage.
 
 Prove a fake VAD/fake scorer scaffold and investigate N-best, confidence,
 timestamp, endpoint, and future scorer directions. Produce probe dispositions
@@ -86,7 +90,7 @@ The confirmed target and completed pre-execution research are consolidated in
 It remains the identity baseline; current development execution is documented
 separately.
 
-## Current workstation development state
+## Completed workstation development state
 
 All five exact candidates have completed native and thin-adapter development
 bring-up, paced TTFT and speech-end timing, unpaced full-utterance RTF,
@@ -99,9 +103,10 @@ with 2 vCPUs and CPU-only execution. It is not Raspberry Pi 5 or aarch64
 evidence. The implementation and sanitized breakdown are documented in
 [`AR1M1 Workstation Development Report`](../research/ar1_m1_workstation_development_report.md).
 
-The runs remain explicitly non-formal. M1 does not exit until this sanitized
-closeout is reviewed, the fixture coverage gate is closed, and real Pi 5
-critical smoke/lifecycle evidence is reviewed.
+The runs remain explicitly non-formal. On 2026-09-01 the User reviewed this
+scope boundary, directed minimum fixture gap collection to AR1M2 entry, and
+approved closing AR1M1. Real Pi 5 critical smoke/lifecycle evidence remains an
+AR1M2 pre-formal entry gate and is not implied by this completion.
 
 ## Fixture gate
 
@@ -112,9 +117,27 @@ three-second PCM smoke fixture. Collect a replacement only when the audit
 documents that no existing authorized fixture is suitable; this smoke fixture
 cannot later become final holdout.
 
-Before AR1M1 exit, complete the product-coverage matrix. Collect only the
-minimum authorized prerecorded audio or annotations needed to close documented
-gaps, and complete references, checksums, sensitivity, license, and prior-use
-review. Propose disjoint development, adjustment, regression, and final-holdout
-roles. No role becomes formal and no holdout may be inspected until User review
-and the AR1M2 entry freeze.
+For AR1M1 exit, complete the product-coverage matrix at metadata level and
+document every gap with its minimum closure action. By User direction, collect
+or derive the minimum authorized prerecorded audio or annotations at AR1M2
+entry, then complete references, checksums, sensitivity, license, and prior-use
+review. No role becomes formal and no holdout may be inspected until User
+review and the AR1M2 entry freeze. The schedule-only revision is recorded in
+`asr_r1/manifests/m1_fixture_schedule_revision.json`.
+
+## Completion evidence
+
+- All five exact candidates passed native, thin-adapter, lifecycle, offline,
+  timeout, recovery, cleanup, and telemetry development checks.
+- Runtime-harness SHA `f478f4baab39c99c361e63bb9d956f09384efecc`
+  and append-only offline-audit-fix SHA
+  `55c28ab0eef50ba41dbee1ac1abc6a162f2bb2a6` identify the clean execution
+  implementations.
+- The complete repository test suite, compilation, data-safety, readiness,
+  clean-tree, and relocated-checkout checks passed.
+- Failed attempts and rows above the RSS reference remain preserved.
+- Results are x86_64 Ubuntu 24.04, 2-vCPU, CPU-only, non-formal diagnostics and
+  explicitly not Raspberry Pi 5 evidence.
+- User approved the scope revision and AR1M1 closure on 2026-09-01.
+
+AR1M1 completion is identified by immutable annotated tag `asr_r1_m1`.

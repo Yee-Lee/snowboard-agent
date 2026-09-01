@@ -16,9 +16,10 @@ non-formal functional coverage: schemas, manifests, fake/unit tests, native and
 thin-adapter contracts, lifecycle, partial/final behavior, N-best fallback,
 cancel, timeout, typed error, recovery, reset, cleanup, offline/dependency
 preflight, and telemetry sanity checks. Formal scoring or comparative results
-and integrated product qualification are Pi 5-only. Pi smoke repeats critical
-functional and lifecycle cases to prove aarch64 and hardware behavior;
-workstation success never substitutes for Pi evidence.
+and integrated product qualification are Pi 5-only. At AR1M2 entry, before
+formal scoring, Pi smoke repeats critical functional and lifecycle cases to
+prove aarch64 and hardware behavior; workstation success never substitutes for
+Pi evidence.
 
 Developer prepares source and a full SHA. Tester checks out that exact SHA on
 Pi, verifies a clean tree and environment, runs the frozen packet, and returns

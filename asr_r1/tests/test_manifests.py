@@ -30,6 +30,7 @@ class SchemaAndManifestTest(unittest.TestCase):
             "asr_r1/manifests/control_provenance.json",
             "asr_r1/manifests/fixture_reuse_audit_plan.json",
             "asr_r1/manifests/m1_fixture_coverage_audit.json",
+            "asr_r1/manifests/m1_fixture_schedule_revision.json",
             "asr_r1/manifests/m1_baseline_method.json",
             "asr_r1/manifests/m1_identity_screening.json",
             "asr_r1/manifests/m1_postprocess_research.json",
@@ -198,6 +199,29 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertIsNone(audit["role_assignment"])
         self.assertIsNone(audit["holdout_proposal"])
         self.assertTrue(audit["user_review_required_before_role_freeze"])
+
+    def test_fixture_gap_collection_moves_to_m2_entry_without_relaxation(self) -> None:
+        revision = load("manifests/m1_fixture_schedule_revision.json")
+        self.assertFalse(revision["formal_result"])
+        self.assertEqual(
+            "USER_APPROVED_EFFECTIVE_AT_AR1M1_EXIT",
+            revision["status"],
+        )
+        self.assertEqual(
+            ["AR1M1_EXIT", "AR1M2_ENTRY_BEFORE_FORMAL_EXECUTION"],
+            [gate["gate"] for gate in revision["revised_gates"]],
+        )
+        self.assertIn(
+            "NO_ADDITIONAL_GAP_COLLECTION",
+            revision["revised_gates"][0]["collection"],
+        )
+        self.assertEqual(
+            "MINIMUM_DOCUMENTED_GAP_CLOSURE_REQUIRED",
+            revision["revised_gates"][1]["collection"],
+        )
+        self.assertIsNone(revision["role_assignment"])
+        self.assertIsNone(revision["holdout_proposal"])
+        self.assertTrue(revision["user_review_required_before_role_freeze"])
 
     def test_m1_postprocess_research_is_diagnostic_only(self) -> None:
         research = load("manifests/m1_postprocess_research.json")
