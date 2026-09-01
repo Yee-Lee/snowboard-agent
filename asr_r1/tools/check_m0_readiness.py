@@ -43,7 +43,9 @@ def _require(condition: bool, message: str, failures: list[str]) -> None:
         failures.append(message)
 
 
-def verify(root: Path, expect_tag: bool = False) -> list[str]:
+def verify(
+    root: Path, expect_tag: bool = False, require_clean: bool = False
+) -> list[str]:
     root = root.resolve()
     failures: list[str] = []
 
@@ -239,12 +241,30 @@ def verify(root: Path, expect_tag: bool = False) -> list[str]:
             failures,
         )
         if tag_type.returncode == 0:
+            tag_commit = _git("rev-list", "-n", "1", "asr_r1_m0")
             _require(
-                _git("rev-list", "-n", "1", "asr_r1_m0") == _git("rev-parse", "HEAD"),
-                "asr_r1_m0 must resolve to HEAD",
+                subprocess.run(
+                    ["git", "merge-base", "--is-ancestor", tag_commit, "HEAD"],
+                    cwd=root,
+                    check=False,
+                ).returncode
+                == 0,
+                "asr_r1_m0 must be an ancestor of HEAD",
                 failures,
             )
-        _require(not _git("status", "--porcelain"), "post-tag worktree must be clean", failures)
+            tagged_milestone = _git(
+                "show", "asr_r1_m0:docs/milestone/ar1_m0_research_readiness.md"
+            )
+            tagged_index = _git("show", "asr_r1_m0:docs/milestone/README.md")
+            _require(
+                "Status: `COMPLETE`" in tagged_milestone
+                and "| AR1M0 | `COMPLETE` |" in tagged_index,
+                "asr_r1_m0 does not contain the completed M0 state",
+                failures,
+            )
+
+    if require_clean:
+        _require(not _git("status", "--porcelain"), "worktree must be clean", failures)
 
     for finding in scan_repository(root):
         failures.append(f"data safety: {finding.path}: {finding.reason}")
@@ -254,8 +274,11 @@ def verify(root: Path, expect_tag: bool = False) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expect-tag", action="store_true")
+    parser.add_argument("--require-clean", action="store_true")
     args = parser.parse_args()
-    failures = verify(REPO_ROOT, expect_tag=args.expect_tag)
+    failures = verify(
+        REPO_ROOT, expect_tag=args.expect_tag, require_clean=args.require_clean
+    )
     if failures:
         for failure in failures:
             print(f"FAIL {failure}")

@@ -1,6 +1,18 @@
 # AR1M1: Runtime Feasibility and Integration Readiness
 
-Status: `NOT_STARTED`
+Status: `IN_PROGRESS`
+
+Entry date: 2026-09-01
+
+Entry baseline: `asr_r1_m0` /
+`53d6c853486d625b1af9e37f7126a248f6d591f8`
+
+AR1M1 starts with metadata-only official-source screening and fixture audit.
+This entry does not authorize real artifact acquisition, build, installation,
+import, model load, inference, benchmark, or Pi execution. Each real probe must
+first fix an exact candidate/runtime row, controlled inputs and dependency
+closure, frozen smoke fixture and method, clean full SHA, evidence location,
+timeouts, and cleanup.
 
 Bring up each official model/runtime on workstation and Pi 5 CPU-only hardware.
 Run native and thin Python-adapter smoke tests with one frozen, approximately
@@ -22,6 +34,25 @@ The Pi 5 then repeats the frozen critical smoke and lifecycle cases at the same
 clean SHA to establish aarch64, CPU-only, resource, temperature/throttling, and
 hardware behavior. Only Pi evidence may support target-runtime feasibility;
 workstation success is necessary but not sufficient.
+
+## Minimum-cost probe order
+
+Apply the same fail-closed order to every candidate:
+
+1. Verify an official immutable checkpoint, runtime, license/notice, supported
+   streaming contract, and credible workstation/aarch64 path using metadata
+   only. Record `LOCKABLE`, `CONDITIONAL`, or `STOP` without downloading a
+   model.
+2. For a lockable row, freeze source URLs/revisions, filenames, declared sizes,
+   expected checksums, dependency closure, offline recipe, fixture, commands,
+   timeouts, evidence, and cleanup at a clean SHA.
+3. Acquire the smallest exact official artifact set into controlled storage and
+   verify identities before unpack, install, import, or load. Stop on mismatch.
+4. Run the cheapest official native workstation startup and one frozen smoke;
+   then run the thin adapter and complete non-formal functional/lifecycle suite.
+5. Advance only a workstation-complete row to the same-SHA Pi smoke. Preserve
+   every failed or conditional row; do not spend a higher-cost stage to answer a
+   question already closed by a lower-cost stage.
 
 Prove a fake VAD/fake scorer scaffold and investigate N-best, confidence,
 timestamp, endpoint, and future scorer directions. Produce probe dispositions

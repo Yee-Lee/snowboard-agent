@@ -6,7 +6,7 @@ Last updated: 2026-09-01
 
 Overall reachability: `ON_TRACK`
 
-Active milestone: `NONE — AR1M0 complete; AR1M1 not entered`
+Active milestone: `AR1M1 — Runtime Feasibility and Integration Readiness`
 
 The contract and receipt are committed on `asr_r1`. The legacy Audio tree is
 isolated and recoverable at `audio_m4`. Candidate/control manifests, fixture
@@ -16,11 +16,14 @@ User approved its completion commit, annotated tag, and push on 2026-09-01.
 
 No real model acquisition, build, or execution occurred. AR1M0 completion is
 identified by immutable annotated tag `asr_r1_m0`; no later AR1 tag exists.
+AR1M1 entered from that exact tag on 2026-09-01. Its first authorized work is
+metadata-only identity/runtime screening and fixture audit; real acquisition or
+execution still requires an exact row, frozen packet, and clean candidate SHA.
 
 | Milestone | Status | File |
 | --- | --- | --- |
 | AR1M0 | `COMPLETE` | [AR1M0](ar1_m0_research_readiness.md) |
-| AR1M1 | `NOT_STARTED` | [AR1M1](ar1_m1_runtime_feasibility.md) |
+| AR1M1 | `IN_PROGRESS` | [AR1M1](ar1_m1_runtime_feasibility.md) |
 | AR1M2 | `NOT_STARTED` | [AR1M2](ar1_m2_candidate_evaluation.md) |
 | AR1M3 | `NOT_STARTED` | [AR1M3](ar1_m3_integrated_qualification.md) |
 | AR1M4 | `NOT_STARTED` | [AR1M4](ar1_m4_outcome_handoff.md) |
@@ -48,6 +51,8 @@ method revision and new frozen packet before collection or restart.
 
 ## Next authorized work
 
-Prepare an explicit AR1M1 entry update and exact-identity research plan. Do not
-start real model acquisition, build, import, load, or execution until AR1M1
-entry and its authorized preconditions are recorded.
+Run metadata-only official-source screening for each candidate/runtime and audit
+the historical fixture catalogs. Lock or stop each exact row before acquiring
+artifacts. Do not build, import, load, or execute a real candidate until its
+exact manifest, frozen smoke fixture, clean SHA, dependency closure, and
+reviewed packet are recorded.
