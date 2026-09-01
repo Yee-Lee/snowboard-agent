@@ -5,10 +5,10 @@ Status: `DRAFT / NON-FORMAL X86 WORKSTATION DEVELOPMENT EVIDENCE / NOT PI 5`
 Date: 2026-09-01
 
 This report records engineering bring-up, not a score, ranking, Pi hardware
-disposition, qualification decision, or final outcome. The measurements below
-are single-run diagnostics from a development worktree. They must be repeated
-from a clean immutable SHA before they can become reviewed M1 evidence, and
-workstation results cannot replace Pi 5 smoke or formal comparison.
+disposition, qualification decision, or final outcome. The five-row workstation
+packet has now been repeated from clean immutable SHAs. Its measurements remain
+single-run, non-formal development diagnostics, and workstation results cannot
+replace Pi 5 smoke or formal comparison.
 
 ## Execution environment — explicitly not Raspberry Pi 5
 
@@ -54,21 +54,51 @@ and delivery lateness were sampled by the supervising process. The
 rule. Transcript content and raw output remain outside Git; only hashes and
 sanitized aggregates are retained.
 
+## Clean-SHA workstation verification
+
+The runtime harness and five exact native candidates were verified from clean
+SHA `f478f4baab39c99c361e63bb9d956f09384efecc`. A strict offline-audit parser
+incorrectly treated `strace` signal metadata as a network syscall; the failed
+attempt was preserved, the parser was fixed without changing a model runtime,
+and all offline/lifecycle cases were verified from clean append-only SHA
+`55c28ab0eef50ba41dbee1ac1abc6a162f2bb2a6`.
+
+At those SHAs:
+
+- exact artifact, dependency, fixture, runtime, and unloaded-model preflights
+  passed for all five rows;
+- all five native probes returned non-empty sanitized finals;
+- all five paced adapter children completed under syscall-level offline audit,
+  and every successful network trace was empty;
+- every candidate passed all 14 lifecycle assertions for isolation, reset,
+  cancel, typed errors, recovery, final/fallback behavior, cleanup, and bounded
+  shutdown; and
+- 64 repository tests, bytecode compilation, data-safety checks, M0 readiness,
+  M1 clean-tree readiness, and a relocated-checkout test passed.
+
+Two unsuccessful attempts remain documented rather than being erased. The
+first was the `SIGCHLD` metadata false positive above. The second was an
+operator filename typo for the Nemotron artifact; it produced no network trace
+and was repeated once with the frozen exact filename. Neither failure was a
+model-performance failure, and no additional model rerun is pending.
+
 ## X86 2-vCPU diagnostic observations
 
 | Probe order | Candidate | Native load (s) | Full decode (s) | Full RTF | TTFT (ms) | Speech-end → final (ms) | Native decode cores | Paced deadline misses / 17 | Paced peak RSS |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | Zipformer x-large INT8 | 76.16 | 6.40 | 2.405 | 2,833 | 4,183 | 1.50 | 15 | 1,080,000,512 B |
-| 2 | WeNet WenetSpeech CTC INT8 | 3.56 | 1.03 | 0.387 | 1,129 | 92 | 1.55 | 7 | 249,892,864 B |
-| 3 | Nemotron 3.5 Q8_0 | 0.45 | 27.83 | 10.461 | 10,813 | 22,574 | 0.93 | 15 | 998,588,416 B |
-| 4 | Zipformer large INT8 | 38.97 | 4.57 | 1.718 | 993 | 170 | 1.15 | 14 | 295,137,280 B |
-| 5 | WeNet AISHELL CTC INT8 | 2.39 | 0.45 | 0.168 | 763 | 10 | 1.57 | 2 | 145,231,872 B |
+| 1 | Zipformer x-large INT8 | 65.13 | 5.88 | 2.209 | 2,833 | 4,183 | 1.46 | 15 | 1,080,000,512 B |
+| 2 | WeNet WenetSpeech CTC INT8 | 2.94 | 1.09 | 0.409 | 1,129 | 92 | 1.57 | 7 | 249,892,864 B |
+| 3 | Nemotron 3.5 Q8_0 | 0.27 | 25.00 | 9.399 | 10,813 | 22,574 | 0.89 | 15 | 998,588,416 B |
+| 4 | Zipformer large INT8 | 33.06 | 2.84 | 1.067 | 993 | 170 | 1.57 | 14 | 295,137,280 B |
+| 5 | WeNet AISHELL CTC INT8 | 2.48 | 0.58 | 0.220 | 763 | 10 | 1.56 | 2 | 145,231,872 B |
 
 These values are not Pi 5 results and do not measure recognition quality. The
-table uses the latest matching diagnostic where a path was rerun; observed
-run-to-run variance, especially for Nemotron and cold load, is another reason
-the clean-SHA packet requires repeats. A single known regression utterance only
-proves that each exact runtime can load, accept streaming PCM,
+native load, full decode, full RTF, and native-core columns are clean-SHA
+observations. The paced TTFT, speech-end, deadline-miss, and paced-RSS columns
+remain the earlier explicit development observations because the clean offline
+wrapper retained only a sanitized child-output hash; the report does not infer
+timings from that hash. A single known regression utterance only proves that
+each exact runtime can load, accept streaming PCM,
 emit partials and a non-empty final, and shut down. Differences between native
 and paced load observations also show that one cold-load number is not stable
 enough to extrapolate to Pi 5.
@@ -80,7 +110,7 @@ enough to extrapolate to Pi 5.
 The exact large ONNX closure works through sherpa-onnx and uses more than the
 RSS reference in the paced process tree. Cold initialization consumed roughly
 one effective core and took tens of seconds. Resident decode used about 1.5
-cores but still had RTF 2.405; the paced run accumulated 15 deadline misses,
+cores but still had RTF 2.209; the paced run accumulated 15 deadline misses,
 and its 2.8-second TTFT was followed by more than four seconds of
 speech-end-to-final delay.
 
@@ -108,8 +138,8 @@ Taiwan Mandarin or English entities.
 
 The portable C ABI and Q8_0 artifact load quickly, but inference is the limiting
 stage. Decode used only about 0.92–0.93 effective core, and repeated development
-runs placed full-utterance RTF from about 8.7 to 10.5. The latest fail-closed
-native-final run recorded RTF 10.461. TTFT exceeded ten seconds, and the paced
+runs placed full-utterance RTF from about 8.7 to 10.5. The clean fail-closed
+native-final run recorded RTF 9.399. TTFT exceeded ten seconds, and the paced
 stream accumulated more than 18
 seconds of delivery backlog. Peak RSS sat immediately below the reference,
 leaving effectively no safe product headroom under an approximately 1 GB ASR
@@ -127,7 +157,8 @@ not an interpretation change to this result.
 
 The large model reduced peak RSS to roughly 295 MB and produced a first partial
 in about one second, but cold load still took tens of seconds. Native
-full-utterance RTF remained above one. The paced stream finished close to audio
+full-utterance RTF remained slightly above one. The paced stream finished close
+to audio
 duration by using more parallel CPU during parts of the run, yet 14 deadline
 misses and approximately 350 ms maximum delivery lateness expose uneven chunk
 cost rather than consistently bounded streaming work.
@@ -142,7 +173,7 @@ guarantee sustained full-sentence throughput or cheap process recovery.
 
 This is the smallest operational row in the current set. It loaded in a few
 seconds, stayed near 145 MB RSS, used about 1.57 cores during unpaced decode,
-and the latest native-final run recorded RTF 0.168. Its TTFT was about 763 ms,
+and the clean native-final run recorded RTF 0.220. Its TTFT was about 763 ms,
 only two chunks exceeded the
 strict 5 ms delivery tolerance, and speech-end-to-final was about 10 ms.
 
@@ -207,11 +238,11 @@ offline closure, and prevent later teams from repeating expensive paths under
 the false assumption that model quantization or a successful three-second
 transcript implies product feasibility.
 
-## Remaining before reviewed M1 evidence
+## Remaining before M1 exit
 
-- Commit a complete reviewable development segment, then repeat critical
-  preflight, native, adapter, lifecycle, TTFT/RTF, offline, timeout, cleanup,
-  and telemetry checks from that clean immutable SHA.
+- Review and commit this sanitized clean-SHA workstation closeout. No further
+  workstation model rerun is planned unless runtime or measurement code changes
+  or review identifies a defect.
 - Close the documented fixture coverage gaps for intent taxonomy, English
   entities, volume conditions, and speech in noise. Role and holdout freeze
   still requires User review.

@@ -22,13 +22,13 @@ INT8, and WeNet AISHELL streaming CTC INT8. The order is not a score or ranking.
 PengChengStarling is stopped by User decision because its 1.22 GB inference
 closure exceeds the approximately 1 GB ASR budget.
 
-All five exact rows have completed non-formal development bring-up in an
-x86_64 Ubuntu 24.04 virtual environment limited to 2 vCPUs and CPU-only
-execution. Native and thin-adapter paths produced partials and non-empty finals;
-the lifecycle, offline, TTFT/full-utterance RTF, resource, timeout, cleanup, and
-diagnostic post-process interface scaffolds are implemented. These are
-development diagnostics from a changing worktree, not reviewed evidence, not
-Pi 5 results, and not formal scores or qualification decisions.
+All five exact rows have completed non-formal development bring-up and clean-SHA
+workstation repetition in an x86_64 Ubuntu 24.04 virtual environment limited to
+2 vCPUs and CPU-only execution. Native and thin-adapter paths produced partials
+and non-empty finals; the lifecycle, offline, TTFT/full-utterance RTF, resource,
+timeout, cleanup, and diagnostic post-process interface scaffolds are
+implemented. These are non-formal development diagnostics, not Pi 5 results,
+formal scores, or qualification decisions.
 
 The non-formal workstation baseline method uses a 1,000,000,000-byte RSS
 reference with the existing 2.66-second controlled smoke identity. RSS is an
@@ -67,15 +67,15 @@ method revision and new frozen packet before collection or restart.
 - Nemotron lists broad-coverage `zh-CN`, not `zh-TW`; M1 smoke cannot establish
   Taiwan Mandarin quality.
 - The controlled source WAV and reproducible frozen p0 derivation are available;
-  the revised method still needs a clean probe SHA before real acquisition.
+  clean workstation probe SHAs are recorded, but the Pi packet remains pending.
 - Workstation/aarch64 paths are documented, but Pi 5 behavior remains unproven.
 
 ## Next authorized work
 
-Complete review of the M1 development segment, commit a clean candidate SHA,
-and repeat the critical five-row workstation packet with the exact external
-artifact closure. Close the documented fixture coverage gaps before M1 exit,
-then repeat the frozen critical smoke and lifecycle cases on a real Pi 5 at the
-same immutable SHA. Preserve all rows above the RSS reference and all failed
-evidence. Do not publish a formal score, ranking, qualification, or Pi
+Complete review and commit of the sanitized clean-SHA workstation closeout; no
+additional model rerun is pending unless its implementation or measurement
+method changes. Close the documented fixture coverage gaps before M1 exit,
+then repeat the frozen critical smoke and lifecycle cases on a real Pi 5 at an
+immutable delivery SHA. Preserve all rows above the RSS reference and all
+failed evidence. Do not publish a formal score, ranking, qualification, or Pi
 disposition from the x86 workstation results.

@@ -90,15 +90,17 @@ separately.
 
 All five exact candidates have completed native and thin-adapter development
 bring-up, paced TTFT and speech-end timing, unpaced full-utterance RTF,
-lifecycle, resource, and syscall-level offline probes. The environment is an
-x86_64 Ubuntu 24.04 virtual machine with 2 vCPUs and CPU-only execution. It is
-not Raspberry Pi 5 or aarch64 evidence. The implementation and sanitized
-breakdown are documented in
+lifecycle, resource, and syscall-level offline probes. The clean-SHA
+workstation repetition completed at runtime-harness SHA
+`f478f4baab39c99c361e63bb9d956f09384efecc` and append-only offline-audit-fix
+SHA `55c28ab0eef50ba41dbee1ac1abc6a162f2bb2a6`; no further workstation model
+rerun is pending. The environment is an x86_64 Ubuntu 24.04 virtual machine
+with 2 vCPUs and CPU-only execution. It is not Raspberry Pi 5 or aarch64
+evidence. The implementation and sanitized breakdown are documented in
 [`AR1M1 Workstation Development Report`](../research/ar1_m1_workstation_development_report.md).
 
-The runs remain explicitly non-formal and were produced while the development
-worktree was changing. M1 does not exit until a reviewable commit is followed
-by clean-SHA repetition, the fixture coverage gate is closed, and real Pi 5
+The runs remain explicitly non-formal. M1 does not exit until this sanitized
+closeout is reviewed, the fixture coverage gate is closed, and real Pi 5
 critical smoke/lifecycle evidence is reviewed.
 
 ## Fixture gate
