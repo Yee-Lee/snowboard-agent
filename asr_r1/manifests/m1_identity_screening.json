@@ -4,9 +4,10 @@
   "status": "FROZEN_METADATA_SCREEN_NON_FORMAL_NO_EXECUTION_AUTHORIZATION",
   "screening_date": "2026-09-01",
   "formal_result": false,
-  "purpose": "Lock the exact five-candidate development order and stop higher-cost work when identity, platform, license, streaming, or the 1 GB memory path is not reproducible.",
+  "purpose": "Lock the exact five-candidate development order and stop higher-cost work when identity, platform, license, or streaming is not reproducible. Memory is observed as POC evidence and is not an automatic stop rule.",
   "order_policy": "development_order is User-directed probe order only; it is not a score, quality ranking, hardware disposition, or qualification decision.",
-  "memory_budget_bytes": 1000000000,
+  "memory_reference_bytes": 1000000000,
+  "memory_policy": "Record peak process-tree RSS and whether it exceeds the reference. Never terminate or eliminate a POC candidate solely because of this observation.",
   "disposition_meaning": {
     "LOCKABLE": "Metadata supports preparing a separate clean-SHA probe packet; this does not authorize acquisition or imply target feasibility.",
     "STOP": "Preserve the row and perform no acquisition or execution in the current M1 method."
@@ -63,11 +64,11 @@
         "streaming_contract": "online transducer",
         "language_scope": "multi-dataset Simplified Chinese training; no zh-TW quality claim"
       },
-      "memory_analysis": "The approximately 736 MiB declared inference files leave a narrow margin inside the 1,000,000,000-byte total RSS budget. Only a fail-closed load and smoke may close feasibility.",
+      "memory_analysis": "The approximately 736 MiB declared inference files make the 1,000,000,000-byte reference a high-risk boundary. M1 records the actual peak but does not terminate or eliminate this POC path for exceeding it.",
       "open_conditions": [
         "verify archive digest before unpack and compute extracted-file digests",
         "restore and verify the frozen controlled smoke WAV",
-        "stop immediately if process-tree RSS exceeds 1,000,000,000 bytes",
+        "record peak process-tree RSS and retain the row even above the 1,000,000,000-byte reference",
         "complete workstation lifecycle probes before any Pi scheduling"
       ]
     },
@@ -139,12 +140,12 @@
         "model": "NVIDIA Open Model License (OpenMDW 1.1)",
         "runtime": "Apache-2.0"
       },
-      "memory_analysis": "The 741,548,352-byte GGUF leaves only 258,451,648 bytes inside the total 1,000,000,000-byte RSS budget before runtime and streaming state. M1 must treat it as borderline until measured.",
+      "memory_analysis": "The 741,548,352-byte GGUF leaves 258,451,648 bytes below the 1,000,000,000-byte reference before runtime and streaming state. M1 records the actual peak but does not terminate or eliminate this POC path for exceeding it.",
       "open_conditions": [
         "verify model and runtime archive digests before load",
         "restore and verify the frozen controlled smoke WAV",
         "run only local --device cpu --mode stream --language zh-CN",
-        "stop immediately if process-tree RSS exceeds 1,000,000,000 bytes",
+        "record peak process-tree RSS and retain the row even above the 1,000,000,000-byte reference",
         "review OpenMDW 1.1 obligations before any product recommendation"
       ]
     },

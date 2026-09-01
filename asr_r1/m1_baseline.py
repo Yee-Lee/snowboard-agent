@@ -115,15 +115,14 @@ def _stop_process_group(process: subprocess.Popen[str]) -> None:
 def run_monitored(
     argv: Sequence[str],
     timeout_seconds: float,
-    memory_budget_bytes: int,
     cwd: Path | None = None,
 ) -> CapturedRun:
-    """Run without a shell, sampling total process-tree RSS until exit."""
+    """Run without a shell, observing process-tree RSS without a memory kill."""
 
     if not argv:
         raise ValueError("argv must not be empty")
-    if timeout_seconds <= 0 or memory_budget_bytes <= 0:
-        raise ValueError("timeout and memory budget must be positive")
+    if timeout_seconds <= 0:
+        raise ValueError("timeout must be positive")
     environment = os.environ.copy()
     environment.update(
         {
@@ -151,10 +150,6 @@ def run_monitored(
     status = "COMPLETED"
     while process.poll() is None:
         peak_rss = max(peak_rss, _process_tree_rss_bytes(process.pid))
-        if peak_rss > memory_budget_bytes:
-            status = "RSS_LIMIT_EXCEEDED"
-            _stop_process_group(process)
-            break
         if time.monotonic() - started > timeout_seconds:
             status = "TIMEOUT"
             _stop_process_group(process)
@@ -200,7 +195,17 @@ def _row(candidate_id: str) -> tuple[dict, dict]:
     return method, {"command": command, "identity": row}
 
 
-def _failed_result(candidate_id: str, run: CapturedRun) -> dict[str, object]:
+def _resource_fields(run: CapturedRun, reference_bytes: int) -> dict[str, object]:
+    return {
+        "peak_process_tree_rss_bytes": run.peak_process_tree_rss_bytes,
+        "memory_reference_bytes": reference_bytes,
+        "rss_above_reference": run.peak_process_tree_rss_bytes > reference_bytes,
+    }
+
+
+def _failed_result(
+    candidate_id: str, run: CapturedRun, reference_bytes: int
+) -> dict[str, object]:
     return {
         "schema_version": "1.0",
         "formal_result": False,
@@ -209,7 +214,7 @@ def _failed_result(candidate_id: str, run: CapturedRun) -> dict[str, object]:
         "status": run.status,
         "returncode": run.returncode,
         "elapsed_seconds": run.elapsed_seconds,
-        "peak_process_tree_rss_bytes": run.peak_process_tree_rss_bytes,
+        **_resource_fields(run, reference_bytes),
         "stdout_sha256": _output_digest(run.stdout),
         "stderr_sha256": _output_digest(run.stderr),
         "interpretation": "NON_FORMAL_WORKSTATION_SMOKE",
@@ -221,7 +226,7 @@ def _run_sherpa(
     model_dir: Path,
     fixture: Path,
     timeout_seconds: int,
-    memory_budget_bytes: int,
+    memory_reference_bytes: int,
     num_threads: int,
 ) -> dict[str, object]:
     argv = [
@@ -237,13 +242,16 @@ def _run_sherpa(
         "--num-threads",
         str(num_threads),
     ]
-    run = run_monitored(argv, timeout_seconds, memory_budget_bytes, _repo_root())
+    run = run_monitored(argv, timeout_seconds, _repo_root())
     if run.status != "COMPLETED":
-        return _failed_result(candidate_id, run)
+        return _failed_result(candidate_id, run, memory_reference_bytes)
     try:
         result = json.loads(run.stdout)
     except json.JSONDecodeError:
-        return {**_failed_result(candidate_id, run), "status": "INVALID_OUTPUT"}
+        return {
+            **_failed_result(candidate_id, run, memory_reference_bytes),
+            "status": "INVALID_OUTPUT",
+        }
     result.update(
         {
             "smoke_completed": bool(result.get("final_non_empty")),
@@ -252,7 +260,7 @@ def _run_sherpa(
                 if result.get("final_non_empty")
                 else "EMPTY_FINAL"
             ),
-            "peak_process_tree_rss_bytes": run.peak_process_tree_rss_bytes,
+            **_resource_fields(run, memory_reference_bytes),
             "stdout_sha256": _output_digest(run.stdout),
             "stderr_sha256": _output_digest(run.stderr),
         }
@@ -266,7 +274,7 @@ def _run_nemotron(
     model: Path,
     fixture: Path,
     timeout_seconds: int,
-    memory_budget_bytes: int,
+    memory_reference_bytes: int,
 ) -> dict[str, object]:
     common = ["--model", str(model), "--device", "cpu", "--language", "zh-CN"]
     smoke_argv = [
@@ -278,16 +286,22 @@ def _run_nemotron(
         "--no-warmup",
         "--json",
     ]
-    smoke = run_monitored(smoke_argv, timeout_seconds, memory_budget_bytes)
+    smoke = run_monitored(smoke_argv, timeout_seconds)
     if smoke.status != "COMPLETED":
-        return _failed_result(candidate_id, smoke)
+        return _failed_result(candidate_id, smoke, memory_reference_bytes)
     try:
         transcript = json.loads(smoke.stdout)
         final_text = transcript["text"].strip()
     except (json.JSONDecodeError, KeyError, AttributeError):
-        return {**_failed_result(candidate_id, smoke), "status": "INVALID_OUTPUT"}
+        return {
+            **_failed_result(candidate_id, smoke, memory_reference_bytes),
+            "status": "INVALID_OUTPUT",
+        }
     if not final_text:
-        return {**_failed_result(candidate_id, smoke), "status": "EMPTY_FINAL"}
+        return {
+            **_failed_result(candidate_id, smoke, memory_reference_bytes),
+            "status": "EMPTY_FINAL",
+        }
 
     bench_argv = [
         str(binary),
@@ -305,9 +319,9 @@ def _run_nemotron(
         "0",
         "--json",
     ]
-    bench = run_monitored(bench_argv, timeout_seconds, memory_budget_bytes)
+    bench = run_monitored(bench_argv, timeout_seconds)
     if bench.status != "COMPLETED":
-        return _failed_result(candidate_id, bench)
+        return _failed_result(candidate_id, bench, memory_reference_bytes)
     try:
         payload = json.loads(bench.stdout)
         native = payload["runs"][0]
@@ -315,7 +329,15 @@ def _run_nemotron(
         if rtfx <= 0:
             raise ValueError("invalid rtfx")
     except (json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError):
-        return {**_failed_result(candidate_id, bench), "status": "INVALID_OUTPUT"}
+        return {
+            **_failed_result(candidate_id, bench, memory_reference_bytes),
+            "status": "INVALID_OUTPUT",
+        }
+
+    peak_rss = max(
+        smoke.peak_process_tree_rss_bytes,
+        bench.peak_process_tree_rss_bytes,
+    )
 
     return {
         "schema_version": "1.0",
@@ -328,10 +350,9 @@ def _run_nemotron(
         "model_load_seconds": float(payload["load_ms"]) / 1_000,
         "decode_wall_seconds": float(native["wall_seconds"]),
         "rtf": 1 / rtfx,
-        "peak_process_tree_rss_bytes": max(
-            smoke.peak_process_tree_rss_bytes,
-            bench.peak_process_tree_rss_bytes,
-        ),
+        "peak_process_tree_rss_bytes": peak_rss,
+        "memory_reference_bytes": memory_reference_bytes,
+        "rss_above_reference": peak_rss > memory_reference_bytes,
         "final_non_empty": True,
         "final_text_sha256": _output_digest(final_text),
         "smoke_stdout_sha256": _output_digest(smoke.stdout),
@@ -360,7 +381,7 @@ def run_candidate(
     fixture = _verify_external(controlled_wav, repo_root, "controlled audio")
     verify_controlled_smoke_fixture(repo_root, fixture)
     model_path = _verify_external(model_path, repo_root, "model artifact")
-    budget = method["memory_budget_bytes"]
+    memory_reference = method["memory_reference_bytes"]
     timeout = command["timeout_seconds"]
 
     if command["model_kind"] == "zipformer_transducer":
@@ -377,7 +398,7 @@ def run_candidate(
             if not (model_path / filename).is_file():
                 raise FileNotFoundError(model_path / filename)
         return _run_sherpa(
-            candidate_id, model_path, fixture, timeout, budget, num_threads
+            candidate_id, model_path, fixture, timeout, memory_reference, num_threads
         )
 
     if command["model_kind"] == "wenet_ctc":
@@ -393,7 +414,7 @@ def run_candidate(
             checkpoint["tokens"]["sha256"],
         )
         return _run_sherpa(
-            candidate_id, model_path, fixture, timeout, budget, num_threads
+            candidate_id, model_path, fixture, timeout, memory_reference, num_threads
         )
 
     if command["model_kind"] == "nemotron_3_5_q8_0":
@@ -408,7 +429,7 @@ def run_candidate(
         if not binary.is_file() or not os.access(binary, os.X_OK):
             raise ValueError("runtime binary is not executable")
         return _run_nemotron(
-            candidate_id, binary, model_path, fixture, timeout, budget
+            candidate_id, binary, model_path, fixture, timeout, memory_reference
         )
     raise ValueError("unsupported frozen model kind")
 

@@ -5,7 +5,10 @@ import unittest
 import wave
 from pathlib import Path
 
-from asr_r1.fixture_preflight import verify_controlled_smoke_fixture
+from asr_r1.fixture_preflight import (
+    restore_controlled_smoke_fixture,
+    verify_controlled_smoke_fixture,
+)
 
 
 class FixturePreflightTest(unittest.TestCase):
@@ -15,7 +18,13 @@ class FixturePreflightTest(unittest.TestCase):
         self.repo_root = temporary_root / "repo"
         manifest_dir = self.repo_root / "asr_r1" / "manifests"
         manifest_dir.mkdir(parents=True)
+        self.source_wav = temporary_root / "source.wav"
         self.external_wav = temporary_root / "controlled.wav"
+        with wave.open(str(self.source_wav), "wb") as target:
+            target.setnchannels(1)
+            target.setsampwidth(2)
+            target.setframerate(16_000)
+            target.writeframes(b"\x00\x00" * 640)
         with wave.open(str(self.external_wav), "wb") as target:
             target.setnchannels(1)
             target.setsampwidth(2)
@@ -31,6 +40,13 @@ class FixturePreflightTest(unittest.TestCase):
                 "duration_seconds": 0.02,
                 "size_bytes": len(payload),
                 "sha256": hashlib.sha256(payload).hexdigest(),
+                "source_fixture_sha256": hashlib.sha256(
+                    self.source_wav.read_bytes()
+                ).hexdigest(),
+                "source_size_bytes": self.source_wav.stat().st_size,
+                "source_frames": 640,
+                "crop_start_ms": 10,
+                "crop_end_ms": 30,
             },
         }
         (manifest_dir / "m1_smoke_fixture.json").write_text(
@@ -56,6 +72,23 @@ class FixturePreflightTest(unittest.TestCase):
         inside.write_bytes(self.external_wav.read_bytes())
         with self.assertRaisesRegex(ValueError, "outside the repository"):
             verify_controlled_smoke_fixture(self.repo_root, inside)
+
+    def test_exact_source_reproduces_frozen_crop(self) -> None:
+        restored = self.external_wav.with_name("restored.wav")
+        identity = restore_controlled_smoke_fixture(
+            self.repo_root, self.source_wav, restored
+        )
+        self.assertEqual(320, identity.frames)
+        self.assertEqual(
+            hashlib.sha256(self.external_wav.read_bytes()).hexdigest(),
+            identity.sha256,
+        )
+
+    def test_restore_refuses_existing_output(self) -> None:
+        with self.assertRaises(FileExistsError):
+            restore_controlled_smoke_fixture(
+                self.repo_root, self.source_wav, self.external_wav
+            )
 
 
 if __name__ == "__main__":

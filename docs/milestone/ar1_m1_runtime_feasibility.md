@@ -74,12 +74,12 @@ U2++ attention rescoring was tested. PengChengStarling is preserved as stopped
 after the User eliminated its 1,220,027,735-byte unquantized inference closure.
 
 The baseline uses `asr-clear-002-p0`, a frozen 2.66-second regression smoke,
-deterministic 160 ms chunks, CPU only, and a 1,000,000,000-byte sampled
-process-tree RSS ceiling. Each row must return a non-empty final and record model
-load time when exposed, warm decode wall time, RTF, and peak RSS. The measurement
-is non-formal workstation development evidence only. Artifact acquisition and
-execution remain blocked until the missing external controlled WAV is restored,
-passes exact preflight, and the method is committed at a clean SHA.
+deterministic 160 ms chunks, CPU only, and a 1,000,000,000-byte RSS reference.
+Each row must return a non-empty final and record model load time when exposed,
+warm decode wall time, RTF, peak RSS, and an above-reference flag. RSS does not
+terminate or eliminate a POC row. The controlled source WAV has been recovered
+and the p0 crop reproduces the frozen checksum. Artifact acquisition and
+execution require this revised method at a clean SHA.
 
 ## Fixture gate
 

@@ -89,7 +89,7 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertEqual(
             {
                 "LOCKABLE_METADATA_ONLY",
-                "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
+                "LOCKABLE_RESOURCE_OBSERVATION",
             },
             {item["identity_status"] for item in tracker["candidates"]},
         )
@@ -114,11 +114,12 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertEqual("zh-CN", nemotron["checkpoint"]["language_scope"].split()[1])
         self.assertEqual("STOP", screening["stopped_rows"][0]["disposition"])
 
-    def test_m1_baseline_is_non_formal_memory_capped_and_ordered(self) -> None:
+    def test_m1_baseline_is_non_formal_resource_observed_and_ordered(self) -> None:
         method = load("manifests/m1_baseline_method.json")
         self.assertFalse(method["formal_result"])
-        self.assertEqual(1_000_000_000, method["memory_budget_bytes"])
-        self.assertIn("BLOCKED_ON_CONTROLLED_FIXTURE", method["status"])
+        self.assertEqual(1_000_000_000, method["memory_reference_bytes"])
+        self.assertIn("Never terminate", method["memory_policy"])
+        self.assertIn("FROZEN_PRE_RESULT_METHOD_SOURCE_VERIFIED", method["status"])
         self.assertEqual(
             [1, 2, 3, 4, 5],
             [row["development_order"] for row in method["candidate_commands"]],
@@ -131,7 +132,11 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertFalse(fixture["holdout_eligible"])
         self.assertEqual(16_000, fixture["pcm"]["sample_rate_hz"])
         self.assertAlmostEqual(2.66, fixture["pcm"]["duration_seconds"])
-        self.assertEqual("NOT_FOUND", fixture["controlled_locator"]["local_availability_at_freeze"])
+        self.assertIn(
+            "SOURCE_RECOVERED",
+            fixture["controlled_locator"]["local_availability_at_freeze"],
+        )
+        self.assertIsNone(fixture["blocking_condition"])
 
     def test_control_provenance_is_bound_to_audio_m4(self) -> None:
         provenance = load("manifests/control_provenance.json")

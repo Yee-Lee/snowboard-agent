@@ -3,10 +3,10 @@
   "tracker_id": "AR1M1-CANDIDATE-TRACKER-001",
   "status": "METADATA_SCREENED_NON_FORMAL_REAL_EXECUTION_REQUIRES_FROZEN_PACKET",
   "updated_date": "2026-09-01",
-  "execution_policy": "Development order is User-directed and is not a score or ranking. Real execution requires a lockable exact row, the frozen external smoke fixture, a clean SHA, and the memory-capped packet.",
+  "execution_policy": "Development order is User-directed and is not a score or ranking. Real execution requires a lockable exact row, the frozen external smoke fixture, a clean SHA, and the resource-observation packet.",
   "identity_screening_manifest": "asr_r1/manifests/m1_identity_screening.json",
   "baseline_method_manifest": "asr_r1/manifests/m1_baseline_method.json",
-  "memory_budget_bytes": 1000000000,
+  "memory_reference_bytes": 1000000000,
   "candidates": [
     {
       "development_order": 1,
@@ -16,8 +16,8 @@
       "checkpoint_name": "sherpa-onnx-streaming-zipformer-zh-xlarge-int8-2025-06-30",
       "checkpoint_revision": "github-release:asr-models/sha256:30437d84dc4861740d40166212ab05f3728945443d53691620075c4031fb88e1",
       "runtime_revision": "sherpa-onnx-v1.13.5@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
-      "identity_status": "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
-      "next_identity_action": "Freeze a clean-SHA packet, restore the controlled smoke fixture, then run the first fail-closed load and three-second smoke under the 1,000,000,000-byte RSS limit."
+      "identity_status": "LOCKABLE_RESOURCE_OBSERVATION",
+      "next_identity_action": "At the revised clean-SHA packet, run the three-second smoke and record peak RSS against the 1,000,000,000-byte reference without memory-based termination."
     },
     {
       "development_order": 2,
@@ -38,8 +38,8 @@
       "checkpoint_name": "nemotron-3.5-asr-streaming-0.6b.q8_0.gguf",
       "checkpoint_revision": "huggingface:nvidia/nemotron-3.5-asr-streaming-0.6b@1c8deaecc64b91f034d73e08dd8b64625eb3395d",
       "runtime_revision": "NeMo-Speech.cpp-v0.1.0@4f9676226f667d14608487df744f375db87127f8",
-      "identity_status": "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
-      "next_identity_action": "Use only the official Q8_0 GGUF and local CPU runtime. Run zh-CN streaming smoke under the 1,000,000,000-byte RSS limit; do not infer zh-TW quality from M1."
+      "identity_status": "LOCKABLE_RESOURCE_OBSERVATION",
+      "next_identity_action": "Use only the official Q8_0 GGUF and local CPU runtime. Run zh-CN streaming smoke, observe RSS without memory-based termination, and do not infer zh-TW quality from M1."
     },
     {
       "development_order": 4,

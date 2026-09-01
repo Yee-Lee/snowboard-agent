@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import wave
@@ -32,6 +33,15 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _external_path(repo_root: Path, path: Path, kind: str) -> Path:
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(repo_root.resolve())
+    except ValueError:
+        return resolved
+    raise ValueError(f"{kind} must remain outside the repository")
+
+
 def verify_controlled_smoke_fixture(
     repo_root: Path,
     controlled_wav: Path,
@@ -43,14 +53,8 @@ def verify_controlled_smoke_fixture(
     with manifest_path.open(encoding="utf-8") as handle:
         manifest = json.load(handle)
 
-    controlled_wav = controlled_wav.expanduser().resolve()
     repo_root = repo_root.resolve()
-    try:
-        controlled_wav.relative_to(repo_root)
-    except ValueError:
-        pass
-    else:
-        raise ValueError("controlled audio must remain outside the repository")
+    controlled_wav = _external_path(repo_root, controlled_wav, "controlled audio")
     if not controlled_wav.is_file():
         raise FileNotFoundError(controlled_wav)
 
@@ -94,3 +98,95 @@ def verify_controlled_smoke_fixture(
         frames=frames,
         duration_seconds=duration_seconds,
     )
+
+
+def restore_controlled_smoke_fixture(
+    repo_root: Path,
+    source_wav: Path,
+    output_wav: Path,
+    manifest_relative: str = DEFAULT_MANIFEST,
+) -> FixtureIdentity:
+    """Reproduce the frozen crop from an exact external historical source WAV."""
+
+    repo_root = repo_root.resolve()
+    source_wav = _external_path(repo_root, source_wav, "source audio")
+    output_wav = _external_path(repo_root, output_wav, "derived audio")
+    if output_wav.exists():
+        raise FileExistsError(output_wav)
+    manifest_path = resolve_repo_resource(repo_root, manifest_relative)
+    with manifest_path.open(encoding="utf-8") as handle:
+        manifest = json.load(handle)
+    expected = manifest["pcm"]
+    if not source_wav.is_file():
+        raise FileNotFoundError(source_wav)
+    if source_wav.stat().st_size != expected["source_size_bytes"]:
+        raise ValueError("source fixture size mismatch")
+    if _sha256(source_wav) != expected["source_fixture_sha256"]:
+        raise ValueError("source fixture SHA-256 mismatch")
+
+    with wave.open(str(source_wav), "rb") as source:
+        source_format = (
+            source.getnchannels(),
+            source.getsampwidth(),
+            source.getframerate(),
+            source.getnframes(),
+            source.getcomptype(),
+        )
+        expected_source_format = (
+            expected["channels"],
+            2,
+            expected["sample_rate_hz"],
+            expected["source_frames"],
+            "NONE",
+        )
+        if source_format != expected_source_format:
+            raise ValueError("source fixture WAV format mismatch")
+        start_frame = (
+            expected["crop_start_ms"] * expected["sample_rate_hz"] // 1_000
+        )
+        end_frame = expected["crop_end_ms"] * expected["sample_rate_hz"] // 1_000
+        if end_frame - start_frame != expected["frames"]:
+            raise ValueError("frozen crop frame count mismatch")
+        source.setpos(start_frame)
+        payload = source.readframes(end_frame - start_frame)
+
+    output_wav.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with output_wav.open("xb") as destination:
+            with wave.open(destination, "wb") as target:
+                target.setnchannels(expected["channels"])
+                target.setsampwidth(2)
+                target.setframerate(expected["sample_rate_hz"])
+                target.writeframes(payload)
+        return verify_controlled_smoke_fixture(
+            repo_root, output_wav, manifest_relative=manifest_relative
+        )
+    except Exception:
+        output_wav.unlink(missing_ok=True)
+        raise
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args()
+    repo_root = Path(__file__).resolve().parents[1]
+    identity = restore_controlled_smoke_fixture(repo_root, args.source, args.output)
+    print(
+        json.dumps(
+            {
+                "fixture_id": identity.fixture_id,
+                "sha256": identity.sha256,
+                "size_bytes": identity.size_bytes,
+                "frames": identity.frames,
+                "duration_seconds": identity.duration_seconds,
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

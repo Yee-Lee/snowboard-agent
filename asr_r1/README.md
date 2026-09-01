@@ -2,7 +2,7 @@
 
 This directory contains AR1 source, tests, schemas, manifests, tools,
 deliveries, and sanitized evidence. AR1M1 adds a thin sherpa-onnx adapter and
-memory-capped workstation baseline scaffolding; no real model has yet been
+resource-observing workstation baseline scaffolding; no real model has yet been
 acquired or executed. Legacy code remains available at immutable tag `audio_m4`
 and must not be imported directly.
 

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "fixture_freeze_id": "AR1M1-SMOKE-FIXTURE-001",
-  "status": "IDENTITY_FROZEN_CONTROLLED_ARTIFACT_AVAILABILITY_PENDING",
+  "status": "IDENTITY_FROZEN_SOURCE_RECOVERED_DERIVATION_VERIFIED",
   "formal_result": false,
   "fixture_id": "asr-clear-002-p0",
   "role": "regression_smoke_only",
@@ -37,6 +37,8 @@
     "size_bytes": 85164,
     "sha256": "5a4a7b962b46a666a2f49158d407766ce122511e22c865777b1720b57a48f413",
     "source_fixture_sha256": "ba9257a5fb2aecfeeb03b9294316b213cc274e952132391351670fb140852ca3",
+    "source_size_bytes": 192044,
+    "source_frames": 96000,
     "crop_start_ms": 470,
     "crop_end_ms": 3130,
     "padding_profile": "p0"
@@ -47,9 +49,10 @@
   },
   "controlled_locator": {
     "policy": "The operator supplies the controlled WAV path at runtime. Development code must not store an absolute or checkout-relative artifact path.",
-    "local_availability_at_freeze": "NOT_FOUND",
-    "required_preflight": "exact size, SHA-256, WAV format, frame count, and duration must match before any real model load"
+    "local_availability_at_freeze": "VERIFIED_SOURCE_RECOVERED_FROM_HISTORICAL_CONTROLLED_STORAGE",
+    "restore_command": "python3 -m asr_r1.fixture_preflight --source EXTERNAL_SOURCE_WAV --output EXTERNAL_DERIVED_WAV",
+    "required_preflight": "source and derived exact size, SHA-256, WAV format, frame count, crop bounds, and duration must match before any real model load"
   },
-  "collection_decision": "NO_NEW_COLLECTION_REQUIRED_IF_CONTROLLED_ARTIFACT_IS_RESTORED",
-  "blocking_condition": "Real smoke is prohibited until the controlled p0 WAV is restored and passes preflight."
+  "collection_decision": "NO_NEW_COLLECTION_REQUIRED_SOURCE_RECOVERED",
+  "blocking_condition": null
 }

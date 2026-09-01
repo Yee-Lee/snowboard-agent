@@ -23,11 +23,12 @@ WeNet AISHELL streaming CTC INT8. The order is not a score or ranking.
 PengChengStarling is stopped by User decision because its 1.22 GB inference
 closure exceeds the approximately 1 GB ASR budget.
 
-The non-formal workstation baseline method is frozen at a 1,000,000,000-byte
-sampled process-tree RSS ceiling with the existing 2.66-second controlled smoke
-identity. Real acquisition and execution remain blocked until that external WAV
-is restored, passes checksum/PCM preflight, and the probe packet has a clean
-full SHA.
+The non-formal workstation baseline method uses a 1,000,000,000-byte RSS
+reference with the existing 2.66-second controlled smoke identity. RSS is an
+observation, not an automatic termination or elimination rule. The exact source
+WAV has been recovered from controlled historical storage and its p0 crop has
+been reproduced with the frozen checksum. Real acquisition and execution now
+require the revised packet at a clean full SHA.
 
 | Milestone | Status | File |
 | --- | --- | --- |
@@ -54,19 +55,19 @@ method revision and new frozen packet before collection or restart.
 ## Risks
 
 - Zipformer x-large has approximately 736 MiB of declared inference files and
-  Nemotron Q8_0 is 741,548,352 bytes; both are memory-capped smoke candidates,
-  not established 1 GB fits.
+  Nemotron Q8_0 is 741,548,352 bytes; both require explicit RSS observation,
+  but exceeding the 1 GB reference does not stop their POC work.
 - Nemotron lists broad-coverage `zh-CN`, not `zh-TW`; M1 smoke cannot establish
   Taiwan Mandarin quality.
-- The frozen controlled smoke WAV is not present in known local controlled
-  storage, so no real artifact acquisition or execution may begin.
+- The controlled source WAV and reproducible frozen p0 derivation are available;
+  the revised method still needs a clean probe SHA before real acquisition.
 - Workstation/aarch64 paths are documented, but Pi 5 behavior remains unproven.
 
 ## Next authorized work
 
-Restore the checksum-bound external smoke WAV and pass fixture preflight. At a
-clean packet SHA, acquire and verify each exact artifact outside Git, then run
-the five non-formal workstation smokes in the frozen order. Record warm decode
-RTF, load time when exposed, and peak process-tree RSS; stop any row exceeding
-1,000,000,000 bytes. Do not publish a formal score, ranking, qualification, or
+At the revised clean packet SHA, acquire and verify each exact artifact outside
+Git, then run the five non-formal workstation smokes in the frozen order. Record
+warm decode RTF, load time when exposed, peak process-tree RSS, and whether RSS
+is above the 1,000,000,000-byte reference. Preserve and continue research rows
+above that reference. Do not publish a formal score, ranking, qualification, or
 Pi disposition from these workstation results.

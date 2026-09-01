@@ -1,14 +1,14 @@
 {
   "schema_version": "1.0",
   "packet_id": "AR1M1-WORKSTATION-BASELINE-001",
-  "status": "FROZEN_METHOD_BLOCKED_ON_CONTROLLED_FIXTURE_AND_CLEAN_SHA",
+  "status": "FROZEN_PRE_RESULT_METHOD_SOURCE_VERIFIED",
   "formal_result": false,
   "purpose": "Run one approximately three-second local streaming smoke per candidate and record diagnostic RTF and peak process-tree RSS without publishing a score, ranking, or qualification decision.",
   "candidate_order_source": "asr_r1/manifests/candidate_tracker.json",
   "fixture_manifest": "asr_r1/manifests/m1_smoke_fixture.json",
   "fixture_preflight": "asr_r1/fixture_preflight.py",
-  "memory_budget_bytes": 1000000000,
-  "memory_policy": "Fail closed and terminate the candidate if sampled process-tree RSS exceeds the budget. Report the observed peak; absence of an overshoot sample does not prove a hard kernel-enforced bound.",
+  "memory_reference_bytes": 1000000000,
+  "memory_policy": "Sample and report peak process-tree RSS plus an above-reference flag. Never terminate, eliminate, or skip a POC candidate solely because RSS exceeds the 1,000,000,000-byte reference.",
   "execution_environment": "workstation CPU only; models, runtimes, audio, transcripts, and raw output remain outside Git",
   "offline_policy": "Use only pre-acquired checksum-verified local artifacts. The execution command receives external artifact paths explicitly and must not auto-download.",
   "fixture": {
@@ -69,7 +69,7 @@
       "timeout_seconds": 120
     }
   ],
-  "smoke_completion_definition": "The exact artifact loads, accepts the complete frozen PCM stream, returns a non-empty final, stays within the sampled RSS budget, exits cleanly, and emits complete diagnostic metrics.",
+  "smoke_completion_definition": "The exact artifact loads, accepts the complete frozen PCM stream, returns a non-empty final, exits cleanly, and emits complete diagnostic metrics. RSS is observational and does not control completion.",
   "interpretation_limit": "A workstation pass is development evidence only. It is not a formal score, comparative ranking, Pi hardware disposition, zh-TW quality conclusion, or qualification decision.",
-  "current_blocker": "The checksum-bound controlled WAV is not present in known local controlled storage. No artifact acquisition or real model load may start until it is restored and passes preflight."
+  "current_blocker": null
 }

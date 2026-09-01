@@ -14,7 +14,6 @@ class MonitoredProcessTest(unittest.TestCase):
             run = run_monitored(
                 [sys.executable, "-c", 'print("ok")'],
                 timeout_seconds=2,
-                memory_budget_bytes=200_000_000,
                 cwd=Path(temporary),
             )
         self.assertEqual("COMPLETED", run.status)
@@ -26,22 +25,21 @@ class MonitoredProcessTest(unittest.TestCase):
         run = run_monitored(
             [sys.executable, "-c", "import time; time.sleep(2)"],
             timeout_seconds=0.05,
-            memory_budget_bytes=200_000_000,
         )
         self.assertEqual("TIMEOUT", run.status)
         self.assertLess(run.elapsed_seconds, 2)
 
-    def test_rss_limit_terminates_process(self) -> None:
+    def test_high_rss_is_observed_without_termination(self) -> None:
         run = run_monitored(
             [
                 sys.executable,
                 "-c",
-                "import time; value=bytearray(30000000); time.sleep(2)",
+                "value=bytearray(30000000); print(len(value))",
             ],
             timeout_seconds=2,
-            memory_budget_bytes=15_000_000,
         )
-        self.assertEqual("RSS_LIMIT_EXCEEDED", run.status)
+        self.assertEqual("COMPLETED", run.status)
+        self.assertEqual(0, run.returncode)
         self.assertGreater(run.peak_process_tree_rss_bytes, 15_000_000)
 
 
@@ -71,11 +69,12 @@ class NemotronResultTest(unittest.TestCase):
                 Path("external-model"),
                 Path("external-fixture"),
                 timeout_seconds=10,
-                memory_budget_bytes=1_000_000_000,
+                memory_reference_bytes=1_000_000_000,
             )
         self.assertTrue(result["smoke_completed"])
         self.assertEqual(0.5, result["rtf"])
         self.assertEqual(710_000_000, result["peak_process_tree_rss_bytes"])
+        self.assertFalse(result["rss_above_reference"])
         self.assertNotIn("controlled words", json.dumps(result))
 
 
