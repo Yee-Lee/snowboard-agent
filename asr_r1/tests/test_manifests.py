@@ -29,14 +29,18 @@ class SchemaAndManifestTest(unittest.TestCase):
             "asr_r1/manifests/candidate_tracker.json",
             "asr_r1/manifests/control_provenance.json",
             "asr_r1/manifests/fixture_reuse_audit_plan.json",
+            "asr_r1/manifests/m1_fixture_coverage_audit.json",
             "asr_r1/manifests/m1_baseline_method.json",
             "asr_r1/manifests/m1_identity_screening.json",
+            "asr_r1/manifests/m1_postprocess_research.json",
             "asr_r1/manifests/m1_smoke_fixture.json",
             "asr_r1/schemas/lifecycle_command.schema.json",
             "asr_r1/schemas/pcm_chunk.schema.json",
             "asr_r1/schemas/streaming_event.schema.json",
             "asr_r1/protocol.py",
             "asr_r1/fake_runtime.py",
+            "asr_r1/diagnostic_pipeline.py",
+            "asr_r1/tools/check_m1_workstation_readiness.py",
         ]
         for relative in expected:
             with self.subTest(path=relative):
@@ -109,6 +113,19 @@ class SchemaAndManifestTest(unittest.TestCase):
         )
         xlarge = screening["rows"][0]
         self.assertGreater(xlarge["checkpoint"]["artifact_size_bytes"], 500_000_000)
+        self.assertEqual(
+            set(xlarge["checkpoint"]["declared_inference_files"]),
+            {
+                item["filename"]
+                for item in xlarge["checkpoint"]["extracted_files"]
+            },
+        )
+        self.assertTrue(
+            all(
+                len(item["sha256"]) == 64 and item["size_bytes"] > 0
+                for item in xlarge["checkpoint"]["extracted_files"]
+            )
+        )
         nemotron = screening["rows"][2]
         self.assertEqual(741_548_352, nemotron["checkpoint"]["size_bytes"])
         self.assertEqual("zh-CN", nemotron["checkpoint"]["language_scope"].split()[1])
@@ -132,6 +149,12 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertFalse(fixture["holdout_eligible"])
         self.assertEqual(16_000, fixture["pcm"]["sample_rate_hz"])
         self.assertAlmostEqual(2.66, fixture["pcm"]["duration_seconds"])
+        self.assertEqual(0, fixture["speech_interval"]["derived_start_ms"])
+        self.assertEqual(2660, fixture["speech_interval"]["derived_end_ms"])
+        self.assertEqual(
+            "HUMAN_REVIEWED_FROZEN",
+            fixture["speech_interval"]["annotation_status"],
+        )
         self.assertIn(
             "SOURCE_RECOVERED",
             fixture["controlled_locator"]["local_availability_at_freeze"],
@@ -151,6 +174,47 @@ class SchemaAndManifestTest(unittest.TestCase):
         self.assertEqual(
             "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3",
             provenance["silero_control"]["model"]["sha256"],
+        )
+
+    def test_m1_fixture_coverage_audit_preserves_gaps_and_roles(self) -> None:
+        audit = load("manifests/m1_fixture_coverage_audit.json")
+        dimensions = {row["dimension"]: row for row in audit["coverage_matrix"]}
+        self.assertEqual(
+            {
+                "intent",
+                "english_entity",
+                "code_switch",
+                "general_zh_tw",
+                "duration",
+                "pause",
+                "volume",
+                "noise",
+                "speech_end",
+            },
+            set(dimensions),
+        )
+        self.assertEqual("GAP", dimensions["volume"]["status"])
+        self.assertEqual("PARTIAL", dimensions["noise"]["status"])
+        self.assertIsNone(audit["role_assignment"])
+        self.assertIsNone(audit["holdout_proposal"])
+        self.assertTrue(audit["user_review_required_before_role_freeze"])
+
+    def test_m1_postprocess_research_is_diagnostic_only(self) -> None:
+        research = load("manifests/m1_postprocess_research.json")
+        self.assertFalse(research["formal_result"])
+        self.assertIn("REAL_POSTPROCESS_NOT_RUN", research["status"])
+        self.assertIn("No post-process", research["scope"])
+        observed = research["observed_m1_adapter_surface"]
+        self.assertEqual(5, observed["candidates_observed"])
+        self.assertEqual("TOP_ONE_FALLBACK_ONLY", observed["nbest"])
+        self.assertEqual("NOT_EXPOSED", observed["confidence"])
+        self.assertEqual("NOT_EXPOSED", observed["token_timestamps"])
+        directions = {
+            item["direction"]: item for item in research["potential_directions"]
+        }
+        self.assertEqual(
+            "BLOCKED_BY_CURRENT_TOP_ONE_RUNTIME_SURFACE",
+            directions["nbest_second_pass_rescoring"]["research_state"],
         )
 
     def test_fixture_plan_has_no_role_assignment(self) -> None:

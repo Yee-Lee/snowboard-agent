@@ -23,6 +23,8 @@ class FixtureIdentity:
     size_bytes: int
     frames: int
     duration_seconds: float
+    speech_start_offset_ms: int
+    speech_end_offset_ms: int
 
 
 def _sha256(path: Path) -> str:
@@ -90,6 +92,20 @@ def verify_controlled_smoke_fixture(
     duration_seconds = frames / sample_rate
     if abs(duration_seconds - expected["duration_seconds"]) > 0.000001:
         raise ValueError("fixture duration mismatch")
+
+    speech = manifest["speech_interval"]
+    source_interval = speech["source_end_ms"] - speech["source_start_ms"]
+    derived_interval = speech["derived_end_ms"] - speech["derived_start_ms"]
+    duration_ms = frames * 1_000 // sample_rate
+    if (
+        speech["annotation_status"] != "HUMAN_REVIEWED_FROZEN"
+        or speech["source_start_ms"] != expected["crop_start_ms"]
+        or speech["source_end_ms"] != expected["crop_end_ms"]
+        or speech["derived_start_ms"] != 0
+        or source_interval != derived_interval
+        or speech["derived_end_ms"] != duration_ms
+    ):
+        raise ValueError("fixture speech interval mismatch")
     return FixtureIdentity(
         fixture_id=manifest["fixture_id"],
         path=controlled_wav,
@@ -97,6 +113,8 @@ def verify_controlled_smoke_fixture(
         size_bytes=actual_size,
         frames=frames,
         duration_seconds=duration_seconds,
+        speech_start_offset_ms=speech["derived_start_ms"],
+        speech_end_offset_ms=speech["derived_end_ms"],
     )
 
 

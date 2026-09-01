@@ -43,6 +43,14 @@
     "crop_end_ms": 3130,
     "padding_profile": "p0"
   },
+  "speech_interval": {
+    "annotation_status": "HUMAN_REVIEWED_FROZEN",
+    "source_start_ms": 470,
+    "source_end_ms": 3130,
+    "derived_start_ms": 0,
+    "derived_end_ms": 2660,
+    "timing_use": "TTFT starts at derived_start_ms; speech-end-to-final starts at derived_end_ms."
+  },
   "reference": {
     "transcript_in_git": false,
     "reference_sha256": "473e99be15309ac45ed12709a8bb065f9f7f90b57ee5a3ce301abfece2035a3a"

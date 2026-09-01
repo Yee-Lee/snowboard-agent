@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import signal
 import subprocess
 import sys
@@ -30,6 +31,10 @@ class CapturedRun:
     peak_process_tree_rss_bytes: int
     stdout: str
     stderr: str
+    peak_process_tree_pss_bytes: int = 0
+    peak_process_tree_threads: int = 0
+    process_tree_cpu_seconds: float = 0.0
+    effective_cpu_cores: float = 0.0
 
 
 def _repo_root() -> Path:
@@ -62,6 +67,28 @@ def _verify_file(path: Path, size_bytes: int, sha256: str) -> None:
         raise ValueError("artifact SHA-256 mismatch")
 
 
+def _verify_sherpa_runtime_artifacts(
+    paths: Sequence[Path], repo_root: Path
+) -> None:
+    identity = _load_json(IDENTITY_MANIFEST)
+    expected = {
+        item["filename"]: item
+        for item in identity["shared_sherpa_runtime"][
+            "workstation_cp312_x86_64_wheels"
+        ]
+    }
+    supplied: dict[str, Path] = {}
+    for path in paths:
+        external = _verify_external(path, repo_root, "runtime artifact")
+        if external.name in supplied:
+            raise ValueError("duplicate runtime artifact")
+        supplied[external.name] = external
+    if set(supplied) != set(expected):
+        raise ValueError("exact sherpa runtime artifact closure is required")
+    for filename, item in expected.items():
+        _verify_file(supplied[filename], item["size_bytes"], item["sha256"])
+
+
 def _children(pid: int) -> set[int]:
     descendants: set[int] = set()
     pending = [pid]
@@ -92,8 +119,54 @@ def _rss_bytes(pid: int) -> int:
     return 0
 
 
-def _process_tree_rss_bytes(pid: int) -> int:
-    return sum(_rss_bytes(item) for item in {pid, *_children(pid)})
+def _pss_bytes(pid: int) -> int:
+    rollup = Path("/proc") / str(pid) / "smaps_rollup"
+    try:
+        lines = rollup.read_text(encoding="ascii").splitlines()
+    except (FileNotFoundError, PermissionError, ProcessLookupError):
+        return 0
+    for line in lines:
+        if line.startswith("Pss:"):
+            return int(line.split()[1]) * 1_024
+    return 0
+
+
+def _thread_count(pid: int) -> int:
+    status_path = Path("/proc") / str(pid) / "status"
+    try:
+        lines = status_path.read_text(encoding="ascii").splitlines()
+    except (FileNotFoundError, PermissionError, ProcessLookupError):
+        return 0
+    for line in lines:
+        if line.startswith("Threads:"):
+            return int(line.split()[1])
+    return 0
+
+
+def _cpu_ticks(pid: int) -> int:
+    stat_path = Path("/proc") / str(pid) / "stat"
+    try:
+        value = stat_path.read_text(encoding="ascii")
+    except (FileNotFoundError, PermissionError, ProcessLookupError):
+        return 0
+    closing = value.rfind(")")
+    if closing < 0:
+        return 0
+    fields = value[closing + 2 :].split()
+    try:
+        return int(fields[11]) + int(fields[12])
+    except (IndexError, ValueError):
+        return 0
+
+
+def _process_tree_metrics(pid: int) -> tuple[int, int, int, int]:
+    processes = {pid, *_children(pid)}
+    return (
+        sum(_rss_bytes(item) for item in processes),
+        sum(_pss_bytes(item) for item in processes),
+        sum(_thread_count(item) for item in processes),
+        sum(_cpu_ticks(item) for item in processes),
+    )
 
 
 def _stop_process_group(process: subprocess.Popen[str]) -> None:
@@ -147,25 +220,42 @@ def run_monitored(
         start_new_session=True,
     )
     peak_rss = 0
+    peak_pss = 0
+    peak_threads = 0
+    peak_cpu_ticks = 0
     status = "COMPLETED"
     while process.poll() is None:
-        peak_rss = max(peak_rss, _process_tree_rss_bytes(process.pid))
+        rss, pss, threads, cpu_ticks = _process_tree_metrics(process.pid)
+        peak_rss = max(peak_rss, rss)
+        peak_pss = max(peak_pss, pss)
+        peak_threads = max(peak_threads, threads)
+        peak_cpu_ticks = max(peak_cpu_ticks, cpu_ticks)
         if time.monotonic() - started > timeout_seconds:
             status = "TIMEOUT"
             _stop_process_group(process)
             break
         time.sleep(0.02)
-    peak_rss = max(peak_rss, _process_tree_rss_bytes(process.pid))
+    rss, pss, threads, cpu_ticks = _process_tree_metrics(process.pid)
+    peak_rss = max(peak_rss, rss)
+    peak_pss = max(peak_pss, pss)
+    peak_threads = max(peak_threads, threads)
+    peak_cpu_ticks = max(peak_cpu_ticks, cpu_ticks)
     stdout, stderr = process.communicate()
     if status == "COMPLETED" and process.returncode != 0:
         status = "PROCESS_ERROR"
+    elapsed_seconds = time.monotonic() - started
+    cpu_seconds = peak_cpu_ticks / os.sysconf("SC_CLK_TCK")
     return CapturedRun(
         status=status,
         returncode=process.returncode,
-        elapsed_seconds=time.monotonic() - started,
+        elapsed_seconds=elapsed_seconds,
         peak_process_tree_rss_bytes=peak_rss,
         stdout=stdout,
         stderr=stderr,
+        peak_process_tree_pss_bytes=peak_pss,
+        peak_process_tree_threads=peak_threads,
+        process_tree_cpu_seconds=cpu_seconds,
+        effective_cpu_cores=cpu_seconds / elapsed_seconds,
     )
 
 
@@ -198,8 +288,31 @@ def _row(candidate_id: str) -> tuple[dict, dict]:
 def _resource_fields(run: CapturedRun, reference_bytes: int) -> dict[str, object]:
     return {
         "peak_process_tree_rss_bytes": run.peak_process_tree_rss_bytes,
+        "peak_process_tree_pss_bytes": run.peak_process_tree_pss_bytes,
+        "peak_process_tree_threads": run.peak_process_tree_threads,
+        "process_tree_cpu_seconds": run.process_tree_cpu_seconds,
+        "effective_cpu_cores": run.effective_cpu_cores,
         "memory_reference_bytes": reference_bytes,
         "rss_above_reference": run.peak_process_tree_rss_bytes > reference_bytes,
+        **_environment_fields(),
+    }
+
+
+def _environment_fields() -> dict[str, object]:
+    release = platform.freedesktop_os_release()
+    affinity = (
+        len(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else os.cpu_count()
+    )
+    return {
+        "execution_environment": "WORKSTATION_FEASIBILITY_NOT_PI5",
+        "host_architecture": platform.machine(),
+        "os_id": release.get("ID", "unknown"),
+        "os_version_id": release.get("VERSION_ID", "unknown"),
+        "affinity_vcpu_count": affinity,
+        "gpu_acceleration": False,
+        "pi5_hardware_result": False,
     }
 
 
@@ -325,8 +438,11 @@ def _run_nemotron(
     try:
         payload = json.loads(bench.stdout)
         native = payload["runs"][0]
+        load_seconds = float(payload["load_ms"]) / 1_000
+        benchmark_warmup_seconds = float(payload["warmup_ms"]) / 1_000
+        decode_seconds = float(native["wall_seconds"])
         rtfx = float(native["rtfx"])
-        if rtfx <= 0:
+        if min(load_seconds, benchmark_warmup_seconds, decode_seconds) < 0 or rtfx <= 0:
             raise ValueError("invalid rtfx")
     except (json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError):
         return {
@@ -338,6 +454,14 @@ def _run_nemotron(
         smoke.peak_process_tree_rss_bytes,
         bench.peak_process_tree_rss_bytes,
     )
+    peak_pss = max(
+        smoke.peak_process_tree_pss_bytes,
+        bench.peak_process_tree_pss_bytes,
+    )
+    peak_threads = max(
+        smoke.peak_process_tree_threads,
+        bench.peak_process_tree_threads,
+    )
 
     return {
         "schema_version": "1.0",
@@ -347,12 +471,18 @@ def _run_nemotron(
         "status": "NON_FORMAL_SMOKE_COMPLETED",
         "fixture_id": "asr-clear-002-p0",
         "audio_seconds": float(native["audio_seconds"]),
-        "model_load_seconds": float(payload["load_ms"]) / 1_000,
-        "decode_wall_seconds": float(native["wall_seconds"]),
-        "rtf": 1 / rtfx,
+        "model_load_seconds": load_seconds,
+        "benchmark_warmup_seconds": benchmark_warmup_seconds,
+        "full_utterance_decode_wall_seconds": decode_seconds,
+        "full_utterance_rtf": 1 / rtfx,
         "peak_process_tree_rss_bytes": peak_rss,
+        "peak_process_tree_pss_bytes": peak_pss,
+        "peak_process_tree_threads": peak_threads,
+        "benchmark_process_cpu_seconds": bench.process_tree_cpu_seconds,
+        "benchmark_effective_cpu_cores": bench.effective_cpu_cores,
         "memory_reference_bytes": memory_reference_bytes,
         "rss_above_reference": peak_rss > memory_reference_bytes,
+        **_environment_fields(),
         "final_non_empty": True,
         "final_text_sha256": _output_digest(final_text),
         "smoke_stdout_sha256": _output_digest(smoke.stdout),
@@ -370,6 +500,7 @@ def run_candidate(
     artifact_archive: Path | None = None,
     runtime_binary: Path | None = None,
     runtime_archive: Path | None = None,
+    runtime_artifacts: Sequence[Path] = (),
     num_threads: int = 2,
 ) -> dict[str, object]:
     """Verify identities, then run exactly one frozen candidate row."""
@@ -385,6 +516,7 @@ def run_candidate(
     timeout = command["timeout_seconds"]
 
     if command["model_kind"] == "zipformer_transducer":
+        _verify_sherpa_runtime_artifacts(runtime_artifacts, repo_root)
         if artifact_archive is None:
             raise ValueError("Zipformer requires its verified external release archive")
         archive = _verify_external(artifact_archive, repo_root, "model archive")
@@ -394,14 +526,18 @@ def run_candidate(
             checkpoint["artifact_size_bytes"],
             checkpoint["artifact_sha256"],
         )
-        for filename in command["external_files"]:
-            if not (model_path / filename).is_file():
-                raise FileNotFoundError(model_path / filename)
+        for component in checkpoint["extracted_files"]:
+            _verify_file(
+                model_path / component["filename"],
+                component["size_bytes"],
+                component["sha256"],
+            )
         return _run_sherpa(
             candidate_id, model_path, fixture, timeout, memory_reference, num_threads
         )
 
     if command["model_kind"] == "wenet_ctc":
+        _verify_sherpa_runtime_artifacts(runtime_artifacts, repo_root)
         checkpoint = identity["checkpoint"]
         _verify_file(
             model_path / checkpoint["streaming_model"]["filename"],
@@ -426,6 +562,12 @@ def run_candidate(
         runtime = identity["runtime"]["linux_x86_64_cpu_archive"]
         _verify_file(model_path, checkpoint["size_bytes"], checkpoint["sha256"])
         _verify_file(archive, runtime["size_bytes"], runtime["sha256"])
+        executable = next(
+            item
+            for item in runtime["extracted_files"]
+            if item["relative_path"] == "bin/nemo-speech"
+        )
+        _verify_file(binary, executable["size_bytes"], executable["sha256"])
         if not binary.is_file() or not os.access(binary, os.X_OK):
             raise ValueError("runtime binary is not executable")
         return _run_nemotron(
@@ -442,6 +584,7 @@ def main() -> int:
     parser.add_argument("--artifact-archive", type=Path)
     parser.add_argument("--runtime-binary", type=Path)
     parser.add_argument("--runtime-archive", type=Path)
+    parser.add_argument("--runtime-artifact", action="append", type=Path, default=[])
     parser.add_argument("--num-threads", type=int, default=2)
     args = parser.parse_args()
     result = run_candidate(
@@ -451,6 +594,7 @@ def main() -> int:
         artifact_archive=args.artifact_archive,
         runtime_binary=args.runtime_binary,
         runtime_archive=args.runtime_archive,
+        runtime_artifacts=args.runtime_artifact,
         num_threads=args.num_threads,
     )
     print(json.dumps(result, sort_keys=True))

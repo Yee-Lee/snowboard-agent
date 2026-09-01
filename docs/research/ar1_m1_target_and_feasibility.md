@@ -1,6 +1,6 @@
 # AR1M1 Target and Completed Feasibility Research
 
-Status: `PRE-EXECUTION RESEARCH SUMMARY / NON-FORMAL`
+Status: `PRE-EXECUTION RESEARCH BASELINE / SUPERSEDED FOR EXECUTION STATUS`
 
 Date: 2026-09-01
 
@@ -82,13 +82,13 @@ M1 smoke, and this historically used fixture cannot become final holdout.
 - Unit, manifest, relocation, and data-safety coverage exists for the frozen
   pre-result method.
 
-## Not yet established
+## Execution-status pointer
 
-No real candidate artifact has been acquired, installed, imported, loaded, or
-decoded in AR1M1. There is therefore no measured RTF or RSS, no workstation
-smoke result, no lifecycle result, no Pi 5 evidence, no Taiwan Mandarin quality
-finding, and no formal comparison or qualification decision.
-
-The next execution step is to acquire and checksum-verify candidate 1 outside
-Git at a clean full SHA, run its frozen workstation smoke, preserve the
-non-formal evidence, and then continue through candidates 2–5 in order.
+Real workstation development probes have since exercised all five exact rows.
+Their sanitized, explicitly non-formal measurements and engineering breakdown
+are maintained in
+[`AR1M1 Workstation Development Report`](ar1_m1_workstation_development_report.md).
+Those development runs do not establish reviewed clean-SHA evidence, Pi 5
+behavior, Taiwan Mandarin quality, a formal comparison, or a qualification
+decision. This document remains the pre-execution identity and feasibility
+baseline rather than the current execution-status source.

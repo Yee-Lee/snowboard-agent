@@ -83,8 +83,23 @@ execution require this revised method at a clean SHA.
 
 The confirmed target and completed pre-execution research are consolidated in
 [`AR1M1 Target and Completed Feasibility Research`](../research/ar1_m1_target_and_feasibility.md).
-It explicitly separates lockable metadata from execution evidence that does not
-yet exist.
+It remains the identity baseline; current development execution is documented
+separately.
+
+## Current workstation development state
+
+All five exact candidates have completed native and thin-adapter development
+bring-up, paced TTFT and speech-end timing, unpaced full-utterance RTF,
+lifecycle, resource, and syscall-level offline probes. The environment is an
+x86_64 Ubuntu 24.04 virtual machine with 2 vCPUs and CPU-only execution. It is
+not Raspberry Pi 5 or aarch64 evidence. The implementation and sanitized
+breakdown are documented in
+[`AR1M1 Workstation Development Report`](../research/ar1_m1_workstation_development_report.md).
+
+The runs remain explicitly non-formal and were produced while the development
+worktree was changing. M1 does not exit until a reviewable commit is followed
+by clean-SHA repetition, the fixture coverage gate is closed, and real Pi 5
+critical smoke/lifecycle evidence is reviewed.
 
 ## Fixture gate
 

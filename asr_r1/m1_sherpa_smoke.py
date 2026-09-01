@@ -9,7 +9,7 @@ import resource
 import wave
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from time import monotonic
+from time import monotonic, process_time
 
 from .fixture_preflight import verify_controlled_smoke_fixture
 from .protocol import PCMChunk
@@ -63,11 +63,14 @@ def run_smoke(
     runtime = SherpaStreamingRuntime(_backend(candidate_id, model_dir, num_threads))
 
     load_started = monotonic()
+    load_cpu_started = process_time()
     runtime.load_model()
+    load_cpu_seconds = process_time() - load_cpu_started
     load_seconds = monotonic() - load_started
 
     session_id = runtime.create_session()
     decode_started = monotonic()
+    decode_cpu_started = process_time()
     partial_count = 0
     with wave.open(str(identity.path), "rb") as source:
         frames_per_chunk = source.getframerate() * chunk_duration_ms // 1_000
@@ -89,6 +92,7 @@ def run_smoke(
         session_id,
         emitted_at_ms=round(identity.duration_seconds * 1_000),
     )
+    decode_cpu_seconds = process_time() - decode_cpu_started
     decode_seconds = monotonic() - decode_started
     shutdown_ms = runtime.shutdown(5_000)
 
@@ -102,8 +106,12 @@ def run_smoke(
         "num_threads": num_threads,
         "runtime_version": runtime_version,
         "model_load_seconds": load_seconds,
-        "decode_wall_seconds": decode_seconds,
-        "rtf": decode_seconds / identity.duration_seconds,
+        "model_load_cpu_seconds": load_cpu_seconds,
+        "model_load_effective_cpu_cores": load_cpu_seconds / load_seconds,
+        "full_utterance_decode_wall_seconds": decode_seconds,
+        "decode_cpu_seconds": decode_cpu_seconds,
+        "decode_effective_cpu_cores": decode_cpu_seconds / decode_seconds,
+        "full_utterance_rtf": decode_seconds / identity.duration_seconds,
         "self_peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         * 1_024,
         "partial_event_count": partial_count,

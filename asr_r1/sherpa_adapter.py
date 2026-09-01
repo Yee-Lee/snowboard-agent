@@ -39,17 +39,20 @@ class OnlineBackend(Protocol):
 
     def input_finished(self, stream: object) -> None: ...
 
+    def close_stream(self, stream: object) -> None: ...
+
     def close(self) -> None: ...
 
 
 @dataclass
 class _AdapterSession:
-    stream: object
+    stream: object | None
     state: SessionState = SessionState.OPEN
     next_chunk_sequence: int = 0
     last_timestamp_ms: int = -1
     event_sequence: int = 0
     last_partial: str = ""
+    stream_closed: bool = False
 
 
 class SherpaStreamingRuntime:
@@ -157,6 +160,7 @@ class SherpaStreamingRuntime:
             session.state = SessionState.ERROR
             raise ProtocolError(ErrorCode.INVALID_STATE, "backend returned an empty final")
 
+        self._close_session_stream(session)
         session.state = SessionState.FINAL
         event = TranscriptEvent(
             kind=EventKind.FINAL,
@@ -171,7 +175,8 @@ class SherpaStreamingRuntime:
 
     def reset_session(self, session_id: str) -> None:
         self._require_running()
-        self._session(session_id)
+        current = self._session(session_id)
+        self._close_session_stream(current)
         stream = self._backend_call(self._backend.create_stream)
         self._sessions[session_id] = _AdapterSession(stream=stream)
 
@@ -180,6 +185,7 @@ class SherpaStreamingRuntime:
         session = self._session(session_id)
         if session.state in {SessionState.FINAL, SessionState.CANCELLED}:
             raise ProtocolError(ErrorCode.INVALID_STATE, "terminal session cannot be cancelled")
+        self._close_session_stream(session)
         session.state = SessionState.CANCELLED
         event = TranscriptEvent(
             kind=EventKind.ERROR,
@@ -196,6 +202,8 @@ class SherpaStreamingRuntime:
         if timeout_ms <= 0:
             raise ValueError("timeout_ms must be positive")
         started = monotonic()
+        for session in self._sessions.values():
+            self._close_session_stream(session)
         self._sessions.clear()
         try:
             self._backend.close()
@@ -222,6 +230,16 @@ class SherpaStreamingRuntime:
             return operation()
         except Exception as exc:
             raise self._runtime_failure(exc) from exc
+
+    def _close_session_stream(self, session: _AdapterSession) -> None:
+        if session.stream_closed:
+            return
+        stream = session.stream
+        if stream is None:
+            raise ProtocolError(ErrorCode.INVALID_STATE, "session stream is missing")
+        self._backend_call(lambda: self._backend.close_stream(stream))
+        session.stream = None
+        session.stream_closed = True
 
     @staticmethod
     def _runtime_failure(exc: Exception) -> ProtocolError:
@@ -302,6 +320,9 @@ class SherpaOnnxTransducerBackend:
 
     def input_finished(self, stream: object) -> None:
         stream.input_finished()
+
+    def close_stream(self, stream: object) -> None:
+        del stream
 
     def close(self) -> None:
         self._recognizer = None

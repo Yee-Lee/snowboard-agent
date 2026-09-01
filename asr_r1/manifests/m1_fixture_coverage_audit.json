@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "audit_id": "AR1M1-FIXTURE-COVERAGE-AUDIT-001",
+  "status": "METADATA_AUDIT_COMPLETE_GAPS_DOCUMENTED_NO_ROLE_FREEZE",
+  "formal_result": false,
+  "plan_reference": "asr_r1/manifests/fixture_reuse_audit_plan.json",
+  "historical_control": {
+    "tag": "audio_m4",
+    "commit": "5694ead4ba6be928fdb4dbdf6da7155b214d72bd"
+  },
+  "audited_sources": [
+    {
+      "reference": "audio_m4:poc_audio/fixtures/authorized/fixture_catalog_v1.json",
+      "sha256": "7d89fe13e53d1fbd4a3f4d1ace81bd6291c236008218be93f4fe87cf6388b677",
+      "audit_status": "IDENTITY_AUTHORIZATION_SENSITIVITY_LICENSE_AUDITED"
+    },
+    {
+      "reference": "audio_m4:poc_audio/fixtures/catalog.json",
+      "sha256": "b85bc5057e5290a91447fcbe5e8917b906a4132b3e3866e1e143229146354a1b",
+      "audit_status": "IDENTITY_LICENSE_SENSITIVITY_AUDITED"
+    },
+    {
+      "reference": "audio_m4:poc_audio/fixtures/authorized/recording_plan_v1.json",
+      "sha256": "d197078d78ad422e1ec6465aea36472adcc4e77c24827c426a03dcbc4b4ba920",
+      "audit_status": "AUTHORIZATION_CATEGORY_AND_REFERENCE_PLAN_AUDITED"
+    },
+    {
+      "reference": "audio_m4:poc_audio/manifests/m2b_c_pcm_lock.json",
+      "sha256": "3b748708ee9989223f26429f0c23d06161dc74dc84b83c9b2206bcf248dfb48a",
+      "audit_status": "PRIOR_USE_DERIVATION_AND_CHECKSUM_AUDITED"
+    },
+    {
+      "reference": "controlled:delivered_fixture_manifest.json",
+      "sha256": "1b33569bbc1f755771c359b2bba4284e72e71a8d836917db9aa8be63ffe530a2",
+      "audit_status": "CONTROLLED_METADATA_IDENTITY_VERIFIED"
+    },
+    {
+      "reference": "controlled:review/vad-labels-v1.json",
+      "sha256": "85d8579387b7478b864c5dd63ad558c98316a2cb6e96dacb2bdf27498f62ed74",
+      "audit_status": "HUMAN_REVIEWED_LABEL_IDENTITY_VERIFIED"
+    }
+  ],
+  "authorization": {
+    "scope": "internal_audio_poc_evaluation_only",
+    "redistribution": "prohibited",
+    "license": "PROJECT-INTERNAL-TEST-DATA",
+    "sensitivity": "controlled_audio_and_metadata",
+    "raw_audio_git_tracked": false
+  },
+  "prior_use": {
+    "status": "PREVIOUSLY_USED_NOT_HOLDOUT",
+    "uses": [
+      "Audio M1 fixture and VAD validation",
+      "Audio M2 ASR development and scoring",
+      "Audio M3 and M4 qualification support"
+    ],
+    "role_constraint": "regression_or_development_only"
+  },
+  "inventory": {
+    "authorized_asr_references": 50,
+    "clear_speech": 25,
+    "pause_speech": 25,
+    "silence": 25,
+    "nonspeech_noise": 25,
+    "nonspeech_silence_and_noise_seconds": 600,
+    "speech_duration_seconds": {
+      "minimum": 6.0,
+      "maximum": 8.0
+    },
+    "delivered_pcm": {
+      "sample_rate_hz": 16000,
+      "channels": 1,
+      "sample_format": "S16_LE"
+    }
+  },
+  "coverage_matrix": [
+    {
+      "dimension": "intent",
+      "status": "PARTIAL",
+      "evidence": "Authorized prompts cover device control, system state, timing, audio, and test operations, but no frozen AR1 intent taxonomy annotation exists."
+    },
+    {
+      "dimension": "english_entity",
+      "status": "GAP",
+      "evidence": "Code-switch prompts contain English technical tokens, but named-entity coverage is not separately identified or audited."
+    },
+    {
+      "dimension": "code_switch",
+      "status": "COVERED_REUSABLE",
+      "evidence": "The authorized 50-reference plan includes clear and paused code-switch categories."
+    },
+    {
+      "dimension": "general_zh_tw",
+      "status": "COVERED_REUSABLE",
+      "evidence": "The authorized internal set and prior Common Voice rows contain audited Taiwan Mandarin material."
+    },
+    {
+      "dimension": "duration",
+      "status": "COVERED_REUSABLE",
+      "evidence": "Authorized speech covers fixed six- and eight-second recordings; prior derived regression clips cover approximately 2.44 to 5.23 seconds."
+    },
+    {
+      "dimension": "pause",
+      "status": "COVERED_REUSABLE",
+      "evidence": "Twenty-five authorized pause fixtures have human-reviewed speech and internal-pause intervals."
+    },
+    {
+      "dimension": "volume",
+      "status": "GAP",
+      "evidence": "No audited low-, nominal-, and high-volume condition label or controlled derivation is present."
+    },
+    {
+      "dimension": "noise",
+      "status": "PARTIAL",
+      "evidence": "Twenty-five nonspeech noise fixtures are identified, but speech-in-noise ASR coverage is absent."
+    },
+    {
+      "dimension": "speech_end",
+      "status": "COVERED_REUSABLE",
+      "evidence": "Human-reviewed speech intervals and prior p0, p300, and p500 boundary variants support speech-end behavior."
+    }
+  ],
+  "documented_gaps": [
+    {
+      "gap": "AR1 intent taxonomy annotation",
+      "minimum_action": "Annotate a minimum reusable development subset without changing audio."
+    },
+    {
+      "gap": "English named entities",
+      "minimum_action": "Identify authorized existing named-entity material or collect the smallest reviewed addition."
+    },
+    {
+      "gap": "volume conditions",
+      "minimum_action": "Freeze a controlled low/nominal/high derivation or collect the smallest reviewed addition."
+    },
+    {
+      "gap": "speech in noise",
+      "minimum_action": "Freeze a licensed controlled mixing method or collect the smallest reviewed addition."
+    }
+  ],
+  "collection_decision": "MINIMUM_GAP_CLOSURE_REQUIRED_BEFORE_AR1M1_EXIT",
+  "role_assignment": null,
+  "holdout_proposal": null,
+  "user_review_required_before_role_freeze": true
+}

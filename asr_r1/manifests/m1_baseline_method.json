@@ -20,8 +20,10 @@
   },
   "metrics": {
     "model_load_seconds": "resident runtime load time when exposed by the native API",
-    "decode_wall_seconds": "warm-model elapsed time for one complete streaming utterance",
-    "rtf": "decode_wall_seconds divided by 2.66 seconds",
+    "full_utterance_decode_wall_seconds": "resident-model unpaced elapsed time for one complete streaming utterance",
+    "full_utterance_rtf": "full_utterance_decode_wall_seconds divided by 2.66 seconds; model load is excluded",
+    "ttft_ms": "paced adapter-observed first non-empty changed partial minus the frozen derived speech-start time",
+    "speech_end_to_final_ms": "paced final observation minus the frozen derived speech-end time",
     "cold_total_seconds": "load plus warmup plus decode when the native executable cannot expose a resident API boundary",
     "peak_process_tree_rss_bytes": "maximum sampled sum of VmRSS for the command process tree"
   },

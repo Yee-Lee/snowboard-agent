@@ -20,6 +20,7 @@ class FakeBackend:
         self.closed = False
         self.fail_accept = False
         self.always_ready = False
+        self.closed_stream_ids = []
         self._next_stream = 0
 
     def load_model(self) -> None:
@@ -47,6 +48,9 @@ class FakeBackend:
     def input_finished(self, stream: dict) -> None:
         stream["finished"] = True
 
+    def close_stream(self, stream: dict) -> None:
+        self.closed_stream_ids.append(stream["id"])
+
     def close(self) -> None:
         self.closed = True
 
@@ -71,6 +75,10 @@ class SherpaAdapterTest(unittest.TestCase):
         self.assertEqual(EventKind.FINAL, final.kind)
         self.assertEqual(final.text, final.alternatives[0].text)
         self.assertIsNone(final.alternatives[0].confidence)
+        self.assertEqual([1], self.backend.closed_stream_ids)
+        selected = self.runtime._sessions[session]
+        self.assertTrue(selected.stream_closed)
+        self.assertIsNone(selected.stream)
 
     def test_model_residency_reset_and_session_isolation(self) -> None:
         first = self.runtime.create_session()
@@ -81,11 +89,13 @@ class SherpaAdapterTest(unittest.TestCase):
         self.runtime.reset_session(first)
         self.assertEqual(SessionState.OPEN, self.runtime.state(first))
         self.assertTrue(self.runtime.model_loaded)
+        self.assertIn(1, self.backend.closed_stream_ids)
 
     def test_cancel_is_typed_and_terminal(self) -> None:
         session = self.runtime.create_session()
         event = self.runtime.cancel_session(session, 1)
         self.assertEqual(ErrorCode.CANCELLED, event.error_code)
+        self.assertEqual([1], self.backend.closed_stream_ids)
         with self.assertRaises(ProtocolError):
             self.runtime.accept_chunk(chunk(session, 0, 2))
 
@@ -112,6 +122,7 @@ class SherpaAdapterTest(unittest.TestCase):
         self.assertLessEqual(self.runtime.shutdown(100), 100)
         self.assertTrue(self.backend.closed)
         self.assertEqual(0, self.runtime.session_count)
+        self.assertEqual([1], self.backend.closed_stream_ids)
         with self.assertRaises(ProtocolError) as raised:
             self.runtime.create_session()
         self.assertEqual(ErrorCode.SHUTDOWN, raised.exception.code)

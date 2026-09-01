@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "research_id": "AR1M1-DIAGNOSTIC-POSTPROCESS-001",
+  "status": "FAKE_INTERFACE_PROVEN_REAL_POSTPROCESS_NOT_RUN",
+  "formal_result": false,
+  "scope": "Diagnostic research only. No post-process or second scorer changes the emitted ASR final, enters the AR1M3 comparison, or receives qualification credit.",
+  "scaffold": {
+    "implementation": "asr_r1/diagnostic_pipeline.py",
+    "fake_vad": "Caller-supplied speech labels exercise ordered speech-start, speech-end, reset, and cancel transitions without claiming acoustic VAD behavior.",
+    "fake_second_pass_scorer": "Injected deterministic scores exercise top-one fallback and N-best selection while returning only transcript hashes and leaving the final unchanged."
+  },
+  "observed_m1_adapter_surface": {
+    "status": "NON_FORMAL_WORKSTATION_DEVELOPMENT_OBSERVATION",
+    "candidates_observed": 5,
+    "nbest": "TOP_ONE_FALLBACK_ONLY",
+    "confidence": "NOT_EXPOSED",
+    "token_timestamps": "NOT_EXPOSED",
+    "endpoint": "CANDIDATE_INTERNAL_BEHAVIOR_NOT_A_COMMON_FROZEN_VAD_INTERFACE",
+    "wenet_boundary": "The tested sherpa-onnx online CTC conversions do not establish native WeNet U2++ attention rescoring."
+  },
+  "potential_directions": [
+    {
+      "direction": "deterministic_text_normalization",
+      "research_state": "DIAGNOSTICALLY_FEASIBLE",
+      "value_hypothesis": "Normalize stable spacing, punctuation, number, and English-token presentation after preserving the raw final.",
+      "risk": "A rule may alter semantic content or hide model errors; score raw and normalized forms separately."
+    },
+    {
+      "direction": "english_entity_and_context_bias",
+      "research_state": "REQUIRES_FIXTURE_GAP_CLOSURE_AND_RUNTIME_PROBE",
+      "value_hypothesis": "Product vocabulary may benefit from audited entity normalization or decoder-side contextual bias.",
+      "risk": "Context bias is decoder behavior, not interchangeable with post-processing, and may harm general utterances."
+    },
+    {
+      "direction": "nbest_second_pass_rescoring",
+      "research_state": "BLOCKED_BY_CURRENT_TOP_ONE_RUNTIME_SURFACE",
+      "value_hypothesis": "A scorer can only recover an alternative that the first pass exposes.",
+      "risk": "A different decoder/runtime path, reproducible score identity, latency, RSS, and genuine N-best output are prerequisites."
+    },
+    {
+      "direction": "vad_endpoint_cooperation",
+      "research_state": "SEPARATE_BOUNDED_M2_DIAGNOSTIC",
+      "value_hypothesis": "Endpoint timing may reduce speech-end-to-final delay without altering ASR text.",
+      "risk": "VAD truncation can damage first or last syllables; endpoint latency and ASR decode cost must remain separate."
+    }
+  ],
+  "m2_boundary": "Only small development-data diagnostics may follow. No real post-process enters the formal comparison, and no direction is an M2 advance or qualification decision."
+}

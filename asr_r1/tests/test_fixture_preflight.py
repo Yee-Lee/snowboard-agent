@@ -48,6 +48,13 @@ class FixturePreflightTest(unittest.TestCase):
                 "crop_start_ms": 10,
                 "crop_end_ms": 30,
             },
+            "speech_interval": {
+                "annotation_status": "HUMAN_REVIEWED_FROZEN",
+                "source_start_ms": 10,
+                "source_end_ms": 30,
+                "derived_start_ms": 0,
+                "derived_end_ms": 20,
+            },
         }
         (manifest_dir / "m1_smoke_fixture.json").write_text(
             json.dumps(manifest), encoding="utf-8"
@@ -60,6 +67,18 @@ class FixturePreflightTest(unittest.TestCase):
         identity = verify_controlled_smoke_fixture(self.repo_root, self.external_wav)
         self.assertEqual("test-smoke", identity.fixture_id)
         self.assertEqual(320, identity.frames)
+        self.assertEqual(0, identity.speech_start_offset_ms)
+        self.assertEqual(20, identity.speech_end_offset_ms)
+
+    def test_unfrozen_speech_interval_fails(self) -> None:
+        manifest_path = (
+            self.repo_root / "asr_r1" / "manifests" / "m1_smoke_fixture.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["speech_interval"]["derived_start_ms"] = 1
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "speech interval mismatch"):
+            verify_controlled_smoke_fixture(self.repo_root, self.external_wav)
 
     def test_checksum_mismatch_fails(self) -> None:
         with self.external_wav.open("ab") as target:

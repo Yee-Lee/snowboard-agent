@@ -60,6 +60,13 @@
         "artifact_sha256": "30437d84dc4861740d40166212ab05f3728945443d53691620075c4031fb88e1",
         "declared_inference_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt", "bpe.model"],
         "declared_extracted_sizes": "encoder 726 MiB, decoder 8.1 MiB, joiner 1.5 MiB, tokens 18 KiB, bpe 258 KiB",
+        "extracted_files": [
+          {"filename": "encoder.int8.onnx", "size_bytes": 761133737, "sha256": "f2c543a0330e1ed0bd09c82e4ae7d3f1cbee10a15feca638fcc4f88083a36b8a"},
+          {"filename": "decoder.onnx", "size_bytes": 8533022, "sha256": "8f9c903da2818f207304a3f30b9eeb30028e30398f333c1e95e12c97704173e6"},
+          {"filename": "joiner.int8.onnx", "size_bytes": 1545417, "sha256": "f76ffce14b6ef80098cfdbce8846896ff68133970abc314eafab632f910df0d7"},
+          {"filename": "tokens.txt", "size_bytes": 18626, "sha256": "6722bd1585f46f84456b29c3550a343a3cc375b971645773c02ed8e0b4e2405c"},
+          {"filename": "bpe.model", "size_bytes": 263956, "sha256": "867a7355801cb43939962ad757ba1cb7941b6171b5a6902772483b4e3a623377"}
+        ],
         "quantization": "INT8 encoder and joiner; decoder is not declared INT8",
         "streaming_contract": "online transducer",
         "language_scope": "multi-dataset Simplified Chinese training; no zh-TW quality claim"
@@ -127,7 +134,11 @@
         "linux_x86_64_cpu_archive": {
           "filename": "nemo-speech-0.1.0-linux-x86_64-cpu.tar.gz",
           "size_bytes": 4583913,
-          "sha256": "0f74131d631ad2c694cf0ec53490866bb6461147959589a69fb6fc231944065b"
+          "sha256": "0f74131d631ad2c694cf0ec53490866bb6461147959589a69fb6fc231944065b",
+          "extracted_files": [
+            {"relative_path": "bin/nemo-speech", "size_bytes": 1712472, "sha256": "867270cc7e0bd0ca4249d191138d9da3285ce852abc7bdc4ffcabab41e832eea"},
+            {"relative_path": "lib/libnemo_speech_asr_c.so.1", "size_bytes": 68208, "sha256": "4db4deb4fdaaf3a60bcf07d29c7dab78e0ff8601cc0ff5f5debe3484cd6156e3"}
+          ]
         },
         "linux_aarch64_cpu_archive": {
           "filename": "nemo-speech-0.1.0-linux-aarch64-cpu.tar.gz",
@@ -162,6 +173,12 @@
         "artifact_sha256": "5a2832047ea1f97dd0dc595b816c230c4bafad65cfc0341fa57517cadc50afd0",
         "declared_inference_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt"],
         "declared_extracted_sizes": "encoder 154 MiB, decoder 4.9 MiB, joiner 1.0 MiB, tokens 20 KiB",
+        "extracted_files": [
+          {"filename": "encoder.int8.onnx", "size_bytes": 161141793, "sha256": "5ac51e27981bb4dab01bb9be4958453ba50c3b61c063ddda0eab23fd3671aa4f"},
+          {"filename": "decoder.onnx", "size_bytes": 5165083, "sha256": "06522ad63cec0fdf6809f4e1db9bb4f7d710c34582e3b35db62ac60eccafac7e"},
+          {"filename": "joiner.int8.onnx", "size_bytes": 1033416, "sha256": "b34584dc6f561089e1d747fedebb3765f2caa72c927ef54d7ca55e5ae40a814b"},
+          {"filename": "tokens.txt", "size_bytes": 20628, "sha256": "6193c7ea1c96d0d9a1e9652789b40d13a8a913b434a5451e93158f5a09fd6652"}
+        ],
         "quantization": "INT8 encoder and joiner; decoder is not declared INT8",
         "streaming_contract": "online transducer",
         "language_scope": "multi-dataset Simplified Chinese training; no zh-TW quality claim"
