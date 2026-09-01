@@ -85,7 +85,17 @@ def verify(
     for path in required_paths:
         _require(resolve_repo_resource(root, path).is_file(), f"missing {path}", failures)
 
-    tracker = _json(resolve_repo_resource(root, "asr_r1/manifests/candidate_tracker.json"))
+    tag_exists = subprocess.run(
+        ["git", "cat-file", "-e", "refs/tags/asr_r1_m0"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    ).returncode == 0
+    tracker = (
+        _git_json("asr_r1_m0:asr_r1/manifests/candidate_tracker.json")
+        if tag_exists
+        else _json(resolve_repo_resource(root, "asr_r1/manifests/candidate_tracker.json"))
+    )
     _require(len(tracker.get("candidates", [])) == 3, "candidate tracker must contain three rows", failures)
     _require(
         tracker.get("status") == "IDENTITY_TRACKING_ONLY_NO_EXECUTION_AUTHORIZED",

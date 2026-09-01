@@ -29,6 +29,9 @@ class SchemaAndManifestTest(unittest.TestCase):
             "asr_r1/manifests/candidate_tracker.json",
             "asr_r1/manifests/control_provenance.json",
             "asr_r1/manifests/fixture_reuse_audit_plan.json",
+            "asr_r1/manifests/m1_baseline_method.json",
+            "asr_r1/manifests/m1_identity_screening.json",
+            "asr_r1/manifests/m1_smoke_fixture.json",
             "asr_r1/schemas/lifecycle_command.schema.json",
             "asr_r1/schemas/pcm_chunk.schema.json",
             "asr_r1/schemas/streaming_event.schema.json",
@@ -66,14 +69,69 @@ class SchemaAndManifestTest(unittest.TestCase):
             set(lifecycle["properties"]["operation"]["enum"]),
         )
 
-    def test_candidate_tracker_preserves_open_identities(self) -> None:
+    def test_candidate_tracker_records_metadata_dispositions(self) -> None:
         tracker = load("manifests/candidate_tracker.json")
-        self.assertEqual(3, len(tracker["candidates"]))
-        pending = [
-            item for item in tracker["candidates"] if item["identity_status"].startswith("PENDING")
-        ]
-        self.assertEqual(2, len(pending))
-        self.assertIn("NO_EXECUTION_AUTHORIZED", tracker["status"])
+        self.assertEqual(5, len(tracker["candidates"]))
+        self.assertEqual(
+            [
+                "asr-sherpa-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+                "asr-sherpa-wenet-wenetspeech-streaming-ctc-int8",
+                "asr-nvidia-nemotron-3-5-streaming-0-6b-q8-0",
+                "asr-sherpa-streaming-zipformer-zh-large-int8-2025-06-30",
+                "asr-sherpa-wenet-aishell-streaming-ctc-int8",
+            ],
+            [item["candidate_id"] for item in tracker["candidates"]],
+        )
+        self.assertEqual(
+            [1, 2, 3, 4, 5],
+            [item["development_order"] for item in tracker["candidates"]],
+        )
+        self.assertEqual(
+            {
+                "LOCKABLE_METADATA_ONLY",
+                "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
+            },
+            {item["identity_status"] for item in tracker["candidates"]},
+        )
+        self.assertEqual(
+            "STOP_USER_ELIMINATED_MEMORY_BUDGET",
+            tracker["eliminated_candidates"][0]["identity_status"],
+        )
+        self.assertIn("REAL_EXECUTION_REQUIRES_FROZEN_PACKET", tracker["status"])
+
+    def test_m1_screen_is_non_formal_and_cost_gated(self) -> None:
+        screening = load("manifests/m1_identity_screening.json")
+        self.assertFalse(screening["formal_result"])
+        self.assertIn("NO_EXECUTION_AUTHORIZATION", screening["status"])
+        self.assertEqual(
+            ["LOCKABLE"] * 5,
+            [row["disposition"] for row in screening["rows"]],
+        )
+        xlarge = screening["rows"][0]
+        self.assertGreater(xlarge["checkpoint"]["artifact_size_bytes"], 500_000_000)
+        nemotron = screening["rows"][2]
+        self.assertEqual(741_548_352, nemotron["checkpoint"]["size_bytes"])
+        self.assertEqual("zh-CN", nemotron["checkpoint"]["language_scope"].split()[1])
+        self.assertEqual("STOP", screening["stopped_rows"][0]["disposition"])
+
+    def test_m1_baseline_is_non_formal_memory_capped_and_ordered(self) -> None:
+        method = load("manifests/m1_baseline_method.json")
+        self.assertFalse(method["formal_result"])
+        self.assertEqual(1_000_000_000, method["memory_budget_bytes"])
+        self.assertIn("BLOCKED_ON_CONTROLLED_FIXTURE", method["status"])
+        self.assertEqual(
+            [1, 2, 3, 4, 5],
+            [row["development_order"] for row in method["candidate_commands"]],
+        )
+        self.assertIn("not a formal score", method["interpretation_limit"])
+
+    def test_m1_smoke_fixture_is_regression_only(self) -> None:
+        fixture = load("manifests/m1_smoke_fixture.json")
+        self.assertEqual("regression_smoke_only", fixture["role"])
+        self.assertFalse(fixture["holdout_eligible"])
+        self.assertEqual(16_000, fixture["pcm"]["sample_rate_hz"])
+        self.assertAlmostEqual(2.66, fixture["pcm"]["duration_seconds"])
+        self.assertEqual("NOT_FOUND", fixture["controlled_locator"]["local_availability_at_freeze"])
 
     def test_control_provenance_is_bound_to_audio_m4(self) -> None:
         provenance = load("manifests/control_provenance.json")

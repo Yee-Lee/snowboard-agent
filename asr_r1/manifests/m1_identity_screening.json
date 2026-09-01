@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.1",
+  "screening_id": "AR1M1-IDENTITY-SCREEN-002",
+  "status": "FROZEN_METADATA_SCREEN_NON_FORMAL_NO_EXECUTION_AUTHORIZATION",
+  "screening_date": "2026-09-01",
+  "formal_result": false,
+  "purpose": "Lock the exact five-candidate development order and stop higher-cost work when identity, platform, license, streaming, or the 1 GB memory path is not reproducible.",
+  "order_policy": "development_order is User-directed probe order only; it is not a score, quality ranking, hardware disposition, or qualification decision.",
+  "memory_budget_bytes": 1000000000,
+  "disposition_meaning": {
+    "LOCKABLE": "Metadata supports preparing a separate clean-SHA probe packet; this does not authorize acquisition or imply target feasibility.",
+    "STOP": "Preserve the row and perform no acquisition or execution in the current M1 method."
+  },
+  "sources_policy": "Technical claims use project-owner, official repository, release, package-index, or model-repository metadata only.",
+  "shared_sherpa_runtime": {
+    "name": "sherpa-onnx",
+    "version": "1.13.5",
+    "source_tag": "v1.13.5",
+    "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+    "license": "Apache-2.0",
+    "license_url": "https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.5/LICENSE",
+    "platform_evidence": "Official Linux x86_64 and aarch64 packages and Raspberry Pi documentation provide a CPU-only runtime path.",
+    "workstation_cp312_x86_64_wheels": [
+      {
+        "filename": "sherpa_onnx-1.13.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+        "size_bytes": 4391779,
+        "sha256": "dabb0b01c39dc2abad612ae6b1394472d4c1fffd775a98ad1d8494d849f73b26"
+      },
+      {
+        "filename": "sherpa_onnx_core-1.13.5-py3-none-manylinux2014_x86_64.whl",
+        "size_bytes": 10371666,
+        "sha256": "485b20188ddf905ffbd7504ed456a05d0ff84d10c592a16c0adb7d69bb845f82"
+      }
+    ],
+    "pi_cp312_aarch64_wheels": [
+      {
+        "filename": "sherpa_onnx-1.13.5-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+        "size_bytes": 4167115,
+        "sha256": "c33a0f14c4517b5b4483f289fb91202c218ef0eb522ea3af8d523311552ea6b4"
+      },
+      {
+        "filename": "sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl",
+        "size_bytes": 13051193,
+        "sha256": "4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa"
+      }
+    ]
+  },
+  "rows": [
+    {
+      "development_order": 1,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+      "disposition": "LOCKABLE",
+      "risk": "HIGH_MEMORY",
+      "checkpoint": {
+        "name": "sherpa-onnx-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+        "official_documentation": "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html",
+        "artifact_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-zh-xlarge-int8-2025-06-30.tar.bz2",
+        "artifact_size_bytes": 597755927,
+        "artifact_sha256": "30437d84dc4861740d40166212ab05f3728945443d53691620075c4031fb88e1",
+        "declared_inference_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt", "bpe.model"],
+        "declared_extracted_sizes": "encoder 726 MiB, decoder 8.1 MiB, joiner 1.5 MiB, tokens 18 KiB, bpe 258 KiB",
+        "quantization": "INT8 encoder and joiner; decoder is not declared INT8",
+        "streaming_contract": "online transducer",
+        "language_scope": "multi-dataset Simplified Chinese training; no zh-TW quality claim"
+      },
+      "memory_analysis": "The approximately 736 MiB declared inference files leave a narrow margin inside the 1,000,000,000-byte total RSS budget. Only a fail-closed load and smoke may close feasibility.",
+      "open_conditions": [
+        "verify archive digest before unpack and compute extracted-file digests",
+        "restore and verify the frozen controlled smoke WAV",
+        "stop immediately if process-tree RSS exceeds 1,000,000,000 bytes",
+        "complete workstation lifecycle probes before any Pi scheduling"
+      ]
+    },
+    {
+      "development_order": 2,
+      "candidate_id": "asr-sherpa-wenet-wenetspeech-streaming-ctc-int8",
+      "disposition": "LOCKABLE",
+      "risk": "MODEL_LINEAGE_AND_ZH_TW_QUALITY_UNPROVEN",
+      "checkpoint": {
+        "official_listing": "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/wenet/all-models.html",
+        "model_repository": "https://huggingface.co/csukuangfj/sherpa-onnx-zh-wenet-wenetspeech",
+        "model_revision": "6318e5de62a29c20fac9df2468fd60ba643b3228",
+        "streaming_model": {
+          "filename": "model-streaming.int8.onnx",
+          "size_bytes": 133162857,
+          "sha256": "46214af6c57b79114b1d88364473a9519b4d888cd8e320c83b4b205d81d6aad9"
+        },
+        "tokens": {
+          "filename": "tokens.txt",
+          "size_bytes": 48691,
+          "sha256": "b549f532e45b2c1936f0f38a7444cbd8535efd499a78a758e4698950947f0d5b"
+        },
+        "quantization": "INT8 ONNX",
+        "streaming_contract": "sherpa-onnx online WeNet CTC"
+      },
+      "scope_boundary": "This row tests the sherpa-onnx-maintainer streaming CTC conversion listed by official sherpa documentation. It does not test full native WeNet U2++ attention rescoring.",
+      "open_conditions": [
+        "verify both file digests before import",
+        "inspect converted-artifact notice and original WeNet lineage",
+        "restore and verify the frozen controlled smoke WAV",
+        "complete workstation lifecycle probes before any Pi scheduling"
+      ]
+    },
+    {
+      "development_order": 3,
+      "candidate_id": "asr-nvidia-nemotron-3-5-streaming-0-6b-q8-0",
+      "disposition": "LOCKABLE",
+      "risk": "HIGH_MEMORY_AND_NO_ZH_TW_LOCALE",
+      "checkpoint": {
+        "official_repository": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "revision": "1c8deaecc64b91f034d73e08dd8b64625eb3395d",
+        "filename": "nemotron-3.5-asr-streaming-0.6b.q8_0.gguf",
+        "size_bytes": 741548352,
+        "sha256": "a5c435f294eea8f88ce68dd27b8c3bfea7f777cb2fbba04fcd30eaa555f429ae",
+        "quantization": "portable Q8_0 weights; unsupported tensor shapes retain a supported floating-point format, so this is not a full W8A8 claim",
+        "architecture": "0.6B cache-aware FastConformer RNNT",
+        "streaming_contract": "recorded streaming in deterministic 160 ms chunks",
+        "language_scope": "Mandarin zh-CN is broad-coverage; zh-TW is not listed"
+      },
+      "runtime": {
+        "name": "NeMo-Speech.cpp",
+        "version": "0.1.0",
+        "source_tag": "v0.1.0",
+        "source_commit": "4f9676226f667d14608487df744f375db87127f8",
+        "license": "Apache-2.0",
+        "linux_x86_64_cpu_archive": {
+          "filename": "nemo-speech-0.1.0-linux-x86_64-cpu.tar.gz",
+          "size_bytes": 4583913,
+          "sha256": "0f74131d631ad2c694cf0ec53490866bb6461147959589a69fb6fc231944065b"
+        },
+        "linux_aarch64_cpu_archive": {
+          "filename": "nemo-speech-0.1.0-linux-aarch64-cpu.tar.gz",
+          "size_bytes": 4328117,
+          "sha256": "0e4112255d566de7bdd142f239e984995c4447103ba8feb41f2bb5c559d561d3"
+        },
+        "platform_evidence": "The official v0.1.0 release publishes Linux x86_64 and Linux aarch64 CPU archives."
+      },
+      "license": {
+        "model": "NVIDIA Open Model License (OpenMDW 1.1)",
+        "runtime": "Apache-2.0"
+      },
+      "memory_analysis": "The 741,548,352-byte GGUF leaves only 258,451,648 bytes inside the total 1,000,000,000-byte RSS budget before runtime and streaming state. M1 must treat it as borderline until measured.",
+      "open_conditions": [
+        "verify model and runtime archive digests before load",
+        "restore and verify the frozen controlled smoke WAV",
+        "run only local --device cpu --mode stream --language zh-CN",
+        "stop immediately if process-tree RSS exceeds 1,000,000,000 bytes",
+        "review OpenMDW 1.1 obligations before any product recommendation"
+      ]
+    },
+    {
+      "development_order": 4,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-large-int8-2025-06-30",
+      "disposition": "LOCKABLE",
+      "risk": "ZH_TW_QUALITY_UNPROVEN",
+      "checkpoint": {
+        "name": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30",
+        "official_documentation": "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html",
+        "artifact_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30.tar.bz2",
+        "artifact_size_bytes": 132634597,
+        "artifact_sha256": "5a2832047ea1f97dd0dc595b816c230c4bafad65cfc0341fa57517cadc50afd0",
+        "declared_inference_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt"],
+        "declared_extracted_sizes": "encoder 154 MiB, decoder 4.9 MiB, joiner 1.0 MiB, tokens 20 KiB",
+        "quantization": "INT8 encoder and joiner; decoder is not declared INT8",
+        "streaming_contract": "online transducer",
+        "language_scope": "multi-dataset Simplified Chinese training; no zh-TW quality claim"
+      },
+      "open_conditions": [
+        "verify archive digest before unpack and compute extracted-file digests",
+        "restore and verify the frozen controlled smoke WAV",
+        "complete workstation lifecycle probes before any Pi scheduling"
+      ]
+    },
+    {
+      "development_order": 5,
+      "candidate_id": "asr-sherpa-wenet-aishell-streaming-ctc-int8",
+      "disposition": "LOCKABLE",
+      "risk": "MODEL_LINEAGE_AND_ZH_TW_QUALITY_UNPROVEN",
+      "checkpoint": {
+        "official_listing": "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/wenet/all-models.html",
+        "model_repository": "https://huggingface.co/csukuangfj/sherpa-onnx-zh-wenet-aishell",
+        "model_revision": "01b54e27a5add735af226f3c2706b54fa3a9ae5f",
+        "streaming_model": {
+          "filename": "model-streaming.int8.onnx",
+          "size_bytes": 49618814,
+          "sha256": "2cdebc9983b205a8a261cc37c3a3d254a659af0e0423582386448a1ae9c8f66e"
+        },
+        "tokens": {
+          "filename": "tokens.txt",
+          "size_bytes": 36999,
+          "sha256": "c5146cef40588dcea3ef679c9c05d4eaeb2c37b5369002094369a5722d284de6"
+        },
+        "quantization": "INT8 ONNX",
+        "streaming_contract": "sherpa-onnx online WeNet CTC"
+      },
+      "scope_boundary": "This row tests the sherpa-onnx-maintainer streaming CTC conversion listed by official sherpa documentation. It does not test full native WeNet U2++ attention rescoring.",
+      "open_conditions": [
+        "verify both file digests before import",
+        "inspect converted-artifact notice and original WeNet lineage",
+        "restore and verify the frozen controlled smoke WAV",
+        "complete workstation lifecycle probes before any Pi scheduling"
+      ]
+    }
+  ],
+  "stopped_rows": [
+    {
+      "candidate_id": "asr-pengchengstarling-multilingual-zipformer-rnnt-epoch75-avg11",
+      "disposition": "STOP",
+      "decision_owner": "User",
+      "decision_date": "2026-09-01",
+      "reason": "The declared 1,220,027,735-byte unquantized inference closure exceeds the approximately 1 GB ASR budget before runtime overhead. Preserve prior metadata; do not acquire, build, or run it."
+    }
+  ]
+}

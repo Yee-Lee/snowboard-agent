@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "AR1M1-WORKSTATION-BASELINE-001",
+  "status": "FROZEN_METHOD_BLOCKED_ON_CONTROLLED_FIXTURE_AND_CLEAN_SHA",
+  "formal_result": false,
+  "purpose": "Run one approximately three-second local streaming smoke per candidate and record diagnostic RTF and peak process-tree RSS without publishing a score, ranking, or qualification decision.",
+  "candidate_order_source": "asr_r1/manifests/candidate_tracker.json",
+  "fixture_manifest": "asr_r1/manifests/m1_smoke_fixture.json",
+  "fixture_preflight": "asr_r1/fixture_preflight.py",
+  "memory_budget_bytes": 1000000000,
+  "memory_policy": "Fail closed and terminate the candidate if sampled process-tree RSS exceeds the budget. Report the observed peak; absence of an overshoot sample does not prove a hard kernel-enforced bound.",
+  "execution_environment": "workstation CPU only; models, runtimes, audio, transcripts, and raw output remain outside Git",
+  "offline_policy": "Use only pre-acquired checksum-verified local artifacts. The execution command receives external artifact paths explicitly and must not auto-download.",
+  "fixture": {
+    "fixture_id": "asr-clear-002-p0",
+    "duration_seconds": 2.66,
+    "chunk_duration_ms": 160,
+    "schedule": "deterministic ordered PCM chunks without wall-clock sleeping for decode-cost RTF",
+    "role": "regression_smoke_only"
+  },
+  "metrics": {
+    "model_load_seconds": "resident runtime load time when exposed by the native API",
+    "decode_wall_seconds": "warm-model elapsed time for one complete streaming utterance",
+    "rtf": "decode_wall_seconds divided by 2.66 seconds",
+    "cold_total_seconds": "load plus warmup plus decode when the native executable cannot expose a resident API boundary",
+    "peak_process_tree_rss_bytes": "maximum sampled sum of VmRSS for the command process tree"
+  },
+  "candidate_commands": [
+    {
+      "development_order": 1,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+      "runner": "python -m asr_r1.m1_sherpa_smoke",
+      "model_kind": "zipformer_transducer",
+      "external_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt"],
+      "timeout_seconds": 180
+    },
+    {
+      "development_order": 2,
+      "candidate_id": "asr-sherpa-wenet-wenetspeech-streaming-ctc-int8",
+      "runner": "python -m asr_r1.m1_sherpa_smoke",
+      "model_kind": "wenet_ctc",
+      "external_files": ["model-streaming.int8.onnx", "tokens.txt"],
+      "timeout_seconds": 120
+    },
+    {
+      "development_order": 3,
+      "candidate_id": "asr-nvidia-nemotron-3-5-streaming-0-6b-q8-0",
+      "runner": "nemo-speech bench asr",
+      "model_kind": "nemotron_3_5_q8_0",
+      "external_files": ["nemotron-3.5-asr-streaming-0.6b.q8_0.gguf"],
+      "fixed_arguments": ["--device", "cpu", "--language", "zh-CN", "--mode", "stream", "--concurrency", "1", "--repetitions", "1", "--warmup", "0", "--json"],
+      "native_rtfx_conversion": "RTF equals 1 divided by the reported rtfx",
+      "timeout_seconds": 240
+    },
+    {
+      "development_order": 4,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-large-int8-2025-06-30",
+      "runner": "python -m asr_r1.m1_sherpa_smoke",
+      "model_kind": "zipformer_transducer",
+      "external_files": ["encoder.int8.onnx", "decoder.onnx", "joiner.int8.onnx", "tokens.txt"],
+      "timeout_seconds": 120
+    },
+    {
+      "development_order": 5,
+      "candidate_id": "asr-sherpa-wenet-aishell-streaming-ctc-int8",
+      "runner": "python -m asr_r1.m1_sherpa_smoke",
+      "model_kind": "wenet_ctc",
+      "external_files": ["model-streaming.int8.onnx", "tokens.txt"],
+      "timeout_seconds": 120
+    }
+  ],
+  "smoke_completion_definition": "The exact artifact loads, accepts the complete frozen PCM stream, returns a non-empty final, stays within the sampled RSS budget, exits cleanly, and emits complete diagnostic metrics.",
+  "interpretation_limit": "A workstation pass is development evidence only. It is not a formal score, comparative ranking, Pi hardware disposition, zh-TW quality conclusion, or qualification decision.",
+  "current_blocker": "The checksum-bound controlled WAV is not present in known local controlled storage. No artifact acquisition or real model load may start until it is restored and passes preflight."
+}

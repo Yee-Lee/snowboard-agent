@@ -58,6 +58,29 @@ Prove a fake VAD/fake scorer scaffold and investigate N-best, confidence,
 timestamp, endpoint, and future scorer directions. Produce probe dispositions
 and advance/conditional/stop advice, not formal rankings.
 
+## Frozen workstation baseline order
+
+The User-directed M1 development order is:
+
+1. sherpa-onnx streaming Zipformer zh x-large INT8 2025-06-30.
+2. sherpa-onnx WeNet WenetSpeech streaming CTC INT8, 133,162,857-byte model.
+3. NVIDIA Nemotron 3.5 ASR Streaming 0.6B portable Q8_0.
+4. sherpa-onnx streaming Zipformer zh large INT8 2025-06-30.
+5. sherpa-onnx WeNet AISHELL streaming CTC INT8, 49,618,814-byte model.
+
+This is a cost/probe sequence, not a quality score or formal ranking. The WeNet
+rows exercise sherpa-onnx online CTC conversions; they do not claim that native
+U2++ attention rescoring was tested. PengChengStarling is preserved as stopped
+after the User eliminated its 1,220,027,735-byte unquantized inference closure.
+
+The baseline uses `asr-clear-002-p0`, a frozen 2.66-second regression smoke,
+deterministic 160 ms chunks, CPU only, and a 1,000,000,000-byte sampled
+process-tree RSS ceiling. Each row must return a non-empty final and record model
+load time when exposed, warm decode wall time, RTF, and peak RSS. The measurement
+is non-formal workstation development evidence only. Artifact acquisition and
+execution remain blocked until the missing external controlled WAV is restored,
+passes exact preflight, and the method is committed at a clean SHA.
+
 ## Fixture gate
 
 Before the first real smoke run, audit the historical catalogs for identity,

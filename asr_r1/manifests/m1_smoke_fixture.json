@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "fixture_freeze_id": "AR1M1-SMOKE-FIXTURE-001",
+  "status": "IDENTITY_FROZEN_CONTROLLED_ARTIFACT_AVAILABILITY_PENDING",
+  "formal_result": false,
+  "fixture_id": "asr-clear-002-p0",
+  "role": "regression_smoke_only",
+  "holdout_eligible": false,
+  "selection_reason": "Previously used authorized Taiwan Mandarin development audio with a frozen 2.66-second speech crop; reuse avoids new collection and cannot contaminate a future holdout.",
+  "historical_provenance": {
+    "control_tag": "audio_m4",
+    "control_commit": "5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
+    "authorized_catalog_reference": "audio_m4:poc_audio/fixtures/authorized/fixture_catalog_v1.json",
+    "authorized_catalog_sha256": "7d89fe13e53d1fbd4a3f4d1ace81bd6291c236008218be93f4fe87cf6388b677",
+    "pcm_lock_reference": "audio_m4:poc_audio/manifests/m2b_c_pcm_lock.json",
+    "pcm_lock_sha256": "6282a3c9285b4f1e0040952cb6d5b8756e22101a4eab871436a6e8294ea93819",
+    "prior_use": [
+      "Audio M2B-C development",
+      "ASR decoder and prompt probes",
+      "reviewed result evidence"
+    ]
+  },
+  "authorization": {
+    "scope": "internal_audio_poc_evaluation_only",
+    "redistribution": "prohibited",
+    "raw_audio_git_tracked": false,
+    "license": "PROJECT-INTERNAL-TEST-DATA",
+    "sensitivity": "controlled_audio"
+  },
+  "pcm": {
+    "container": "WAV",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "sample_format": "S16_LE",
+    "frames": 42560,
+    "duration_seconds": 2.66,
+    "size_bytes": 85164,
+    "sha256": "5a4a7b962b46a666a2f49158d407766ce122511e22c865777b1720b57a48f413",
+    "source_fixture_sha256": "ba9257a5fb2aecfeeb03b9294316b213cc274e952132391351670fb140852ca3",
+    "crop_start_ms": 470,
+    "crop_end_ms": 3130,
+    "padding_profile": "p0"
+  },
+  "reference": {
+    "transcript_in_git": false,
+    "reference_sha256": "473e99be15309ac45ed12709a8bb065f9f7f90b57ee5a3ce301abfece2035a3a"
+  },
+  "controlled_locator": {
+    "policy": "The operator supplies the controlled WAV path at runtime. Development code must not store an absolute or checkout-relative artifact path.",
+    "local_availability_at_freeze": "NOT_FOUND",
+    "required_preflight": "exact size, SHA-256, WAV format, frame count, and duration must match before any real model load"
+  },
+  "collection_decision": "NO_NEW_COLLECTION_REQUIRED_IF_CONTROLLED_ARTIFACT_IS_RESTORED",
+  "blocking_condition": "Real smoke is prohibited until the controlled p0 WAV is restored and passes preflight."
+}

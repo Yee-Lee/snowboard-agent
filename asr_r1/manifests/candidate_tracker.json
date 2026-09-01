@@ -1,39 +1,74 @@
 {
-  "schema_version": "1.0",
-  "tracker_id": "AR1M0-CANDIDATE-TRACKER-001",
-  "status": "IDENTITY_TRACKING_ONLY_NO_EXECUTION_AUTHORIZED",
+  "schema_version": "1.1",
+  "tracker_id": "AR1M1-CANDIDATE-TRACKER-001",
+  "status": "METADATA_SCREENED_NON_FORMAL_REAL_EXECUTION_REQUIRES_FROZEN_PACKET",
   "updated_date": "2026-09-01",
-  "execution_policy": "No acquisition, build, import, model load, inference, benchmark, or Pi execution is authorized by this tracker.",
+  "execution_policy": "Development order is User-directed and is not a score or ranking. Real execution requires a lockable exact row, the frozen external smoke fixture, a clean SHA, and the memory-capped packet.",
+  "identity_screening_manifest": "asr_r1/manifests/m1_identity_screening.json",
+  "baseline_method_manifest": "asr_r1/manifests/m1_baseline_method.json",
+  "memory_budget_bytes": 1000000000,
   "candidates": [
     {
-      "candidate_id": "asr-sherpa-streaming-zipformer-zh-int8-2025-06-30",
-      "display_name": "sherpa-onnx streaming Zipformer zh INT8 2025-06-30",
+      "development_order": 1,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+      "display_name": "Zipformer zh x-large INT8",
+      "engine_family": "sherpa-onnx",
+      "checkpoint_name": "sherpa-onnx-streaming-zipformer-zh-xlarge-int8-2025-06-30",
+      "checkpoint_revision": "github-release:asr-models/sha256:30437d84dc4861740d40166212ab05f3728945443d53691620075c4031fb88e1",
+      "runtime_revision": "sherpa-onnx-v1.13.5@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "identity_status": "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
+      "next_identity_action": "Freeze a clean-SHA packet, restore the controlled smoke fixture, then run the first fail-closed load and three-second smoke under the 1,000,000,000-byte RSS limit."
+    },
+    {
+      "development_order": 2,
+      "candidate_id": "asr-sherpa-wenet-wenetspeech-streaming-ctc-int8",
+      "display_name": "WeNet WenetSpeech streaming CTC INT8",
+      "engine_family": "sherpa-onnx WeNet CTC",
+      "checkpoint_name": "sherpa-onnx-zh-wenet-wenetspeech/model-streaming.int8.onnx",
+      "checkpoint_revision": "huggingface:csukuangfj/sherpa-onnx-zh-wenet-wenetspeech@6318e5de62a29c20fac9df2468fd60ba643b3228",
+      "runtime_revision": "sherpa-onnx-v1.13.5@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "identity_status": "LOCKABLE_METADATA_ONLY",
+      "next_identity_action": "Verify the exact two-file closure and run streaming CTC smoke. Treat full WeNet U2++ attention rescoring as a separate, untested runtime path."
+    },
+    {
+      "development_order": 3,
+      "candidate_id": "asr-nvidia-nemotron-3-5-streaming-0-6b-q8-0",
+      "display_name": "NVIDIA Nemotron 3.5 ASR Streaming 0.6B Q8_0",
+      "engine_family": "NeMo-Speech.cpp",
+      "checkpoint_name": "nemotron-3.5-asr-streaming-0.6b.q8_0.gguf",
+      "checkpoint_revision": "huggingface:nvidia/nemotron-3.5-asr-streaming-0.6b@1c8deaecc64b91f034d73e08dd8b64625eb3395d",
+      "runtime_revision": "NeMo-Speech.cpp-v0.1.0@4f9676226f667d14608487df744f375db87127f8",
+      "identity_status": "LOCKABLE_MEMORY_CAPPED_PROBE_ONLY",
+      "next_identity_action": "Use only the official Q8_0 GGUF and local CPU runtime. Run zh-CN streaming smoke under the 1,000,000,000-byte RSS limit; do not infer zh-TW quality from M1."
+    },
+    {
+      "development_order": 4,
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-large-int8-2025-06-30",
+      "display_name": "Zipformer zh large INT8",
       "engine_family": "sherpa-onnx",
       "checkpoint_name": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30",
-      "checkpoint_revision": null,
-      "runtime_revision": null,
-      "identity_status": "PARTIAL_NAME_LOCK_REVISION_PENDING",
-      "next_identity_action": "AR1M1 must lock official source, runtime, model files, licenses, sizes, and checksums before acquisition or execution."
+      "checkpoint_revision": "github-release:asr-models/sha256:5a2832047ea1f97dd0dc595b816c230c4bafad65cfc0341fa57517cadc50afd0",
+      "runtime_revision": "sherpa-onnx-v1.13.5@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "identity_status": "LOCKABLE_METADATA_ONLY",
+      "next_identity_action": "Verify the checksum-bound archive and run the frozen workstation streaming smoke."
     },
     {
-      "candidate_id": "asr-pengchengstarling-multilingual-zipformer-rnnt-pending",
-      "display_name": "PengChengStarling Multilingual Zipformer RNN-T",
-      "engine_family": null,
-      "checkpoint_name": null,
-      "checkpoint_revision": null,
-      "runtime_revision": null,
-      "identity_status": "PENDING_EXACT_OFFICIAL_IDENTITY",
-      "next_identity_action": "AR1M1 research must select and lock one official checkpoint/runtime pair or record a stop disposition."
-    },
+      "development_order": 5,
+      "candidate_id": "asr-sherpa-wenet-aishell-streaming-ctc-int8",
+      "display_name": "WeNet AISHELL streaming CTC INT8",
+      "engine_family": "sherpa-onnx WeNet CTC",
+      "checkpoint_name": "sherpa-onnx-zh-wenet-aishell/model-streaming.int8.onnx",
+      "checkpoint_revision": "huggingface:csukuangfj/sherpa-onnx-zh-wenet-aishell@01b54e27a5add735af226f3c2706b54fa3a9ae5f",
+      "runtime_revision": "sherpa-onnx-v1.13.5@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "identity_status": "LOCKABLE_METADATA_ONLY",
+      "next_identity_action": "Verify the exact two-file closure and run streaming CTC smoke. Treat full WeNet U2++ attention rescoring as a separate, untested runtime path."
+    }
+  ],
+  "eliminated_candidates": [
     {
-      "candidate_id": "asr-wenet-u2pp-conformer-pending",
-      "display_name": "WeNet U2++ Conformer",
-      "engine_family": "WeNet",
-      "checkpoint_name": null,
-      "checkpoint_revision": null,
-      "runtime_revision": null,
-      "identity_status": "PENDING_EXACT_OFFICIAL_IDENTITY",
-      "next_identity_action": "AR1M1 research must select and lock one official checkpoint/runtime pair or record a stop disposition."
+      "candidate_id": "asr-pengchengstarling-multilingual-zipformer-rnnt-epoch75-avg11",
+      "identity_status": "STOP_USER_ELIMINATED_MEMORY_BUDGET",
+      "reason": "The 1,220,027,735-byte unquantized inference closure already exceeds the approximately 1 GB ASR memory budget. User eliminated this path on 2026-09-01."
     }
   ]
 }
