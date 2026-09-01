@@ -1,6 +1,6 @@
 # AR1 Outcome Checklist
 
-Status: `DRAFT FOR AR1M0 FREEZE`
+Status: `AUTHORITATIVE / FROZEN AT AR1M0`
 
 - Branch and full delivery SHA.
 - Exact ASR, runtime, artifact, dependency, license, configuration, and
@@ -14,3 +14,10 @@ Status: `DRAFT FOR AR1M0 FREEZE`
 - Core deltas for possible `ALPHA.R1` continuation.
 - User-confirmed report and exactly one disposition.
 - Core evidence-intake findings closed before AR1M4 completion.
+
+Checklist items are satisfied only by reviewed, reproducible evidence, not by
+absence of a recorded failure. Formal scores, rankings, hardware-result
+dispositions, qualification decisions, and final outcome language cannot be
+committed or pushed without explicit User approval. AR1M4 still submits exactly
+one of `SUPPORTED`, `NOT_SUPPORTED`, or `INCONCLUSIVE`; it cannot accept a Core
+gate, create `ALPHA.R1`, or select M5.

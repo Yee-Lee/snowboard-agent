@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowboard.local/asr-r1/lifecycle-command-v1.schema.json",
+  "title": "AR1 Lifecycle Command",
+  "type": "object",
+  "required": ["schema_version", "operation", "request_id"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "operation": {
+      "enum": [
+        "model_load",
+        "session_create",
+        "session_reset",
+        "input_finished",
+        "cancel",
+        "shutdown"
+      ]
+    },
+    "request_id": {"type": "string", "minLength": 1},
+    "session_id": {"type": "string", "minLength": 1},
+    "timeout_ms": {"type": "integer", "minimum": 1}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {"enum": ["session_reset", "input_finished", "cancel"]}
+        }
+      },
+      "then": {"required": ["session_id"]}
+    },
+    {
+      "if": {"properties": {"operation": {"const": "shutdown"}}},
+      "then": {"required": ["timeout_ms"]}
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "AR1M0-FIXTURE-REUSE-AUDIT-PLAN-001",
+  "status": "PLAN_FROZEN_AUDIT_NOT_STARTED_NO_HOLDOUT_ASSIGNED",
+  "policy": {
+    "audit_fields": [
+      "identity",
+      "authorization",
+      "sensitivity",
+      "category",
+      "prior_use",
+      "reference",
+      "checksum",
+      "license",
+      "controlled_locator"
+    ],
+    "coverage_dimensions": [
+      "intent",
+      "english_entity",
+      "code_switch",
+      "general_zh_tw",
+      "duration",
+      "pause",
+      "volume",
+      "noise",
+      "speech_end"
+    ],
+    "role_rules": {
+      "previously_tuned": "regression_only",
+      "previously_scored_or_reviewed": "not_holdout",
+      "untouched": "holdout_eligible_only_after_user_review",
+      "coverage_gap": "collect_minimum_authorized_addition_only"
+    },
+    "role_freeze_order": [
+      "complete identity and authorization audit",
+      "complete prior-use audit",
+      "review coverage gaps",
+      "obtain User review for any holdout proposal",
+      "freeze disjoint development, adjustment, regression, and holdout roles"
+    ],
+    "milestone_gates": [
+      {
+        "milestone": "AR1M0",
+        "collection": "PROHIBITED",
+        "required_state": "audit and collection process frozen; no fixture role assigned"
+      },
+      {
+        "milestone": "AR1M1_ENTRY_BEFORE_REAL_SMOKE",
+        "collection": "REUSE_FIRST_MINIMUM_REPLACEMENT_ONLY",
+        "required_state": "historical catalogs audited; one authorized approximately three-second PCM smoke fixture frozen"
+      },
+      {
+        "milestone": "AR1M1_EXIT_AR1M2_ENTRY",
+        "collection": "MINIMUM_DOCUMENTED_PRERECORDED_GAPS_ONLY",
+        "required_state": "coverage matrix complete; new gaps fully authorized, referenced, checksummed, sensitivity-reviewed, licensed, and prior-use audited"
+      },
+      {
+        "milestone": "BEFORE_AR1M2A_FORMAL",
+        "collection": "CLOSED_AFTER_USER_REVIEW_AND_ROLE_FREEZE",
+        "required_state": "development, adjustment, regression, and final holdout manifests disjoint and frozen"
+      },
+      {
+        "milestone": "AR1M3_ENTRY_AFTER_PIPELINE_FREEZE",
+        "collection": "FROZEN_TARGET_MICROPHONE_QUALIFICATION_ONLY",
+        "required_state": "prompts, capture method, hardware, microphone, environment, repeats, authorization, and cleanup frozen; no tuning use"
+      }
+    ]
+  },
+  "sources_to_audit": [
+    {
+      "source_id": "audio-m4-authorized-fixture-catalog-v1",
+      "historical_reference": "audio_m4:poc_audio/fixtures/authorized/fixture_catalog_v1.json",
+      "audit_status": "NOT_STARTED",
+      "assigned_role": null
+    },
+    {
+      "source_id": "audio-m4-fixture-catalog",
+      "historical_reference": "audio_m4:poc_audio/fixtures/catalog.json",
+      "audit_status": "NOT_STARTED",
+      "assigned_role": null
+    }
+  ],
+  "prohibited_at_ar1m0": [
+    "copy raw or private audio into Git",
+    "assign any fixture to final holdout before the audit and User review",
+    "treat prior M4 acceptance as AR1 evidence",
+    "add recordings before a documented coverage-gap review"
+  ]
+}

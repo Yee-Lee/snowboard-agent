@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "tracker_id": "AR1M0-CANDIDATE-TRACKER-001",
+  "status": "IDENTITY_TRACKING_ONLY_NO_EXECUTION_AUTHORIZED",
+  "updated_date": "2026-09-01",
+  "execution_policy": "No acquisition, build, import, model load, inference, benchmark, or Pi execution is authorized by this tracker.",
+  "candidates": [
+    {
+      "candidate_id": "asr-sherpa-streaming-zipformer-zh-int8-2025-06-30",
+      "display_name": "sherpa-onnx streaming Zipformer zh INT8 2025-06-30",
+      "engine_family": "sherpa-onnx",
+      "checkpoint_name": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30",
+      "checkpoint_revision": null,
+      "runtime_revision": null,
+      "identity_status": "PARTIAL_NAME_LOCK_REVISION_PENDING",
+      "next_identity_action": "AR1M1 must lock official source, runtime, model files, licenses, sizes, and checksums before acquisition or execution."
+    },
+    {
+      "candidate_id": "asr-pengchengstarling-multilingual-zipformer-rnnt-pending",
+      "display_name": "PengChengStarling Multilingual Zipformer RNN-T",
+      "engine_family": null,
+      "checkpoint_name": null,
+      "checkpoint_revision": null,
+      "runtime_revision": null,
+      "identity_status": "PENDING_EXACT_OFFICIAL_IDENTITY",
+      "next_identity_action": "AR1M1 research must select and lock one official checkpoint/runtime pair or record a stop disposition."
+    },
+    {
+      "candidate_id": "asr-wenet-u2pp-conformer-pending",
+      "display_name": "WeNet U2++ Conformer",
+      "engine_family": "WeNet",
+      "checkpoint_name": null,
+      "checkpoint_revision": null,
+      "runtime_revision": null,
+      "identity_status": "PENDING_EXACT_OFFICIAL_IDENTITY",
+      "next_identity_action": "AR1M1 research must select and lock one official checkpoint/runtime pair or record a stop disposition."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowboard.local/asr-r1/pcm-chunk-v1.schema.json",
+  "title": "AR1 Timestamped PCM Chunk",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "session_id",
+    "sequence",
+    "timestamp_ms",
+    "sample_rate_hz",
+    "encoding",
+    "samples_base64"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "session_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0},
+    "timestamp_ms": {"type": "integer", "minimum": 0},
+    "sample_rate_hz": {"const": 16000},
+    "encoding": {"const": "PCM_S16_LE_MONO"},
+    "samples_base64": {"type": "string", "minLength": 4}
+  },
+  "additionalProperties": false
+}

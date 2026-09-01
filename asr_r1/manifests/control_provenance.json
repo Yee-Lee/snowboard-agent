@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "provenance_id": "AR1M0-WHISPER-SILERO-CONTROL-PROVENANCE-001",
+  "status": "HISTORICAL_CONTROL_IDENTITIES_RECORDED_NO_ARTIFACTS_ACQUIRED",
+  "historical_control": {
+    "tag": "audio_m4",
+    "commit": "5694ead4ba6be928fdb4dbdf6da7155b214d72bd"
+  },
+  "whisper_control": {
+    "candidate_id": "asr-whispercpp-base-q8_0-1.9.2-m2b",
+    "engine": {
+      "name": "whisper.cpp",
+      "version": "1.9.2",
+      "revision": "306c88f4d1286aec1bf96e544632897886af5501",
+      "source_archive_sha256": "988945d81af6abcf52d5e8034f516c74ffc61057c32c3a4b84f3451c2c7e5e47",
+      "license": "MIT"
+    },
+    "model": {
+      "filename": "ggml-base-q8_0.bin",
+      "immutable_revision": "hf:ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "size_bytes": 81768585,
+      "sha256": "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+      "license_notice_status": "MIT repository notice; model lineage notice requires review before AR1 formal execution"
+    },
+    "accepted_configuration": {
+      "pcm": "16000_HZ_MONO_S16_LE",
+      "endpoint": "FROZEN_LABEL_P0_NO_ADDED_PADDING",
+      "threads": 4,
+      "language": "zh",
+      "decoder": "greedy_best_of_1",
+      "context": false,
+      "timestamps": false,
+      "internal_vad": false,
+      "initial_prompt_sha256": "e3b2606c90009ce609aa23183c2229619619cf1173dc17d2ecd2308bfe4fe8ef"
+    },
+    "historical_build": {
+      "worker_source_commit": "62aac01389d06f7f218db0e45acf3de30b4476af",
+      "worker_binary_sha256": "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b",
+      "reuse_policy": "Historical binary is identity evidence only; AR1 must rebuild and re-hash from controlled inputs."
+    },
+    "source_references": [
+      "audio_m4:poc_audio/manifests/m2b_base_q8_probe.json",
+      "audio_m4:poc_audio/manifests/m2b_c_asr_recipe_proposal.json",
+      "audio_m4:poc_audio/manifests/m3_risk_qualification_packet.json"
+    ]
+  },
+  "silero_control": {
+    "candidate_id": "vad-silero-onnx-6.2.1",
+    "engine": {
+      "name": "silero-vad",
+      "version": "6.2.1",
+      "revision": "7e30209a3e901f9842f81b225f3e93d8199902b1",
+      "source_archive_sha256": "266344c3ac556317012d55820265baea7806efe17d67fda8df83f9cb4a168716",
+      "license": "MIT"
+    },
+    "model": {
+      "filename": "silero_vad.onnx",
+      "size_bytes": 2327524,
+      "sha256": "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"
+    },
+    "accepted_configuration": {
+      "sample_rate_hz": 16000,
+      "window_samples": 512,
+      "official_context_samples": 64,
+      "probability_threshold": 0.5,
+      "negative_threshold": 0.35,
+      "minimum_speech_ms": 250,
+      "startup_mask_ms": 160,
+      "end_consecutive_nonspeech_ms": 500,
+      "pre_speech_padding_ms": 500,
+      "post_speech_padding_ms": 600
+    },
+    "source_references": [
+      "audio_m4:poc_audio/manifests/m2_vad_silero_fallback.json",
+      "audio_m4:poc_audio/manifests/m3_risk_qualification_packet.json"
+    ]
+  },
+  "ar1_reuse_rule": "Every artifact and runtime must be reacquired or rebuilt from controlled immutable inputs and verified before formal AR1 execution."
+}
