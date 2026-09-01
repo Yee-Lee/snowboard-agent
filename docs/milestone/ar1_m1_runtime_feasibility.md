@@ -81,6 +81,11 @@ terminate or eliminate a POC row. The controlled source WAV has been recovered
 and the p0 crop reproduces the frozen checksum. Artifact acquisition and
 execution require this revised method at a clean SHA.
 
+The confirmed target and completed pre-execution research are consolidated in
+[`AR1M1 Target and Completed Feasibility Research`](../research/ar1_m1_target_and_feasibility.md).
+It explicitly separates lockable metadata from execution evidence that does not
+yet exist.
+
 ## Fixture gate
 
 Before the first real smoke run, audit the historical catalogs for identity,

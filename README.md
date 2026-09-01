@@ -9,10 +9,13 @@ Current status is in [`docs/milestone/README.md`](docs/milestone/README.md).
 The contract is in [`docs/handoff/inbound/`](docs/handoff/inbound/), and working
 rules are in [`docs/workflow.md`](docs/workflow.md).
 
-Initial candidates are the 2025 Chinese Streaming Zipformer RNN-T,
-PengChengStarling Multilingual Zipformer RNN-T, and WeNet U2++ Conformer. Exact
-identities are fixed before execution. Official runtimes and artifacts are
-evaluated first on Pi 5 CPU-only hardware.
+The active M1 probe order is Zipformer zh x-large INT8, WeNet WenetSpeech
+streaming CTC INT8, Nemotron 3.5 Streaming 0.6B Q8_0, Zipformer zh large INT8,
+and WeNet AISHELL streaming CTC INT8. Exact identities are fixed before
+execution. The workstation runs the complete non-formal development suite
+before critical smoke and lifecycle cases are repeated on Pi 5 CPU-only
+hardware. See the
+[`M1 research summary`](docs/research/ar1_m1_target_and_feasibility.md).
 
 Human authority lives under `docs/`; source, tests, schemas, manifests, tools,
 deliveries, and sanitized evidence live under `asr_r1/`.
