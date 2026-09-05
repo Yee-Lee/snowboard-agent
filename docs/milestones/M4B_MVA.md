@@ -75,12 +75,23 @@ Gate解除不等於M4B Accepted；Core產品仍需Developer實作、Tester exact
 ## 4. Current state
 
 - Work/baseline：M4B-MVA / M4B-MVA-001（Designer design / POC plan frozen）。
-- Current step：4；等待Designer交付既有LLM POC團隊。尚未交付，M4B-MVA-POC仍未Open。
+- Current step：5；定版request已交付既有LLM POC團隊，M4B-MVA-POC為Open，等待POC intake、execution snapshot與結果。
 - Step 1 (Architect)：已完成。arch.md六點修訂及Designer結案見已歸檔[AR_impl_M4B_I](../reviews/history/AR_impl_M4B_I.md)。
 - Step 2 (Reviewer)：已完成。三面PASS，0 Blocking，3 Advisory。見已歸檔[IR_review_M4B_II](../reviews/history/IR_review_M4B_II.md)。
 - Step 3 (Designer)：已完成。begin/end控制時序已統一；POC安全停止條件、固定分析窗口、案例順序、Audio缺口填寫規則已定版；profile量測值留Step 5產生、Step 6採用。
 - AR_impl_M4B_I：Resolved並歸檔。
-- POC：定版工作包已在Core準備，未交付、未執行；gate尚未Open，進場仍鎖定。
+- Step 4 (Designer)：已完成。exact delivery receipt見下節；除單一incoming request外未修改POC worktree。
+- POC：工作包已交付、尚未執行；POC可依定版計畫進行intake與workstation準備，Pi存取／執行仍須另有USER授權。
 - Developer／Tester：尚未進場；TR_spec_M4B_IV為deferred request。
-- Next：Designer執行Step 4，交付定版工作包並記錄exact package SHA、位置與receipt；交付完成才把M4B-MVA-POC標為Open。
-- 本文件不授權commit/push或目前跨repo交付；執行到步驟3/4時依既有USER／repo規範交付。
+- Next：LLM POC團隊執行Step 5；先commit execution snapshot並回報exact SHA，再依定版plan取得所需硬體授權後量測、交付結果。
+- 本次USER已授權Core commit與單一request跨repo交付；不授權POC commit/push、Pi執行或其他repo異動。
+
+### Step 4 delivery receipt
+
+- Delivered at：2026-09-05T14:51:26Z。
+- Core source commit：`034a50f260e7434e586dddf64ef500da3b1b2b4e`。
+- Source：`docs/outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`。
+- Target baseline before intake：POC worktree `llm` at `b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1`。
+- Target incoming path：`poc_llm/docs/pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`。
+- SHA-256：`5afb24e8ec7ad67853745ec290672c6b48a174819928936609556fefd184a2c2`；source/target byte comparison PASS。
+- Receipt：target檔案存在且僅該檔為untracked；由POC團隊負責後續intake與版本控制。

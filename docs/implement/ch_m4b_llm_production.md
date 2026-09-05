@@ -1,7 +1,7 @@
 # M4B-MVA — 最小 Reasoner 與語音架構設計
 
 狀態：M4B-MVA-001 Designer design / POC plan frozen；Architecture與Reviewer已通過。
-POC尚未交付，量測profile與Tester coverage尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
+POC request已交付，量測profile與Tester coverage尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
 日期：2026-09-05。追蹤：[IR_dev_M4B_III](../reviews/IR_dev_M4B_III.md)、
 [AR_impl_M4B_I](../reviews/history/AR_impl_M4B_I.md)、
 [TR_spec_M4B_IV](../reviews/TR_spec_M4B_IV.md)。
@@ -10,7 +10,7 @@ POC尚未交付，量測profile與Tester coverage尚未簽核。不是Developmen
 8-attempt/48-MiB recycle與model-generated canonical action envelope。
 R1與其批准紀錄仍是不可改寫的歷史；可由Core commit
 5d09f23及更早Git history查閱。已發布candidate不改寫。
-本章已完成七步流程 Step 3 定版；Step 4 交付 POC 前不開始外部執行，
+本章已完成七步流程 Step 3 定版與Step 4交付；POC依定版request進入Step 5，
 Step 6 解除 gate 前不開始耦合產品實作。
 
 ## 0. USER decisions and scope
@@ -328,6 +328,6 @@ Designer已完成Step 3定版；數值由POC產生再由Designer於Step 6採用�
 
 [REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
 屬M4B-MVA-001；沿用既有LLM POC團隊/repository，必要時協調Audio。
-工作包已完成Reviewer審查與Designer定版，尚未交付。
-正式交付後依定版範圍執行，只有Designer審核並明確解除M4B-MVA-POC才進場；
+工作包已完成Reviewer審查、Designer定版與Step 4交付；receipt見M4B-MVA gate §4。
+POC依定版範圍執行，只有Designer審核並明確解除M4B-MVA-POC才容許Developer／Tester進場；
 POC結果不取代Core產品exact-SHA驗收。
