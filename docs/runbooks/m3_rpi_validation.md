@@ -53,10 +53,11 @@ sudo apt install -y python3-picamera2 libasound2-dev libgpiod-dev gpiod
 ```
 
 ### 3.2 建立 Python 虛擬環境
+從已開啟的 Core worktree 內執行以下命令。
 為確保虛擬環境能直接調用系統編譯好的 `picamera2` 與 `gpiod`，建立虛擬環境時**必須帶有 `--system-site-packages`**：
 
 ```bash
-cd /home/yee/workspace/snowboard-agent
+cd "$(git rev-parse --show-toplevel)"
 python3 -m venv --system-site-packages .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install pytest pytest-asyncio pyyaml numpy pyalsaaudio==0.11.0 samplerate==0.2.4 pillow
@@ -66,10 +67,10 @@ python3 -m venv --system-site-packages .venv
 ### 3.3 編譯 SSD1351 OLED 原生 C 驅動庫
 原生 C library (`libdisplay.so`) 必須由外部 accepted 原始碼編譯（不放入 Core Git），並確保 SHA256 與 config 一致：
 ```bash
-# 產出路徑範例：
-# /home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so
+# 替換為本機 accepted build 的實際路徑（僅存於本地設定）：
+SBD_M3_DISPLAY_LIBRARY=/path/to/accepted-display-build/libdisplay.so
 # 驗證 checksum：
-sha256sum /home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so
+sha256sum "$SBD_M3_DISPLAY_LIBRARY"
 # 預期 SHA256：2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493
 ```
 
@@ -77,7 +78,7 @@ sha256sum /home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/n
 
 ## 4. 本地端設定檔（`config.m3.local.yaml`）
 
-於樹莓派工作目錄建立 `config.m3.local.yaml`（此檔案包含本地絕對路徑，不納入 Git 版本控制）：
+於樹莓派工作目錄建立 `config.m3.local.yaml`（此檔案包含本地絕對路徑，不納入 Git 版本控制）。將下方 `/path/to/accepted-display-build/libdisplay.so` 佔位符替換為 §3.3 驗證過的 library 路徑：
 
 ```yaml
 core:
@@ -118,7 +119,7 @@ core:
     byte_order: msb_first
     frame_buffer_bytes: 32768
     show_session_content: true
-    native_library_path: /home/yee/workspace/poc_display/snowboard-agent/src/sbd/core/display/native/waveshare_ssd1351/libdisplay.so
+    native_library_path: /path/to/accepted-display-build/libdisplay.so
     native_library_sha256: 2dd44a17abd57a195674ddcf12717bbb2759580e81bbf194723507232ad50493
     native_abi_version: 1
     spi_device: /dev/spidev0.0
@@ -163,7 +164,7 @@ CR 修正已提交、Tester 指定單一 candidate SHA 後執行。
 ### 5.1 Candidate 與工作樹前置檢查
 
 ```bash
-cd /home/yee/workspace/snowboard-agent
+cd "$(git rev-parse --show-toplevel)"
 git status --short
 git rev-parse HEAD
 git rev-parse --abbrev-ref HEAD
@@ -183,8 +184,8 @@ runner 也會重做這些檢查；SHA 不符或受測檔案 dirty 時，card 必
 ### 5.2 建立本次 evidence bundle
 
 ```bash
-export SBD_M3_RPI_CONFIG=/home/yee/workspace/snowboard-agent/config.m3.local.yaml
-export SBD_M3_EVIDENCE_DIR=/home/yee/workspace/snowboard-agent/docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001
+export SBD_M3_RPI_CONFIG="$(git rev-parse --show-toplevel)/config.m3.local.yaml"
+export SBD_M3_EVIDENCE_DIR="$(git rev-parse --show-toplevel)/docs/outsource/evidence/DELIVERY-M3-HARDWARE-VALIDATION-001"
 export SBD_M3_MANUAL_DIR="$SBD_M3_EVIDENCE_DIR/manual-current-run"
 export SBD_M3_HARDWARE_MANIFEST="$SBD_M3_EVIDENCE_DIR/hardware.json"
 export SBD_M3_INTERACTION_TIMEOUT_SECONDS=120

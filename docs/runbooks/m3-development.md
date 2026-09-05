@@ -64,12 +64,13 @@ pip install -e ".[dev]"
 ```
 
 ### 3.2 樹莓派端（Raspberry Pi 5）
+從已開啟的 Core worktree 內執行以下命令。
 ```bash
 # 1. 系統底層依賴
 sudo apt update && sudo apt install -y python3-picamera2 libasound2-dev libgpiod-dev gpiod
 
 # 2. 建立包含系統套件存取的專屬虛擬環境
-cd /home/yee/workspace/snowboard-agent
+cd "$(git rev-parse --show-toplevel)"
 python3 -m venv --system-site-packages .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install pytest pytest-asyncio pyyaml numpy pyalsaaudio==0.11.0 samplerate==0.2.4 pillow

@@ -55,6 +55,6 @@
 
 ## 4. 相關交付與證據路徑
 
-* **Response** : [`docs/outsource/responses/CR-M1-II.md`](file:///home/yee/workspace/snowboard-agent/docs/outsource/responses/CR-M1-II.md)
-* **Delivery** : [`docs/outsource/deliveries/DELIVERY-M1-CR-M1-II.md`](file:///home/yee/workspace/snowboard-agent/docs/outsource/deliveries/DELIVERY-M1-CR-M1-II.md)
-* **Evidence** : `docs/outsource/evidence/DELIVERY-M1-CR-M1-II/`
+* **Response** : [`docs/outsource/responses/CR-M1-II.md`](CR-M1-II.md)
+* **Delivery** : [`docs/outsource/deliveries/DELIVERY-M1-II-001.md`](../deliveries/DELIVERY-M1-II-001.md)
+* **Evidence** : `docs/outsource/evidence/DELIVERY-M1-II-001/`（歷史日誌路徑；目前 checkout 未收錄，驗收紀錄見上述 Delivery。）

@@ -6,7 +6,8 @@
 
 ## 1. 進行中 / 待處理 Handoffs (Active Handoffs)
 
-目前無進行中或待處理的 handoff。
+目前無進行中 / 待處理之 Handoff。
+
 
 ---
 
@@ -55,6 +56,7 @@ revision，使用precommitted或held-out catalog重跑受影響Gate 2A surface�
 
 | Handoff ID | 標題 / 範疇 | 原 Legacy ID | 結案狀態 | 回覆 / 交付對照 |
 | :--- | :--- | :--- | :--- | :--- |
+| [`PM-OUT-260901-026-repo-bare-worktree-migration`](history/PM-OUT-260901-026-repo-bare-worktree-migration.md) | Core Bare + Worktree 搬移 | 無 | **Resolved** | Core worktree established; venv rebuilt. Core path audit, corrections and target prerequisites: archived handoff. |
 | [`NOTE-ASR-POSTPROCESS-POC-001`](history/NOTE-ASR-POSTPROCESS-POC-001.md) | ASR transcript postprocess POC 研議 | 無 | **Abandoned — 暫不續議；未來須以新 request 重議** | 無需 response |
 | [`PM-OUT-260830-025-hw-diagnostic-tool`](history/PM-OUT-260830-025-hw-diagnostic-tool.md) | Hardware Diagnostic Tool | 無 | **Resolved** | Automated: `scripts/hw_diag/run_diag.sh`；manual button: `scripts/hw_diag/run_button.sh`；regression: `tests/test_pm_025_hw_diag.py` |
 | [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER`](history/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) | Gate 2B closure / Gemma POC winner | `POC-llm-DEL-2026-001-R3` | **Resolved — Gemma POC winner Accepted；Core Gate 3 Pending** | Final ACK: [`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md) |
@@ -68,7 +70,7 @@ revision，使用precommitted或held-out catalog重跑受影響Gate 2A surface�
 | [`DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE`](history/DELIVERY-018-PM-LLM-POC-GATE1-CLOSURE.md) | Gate 1 cumulative closure review / P6.1/P7.1 replacement | `DELIVERY-015` | **Resolved — Gate 1 Closed / Candidates Advanced** | ACK: [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) |
 | [`DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN`](history/DELIVERY-015-PM-LLM-POC-CUMULATIVE-GATE-DESIGN.md) | M4b cumulative Gate allocation / carry-forward / v7 boundary | `ACK-LLM-M2-CUMULATIVE-GATES-R2-APPROVE` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |
 | [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA`](history/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) | Replacement Gate 1 execution SHA / deterministic target fixture | `DELIVERY-015` | **Resolved — ACKed in unified Core ACK** | ACK: [`DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md`](../deliveries/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md) |
-| [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD`](history/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) | Prior R2 SHA hold while deterministic target fixture was prepared | 無 | **Resolved — closed by DELIVERY-017 replacement SHA** | Replacement: [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) |
+| [`DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD`](history/DELIVERY-016-PM-LLM-POC-GATE1-R3-TARGET-UNIT-HOLD.md) | Prior R2 SHA hold while deterministic target fixture was prepared | 無 | **Resolved — closed by DELIVERY-017 replacement SHA** | Replacement: [`DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md`](history/DELIVERY-017-PM-LLM-POC-GATE1-R3-REPLACEMENT-SHA.md) |
 | [`ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001`](history/ADDENDUM-AUDIO-M4-MATCHA-LICENSE-001.md) | Matcha model-license evidence correction | `POC-audio-DEL-2026-001-R1` | **Resolved — Apache-2.0 model grant acknowledged; remaining lineage risk accepted by USER** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`DELIVERY-AUDIO-M4-GATE2B-001`](history/DELIVERY-AUDIO-M4-GATE2B-001.md) | Audio M4 Gate 2B technical delivery / Matcha license disposition | `POC-audio-DEL-2026-001-R1` | **Resolved — technical delivery and all three final references accepted** | Response: [`RESP-AUDIO-M4-GATE2B-001.md`](../responses/RESP-AUDIO-M4-GATE2B-001.md) |
 | [`REQ-AUDIO-M4-RUNTIME-CLOSURE-002`](history/REQ-AUDIO-M4-RUNTIME-CLOSURE-002.md) | Core controller / finalist runtime closure | 無 | **Resolved — controller-r2, VAD, and TTS offline closures passed; accepted by downstream Gate 2B closure** | Response: [`RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md`](../responses/RESP-AUDIO-M4-RUNTIME-CLOSURE-002.md) |

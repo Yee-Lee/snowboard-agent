@@ -17,9 +17,9 @@
 * **總預估點數**：2 SP
 * **修正基線**：Commit SHA `a723b4e0542de8eae0071a91a192104c686152bd`；對照 `PM-OUT-2026-001-R1` (`CR-M1-II`) 所列 5 項議題。
 * **修正內容**：
-  * `CR-M1-II-002` (Blocking)：移除 [`tests/test_config.py`](file:///home/yee/workspace/snowboard-agent/tests/test_config.py#L107) 硬編碼之 `/etc/hosts`，改用 `tmp_path` 建立跨平台暫存檔，真正驗證 config format mismatch。
-  * `CR-M1-II-003` (Blocking)：移除 [`tests/test_bootstrap.py`](file:///home/yee/workspace/snowboard-agent/tests/test_bootstrap.py#L173) Windows pipe 無法使用的 `select.select()`，改用背景 `Thread` + `Queue` (timeout 0.1s) 實作跨平台 stream reader。
-  * `CR-M1-II-004` (Advisory)：重構 [`tests/milestones/test_m1_foundation.py`](file:///home/yee/workspace/snowboard-agent/tests/milestones/test_m1_foundation.py)，移除 `from tests.test_* import *` 之 wildcard re-export，消除 full suite 重複收集。Full suite test nodes 由 332 灌水數據縮減為 167 筆真實精確節點（166 unique tests + 1 milestone runner）。
+  * `CR-M1-II-002` (Blocking)：移除 [`tests/test_config.py`](../../../tests/test_config.py) 硬編碼之 `/etc/hosts`，改用 `tmp_path` 建立跨平台暫存檔，真正驗證 config format mismatch。
+  * `CR-M1-II-003` (Blocking)：移除 [`tests/test_bootstrap.py`](../../../tests/test_bootstrap.py) Windows pipe 無法使用的 `select.select()`，改用背景 `Thread` + `Queue` (timeout 0.1s) 實作跨平台 stream reader。
+  * `CR-M1-II-004` (Advisory)：重構 [`tests/milestones/test_m1_foundation.py`](../../../tests/milestones/test_m1_foundation.py)，移除 `from tests.test_* import *` 之 wildcard re-export，消除 full suite 重複收集。Full suite test nodes 由 332 灌水數據縮減為 167 筆真實精確節點（166 unique tests + 1 milestone runner）。
   * `CR-M1-II-005` (Blocking)：對齊 `developer_progress.md` 紀錄、31 個 Test ID 涵蓋率與自驗驗證結果。
 * **Developer 自驗數據**：
   * `PYTHONPATH=src python3 -m pytest -p no:cacheprovider -q tests/milestones/test_m1_foundation.py` → `1 passed in 5.40s`
@@ -56,7 +56,7 @@
   * `python -m pytest -p no:cacheprovider -q tests/milestones/test_m1_foundation.py` → `149 passed in 6.16s`
   * `python -m pytest -p no:cacheprovider -q` → `298 passed in 10.99s`
 * 同步修正 `pyproject.toml` 的 setuptools build backend，以及兩個使用 Python 3.12-only Protocol introspection 的測試，確保宣告的 Python ≥ 3.11 安裝與驗收路徑成立。
-* 新增精簡 [`M1 development runbook`](../runbooks/m1-development.md)；完整 docs 搬遷延至 M1 定版後、M2 開發前，前置決策記於 [`docs restructure Note`](../notes/docs-restructure-after-m1.md)。
+* 新增精簡 [`M1 development runbook`](../../runbooks/m1-development.md)；完整 docs 搬遷延至 M1 定版後、M2 開發前，前置決策記於 [`docs restructure Note`](../../notes/docs-restructure-after-m1.md)。
 
 ### 估點基準
 

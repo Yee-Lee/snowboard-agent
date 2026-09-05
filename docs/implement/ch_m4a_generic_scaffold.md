@@ -39,7 +39,7 @@
 
 ### 2.1 NullASRAdapter
 
-落點：[`src/sbd/perception/listen/asr.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/perception/listen/asr.py)，新增於 `MockASRAdapter` 之後
+落點：[`src/sbd/perception/listen/asr.py`](../../src/sbd/perception/listen/asr.py)，新增於 `MockASRAdapter` 之後
 
 ```python
 class NullASRAdapter:
@@ -81,7 +81,7 @@ class NullASRAdapter:
 
 ### 2.2 ASR factory
 
-落點：[`src/sbd/perception/listen/__init__.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/perception/listen/__init__.py)（新建或擴充）
+落點：[`src/sbd/perception/listen/__init__.py`](../../src/sbd/perception/listen/__init__.py)（新建或擴充）
 
 ```python
 from __future__ import annotations
@@ -106,7 +106,7 @@ def make_asr_adapter(cfg: ASRConfig) -> ASRAdapter:
 
 ### 3.1 NullTTSAdapter
 
-落點：[`src/sbd/action/speak/tts.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/action/speak/tts.py)，新增於 `MockTTSAdapter` 之後
+落點：[`src/sbd/action/speak/tts.py`](../../src/sbd/action/speak/tts.py)，新增於 `MockTTSAdapter` 之後
 
 ```python
 class NullTTSAdapter:
@@ -145,7 +145,7 @@ class NullTTSAdapter:
 
 ### 3.2 TTS factory
 
-落點：[`src/sbd/action/speak/__init__.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/action/speak/__init__.py)（新建或擴充）
+落點：[`src/sbd/action/speak/__init__.py`](../../src/sbd/action/speak/__init__.py)（新建或擴充）
 
 ```python
 from __future__ import annotations
@@ -168,7 +168,7 @@ def make_tts_adapter(cfg: TTSConfig) -> TTSAdapter:
 
 ## 4. Config Schema 更新
 
-落點：[`src/sbd/core/config/models.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/core/config/models.py)
+落點：[`src/sbd/core/config/models.py`](../../src/sbd/core/config/models.py)
 
 ### 4.1 ASRConfig
 
@@ -206,7 +206,7 @@ class TTSConfig:
 
 ### 4.3 Cross-field validation
 
-落點：[`src/sbd/core/config/validate.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/core/config/validate.py)
+落點：[`src/sbd/core/config/validate.py`](../../src/sbd/core/config/validate.py)
 
 ```python
 def _validate_asr_config(cfg: ASRConfig) -> None:
@@ -252,7 +252,7 @@ action:
 
 ## 5. RM Resource Key 登記
 
-落點：[`src/sbd/core/resource_manager.py`](file:///home/yee/workspace/snowboard-agent/src/sbd/core/resource_manager.py)
+落點：[`src/sbd/core/resource_manager/manager.py`](../../src/sbd/core/resource_manager/manager.py)
 
 新增至 Ch 5 §3.1 stable ResourceKey registry：
 
@@ -355,7 +355,7 @@ config.example.yaml          # perception.listen.adapter / action.tts / resource
 
 - **Owner**：Developer
 - **驗收**：Tester 依 §7 Test ID 驗收；所有 M1/M2/M3 regression pass
-- **設計依據**：本文件、[`ch02b_workers.md`](file:///home/yee/workspace/snowboard-agent/docs/implement/ch02b_workers.md) §2.1 / §4.1、[`ch10_config.md`](file:///home/yee/workspace/snowboard-agent/docs/implement/ch10_config.md) §5–§6、`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003` §4
+- **設計依據**：本文件、[`ch02b_workers.md`](ch02b_workers.md) §2.1 / §4.1、[`ch10_config.md`](ch10_config.md) §5–§6、`DELIVERY-AUDIO-POC-M4A-M2AB-SCOPE-ACK-003` §4
 - **禁止事項**：引入任何真實 engine dependency；以未獲 ACK 的 engine name 填入 config Literal
 - **完成標誌**：`python -m pytest -v -m "not rpi"` 全數 pass，含 §7 所有新增 Test ID
 

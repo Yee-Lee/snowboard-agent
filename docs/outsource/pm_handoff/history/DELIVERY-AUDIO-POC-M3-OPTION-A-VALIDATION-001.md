@@ -7,10 +7,10 @@
 
 ## Complete return packet
 
-The machine-readable [manifest](../evidence/m3_option_a/manifest.json) binds
+The machine-readable [manifest](https://github.com/Yee-Lee/snowboard-agent/blob/882e2b6ff571eb9d54ec96bae7d3b63338c5965c/poc_audio/evidence/m3_option_a/manifest.json) binds
 P4-A01 through A10 status, source/config/runner hashes, candidate provenance,
 sanitized environment, commands, timestamps, and controlled raw-retention
-paths. [results.json](../evidence/m3_option_a/results.json) and the four
+paths. [results.json](https://github.com/Yee-Lee/snowboard-agent/blob/882e2b6ff571eb9d54ec96bae7d3b63338c5965c/poc_audio/evidence/m3_option_a/results.json) and the four
 sanitized P4 summaries are the review index; raw PCM, wheels and native
 binaries remain Git-ignored in the manifest-relative Pi packet directories.
 

@@ -15,7 +15,7 @@
 | `milestone.md` | WHEN + VERIFY──階段、範圍、驗收 |
 | `protocol.md` | 對外 / 跨 process wire format；Audio Protocol v1已核准；LLM `snowboard.llm/1`已納入Gemma winner baseline，待單輪review |
 
-`arch.md` 未明或無法落實的項目，依 [reviews/README.md](reviews/README.md) §2 以 `arch_review_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有 `history/arch_review_implement.md` 僅保留歷史追蹤。
+`arch.md` 未明或無法落實的項目，依 [roles/workflow.md](roles/workflow.md) §3 以 `AR_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有審查單保留於 [reviews/history/](reviews/history/) 供歷史追蹤。
 
 ---
 
@@ -60,6 +60,6 @@
 * **Display 內容與 UX profile** ： [display_spec.md](display_spec.md)
 * **ASR / TTS / LLM / Vision / wake-word 選型 gate** ： [model_spec.md](model_spec.md)
 * **跨 process child wire schema** ： [protocol.md](protocol.md)
-* **設計與審查流程**： [reviews/README.md](reviews/README.md)
-* **Reviewer 工作原則與新輪次紀錄**： [reviews/README.md](reviews/README.md) §3（既有 `history/implement_reviewer.md` 與 `history/impl_review_*` 僅保留歷史）
-* **既有 Architect 審查紀錄**： `reviews/AR-Review-*.md`（新輪次見 [reviews/README.md](reviews/README.md) §1）
+* **設計與審查流程**： [roles/workflow.md](roles/workflow.md) §3–§4
+* **Reviewer 工作原則**： [roles/reviewer.md](roles/reviewer.md)；新輪次與歸檔規範見 [roles/workflow.md](roles/workflow.md) §3
+* **審查紀錄**： [reviews/](reviews/)；已結案單據見 [reviews/history/](reviews/history/)
