@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b-mva:manual-sample:v1",
+  "title": "M4B-MVA sanitized manual semantic assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "case_id", "operator", "utc", "rubric", "overall", "sanitized_reason"],
+  "properties": {
+    "run_id": {"type": "string", "minLength": 1},
+    "case_id": {"type": "string", "pattern": "^H(0[1-9]|1[0-2])$"},
+    "operator": {"type": "string", "minLength": 1},
+    "utc": {"type": "string", "format": "date-time"},
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_consistent", "knowledge_basic_correct", "capability_honest", "continuity", "concise", "end_intent_correct"],
+      "properties": {
+        "identity_consistent": {"enum": ["Pass", "Fail", "NA"]},
+        "knowledge_basic_correct": {"enum": ["Pass", "Fail", "NA"]},
+        "capability_honest": {"enum": ["Pass", "Fail", "NA"]},
+        "continuity": {"enum": ["Pass", "Fail", "NA"]},
+        "concise": {"enum": ["Pass", "Fail", "NA"]},
+        "end_intent_correct": {"enum": ["Pass", "Fail", "NA"]}
+      }
+    },
+    "overall": {"enum": ["Pass", "Fail", "Unclear"]},
+    "sanitized_reason": {"type": "string", "minLength": 1, "maxLength": 500}
+  }
+}

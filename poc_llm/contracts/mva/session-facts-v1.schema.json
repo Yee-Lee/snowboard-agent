@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b-mva:session-facts:v1",
+  "title": "M4B-MVA frozen POC SessionFacts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "role", "locale", "available_perceptions", "available_actions"],
+  "properties": {
+    "name": {"const": "雪板"},
+    "role": {"const": "你的語音小助理"},
+    "locale": {"const": "zh-TW"},
+    "available_perceptions": {
+      "type": "array",
+      "prefixItems": [{"const": "listen"}],
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "available_actions": {
+      "type": "array",
+      "prefixItems": [{"const": "speak"}, {"const": "rest"}],
+      "minItems": 2,
+      "maxItems": 2
+    }
+  }
+}

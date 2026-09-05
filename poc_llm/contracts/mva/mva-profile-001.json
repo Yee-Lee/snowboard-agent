@@ -1,0 +1,86 @@
+{
+  "work_name": "M4B-MVA",
+  "baseline_id": "M4B-MVA-001",
+  "gate_id": "M4B-MVA-POC",
+  "profile_id": "core-m4b-mva-001",
+  "profile_status": "poc_measurement_candidate_not_production_lock",
+  "candidate": {
+    "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+    "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r1",
+    "runtime_version": "0.16.0",
+    "runtime_source_commit": "924e79c91542761242244e4f1651851f822e4cbb",
+    "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "model_revision": "6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94",
+    "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "legacy_config_provenance_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"
+  },
+  "platform": {
+    "hardware": "Raspberry Pi 5 Model B Rev 1.1",
+    "memory_gib": 4,
+    "os": "Debian 13",
+    "architecture": "aarch64",
+    "python": "3.13.5",
+    "backend": "CPU",
+    "threads": 4,
+    "offline_required": true
+  },
+  "session_facts": {
+    "name": "雪板",
+    "role": "你的語音小助理",
+    "locale": "zh-TW",
+    "available_perceptions": ["listen"],
+    "available_actions": ["speak", "rest"]
+  },
+  "surface": {
+    "protocol_version": "snowboard.llm/2",
+    "conversation_policy": "one_conversation_per_product_session_reuse_normal_turns",
+    "semantic_output": "exact_text_end",
+    "system_prompt_path": "poc_llm/contracts/mva/system-prompt-v1.txt",
+    "user_turn_template_path": "poc_llm/contracts/mva/user-turn-template-v1.txt",
+    "semantic_schema_path": "poc_llm/contracts/mva/semantic-output-v1.schema.json",
+    "wire_schema_path": "poc_llm/contracts/mva/wire-frame-v1.schema.json"
+  },
+  "inference": {
+    "user_new_token_admission": 32,
+    "maximum_output_tokens": 128,
+    "engine_kv_tokens": 1024,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "automatic_tool_calling": false,
+    "prewarm_modes": ["none", "once"]
+  },
+  "watchdogs_seconds": {
+    "startup": 120,
+    "generation": 30,
+    "mode": 1800,
+    "memory_cycle": 7200
+  },
+  "matrix": {
+    "cold_order": ["N1", "O1", "N2", "O2", "N3", "O3"],
+    "replacement_order": ["N1", "O1", "N2", "O2", "N3", "O3", "N4", "O4", "N5", "O5"],
+    "memory_cycles": 3,
+    "sessions_per_memory_cycle": 20,
+    "turns_per_session": 2,
+    "steady_window_sessions": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    "controlled_recovery_repetitions": 3,
+    "manual_sessions": 12
+  },
+  "resource_stop": {
+    "minimum_mem_available_mib": 512,
+    "maximum_temperature_c_exclusive": 80,
+    "swap_increase_allowed_kib": 0,
+    "throttled_required": "0x0",
+    "stop_on_oom_or_kernel_fault": true,
+    "stop_on_identity_or_sampler_or_cleanup_failure": true
+  },
+  "claim": {
+    "default_scope": "llm_subsystem",
+    "m4_e2e_requires_exact_accepted_audio": true,
+    "m4_e2e_requires_same_timebase_audible_onset": true,
+    "ttft_or_ttc_must_not_substitute_audible_latency": true
+  },
+  "legacy_trigger_keys_forbidden": [
+    "recycle_max_inference_attempts",
+    "recycle_owner_pss_delta_mib"
+  ]
+}

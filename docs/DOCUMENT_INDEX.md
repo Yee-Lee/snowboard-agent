@@ -8,6 +8,7 @@
 * [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
+* [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -49,6 +50,8 @@
 POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK：
 
 * [`ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - M4b 合約內部技術審查與 12 項測試指標承接確認
+* [`ACK-LLM-POC-M4B-MVA-MEASURE-001.md`](response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md) - M4B-MVA正式收件、Core exact-source核對、產品等價設計修正與授權邊界
+* [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md`](response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md) - 工作站更換前的Step 5完整continuation record、測試、round-close audit、未完成項目與授權邊界
 * [`RESP-POC-LLM-READINESS-2026-001.md`](response/RESP-POC-LLM-READINESS-2026-001.md) - 逐 finding 修訂回覆；Team revised 不代表 PM/Core 已關閉 finding
 * [`RESP-PM-OUT-260817-015.md`](response/RESP-PM-OUT-260817-015.md) - 015 複驗回覆、changed paths 與 remaining Core decisions
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
@@ -137,6 +140,7 @@ Repo-owned 內部執行工作文件：
 * [`m2_llm_candidate_evaluation.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m2_llm_candidate_evaluation.md) - runtime/model 候選初篩與比較
 * [`m3_llm_child_pi_integration.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m3_llm_child_pi_integration.md) - persistent child 與 Pi 整合
 * [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
+* [`m4b_mva_product_parity.md`](milestone/m4b_mva_product_parity.md) - M4B-MVA Step 5產品等價contract、runner、Pi量測與Designer release計畫
 * [`GATE1-ENV-PREFLIGHT-ARM64-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001.md) - ARM64-only UTM executable request；與 x86_64 package/evidence 隔離
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
 * [`GATE1-PI-COMPAT-PACKET-007.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md) - `DESIGN REVIEW`；Pi 5累積P1/P6/P7/P10A/P11/P12 executable packet

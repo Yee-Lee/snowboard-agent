@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b-mva:semantic-output:v1",
+  "title": "M4B-MVA compact semantic output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "end"],
+  "properties": {
+    "text": {"type": "string", "maxLength": 4096},
+    "end": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["end"],
+        "properties": {"end": {"const": true}}
+      },
+      "then": {"properties": {"text": {"const": ""}}},
+      "else": {"properties": {"text": {"pattern": "\\S"}}}
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b-mva:wire-frame:v1",
+  "title": "snowboard.llm/2 M4B-MVA frame",
+  "$defs": {
+    "request_id": {"type": "string", "pattern": "^llm\\.[1-9][0-9]*\\.[1-9][0-9]*$", "maxLength": 128},
+    "session_id": {"type": "string", "pattern": "^[ -~]{1,128}$"},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "pairing_revision", "platform", "runtime_sha256", "model_sha256", "config_sha256", "core_profile_id", "core_profile_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "pairing_revision": {"type": "string", "minLength": 1},
+        "platform": {"const": "linux-aarch64-pi5-4gb-debian13"},
+        "runtime_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "model_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "core_profile_id": {"const": "core-m4b-mva-001"},
+        "core_profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "locale", "available_perceptions", "available_actions"],
+      "properties": {
+        "name": {"const": "雪板"},
+        "role": {"const": "你的語音小助理"},
+        "locale": {"const": "zh-TW"},
+        "available_perceptions": {"const": ["listen"]},
+        "available_actions": {"const": ["speak", "rest"]}
+      }
+    },
+    "turn_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["perceptions"],
+      "properties": {
+        "perceptions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "status", "text"],
+            "properties": {
+              "kind": {"const": "listen"},
+              "status": {"enum": ["ok", "timeout", "error"]},
+              "text": {"type": "string", "maxLength": 4096}
+            }
+          }
+        }
+      }
+    },
+    "semantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "end"],
+      "properties": {
+        "text": {"type": "string", "maxLength": 4096},
+        "end": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"end": {"const": true}}, "required": ["end"]},
+          "then": {"properties": {"text": {"const": ""}}},
+          "else": {"properties": {"text": {"pattern": "\\S"}}}
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ttft_ms", "ttc_ms", "new_input_tokens", "output_tokens", "kv_tokens"],
+      "properties": {
+        "ttft_ms": {"type": ["number", "null"], "minimum": 0},
+        "ttc_ms": {"type": "number", "minimum": 0},
+        "new_input_tokens": {"type": "integer", "minimum": 0},
+        "output_tokens": {"type": "integer", "minimum": 1},
+        "kv_tokens": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "state", "identity"],
+      "properties": {"type": {"const": "READY"}, "protocol_version": {"const": "snowboard.llm/2"}, "state": {"const": "READY_NO_SESSION"}, "identity": {"$ref": "#/$defs/identity"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "facts"],
+      "properties": {"type": {"const": "OPEN_SESSION"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "facts": {"$ref": "#/$defs/facts"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "state"],
+      "properties": {"type": {"const": "SESSION_OPENED"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "state": {"const": "SESSION_IDLE"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "turn_id", "input"],
+      "properties": {"type": {"const": "GENERATE"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "turn_id": {"type": "integer", "minimum": 1}, "input": {"$ref": "#/$defs/turn_input"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "semantic", "metrics", "state"],
+      "properties": {"type": {"const": "RESULT"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "semantic": {"$ref": "#/$defs/semantic"}, "metrics": {"$ref": "#/$defs/metrics"}, "state": {"const": "SESSION_IDLE"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "reason"],
+      "properties": {"type": {"const": "CLOSE_SESSION"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "reason": {"enum": ["rest", "interrupt", "error", "shutdown", "capacity"]}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "state"],
+      "properties": {"type": {"const": "SESSION_CLOSED"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "state": {"const": "READY_NO_SESSION"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id"],
+      "properties": {"type": {"const": "CANCEL"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "state"],
+      "properties": {"type": {"const": "CANCELLED"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "state": {"const": "READY_NO_SESSION"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version", "request_id", "session_id", "code", "state"],
+      "properties": {"type": {"const": "ERROR"}, "protocol_version": {"const": "snowboard.llm/2"}, "request_id": {"$ref": "#/$defs/request_id"}, "session_id": {"$ref": "#/$defs/session_id"}, "code": {"enum": ["INPUT_TOO_LARGE", "CONTEXT_LIMIT", "TIMEOUT", "GENERATION_FAILED", "INVALID_OUTPUT", "SESSION_MISMATCH", "BUSY", "INVALID_REQUEST", "PROTOCOL_ERROR", "CLEANUP_FAILED"]}, "state": {"enum": ["READY_NO_SESSION", "SESSION_IDLE", "FATAL"]}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version"],
+      "properties": {"type": {"const": "SHUTDOWN"}, "protocol_version": {"const": "snowboard.llm/2"}}
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "protocol_version"],
+      "properties": {"type": {"const": "SHUTDOWN_ACK"}, "protocol_version": {"const": "snowboard.llm/2"}}
+    }
+  ]
+}

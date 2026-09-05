@@ -1,9 +1,10 @@
 # LLM POC Workspace
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準。Gate 1、Gate 2A與Gate 2B POC
-execution已完成；User已選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC winner，Core final ACK
-pending。本文件不另行建立狀態；任何production model lock、persistent-child integration或Gate 3
-acceptance仍由Core文件與exact-SHA驗收控制。
+execution已完成；User選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC winner，且Core final ACK
+已收到。2026-09-05另行交付的`M4B-MVA-001`產品等價量測目前在Step 5 workstation準備階段；
+它不回退舊gate或改寫machine結果。任何production lock、Gate 3 acceptance、MVA Pi執行、commit/push
+或benchmark發布仍由Core文件、exact SHA與User授權控制。
 
 ## Layout
 
@@ -13,6 +14,12 @@ acceptance仍由Core文件與exact-SHA驗收控制。
 - `fixtures/`：可提交的非敏感 fixtures 與 catalog/checksum；不放 private prompt/output。
 - `evidence/`：sanitized evidence index/summary；raw results 走受控管道。
 - `deliveries/`：POC delivery manifests 與 handoff package。
+- `contracts/mva/`、`fixtures/mva/`、`tests/mva/`：M4B-MVA專用產品等價surface；不得以舊
+  fresh-Conversation/full-envelope contract替代。
+
+工作站更換或context reset時，M4B-MVA續接以
+[`HANDOFF-LLM-M4B-MVA-WORKSTATION-001`](../docs/response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md)
+為完整checkpoint；新工作站仍須重新建立自己的ignored `.workstation-context.md`，不得繼承舊機能力。
 
 Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence schema；它們
 目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC

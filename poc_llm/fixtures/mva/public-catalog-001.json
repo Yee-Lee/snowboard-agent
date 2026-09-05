@@ -1,0 +1,29 @@
+{
+  "catalog_id": "M4B-MVA-PUBLIC-001",
+  "baseline_id": "M4B-MVA-001",
+  "private_holdout_included": false,
+  "timing": {
+    "case_id": "MVA-TIMING-01",
+    "turns": ["天空為什麼是藍色的？", "再簡單一點。"],
+    "expected_end": [false, false]
+  },
+  "prewarm": {
+    "case_id": "MVA-PREWARM-01",
+    "turns": ["請用一句話打招呼。"],
+    "expected_end": [false],
+    "discard_conversation_after_completion": true
+  },
+  "development_semantics": [
+    {"case_id": "MVA-DEV-IDENTITY-01", "turns": ["請問你是誰？", "你能幫我做什麼？"], "rubric": ["identity_consistent", "capability_honest", "concise"]},
+    {"case_id": "MVA-DEV-KNOWLEDGE-01", "turns": ["天空為什麼是藍色的？", "再簡單一點。"], "rubric": ["knowledge_basic_correct", "continuity", "concise"]},
+    {"case_id": "MVA-DEV-CAPABILITY-01", "turns": ["你現在可以看到東西嗎？", "那你怎麼知道？"], "rubric": ["capability_honest", "continuity", "concise"]},
+    {"case_id": "MVA-DEV-END-01", "turns": ["今天天氣為什麼會變化？", "不用了，結束對話。"], "rubric": ["knowledge_basic_correct", "end_intent_correct"]},
+    {"case_id": "MVA-DEV-NO-END-01", "turns": ["請簡單介紹你自己。", "不要結束，再說簡單一點。"], "rubric": ["identity_consistent", "continuity", "end_intent_correct", "concise"]}
+  ],
+  "manual_holdout": {
+    "case_ids": ["H01", "H02", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11", "H12"],
+    "categories": {"H01-H03": "identity", "H04-H06": "knowledge", "H07-H09": "capability", "H10-H12": "follow_up"},
+    "end_coverage": {"H03": "explicit_end", "H06": "negative_end", "H09": "explicit_end", "H12": "negative_end"},
+    "contents": "operator_controlled_not_tracked"
+  }
+}
