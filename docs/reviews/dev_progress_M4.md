@@ -661,3 +661,19 @@ PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider \
 - 上述修改觸及installer與portable regression，依append-only規則使`60cb29d...`不再可送正式target gate；
   完整portable／non-Pi regression通過並取得USER commit確認後，必須建立新candidate SHA、重新執行三minor
   matrix，再交Designer review／freeze。禁止amend、rebase、reset或force-push改寫舊candidate。
+
+### Product-session lifecycle design escalation（2026-09-05）
+
+- Pi診斷顯示目前M4b契約把產品session isolation等同於每次operation建立fresh LiteRT-LM
+  `Conversation`，但runtime本身支援保留對話history與incremental Session／KV；現有證據沒有證實選定的
+  Gemma 4 E2B＋LiteRT-LM 0.16.0＋Pi組合存在cross-session semantic leakage。
+- USER已釐清本階段產品語意：同一產品session可由runtime Conversation保留對話狀態，Reasoner只管理工具使用、
+  pending progress等產品關鍵context；session結束後不要求靠context恢復上一個session的工作進度。
+- 已建立blocking `docs/reviews/IR_dev_M4B_III.md`，要求Designer一併裁決Conversation/context boundary、
+  pre-warm必要性、以memory capacity為核心的planned replacement、Reasoner完整責任及分層performance endpoint。
+- 現有same-boot replacement診斷中，real inference pre-warm只把約8秒工作移到READY以前，下一筆`Say hi.`仍約
+  8.2秒；PSS則約在1.77–1.82 GB收斂，未證實固定8次或48 MiB delta代表failure。
+- `IR_dev_M4B_III`維持`Open`期間，不以放寬10秒READY門檻繼續target acceptance，也不對耦合項目建立新
+  candidate。既有immutable candidate `c242b862aa0b64db460a58a93ff783ba2a8fa85c`與非正式Pi診斷均保留。
+- 本輪未執行新POC、formal Pi run或commit。若Designer認為裁決需要額外實體證據，須先指定representative
+  lifecycle/output surface、重複次數、量測endpoint與有效性判準，再由Developer執行bounded POC。
