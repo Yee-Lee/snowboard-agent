@@ -1,5 +1,10 @@
 # Ch 5. Resource Manager 實作
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 屬於 `implement.md` 索引 | 對應 `arch.md` §6.1 ~ §6.2 / §6.5 / §6.8 | 狀態：定稿（IR-final 已通過（2026-08-01））
 
 上游：Ch 2、Ch 2a、Ch 2b、Ch 4。
@@ -520,8 +525,9 @@ main-owned`wait_fatal()`都監督該batch failure。
 5. return。
 
 Hook 不 publish Event、不修改 capability map。若 replacement factory/start 失敗，cleanup 其局部資源後 raise。
-LLM READY只代表`INFERENCE_READY`，所以hook須重做same-lock authenticate、Engine load、mandatory
-pre-warm、Conversation/output/KV discard與resource baseline；Engine construction本身不滿足步驟2。
+LLM M4B-MVA READY須same-install trust verification、Engine與measured profile readiness完成且無產品session；
+預熱依profile選定，不一律mandatory。replacement驗證不可直接跳過，也不重hash完整model；
+不可變install邊界與drift處置依M4B-MVA §5。完整10秒目標從RM接收recovery至barrier釋放計量。
 
 `_run_recovery` 以 RM 擁有的 overall `recovery_timeout_seconds` 包住整批；成功才：
 1. set ready Event；
@@ -626,8 +632,8 @@ class RecoveryFatalError(ResourceManagerError): ...
 25. startup coherence gate（§4.5）：read disabled、read optional start failure、external source enabled/disabled、default-perception worker 不可用等組合下——enabled 且 required 的 source 指向缺席 first-turn worker 為 fatal；optional source 指向缺席 worker 被降級且其 buffer store 被 stop；gate 後 seal 的 `required_kinds` 不再要求被降級 source 的 first-turn worker，seal 成功。
 26. seal 必要 kind 推導：僅 `{reasoner, rest} U enabled-after-gate first-turn workers U default_perceptions`；optional 且不在此集合的 kind（如 read disabled）缺席不使 seal 失敗。
 27. LLM planned recycle只接受exact recoverable key、terminal-clean owner state與single active ticket；active inference、wrong key、Reasoner raw RM access皆拒絕。
-28. Planned recycle hook先清舊child再重做authenticate/load/pre-warm；Engine-loaded不set barrier，只有new `INFERENCE_READY`原子切換後成功。
-29. 下一個LLM admission等待同一ticket；replacement/pre-warm/cleanup failure保持barrier clear並傳遞`RecoveryFatalError`，不在舊child繼續。
+28. M4B-MVA capacity recycle先完成產品session結束再同key回收；hook驗trust/load/measured readiness，只有新READY原子切換後成功。
+29. 下一個LLM session admission等待同一ticket；replacement/selected-prewarm/cleanup failure保持barrier closed並傳遞RecoveryFatalError；不得沿用舊context或無限recycle。
 30. Planned recovery在沒有SM waiter與後續LLM request時失敗，`wait_fatal()`仍立即raise同一latched
     `RecoveryFatalError`；main supervision進exit 4，沒有unretrieved task warning或第二份不同root cause。
 
@@ -641,4 +647,4 @@ Fake factory / Lifecycle 以 call log 與 `asyncio.Event` 控制，不碰實體�
   recovery failure以同一root cause走exit 4。
 - Ch 10：需要 startup per-resource timeout、stop timeout、`recovery_timeout_seconds`、recovery shutdown cleanup timeout。
 - Ch 11：`StartupError` / `RecoveryFatalError` / `ShutdownReport` log 格式，以及 startup 前 Bus / SM fatal supervision 的工具 API。
-- `docs/protocol.md`：Audio v1與LLM `snowboard.llm/1` wire已固定；LLM hook return的READY必須是完成pre-warm的`INFERENCE_READY`。
+- `docs/protocol.md`：Audio v1不變；LLM M4B-MVA snowboard.llm/2/session wire待簽核，hook return必須有完整新profile readiness與no-session proof。

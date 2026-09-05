@@ -1,5 +1,10 @@
 # Ch 10. Config schema
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 屬於 implement.md 索引 | 對應 arch.md §7.1 | 狀態：基礎契約定稿（IR-final 2026-08-01）；M4a production extension待Reviewer審查（2026-08-26）
 
 上游：Ch 2a、Ch 2b、Ch 4、Ch 5、Ch 6、Ch 7、Ch 9。
@@ -263,16 +268,9 @@ class LLMConfig:
     model_path: Path | None = None
     product_config_path: Path | None = None
     artifact_lock_path: Path | None = None
-    profile_id: str | None = None
-    child_ready_timeout_seconds: float = 45.0
-    generation_timeout_seconds: float = 15.0
-    terminal_grace_seconds: float = 2.0
-    child_terminate_timeout_seconds: float = 2.0
-    child_kill_wait_timeout_seconds: float = 1.0
-    rebuild_ready_timeout_seconds: float = 10.0
-    recycle_max_inference_attempts: int = 8
-    recycle_owner_pss_delta_mib: int = 48
-    recycle_min_mem_available_mib: int = 768
+    profile_id: str | None = None  # M4B-MVA proposed: core-m4b-mva-001
+    # M4B-MVA timeouts/token/capacity policy come from a separately frozen profile.
+    # No executable defaults are authorized before the measurement disposition.
 
 @dataclass(frozen=True, slots=True)
 class CognitionConfig:
@@ -303,14 +301,16 @@ class ActionConfig:
     tts: TTSConfig = TTSConfig()
 ```
 
-Reasoner固定required，不提供`required`欄位。`cognition.llm.driver=litert_lm`時四個path皆必須是
-absolute file，`profile_id`須exact等於`litert-lm-v0.16.0-pi-g2b-r5`，上述numeric值不得覆寫。
-Model/runtime/config checksum、128/128/1024 token boundary、temperature `0.0`、top-p `1.0`與4 threads
-由tracked lock綁定的product config載入，不由YAML重述。Mock要求四個path/profile皆為null。
+Reasoner固定required，不提供required override。Real driver paths仍是absolute file；
+M4B-MVA profile建議core-m4b-mva-001，required fields與exact digest待量測採用後freeze。
+原POC config只作provenance，不能用其c4557b digest宣稱新renderer/output/lifecycle設定。
+新profile分離user-new/input/output/KV、startup/generation/control/cleanup watchdog、
+capacity reserve，以及3秒response/10秒完整recovery目標。
+移除recycle_max_inference_attempts/recycle_owner_pss_delta_mib，不沿用8/48/768 defaults。
+Numeric不在YAML任意覆寫，缺profile/缺欄位在spawn前拒絕；mock仍不載native/profile。
+Sampling/backend原值只作POC起點，不是未簽核的M4B-MVA production lock。
 
-Real LLM另要求`cancel.abort_timeout_seconds.by_kind.cognition.reasoner=0.5`；resource recovery outer
-timeout須涵蓋10秒rebuild READY與舊child cleanup，repository product default維持30秒。8/48/768
-planned recycle policy、same-lock pre-warm與fatal recovery語意見`ch_m4b_llm_production.md` §0.3/§7。
+
 Composition對real factory必須注入`ScheduleRecovery`、`WaitRecovery`與target `LLMResourceSampler`三個
 窄介面；mock三者皆為None。這些是Python wiring而非YAML keys，unknown YAML不得藉此取得RM或sampler。
 
@@ -727,7 +727,7 @@ Config load發生在Event Bus / SM之前：
 18. defaults tree、dataclass decoder與strict overlay對perception使用完全相同的 nested paths；舊 `listen_adapter` / `look_adapter` 以 `UnknownConfigKey` 拒絕。
 19. repository完整 `config.example.yaml` 由 `load_config(local_path=example_path)` 走與production相同的strict merge、decode、field與cross-field validation並成功；assert adapter值落在 `config.perception.listen.adapter` 與 `config.perception.look.adapter` 。
 20. real LLM四個absolute files、exact profile與0.5秒cancel override缺一即fail；mock path/profile全null且不讀lock。
-21. LLM 45/15/2/2/1/10 timeout與8/48/768 recycle values拒絕任何real-driver override；NaN/Infinity、bool-as-int及<=0 fail。
+21. M4B-MVA real profile凍結後驗exact identity/required fields，拒絕舊8/48 recycle keys、NaN/Infinity與bool-as-int；product objectives與operational watchdog不得混用。
 22. real LLM invalid path/lock/profile在native import、child、workdir、sampler與RM registration前失敗且side effect=0。
 22a. real LLM缺任一schedule/wait/sampler窄介面fail；mock收到任一介面亦fail，且YAML無對應key。
 23. `whispercpp`與`sherpa_matcha`的required field / exact profile table-driven驗證；每個missing/mismatch以含完整path的`ConfigValueError`在factory前拒絕。

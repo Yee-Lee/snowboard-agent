@@ -1,5 +1,10 @@
 # Ch 9. LLMResponse action_payload schema
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 屬於 `implement.md` 索引 | 對應 `arch.md` §2.7 ~ §2.8 / §3.3 / §4.6 | 狀態：定稿（IR-final 已通過（2026-08-01））
 
 上游：Ch 1、Ch 2b、Ch 4。
@@ -239,7 +244,7 @@ Validator可供Reasoner與SM共用同一instance，因它無mutable call state�
 
 | 層 | 責任 | 不合時處置 |
 | --- | --- | --- |
-| Reasoner normalizer | 驗證LLM adapter的structured mapping、呼叫validator、建立LLMResponse | P5 apology speak或rest |
+| Reasoner normalizer | M4B-MVA驗semantic text/end、依product policy組canonical mapping，再呼叫validator | 未改context的P5或dirty-session rest |
 | StateManager THINK Exit | 獨立驗證kind、payload、next_perceptions與catalog target | 內部 ReasonerContractViolation 診斷 + 直接transition ERROR；非fatal |
 | Action worker | Defensive讀取與dispatch | 可翻譯錯誤 -> ActionCompleted(error) |
 
@@ -316,3 +321,11 @@ class ToolArgumentsInvalid(ToolRegistryError): ...
 
 * Ch 10：TTS固定voice / speed屬backend config，不進per-action payload。
 * Ch 11：Reasoner validation warning與SM自檢ERROR只記kind/path/reason，禁止raw prompt / payload；後者不等於runtime fatal。
+
+## 13. M4B-MVA model output versus canonical action
+
+Model僅text/end，schema见M4B-MVA §2；本章speak/tool/rest仍是Core canonical action契約，
+不得把移除model full-envelope誤解為刪除SM/ActionPayloadValidator防線。
+next_perceptions由Reasoner產生；M4普通speak為(listen,)，end為rest/{} /()。
+End結果不承載farewell text，故不新增speak後自动rest或empty-next speak捷徑。
+Tool generic validator維持供M5，M4 real-model quality不要求tool。

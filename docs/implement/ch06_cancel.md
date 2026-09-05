@@ -1,5 +1,10 @@
 # Ch 6. Cancel 三級收斂實作
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 屬於 `implement.md` 索引 | 對應 `arch.md` §6.3 ~ §6.5 | 狀態：定稿（IR-final 已通過（2026-08-01））
 
 上游：Ch 2、Ch 2b、Ch 4、Ch 5。
@@ -321,3 +326,14 @@ Fake worker 以 `asyncio.Event` 控制 abort、force-abort 與 outer task done�
 - Ch 10：固定 `cancel.abort_timeout_seconds` 與 `cancel.force_abort_timeout_seconds` 的 default + per-kind schema。
 - Ch 11：固定 `ConvergenceFatalError` 為 Level 3 root cause；main 記一次 CRITICAL 並結束 process。
 - `docs/protocol.md`：Audio child cooperative/deferred cancel wire已固定；其他domain仍待gate。本章只依賴`force_abort()`return的termination proof。
+
+## 13. M4B-MVA control-operation convergence
+
+M4B-MVA session open/close pending與generate同樣受SM收斂追蹤，不以非THINK為由漏掉cleanup。
+Cancel不論發生於open、generate、close，都須typed terminal、joined worker與
+Conversation清理證據；外部cancel不publish正常Fact。無法證明時沿Level2 PGID
+termination/waitpid，回報同一backend key供RM recovery；shutdown不rebuild。
+Dirty request已清Conversation時結束產品session，不能P5 apology後silent reset續聊；
+pre-inference rejection且context未變仍可P5。詳M4B-MVA §4/§9。
+0.5秒等既有操作值只作舊profile參考；新watchdog與10秒產品recovery目標分欄，
+由凍結profile決定，不以3秒user target直接代替native cleanup deadline。

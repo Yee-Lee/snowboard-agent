@@ -1,5 +1,10 @@
 # Ch 2. 跨層貫穿契約
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 屬於 implement.md 索引 | 對應 arch.md §2.4 / §2.6 / §2.8 / §2.9 / §6.1 | 狀態：定稿（IR-final 已通過（2026-08-01））
 
 本章定義 arch.md §2.1「有多實作需求的層」的 `base.py` Protocol——`InputSource` / `Perception` / `Action` / `Adaptor` 四類 Protocol，以及共通 `start()` / `stop()` 與 in-flight worker 的 `abort()` / `force_abort()` 語意。
@@ -321,7 +326,7 @@ class Reasoner:
     ) -> None: ...
 
     async def start(self) -> None:
-        """LLM engine warmup、prompt template 載入。"""
+        """LLM profile readiness與template載入；預熱依measured profile。"""
         ...
 
     async def stop(self) -> None:
@@ -353,7 +358,7 @@ class Reasoner:
 - **`perception_results`**：本 turn 所有 perception worker 的 `PerceptionResult`（含 `status` $\in$ `{ok, timeout, error}`），順序由 SM 收集完成順序決定；reasoner 不假設順序有意義
 - **`pending_message_count`**：本 turn 起始時 external_message buffer 內 pending 訊息數（來源見 arch.md §5.1 / §2.7）——只供 reasoner 決定 `next_perceptions` 是否含 `read`；不得傳入 `message_id`、payload或可反查內容
 - **Fact 分支（Ch 1 §1.8）**：成功或可翻譯的 LLM 失敗只 publish 一個 `LLMResponse`；不可翻譯失敗由 reasoner 主動 publish 一個 `ErrorOccurred`，task completion 不重複補發；進入收斂後不 publish 正常終態 Fact
-- **P5 降級**：LLM engine timeout / 解析失敗 / 拒答時，reasoner 應內部降級產出合理 `LLMResponse`（例：`action_kind="speak"` + apology text + `next_perceptions=("listen",)`）；不 raise
+- **P5 降級**：產出合理LLMResponse而不把可恢復request error直接raise；M4B-MVA依context是否仍完整分流，未改state可apology/listen，dirty timeout/解析失敗須close/rest，外部cancel不publish。
 - **Exception 處理**：不可翻譯錯誤 publish `ErrorOccurred` 後讓 exception 逸出；`CancelledError` re-raise 不 publish（同 §2.3 / §2.4）
 - **完成條件**：SM 記錄 `LLMResponse` 後仍須等待 `reason()` task done、handle 移除，才可離開 THINK
 
@@ -378,7 +383,7 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 
 - **In-flight 集合成員**：SM 呼叫 `reason()` 後、直到對應 asyncio task 真正 done 且 completion notice 使 handle 移除，reasoner 屬於 SM 的 in-flight 集合
 - **單一實例**：reasoner 為 process 內單一 instance；同時只會有一個 in-flight `reason()`（THINK 狀態是 SM 序列狀態，不可能重入）
-- **`start()` 必須等 LLM child完成Engine load、mandatory disposable pre-warm與cleanup後的`INFERENCE_READY`（wire可仍名`READY`）**；`ENGINE_LOADED`不可使start return或解除recovery barrier；`stop()` / `force_abort()` return前必須確認child與descendant已退出
+- **M4B-MVA `start()`** 等identity、Engine與measured profile readiness完成且無產品session後return；prewarm不再一律mandatory。`stop()` / `force_abort()`仍須驗child/descendant退出。Session begin/end與Reasoner P5分界依M4B-MVA §3/§4。
 
 ### 依賴注入
 
@@ -391,3 +396,10 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 與 IR-I-01 對齊：reasoner 採用 Perception / Action 相同的分支模型——正常 / P5 路徑一個 terminal Fact，不可翻譯路徑一個 `ErrorOccurred`，cancel 路徑不發布正常 Fact；方法本身回傳 `None`。
 
 ---
+
+### M4B-MVA session participant（待架構簽核）
+
+SM新增注入ReasonerSessionControl.begin_session(session_id)與end_session(session_id, reason)；
+API、非阻塞completion、四路close與late-ID protection依M4B-MVA §3。reason()仍每turn單一Fact，
+但不再等同stateless inference。未改runtime context的pre-inference錯誤可P5/listen；
+dirty context採close/rest；cancel不publish。public LLMResponse與SM owner不變。

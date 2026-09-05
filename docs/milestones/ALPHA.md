@@ -1,5 +1,10 @@
 # ALPHA 規劃 ── Voice-only 產品化收斂 Gate
 
+> 2026-09-05 MVA scope clarification：M4B先完成最小Reasoner與session內對話連續性，
+> M4整合已有短句語音正確性／回應時間證據；ALPHA擴大case與soak，
+> 不將基本Reasoner設計或短句3秒可行性首次驗證延到本gate。
+> 目標可依實測與USER決策修訂，未達標不自動取消整體計畫。詳見[M4](M4.md)。
+
 ## 定位
 
 `ALPHA` 是 M4 Accepted 後、M5 開始前的 **產品成熟度 Gate**，而非功能 milestone。它不新增功能，而是對 M4 已驗收的 Voice-only 能力進行產品化收斂，並固定後續開發的 exact-SHA baseline。

@@ -1,13 +1,64 @@
 ---
 requestor: "Developer"
 owner: "Designer"
-status: "Open"
+status: "Revised"
 severity: "Blocking"
 ---
 
 # IR_dev_M4B_III — Product-session LLM lifecycle, Reasoner responsibility and performance boundary
 
-## Decision requested
+## Current disposition — Designer response 2026-09-05
+
+USER已確認M4 MVA與下列修訂；本單由Designer標Revised供Developer複審，未自標Resolved。
+完整[M4B-MVA design](../implement/ch_m4b_llm_production.md)、[M4 scope](../milestones/M4.md)、
+[architecture request](AR_impl_M4B_I.md)、[test-spec request](TR_spec_M4B_IV.md)已建立。
+原下文為Developer發起時的證據與請求，保留不改写；新產品方向優先依本回覆。
+
+| Finding | Verification / disposition | Direct fix / minimum closure |
+| :--- | :--- | :--- |
+| 1 session/history | fresh-per-turn事實成立；session定義原已在arch §4.1；USER並非禁止自然history | M4B-MVA §3/§4 session ports、same-session reuse、四路close與cross-session隔離；AR處理§8.3 |
+| 2 prewarm | 原cold-first失敗有歷史依據；未證明每次replacement下一筆收益 | M4B-MVA §5/§6；same-boot預設none，冷啟動比較交POC；READY/profile/card同步 |
+| 3 recycle | 原8來自POC斜率推算，Core適用性不足；sample注入證明capacity足夠也因150MiB delta回收 | M4B-MVA §5/§9；移除8/48/早期64/固定三generation；natural soak與受控recovery分開 |
+| 4 Reasoner | full-envelope實作成立；LLM理解與SM驗證本來就符合架構，不採「因此失職」判法 | M4B-MVA §2最小text/end→Reasoner action/next_perceptions；M4不做task manager；tool留M5 |
+| 5 performance | 有15秒watchdog，但缺caller/audible端點；internal TTFT不等於回應 | M4B-MVA §6；speech-end→meaningful onset，完整recovery；quality/manual與timing分欄 |
+
+### Verified evidence and limits
+
+本輪核對R1 source/design/test與指定上游文件；33項直接portable regression PASS（CPython3.12.3）。
+命令（在清除USER允許捨棄的WIP以前執行）：
+
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 timeout 60 .venv/bin/python -B -m pytest -p no:cacheprovider --capture=sys tests/test_m4b_hist_001.py tests/test_m4b_gen_001.py tests/test_m4b_out_001.py tests/test_m4b_rec_001.py::test_m4b_rec_001_rebuild_ready_timeout_starts_after_authentication
+
+首次未關autoload因host ROS pytest plugin缺lark失敗；隔離該無關plugin後33 passed。
+這是舊契約行为核實，非M4B-MVA測試／formal portable sign-off。
+用tests.test_m4b_gen_001._adapter/_input在memory-only程序注入：
+baseline1700MiB→1850MiB、MemAvailable1200MiB，第一request後
+attempts=1/recycle_tickets=1/RECYCLE_PENDING。
+另一個start+rebuild closure spy得到runtime/model-config verification各兩次，
+配合lock.verify_config_paths直接完整hash，證明replacement critical path重新驗大model。
+無Pi新run。新Pi 8.2秒/1.77–1.82GB原始腳本/逐次樣本未定位，只能列Developer摘要。
+Developer可提供現成sanitized identity/commands/samples，無需為本核實另跑探索。
+不要把41總decode tokens全稱為可省overhead，也不把Python驗證當成已證实性能瓶頸。
+
+### Downstream scope and authority
+
+應修改M4B-MVA §9列出的source/API/profile/card/catalog，不需重開M4A HAL、POC winner、
+target ABI、license、歷史machine FAIL/waiver或generic M5 tool validator。
+USER確認五個舊WIP無保留需要，已捨棄，不能以其存在阻擋新設計。
+流程現依USER指定[M4B-MVA七步gate](../milestones/M4B_MVA.md)，
+Reviewer審arch/design/POC計畫，Designer定版交付；POC結果經Designer審核解除gate前，
+Developer／Tester不提前進場或準備spec draft，
+不得建立耦合新candidate或用放寬READY deadline繼續舊target acceptance。
+Performance target miss只發現差距，按USER決策可調整，不代表no-go；
+原結果保留，未裁決前不假標PASS。
+
+POC request：
+[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+prepared in Core，未交付外部／未授權實體執行。
+Tester經TR_spec_M4B_IV寫自動/人工delta，Designer不修改Tester-owned spec。
+本回覆一次列出五項與直接影響面；後續複審以本範圍及新regression收斂。
+
+## Original decision requested
 
 Please revise the M4b product design after the physical-Pi implementation diagnostics exposed five
 coupled gaps in the approved lifecycle:

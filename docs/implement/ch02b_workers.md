@@ -1,5 +1,10 @@
 
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 # Ch 2b. worker 契約與 library adapter
 
 |本章定義 ASR / Vision / LLM / TTS adapter 與 worker 行為；精確 engine、model、voice、版本、授權與 Pi benchmark gate 見 ../model_spec.md 。
@@ -185,161 +190,41 @@ class VisionAdapter(Protocol):
 
 Vision adapter 不直接取得 Camera；拍攝與分析的資源順序由 Look worker 擁有。
 
-## 3. Cognition
+## 3. Cognition — M4B MVA M4B-MVA revision
+
+完整API、state、failure、實作骨架與regression在
+[ch_m4b_llm_production.md](ch_m4b_llm_production.md) §2–§9；
+wire在[protocol.md](../protocol.md) §4。本節以M4B-MVA替代原R1 stateless prompt/full-envelope。
 
 ### 3.1 PromptBuilder
 
-```python
-@dataclass(frozen=True, slots=True)
-class ReasoningPerception:
-    kind: Literal["listen", "read", "look"]
-    status: Literal["ok", "timeout", "error"]
-    text: str
-
-@dataclass(frozen=True, slots=True)
-class ReasoningInput:
-    perceptions: tuple[ReasoningPerception, ...]
-    pending_message_count: int
-    available_perceptions: tuple[str, ...]
-    available_actions: tuple[str, ...]
-    tool_schemas: tuple[dict[str, Any], ...]
-
-class ReasoningInputError(ValueError): ...
-class ReasoningInputContractError(ReasoningInputError): ...
-class ReasoningInputTooLarge(ReasoningInputError): ...
-
-class PromptBuilder:
-    def build(
-        self,
-        *,
-        perceptions: tuple[PerceptionResult, ...],
-        pending_message_count: int,
-        available_perceptions: tuple[str, ...],
-        available_actions: tuple[str, ...],
-        tool_schemas: tuple[dict[str, Any], ...],
-    ) -> ReasoningInput: ...
-```
-
-PromptBuilder 是 Snowboard 自有的純 Python 元件，不是第三方 adapter：
-
-- 不做 IO、不管 Resource Manager、不 publish 事件。
-- 固定排序 perception：`listen`、`read`、`look`；同kind重複、超過16筆或未知kind直接拒絕，
-  不依完成順序改語意輸入。
-- 每筆只投影`kind/status/text`；不把`extra`、session/turn/correlation ID傳給child。Ch 1的
-  `text=None` canonical映射為`text=""`，但原`status`保持`timeout/error`，不得改成`ok`。
-- pending metadata 只輸出 count，不含 ID、payload 或可反查內容。
-- perception依`listen/read/look`、action依`speak/tool/rest` canonical order去重；unknown kind拒絕。
-  `speak/tool`只有在至少一個perception可作合法`next_perceptions`時才進effective actions；`tool`
-  另要求sealed tool schema非空；`rest`必須存在，否則startup composition fatal。
-- 將Snowboard `ToolRegistry.schemas()`的defensive copy依tool name排序後提供給模型；每筆只含
-  `name/description/input_schema`，不傳validator、execution control或handler。
-- 只做 Snowboard 語意資料的排序、正規化與不可變複製；chat-template rendering、tokenization 與 constrained-output 均由 child 擁有。
-- 不建立 raw prompt 字串；`ReasoningInput` 依 `docs/protocol.md` 的 `snowboard.llm/1` 傳入 child。
-- 要求模型只輸出一個 Ch 9 定義的 action object；tool 選擇正規化為 `LLMResponse(action_kind="tool")`，不允許 LiteRT-LM 自動執行 handler。
-
-Unknown/duplicate kind、negative pending count、invalid tool schema或缺少required `rest`屬
-`ReasoningInputContractError`，表示composition/fact違約；Reasoner發布sanitized `ErrorOccurred`並進ERROR，
-不得P5掩蓋。單筆text超過4096 code point，或well-formed projection因本turn private content超過16 KiB，
-屬`ReasoningInputTooLarge`，child side effect=0並可走P5。若空content+完整static tool projection已超過
-16 KiB，則在startup preflight即composition fatal，不等到user turn。
+產品facts在session open傳入：雪板身分、角色、繁中、當前listen/speak能力。
+每turn只project當前listen PerceptionResult，不傳handler、private IDs或整份history。
+Session identity由control envelope攜帶，不render進LLM。
+Runtime Conversation管理session內history/KV；Core無transcript store/摘要/檢索。
+Token限制区分user-new、incremental template、累積KV、output reserve；值待profile。
 
 ### 3.2 LLMEngineAdapter
 
-```python
-@dataclass(frozen=True, slots=True)
-class LLMGenerationMetrics:
-    init_ms: float
-    ttft_ms: float
-    prefill_tokens: int
-    prefill_tokens_per_second: float
-    decode_tokens: int
-    decode_tokens_per_second: float
-    kv_tokens: int
+既有start/stop/abort/force_abort維持，新增open_session(session_id, facts)、
+generate(session_id, turn_id, value)、close_session(session_id, reason)。
+Generate回SemanticGeneration(text/end, metrics)，不回canonical action envelope。
+Dedicated child/PGID保留，同session正常turn reuse，結束close；runtime native只在child。
+CANCEL最多一次，typed outcome+thread join+Conversation cleanup；desync/cleanup failure
+走Level2→RM。Capacity-based planned recovery與fault recovery分開，無fixed8/48。
+READY無產品Conversation；prewarm依measured profile選擇。完整recovery計時不排除hash/load。
+Process termination與same-key RecoveryTicket/barrier/main fatal監督維持。
 
-@dataclass(frozen=True, slots=True)
-class LLMGeneration:
-    response: Mapping[str, object]
-    metrics: LLMGenerationMetrics
+### 3.3 Reasoner policy and normalization
 
-class LLMEngineAdapter(Protocol):
-    async def start(self) -> None: ...
-    async def stop(self) -> None: ...
-    async def abort(self) -> None: ...
-    async def force_abort(self) -> ForceAbortReport: ...
-    async def generate(self, value: ReasoningInput) -> LLMGeneration: ...
-```
-
-LiteRT-LM 實作落點：
-
-```text
-src/sbd/cognition/litert_lm/
-├── __init__.py
-├── adapter.py   # parent-side adapter、watchdogs、recycle policy + IPC client
-└── worker.py    # child entrypoint，持有 LiteRT-LM Engine
-```
-
-實作約束：
-
-- LiteRT-LM Python 未公開可靠推論 cancellation API，故 Engine 必須放在專用 child process，不得在 Snowboard 主 process 的 thread 內直接推論。
-- `start()` spawn child；child驗artifact/config後載入並持有`litert_lm.Engine`，此時只到`ENGINE_LOADED`。每次child start/rebuild都須以相同chat template、model tokenizer、rendered-token檢查與constrained-output path執行固定非敏感pre-warm，close/discard disposable Conversation、output與KV/history後才回`READY`（唯一語意為`INFERENCE_READY`），adapter才return。Pre-warm算startup availability，不藏入第一個user request latency。模型跨IDLE、wake與session常駐，不因每turn重載。
-- 每次`generate()`以`snowboard.llm/1`傳送結構化`ReasoningInput`，並建立無隱藏歷史的新
-  `Conversation`。Child control loop保持在main thread收CANCEL；每request只建立一個background thread，
-  該thread呼叫winner已驗證的同步`send_message(prompt, response_format=ResponseFormat.json(schema))`。
-  Worker outcome回control loop後須先join thread，再由control loop送唯一terminal；不對parent暴露文字chunk。
-- Chat-template rendered input以exact model tokenizer在inference前強制`<=128` tokens，runtime `prefill_tokens`亦須`<=128`；output ceiling 128、Engine capacity 1024分別驗證。Constrained JSON與runtime capability/tool allowlist各自fail closed。Core Gate 3以current-turn expected action/schema/allowlist作正向oracle，並以fresh Conversation與prior-state absence作history oracle；Gate 2B current/forbidden/prior marker只屬POC narrow harness evidence，不注入或擴張一般production request。
-- Generation deadline固定15秒；parent另有最多2秒terminal-observation-only grace，只能接收child-owned `TIMEOUT`/`ERROR`，不得接受逾時result。Engine-load/pre-warm、first-token、generation與terminal observation使用不同watchdog/telemetry。
-- `abort()`送cooperative CANCEL；child control loop對active Conversation最多呼叫一次`cancel_process()`。
-  只有typed worker outcome、thread join、Conversation close與READY terminal全成立時才return；native cancel
-  無法收斂時保持pending，交Ch 6 Level 1→2處理。
-- Cancellation exception處理須先match專用Cancelled型別，再match其`RuntimeError`等父類；thread/process測試必須capture terminal outcome並assert join，任何`PytestUnhandledThreadExceptionWarning`均為test failure，不得只靠thread已結束形成false pass。
-- `force_abort()` 依序 terminate child、在上限內 waitpid，必要時 kill 後再次 waitpid；確認 IPC 關閉且無 descendant 後，回報 LLM backend destroyed。
-- `stop()` 優先送 graceful shutdown；逾時同樣 terminate / kill + waitpid，return 前不得留下 child。
-- 每個 child 最多接受 8 次 inference attempt；或 post-prewarm owner PSS 增量達 48 MiB；或 target `MemAvailable` 低於 768 MiB 時，adapter 在 terminal cleanup 完成且無 active request 後標記 `RECYCLE_PENDING`。缺少 target sampler 資料須 preflight fail closed；portable 測試使用注入 sampler。
-- Planned recycle 只可透過窄化的 `schedule_recovery(("backend.cognition.reasoner.llm",))`／
-  `wait_recovery(ticket)`交由RM建立並等待`RecoveryTicket`；舊generation關閉後，rebuild必須重跑
-  artifact/config驗證與pre-warm，ticket barrier清除前下一個request不得進入。任何recycle recovery
-  失敗均由main-supervised`rm.wait_fatal()`立即Level 3，即使沒有下一個request；不得fallback到其他
-  模型或profile。
-- Tool handler 只註冊於 Snowboard `ToolRegistry`，絕不傳入 child。
-- Core不使用LiteRT-LM automatic/manual function execution surface；child一律由`ReasoningInput.tool_schemas`
-  建capability-bound JSON response schema並交`ResponseFormat.json(...)` constrained decode。Tool結果只回
-  intent，parent正規化為`LLMResponse(action_kind="tool")`；實際handler僅由
-  `SM -> action/tool -> ToolRegistry`執行。
-- child 被 `force_abort()` 破壞後不得由 Reasoner 自行重啟；SM 把 report 交 RM，RM rebuild / start 新 backend，recovery barrier 清除前 SM 保持 ERROR。
-- 模型路徑、backend、sampling、最大輸出 token、reason timeout、terminate / waitpid timeout 進 Ch 10。
-- READY、structured generate、single result、cooperative cancel、shutdown 的 wire schema 已固定於 `docs/protocol.md` §4；不得增加 `CHUNK` 或 raw prompt payload。
-
-Selected winner surface使用同步`send_message(..., response_format=...)`與`cancel_process()`；Core不切換到
-未由Gate 2B winner驗證的async decode路徑。Native cancel仍不是Level 2完成證明，因此child-process
-isolation與`force_abort()`已由AR-Impl-6定案，不再是待決項目。
-
-官方參考：
-- [LiteRT-LM Python API](https://ai.google.dev/edge/litert)
-- [LiteRT-LM repository](https://github.com/google-ai-edge/litert-lm)
-
-### 3.3 Reasoner 正規化
-
-Reasoner 依 Ch 2 §2.8 接收本 turn facts：
-
-1. 查詢合法 perception / action capability。
-2. 以本turn facts、pending count、capability與sealed tool schemas呼叫`PromptBuilder.build()`，取得
-   immutable `ReasoningInput`。
-3. 在 config 的 `cognition.reason_timeout_seconds` 內呼叫 `llm.generate(value)`。
-4. 驗證回傳 mapping 與 Ch 9 schema；不得在 Reasoner 重新解析 raw JSON 文字。
-5. 建構、publish 一個帶原識別符的 `LLMResponse`。
-
-以下情境走 P5 fallback，不 publish `ErrorOccurred`：
-
-| 情境 | Fallback |
-| --- | --- |
-| LLM clean timeout / 拒答 / 空輸出 | 若 `speak` 可用：apology `speak` + `default_perceptions` |
-| `ReasoningInputTooLarge` / rendered input >128 tokens | 同上；write/inference前拒絕且不截斷private content |
-| child 回傳 schema 不合 / action 不合法 | 同上，並 log warning，不把 raw output 放 Event |
-| `speak`不可用或default perceptions過濾後為空 | 不擅自改派`tool`；產`rest` empty payload |
-
-Fallback 的 `next_perceptions` 只保留 capability 為 true 的 `default_perceptions`；若結果為空，改為 `action_kind="rest"`。
-
-「Clean timeout」表示 operation 已自然結束或合作式 abort 已完成；若 timeout 只能靠 `force_abort()` 破壞 child 才能停止，依 §1.2 改發 `ErrorOccurred`，本 session 進 ERROR，不能同時發布 apology `LLMResponse`。
+Model text/end只是語意輸入。Reasoner自行決定：
+有效短回答+speak/listen可用→speak/{text}/(listen,)；
+明確end→rest/{}/()；無可用speech continuation→rest。
+Model不得提供next_perceptions或tool；此責任不是SM推論或child代寫。
+未改state的request rejection可簡短P5/listen；dirty runtime/容量滿則close/rest，不能
+用新Conversation静默承接「對」等依賴舊前文的回答。所有source异常分界依M4B-MVA §4。
+Real semantic quality由人工rubric驗，injected mock只驗policy。
+Generic ToolRegistry/schema留供M5；M4不用real model tool intent作voice-only gate。
 
 ## 4. Action workers
 

@@ -1,12 +1,27 @@
 # Milestone Progress
 
+## Current M4B disposition — 2026-09-05 USER MVA revision
+
+M4A維持Accepted；M4B-MVA為Designer draft，尚未Development Ready／Gate3 PASS。
+USER確認session內continuity、不建context management、最小Reasoner擁有next_perceptions、
+短句語音2秒目標/3秒上限、10秒完整recovery、cold startup無產品SLA。
+數字可依量測與USER裁決調整，miss不構成計畫no-go。
+[IR_dev_M4B_III](IR_dev_M4B_III.md)已由Designer回覆Revised，requestor結案待後續進場，當前不另放行Developer；
+[AR_impl_M4B_I](AR_impl_M4B_I.md)與[TR_spec_M4B_IV](TR_spec_M4B_IV.md) Open。
+本工作統一M4B-MVA／M4B-MVA-001，依[USER七步流程](../milestones/M4B_MVA.md)。
+目前步驟1等待Architect；Reviewer須審arch/design/POC計畫，Designer定版後才交付。
+POC未交付／未執行，只有Designer審核結果並解除M4B-MVA-POC後Developer／Tester才進場。
+舊WIP五檔依USER授權捨棄；沒有新product code/test、candidate、commit或外部repo異動。
+下方較早dated段落／approval屬R1歷史snapshot；其candidate-ready敘述不覆蓋本節。
+
+
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
 
 * **Current milestone**: M4
 * **Permanent development branch**: `core`
 * **M3 gate status**: `Accepted — Designer transition direct review complete`
 * **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
-* **Last updated**: 2026-08-30
+* **Last updated**: 2026-09-05
 * **Owner**: Designer
 
 ---
@@ -109,7 +124,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow；M4A Accepted不回退，但final M4 candidate須對未變更M4A scope建立inheritance，並在final SHA重跑受新composition影響的Audio/resource/offline/privacy/session regression，不無差別重跑已Accepted的M4A-only target rows。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
-| M4b LLM | `IMPLEMENTATION IN PROGRESS — DESIGN/SPEC GATES RESOLVED` | Gate 2B winner lineage與P9/P10B machine FAIL/User waiver不變。Target ABI與quality-oracle delta均Resolved；`TR_spec_M4B_III`已以OUT 23/23、HIST 5/5、RES六組20/20、marker-free catalog/card契約由Designer Blocking 0通過並歸檔。Developer可收斂implementation/handoff並準備candidate scope；provisional candidate commit仍須USER明確授權，formal portable/Pi gate仍依外部指定SHA執行。 |
+| M4b LLM | `M4B-MVA DESIGN REVISION — ARCHITECTURE/PROFILE/SPEC PENDING` | R1 Gate2B/ABI/spec歷史不改；IR_dev_M4B_III Revised，AR_impl_M4B_I與TR_spec_M4B_IV Open。POC量測包未交付；Reviewer/profile與coverage收斂前不準備coupled candidate。 |
 | M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）

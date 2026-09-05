@@ -1,853 +1,326 @@
-# M4b Local LLM production design
+# M4B-MVA — 最小 Reasoner 與語音架構設計
 
-狀態：**Design與quality-oracle test-spec delta approved；implementation in progress；Core Gate 3 pending**。
+狀態：Designer revision for review；USER產品方向已確認，Architecture / Reviewer /
+Tester與量測profile尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
+日期：2026-09-05。追蹤：[IR_dev_M4B_III](../reviews/IR_dev_M4B_III.md)、
+[AR_impl_M4B_I](../reviews/AR_impl_M4B_I.md)、
+[TR_spec_M4B_IV](../reviews/TR_spec_M4B_IV.md)。
 
-Architecture change：**No**。Persistent child、LiteRT-LM runtime、Reasoner、Resource Manager與三級
-收斂邊界不變。USER已於2026-08-29澄清`arch.md`的`Gemma3:e2b`是文字typo；E2B指Gemma 4 E2B，
-因此Gate 2A選型不構成model-generation architecture change。Designer不在本輪修改Architect-owned
-`arch.md`，但後續引用一律使用Gemma 4 E2B正名。
+本章取代R1的per-operation fresh Conversation、mandatory replacement pre-warm、
+8-attempt/48-MiB recycle與model-generated canonical action envelope。
+R1與其批准紀錄仍是不可改寫的歷史；可由Core commit
+5d09f23及更早Git history查閱。已發布candidate不改寫。
+本章是供審查的新設計，不授權在未解架構矛盾下開始耦合產品實作。
 
-本章把 `docs/milestones/M4.md` 的 M4b 範圍轉成 Core product 可實作的
-persistent-child、runtime identity、failure convergence、POC inheritance 與 Gate 3
-驗收設計。架構仍以 `docs/arch.md` 為權威；LLM winner lifecycle與wire schema見
-`docs/protocol.md` §4，測試要求見§6；final engine / model / quantization / artifact identity已由
-`docs/model_spec.md` §6固定。
+## 0. USER decisions and scope
 
-Gate 2A已在execution SHA `e2b59fac609e0d768ff3554754363900cbed70a9`、surface SHA-256
-`eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1`完成。User選定
-`CAND-LRT-G4E2B-MOBILE-R1`（Gemma 4 E2B mobile）為sole model finalist並排除Qwen；Core decision見
-`DELIVERY-LLM-POC-M4B-GATE2A-PROVISIONAL-ACK-001`。Gemma R1 P2/P8仍FAIL的歷史不可改寫；後續
-`DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`已接受R3 winner baseline，但該POC waiver
-不等於Core product Gate 3 PASS。
+- M4是最小可行架構（MVA）的離線語音主線；M4B完成必要Reasoner設計與行為驗證，
+  M4C完成Audio/LLM/Display整合；ALPHA擴大品質與穩定性收斂；M5才加入實際tool。
+- 同一產品session必須能承接上一句問題／澄清。未自行建立context management，
+  不等於禁止runtime history。Session由SM從wake至IDLE擁有。
+- 不做長期記憶、摘要、檢索、跨session恢复、pending task manager或完整tool reasoning loop。
+- Reasoner擁有action/next_perceptions決策；LLM提供回答與結束意圖，SM負責時序與驗證。
+- 初始身分為「雪板，你的語音小助理」。Capabilities只說當前可用能力；沒有影像輸入
+  不得假裝看見環境。一般知識回答須基本正確，不以好聽但錯誤的句子通過。
+- 短句一般對話目標2秒、初始上限3秒；完整恢復目標10秒。冷啟動無產品SLA，
+  可評估background warm-up，但本輪不預先改main啟動拓樸。
+- 上述是可修訂的工程／產品目標。未達標先確認有效性、分析瓶頸、提出優化或新門檻，
+  不代表停止M4、放棄模型或取消計畫。每次修訂保留old target/result/reason/new target與USER決策。
+- 32個本輪user tokens只是POC候選，不是已核准的總prompt limit。
+- 既有五個未提交WIP可捨棄；不要求backup commit或移植其寫法。
+- 自動測試驗程式契約／政策；語意品質用小型人工rubric。工程比較優先交POC，
+  Core Developer做产品實作，Tester驗產品exact SHA。
 
-本章原先在Gate 2A後形成的Phase A schema與work-package內容只保留為歷史脈絡。若與後續winner
-`docs/protocol.md` §4或`docs/model_spec.md` §6衝突，後兩者為implementation authority；current seam
-已收斂到`protocol_version="snowboard.llm/1"`，並已由單輪`IR_review_M4B_I`完整審查通過。
+## 1. Authority, evidence and exclusions
 
-## 0. Post-Gate-2B authority and design disposition
+Gemma 4 E2B mobile、LiteRT-LM 0.16.0、Pi 5 4GB與既有target ABI/離線
+artifact/license選擇維持。POC Attempt 006 P9/P10B machine FAIL及USER waiver不可改標。
+POC winner profile是provenance，不再把其prompt、output、history、pre-warm與數字自動當M4B-MVA契約。
+M4B-MVA須有獨立Core profile ID、prompt/schema/config digest與changed-surface inheritance。
 
-### 0.1 Immutable design inputs
+本次核實區分：
+1. source確實每generate create/close、每replacement驗完整hash及預熱；
+2. 原8次有POC斜率推算理由，但沒有Core正常allocation與長期漏失的有效區分；
+3. Reasoner呼叫LLM及SM驗證都符合架構，不以「不是Python自行理解」判違約；
+4. Developer最新Pi 8.2秒／1.77–1.82GB只找到摘要，尚無可獨立核對的腳本與逐次樣本；
+5. 15秒watchdog存在，但不構成端到端產品完成時間SLA。
 
-| Input | Authoritative value / consequence |
+不實作真實tool dispatch、MQTT、look/camera、voice wake、長篇回答、streaming或
+二次LLM推論。M4不以模型tool品質阻擋voice-only；既有ToolRegistry與generic validator
+相容性由portable regression保護，真實tool語意在M5評估。未來look屬perception能力，
+「你能看嗎」與「幫我看看」的能力詢問／觀察要求須分開，M4不啟動camera。
+
+## 2. Minimum Reasoner policy
+
+建議model semantic result固定兩個欄位，constrained JSON，暫不引入文字控制marker：
+
+    {"text":"我是雪板，你的語音小助理。","end":false}
+    {"text":"","end":true}
+
+Exact fields；end必須bool；end=false要求nonblank text；end=true只允許empty text。
+Model不輸出action_kind/action_payload/next_perceptions或tool arguments。
+這是Designer首選編碼，POC依同一格式量測；變更須versioned修訂，不任意換成full envelope。
+USER的範例是產品事實／development案例，不是exact-literal驗收答案。
+
+| Injected condition | Reasoner disposition | Product result |
+| :--- | :--- | :--- |
+| 有效text/end=false且speak/listen可用 | speak；next_perceptions由Reasoner固定listen | 單一LLMResponse(speak, {text}, (listen,)) |
+| 有效end=true | rest；next_perceptions空 | 單一LLMResponse(rest, {}, ()) |
+| 模型建議不存在的key、tool或next_perceptions | 拒絕模型結果 | 依§4區分未改state與dirty Conversation |
+| speak/listen不可用 | 不執行無法延續的speak | rest；不詢問core資源或猜測失效原因 |
+| 過長input、無有效ASR文字、inference前拒絕且session仍完整 | 固定簡短說明／P5；listen | 不宣稱正常知識回答PASS |
+| runtime無法證明context完整 | 結束session | rest→IDLE；需新wake，不能處理失去前文的「對」 |
+
+MVA end路徑沿用empty rest，不新增「先farewell speak再自動rest」或extra LLM turn。
+正常end與context loss均以既有Display回IDLE表達結束，不假裝成功回答。
+若要新增有聲收尾，須另定consumer及action契約，不偷偷用empty next_perceptions結束speak。
+Refusal若是合法短回答可走speak/listen；是否回答正確由人工rubric判定。
+
+固定產品facts（姓名／角色／可用能力）、簡短繁中風格與輸出契約在session建立時傳入。
+每turn只送新perception內容；不重送全transcript、不要求模型產生固定Core控制語法。
+Reasoner不得以字串關鍵字分類「你是誰」等問法；LLM理解自然語言。
+M4 profile只啟用listen/speak/rest；一般能力介面保留未來擴充，但不提前建立read/look政策。
+若觀察到當前capability與session開始時不同，視composition invariant失效，結束session，
+不沿用錯誤能力描述。RM startup-static能力原則不變。
+
+### Validation ownership
+
+| Layer | Responsibility | Failure |
+| :--- | :--- | :--- |
+| child | model token/output bound、strict parse、semantic result shape | typed operation error；dirty history必須丟棄 |
+| adapter | frame size、version、request/session identity、terminal、metrics、single flight | protocol/identity failure destructive recovery |
+| Reasoner | product policy、capabilities、canonical envelope、Ch9 validator | bounded P5或session end；無法收斂才ERROR |
+| SM | Fact identity、合法action/payload/next_perceptions、task完成與派發 | 既有contract violation→ERROR |
+
+SM檢查不是可任意移除的重複驗證。人工語意PASS也不能替代任一程式契約。
+
+## 3. Session API and ownership
+
+SM仍為session唯一owner；Reasoner只是受控participant。新增窄介面建議如下：
+
+    class ReasonerSessionControl(Protocol):
+        async def begin_session(self, session_id: str) -> None: ...
+        async def end_session(self, session_id: str, reason: str) -> None: ...
+
+LLM adapter在既有start/stop/abort/force_abort之外提供：
+
+    async def open_session(self, session_id: str, facts: SessionFacts) -> None: ...
+    async def generate(self, session_id: str, turn_id: int,
+                       value: TurnInput) -> SemanticGeneration: ...
+    async def close_session(self, session_id: str, reason: str) -> None: ...
+
+SessionFacts = name/role/locale/available_perceptions/available_actions；
+TurnInput = 當前perceptions(kind/status/text)，M4只允许listen。
+SemanticGeneration = semantic(text/end) + diagnostics；session identity留在控制層，
+不render進model prompt、不log。Public LLMResponse形狀與每turn一個Fact不變。
+所有API均single flight；沒有parallel Conversation。
+
+SM在WAKE分配ID後、PERCEPTION前以既有非阻塞completion-notice模式完成begin_session。
+不得await blocking native operation卡住SM inbox；Interrupt/Shutdown能取消未完成open。
+Reasoner begin只登記ownership；lazy open可在第一個reason呼叫建立Conversation，
+但該成本必須算入第一筆請求，不能以READY排除。一session只開一次。
+
+正常rest、Interrupt、Error、Shutdown四條路徑，在in-flight收斂後、清SM session欄位／
+resume wake之前呼叫end_session並證明close完成；未曾進THINK也須清Reasoner session登記。
+CONTROL pending也是收斂追蹤項，不能僅清reason task。
+相同session end可重複no-op；wrong nonempty session拒絕，不得關閉後來的session。
+先close舊Conversation才容許新session。遲到open/result/close ACK不准更動新session。
+
+### Implementation skeleton (after architecture approval)
+
+    begin_session(sid):
+        require no active session/control
+        remember sid; conversation_open = False
+
+    reason(sid, tid, cid, perceptions, pending):
+        require sid == current_sid
+        if not conversation_open:
+            await llm.open_session(sid, product_facts)
+        result = await llm.generate(sid, tid, current_turn_input)
+        response = apply_mva_policy(result, capability_of)
+        publish exactly one LLMResponse with sid/tid/cid
+
+    finish_convergence(trigger):
+        await in_flight_completion_and_cancel_proof()
+        await reasoner.end_session(sid, trigger)
+        clear_session_tracking()
+        follow_existing_idle_or_shutdown_path()
+
+新增檔案/symbol以Ch4 manager/ports/notices、Reasoner、llm.py、prompt_builder.py、
+llm_child_protocol.py及LiteRT adapter/worker為直接修改面。main只注入窄port，
+不把Reasoner或SM提升為runtime owner。
+
+## 4. Conversation state, failure and capacity
+
+Child state = READY_NO_SESSION / SESSION_IDLE / GENERATING / FATAL。
+Session正常成功後保留Conversation；Engine跨session常駐。
+Request-local references/thread要清理，不能把Conversation也當request-local清掉。
+Session close必須丟history/KV/reference；這不等於Engine allocator一定歸還全部PSS。
+
+| Condition | Conversation / terminal | Parent / Reasoner |
+| :--- | :--- | :--- |
+| 成功generate | 保留、SESSION_IDLE；RESULT | policy→一個LLMResponse |
+| input超界且尚未send_message | 原Conversation不變；INPUT_TOO_LARGE/session retained | 固定短回覆+listen；不計正常quality PASS |
+| timeout/cancel、native error、invalid model output | join worker；close Conversation；SESSION_ENDED | 若仍可publish則rest；外部cancel不publish |
+| close/join無法證明、protocol desync、crash | FATAL；不假稱session clean | Ch6 Level2→RM recovery；清產品session |
+| context capacity將滿 | 不開始新inference；close；CONTEXT_LIMIT/session ended | rest→IDLE；新wake才重新對話 |
+| validated result後Reasoner仍拒絕 | close該Conversation，丟棄result | rest；不保留被拒答案當成已回答 |
+
+P5 apology+listen只適用仍能證明context未改變的request failure。fallback不代表模型已看過該句；
+fallback不得包含需要未來理解的確認提問。runtime state已破壞時不靜默建立新Conversation續同session。
+Error/Shutdown不需要有聲提示。任何dirty state都不得以「thread已退出」取代typed cleanup證據。
+
+容量分成user-new tokens、完整rendered/incremental input、output reserve、Engine total KV。
+Admission須以exact tokenizer驗證累積容量+本次input+最大output reserve，避免先開始才耗盡。
+POC驗token_count/render API在selected runtime的真實語意；未驗清前不可宣稱capacity protection。
+不做摘要／sliding window／自動重送history。數值由§7 profile freeze固定，未凍結不得正式驗收。
+
+## 5. Readiness, recovery and memory
+
+初次startup authenticate→Engine load→依measured profile optional prewarm→READY_NO_SESSION。
+同次開機replacement預設不做disposable inference prewarm；冷啟動是否預熱先以§11 POC比較。
+任何保留prewarm必須證明下一筆真實請求收益，且不得污染第一個session。
+不因「cold startup無產品SLA」移除bounded operational watchdog；watchdog是清理掛死，
+不是使用者等待承諾。Background warm-up只是允許的後續方案，不在本draft加入新supervisor。
+
+移除attempt-count、post-prewarm 48MiB與固定三generation成功條件。
+主要planned trigger是MemAvailable低於measured profile的capacity reserve；owner PSS作歸因，
+沒有穩態證據不定2GB等上限。取樣仍用完整unique-PID owner PSS及MemAvailable，
+資料缺失不沿用舊sample，不當正常PASS；startup缺能力為preflight failure。
+
+在open/generate admission前及terminal後取樣；不在active inference中planned recycle。
+若low memory但session存在：停止後續admission，讓當前inference完成清理，將其result
+discard並回SESSION_ENDED，close session；Reasoner rest。不得先說出需要回答的問題再悄悄丟history。
+等SM完成session close後由同key RecoveryTicket排程一次replacement。
+Replacement仍低於reserve時不無限recycle：barrier不開、保存capacity failure並依既有RM fatal處置。
+真正crash/cancel失敗等fault recovery與planned capacity maintenance分開記錄。
+
+恢復目標10秒從RM接受recovery至replacement ready/barrier釋放，包含舊owner清理、
+身份驗證、load及任何選定prewarm。保留分項timing，不把rehash藏到計時之外。
+Engineering timeout與目標分欄；超目標但在watchdog內完成是target miss，不必自動kill。
+watchdog超時/cleanup失敗仍走既有Level3。門檻修訂不改寫先前result。
+
+### Same-install trust boundary
+
+首次install/preflight/initial trust完整hash model、runtime、config並驗ABI；hash I/O在
+executor或既有非阻塞準備流程，不阻塞SM event loop。Replacement不得每次完整rehash大model。
+首選：root/受信任部署owner管理、service無寫入權的sealed install generation，
+受信任operator保證運行期間不替換其內容；parent保留validated manifest與generation identity。
+每次replacement重驗path無symlink、owner/mode、device/inode/size/mtime/ctime及manifest identity；
+任一變動撤銷信任、fail closed，不在10秒critical path靜默重新建立信任。
+Metadata比對本身不是digest proof；此快路徑依賴明確不可變部署邊界。
+無法建立該邊界的target不可使用快路徑，回Designer採等價attestation，不直接跳過驗證。
+本項不授權installer更改system packages、mount或部署服務，也不建立systemd/update功能。
+
+## 6. Performance and quality endpoints
+
+| Layer | Start → end | Claim |
+| :--- | :--- | :--- |
+| runtime POC | send/generation入口→first internal token／complete semantic output | TTFT與TTC；須含或另列Conversation create；不可冒稱audible latency |
+| Core M4B | adapter接受本輪input（含必要session open/recovery等待）→Reasoner可交付LLMResponse | caller-visible TTC；IPC/render/validation計入 |
+| M4 voice | 使用者最後一段語音結束→第一個有內容回答的audible onset | 目標2秒／初始上限3秒；不以提示音或固定請稍候計入 |
+| engineering split | endpoint confirmed、ASR done、LLM begin/end、TTS first PCM、playback onset | bottleneck attribution，不能替代主指標 |
+| recovery | RM接受recovery→barrier解除 | 完整10秒目標 |
+
+ASR transcribe(stream)呼叫不等於使用者說完。固定WAV須提供最後speech-sample annotation；
+實機用loopback/外部錄音的同一timebase觀察speech end與speaker onset，或經驗證的等價方法。
+第一個PCM write不是自動等於audible onset；量測方法須列已知誤差。
+輸入音長與user tokens分開，output採短句；複雜度以案例類型定義，不以32 tokens代理。
+長篇／複雜問題明確請求縮短或拆分；不偷偷截斷。出界案例測可預期處置，不冒稱正常SLA達成。
+
+自動：schema、capability policy、next_perceptions、timing、identity、cancel、cleanup。
+人工：身分一致、知識基本正確、無虛構能力、追問連貫、簡短易懂。
+不以keyword、exact string、另一LLM judge或schema PASS取代人工語意。
+人工記run/case/operator/time、各rubric Pass/Fail與sanitized reason；獨立保留性能結果。
+快但錯、fallback、提前截斷、錯誤結束不計正常回答PASS。
+「100% coverage」只宣稱已列需求有驗證方法，不宣稱模型所有語意皆正確。
+
+## 7. Profile and unresolved measurement register
+
+新Core profile建議ID：core-m4b-mva-001；尚未建立production lock。
+保持原model/runtime/ABI/license身份；改動renderer/output/session/profile單独記Core delta。
+舊POC config與原digest保留為provenance，不能以同digest聲稱新profile。
+
+| Field / decision | Draft disposition | Required before product freeze |
+| :--- | :--- | :--- |
+| semantic output | exact text/end兩欄 | same-schema POC correctness/TTC |
+| user-new tokens | 32候選 | 語音長度與代表性繁中案例可容納性 |
+| output tokens / Engine KV | 128/1024只作原baseline參考 | 新短句與多turn capacity量測、明確reserve |
+| prewarm initial/replacement | 初次待比較；same-boot預設none | following-request收益與成本 |
+| capacity reserve / stable window | 未定；不沿用768/48/64 | combined memory樣本與安全headroom |
+| startup / generation / control watchdog | 保持bounded，值待profile；舊45/15/2只作參考 | 包含open/close與cleanup的timeout table |
+| response/recovery objectives | 2秒目標、3秒上限、10秒完整recovery | 原值與每次miss保留；USER可修訂 |
+| supported case envelope | 短句身分／知識／能力／追問／結束 | 固定catalog、input/output limits、人工rubric |
+
+以Designer逐項response收斂profile；不能由Developer在YAML猜值。
+新config移除recycle_max_inference_attempts/recycle_owner_pss_delta_mib；
+memory reserve与timeouts由新profile提供，runtime path selector仍由Ch10管理。
+分離recovery objective與operational watchdog；缺少required profile欄位在spawn前拒絕。
+schema版本與完整bytes/digest待凍結，禁止sample-only defaults形成正式PASS。
+
+## 8. Offline packaging and unchanged target ABI
+
+繼承已Resolved的IR_dev_M4B_I／TR_spec_M4B_II target ABI，不重新選型：
+Debian13 aarch64；root-owned non-symlink /usr/bin/python3.13；CPython3.13.5、
+SOABI cpython-313-aarch64-linux-gnu、MULTIARCH aarch64-linux-gnu、
+64-bit little-endian、empty abiflags；stdlib /usr/lib/python3.13及其lib-dynload。
+五個python3.13/libpython3.13 target packages須installed、同一3.13.5-* revision。
+Per-run ABI attestation包含sorted package tuples、base SHA、sys.version、SOABI/MULTIARCH、
+stdlib roots/glibc；install/preflight/acceptance一致，drift撤銷既有attestation。
+
+產品仍用--copies --without-pip isolated venv；stdlib/platform libraries屬target，
+14-file LiteRT payload屬tracked runtime closure，不把target CPython bytes收進該manifest。
+Install staging驗完atomic rename，existing output/symlink拒絕；無apt/pip download/網路fallback。
+Native runtime只能在child lazy import；parent不得import。禁止user/system third-party site、
+PYTHONPATH/PYTHONHOME/LD_PRELOAD escape。Model/config/runtime仍full-digest建立初始trust，
+same-install replacement依§5；no-follow、license/notices與offline evidence維持。
+原manifest內容如因新增product config identity須修訂，保留原POC lineage而非改model digest。
+
+## 9. Minimum regression and affected files
+
+| Risk / injected condition | Expected outcome / minimum assertions |
 | :--- | :--- |
-| Final winner ACK | `DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001`；R3是唯一POC product input |
-| Runtime / model | LiteRT-LM API `0.16.0` + Gemma 4 E2B mobile；exact artifact/config identity見`model_spec.md` §6 |
-| Wire contract | `protocol_version="snowboard.llm/1"`；exact lifecycle/schema見`protocol.md` §4 |
-| Readiness | 每次child start都須完成authenticate → Engine load → fixed disposable pre-warm → `INFERENCE_READY` |
-| Machine risk | Attempt 006 P9/P10B維持`FAIL`；POC waiver不得轉成Core product PASS |
-| Core exit | single `IR_review_M4B_I` → Tester完整`TR_spec_M4B_I` → WP-01～06 → exact-SHA Gate 3 |
-
-Architecture disposition：**No architecture change / no `AR_impl`**。Persistent child、Reasoner、
-process-group Level 2 termination與RM recovery barrier都已存在；本輪只收斂Designer-owned API、
-state、config、product lock、maintenance recycle與Gate 3 mapping。`arch.md`中的`Gemma3:e2b`仍按
-USER既有澄清解讀為Gemma 4 E2B typo，不據此改寫Architect-owned文件。
-Ch 5新增`rm.wait_fatal()`只讓main觀察架構既定的「recovery failure → Level 3」，不新增owner、
-fallback或recovery policy。
-Ch 5既有`prepare_shutdown()`同時固定shutdown期間取消recovery orchestration、清理未READY replacement
-及cleanup失敗升Level 3的語意；它與`rm.wait_fatal()`共同構成本輪所引用的RM surface，不新增LLM owner。
-
-### 0.2 Design/test approval and Development Ready closure
-
-Designer已完成§3.1 structured seam、startup/pre-warm、single-flight generation、typed terminal、
-planned recycle state machine、real config、tracked lock responsibility、offline package/preflight、
-license/notices與known resident-retention defect的可驗證產品處置。
-
-Reviewer已於2026-08-30完成本章、`protocol.md` §4/§6、`model_spec.md` §6、Ch 2b/5/6/9/10與
-M4 gate的單輪審查；`IR_review_M4B_I`以Blocking 0標記`Resolved`並歸檔。Tester其後新增§10完整
-M4B Test IDs，Designer於2026-08-30以`TR_spec_M4B_I` Round II確認100% coverage、Blocking 0並歸檔。
-Developer的`IR_dev_M4B_II`後續以實體Pi單次debug證明原current-marker oracle與已核准generic
-renderer契約不相容；本修訂選定「Core semantic current-turn oracle + fresh-Conversation /
-prior-state oracle」，不改寫Gate 2B POC歷史。`IR_dev_M4B_II`已由Developer確認並歸檔，
-`TR_spec_M4B_III`亦已完成Tester修訂與Designer final confirmation，Blocking 0 / `Resolved`。
-M4b Developer可繼續收斂implementation並準備candidate scope；此狀態不宣告Gate 3 PASS或
-Accepted，provisional candidate commit仍須依workflow取得USER另行明確同意。
-
-### 0.3 Bounded recycle policy
-
-每個child在pre-warm完成後建立resource baseline。任一條件在operation terminal、Conversation close、
-output/reference discard與owner sample完成後成立，即設定`RECYCLE_PENDING`：
-
-- `inference_attempts >= 8`；每次真正建立production Conversation並進入inference即計數，成功、
-  timeout、cancel或generation error都不扣回；
-- `owner_pss_mib - prewarm_owner_pss_mib >= 48`；
-- `MemAvailable < 768 MiB`；或
-- owner sample／Conversation cleanup無法證明完成，此項升級為destructive recovery，不當planned success。
-
-Production sampler在child啟動前先read-only驗`/proc/meminfo`與`/proc/<pid>/smaps_rollup`可用；owner PSS
-是child process-group leader及其全部live descendants的unique PID PSS總和，不能只看parent controller、
-單一thread或sum RSS。每次比較使用原始bytes：`48 * 1024**2`與`768 * 1024**2`，不得先四捨五入
-MiB。Baseline在pre-warm cleanup、READY identity與完整owner sample皆成功後只建立一次；replacement
-建立自己的新baseline與attempt counter。取樣期間PID消失、任一owner不可讀或欄位非finite/nonnegative
-或`type(value) is not int`均視為sample failure，不沿用前一筆值。
-
-8次上限使Attempt 006觀察到的LLM PSS斜率`5.484794 MiB/session`在單一child內預期累積約
-`43.878 MiB`，低於48 MiB early trigger與64 MiB frozen late-delta gate。數值是Core產品防線，
-不是對POC machine FAIL的重標。Target缺少`MemAvailable`／owner PSS讀取能力時preflight fail closed；
-portable tests使用injected sampler，不以macOS缺`/proc`作Skip。
-
-Recycle不得在active request中執行。Parent先讓目前result/terminal完成，再原子清READY並以窄化的
-`schedule_recovery(("backend.cognition.reasoner.llm",))` callback進既有RM barrier。下一個generate
-只可等待同一`RecoveryTicket`；成功後使用新child generation，failure/timeout傳遞
-`RecoveryFatalError`到Level 3，不fallback到舊child、mock、另一model或network。Recovery hook對舊
-child執行SHUTDOWN → bounded TERM → bounded KILL → waitpid，之後以相同product lock重走
-authenticate/load/pre-warm；只有新`INFERENCE_READY`才原子切換owner reference並解除barrier。
-Adapter保存ticket供下一個`generate()`呼叫窄化`wait_recovery(ticket)`；同時Ch 5的
-`rm.wait_fatal()`由main常駐監督，所以即使沒有下一request或SM waiter，background recovery failure也
-立即Level 3，而不是unobserved task。Planned success可與後續Action執行重疊，但舊LLM child已先退出，
-且任何新LLM inference仍被ticket阻擋。
-
-健康terminal取得完整sample而命中8/48/768時是planned path：schedule成功後可把本次validated result交
-Reasoner。Cleanup或sample proof失敗則不是planned path：adapter標FATAL並raise sanitized non-P5
-failure、不交付本次result；Reasoner發布一個`ErrorOccurred`。其後`abort()`不得假裝cooperative success，
-由Ch 6 Level 2呼叫idempotent `force_abort()`取得destroyed key，再由SM既有ticket waiter進ERROR／RM
-recovery。這條路徑不由adapter預先開第二個recovery batch。Termination或planned schedule本身失敗
-直接Level 3。
-
-## 1. Planning boundary
-
-### 1.1 Designer-fixed scope
-
-- Core controller 與其直接擁有的 LLM child 之 process / IPC ownership；
-- READY、structured GENERATE、single RESULT、CANCEL、SHUTDOWN 與 protocol-failure 語意；
-- 一次只允許一個 active generation、每 turn 無 hidden history、engine 跨 turn 常駐；
-- Reasoner P5 fallback、privacy、timeout、Level 2 termination proof 與 RM recovery barrier；
-- selected runtime 必須具備的 product lock、offline install、preflight、inheritance 與
-  exact-SHA evidence 欄位；
-- Gate 3 工作包與 test-spec coverage skeleton。
-
-### 1.2 Post-design role gates
-
-- Core Tester PASS、M4b Accepted、M4c entry或整體M4 acceptance。
-- machine-readable Core lock、offline installation closure與redistribution notice inventory；
-- bounded recycle、pre-warm、cancellation與4 GB combined resource defect的實作及產品驗證；
-- `snowboard.llm/1`實作、single design/test review及完整Gate 3 evidence。
-
-Gate 2B final ACK已固定LiteRT-LM / Gemma 4 E2B POC winner reference。任何runtime或locked identity
-偏離仍須另開change request／必要時`AR_impl`；不得只靠config或adapter名稱私下改變runtime架構。
-
-### 1.3 Gate 2A product implication（immutable history）
-
-以下條件已由後續R3 winner與final ACK滿足，只保留作inheritance lineage，不是current design blocker：
-
-- Gemma R1：P2 `FAIL (3/30)`、P3/P4/P5 `PASS`、P8
-  `FAIL / DEPENDENCY_LIMITED_BY_P2`；沒有observed history pollution。
-- Qwen：P2 `FAIL (0/30)`、P3/P5 `PASS`、P4需Core threshold decision、P8
-  `FAIL / DEPENDENCY_LIMITED_BY_P2`，且carry P7.1 `FAIL / SLOW_RECOVERY`；不進formal Gate 2B。
-- New Gemma revision只可調整versioned integration surface，使用bounded adaptation budget與分離的
-  development/scored cases；不得覆寫或重標R1 receipt。
-- 受影響P2/P8當時須在new frozen revision完成後才能進Gate 2B；實際machine history與User disposition
-  以R3 manifest分欄保存。Input未變的P1/P3/P4/P5/P6.1/P7.1/P10A/P11/P12依lock carry；Core仍對
-  product delta重驗對應Test ID。
-
-### 1.4 DELIVERY-019 bounded integration adaptation plan（executed history）
-
-本節記錄R1→R3當時可用的POC revision budget；R3/final ACK後不再授權新的POC調參，也不是Core
-Developer待執行工作。§3.2的Core general renderer源自原始M1 product contract，並以M4B-OUT/INH列為
-POC narrow harness的產品delta，不回頭改寫或延伸本budget。
-
-R1失敗證明目前model/chat-template/PromptBuilder/prompt/config pairing不可交付，不證明Gemma 4 E2B
-artifact本身不可用。New revision以「先prompt integration、後必要config」的最小變更順序收斂：
-
-| Stage | 允許動作 | Freeze / exit |
-| :--- | :--- | :--- |
-| A — failure taxonomy | 只在新的development catalog分析sanitized disposition count：JSON framing、required key、action/payload、current-marker、token truncation；不得讀取或複用R1 scored case的private output來調prompt | 先commit development catalog checksum、diagnostic分類與adaptation budget；不產生P credit |
-| B — prompt-only revision | 調整system instruction、Core schema描述、Gemma官方chat-template套用方式、section ordering及最多一個完全synthetic generic example；temperature/top-p/model/runtime/token envelope不變 | 建立一個versioned development candidate；development cases 100%後才能freeze scored candidate |
-| C — bounded config revision | 只有B仍可重現明確truncation或template-capacity問題時，才可調整product input/output envelope或generation profile；一次只改一組predeclared變因 | 任何shared identity drift依下表重算affected P；不得以重試、majority vote或post-hoc repair取代single result |
-| D — frozen qualification | 在freeze前commit新catalog schema/checksum與expected dispositions；scored catalog須與R1及development cases分離，或由獨立Reviewer持有至freeze後 | P2 30/30與P8全部PASS才可提交Gate 2B entry；valid FAIL保留且該revision停止 |
-
-Adaptation budget固定為最多兩個new development revisions：一個prompt-only revision，加上一個只有在
-documented capacity/template root cause時才允許的config revision。超過兩個revision、需要改model
-artifact/runtime、需要fine-tune weights或仍無法達成P2/P8時，停止調參並回Core/USER作re-estimation / no-go，
-不得無限增加prompt特例。
-
-明確禁止：
-
-- 把R1 scored catalog case、expected literal、nonce/trap或model output抄入system prompt / few-shot；
-- 讓normalizer補寫缺少的model fields、把壞JSONrepair成P2 PASS或以P5 fallback計入normal answer；
-- 同request自動重試、挑最佳結果、majority vote、提高repetition後平均失敗；
-- 放寬P2 exact schema、P8 current-marker / prior-leak規則或重標R1 FAIL；
-- 以Qwen、另一Gemma artifact、雲端service或runtime downloader作隱式fallback。
-
-Affected-evidence規則：
-
-| Changed surface | Required requalification before Gate 2B |
-| :--- | :--- |
-| PromptBuilder / system prompt / product config only | P2、P8；P3若reference normalizer與privacy scanner完全不變可carry |
-| Shared chat-template rendering or tokenizer boundary | P2、P4、P5、P8 |
-| Token envelope / engine capacity / timeout profile | P2、P4、P5、P8與4GB preflight；Gate 2B P9/P10B照常新跑 |
-| Runtime/model artifact or native library | Gate 1/2A affected evidence全部失效；須另提Core change request，不屬本adaptation budget |
-
-每個revision manifest須列changed field、before/after checksum、root-cause hypothesis、development catalog
-identity、freeze SHA、scored catalog custody與affected-P decision。這些欄位讓Reviewer一次判斷是否有
-overfit、偷改gate或漏跑直接影響面。
-
-## 2. Product topology and ownership
-
-```text
-Core controller (no selected-runtime native import)
-  └─ LLMEngineAdapter owner
-      └─ dedicated LLM process group
-          └─ selected runtime + one persistent engine
-              └─ one fresh conversation per GENERATE
-```
-
-- Parent adapter是child process group、IPC streams、request counter、active operation、
-  stderr sanitized tail與temporary work directory的唯一owner。
-- Child以`start_new_session=True`啟動，PID=PGID；selected runtime不得再建立逃離該PGID的
-  descendant。若runtime不可避免地建立descendant，product delta必須證明parent的單一
-  TERM/KILL操作仍能涵蓋並wait所有descendant，否則baseline不可採用。
-- Child不得listen socket、執行tool handler、開Audio/Display HAL或接受任意artifact path。
-  Tool schema只作prompt input；tool intent回parent後仍由既有Reasoner / SM路徑處理。
-- Engine在READY前載入一次並跨IDLE、wake、session與turn常駐。每個GENERATE建立全新、
-  無hidden KV/history的conversation；不得以重載engine來偽裝history isolation。
-- Prompt與model output可存在於private pipe及process memory，但不得寫入log、result、
-  evidence、exception message或stderr。
-
-## 3. Core interfaces and file ownership
-
-M4b把既有text seam收斂成structured input/result；Reasoner仍擁有產品validator與P5，child只負責
-frozen render/inference與wire-level exact schema：
-
-```python
-@dataclass(frozen=True, slots=True)
-class LLMGenerationMetrics:
-    init_ms: float
-    ttft_ms: float
-    prefill_tokens: int
-    prefill_tokens_per_second: float
-    decode_tokens: int
-    decode_tokens_per_second: float
-    kv_tokens: int
-
-@dataclass(frozen=True, slots=True)
-class LLMGeneration:
-    response: Mapping[str, object]
-    metrics: LLMGenerationMetrics
-
-class LLMEngineAdapter(Protocol):
-    async def start(self) -> None: ...
-    async def stop(self) -> None: ...
-    async def abort(self) -> None: ...
-    async def force_abort(self) -> ForceAbortReport: ...
-    async def generate(self, value: ReasoningInput) -> LLMGeneration: ...
-
-@dataclass(frozen=True, slots=True)
-class LLMResourceSample:
-    owner_pss_bytes: int
-    mem_available_bytes: int
-
-class LLMResourceSampler(Protocol):
-    def sample(self, *, child_pid: int, child_pgid: int) -> LLMResourceSample: ...
-
-class ScheduleRecovery(Protocol):
-    def __call__(self, keys: tuple[str, ...]) -> RecoveryTicket: ...
-
-class WaitRecovery(Protocol):
-    async def __call__(self, ticket: RecoveryTicket) -> None: ...
-```
-
-LiteRT-LM與winner identity已固定；controller-side module不得import native runtime。只有child entry
-在strict lock與isolated runtime驗證後lazy import：
-
-```text
-src/sbd/cognition/
-├── llm.py                         # existing Protocol + mock
-├── reasoner.py                    # existing normalizer / P5 owner
-├── prompt_builder.py              # bounded ReasoningInput projection；不render model prompt
-└── litert_lm/
-    ├── __init__.py
-    ├── adapter.py                 # parent-side LLMEngineAdapter / recovery owner
-    └── worker.py                  # child entry; selected runtime imported lazily here only
-requirements/m4b/
-├── llm-artifacts.json             # Accepted POC + product identity lock
-├── llm-runtime-rpi-cp313.json     # exact offline runtime closure
-└── THIRD_PARTY_NOTICES.md
-scripts/
-└── m4b_llm_product.py             # install / preflight; no model payload in Git
-```
-
-`src/sbd/adaptor/framed_child.py`可重用bounded line reader與process-group termination primitive，
-但LLM state machine、request/terminal mapping、output validation與request code只能留在LLM module；
-LLM wire沒有parent-visible chunk aggregation。
-
-### 3.1 Current exact implementation seam
-
-落點固定為：
-
-```text
-src/sbd/cognition/
-├── llm.py                         # public structured Protocol + mock
-├── reasoner.py                    # product validator / P5 owner
-├── prompt_builder.py              # ReasoningInput semantic owner；不render model chat template
-├── llm_child_protocol.py          # snowboard.llm/1 pure codec / exact schema
-└── litert_lm/
-    ├── __init__.py
-    ├── adapter.py                 # parent owner / admission / recovery-ticket wait
-    └── worker.py                  # isolated child；only native runtime import
-tests/fakes/
-└── m4b_llm_child.py               # deterministic structured-wire child
-tests/
-└── test_m4b_ipc_001.py
-```
-
-`llm_child_protocol.py`不保留Gate 2A numeric protocol、CHUNK aggregate或raw prompt payload。Current
-public seam為：
-
-```python
-class LLMProtocolError(AdapterError): ...
-
-@dataclass(frozen=True, slots=True)
-class LLMReadyIdentity:
-    candidate_id: str
-    pairing_revision: str
-    platform: str
-    runtime_sha256: str
-    model_sha256: str
-    config_sha256: str
-
-@dataclass(frozen=True, slots=True)
-class LLMReady:
-    identity: LLMReadyIdentity
-
-@dataclass(frozen=True, slots=True)
-class LLMWireResult:
-    request_id: str
-    response: Mapping[str, object]
-    metrics: LLMGenerationMetrics
-
-@dataclass(frozen=True, slots=True)
-class LLMWireError:
-    request_id: str
-    code: Literal[
-        "BUSY",
-        "INVALID_REQUEST",
-        "TIMEOUT",
-        "GENERATION_FAILED",
-        "CANCEL_FAILED",
-        "PROTOCOL_ERROR",
-    ]
-    state: Literal["READY", "GENERATING", "FATAL"]
-
-@dataclass(frozen=True, slots=True)
-class LLMWireCancelled:
-    request_id: str
-
-def encode_generate(request_id: str, value: ReasoningInput) -> dict[str, object]: ...
-def encode_cancel(request_id: str) -> dict[str, object]: ...
-def parse_ready(
-    value: Mapping[str, object],
-    *,
-    expected_identity: LLMReadyIdentity,
-) -> LLMReady: ...
-def parse_terminal(
-    value: Mapping[str, object],
-    *,
-    active_request_id: str,
-) -> LLMWireResult | LLMWireError | LLMWireCancelled: ...
-```
-
-Exact rules：
-
-- parent request ID由adapter配置為`llm.<child_generation>.<monotonic_counter>`；counter在同一child
-  lifetime嚴格遞增、不重用，且不嵌入session ID、prompt或其他private metadata；
-- GENERATE直接傳`ReasoningInput`的bounded structured fields；perceptions最多16筆，
-  `pending_message_count >= 0`，capability/tool schema由parent封閉，不傳handler；
-- child套用winner chat template與model tokenizer，在inference前拒絕rendered input >128 tokens；
-- RESULT response仍由Reasoner以Ch 9 validator再次驗證；child constrained schema不是繞過
-  product validator的權威；
-- production RESULT必須含完整metrics；缺失、NaN/Infinity、token boundary違約、wrong/duplicate
-  terminal、late frame或wrong request ID都是protocol failure；
-- `TIMEOUT`只可在15秒generation deadline後產生；2秒grace只收matching terminal，不接受late
-  RESULT；`CANCEL_FAILED`／`PROTOCOL_ERROR`使child FATAL並走Level 2；
-- codec錯誤只含stage/field/reason，不含perception text、response、tool arguments、credential或path。
-
-Factory seam固定為：
-
-```python
-def make_llm_adapter(
-    cfg: LLMConfig,
-    *,
-    schedule_recovery: ScheduleRecovery | None = None,
-    wait_recovery: WaitRecovery | None = None,
-    resource_sampler: LLMResourceSampler | None = None,
-) -> LLMEngineAdapter: ...
-```
-
-Real branch要求三個窄介面皆非None，先以pure-Python parser讀tracked lock並驗config paths/identity，
-之後才lazy import`litert_lm.adapter`；mock要求三者皆為None、不讀lock、不建立workdir、不import native
-runtime。Portable recycle測試直接建real parent adapter並注入fake child、deterministic sampler與ticket
-scheduler，不藉mock driver放寬production validation。
-
-### 3.2 Winner renderer, constrained schema and pre-warm
-
-Gate 2B winner evidence與Core product renderer必須分欄，不可誤稱相同：execution SHA
-`0c75536e6ee99b502c59438989ca852194648946`的
-`poc_llm/harness/litert_lm_gate2b_child_adapter_v2.py`為combined Gate 2B marker harness，只接受
-`listen -> speak -> listen`。它證明winner runtime、token/cancel/pre-warm與resource行為，但不是Core
-一般`speak/tool/rest` renderer。Core general contract authority來自同一SHA的：
-
-| Input | SHA-256 | Core disposition |
-| :--- | :--- | :--- |
-| `contracts/m1/prompt-input.schema.json` | `aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6` | §3.1 projection與protocol exact schema |
-| `contracts/m1/response.schema.json` | `4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` | Ch 9 general speak/tool/rest base schema |
-| `contracts/m1/protocol-frame-pi.schema.json` | `e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` | selected Pi `snowboard.llm/1` wire、metrics、PING/PONG |
-| `contracts/m1/strict-config-pi-gate2b-product-v2.schema.json` | `ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34` | POC runtime product-config schema |
-| Gate 2B product config v2 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` | runtime/token/sampling/deadline/offline reference；POC absolute paths不得用於Core I/O |
-
-Child `_render_prompt(value)`固定為POC generic M1 renderer，不自行加入scored examples、history或重試：
-
-```python
-payload = json.dumps(
-    encode_reasoning_input(value),
-    ensure_ascii=True,
-    sort_keys=True,
-    separators=(",", ":"),
-)
-prompt = (
-    "Return exactly one JSON object with action_kind, action_payload, and "
-    "next_perceptions. Do not add markdown or commentary. Input: " + payload
-)
-```
-
-`_build_response_schema(value)`每request由Ch 9 exact schema建立deterministic constrained schema：
-
-1. top-level exact keys固定`action_kind/action_payload/next_perceptions`；branch依canonical
-   `speak`、tool name排序、`rest`排列；
-2. speak branch固定nonblank text，`next_perceptions`為1筆以上、unique且只可取input available
-   perceptions；沒有available perception時PromptBuilder已移除speak branch；
-3. 每個tool各有一個branch：name為該registered dotted name的`const`，arguments只constrain為JSON
-   object，next-perception規則同speak；tool的closed `input_schema`只放semantic prompt供模型參考，
-   實際arguments由Reasoner的sealed registry validator判定並在不合時走P5。這避免把任意tool schema
-   誤當LiteRT constraint-provider支援面；不得把handler/validator傳入child；
-4. rest branch只接受empty payload與empty next perceptions；
-5. input effective actions不存在的branch不得生成。若沒有合法branch、schema無法由LiteRT constraint
-   provider接受或renderer/parser違約，startup/pre-request fail closed，不退回unconstrained decode；
-6. child取得complete model output後以strict JSON parser建立mapping，再依同一dynamic schema驗證；
-   raw text不得越過child。Reasoner仍以Ch 9 validator/capability/tool registry作獨立產品防線。
-
-Inference execution固定沿用winner可行surface：child main control loop收frame，每request啟動一個且僅一個
-background thread呼叫同步
-`Conversation.send_message(prompt, response_format=ResponseFormat.json(dynamic_schema))`。CANCEL／deadline
-由control loop對同一Conversation最多呼叫一次`cancel_process()`；worker只把typed outcome交回control
-loop，control loop先join worker、確認Conversation close/reference discard，才emit terminal。不得換成
-async iterator、讓worker thread自行寫wire，或以thread不再alive取代outcome/join assertion。
-
-固定public pre-warm輸入為：
-
-```json
-{"perceptions":[{"kind":"listen","status":"ok","text":"Say ready."}],"pending_message_count":0,"capabilities":{"perceptions":["listen"],"actions":["speak"],"tools":[]}}
-```
-
-它走同一renderer、exact model chat template/tokenizer、dynamic speak schema與Conversation cleanup；
-application prompt SHA-256固定為
-`4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d`。Model output只要求通過
-dynamic schema且decode token >0，隨後完整丟棄。Gate 2B current/forbidden/prior marker只屬
-narrow POC harness的不可改寫歷史evidence。Core generic renderer只承諾`speak.text`非空，不承諾
-任意literal回顯；Gate 3不得私增required/forbidden literal欄位、marker-specific schema
-pattern、prompt injection或post-hoc repair。Core品質正向oracle固定為當前turn的expected
-`action_kind`、current capability/tool/`next_perceptions` binding、exact response schema與Reasoner
-validation；history oracle另結合fresh Conversation/close結構證據與prior-turn state負向證據。
-
-## 4. Parent adapter lifecycle
-
-Parent state固定為：
-
-```text
-STOPPED
-  -> AUTHENTICATING
-  -> STARTING
-  -> ENGINE_LOADED
-  -> PREWARMING
-  -> READY
-  -> GENERATING -> READY
-  -> RECYCLE_PENDING -> RECOVERING -> AUTHENTICATING
-  -> DESTROYED
-```
-
-1. `start()`先以tracked lock驗isolated runtime、wheel/native/model/config identity與private work root，
-   再spawn child。Model full hash在spawn前完成，不計入READY timing，也不得在child READY路徑重做。
-2. Child建Engine後進`ENGINE_LOADED`，此時拒絕GENERATE。它以同一winner renderer/tokenizer/
-   constrained-output path跑固定public pre-warm，close disposable Conversation並丟棄output/KV/reference。
-3. 只有收到§3.1 exact READY、state/identity全吻合且parent resource baseline完成，`start()`才return。
-   重複`start()`只在READY為idempotent；其他nonterminal state拒絕reentry。
-4. `generate(value)` single-flight；READY才配置request ID並送structured input。RESULT只有在response、
-   metrics、state與request ID驗完後建立`LLMGeneration`；wire沒有CHUNK或partial product output。
-5. Terminal後parent要求child已close Conversation、清request-local reference並回READY，再取owner sample、
-   更新attempt count及§0.3 trigger。健康trigger先設定`RECYCLE_PENDING`並建立RecoveryTicket，才把
-   目前result交回Reasoner；cleanup/sample failure依§0.3 destructive path不交result。因此下一個request
-   不能落到舊child。
-6. `generate()`遇`RECYCLE_PENDING/RECOVERING`只await該ticket；success後重新admit，fatal則原樣
-   傳遞。不得以BUSY、空output或P5掩蓋recovery failure。
-7. READY identity mismatch、pre-warm failure、invalid first frame、EOF或startup timeout都先完成
-   TERM → KILL → waitpid、關streams、刪workdir，再raise；不留下半啟動child。
-8. `stop()`在READY送SHUTDOWN；GENERATING先走既有cancel convergence。若全域shutdown撞上
-   RECOVERING，由main先呼叫RM-owned`prepare_shutdown()`取消／等待recovery，再依reverse order呼叫
-   adapter `stop()`；adapter不取得該control。所有return路徑都需process/IPC/workdir cleanup proof。
-
-## 5. Cancel, timeout and recovery
-
-### 5.1 Cooperative request path
-
-- Reasoner外層等待使用`AppConfig.cognition.reason_timeout_seconds`；child generation固定15秒，
-  parent terminal-only grace固定2秒，三者不可混成單一timeout。
-- Reasoner timeout後呼叫`llm.abort()`；adapter只送一次matching CANCEL。只有typed CANCELLED、
-  worker joined、Conversation/output/reference discarded且child回READY後才return，Reasoner才可P5。
-- LiteRT-LM `Cancelled`分支必須先於`RuntimeError`父類捕捉；測試capture實際worker outcome，
-  禁止`PytestUnhandledThreadExceptionWarning` false-pass。
-- 若native cancel沒有在500 ms完成，`abort()`保持pending；Ch 6 Level 1上限到期後Reasoner發布一個
-  sanitized `ErrorOccurred`、不發布fallback，outer call留在in-flight等待Level 2。
-- CANCEL、TIMEOUT或GENERATION_FAILED只要child成功清request-local state並回READY，也計入§0.3
-  inference attempt；cleanup無法證明時一律走Level 2，不當可恢復request error。
-
-### 5.2 Destructive recovery and planned recycle
-
-- `force_abort()`對完整PGID送SIGTERM，2秒後仍存活才SIGKILL並再等1秒，最後waitpid、關IPC、
-  清workdir並驗orphan/descendant為零。成功後state=`DESTROYED`，回
-  `ForceAbortReport(("backend.cognition.reasoner.llm",))`。
-- Ch 6 destructive path與§0.3 planned recycle共用同一RM key、RecoveryTicket、hook與barrier；
-  差別只在舊child entry state。Planned path從`RECYCLE_PENDING`先嘗試SHUTDOWN，destructive path
-  從`DESTROYED`直接建replacement。
-- Hook只在新child完成same-lock authenticate/load/pre-warm/READY後原子切換reference。Capability map
-  不變，Reasoner不自行restart，舊child永不重新admit。
-- 任一TERM/KILL/waitpid、local-ready/ticket identity、replacement start或pre-warm failure都讓RM
-  barrier保持closed並raise`RecoveryFatalError`；不重試、不換null/mock/model、不降級成P5。
-
-## 6. Result validation and history isolation
-
-Parent回`LLMGeneration(response, metrics)`；Reasoner與`ActionPayloadValidator`仍是產品權威：
-
-1. Parent先驗RESULT exact keys、finite metrics與token bounds；Reasoner再驗response exact keys
-   `action_kind`、`action_payload`、`next_perceptions`及Ch 9 capability/tool schema。
-2. `ReasoningInputTooLarge`、active request的`INVALID_REQUEST/READY`與
-   `GENERATION_FAILED/READY`可由Reasoner依P5轉fallback；`TIMEOUT`只有合作式cleanup證明後可P5。
-   `ReasoningInputContractError`走sanitized ErrorOccurred/ERROR；BUSY/desync、FATAL、identity、protocol
-   或recovery failure不得翻譯。
-3. Constrained decoder或child聲稱schema-valid不取代Reasoner validator。Unknown/empty/bad mapping、
-   unavailable action/tool或剔除後空next perceptions仍走既有P5/SM contract。
-4. 每次GENERATE建立fresh single-turn Conversation並在finally close。Gate 3至少以五組污染前一turn
-   的case驗後一turn只依目前`ReasoningInput`；每列必須同時有current-turn exact expected
-   action/schema/allowlist正向oracle、fresh Conversation/close證據與prior action/tool/perception/
-   canary負向oracle，不以current literal回顯作入場條件。未觸發recycle時child PID與Engine
-   load count不變，觸發時則只允許預期generation切換且重新pre-warm。
-5. PromptBuilder只建立bounded semantic `ReasoningInput`，不render selected chat template。Child
-   renderer只接收已定義perception、payload-free pending count、capability與sealed tool schema。
-6. Prompt、perception text、model response、tool arguments、credential與private path不得進stdout、
-   stderr、exception、telemetry、runner command或evidence；只保存public digest、timing、token count、
-   child generation、trigger reason與resource sample。
-
-## 7. Config and strict identity
-
-`LLMConfig` current product shape固定為：
-
-```python
-@dataclass(frozen=True, slots=True)
-class LLMConfig:
-    driver: Literal["mock", "litert_lm"] = "mock"
-    runtime_python: Path | None = None
-    model_path: Path | None = None
-    product_config_path: Path | None = None
-    artifact_lock_path: Path | None = None
-    profile_id: str | None = None
-    child_ready_timeout_seconds: float = 45.0
-    generation_timeout_seconds: float = 15.0
-    terminal_grace_seconds: float = 2.0
-    child_terminate_timeout_seconds: float = 2.0
-    child_kill_wait_timeout_seconds: float = 1.0
-    rebuild_ready_timeout_seconds: float = 10.0
-    recycle_max_inference_attempts: int = 8
-    recycle_owner_pss_delta_mib: int = 48
-    recycle_min_mem_available_mib: int = 768
-```
-
-Real driver規則：
-
-- `runtime_python`、`model_path`、`product_config_path`、`artifact_lock_path`皆為absolute file；
-  `profile_id` exact等於`litert-lm-v0.16.0-pi-g2b-r5`；
-- 上述numeric值須與本節完全相等；YAML不得放寬token/sampling/deadline/recycle，selected product
-  profile的input/output/capacity/temperature/top-p/threads由checksum-matching product config載入；
-- `cancel.abort_timeout_seconds.by_kind["cognition.reasoner"]`固定0.5秒；
-  `resource.recovery_timeout_seconds`須大於10秒rebuild READY加舊child cleanup上限，repository
-  product default維持30秒；
-- tracked lock保存expected identity/digest，YAML只提供path與driver/profile selector，不可覆寫
-  candidate、runtime/model/config checksum、license、source或fallback；
-- `product_config_path`內容須exact hash為`c4557b...`。其中POC `runtime_path/model_path`與
-  `test_profile`只作immutable provenance：Core不得開啟其`/tmp/llm-poc-*`路徑。Core實際isolated
-  interpreter/model位置只取本`LLMConfig`，再以product config的runtime/model digest及artifact lock
-  驗證；其所有numeric/offline欄仍須逐欄cross-check，不得只驗整檔hash；
-- factory在child、native import、workdir、sampler與RM registration前完成shape、path及lock parsing。
-  Missing/extra/mismatch一律fail closed且side-effect count為零；
-- spawn使用allowlisted environment：`PYTHONNOUSERSITE=1`、bytecode write disabled、移除`PYTHONPATH`／
-  `PYTHONHOME`／`LD_PRELOAD`，額外`LD_LIBRARY_PATH`只指向verified runtime closure（platform system ABI
-  libraries仍由Debian loader提供）。Child在Engine construction前
-  才lazy import runtime，並由loaded module/distribution實際路徑驗證其位於closure內；實際loaded native
-  library須open-no-follow、regular-file且SHA-256=`9b3a...`。Import path、loader path或digest漂移即startup
-  failure，不以READY自報欄位取代；
-- mock driver的四個path/profile皆須為None，不讀lock、不啟用target resource sampler；test可由constructor
-  注入deterministic sampler與recovery callback，不靠YAML放寬production values；
-- real `ResourceSpec` key固定`backend.cognition.reasoner.llm`、`recoverable=True`，instance與
-  hook指向同一adapter owner；hook不得建立第二個獨立owner。
-
-## 8. Product lock, packaging and offline closure
-
-Gate 2B final ACK已到位。`requirements/m4b/llm-artifacts.json`為strict exact-key tracked lock，至少
-包含下列top-level object；所有SHA為lowercase 64-hex、所有Git SHA為40-hex，unknown/extra/missing key
-均在side effect前拒絕：
-
-| Object | Required fields / fixed consequence |
-| :--- | :--- |
-| `lock` | `schema_version=1`、`protocol_version="snowboard.llm/1"`、lock自身不含absolute deployment path |
-| `poc_reference` | final ACK ID、execution/closure/publication full SHA、R3 manifest ID、formal evidence ID與sanitized digest |
-| `candidate` | `CAND-LRT-G4E2B-MOBILE-R1`、`litert-lm-v0.16.0-pi-g2b-r5`、`pi-debian13-aarch64` |
-| `runtime` | API `0.16.0`、source commit`924e79...`、exact wheel filename/digest、native library digest`9b3a...`、Apache-2.0 |
-| `model` | exact source repo/revision、filename、size`2588147712`、digest`181938...`、embedded mobile quantization、Apache-2.0 |
-| `product_profile` | POC config locator/digest`c4557b...`、config-schema digest`ce8fa...`、prompt/response/Pi-protocol schema locators與digests`aca834...`/`4be45e...`/`e1af3b...`、pre-warm prompt digest`4f3bc3...`、128/128/1024、0.0/1.0/4與all deadlines/offline flags |
-| `runtime_closure` | `llm-runtime-rpi-cp313.json` relative locator及其computed digest；manifest只列product-owned LiteRT-LM distribution/native payload的exact relative path/size/digest，不列target-owned CPython launcher或stdlib，不接受placeholder |
-| `licenses` | runtime/model各自source metadata locator、SPDX`Apache-2.0`、repository-relative license/notice locator |
-
-Known shortened digests above are prose labels only；JSON須保存`model_spec.md` §6與§3.2列出的完整值。
-Lock parser逐欄比較，不以lock內自稱identity取代expected constants。Model、wheel、native binary、raw
-prompt/output與POC evidence payload保持Git-external；tracked lock、runtime manifest、license text與notices
-不得包含它們或使用者absolute path。
-
-### 8.1 Target CPython ABI boundary（`IR_dev_M4B_I` disposition）
-
-採用**target ABI boundary**，不建立或宣稱self-contained CPython distribution。這是既有platform
-boundary的具體化，不改變persistent-child architecture：Debian 13 aarch64的CPython base runtime、stdlib、
-`lib-dynload`與Debian loader可解析的platform system libraries屬target image dependency；LiteRT-LM wheel、
-bundled native library、model與product config仍是Core exact product closure。
-
-固定支援面如下：
-
-- install只接受regular、non-symlink、root-owned `/usr/bin/python3.13`作base interpreter；exact runtime為
-  `CPython 3.13.5`，`SOABI="cpython-313-aarch64-linux-gnu"`、
-  `MULTIARCH="aarch64-linux-gnu"`、`sys.abiflags=""`、64-bit little-endian；錯一項即在staging前fail closed；
-- `sysconfig`的stdlib／platstdlib須解析至`/usr/lib/python3.13`，dynamic stdlib extension只能來自其
-  `lib-dynload`；這些target-owned bytes不複製進`llm-runtime-rpi-cp313.json`，也不以generated
-  install inventory冒充tracked authority；
-- preflight以`dpkg-query`要求exact package set
-  `python3.13-minimal / libpython3.13-minimal / python3.13 / libpython3.13-stdlib / python3.13-venv`
-  全部為`install ok installed`、版本皆屬`3.13.5-*`且五者version字串完全相同。Debian revision是
-  target-run observed identity而非Core artifact baseline；canonical sorted package tuples、base executable
-  SHA-256、exact `sys.version`、SOABI/MULTIARCH、stdlib roots與glibc version共同形成
-  `python_abi_attestation_sha256`；
-- install使用上述base建立`--copies --without-pip` venv。`pyvenv.cfg`須綁
-  `/usr/bin/python3.13`且`include-system-site-packages=false`；product `runtime_python`仍指向
-  `<install-root>/bin/python`。Venv launcher與`pyvenv.cfg`可進run-specific install inventory，但不進14-file
-  tracked payload manifest；
-- install、Pi preflight與正式acceptance開始時必須重算同一ABI attestation並exact相等；任一package
-  update、launcher digest、stdlib root、ABI或glibc drift都撤銷該install／preflight，不得沿用先前PASS；
-- 「no system-site」禁止的是user/system third-party `site-packages`／`dist-packages`與environment escape，
-  不是禁止Python stdlib或platform ABI library。Child固定`-I`、`PYTHONNOUSERSITE=1`、移除
-  `PYTHONPATH/PYTHONHOME/LD_PRELOAD`；`sys.path`不得含`/usr/local/.../site-packages`、
-  `/usr/lib/python3/dist-packages`或任何product root外第三方package path；`litert_lm`及其native library
-  必須只從verified product site-packages載入。
-
-Product installer不得呼叫`apt`、修改target packages或下載base runtime。未安裝exact target ABI時是
-preflight/environment failure，不得把target bytes捕捉後寫回tracked manifest。CPython patch、SOABI、
-package major/minor或stdlib boundary日後改變，須更新本設計與affected test spec並建立新candidate；單純
-Debian package revision更新也必須產生新的ABI attestation並重走preflight/acceptance，不能拼接evidence。
-
-`m4b_llm_product.py`只提供：
-
-- `install`：接受caller-supplied、checksum-matching offline inputs；在new same-filesystem staging建立
-  isolated venv與product payload；先驗§8.1 target ABI，再以no-index/no-deps或selected runtime等價的
-  locked安裝方式處理exact wheel；驗完才atomic rename，拒絕existing output；
-- `preflight`：read-only驗install inventory、model/runtime/config/notice identity、Pi 5 / Debian 13 /
-  §8.1 CPython ABI attestation、Core candidate SHA與protected paths clean；runtime manifest每個
-  product-payload entry以open-no-follow／regular-file及streaming SHA驗證，拒絕symlink、extra/missing
-  payload、ABI drift與system-site import；在child啟動前fail closed。
-
-兩個subcommand都不得下載、解析branch HEAD、fallback、輸出private path或覆寫既有install。
-正式target acceptance另在network-disabled environment執行並證明zero network attempt；單純DNS失敗
-或未配置credential不算offline證據。Selected runtime/native package不得加入Core controller的
-`[project.dependencies]`，也不得被controller-side module import；只存在於Git-external isolated
-runtime closure。
-
-## 9. POC inheritance and Core delta
-
-POC PASS不等於Core PASS。Gate 2B final ACK後，Designer建立逐項mapping：
-
-| POC area | Core Gate 3 disposition |
-| :--- | :--- |
-| P1 / P6 / P7 lifecycle | 以Core parent、Ch 6、RM barrier重跑；POC只繼承candidate行為與已知限制 |
-| P2 / P3 result quality | 繼承POC fixed catalog結果作歷史；Core以generic PromptBuilder / validator重跑bounded semantic intent catalog，不繼承narrow marker schema |
-| P4 performance | 繼承candidate selection數據；在Core product topology量測delta，不自行改門檻 |
-| P5 timeout | 以config-driven Reasoner timeout與Core child cleanup重跑 |
-| P8 history | 以persistent engine + fresh Conversation/close、current semantic binding與prior-state absence在Core exact SHA重跑 |
-| P9 / P10B combined | 以Accepted M4a product input重跑Core-ownedcomposition/resource/session；不得用surrogate |
-| P11 provenance | 驗product lock、offline install與完整notice inventory |
-| P12 offline | 在Core exact SHA下重跑network-disabled product session |
-
-正式inheritance row至少含POC delivery ID/full SHA、manifest/evidence locator及checksum、candidate/pairing
-identity、classification、inheritance reason、Core product SHA、delta Test ID/result、result locator與
-acceptance run ID。只有「沿用POC」或缺locator/checksum時fail closed。
-
-## 10. Test coverage handoff
-
-Reviewer核准完整M4b design後，Tester在`docs/test_spec/test_spec_M4.md`新增完整M4B章節。Designer
-不直接修改Tester-owned spec；`TR_spec_M4B_I`須證明下列風險100%有可觀察assertion後才可Resolved。
-
-### 10.1 Portable protocol minimum
-
-`M4B-IPC-001`至少覆蓋：
-
-1. 16 KiB control boundary、fragment/coalesce、valid UTF-8 JSON與extra/missing/unknown key fail closed；
-2. READY只能在pre-warm完成後出現，exact winner identity任一欄mismatch都terminate/waitpid/cleanup；
-3. string request ID regex、child-generation/counter monotonicity、wrong/duplicate/late terminal；
-4. structured GENERATE的canonical order、duplicate/16-perception/4096-char/16-KiB boundary、
-   `None -> ""`+status preservation、pending count、capability/tool exact schema，以及ID/extra/handler排除；
-5. generic renderer bytes、capability-bound dynamic speak/tool/rest branches、strict raw JSON parse、RESULT
-   exact action mapping、finite metrics與prefill/decode/KV 1..128/1..128/1..1024 boundaries；
-6. 15秒generation與2秒terminal-only grace分離；grace內late RESULT仍不可成功；
-7. CANCELLED typed outcome、single native cancel、joined worker、Conversation discard、healthy next request及
-   zero unhandled-thread warning；
-8. BUSY/INVALID_REQUEST/TIMEOUT/GENERATION_FAILED/CANCEL_FAILED/PROTOCOL_ERROR state與P5/FATAL分界；
-9. stdout/stderr/caplog/result不含perception、response、tool args、credential或private path；
-10. M4A protocol/lifecycle regressions保持通過，證明未改寫Accepted Audio contract。
-
-### 10.2 Full Gate 3 Test IDs
-
-| Test ID | Platform | Required risk |
-| :--- | :--- | :--- |
-| `M4B-CFG-001` | portable | exact real config、mock isolation、factory三個窄介面、0.5/45/15/2/2/1/10 timeout與8/48/768 recycle values |
-| `M4B-LOCK-001` | portable + Pi preflight | strict lock keys、R3/runtime/native/model/config/schema/source/license identity、POC path僅provenance；mismatch zero side effect |
-| `M4B-IPC-001` | portable | `snowboard.llm/1` exact keys/state/request/terminal/metrics/privacy |
-| `M4B-RDY-001` | portable double + Pi | ENGINE_LOADED不admit、fixed input/prompt digest、mandatory same-renderer pre-warm、discard、READY/rebuild READY |
-| `M4B-GEN-001` | portable double + Pi | structured input、single result、persistent Engine、fresh Conversation、token/metric bounds |
-| `M4B-OUT-001` | portable + Pi | speak/tool/rest exact schema、current-turn expected action/capability/tool binding、allowlist、Reasoner validation |
-| `M4B-P5-001` | portable + Pi | invalid/refusal/recoverable error/clean timeout fallback；fatal/recovery failure不被掩蓋 |
-| `M4B-CAN-001` | portable + Pi | typed cancel、TERM/KILL/waitpid、single cancel、worker join、next success、Level 3 |
-| `M4B-REC-001` | portable + Pi | unique-owner PSS/raw-byte 8/48/768 triggers、missing sample、terminal-only schedule/wait、ticket identity、no old-child admit、same-lock/pre-warm replacement、no-next-request failure仍由RM fatal monitor exit 4 |
-| `M4B-HIST-001` | portable + Pi | five-turn current-semantic/prior-state isolation + fresh Conversation/close；normal child PID stable，planned generation switch only at expected boundary |
-| `M4B-PRIV-001` | portable + Pi | input/output/tool/credential/path不進product log/evidence；public digest/metrics allowed |
-| `M4B-OFF-001` | Pi | network-disabled real inference、no downloader/fallback/system-site import |
-| `M4B-RES-001` | Pi | same-SHA M4a+M4b 4 GB 20-session；三generation、r14 4/64 gates、swap/OOM/thermal/cleanup |
-| `M4B-PKG-001` | portable review + Pi install | clean offline atomic install、no-follow exact runtime inventory、Apache-2.0 license/notices |
-| `M4B-INH-001` | evidence review | P1～P12 machine result/waiver分欄、Gate2B narrow harness→Core general renderer delta、locator/checksum、single product SHA |
-
-`M4B-RES-001`不讀或要求Memory PSI；仍逐sample驗`system_used <= 3584 MiB`、`swap=0`、
-zero OOM/throttle、temperature <80°C、owner PSS/RSS/CPU/thread、20 accepted sessions與zero residue。
-沿用Gate 2B r14 frozen verifier公式，完整20-session combined PSS與system-used各自仍須
-leak slope`<=4 MiB/session`且late-minus-early median delta`<=64 MiB`；每個child generation的
-post-prewarm owner-PSS baseline-to-clean-terminal delta亦不得超過64 MiB。48 MiB是early recycle trigger，
-不是放寬64 MiB gate；單次jump越界即FAIL，即使之後recycle成功也不洗掉。Planned recycle不得刪除
-pre-trigger sample、分generation重算整體斜率或重設result；evidence須保存child generation、trigger
-reason、pre/post baseline、ticket與每次pre-warm timing。8-attempt上限在20個accepted sessions必然於
-第8與第16個attempt cleanup後各排程一次，故至少須觀察兩個完成replacement及三個child generation。
-
-Pi entry不得由portable double宣告Pass。所有formal命令使用外部指定candidate SHA、bounded timeout、
-fresh run ID/output；debug result不得合併成formal PASS。M4b只有Tester對同一Core product SHA完成
-portable matrix與target acceptance，且Designer final review無Blocking，才可標子gate Accepted。
-
-## 11. Planned work packages and authorization
-
-所有WP共同entry是`IR_review_M4B_I=Resolved`與`TR_spec_M4B_I=Resolved`；在此之前只允許
-Designer文件工作，不開始Developer implementation。
-
-Developer實作期間的`IR_dev_M4B_I`／`TR_spec_M4B_II`已將target CPython closure收斂為target ABI
-boundary並歸檔。`IR_dev_M4B_II`揭露的Core generic renderer / fixed marker不相容由本修訂
-選定revised acceptance claim；`TR_spec_M4B_III`已完成`M4B-OUT-001`、`M4B-HIST-001`、
-`M4B-RES-001`及其直接candidate-card/catalog欄位修訂，並由Designer以Blocking 0
-標記`Resolved`。Developer可繼續收斂implementation與handoff，完成scope核對後再向USER請求
-provisional candidate commit授權；其餘12個Test ID、runtime/model/config/renderer digest、lifecycle、
-resource threshold與M4a Accepted契約不重開。
-
-| WP | Scope | Exit |
-| :--- | :--- | :--- |
-| M4B-WP-01 | `llm.py` structured types、`llm_child_protocol.py` codec/state、deterministic child double | M4B-IPC/RDY portable assertions全綠；無real runtime import |
-| M4B-WP-02 | Ch 10 strict config、tracked R3 lock parser、factory、offline install/preflight/notices | CFG/LOCK/PKG portable negative matrix全綠，invalid input side effect=0 |
-| M4B-WP-03 | parent adapter、startup/pre-warm、admission、cancel/terminal、resource sampler與RecoveryTicket wait | RDY/CAN/REC deterministic lifecycle全綠；M4A regressions不變 |
-| M4B-WP-04 | isolated LiteRT-LM worker、winner renderer/tokenizer/constrained output、fresh Conversation | Pi preflight identity通過；GEN/OUT/HIST focused target smoke全綠 |
-| M4B-WP-05 | Reasoner structured seam、config-driven timeout、factory/composition、RM hook/barrier與main `rm.wait_fatal()` supervision | P5/fatal分界、planned failure即時exit 4、same-owner recovery、next-success與privacy regressions全綠 |
-| M4B-WP-06 | candidate runner suite、20-session M4a+M4b composition、inheritance generator/template | Developer fast loop全綠；正式evidence仍只由Tester對candidate SHA產生 |
-
-Developer先在`docs/reviews/dev_progress_M4.md`為每個WP列files/symbols、dependency、估點、affected tests
-與exit evidence。WP可依dependency前進，但不得把mock/portable或POC waiver標成Core target PASS。
-
-## 12. Review and completion gates
-
-1. **External input complete**：Gate 2A history、DELIVERY-019 adaptation、022 pre-warm、023 PSI removal、
-   Attempt 006 machine FAIL/waiver與R3 final winner ACK皆保持append-only。
-2. **Designer delivery complete**：本章、Ch 2b/5/9/10、M4 gate與progress tracker使用同一structured seam、
-   exact winner identity、recycle policy與WP/Test ID mapping。
-3. **Single full design review — complete**：Reviewer已以一張`IR_review_M4B_I`審完整selected scope；
-   2026-08-30以Blocking 0標記`Resolved`，歸檔於`docs/reviews/history/IR_review_M4B_I.md`。
-4. **Single full test coverage review**：Tester一次補§10全部M4B Test IDs；Designer以
-   `TR_spec_M4B_I`確認100% coverage、portable/target/candidate/evidence contract後才Development Ready。
-5. **Development / candidate gate**：WP-01～06 fast loop → USER-approved provisional commit → 三minor
-   portable matrix → Designer candidate review/freeze → Pi preflight/acceptance → Tester reconciliation。
-6. **Designer final confirmation**：只核對frozen candidate後無protected-input drift、Tester evidence同SHA、
-   design Blocking皆關閉；通過才標M4b Accepted。
-
-M4b Accepted只關閉M4b子gate。M4c仍須在M4a與M4b均通過後接線，整體M4另要求三個子gate在
-同一產品delivery exact SHA收斂。M4a Accepted狀態本身不回退，但final M4 candidate必須對未變更
-M4a scope建立inheritance，並在該SHA重跑受M4b composition影響的Audio/resource/offline/privacy/
-session regressions；不得拼接M4a歷史candidate與另一個M4b-only SHA宣告M4完成。
-
-## 13. Combined Reviewer delivery
-
-Reviewer單輪完整審查輸入固定為：
-
-- 本章§0～§14完整內容；
-- `docs/protocol.md` §1、§4與§6；
-- `docs/milestones/M4.md` §6.2.2；
-- `docs/implement/m4b_gate2a_intake.md`；
-- `docs/model_spec.md` §6、R3 manifest與Core final winner ACK；
-- Ch 2/2b Reasoner/LLMEngineAdapter、Ch 5 stable key、Ch 6 cancellation、Ch 9 validator、Ch 10
-  current config，以及現有`main.py`、`resource_manager/manager.py`、`framed_child.py`、`llm.py`、
-  `reasoner.py` source seam。
-
-Reviewer至少一次核對：
-
-1. protocol/fake與real adapter/worker/lock的ownership清楚，production identity只來自Gate 2B final ACK；
-2. structured protocol exact keys、canonical projection、POC-path exclusion、token/metric bounds、state與
-   typed terminal可實作；
-3. codec可重用common helpers但不要求改寫Accepted M4A transport；
-4. prompt/output privacy在success與每個failure cleanup路徑都封閉；
-5. P5 normalizer仍由Reasoner擁有，fake child不宣告product schema/quality PASS；
-6. hard-coded reason timeout改成config-driven且15秒generation／2秒grace／0.5秒cancel分層不漂移；
-7. unique-owner sampler、raw-byte 8/48/768 trigger、terminal-only schedule/wait、RecoveryTicket、
-   main-owned RM fatal monitor與new READY形成single-owner閉環；
-8. Gate 2B narrow listen/speak marker harness與Core generic speak/tool/rest renderer明確列為product delta；
-   Core只驗current semantic binding、fresh Conversation與prior-state absence，不要求generic speak回顯marker；
-   Gate 2A／P9／P10B machine FAIL、User waiver與Core product result分欄，沒有evidence mutation；
-9. Gemma 4 E2B typo clarification有記錄；任何非LiteRT-LM runtime仍另開`AR_impl`；
-10. Tester handoff能直接形成§10的15個Test ID，r14 4/64 gates不被recycle重設，且M4A accepted
-    behavior／same-SHA boundary無矛盾。
-
-Reviewer已依本節清單完成`IR_review_M4B_I`並以Blocking 0核准M4b完整design；後續Tester coverage
-亦由Designer以`TR_spec_M4B_I` Round II核准。這些結論仍不等於Developer實作完成、Core Tester PASS
-或M4b Accepted；下一個owner是Developer。
-
-## 14. Designer completion audit and delivery manifest
-
-### 14.1 Requirement closure
-
-| Requirement | Authoritative closure | Reviewer evidence |
-| :--- | :--- | :--- |
-| Architecture fit | §0、Ch 2b/5/6；persistent child、Reasoner、Level 2與RM barrier不變 | `No architecture change / no AR_impl` |
-| Public API/data | §3、Ch 2/2b；structured immutable input/result、sampler與recovery narrow ports | exact signatures、no raw prompt/ID/payload |
-| Wire/renderer | `protocol.md` §4、§3.1/§3.2 | exact schemas/digests、canonical projection、dynamic constrained branches、fixed pre-warm |
-| Identity/config | `model_spec.md` §6、Ch 10、§7/§8 | exact R3 values、POC paths provenance-only、strict lock/runtime manifest |
-| Lifecycle/failure | §4/§5、Ch 5/6 | deadlines、typed terminal、cleanup proof、P5/fatal table、same-owner rebuild |
-| Defect mitigation | §0.3、§10.2、M4 §6.4 | unique-owner sampling、8/48/768 trigger、r14 4/64 gates、two replacements |
-| Privacy/offline/package | §6/§8 | no private log/evidence、no download/fallback/system-site、atomic/no-follow install |
-| POC inheritance | §1.3/§9、R3/final ACK | machine FAIL與waiver分欄、narrow harness→general renderer delta、single Core SHA |
-| Development slicing | §11 | WP-01～06各有scope、dependency與exit evidence |
-| Test handoff | §10 | 15 Test IDs覆蓋portable/Pi/evidence；Tester-owned spec未被Designer預寫 |
-
-### 14.2 Review package and ownership boundary
-
-Reviewer已依§13清單完成Reviewer-owned `IR_review_M4B_I`，Blocking 0且無需Designer修訂主設計；
-審查單依workflow歸檔。其Advisory所指的`prepare_shutdown()`已由Ch 5 §6.5完整定義，本章§0.1亦補上
-surface交叉引用，不改變已核准契約。
-
-Tester已新增`docs/test_spec/test_spec_M4.md`的M4B coverage；Designer以`TR_spec_M4B_I` Round II完成
-coverage sign-off並歸檔。下一個owner是Developer：依§11先更新Developer-owned`dev_progress_M4.md`，
-再執行WP-01～06；本次Designer不建立runtime lock／production source，也不宣告Gate 3 PASS。
-
-### 14.3 Self-check evidence
-
-2026-08-30的mechanical consistency、authority-object digest、15 Test ID／6 WP計數、stale-seam scan與
-PM handoff audit記錄於`docs/reviews/impl_progress.md`的「Post-Gate-2B Reviewer delivery self-check」。
-這些證明delivery完整且輸入可定位；它們不是source implementation或Gate 3 execution evidence。
+| two turns same session | 一個Conversation；第二輪能回答第一輪追問（real人工）；mock只證明reuse |
+| next session | previous close ACK在new open前；old canary/context不進新session；no retained refs |
+| interrupt during open/generate/close | 無late LLMResponse；control/task收斂；session清除；失敗走Level2 |
+| normal end / no-THINK end / Shutdown | 一次有效close或idempotent no-op；清登記；Shutdown不rebuild |
+| end=false/text valid | Reasoner產speak/listen，model未提供next_perceptions |
+| end=true或unavailable capability | rest/empty next；不派發tool，不呼叫不存在perception |
+| oversized input / capacity full | 前者無inference且state retained；後者close/rest，不暗中reset續對話 |
+| invalid model JSON / timeout / cancel | dirty Conversation discard；typed joined terminal；新session健康；zero thread warning |
+| wrong session/request/duplicate terminal | fail closed；不交付result；原owner cleanup，無cross-session mutation |
+| normal allocation below capacity reserve | 不因8次或48MiB排程；完整samples仍保留 |
+| low capacity / replacement仍不足 | 一次回收、session結束、closed barrier；不recycle loop／fake PASS |
+| installed identity mutation | spawn前失敗；zero inference；不以stat-only當digest |
+| no-next-request recovery failure | main RM fatal monitor仍結束；不存在unobserved failure |
+| output/cancel/privacy | logs/evidence無private text/prompt/audio/tool args；人工紀錄不copy raw answers |
+
+Source直接面：reasoner/prompt_builder/llm/llm_child_protocol；LiteRT worker/adapter/lock/resource；
+SM manager/ports/notices/convergence；config models/loader/factory与main窄port wiring。
+Tests/工具直接面：M4B CFG/LOCK/IPC/RDY/GEN/OUT/P5/CAN/REC/HIST/PRIV/RES/PKG/INH、
+fake child、m4b_target_cases、m4b_target_metrics、candidate_gate、m4b_inheritance、
+gate3-product-catalog。OFF維持既有網路邊界並驗新composition。
+不重開M4A-only target rows；同SHA重驗真正受新session/composition影響的Audio/resource/privacy。
+Candidate卡不能仍固定20 Conversations／5 create-close／三generation或prewarm digest。
+20 sessions與session內multi-turn分開計數；自然capacity soak不硬湊兩次重啟，
+recovery另用受控注入驗。歷史r14公式/vector保持；新Core capacity/stability判準另version，
+不能把改判準的結果回填舊r14。
+
+## 10. Review sequencing and handoff
+
+跨團隊名稱M4B-MVA，基線M4B-MVA-001；不再使用草稿別名R2。
+唯一順序與release條件見[M4B-MVA gate](../milestones/M4B_MVA.md)：
+Architect修訂→Reviewer審arch/design/POC計畫→Designer定版→交付POC、gate Open→
+POC回交→Designer審核通過、gate解除→Developer／Tester進場。
+不允許Developer／Tester因部分契約穩定提前寫spec或實作。
+進場後仍先完成test-spec coverage，再開始產品實作；candidate commit需USER確認。
+Reviewer審的是包含本章/protocol/跨章delta與POC計畫的一個完整package，
+數值由POC產生再由Designer採用，不把「設計定版」誤解為先猜定量測結果。
+
+## 11. POC work package
+
+[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+屬M4B-MVA-001；沿用既有LLM POC團隊/repository，必要時協調Audio。
+工作包尚未完成Reviewer審查／Designer定版，未交付。
+正式交付後依定版範圍執行，只有Designer審核並明確解除M4B-MVA-POC才進場；
+POC結果不取代Core產品exact-SHA驗收。

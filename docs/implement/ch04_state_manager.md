@@ -1,5 +1,10 @@
 # Ch 4. State Manager 實作
 
+> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
+> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
+> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+
+
 關於 implement.md 索引 | 對應 arch.md §3.5～§3.7 / §4 / §5.1～§5.2 / §6.3～§6.5 | 狀態：定稿（IR-final 已通過（2026-08-01））
 
 上游契約：Ch 1、Ch 2、Ch 3。AR-Impl-7 已 Confirmed：THINK Exit 壞 `LLMResponse` / 剔除未註冊 kind 後空清單走 §3.2 SM 自檢 ERROR 路徑（非 process 崩）。IR-IV-01（第 IV 輪）：§6.4 THINK Exit 對 speak/tool 的 `next_perceptions` 做正規化（剔除未註冊 kind + 去重，同屬 arch.md §2.7 授權的 SM 正規化，degrade 不 ERROR）；rest 完全忽略 `next_perceptions`（arch.md §2.7 / §4.6）。
@@ -646,3 +651,15 @@ Log context 至少含 state、session_id、turn_id、correlation_id、worker kin
 - Ch 9 : 提供 `ActionPayloadValidator` ，且驗證不執行 tool handler。
 - Ch 10 : 提供 wake ack 、 perception 、 cancel / recovery timeout 與 default perceptions。
 - Ch 11 : main 監督 dispatch task / bus fatal / RM recovery fatal 的方式。
+
+## 11. M4B-MVA session participant delta（待AR_impl_M4B_I）
+
+WAKE分配session ID後先登記Reasoner session，再開始PERCEPTION；
+begin/end控制操作用task/completion notice處理，SM inbox保持能接受Interrupt/Shutdown。
+Pending控制操作加入收斂追蹤，不能只看think task。
+四種exit（rest/interrupt/error/shutdown）在in-flight收斂後，先end_session/close ACK，
+再清session fields/resume wake。沒有進THINK也清登記。
+同session重複end冪等；late old-ID open/result/close不得改新session。
+Close失敗走既有Ch6 Level2與RM barrier；shutdown不rebuild。
+M4B-MVA沒有改LLMResponse三欄、SM action validation與empty rest；實際演算法與
+修改symbols/regression見M4B-MVA §3/§9。此新participant未簽核前不當已實作。
