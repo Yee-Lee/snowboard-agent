@@ -2,7 +2,7 @@
 
 > M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
 > LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
-> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+> Architecture與design已簽核；POC profile與test spec仍待後續gate。不得以舊source已實作視為M4B-MVA Ready。
 
 
 # Ch 2b. worker 契約與 library adapter

@@ -2,7 +2,7 @@
 
 > M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
 > LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
-> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+> Architecture與design已簽核；POC profile與test spec仍待後續gate。不得以舊source已實作視為M4B-MVA Ready。
 
 
 關於 implement.md 索引 | 對應 arch.md §3.5～§3.7 / §4 / §5.1～§5.2 / §6.3～§6.5 | 狀態：定稿（IR-final 已通過（2026-08-01））
@@ -652,14 +652,15 @@ Log context 至少含 state、session_id、turn_id、correlation_id、worker kin
 - Ch 10 : 提供 wake ack 、 perception 、 cancel / recovery timeout 與 default perceptions。
 - Ch 11 : main 監督 dispatch task / bus fatal / RM recovery fatal 的方式。
 
-## 11. M4B-MVA session participant delta（待AR_impl_M4B_I）
+## 11. M4B-MVA session participant delta（Designer frozen）
 
-WAKE分配session ID後先登記Reasoner session，再開始PERCEPTION；
+首turn THINK Entry登記Reasoner session並完成begin，才啟動該turn reason/generate；
 begin/end控制操作用task/completion notice處理，SM inbox保持能接受Interrupt/Shutdown。
 Pending控制操作加入收斂追蹤，不能只看think task。
-四種exit（rest/interrupt/error/shutdown）在in-flight收斂後，先end_session/close ACK，
-再清session fields/resume wake。沒有進THINK也清登記。
+四種exit（rest/interrupt/error/shutdown）先登記end intent並阻止新admission，再收斂active
+open/generate；之後完成end_session/close ACK，才清session fields/resume wake。end control
+不等待包含自己的集合。沒有進THINK時end為no-op；已開始begin則必須一併收斂。
 同session重複end冪等；late old-ID open/result/close不得改新session。
 Close失敗走既有Ch6 Level2與RM barrier；shutdown不rebuild。
 M4B-MVA沒有改LLMResponse三欄、SM action validation與empty rest；實際演算法與
-修改symbols/regression見M4B-MVA §3/§9。此新participant未簽核前不當已實作。
+修改symbols/regression見M4B-MVA §3/§9。本設計已簽核，但尚未實作或驗收。

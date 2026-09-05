@@ -10,8 +10,9 @@ USER確認M4以最小可行語音架構為目標：M4B完成最小Reasoner與ses
 M4整合驗speech-end到meaningful audible onset；ALPHA擴大品質/穩定性，實際tool在M5。
 2秒目標／3秒上限、10秒恢復是可修訂目標，不是整個計畫no-go條件；
 保留原目標、實測、調整理由與新目標，不重標historical result。
-[新M4規劃](milestones/M4.md)、[M4B-MVA設計](implement/ch_m4b_llm_production.md)尚待
-Architecture/Reviewer/Tester與量測profile，不因USER產品方向確認直接宣告Development Ready。
+[新M4規劃](milestones/M4.md)、[M4B-MVA設計](implement/ch_m4b_llm_production.md)已完成
+Architecture/Reviewer/Designer定版；尚待POC交付與結果、Designer採用profile及Tester coverage，
+因此仍未宣告Development Ready。
 
 ## 1. 規劃基準
 

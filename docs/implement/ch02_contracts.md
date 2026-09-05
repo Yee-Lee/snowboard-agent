@@ -2,7 +2,7 @@
 
 > M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
 > LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
-> 尚待AR_impl_M4B_I與design/spec簽核。不得以舊source已實作視為M4B-MVA Ready。
+> Architecture與design已簽核；POC profile與test spec仍待後續gate。不得以舊source已實作視為M4B-MVA Ready。
 
 
 屬於 implement.md 索引 | 對應 arch.md §2.4 / §2.6 / §2.8 / §2.9 / §6.1 | 狀態：定稿（IR-final 已通過（2026-08-01））
@@ -397,7 +397,7 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 
 ---
 
-### M4B-MVA session participant（待架構簽核）
+### M4B-MVA session participant（Designer frozen）
 
 SM新增注入ReasonerSessionControl.begin_session(session_id)與end_session(session_id, reason)；
 API、非阻塞completion、四路close與late-ID protection依M4B-MVA §3。reason()仍每turn單一Fact，

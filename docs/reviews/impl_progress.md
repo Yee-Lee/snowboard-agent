@@ -2,14 +2,14 @@
 
 ## Current M4B disposition — 2026-09-05 USER MVA revision
 
-M4A維持Accepted；M4B-MVA為Designer draft，尚未Development Ready／Gate3 PASS。
+M4A維持Accepted；M4B-MVA architecture/design/POC plan已定版，尚未Development Ready／Gate3 PASS。
 USER確認session內continuity、不建context management、最小Reasoner擁有next_perceptions、
 短句語音2秒目標/3秒上限、10秒完整recovery、cold startup無產品SLA。
 數字可依量測與USER裁決調整，miss不構成計畫no-go。
 [IR_dev_M4B_III](IR_dev_M4B_III.md)已由Designer回覆Revised，requestor結案待後續進場，當前不另放行Developer；
-[AR_impl_M4B_I](AR_impl_M4B_I.md)與[TR_spec_M4B_IV](TR_spec_M4B_IV.md) Open。
+[AR_impl_M4B_I](history/AR_impl_M4B_I.md)已Resolved；[TR_spec_M4B_IV](TR_spec_M4B_IV.md)維持deferred Open。
 本工作統一M4B-MVA／M4B-MVA-001，依[USER七步流程](../milestones/M4B_MVA.md)。
-目前步驟1等待Architect；Reviewer須審arch/design/POC計畫，Designer定版後才交付。
+目前步驟4等待Designer交付既有LLM POC團隊；交付完成才開啟M4B-MVA-POC。
 POC未交付／未執行，只有Designer審核結果並解除M4B-MVA-POC後Developer／Tester才進場。
 舊WIP五檔依USER授權捨棄；沒有新product code/test、candidate、commit或外部repo異動。
 下方較早dated段落／approval屬R1歷史snapshot；其candidate-ready敘述不覆蓋本節。
@@ -35,8 +35,8 @@ POC未交付／未執行，只有Designer審核結果並解除M4B-MVA-POC後Deve
 | **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
 | **Ch 11** | [ch11_error_logging.md](../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
 | **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Accepted | Designer | Core candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成Tester exact-SHA驗收與Designer final confirmation |
-| **M4b production** | [ch_m4b_llm_production.md](../implement/ch_m4b_llm_production.md) | M4B-MVA design revision；architecture/profile/spec pending | Designer | R1 ABI與quality-oracle結案保留；M4B-MVA依AR_impl_M4B_I、POC profile與TR_spec_M4B_IV，coupled candidate尚未放行 |
-| **Child Protocol** | [protocol.md](../protocol.md) | Audio v1 approved；LLM v2 MVA draft | Designer | R1 approval是歷史；M4B-MVA session/control wire待簽核 |
+| **M4b production** | [ch_m4b_llm_production.md](../implement/ch_m4b_llm_production.md) | M4B-MVA design frozen；profile/spec pending | Designer | R1 ABI與quality-oracle結案保留；等待POC量測、profile採用與TR_spec_M4B_IV，coupled candidate尚未放行 |
+| **Child Protocol** | [protocol.md](../protocol.md) | Audio v1 approved；LLM v2 MVA design frozen | Designer | R1 approval是歷史；M4B-MVA execution/profile identity待POC與Step 6採用 |
 
 ## 跨章節 Gate 與備註
 

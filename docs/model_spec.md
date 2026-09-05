@@ -190,10 +190,10 @@ Core deployment只取LLMConfig明確paths。Gate2B narrow marker harness與R1 ge
 speak/tool/rest renderer都是歷史surface；M4B-MVA產品text/end、session lifecycle與profile
 依下節及新設計，不能將原prompt/response digest冒稱M4B-MVA身份。
 
-### 6.3 Core MVA M4B-MVA profile — pending measurements
+### 6.3 Core MVA M4B-MVA profile — design frozen, measurements pending
 
 USER於2026-09-05確認M4 MVA與session內連續對話。舊fresh-turn/full-envelope/
-mandatory-prewarm profile已由[新設計](implement/ch_m4b_llm_production.md)取代為revision draft；
+mandatory-prewarm profile已由[新設計](implement/ch_m4b_llm_production.md)取代並完成Designer定版；
 原POC winner config/digests與machine evidence仍是immutable provenance。
 前節的generic speak/tool/rest renderer描述只屬R1 adoption history，M4B-MVA改用text/end semantic。
 Runtime/model/target ABI/license維持§6.2，不宣稱新profile已凍結。

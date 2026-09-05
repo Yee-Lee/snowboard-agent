@@ -74,10 +74,13 @@ Gate解除不等於M4B Accepted；Core產品仍需Developer實作、Tester exact
 
 ## 4. Current state
 
-- Work/baseline：M4B-MVA / M4B-MVA-001（draft，尚未定版）。
-- Current step：1；等待Architect修訂arch.md。
-- Reviewer：尚未審核本次三面package；Designer不可代標PASS。
-- POC：工作包已在Core準備，未交付，未執行；gate未到Open交付階段，進場仍鎖定。
+- Work/baseline：M4B-MVA / M4B-MVA-001（Designer design / POC plan frozen）。
+- Current step：4；等待Designer交付既有LLM POC團隊。尚未交付，M4B-MVA-POC仍未Open。
+- Step 1 (Architect)：已完成。arch.md六點修訂及Designer結案見已歸檔[AR_impl_M4B_I](../reviews/history/AR_impl_M4B_I.md)。
+- Step 2 (Reviewer)：已完成。三面PASS，0 Blocking，3 Advisory。見已歸檔[IR_review_M4B_II](../reviews/history/IR_review_M4B_II.md)。
+- Step 3 (Designer)：已完成。begin/end控制時序已統一；POC安全停止條件、固定分析窗口、案例順序、Audio缺口填寫規則已定版；profile量測值留Step 5產生、Step 6採用。
+- AR_impl_M4B_I：Resolved並歸檔。
+- POC：定版工作包已在Core準備，未交付、未執行；gate尚未Open，進場仍鎖定。
 - Developer／Tester：尚未進場；TR_spec_M4B_IV為deferred request。
-- Next：Architect處理[AR_impl_M4B_I](../reviews/AR_impl_M4B_I.md)。
+- Next：Designer執行Step 4，交付定版工作包並記錄exact package SHA、位置與receipt；交付完成才把M4B-MVA-POC標為Open。
 - 本文件不授權commit/push或目前跨repo交付；執行到步驟3/4時依既有USER／repo規範交付。

@@ -1,16 +1,17 @@
 # M4B-MVA — 最小 Reasoner 與語音架構設計
 
-狀態：Designer revision for review；USER產品方向已確認，Architecture / Reviewer /
-Tester與量測profile尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
+狀態：M4B-MVA-001 Designer design / POC plan frozen；Architecture與Reviewer已通過。
+POC尚未交付，量測profile與Tester coverage尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
 日期：2026-09-05。追蹤：[IR_dev_M4B_III](../reviews/IR_dev_M4B_III.md)、
-[AR_impl_M4B_I](../reviews/AR_impl_M4B_I.md)、
+[AR_impl_M4B_I](../reviews/history/AR_impl_M4B_I.md)、
 [TR_spec_M4B_IV](../reviews/TR_spec_M4B_IV.md)。
 
 本章取代R1的per-operation fresh Conversation、mandatory replacement pre-warm、
 8-attempt/48-MiB recycle與model-generated canonical action envelope。
 R1與其批准紀錄仍是不可改寫的歷史；可由Core commit
 5d09f23及更早Git history查閱。已發布candidate不改寫。
-本章是供審查的新設計，不授權在未解架構矛盾下開始耦合產品實作。
+本章已完成七步流程 Step 3 定版；Step 4 交付 POC 前不開始外部執行，
+Step 6 解除 gate 前不開始耦合產品實作。
 
 ## 0. USER decisions and scope
 
@@ -115,34 +116,38 @@ SemanticGeneration = semantic(text/end) + diagnostics；session identity留在�
 不render進model prompt、不log。Public LLMResponse形狀與每turn一個Fact不變。
 所有API均single flight；沒有parallel Conversation。
 
-SM在WAKE分配ID後、PERCEPTION前以既有非阻塞completion-notice模式完成begin_session。
-不得await blocking native operation卡住SM inbox；Interrupt/Shutdown能取消未完成open。
-Reasoner begin只登記ownership；lazy open可在第一個reason呼叫建立Conversation，
-但該成本必須算入第一筆請求，不能以READY排除。一session只開一次。
+SM在首turn THINK Entry發出begin_session控制操作；begin先登記ownership，再建立該session
+唯一Conversation。SM以task/completion notice等待begin完成後才容許generate，但dispatch inbox
+全程可接受Interrupt/Shutdown，不await blocking native operation。begin/open成本計入第一筆
+caller TTC，不能以READY排除。一session只開一次。
 
-正常rest、Interrupt、Error、Shutdown四條路徑，在in-flight收斂後、清SM session欄位／
-resume wake之前呼叫end_session並證明close完成；未曾進THINK也須清Reasoner session登記。
-CONTROL pending也是收斂追蹤項，不能僅清reason task。
+正常rest、Interrupt、Error、Shutdown四條路徑先發出end intent；Reasoner原子標記ENDING、
+拒絕新admission，再由既有收斂取消／等待active open或generate。active operation有typed terminal
+與join證明後，end_session完成Conversation native close；close ACK後才清SM session欄位／
+resume wake。CONTROL pending也是收斂追蹤項，但end task不等待包含自己的control集合，
+避免自我等待。未曾進THINK即沒有Reasoner登記，end為no-op；若begin已發出則仍須收斂。
 相同session end可重複no-op；wrong nonempty session拒絕，不得關閉後來的session。
 先close舊Conversation才容許新session。遲到open/result/close ACK不准更動新session。
 
-### Implementation skeleton (after architecture approval)
+### Frozen implementation skeleton
 
-    begin_session(sid):
+    async begin_session(sid):
         require no active session/control
-        remember sid; conversation_open = False
+        remember sid; state = OPENING
+        await llm.open_session(sid, product_facts)
+        require matching SESSION_OPENED; state = ACTIVE
 
     reason(sid, tid, cid, perceptions, pending):
-        require sid == current_sid
-        if not conversation_open:
-            await llm.open_session(sid, product_facts)
+        require sid == current_sid and state == ACTIVE
         result = await llm.generate(sid, tid, current_turn_input)
         response = apply_mva_policy(result, capability_of)
         publish exactly one LLMResponse with sid/tid/cid
 
     finish_convergence(trigger):
-        await in_flight_completion_and_cancel_proof()
-        await reasoner.end_session(sid, trigger)
+        mark_session_ending_and_reject_new_admission()
+        end = start_reasoner_end(sid, trigger)
+        await active_open_or_generate_completion_and_cancel_proof()
+        await end.close_proof
         clear_session_tracking()
         follow_existing_idle_or_shutdown_path()
 
@@ -181,7 +186,7 @@ POC驗token_count/render API在selected runtime的真實語意；未驗清前不
 同次開機replacement預設不做disposable inference prewarm；冷啟動是否預熱先以§11 POC比較。
 任何保留prewarm必須證明下一筆真實請求收益，且不得污染第一個session。
 不因「cold startup無產品SLA」移除bounded operational watchdog；watchdog是清理掛死，
-不是使用者等待承諾。Background warm-up只是允許的後續方案，不在本draft加入新supervisor。
+不是使用者等待承諾。Background warm-up只是允許的後續方案，不在本baseline加入新supervisor。
 
 移除attempt-count、post-prewarm 48MiB與固定三generation成功條件。
 主要planned trigger是MemAvailable低於measured profile的capacity reserve；owner PSS作歸因，
@@ -247,7 +252,7 @@ ASR transcribe(stream)呼叫不等於使用者說完。固定WAV須提供最後s
 | user-new tokens | 32候選 | 語音長度與代表性繁中案例可容納性 |
 | output tokens / Engine KV | 128/1024只作原baseline參考 | 新短句與多turn capacity量測、明確reserve |
 | prewarm initial/replacement | 初次待比較；same-boot預設none | following-request收益與成本 |
-| capacity reserve / stable window | 未定；不沿用768/48/64 | combined memory樣本與安全headroom |
+| capacity reserve / stable window | 產品值待POC；執行安全線固定MemAvailable>=512MiB；分析窗口固定每周期session 11–20 | combined memory樣本與安全headroom |
 | startup / generation / control watchdog | 保持bounded，值待profile；舊45/15/2只作參考 | 包含open/close與cleanup的timeout table |
 | response/recovery objectives | 2秒目標、3秒上限、10秒完整recovery | 原值與每次miss保留；USER可修訂 |
 | supported case envelope | 短句身分／知識／能力／追問／結束 | 固定catalog、input/output limits、人工rubric |
@@ -256,7 +261,8 @@ ASR transcribe(stream)呼叫不等於使用者說完。固定WAV須提供最後s
 新config移除recycle_max_inference_attempts/recycle_owner_pss_delta_mib；
 memory reserve与timeouts由新profile提供，runtime path selector仍由Ch10管理。
 分離recovery objective與operational watchdog；缺少required profile欄位在spawn前拒絕。
-schema版本與完整bytes/digest待凍結，禁止sample-only defaults形成正式PASS。
+schema版本與完整bytes/digest待POC execution snapshot及Step 6產品profile採用後凍結，
+禁止sample-only defaults形成正式PASS。上述profile尚未凍結，不得進行正式產品驗收。
 
 ## 8. Offline packaging and unchanged target ABI
 
@@ -314,13 +320,14 @@ Architect修訂→Reviewer審arch/design/POC計畫→Designer定版→交付POC�
 POC回交→Designer審核通過、gate解除→Developer／Tester進場。
 不允許Developer／Tester因部分契約穩定提前寫spec或實作。
 進場後仍先完成test-spec coverage，再開始產品實作；candidate commit需USER確認。
-Reviewer審的是包含本章/protocol/跨章delta與POC計畫的一個完整package，
-數值由POC產生再由Designer採用，不把「設計定版」誤解為先猜定量測結果。
+Reviewer已對包含本章/protocol/跨章delta與POC計畫的完整package判定PASS。
+Designer已完成Step 3定版；數值由POC產生再由Designer於Step 6採用，
+不把設計／量測方法定版誤解為先猜定量測結果。
 
 ## 11. POC work package
 
 [REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
 屬M4B-MVA-001；沿用既有LLM POC團隊/repository，必要時協調Audio。
-工作包尚未完成Reviewer審查／Designer定版，未交付。
+工作包已完成Reviewer審查與Designer定版，尚未交付。
 正式交付後依定版範圍執行，只有Designer審核並明確解除M4B-MVA-POC才進場；
 POC結果不取代Core產品exact-SHA驗收。

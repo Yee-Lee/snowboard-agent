@@ -203,6 +203,16 @@ GPIO 分流常見規 §5.4。
 * 一次 turn 只推論一次、只產出一個 `LLMResponse`
 * 依 P5，LLM engine 部分失敗（timeout、解析錯誤、拒答）時應內部降級產出合理 `LLMResponse`（例：apology speak + 繼續 listen），優先讓 session 延續
 
+**M4 Reasoner 分工（LLM 角色邊界）**
+
+M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 facts。LLM 只輸出：短回答文本或結束意圖。**Reasoner 獨立決定** `action_kind` 與 `next_perceptions`——不新增每 turn 第二次 LLM 推論，不引入通用 task / context manager。M4 典型流程：speak → listen；reasoner 判定結束意圖 → 產 `action_kind=rest`。
+
+**P5 分界（pre-inference 與 dirty context）**
+
+* **Pre-inference rejection**：若推論前 Reasoner 判定 perception 結果 / context 不足以組出合理 prompt（尚未改動 Conversation），可內部降級產出 `LLMResponse(action_kind=speak, payload=apology)` + 繼續 listen，無需呼叫 LLM；此為 P5 降級的合法路徑，對 SM 仍發布正常 `LLMResponse`。
+* **Dirty / lost context**：若 Reasoner 偵測到 context 已損壞或無法恢復（例：session begin 後 Conversation 已有改動但推論發現 context 丟失），Reasoner 應產 `action_kind=rest`（不得 silent reset 後繼續回答）；SM 執行正常 rest 收斂，結束 product session。
+* Cancel 中的 Reasoner：cancel 狀態下 Reasoner 不 publish 正常 `LLMResponse`（遵循 §6.3 被 cancel 者不 publish Facts）。Unprovable cleanup 沿現有 Level 2 / 3 路徑。
+
 **Pending message metadata 的邊界**：reasoner 可觀察但不可解讀 pending metadata——metadata 為 payload-free（僅 id 或 count），reasoner 藉此決定 `next_perceptions` 是否含 `read`；實際訊息內容由下一 turn 的 read perception 讀取。具體 metadata 形式（count vs id list、傳入通道）屬 `implement.md` 。
 
 **Capability 查詢邊界**：reasoner 可透過 `capability_of(kind)`（§6.8 B）查詢與其產出契約一致粒度的能力狀態——合法 kind = perception kind（ `listen` / `read` / `look` ）∪ action kind（ `speak` / `tool` ）。reasoner 不查 core 資源（ `audio` / `display` / `camera` / `gpio` ）、adaptor、input source——底層依賴鏈屬 Resource Manager 職責，reasoner 不感知「 `capability_of("listen")=false` 是因為 audio null、還是 listen 自身 start 失敗、還是 config 標 optional 而未載入」（Null Object Pattern 的完整落實，見 §6.8）。
@@ -377,6 +387,14 @@ Guard 三步判定：SM dispatch loop 從 inbox 取出事件後，依序執行�
 * `Turn` : `Session` 內一次「`perception -> think -> action`」循環
 * 一個 `session` 可包含多個 `turn`
 
+**Session 內 Conversation（runtime continuity）**
+
+Session 期間，Reasoner 可持有 `Conversation` 物件（history 列表 / KV context），在同一 session 的多 turn 之間保持對話脈絡（例：承接上一句、保留已知使用者意圖）。架構邊界：
+
+* **Core 的職責**：只管 `Conversation` 的 owner（Reasoner 持有）、lifetime（與 session 共生）、capacity（最大 token / turn 數，config-driven）；不介入訊息摘要、檢索或 task restoration。
+* **Session 結束即清棄**：session 結束時（rest、interrupt、error、shutdown 四路），SM 通知 Reasoner session end；Reasoner 在 close 流程中丟棄 `Conversation` 全部內容（history / KV）。不做跨 session 持久化——此設計確保每次 wake 為乾淨的 context。
+* **無產品記憶系統**：不建立任何持久化記憶層；長期 / 跨 session 記憶、摘要、檢索仍為未納入項目（見 §8.3）。
+
 ### 4.2 狀態集合
 
 | 狀態 | 意義 |
@@ -465,6 +483,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * 呼叫 reasoner，加入 in-flight 集合
 * 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供 reasoner 決定 `next_perceptions` 是否含 `read`
+* 若為 session 首 turn（`turn_id == 1`）：SM 通知 Reasoner **session begin**（傳入 `session_id`），Reasoner 建立 `Conversation` 物件並初始化 context。通知以控制流方法呼叫傳入，不阻塞 SM inbox——SM 呼叫後即繼續，不 await Reasoner 內部推論完成；SM inbox 在任何 Reasoner 操作期間均保持可消費（late ACK / 遲來 Signal 不因此堵塞）。
 
 **THINK Exit**
 
@@ -481,12 +500,14 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 **ACTION Exit（`kind=rest`）**
 
+* SM 通知 Reasoner **session end**：Reasoner 在 close 流程中丟棄 `Conversation`（history / KV）；此通知於 in-flight 收斂之前發出，確保 rest / interrupt / error / shutdown 四路皆在 clear tracking 欄位前完成 close。通知為控制流方法呼叫，不阻塞 SM inbox。
 * 對本 session 剩餘 in-flight 執行 §6.5 error 收斂機制
 * 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source` 記錄、上一輪 `next_perceptions` 記錄等）
 * 通知 `external_message` `flush-to-wake`（§5.1）——buffer 內未消化訊息重新發 `ExternalMessageArrived` ，於 IDLE 自然開新 session
 
 **ERROR Entry**
 
+* SM 通知 Reasoner **session end**（若當前有活躍 session）：Reasoner 丟棄 `Conversation`；通知先於 in-flight 收斂，與 rest 路徑對稱。
 * 對 in-flight 集合執行 §6.5 error 收斂機制
 
 **ERROR Exit**
@@ -500,9 +521,9 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 | 事件 | SM 反應 | 目的狀態 |
 | --- | --- | --- |
-| `InterruptRequested` | 觸發收斂（§6.5）；收斂正常完成後清 session 追蹤欄位、隱性收斂不進顯性中間狀態 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) |
-| `ErrorOccurred` | 進 ERROR（收斂動作於 ERROR Entry 執行） | ERROR |
-| `ShutdownRequested` / `SIGTERM` / `SIGINT` | SM 進 shutdown 模式（拒新 wake 類 Signal）→ 收斂（§6.5）→ in-flight 集合空後停 dispatch loop → `main.py` 依 Resource Manager 反向呼叫各模組 `stop()`（§6.2） | (終止) |
+| `InterruptRequested` | 先通知 Reasoner session end（丟棄 `Conversation`）→ 觸發收斂（§6.5）；收斂正常完成後清 session 追蹤欄位、隱性收斂不進顯性中間狀態 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) |
+| `ErrorOccurred` | 進 ERROR（session end 通知及收斂動作於 ERROR Entry 執行） | ERROR |
+| `ShutdownRequested` / `SIGTERM` / `SIGINT` | 先通知 Reasoner session end（若有活躍 session）→ SM 進 shutdown 模式（拒新 wake 類 Signal）→ 收斂（§6.5）→ in-flight 集合空後停 dispatch loop → `main.py` 依 Resource Manager 反向呼叫各模組 `stop()`（§6.2） | (終止) |
 
 **若已在 ERROR 狀態**
 
@@ -817,5 +838,5 @@ Capability Map 為嚴格靜態值： `capability_map` 在啟動階段一次決�
 
 * Query action：作為第四類 action（查詢式派發，例：雲端查詢 / 雲端 LLM）。無狀態脈絡構想——query payload 附「`brief_context`」摘要、外部服務原樣回傳、reasoner 依 `brief_context` + `answer` 恢復狀態。待決策：回覆入口（ `ExternalMessageArrived` / 專屬 Signal / read perception ）、correlation 機制、上下文 schema
 * 完整 reasoning loop：Tool 結果回饋後再次推論。待決策：correlation id、新狀態（如 `TOOL`）
-* 多輪對話記憶：跨 turn / 跨 session 的上下文儲存。待決策：儲存範圍、清理策略、與 reasoner 的接面
+* 多輪對話記憶（跨 session）：M4 session 內的 runtime 自然 continuity（`Conversation` history / KV、同 session 承接上一句）已由 §4.1 架構契約正式納入，不屬未定案範疇。**仍未納入的**：長期 / 跨 session 記憶、對話摘要、向量檢索、task restoration——這些需要持久化儲存層，現行不建立。待決策（未來觸發點）：儲存後端選型、清理策略、與 reasoner 的接面設計、隱私邊界
 * `core/network` ：多 adaptor 共用 transport（TCP / UART / 藍牙）的落點。觸發條件：出現第二個需要共用底層 transport 的 adaptor

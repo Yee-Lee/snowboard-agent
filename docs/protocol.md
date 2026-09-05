@@ -159,9 +159,9 @@ READY 只在 exact runtime/acoustic/Vocos/profile validation 與 engine load 完
 
 `CANCELLED`、`CANCEL_DEFERRED`、`ERROR` 與 `SHUTDOWN_ACK` 的 lifecycle meaning 同 §2.2。允許的 TTS request code 為 `INVALID_TEXT`、`GENERATION_REJECTED`、`INVALID_PCM`；identity、protocol、crash 與 cleanup failure 仍是 backend failure。
 
-## 4. LLM MVA protocol M4B-MVA — review draft
+## 4. LLM MVA protocol M4B-MVA — design frozen
 
-Status：Architecture / design / measured profile / test-spec approval pending。
+Status：Architecture / design已通過；POC execution snapshot、measured profile與test-spec approval pending。
 [Current M4B design](implement/ch_m4b_llm_production.md)是session與Reasoner policy權威。
 本節取代原LLM snowboard.llm/1；Audio §2/§3不變。舊wire只屬歷史candidate，
 不得以M4B-MVA frame配舊profile或未更新的R1 cards。Breaking version固定snowboard.llm/2。
@@ -212,8 +212,8 @@ semantic與模型輸出同形：end=false要求nonblank text，end=true要求tex
 text上限由新profile output envelope限制，wire另<=4096 codepoints。
 metrics exact keys ttft_ms/ttc_ms/new_input_tokens/output_tokens/kv_tokens。
 時間為finite nonnegative non-bool number；native TTFT不可取得時允許null並標該端點無證據，
-不得填0冒充量測。TTC以child monotonic完整generate量測，含create若尚未建立；
-完整Core caller TTC另由parent/Reasoner量測。token為nonnegative non-bool int，
+不得填0冒充量測。TTC以child monotonic完整generate量測，不含先前OPEN_SESSION；parent另量open/close，
+完整Core caller TTC由parent/Reasoner自首turn begin至可交付LLMResponse量測。token為nonnegative non-bool int，
 成功normal output必須output_tokens>0；上下限依新profile，不能假設prefill永遠<=128。
 初始control timeout、generation、grace、token/capacity數字在profile freeze後才供formal execution。
 

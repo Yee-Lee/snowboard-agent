@@ -11,7 +11,7 @@ severity: "Blocking"
 
 USER已確認M4 MVA與下列修訂；本單由Designer標Revised供Developer複審，未自標Resolved。
 完整[M4B-MVA design](../implement/ch_m4b_llm_production.md)、[M4 scope](../milestones/M4.md)、
-[architecture request](AR_impl_M4B_I.md)、[test-spec request](TR_spec_M4B_IV.md)已建立。
+[architecture closure](history/AR_impl_M4B_I.md)、[test-spec request](TR_spec_M4B_IV.md)已建立。
 原下文為Developer發起時的證據與請求，保留不改写；新產品方向優先依本回覆。
 
 | Finding | Verification / disposition | Direct fix / minimum closure |
