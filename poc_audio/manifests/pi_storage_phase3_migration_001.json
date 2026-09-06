@@ -1,5 +1,6 @@
 {
-  "delete_authorized": false,
+  "cleanup_authority": "Core exact cleanup recorded by RECEIPT-PI-MIGRATION-001",
+  "delete_authorized": true,
   "hardlink_authorized": false,
   "holds": [
     {
@@ -8,7 +9,7 @@
       "hold_id": "AUDIO_M4_COMPLETION",
       "identity": "git:5694ead4ba6be928fdb4dbdf6da7155b214d72bd;tag:audio_m4",
       "intended_identity": "PI_DEV_ROOT/audio@5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
-      "status": "CANONICAL_SOURCE_VERIFIED_OLD_HOLD_UNCHANGED"
+      "status": "LEGACY_CHECKOUT_REDUCED_TO_GIT_SOURCE_ONLY_AND_RETAINED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -16,7 +17,7 @@
       "hold_id": "M4A_ACCEPTED_PRODUCT",
       "identity": "core:6c3ba95455dc5c2a152aa230b8ae5915887fe6a9;acceptance:f53b6f9d74fab8b3470e12dbed0b2734b6c6ab3a3ce3ecb0f3ae4d09b905d5c0",
       "intended_identity": "PI_PROD_PRODUCTS/m4a/audio_m4-5694ead4-v2",
-      "status": "CANONICAL_PRODUCT_VERIFIED_CURRENT_OLD_RUN_PENDING_CLEANUP"
+      "status": "CANONICAL_PRODUCT_VERIFIED_AND_LEGACY_RUN_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -24,7 +25,7 @@
       "hold_id": "M4A_ACCEPTED_TESTER_BUNDLE",
       "identity": "sha256:f53b6f9d74fab8b3470e12dbed0b2734b6c6ab3a3ce3ecb0f3ae4d09b905d5c0",
       "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4a/6c3ba954/acceptance",
-      "status": "HOLD_NO_COPY_AUTHORIZED"
+      "status": "ARCHIVED_EXTERNALLY_AND_LEGACY_TESTER_RUN_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -32,7 +33,7 @@
       "hold_id": "M4A_RUNTIME_CLOSURE",
       "identity": "REQ-AUDIO-M4-RUNTIME-CLOSURE-002",
       "intended_identity": "PI_PROD_PRODUCTS/m4a/audio_m4-5694ead4-v2",
-      "status": "CANONICAL_RUNTIME_REPLACEMENT_VERIFIED_OLD_CLOSURE_PENDING_CLEANUP"
+      "status": "CANONICAL_RUNTIME_VERIFIED_AND_OLD_CLOSURE_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -48,7 +49,7 @@
       "hold_id": "M3_ACCEPTED_CONTROLLED_RESULT",
       "identity": "audio:f7b9694d1477f26513880526e0718d2b3c5766b3;result:M3-RISK-FOCUSED-QUALIFICATION-001",
       "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m3/f7b9694d",
-      "status": "HOLD_NO_COPY_AUTHORIZED"
+      "status": "ARCHIVED_EXTERNALLY_AND_LEGACY_SESSION_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -56,7 +57,7 @@
       "hold_id": "M4_P91_ACCEPTED_RESULT",
       "identity": "sha256:3f1013c7dfcdc50f92a03441c76d887003927598cb21ebedcac5f9f9f5f2b923",
       "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/p9.1/8be3bc09",
-      "status": "HOLD_NO_COPY_AUTHORIZED"
+      "status": "ARCHIVED_EXTERNALLY_AND_LEGACY_SESSION_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -64,7 +65,7 @@
       "hold_id": "M4_COMBINED_ACCEPTED_RESULT",
       "identity": "sha256:4e5fdcdda45a6baac252b47f1ba72aadc4e546034788ca0a180afe4bcbf4d962",
       "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/combined/8be3bc09",
-      "status": "HOLD_NO_COPY_AUTHORIZED"
+      "status": "ARCHIVED_EXTERNALLY_AND_LEGACY_SESSION_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -72,7 +73,7 @@
       "hold_id": "M4_FAILURE_ACCEPTED_RESULT",
       "identity": "sha256:79360c05f514311ce042057759a9d2a4c23c9a4a890a133bf5fa92cea497c115",
       "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/failure/26f33a3c",
-      "status": "HOLD_NO_COPY_AUTHORIZED"
+      "status": "ARCHIVED_EXTERNALLY_AND_LEGACY_SESSION_REMOVED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -80,7 +81,7 @@
       "hold_id": "CONTROLLED_PRIVATE_AUDIO_AND_TEXT",
       "identity": "fixture-lock-and-retention-policy",
       "intended_identity": "PI_CONTROLLED_PRIVATE_AUDIO/<fixture-lock-sha256>",
-      "status": "HOLD_PENDING_USER_RETENTION_DECISION"
+      "status": "THREE_BUNDLES_ARCHIVED_EXTERNALLY_AND_PI_EXPORTS_CLEARED"
     },
     {
       "action": "VERIFY_ONLY",
@@ -88,15 +89,16 @@
       "hold_id": "ONLY_COPY_REPRODUCTION_INPUTS",
       "identity": "per-object-sha256-from-candidate-manifests",
       "intended_identity": "PI_PROD_ARTIFACTS/sha256/<object-sha256>",
-      "status": "HOLD_PENDING_DURABLE_REACQUISITION_PROOF"
+      "status": "CANONICAL_REPLACEMENT_VERIFIED_AND_LEGACY_INPUTS_REMOVED"
     }
   ],
   "locator_policy": "Logical locators only; private root mappings remain outside Git.",
   "manifest_id": "PI-STORAGE-PHASE3-MIGRATION-001",
   "move_authorized": false,
+  "outcome_receipt": "RECEIPT-PI-MIGRATION-001",
   "request_id": "REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001",
   "schema_version": "1.0",
-  "status": "VERIFIED_PLAN_ONLY",
+  "status": "CORE_OUTCOME_RECONCILED_OWNER_CLOSEOUT",
   "storage_contract": {
     "cache": "PI_DEV_ROOT/cache/audio",
     "cache_role": "Reacquirable archives, downloads, and build intermediates only; never a formal runtime dependency.",
@@ -127,7 +129,8 @@
     "product_tree_read_only_required": true,
     "product_verifier_status": "PASS",
     "product_writable_entry_count": 0,
-    "production_activation_authorized": false,
+    "production_activation_authorized": true,
+    "production_activation_status": "CURRENT_POINTER_VERIFIED_BY_CORE",
     "run": "PI_DEV_ROOT/runs/audio",
     "source": "PI_DEV_ROOT/audio",
     "storage_root_nesting_allowed": false

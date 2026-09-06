@@ -3,144 +3,82 @@
 - Date: 2026-09-06
 - From: Audio POC Team
 - To: Core
-- Request: `REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001`
-- Status: `AUDIO FEEDBACK CLOSED / CORE RE-REVIEW AND ROOT DECISION REQUIRED`
+- Requests: `REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001`, `REQUEST-POC-AUDIO-PI-MIGRATION-PUBLISH-001`
+- Status: `CORE OUTCOME RECONCILED / PUBLICATION AUTHORIZED`
 - Base SHA: `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`
+- Phase 1/2/3 commit: `8e0484249ae0756d95151c4a12a1c1b1cdfaee6a`
 
-Phase 3 adds fail-closed storage bindings for the assigned run, evidence, and
-cache roots. Formal M4 execution now requires distinct roots, refuses immutable
-inputs below the run root, and records logical storage identity in results.
-Matcha and historical qualification consume one read-only product model keyed
-by the source archive SHA-256 instead of extracting a model into every run.
-Artifacts and isolated runtime interpreters must belong to the same complete
-verified product root and are never copied. Reacquirable cache content cannot
-become a formal execution dependency.
+## Phase 3 source result
 
-The migration manifest maps every Phase 1 hold to an intended product, evidence,
-private-data, or content-object identity. Every action is `VERIFY_ONLY`;
-movement, hardlinks, quarantine, activation, and deletion remain unauthorized.
-The private-evidence exporter implements Core's JSON listing and streamed gzip
-tar contract without staging an archive on Pi. The post-download cleanup
-manifest records exact logical locators and receipt/preflight gates. Recorded
-expected archive values are not accepted as a Core receipt by themselves; no
-cleanup target becomes actionable without the separate verified receipt and
-reference conditions.
+The existing append-only commit contains the intended 25-file change set. Formal
+execution binds distinct run, evidence, cache, and complete read-only product
+roots; hashes the actual product manifest and every formal dependency; rejects
+symlinks, writable entries, nested roots, run/cache dependencies, and inventory
+mismatch; and no longer consumes installer archives or wheels. The private
+exporter streams verified owner-only bundles without staging another Pi archive.
 
-Local tests use temporary directories and small fixtures to cover correct reuse,
-wrong identity, mutable input, aliased roots, run-owned dependencies, and absence
-of duplicated model content. Pi validation is limited to the clean canonical
-worktree, assigned-root permissions, packet validation, and disk high-water
-observation. No model was loaded and no benchmark or bulky output was created.
+Affected regression is 42/42. Full discovery ran 242 tests: 235 passed; six
+workstation-only errors require NumPy and one requires Linux `/proc`. Core's
+privacy/downloader suite passed 11/11. Shell syntax, JSON parsing, Python compile,
+Git whitespace, and the focused Core privacy gate passed.
 
-Private payloads are prepared only below
-`PI_AUDIO_PRIVATE/<bundle-id>` with owner-only permissions. The exporter verifies
-the manifest and every payload before streaming a gzip tar; it writes no archive
-on the Pi. `PI_DEV_ROOT/evidence-export/audio` is reserved for sanitized export
-material and must not receive raw audio, transcripts, comments, or content logs.
+## Core receipt reconciliation
 
-## Validation
+Core receipt `RECEIPT-PI-MIGRATION-001` verifies these Audio archives outside all
+Git worktrees:
 
-- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=poc_audio/src python3 -m unittest
-  poc_audio.tests.test_m4_storage poc_audio.tests.test_export_private_evidence
-  poc_audio.tests.test_verify_cleanup_plan poc_audio.tests.test_m4_combined
-  poc_audio.tests.test_m4_combined_coordinator`: 42/42 passed (18 storage,
-  seven private-export, three cleanup-receipt, 14 M4 regression cases).
-- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=poc_audio/src python3 -m unittest
-  discover -s poc_audio/tests -p 'test_*.py'`: 242 tests; 235 passed and seven
-  were unavailable on this workstation. Six require NumPy and one requires
-  Linux `/proc`; none exercises a Phase 3 changed behavior.
-- Updated Python modules compiled with bytecode redirected to a temporary root;
-  both shell entry points passed `bash -n` and `git diff --check` passed.
-- The Core privacy scanner passed every file in this proposal. Both incoming
-  Core documents are byte-for-byte exact copies; all four JSON manifests parse.
-- Pi packet-only preflight: exact clean `audio`/`audio_m4` baseline, 20 sessions,
-  12 failure cases, formal execution disabled, assigned roots mode `0750`, 78%
-  filesystem use, and clean worktree before and after.
-- A repeated read-only Pi check found no READY manifest below
-  `PI_AUDIO_PRIVATE`; no private bundle was streamed by Audio. Core's migration
-  status still marks the external archive receipt as waiting, so values recorded
-  in the cleanup plan are not treated as accepted receipt evidence. Cleanup
-  dry-run returned an empty eligible set.
-- Core downloader/privacy tests passed 11/11. Cross-team inspection found its
-  Audio ready-root binding still points at the shared evidence-export root;
-  `CR-AUDIO-PI-PRIVATE-EVIDENCE-ROOT-001` requests an operator-private mapping
-  before any real bundle is selected.
-- The cleanup verifier consumes Core's receipt field names,
-  `archive_sha256` and `archive_bytes`.
-- Cross-team product inspection found that Core's existing
-  `sbd.m4a.product-install.v4` layout does not directly provide Audio's required
-  marker, file inventory, or hash-keyed model identities.
-  `CR-AUDIO-PI-PRODUCT-CONTRACT-001` requests one canonical schema or a
-  deterministic no-copy adapter before materialization.
+| Bundle | Bytes | SHA-256 | Entries |
+| --- | ---: | --- | ---: |
+| `audio-phase1-private-001` | 21,574 | `fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c` | 10 |
+| `audio-phase1-private-incremental-002` | 17,888,533 | `2ecbae3cf5402618013f43f40feb6732441feb11c660d50dbd585988634f4fe8` | 936 |
+| `audio-phase1-private-incremental-003` | 192,196,504 | `270f611356ba2436642b9c86e86df445139d1c5f43f14e16bba1ffad93e16fcb` | 269 |
 
-## Blocking feedback closure
+All passed safe-name, regular-file, manifest, per-entry checksum, full coverage,
+and archive checksum verification. Pi export trees are cleared; no private
+payload entered Git.
 
-1. The Core request and feedback are retained as exact incoming copies; team
-   status stays in this response and the Phase 2 ACK.
-2. Product verification hashes the actual manifest, validates every dependency
-   byte/size/mode and the read-only product tree, requires runtime/native
-   inventories, rejects nested roots, and rejects symlink components.
-3. Formal TTS no longer reads candidate archives or wheels; all formal
-   artifacts, runtimes, native files, models, and vocoder belong to one product.
-4. Qualification shell and README invocations include the product root and
-   model layout.
-5. This return contains commands, results, files, risks, and commit proposal.
-6. Tests cover concurrency, shared read-only product, evidence separation,
-   manifest/runtime/native mismatch, nesting, symlinks, cache rejection, and
-   archive safety.
-7. Cache is reacquirable only and never a formal dependency.
+`PI_PROD_PRODUCTS/m4a/current` resolves to `audio_m4-5694ead4-v2`. Product manifest
+SHA-256 is `3325c5a7cb40634d60c1ab58ef75a0ff3e0008bf12dc15b5a98ba2189c1c69cb`.
+The product verifier passed 10,876 dependencies, zero symlinks, zero writable
+entries, zero ownership mismatches, and zero legacy shared inodes. Both private
+evidence and product-contract change requests are resolved by this receipt.
 
-## Changed files
+## Cleanup outcome
 
-- `docs/pm_handoff/ACK-POC-AUDIO-PI-PHASE2-WORKSPACES-001.md`
-- `docs/pm_handoff/FEEDBACK-POC-AUDIO-PI-STORAGE-PHASE3-001.md`
-- `docs/pm_handoff/REQUEST-POC-AUDIO-PI-STORAGE-CURATION-001.md`
-- `docs/pm_handoff/REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001.md`
-- `poc_audio/deliveries/PI-STORAGE-CURATION-PHASE3-PLAN-001.md`
-- `poc_audio/deliveries/CR-AUDIO-PI-PRODUCT-CONTRACT-001.md`
-- `poc_audio/deliveries/CR-AUDIO-PI-PRIVATE-EVIDENCE-ROOT-001.md`
-- `poc_audio/deliveries/RETURN-POC-AUDIO-PI-STORAGE-CURATION-001.md`
-- `poc_audio/deliveries/RETURN-POC-AUDIO-PI-STORAGE-PHASE3-001.md`
-- `poc_audio/evidence/PI-STORAGE-CURATION-EVIDENCE-INDEX-001.json`
-- `poc_audio/manifests/pi_storage_cleanup_001.json`
-- `poc_audio/manifests/pi_storage_phase3_migration_001.json`
-- `poc_audio/manifests/pi_storage_post_download_cleanup_001.json`
-- `poc_audio/README.md`
-- `poc_audio/src/audio_poc/m4_combined_domains.py`
-- `poc_audio/src/audio_poc/m4_formal.py`
-- `poc_audio/src/audio_poc/m4_storage.py`
-- `poc_audio/src/audio_poc/m4a_qualification.py`
-- `poc_audio/tests/test_m4_storage.py`
-- `poc_audio/tests/test_export_private_evidence.py`
-- `poc_audio/tests/test_verify_cleanup_plan.py`
-- `poc_audio/tools/export_private_evidence.py`
-- `poc_audio/tools/run_m4_combined.sh`
-- `poc_audio/tools/run_m4a_qualification.sh`
-- `poc_audio/tools/verify_cleanup_plan.py`
+Core removed all eight approved Audio work/scratch roots, reclaiming
+2,214,473,728 allocated bytes; eight archived result sources; all Audio export
+trees and historical evidence/session payloads; old runtime/product inputs; and
+all approved non-telemetry legacy M4A runs. The old Audio checkout is retained as
+clean Git/source-only history. Final filesystem use is 53% with 27 GiB available.
 
-## Commit proposal
+Read-only post-migration inspection confirmed the canonical product pointer,
+empty shared Audio export area, only the intentionally held dirty telemetry M4A
+run under the legacy M4A run root, and the clean retained historical checkout.
+Five small legacy Audio authorization records remain outside that checkout and
+were not named as removal targets; they remain an exact Core-classification hold,
+not an implicit purge target.
+
+## Reconciliation commit proposal
 
 Title:
 
-`[feat][M4]: bind audio runners to verified storage`
+`[docs][M4]: reconcile Pi migration receipts`
 
 Body:
 
-- Require separate run, evidence, cache, and verified product roots.
-- Add private export, cleanup planning, curation evidence, and workspace receipts.
+- Record verified private archives and canonical Audio product.
+- Reconcile completed cleanup and remaining exact holds.
 
-Files: the exact changed-file list above.
+Files:
 
-Remaining work requires separate review: materialize the complete read-only M4A
-product and its manifest from installer inputs; migrate retained evidence only
-after manifest review; download and verify a ready private bundle when one
-exists; recheck all references; and obtain separate User approval before any
-purge. Cache remains limited to reacquirable download and build inputs.
+- `docs/pm_handoff/REQUEST-POC-AUDIO-PI-MIGRATION-PUBLISH-001.md`
+- `docs/pm_handoff/RECEIPT-PI-MIGRATION-001.md`
+- `poc_audio/deliveries/RETURN-POC-AUDIO-PI-STORAGE-PHASE3-001.md`
+- `poc_audio/manifests/pi_storage_phase3_migration_001.json`
+- `poc_audio/manifests/pi_storage_post_download_cleanup_001.json`
 
-Private download additionally waits for Core to resolve
-`CR-AUDIO-PI-PRIVATE-EVIDENCE-ROOT-001`; shared evidence export cannot be used as
-the raw private ready root.
-
-Product materialization additionally waits for Core to resolve
-`CR-AUDIO-PI-PRODUCT-CONTRACT-001`; Audio will not copy or reshape the accepted
-Core install speculatively.
+After publication, the authorized final operator step is to fast-forward the Pi
+canonical Audio worktree to the exact pushed head so the temporary exporter
+becomes tracked, verify a clean worktree, and leave `audio_m4` unchanged. Dirty
+telemetry, retained historical Git sources, the five unclassified authorization
+records, and shared/unknown-owner roots remain outside Audio cleanup authority.
