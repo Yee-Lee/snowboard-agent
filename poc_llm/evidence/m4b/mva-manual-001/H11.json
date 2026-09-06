@@ -1,0 +1,16 @@
+{
+  "run_id": "MVA-MANUAL-001",
+  "case_id": "H11",
+  "operator": "LLM-POC operator / User evaluator",
+  "utc": "2026-09-06T11:28:21Z",
+  "rubric": {
+    "identity_consistent": "NA",
+    "knowledge_basic_correct": "Pass",
+    "capability_honest": "NA",
+    "continuity": "Pass",
+    "concise": "Fail",
+    "end_intent_correct": "NA"
+  },
+  "overall": "Fail",
+  "sanitized_reason": "The explanation was basically correct and the follow-up remained connected, but both responses were materially longer than the global short-answer instruction. User accepted prompt-level brevity tuning as non-blocking."
+}

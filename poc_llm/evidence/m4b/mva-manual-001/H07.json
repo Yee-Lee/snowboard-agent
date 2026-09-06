@@ -1,0 +1,16 @@
+{
+  "run_id": "MVA-MANUAL-001",
+  "case_id": "H07",
+  "operator": "LLM-POC operator / User evaluator",
+  "utc": "2026-09-06T11:28:21Z",
+  "rubric": {
+    "identity_consistent": "NA",
+    "knowledge_basic_correct": "NA",
+    "capability_honest": "Pass",
+    "continuity": "Pass",
+    "concise": "Pass",
+    "end_intent_correct": "NA"
+  },
+  "overall": "Pass",
+  "sanitized_reason": "Visual limitations and available voice capabilities were stated honestly and consistently."
+}

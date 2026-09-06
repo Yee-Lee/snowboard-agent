@@ -9,7 +9,6 @@
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 * [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
-* [`REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md`](pm_handoff/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md) - Core接受Pi搬遷後交付的exact-SHA離線MVA執行指示；User已授權開始Pi測試
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -18,6 +17,7 @@
 * [`RECEIPT-PI-PHASE2-WORKSPACES-001.md`](pm_handoff/history/RECEIPT-PI-PHASE2-WORKSPACES-001.md) - Phase 2 canonical workspace receipt；已由Phase 3 acceptance承接
 * [`REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md) - Phase 3 request；已完成並獲Core接受
 * [`FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/history/FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md) - Phase 3 blocking findings；已修正並獲Core接受
+* [`REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md`](pm_handoff/history/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md) - exact-SHA離線MVA執行指示；23/23正式machine cases完成後歸檔
 
 * `DELIVERY-014-CORE-LLM-POC-PACKETS-ACK.md` - (被取代) 由 016 取代
 * `RESP-LLM-POC-PI-EXECUTION-PACKETS-001.md` - (被取代) 由 002 取代
@@ -59,7 +59,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-LLM-POC-M4B-MVA-MEASURE-001.md`](response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md) - M4B-MVA正式收件、Core exact-source核對、產品等價設計修正與授權邊界
 * [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md`](response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md) - 工作站更換前的Step 5完整continuation record、測試、round-close audit、未完成項目與授權邊界
 * [`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md`](response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md) - 新工作站WP01 controller/writer/lock驗證與平台差異對照；execution snapshot及Pi連接前handoff
-* [`ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md`](response/ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md) - Pi進場缺陷、replacement修正、實際runtime/API proof與23-case private rehearsal；正式exact-SHA結果仍待執行
+* [`ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md`](response/ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md) - Pi進場缺陷、MVA-001 INCONCLUSIVE、MVA-002正式machine evidence、User-reviewed latency瓶頸拆解與Core Step 6效率調整要求
 * [`ACK-POC-LLM-PI-STORAGE-CURATION-001.md`](response/ACK-POC-LLM-PI-STORAGE-CURATION-001.md) - 已被完成handoff及Phase 2 receipt取代的Phase 1 pre-execution intake snapshot
 * [`ACK-LLM-PI-CANONICAL-WORKSPACE-RECEIPT-001.md`](response/ACK-LLM-PI-CANONICAL-WORKSPACE-RECEIPT-001.md) - Core Phase 2 canonical LLM worktree與三個writable data roots的read-only驗證回條
 * [`RESP-POC-LLM-PI-STORAGE-PHASE3-R2-001.md`](response/RESP-POC-LLM-PI-STORAGE-PHASE3-R2-001.md) - 依governing feedback完成九項修訂、回歸分類、Pi bounded preflight與scope separation
@@ -140,6 +140,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md`](delivery/DELIVERY-022-PM-LLM-POC-GATE2B-PREWARM-LIFECYCLE.md) - 要求Core將Engine-loaded與inference-ready分離；固定pre-warm、實際token budget及分離watchdog納入產品child設計，ACK可後至
 * [`DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md`](delivery/DELIVERY-023-PM-LLM-POC-GATE2B-MEMORY-PSI-REMOVAL.md) - User裁決從prospective Gate 2B完全移除system-wide Memory PSI採集與gate；保留4GB capacity、swap/OOM、leak、thermal、ownership及cleanup，Core ACK可後至
 * [`DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md`](delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md) - 已獲Core final ACK；Gemma POC winner與LiteRT-LM resident-retention defect waiver由Core承接至Gate 3
+* [`DELIVERY-025-PM-LLM-POC-M4B-MVA-RESULT.md`](delivery/DELIVERY-025-PM-LLM-POC-M4B-MVA-RESULT.md) - User-approved MVA Step 5結果；23/23 machine PASS、long-session boundary、H01–H12與Core效率改善要求
 * [`POC-llm-DEL-2026-001-R1.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R1.md) - 實際 Gate 0 Initial Manifest；未執行項目明列 Pending/Blocked
 * [`POC-llm-DEL-2026-001-R2.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R2.md) - 015 修訂後 Gate 0 Initial Manifest；R1 已 superseded
 * [`POC-llm-DEL-2026-001-R3.md`](../poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md) - Core-accepted Gemma POC winner manifest；固定runtime/model/config/protocol、累積P matrix、known defect與Core action

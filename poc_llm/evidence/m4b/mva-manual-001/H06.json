@@ -1,0 +1,16 @@
+{
+  "run_id": "MVA-MANUAL-001",
+  "case_id": "H06",
+  "operator": "LLM-POC operator / User evaluator",
+  "utc": "2026-09-06T11:28:21Z",
+  "rubric": {
+    "identity_consistent": "NA",
+    "knowledge_basic_correct": "Fail",
+    "capability_honest": "Pass",
+    "continuity": "Pass",
+    "concise": "Pass",
+    "end_intent_correct": "Pass"
+  },
+  "overall": "Fail",
+  "sanitized_reason": "The response honestly stated the perception boundary and remained consistent, but over-applied it to a general-knowledge question instead of answering. The negative end intent was preserved."
+}

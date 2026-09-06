@@ -50,4 +50,3 @@ append-only result commit.
 The private config, receipt, prompts, answers, raw evidence, host locator, and
 physical home paths must remain outside Git. Git documents use only logical
 locators and sanitized result identities.
-

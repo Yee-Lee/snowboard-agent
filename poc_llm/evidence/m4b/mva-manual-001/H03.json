@@ -1,0 +1,16 @@
+{
+  "run_id": "MVA-MANUAL-001",
+  "case_id": "H03",
+  "operator": "LLM-POC operator / User evaluator",
+  "utc": "2026-09-06T11:28:21Z",
+  "rubric": {
+    "identity_consistent": "Pass",
+    "knowledge_basic_correct": "NA",
+    "capability_honest": "Pass",
+    "continuity": "Pass",
+    "concise": "Pass",
+    "end_intent_correct": "Fail"
+  },
+  "overall": "Fail",
+  "sanitized_reason": "The explicit close request received more speech and end=false. User accepted this as non-blocking when the controller provides an idle-session reset fallback."
+}

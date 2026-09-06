@@ -1,0 +1,16 @@
+{
+  "run_id": "MVA-MANUAL-001",
+  "case_id": "H04",
+  "operator": "LLM-POC operator / User evaluator",
+  "utc": "2026-09-06T11:28:21Z",
+  "rubric": {
+    "identity_consistent": "NA",
+    "knowledge_basic_correct": "Pass",
+    "capability_honest": "NA",
+    "continuity": "Pass",
+    "concise": "Pass",
+    "end_intent_correct": "NA"
+  },
+  "overall": "Pass",
+  "sanitized_reason": "The basic explanation was correct and the requested simplification preserved meaning."
+}

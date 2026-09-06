@@ -11,20 +11,20 @@ product `8279e79`、artifact identity與private evidence transfer/legacy-run cle
 開始Pi測試。LLM operator已確認SSH、乾淨checkout、frozen surface、private config、
 resource stop gates與離線one-shot回復能力。User授權後已修正model/wheel的group-read；private
 replacement source已修正venv import root、model suffix presentation、native constrained-schema subset、
-evidence identity及shutdown邊界，並在Pi完成全部23個machine case rehearsal。正式結果仍須replacement
-commit/surface的exact-SHA離線執行。
-Benchmark/profile發布與permanent purge仍需各自獨立User授權。
+evidence identity及shutdown邊界，並在Pi完成全部23個machine case rehearsal。replacement
+commit/surface的exact-SHA `MVA-002`已正式完成23/23 machine cases；User亦完成benchmark、長對話
+補測與H01–H12審閱。permanent purge仍需獨立User授權，Audio整合測試由User批示暫不執行。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 PI EXECUTION IN PROGRESS`。
+狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 DELIVERED / CORE STEP 6 ACK PENDING`。
 
 原LLM POC M0～M4與Gate 1/2A/2B保持完成且結果immutable。Core於2026-09-05正式交付
 `M4B-MVA-001`產品等價量測，User確認由既有POC團隊進入七步流程Step 5；本機先修正為
 same-session Conversation reuse、compact `text/end`及evidence-backed prewarm/resource設計。
 2026-09-06 User先授權恢復本機測試環境並完成連接Pi前的準備，後續
 確認Pi可連線並指示開始Pi測試。Pi 5、Debian 13、CPython 3.13.5、乾淨
-checkout及入場resource gates已實測確認；hardware execution已授權，benchmark發布仍需User審核。
+checkout及入場resource gates已實測確認；hardware execution與User benchmark review均已完成。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -61,7 +61,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / PI PATH PROVED` | replacement source已在Pi完成23/23 machine rehearsal；待commit/surface與exact-SHA離線正式輪 |
+| M4B-MVA | `IN_PROGRESS / USER-APPROVED RESULT` | exact-SHA MVA-002為23/23 machine PASS；long-session supplemental完成；H01–H12為8 Pass/4 accepted non-blocking Fail；待delivery commit與Core Step 6 ACK |
 
 ## Cumulative P1～P12 rule
 
@@ -87,21 +87,25 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   `ac25aa104adcadb3b6274ca6f9c3d4154b4004ee`與surface `f774c8d0…c461`；Pi目前位於
   exact SHA且保持乾淨。首次offline prepare-install的artifact group-read已依User授權修正；後續
   runtime/layout/API缺口已在獨立private candidate修正並完成23/23 Pi machine rehearsal。舊SHA不被
-  靜默修改；下一步是固定replacement source/surface/exact SHA後重跑正式離線證據。
+  靜默修改；replacement exact SHA `7bb332670b5fdf45f05f07dd385bec94d914b4e1`、surface
+  `61764d07…74e89`的正式`MVA-002`已完成23/23 machine cases。User審閱後machine disposition為`PASS`。
 - **Workstation migration / WP01**：新checkout已核對交接SHA `7a56137b…`並建立ignored local
   context；隔離測試環境、controller、sanitized writer與surface lock已完成。MVA targeted tests
   通過；完整suite的macOS/Linux/x86與canonical-path限制已在原交接SHA對照重現，並未宣告全綠。
   詳見[Pi entry handoff](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
 - **M4B-MVA Step 5**：Core frozen source `034a50f260e7434e586dddf64ef500da3b1b2b4e`、delivery
   receipt `492f022c06962eb93b37fa0e93765f43690be1b2`與Income SHA-256 `5afb24e8…2c2`已核對。
-  Workstation已準備MVA contract/runner與execution snapshot；Pi執行已授權，benchmark發布仍待User審核。
+  Workstation contract/runner與execution snapshot已完成；Pi執行及benchmark User review均已完成，
+  正在收斂Step 5 delivery commit。
 - **MVA parity delta**：舊fresh-per-operation/full-envelope/mandatory-prewarm surface只作provenance；
   新量測必須使用same-session Conversation reuse、exact `text/end`、Reasoner-owned action policy、
   no/once prewarm A/B及獨立natural-soak/recovery。舊Gate結果不得混入主要樣本或改標。
-- **MVA Audio scope**：尚未確認exact Accepted Audio package是否可提供同timebase
-  speech-end→meaningful audible-onset。缺少時只交付`llm_subsystem` claim，M4 E2E維持Open。
-- **MVA manual quality**：12個freeze後private held-out sessions須由指定評估者保管並逐例人工rubric；
-  raw prompt/answer/audio不得進Git或sanitized result。User必須在結果或profile建議發布前審核。
+- **MVA Audio scope**：本輪無exact Accepted Audio package與同timebase
+  speech-end→meaningful audible-onset，僅交付`llm_subsystem / null / NO_AUDIO_PROOF`。User已批示
+  暫不執行Audio整合測試，新的User核准前不得啟動；M4 E2E維持Open但不阻擋LLM Step 5 delivery。
+- **MVA manual quality**：12個freeze後private held-out sessions已在Pi一次執行並由User審閱；
+  sanitized結果8 Pass / 4 Fail / 0 Unclear。H03/H05/H06/H11保留Fail並接受為非阻擋後續優化；
+  raw prompt/answer/audio保持private且不進Git。
 
 - **Qwen disposition**：P7.1 rebuild READY `18152.025 ms`維持`FAIL / SLOW_RECOVERY`；Gate 2A
   P2 0/30且P4未達TTFT target。User已排除Qwen正式Gate 2B，不得把waiver或machine result改寫為PASS。
@@ -206,7 +210,7 @@ Cumulative、Gate 2A及Gate 2B ACK/review仍是history；新Income不回退或�
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [M4B-MVA measurement request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
 - [Pi storage-curation request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md)
-- [M4B-MVA offline execution request](../pm_handoff/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md)
+- [M4B-MVA offline execution request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
 - [Gate 1 closure ACK (governing locked input)](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)

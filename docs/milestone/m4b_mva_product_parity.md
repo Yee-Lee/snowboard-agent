@@ -1,6 +1,6 @@
 # M4B-MVA：產品等價量測
 
-狀態：`IN_PROGRESS / PI EXECUTABLE PATH PROVED / FORMAL EXACT-SHA RUN PENDING`
+狀態：`IN_PROGRESS / STEP 5 DELIVERED / CORE STEP 6 ACK PENDING`
 
 External gate：`M4B-MVA-POC OPEN`
 
@@ -121,19 +121,54 @@ workstation contract evidence，不是runtime API proof、Pi result或benchmark�
 工作站更換所需的完整續接資訊、檔案inventory、測試命令、round-close audit與所有open items見
 [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001`](../response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md)。
 
-1. WP01 controller、sanitized evidence writer及non-recursive surface lock已完成；replacement source
-   尚須以最終內容重建lock、完成本機回歸並commit成乾淨exact SHA。
-2. Pi已直接驗證selected Engine、public constrained generation、完整API proof與66/66 MVA suite。
-   私有replacement rehearsal已完成全部23個machine case：六個不同boot cold、十個same-boot
-   replacement、三個20-session memory cycle及三個recovery；結構稽核為PASS。這是可執行性證明，
-   不是未commit candidate的正式hardware result或benchmark發布。
-3. 修正範圍固定為canonical venv import root、同inode `.litertlm` temporary presentation、LiteRT-LM
-   v0.16可接受的constrained schema subset、evidence identity欄位與native shutdown期限；不改case順序、
-   prompt、profile、model/runtime bytes或measurement語意。正式WP02/WP03須由replacement exact SHA
-   在離線條件重新執行並經evidence review。
-4. Accepted Audio MVA parity及physical audible-onset方法尚未確認；未解除前只規劃LLM subsystem claim。
-5. 12個private held-out sessions的評估者、operator與受控呈現方式待執行前指定。
-6. 所有benchmark結果與profile建議在User審核前不得發布。
+1. WP01 final source為`7bb332670b5fdf45f05f07dd385bec94d914b4e1`、surface
+   `61764d0737fcf374468621bd90d4765739d2f9b2b06e4314b1dbb73229f74e89`；MVA本機67/67 PASS，Pi
+   exact surface驗證PASS。
+2. `MVA-001-api-proof`因operator誤用pretty receipt file SHA而在model load前成為INCONCLUSIVE；一筆
+   `IDENTITY_DRIFT`證據完整保留，不覆寫。修正為canonical receipt digest與獨立`MVA-002` ledger。
+3. 正式離線`MVA-002`已完成全部23個machine case：六個不同boot cold、十個same-boot replacement、
+   三個20-session memory cycle及三個recovery。Technical audit驗證23筆ledger、單一identity、1,822筆
+   schema-valid samples、summary/checkpoint binding及cleanup；audit SHA-256為`6708ca21…65487`。
+   Runner/audit回傳PASS，User完成數值與語意審閱後將LLM-only machine hardware disposition定為`PASS`。
+4. 本輪無Accepted Audio exact package與同timebase physical audible-onset方法；結果固定
+   `audible_onset_ms=null / NO_AUDIO_PROOF / scope=llm_subsystem`。這不是未執行的LLM machine case；
+   User明確批示暫不執行，未取得新的User核准前不得啟動；若後續獲准，Core組合Accepted M4a Audio
+   時才量speech-end到first meaningful audible output。
+5. 12個private held-out sessions已由operator在Pi一次執行，User逐例審閱；12 sessions、24 generations、
+   零retry、cleanup PASS。Git僅保存schema-valid sanitized rubric，不含raw prompt/answer/audio。
+6. 私有machine review artifact SHA-256為`b7614ae1…9df05`、mode `0600`；User已完成benchmark
+   publication review。這不等於production profile selection或Core gate release。
+7. User已審閱並指示在報告向Core保留時間拆解：cold/once首輪caller TTC `7.704 s`
+   中約`3.305 s`為Conversation open、`1.689 s`為generation-to-first-token、`2.708 s`
+   為後續25 tokens完成，非「首token後又decode六秒」。Core Step 6必須評估提前建立乾淨
+   Conversation、簡化stream-safe semantic frame、分批送TTS及同timebase audible-onset量測；
+   現有MVA-002保持append-only，新設計須另建Core baseline後才可宣稱產品等價。
+8. Memory review顯示global owner-PSS peak `1981.592 MiB`出現在once-prewarm replacement；
+   no-prewarm 60-session cycles peak `1800.639 MiB`。三個steady windows的owner late-minus-early
+   分別為`+0.125 / +0.063 / +11.406 MiB`，system-used則為`+1.391 / 0 / -2.000 MiB`；
+   第三輪`+11.406 MiB`是前後各五筆median差，不是端點淨增加；session 11→20實際只
+   `+0.422 MiB`，中間16–19暫時形成較高resident plateau後回落。未見跨cycle一致的system
+   leak，但未具allocator-level attribution，且prewarm約`0.2 GiB`額外resident ownership仍需
+   Core在保留warmed Conversation方案中繼續驗證。Audio未合併，不得將LLM-only headroom
+   當作完整產品capacity結論。
+9. User review結論為目前未見session count造成progressive memory pressure；不建議固定session數
+   recycle。Core應在Audio composition後訂owner-PSS upper bound、MemAvailable reserve及
+   swap/OOM/thermal/dirty-cleanup gates，並以連續超界與hysteresis排除短暫plateau；exact threshold
+   由Step 6決定，不由POC從LLM-only envelope臆定。
+10. User已接受API/session lifecycle、token/context capacity、recovery/cleanup、system
+    resource/thermal envelope與evidence identity/audit。三輪各20 sessions皆逐次重開
+    KV `0 → 174 → 233`後close，
+    session 20未累積前19個session的KV；memory soak量的是Engine/process retention，不是20-turn
+    context-capacity。
+11. User直接要求補足long-session coverage；append-only `MVA-LONG-002`完成三個fresh-child cycle，
+    每輪單一Conversation皆完成17 turns並於attempted turn 18得到typed `CONTEXT_LIMIT`。KV由turn 1
+    的167增至turn 17的910；固定128 output reserve使`910 + 128 > 1024`，所以還未計下一筆input即
+    正確拒絕。三輪fresh recovery皆由KV 0開始並PASS，cleanup owner absent；live long context約增加
+    73.1 MiB owner PSS。此補測不回填或改寫MVA-002，Core須據此設計context/output budgeting與
+    summarization/truncation或controlled rollover。
+12. H01–H12 User-reviewed結果為8 Pass / 4 Fail / 0 Unclear。H03 missed end、H05 knowledge fact、
+    H06 over-refusal、H11 brevity保留為真實Fail；User接受四項皆為非阻擋後續優化。Core須加強
+    prompt/response budget與general knowledge，並由controller提供idle Conversation reset fallback。
 
 2026-09-06新工作站續接：確認`llm`位於交接SHA
 `7a56137b7b2d65219ea4ff2065ab2773c179a0af`且起始worktree clean，建立ignored local context。
@@ -153,5 +188,5 @@ durable evidence writer與surface manifest已完成；本輪最終驗證與平�
 不得修改Income、Core product repo或composition root；不得提交model/wheel/native binary、raw output、
 private prompt/audio、credential或endpoint；不得沿用舊single-turn/full-envelope數字冒稱產品等價；不得
 在未授權時存取Pi、reboot、安裝、傳輸artifact、切換網路、修改canonical權限、
-commit、push或發布結果。本輪Pi execution/reboot及兩個artifact group-read修正已獲User授權；
-replacement exact-SHA正式離線執行與結果發布仍需各自審核。
+commit、push或發布結果。本輪Pi execution/reboot、兩個artifact group-read修正、正式離線執行、
+長Conversation補測、人工評估與結果發布均已獲User授權／審閱；push未包含在本輪commit授權內。
