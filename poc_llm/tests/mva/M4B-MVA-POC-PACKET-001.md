@@ -105,15 +105,27 @@ snapshot during execution. The manifest inventories all MVA source/tests/contrac
 transitive local imports and dependency locks; its own file and receipts are excluded. The digest
 is SHA-256 of canonical sorted compact JSON, not the pretty-printed file's byte digest.
 
-After explicit Pi authorization, use the handed-off full SHA and surface digest literally; resolve
-the three operator paths in a separate private operator record. The suggested evidence root is
-`/tmp/llm-poc-mva-001`; copy it through an approved controlled channel before reboot if `/tmp` is
-volatile on the selected Pi. Prefer a persistent operator-controlled path outside Git for the entire
-matrix. The runner must see the same ledger and receipt across all boots.
+After explicit Pi authorization, use the handed-off full SHA and surface digest literally. The
+private config binds `PI_DEV_ROOT/poc_llm`, its three assigned run/evidence-export/cache roots, a
+the immutable `PI_PROD_PRODUCTS/m4b/8279e79` product, and the separate
+content-addressed `PI_ARTIFACT_STORE`.
+The product contains only the selected profile/schema copies and verified runtime. The model and
+reacquirable wheel remain under artifact objects; neither may be under product runtime, run output,
+cache, evidence export, a historical worktree or scratch path. The runner must see the same ledger
+and receipt across all boots.
+
+The config also records the runtime manifest, install generation, device ABI, backend, delegate,
+cache-format revision, computed active cache key and at most one distinct rollback cache key. The
+active cache directory is `PI_DEV_ROOT/cache/poc_llm/objects/<cache-key>`. Its key binds the
+model digest/size, runtime manifest/wheel/native/API/source identities, device ABI,
+backend/delegate and cache revision. Initial verification hashes the small product profile/schema,
+runtime manifest and wheel, checks model size before the one full model authentication, and rejects
+any identity or path mismatch.
 
 ```text
+python3 -m poc_llm.tools.run_mva workspace-preflight --operator-authorized --implementation-sha <FULL_SHA>
 python3 -m poc_llm.tools.run_mva prepare-install --operator-authorized --implementation-sha <FULL_SHA> --surface-sha256 <SURFACE_DIGEST> --config <PRIVATE_CONFIG> --receipt <NEW_PRIVATE_RECEIPT>
-python3 -m poc_llm.tools.run_mva <CASE> --operator-authorized --implementation-sha <FULL_SHA> --surface-sha256 <SURFACE_DIGEST> --config <PRIVATE_CONFIG> --receipt <PRIVATE_RECEIPT> --receipt-sha256 <RECEIPT_DIGEST> --evidence-root <PERSISTENT_PRIVATE_ROOT>
+python3 -m poc_llm.tools.run_mva <CASE> --operator-authorized --implementation-sha <FULL_SHA> --surface-sha256 <SURFACE_DIGEST> --config <PRIVATE_CONFIG> --receipt <PRIVATE_RECEIPT> --receipt-sha256 <RECEIPT_DIGEST> --evidence-root <PI_DEV_RUNS_LLM>
 ```
 
 Ordered CASE values (each runs once):

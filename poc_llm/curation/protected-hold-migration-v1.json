@@ -1,0 +1,189 @@
+{
+  "schema_version": "llm-protected-hold-migration-v1",
+  "request_id": "REQUEST-POC-LLM-PI-STORAGE-PHASE3-001",
+  "source_inventory": "poc_llm/curation/pi-cleanup-manifest-v1.json",
+  "mode": "PLAN_AND_VERIFY_ONLY",
+  "execution_authorized": false,
+  "covered_phase1_holds": [
+    "PI_M4B_PRODUCTS/8279e79/runtime",
+    "PI_M4B_ARTIFACTS/60cb29d",
+    "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1 until Core Phase 2 canonical binding is verified",
+    "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536 until accepted execution evidence is independently retained",
+    "PI_M4B_RUNS",
+    "accepted closure/publication manifests, exact profile/schema inputs, locks, licenses/notices and sole result copies"
+  ],
+  "items": [
+    {
+      "hold_id": "runtime-8279e79",
+      "phase1_hold": "PI_M4B_PRODUCTS/8279e79/runtime",
+      "source_locator": "PI_M4B_PRODUCTS/8279e79/runtime",
+      "source_identity": {
+        "sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+        "size_bytes": 151374544,
+        "identity_kind": "runtime-manifest-sha256-plus-tree-size"
+      },
+      "target_identity": {
+        "kind": "immutable-runtime-product",
+        "object_id": "sha256:6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+        "locator": "PI_PROD_PRODUCTS/m4b/8279e79/runtime"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "selected-model",
+      "phase1_hold": "PI_M4B_ARTIFACTS/60cb29d",
+      "source_locator": "PI_SELECTED_MODEL",
+      "source_identity": {
+        "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+        "size_bytes": 2588147712,
+        "identity_kind": "file-sha256"
+      },
+      "target_identity": {
+        "kind": "content-addressed-model-artifact",
+        "object_id": "sha256:181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+        "locator": "PI_ARTIFACT_STORE/sha256/18/181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c/payload"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "locked-runtime-wheel",
+      "phase1_hold": "PI_M4B_ARTIFACTS/60cb29d",
+      "source_locator": "PI_LOCKED_RUNTIME_WHEEL",
+      "source_identity": {
+        "sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+        "size_bytes": 46085754,
+        "identity_kind": "file-sha256"
+      },
+      "target_identity": {
+        "kind": "content-addressed-wheel-artifact",
+        "object_id": "sha256:5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+        "locator": "PI_ARTIFACT_STORE/sha256/5e/5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00/payload"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "legacy-xnnpack-cache",
+      "phase1_hold": "PI_M4B_ARTIFACTS/60cb29d",
+      "source_locator": "PI_XNNPACK_CACHE",
+      "source_identity": {
+        "sha256": "46179cd630dcea671b46058ef2c017015099174071640afb22b1bd98cba83ab3",
+        "size_bytes": 788412736,
+        "identity_kind": "derived-file-sha256"
+      },
+      "target_identity": {
+        "kind": "legacy-cache-hold-no-promotion",
+        "object_id": "sha256:46179cd630dcea671b46058ef2c017015099174071640afb22b1bd98cba83ab3",
+        "locator": "PI_XNNPACK_CACHE"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "selected-profile-source",
+      "phase1_hold": "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1 until Core Phase 2 canonical binding is verified",
+      "source_locator": "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1/poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json",
+      "source_identity": {
+        "sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
+        "size_bytes": 1076,
+        "identity_kind": "file-sha256"
+      },
+      "target_identity": {
+        "kind": "immutable-selected-profile-product",
+        "object_id": "sha256:c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
+        "locator": "PI_PROD_PRODUCTS/m4b/8279e79/profiles/product-profile.json"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "accepted-execution-checkout",
+      "phase1_hold": "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536 until accepted execution evidence is independently retained",
+      "source_locator": "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536",
+      "source_identity": {
+        "sha256": "0c75536e6ee99b502c59438989ca852194648946",
+        "size_bytes": 2597371,
+        "identity_kind": "git-sha-plus-tree-apparent-size"
+      },
+      "target_identity": {
+        "kind": "canonical-source-history",
+        "object_id": "git:0c75536e6ee99b502c59438989ca852194648946",
+        "locator": "PI_DEV_ROOT/poc_llm@0c75536e6ee99b502c59438989ca852194648946"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "core-m4b-run-evidence",
+      "phase1_hold": "PI_M4B_RUNS",
+      "source_locator": "PI_M4B_RUNS (36 directories)",
+      "source_identity": {
+        "sha256": null,
+        "size_bytes": 11149353,
+        "identity_kind": "36-tree-sha256-index",
+        "digest_reference": "poc_llm/curation/pi-storage-worktree-inventory-v1.json#/m4b_test_run_index/runs"
+      },
+      "target_identity": {
+        "kind": "retain-in-place-core-evidence",
+        "object_id": "tree-index:36",
+        "locator": "PI_M4B_RUNS"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "selected-schema",
+      "phase1_hold": "accepted closure/publication manifests, exact profile/schema inputs, locks, licenses/notices and sole result copies",
+      "source_locator": "PI_DEV_ROOT/poc_llm/poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json",
+      "source_identity": {
+        "sha256": "ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34",
+        "size_bytes": 1779,
+        "identity_kind": "file-sha256"
+      },
+      "target_identity": {
+        "kind": "immutable-selected-schema-product",
+        "object_id": "sha256:ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34",
+        "locator": "PI_PROD_PRODUCTS/m4b/8279e79/schemas/product-profile.schema.json"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    },
+    {
+      "hold_id": "accepted-authority-and-sole-evidence-set",
+      "phase1_hold": "accepted closure/publication manifests, exact profile/schema inputs, locks, licenses/notices and sole result copies",
+      "source_locator": "PI_LLM_WORKSPACE/{accepted-authority,locks,licenses,notices,sole-results}",
+      "source_identity": {
+        "sha256": null,
+        "size_bytes": null,
+        "identity_kind": "heterogeneous-protected-set",
+        "unknown_reason": "Phase 1 recorded per-file authority digests but did not establish a complete set boundary for licenses, notices, and sole result copies."
+      },
+      "target_identity": {
+        "kind": "retain-in-place-until-complete-evidence-export",
+        "object_id": null,
+        "locator": "PI_DEV_ROOT/evidence-export/poc_llm/retained-authority"
+      },
+      "action": "verify-only",
+      "materialized": false,
+      "hold": true
+    }
+  ],
+  "verification": {
+    "all_phase1_holds_covered": true,
+    "source_bytes_rechecked_on_pi": false,
+    "target_objects_materialized": 0,
+    "moves_performed": 0,
+    "deletions_performed": 0,
+    "next_gate": "Core review, complete set-boundary inventory, target digest verification, reference recheck, and explicit User authorization"
+  }
+}

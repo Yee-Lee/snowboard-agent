@@ -1,0 +1,64 @@
+{
+  "request_id": "REQUEST-POC-LLM-PI-STORAGE-CURATION-001",
+  "status": "LOCAL_VERIFIED_PI_BINDING_PENDING",
+  "local_base_sha": "57390cc1ed7aef7a3a172716bb71e622649c4f67",
+  "accepted_publication_sha": "485bb2a7c07d86a09899f09358c744edd733f875",
+  "historical_source_sha": "00e6ae1401f21dd498a29bba7985ca387130884c",
+  "closure_sha": "5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae",
+  "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
+  "completion_tag": "llm_m4",
+  "completion_tag_object": "1b9ece39c77932cd2f92c1739ec2b38d83dece71",
+  "completion_sha": "b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1",
+  "all_recorded_commits_are_ancestors_of_local_base": true,
+  "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+  "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+  "protocol": "snowboard.llm/1",
+  "mva_profile_is_not_an_accepted_winner_replacement": true,
+  "stable_copy_needed": false,
+  "files": [
+    {
+      "role": "selected_product_profile",
+      "path": "poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json",
+      "sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"
+    },
+    {
+      "role": "product_config_schema",
+      "path": "poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json",
+      "sha256": "ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34"
+    },
+    {
+      "role": "protocol_schema",
+      "path": "poc_llm/contracts/m1/protocol-frame-pi.schema.json",
+      "sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"
+    },
+    {
+      "role": "prompt_schema",
+      "path": "poc_llm/contracts/m1/prompt-input.schema.json",
+      "sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"
+    },
+    {
+      "role": "response_schema",
+      "path": "poc_llm/contracts/m1/response.schema.json",
+      "sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"
+    }
+  ],
+  "file_bytes_match_at_historical_source_publication_and_local_base": true,
+  "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+  "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+  "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+  "model_size_bytes": 2588147712,
+  "source_references": [
+    {
+      "path": "poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md",
+      "sha256": "7a2c9b64efab3c5542ed41ce52cc5a7a7192f57a09330cbf2ef5e83bc7a24350"
+    },
+    {
+      "path": "docs/pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md",
+      "sha256": "58354ee71bca5241424836273a4ce5dd7246cb0b51220af86d608d44bb8fdc45"
+    }
+  ],
+  "deployment_path_binding": "CORE_PHASE_2_PENDING_DO_NOT_REWRITE_ACCEPTED_PROFILE",
+  "pi_inventory_verified": false,
+  "reclaimable_unique_bytes": null,
+  "reclaimable_unique_bytes_reason": "PI_INVENTORY_AND_ACTIVE_REFERENCE_PROOF_PENDING"
+}

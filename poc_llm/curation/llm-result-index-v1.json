@@ -1,0 +1,128 @@
+{
+  "schema_version": "llm-sanitized-result-index-v1",
+  "request_id": "REQUEST-POC-LLM-PI-STORAGE-CURATION-001",
+  "privacy": {
+    "contains_private_prompts_or_responses": false,
+    "contains_private_host_or_operator_locators": false,
+    "raw_result_export_performed": false
+  },
+  "winner_identity": {
+    "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+    "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+    "protocol": "snowboard.llm/1",
+    "runtime_api_version": "0.16.0",
+    "runtime_source_commit": "924e79c91542761242244e4f1651851f822e4cbb",
+    "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+    "model_source": "litert-community/gemma-4-E2B-it-litert-lm@6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94",
+    "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "model_size_bytes": 2588147712,
+    "model_license": "Apache-2.0",
+    "profile_path": "poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json",
+    "profile_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
+    "profile_limits": {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "kv_tokens": 1024,
+      "temperature": 0,
+      "top_p": 1,
+      "threads": 4,
+      "ready_timeout_seconds": 45,
+      "generation_timeout_seconds": 15,
+      "terminal_timeout_seconds": 2,
+      "cancel_timeout_seconds": 0.5,
+      "shutdown_term_seconds": 2,
+      "shutdown_kill_seconds": 1,
+      "rebuild_timeout_seconds": 10,
+      "offline_required": true,
+      "fallback_allowed": false
+    }
+  },
+  "stable_contracts": [
+    {"role":"product_config_schema","path":"poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json","sha256":"ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34"},
+    {"role":"protocol_schema","path":"poc_llm/contracts/m1/protocol-frame-pi.schema.json","sha256":"e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e"},
+    {"role":"prompt_schema","path":"poc_llm/contracts/m1/prompt-input.schema.json","sha256":"aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6"},
+    {"role":"response_schema","path":"poc_llm/contracts/m1/response.schema.json","sha256":"4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2"},
+    {"role":"gate2b_result_schema","path":"poc_llm/evidence/m4b/gate2b-pi-v1-result.schema.json","sha256":"e1e50880b42f8fd80d9291b91c2811405d6c0a685f949216a8530976473d2ac3"},
+    {"role":"accepted_gate2b_lock","path":"poc_llm/harness/gate2b-pi-lock-v1.json","sha256":"22f52d8b8b5b6d0aacbe2959c49441ccee30a0bacb68b9b8fcfc04877c14665a"}
+  ],
+  "gate1": {
+    "replacement_execution_sha": "93772a1d86c9017e9889c39f2cb40cb8303bfcf6",
+    "surface_sha256": "8c4856301618ee2eefd7b3c08470909bab4f70804b82df169ad9f796e5af79ac",
+    "matrix": [
+      {"candidate":"Gemma 4 E2B","P1":"PASS","P6.1":"PASS","P7.1":"PASS","P10A":"PASS","P11":"PASS","P12":"PASS","gate":"PASS"},
+      {"candidate":"Qwen 2.5 1.5B","P1":"PASS","P6.1":"PASS","P7.1":"FAIL","P10A":"PASS","P11":"PASS","P12":"PASS","gate":"FAIL","governance":"User defect waiver allowed Gate 2A entry without relabeling the failure"}
+    ],
+    "replacement_measurements": [
+      {"candidate":"Gemma 4 E2B","p6_native_cancel_ms":1.069,"p6_terminal_ms":96.322,"p7_abort_absence_ms":15.109,"p7_rebuild_ms":513.968},
+      {"candidate":"Qwen 2.5 1.5B","p6_native_cancel_ms":1.046,"p6_terminal_ms":233.583,"p7_abort_absence_ms":63.453,"p7_rebuild_ms":18152.025,"p7_failure":"SLOW_RECOVERY"}
+    ],
+    "accepted_p10a_measurements": [
+      {"candidate":"Gemma 4 E2B","sessions":"20/20","wall_p50_ms":2363.372,"wall_p95_ms":3229.589,"pss_slope_mib_per_session":0.236386,"system_used_slope_mib_per_session":-0.587393,"peak_temperature_c":51.0},
+      {"candidate":"Qwen 2.5 1.5B","sessions":"20/20","wall_p50_ms":7060.710,"wall_p95_ms":7759.658,"pss_slope_mib_per_session":0.027154,"system_used_slope_mib_per_session":0.331529,"peak_temperature_c":52.7}
+    ],
+    "candidate_config_sha256_by_candidate": {
+      "Gemma 4 E2B": "bc8f32e2aa465176775d12a75afc98670728e353ae587e80c0d8f9db1d48a7d5",
+      "Qwen 2.5 1.5B": "cd32c9132a70572053ec492a1aa1451848ea450b21eb9e6357b14564967c0152"
+    },
+    "qwen_model_sha256": "faa60663b333290c1496c499828b21d3e3254a788cacd8cce917ce0f761a2dc9"
+  },
+  "gate2a": {
+    "execution_sha": "e2b59fac609e0d768ff3554754363900cbed70a9",
+    "surface_sha256": "eccbcdc1a099c40a80cc86de8f711711b9ed351400197a505d4f4f466b37b2e1",
+    "runs": [
+      {
+        "run_id": "G2A-PI-QWEN-004",
+        "sanitized_result_sha256": "e0c000df51c26af5c9cc1f1704f13b8b8816b087d64ba596808b4e3be5b4530f",
+        "sanitized_result_bytes": 27645,
+        "machine_outcome": "FAIL/NOT_ELIGIBLE",
+        "p_dispositions": {"P2":"FAIL (0/30)","P3":"PASS","P4":"CORE_THRESHOLD_DECISION_REQUIRED","P5":"PASS","P8":"FAIL_DEPENDENCY_LIMITED_BY_P2"},
+        "measurements": {"ttft_p95_ms":3069.772,"decode_p50_tokens_per_second":4.313,"wall_ms":6554.854,"p5_timeout_ms":15175.288,"rebuild_ms":18054.122}
+      },
+      {
+        "run_id": "G2A-PI-GEMMA-002",
+        "sanitized_result_sha256": "41f1d8e4f74bac25fd83a17fd0bdb776e9cb0bae1c4c04fdc345f378592681e7",
+        "sanitized_result_bytes": 27357,
+        "machine_outcome": "FAIL/NOT_ELIGIBLE",
+        "p_dispositions": {"P2":"FAIL (3/30)","P3":"PASS","P4":"PASS","P5":"PASS","P8":"FAIL_DEPENDENCY_LIMITED_BY_P2"},
+        "measurements": {"ttft_p95_ms":727.983,"decode_p50_tokens_per_second":11.293,"wall_ms":2065.820,"p5_timeout_ms":15069.013,"rebuild_ms":460.339}
+      }
+    ],
+    "governance": "User selected Gemma as sole model finalist while preserving both machine failures."
+  },
+  "gate2b": {
+    "attempts": [
+      {"attempt":"001","execution_sha":"2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5","machine_outcome":"INCONCLUSIVE","reason":"Two required TTS wheel sources missing; zero scored sessions; cleanup clean","sanitized_result_sha256":"50714d383cbefb75b96ae320e86bbb1ca64756f897f6b05eddd64f4f61a008f0"},
+      {"attempt":"002","execution_sha":"d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39","machine_outcome":"INCONCLUSIVE","reason":"Required pressure telemetry unavailable under the then-current contract; zero scored sessions; cleanup clean","sanitized_result_sha256":"1e3604406ce71d6a05a44bd3781838d92d6643ded4a67e32e7147db075f5f8ce"},
+      {"attempt":"003","execution_sha":"26e654968bbd4c9b2a9a2796d21cfbc01fba7446","machine_outcome":"FAIL","reason":"First request timed out at the equal 15 second boundary; 298 prefill tokens exceeded the declared 128-token input; cold 16.704 s, same-boot 5.061 s; schema invalid and marker missing","sanitized_result_sha256":null,"locator_status":"UNINDEXED_HISTORICAL_HOLD"},
+      {"attempt":"004","execution_sha":"a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f","machine_outcome":"FAIL","reason":"Malformed JSON at the 64-token output ceiling; cleanup zero","sanitized_result_sha256":"665fba87700480f59ddc49323820ebdbfc3d1d8f16f501982e10c34ca690529e"},
+      {"attempt":"005","execution_sha":null,"machine_outcome":"UNKNOWN","reason":"Exact status and retained sanitized locator were not found in tracked authority documents; no inference made","sanitized_result_sha256":null,"locator_status":"UNINDEXED_HISTORICAL_HOLD"},
+      {
+        "attempt":"006",
+        "execution_sha":"0c75536e6ee99b502c59438989ca852194648946",
+        "machine_outcome":"FAIL",
+        "sessions":"20/20 full-chain success",
+        "p_dispositions":{"P9":"FAIL","P10B":"FAIL"},
+        "surface_sha256":"22f52d8b8b5b6d0aacbe2959c49441ccee30a0bacb68b9b8fcfc04877c14665a",
+        "sanitized_result_sha256":"f5f5b3acd15e32bb0208da9f838cec4415469c28c12a45b25f8c2f5f55ad33fa",
+        "measurements":{"combined_pss_slope_mib_per_session":5.900893,"combined_late_early_median_delta_mib":131.578,"llm_pss_slope_mib_per_session":5.484794,"llm_late_early_median_delta_mib":115.865,"system_used_slope_mib_per_session":0.101957,"system_late_early_median_delta_mib":32.750,"peak_system_used_mib":2382.969,"peak_temperature_c":54.0,"swap_bytes":0,"oom_events":0,"throttle_events":0,"duration_ms":509105.067,"cleanup_residuals":0},
+        "governance":"User accepted the winner through a known LiteRT-LM resident-retention defect waiver without relabeling P9/P10B."
+      }
+    ],
+    "final_status": "GEMMA_POC_WINNER_ACCEPTED_CORE_GATE3_PENDING"
+  },
+  "authority_documents": [
+    {"path":"poc_llm/deliveries/POC-llm-DEL-2026-001-R3.md","sha256":"7a2c9b64efab3c5542ed41ce52cc5a7a7192f57a09330cbf2ef5e83bc7a24350"},
+    {"path":"docs/delivery/DELIVERY-024-PM-LLM-POC-GATE2B-CLOSURE-GEMMA-WINNER.md","sha256":"6787639ce93aa1e9755bb69b6b0434b323b5679fb769a18255dcf2d497345f26"},
+    {"path":"docs/response/ASSESSMENT-LLM-M2-GATE1-P6.1-P7.1-20260827-USER-REVIEW.md","sha256":"4681591e54e9d84b8d9009600bc6d121548cf6665971f0451c9c2a7684bb4805"},
+    {"path":"docs/response/ASSESSMENT-LLM-M3-GATE2A-20260829-USER-REVIEW.md","sha256":"ee85a651562a55ff76f090f21ae42a9789816eb7676062ccd5224a8bf87d1465"},
+    {"path":"docs/response/ASSESSMENT-LLM-M4-GATE2B-20260829-USER-REVIEW.md","sha256":"7132342ea1b92a83a3a2373893c5a44324224909930db8228bfdcdeb2ff409e8"},
+    {"path":"docs/pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md","sha256":"64214dec7e2ad3e306b6d56edb5ee6bd597f8b6dcc532c0e905c58dbb0811321"},
+    {"path":"docs/pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-CLOSURE-ACK-001.md","sha256":"3e9f40c9c228e25435e53470d943716e19c2ac2a8dd62576c01a1b66b72c8277"},
+    {"path":"docs/pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md","sha256":"58354ee71bca5241424836273a4ce5dd7246cb0b51220af86d608d44bb8fdc45"}
+  ],
+  "retention_notes": [
+    "Missing historical scratch results cannot be inferred or reconstructed from the Pi.",
+    "PI_M4B_RUNS is shared Core evidence and is indexed separately by tree checksum; it is not claimed as LLM Gate evidence."
+  ]
+}

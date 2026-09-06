@@ -1,0 +1,172 @@
+{
+  "schema_version": "llm-pi-storage-inventory-v1",
+  "request_id": "REQUEST-POC-LLM-PI-STORAGE-CURATION-001",
+  "observed_at": "2026-09-06T10:30:06+08:00",
+  "mode": "READ_ONLY_PHASE_1",
+  "privacy": {
+    "public_manifest_uses_logical_locators": true,
+    "private_locator_mapping": "PI_PRIVATE_BUNDLE_OUTSIDE_GIT",
+    "host_and_operator_fingerprints_omitted": true
+  },
+  "filesystem_capacity": {
+    "size_bytes": 62291251200,
+    "used_bytes": 46301163520,
+    "available_bytes": 13420552192,
+    "use_percent": 78
+  },
+  "process_reference_check": {
+    "matched_process_count": 0,
+    "scope": "LLM workspace, M4B product, LiteRT-LM and selected-model references",
+    "limitation": "Point-in-time process check; persistent service references require Core Phase 2 recheck."
+  },
+  "repository": {
+    "canonical_checkout": "PI_LLM_WORKSPACE/snowboard-agent",
+    "checkout_head": "e2b59fac609e0d768ff3554754363900cbed70a9",
+    "checkout_branch": null,
+    "checkout_tracked_clean": true,
+    "local_llm_branch": "afb310b5337857e01741ab455086b53f9904f280",
+    "remote_tracking_ref": "refs/remotes/origin/llm",
+    "remote_tracking_sha_at_inventory": "0c75536e6ee99b502c59438989ca852194648946",
+    "remote_tracking_sha_at_final_recheck": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+    "remote_tracking_ref_advanced_during_phase1": true,
+    "remote_name": "origin",
+    "remote_url_omitted": true,
+    "authoritative_llm_worktree_present": false,
+    "tag_refs_present_on_pi": [],
+    "finding": "No Pi worktree is attached to the authoritative llm branch. Creating or switching one is reserved for Core Phase 2."
+  },
+  "accepted_lineage": {
+    "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
+    "closure_sha": "5ffdd9eaa3beb9ca09ff6a63839e02248c9a78ae",
+    "publication_sha": "485bb2a7c07d86a09899f09358c744edd733f875",
+    "completion_sha": "b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1",
+    "workstation_tag": "llm_m4",
+    "workstation_tag_object": "1b9ece39c77932cd2f92c1739ec2b38d83dece71",
+    "all_are_ancestors_of_workstation_base": true
+  },
+  "worktrees": [
+    {"locator":"PI_LLM_WORKSPACE/snowboard-agent","sha":"e2b59fac609e0d768ff3554754363900cbed70a9","branch":null,"classification":"hold","tracked_dirty_count":0,"untracked_count":0,"ignored_count":19,"regular_file_count":363,"apparent_bytes":5192112,"allocated_bytes":9973760},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-26e654968bbd4c9b2a9a2796d21cfbc01fba7446","sha":"26e654968bbd4c9b2a9a2796d21cfbc01fba7446","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":":memory:.ses (51 bytes)","ignored_count":16,"regular_file_count":372,"apparent_bytes":2359545,"allocated_bytes":3313664,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5","sha":"2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":":memory:.ses (51 bytes)","ignored_count":16,"regular_file_count":372,"apparent_bytes":2337658,"allocated_bytes":3297280,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-8bd37149b9321a0d40c15abeeb514eef223670d5","sha":"8bd37149b9321a0d40c15abeeb514eef223670d5","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":"1 (0 bytes)","ignored_count":16,"regular_file_count":372,"apparent_bytes":2335432,"allocated_bytes":3293184,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-contained-00e6ae1","sha":"00e6ae1401f21dd498a29bba7985ca387130884c","branch":null,"classification":"protected_hold","tracked_dirty_count":0,"untracked_count":0,"ignored_count":23,"regular_file_count":384,"apparent_bytes":2604698,"allocated_bytes":3575808,"reachable_from_origin_llm":true,"active_reference":"Selected profile source until Core Phase 2 canonical binding is verified."},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-controller-e055df3","sha":"e055df36683b7594f3a2de18233d9c72098aa0ea","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":0,"ignored_count":23,"regular_file_count":384,"apparent_bytes":2591195,"allocated_bytes":3567616,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-corrective-509cd20","sha":"509cd204628543489ec497f267f1af7cfc3dac92","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":0,"ignored_count":13,"regular_file_count":374,"apparent_bytes":2208823,"allocated_bytes":3162112,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-corrective-a69ac1a","sha":"a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":":memory:.ses (51 bytes)","ignored_count":16,"regular_file_count":378,"apparent_bytes":2318345,"allocated_bytes":3280896,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-corrective-c2605f2","sha":"c2605f24016192770e5c214d769a771f7e94c09d","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":":memory:.ses (51 bytes)","ignored_count":12,"regular_file_count":374,"apparent_bytes":2202091,"allocated_bytes":3158016,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39","sha":"d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":1,"untracked_summary":":memory:.ses (51 bytes)","ignored_count":16,"regular_file_count":372,"apparent_bytes":2344975,"allocated_bytes":3305472,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-debug-7617afe","sha":"bca22df6f5153db39382014dc210b4e2c442bbba","branch":null,"classification":"historical_evidence_rebuildable","tracked_dirty_count":0,"untracked_count":0,"ignored_count":14,"regular_file_count":371,"apparent_bytes":2247913,"allocated_bytes":3194880,"reachable_from_origin_llm":true},
+    {"locator":"PI_LLM_WORKSPACE/gate2b-no-psi-0c75536","sha":"0c75536e6ee99b502c59438989ca852194648946","branch":null,"classification":"historical_evidence_hold","tracked_dirty_count":0,"untracked_count":0,"ignored_count":23,"regular_file_count":385,"apparent_bytes":2597371,"allocated_bytes":3579904,"reachable_from_origin_llm":true,"active_reference":"Accepted Gate 2B execution SHA."}
+  ],
+  "stale_worktree_metadata": [{
+    "locator": "PI_TMP_WORKTREE_METADATA/llm-poc-g1-src-66ff4b3",
+    "sha": "66ff4b363da78eaab27123d1b675218d8021680d",
+    "prunable": true,
+    "proof": "git worktree prune --dry-run --verbose reports a gitdir pointing to a non-existent location",
+    "action_taken": false
+  }],
+  "storage_roots": [
+    {"locator":"PI_LLM_WORKSPACE","logical_owner":"LLM POC","apparent_bytes":31340158,"allocated_bytes":46706688,"regular_file_count":5356},
+    {"locator":"PI_M4B_PRODUCTS","logical_owner":"Core M4B product staging","apparent_bytes":454123647,"allocated_bytes":454418432,"regular_file_count":69},
+    {"locator":"PI_M4B_ARTIFACTS","logical_owner":"Core M4B artifact staging","apparent_bytes":3422646202,"allocated_bytes":3422666752,"regular_file_count":3},
+    {"locator":"PI_M4B_RUNS","logical_owner":"Core M4B test evidence","apparent_bytes":11149353,"allocated_bytes":13000704,"regular_file_count":438,"top_level_directory_count":36},
+    {"locator":"PI_SHARED_CACHE","logical_owner":"shared operator cache","apparent_bytes":562809200,"allocated_bytes":569958400,"regular_file_count":711,"classification":"out_of_scope_hold"}
+  ],
+  "artifact_identity": [
+    {"locator":"PI_SELECTED_MODEL","role":"selected_model","size_bytes":2588147712,"allocated_bytes":2588151808,"sha256":"181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c","classification":"protected_hold"},
+    {"locator":"PI_LOCKED_RUNTIME_WHEEL","role":"locked_runtime_wheel","size_bytes":46085754,"allocated_bytes":46088192,"sha256":"5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00","classification":"protected_hold"},
+    {"locator":"PI_XNNPACK_CACHE","role":"derived_xnnpack_cache","size_bytes":788412736,"allocated_bytes":788418560,"sha256":"46179cd630dcea671b46058ef2c017015099174071640afb22b1bd98cba83ab3","classification":"hold_until_cache_semantics_verified"}
+  ],
+  "runtime_installations": [
+    {"locator":"PI_M4B_PRODUCTS/diag-site-packages-fix/runtime","apparent_bytes":151374559,"allocated_bytes":151465984,"regular_file_count":23,"artifact_manifest_sha256":"92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99","runtime_manifest_sha256":"6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2","install_inventory_sha256":"ee171385e108dcfbb45de0a402d5ca8b3646946aed5e2ebaf2eb02659846a23c","classification":"duplicate_hold_pending_core_receipt"},
+    {"locator":"PI_M4B_PRODUCTS/0f7359f/runtime","apparent_bytes":151374544,"allocated_bytes":151465984,"regular_file_count":23,"artifact_manifest_sha256":"92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99","runtime_manifest_sha256":"6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2","install_inventory_sha256":"79ed188eb9af56c0d471341f4e9cadd06ef5f7ceb311ac42dfe5e53a4c480449","classification":"duplicate_hold_pending_core_receipt"},
+    {"locator":"PI_M4B_PRODUCTS/8279e79/runtime","apparent_bytes":151374544,"allocated_bytes":151465984,"regular_file_count":23,"artifact_manifest_sha256":"92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99","runtime_manifest_sha256":"6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2","install_inventory_sha256":"ab06241062b22500b5d857be04ad78e61312167f192ffcb14c9a69a45e0e4c95","classification":"protected_hold"}
+  ],
+  "runtime_content_finding": "All three installations have matching artifact/runtime manifests. Native shared objects use distinct inodes, so two installations represent real duplicate allocation; install inventory hashes differ because they include installation path metadata.",
+  "shared_cache_breakdown": [
+    {"locator":"PI_SHARED_CACHE/pip","apparent_bytes":413665351},
+    {"locator":"PI_SHARED_CACHE/huggingface","apparent_bytes":148742405},
+    {"locator":"PI_SHARED_CACHE/Microsoft","apparent_bytes":401444}
+  ],
+  "m4b_test_run_index": {
+    "classification": "CORE_SHARED_HOLD_NOT_LLM_GATE_EVIDENCE",
+    "tree_digest_algorithm": "SHA-256 of sorted UTF-8 lines: <file_sha256>\\t<size_bytes>\\t<relative_path>\\n",
+    "row_fields": ["directory","apparent_bytes","allocated_bytes","regular_file_count","tree_sha256","has_accept_result","has_accept_failure"],
+    "runs": [
+      ["m4b-0f7359f-20260831-dev01",190895,331776,36,"ad2a8905dee6eb9b01bde680cf1f2b63f4725a647e386f557650052ec0eeadcd",false,false],
+      ["m4b-274b2db-20260831-debug-full01",31980,57344,5,"d99884daf68e29704097460cb54d972e2dda892981741e41d9b608bdabbec0d6",false,false],
+      ["m4b-274b2db-20260831-debug-full02",96670,151552,12,"842720514837842be070d23faf2d805444cc9c132eeee491680f3c6a7fc0891e",false,false],
+      ["m4b-274b2db-20260831-debug-full03",84372,147456,14,"eed7e3f93b340599311a77a9fb450131ea811ce9d7aa5fe527dbce65db532800",false,false],
+      ["m4b-274b2db-20260831-debug-m4bonly01",70943,94208,4,"fcd1fb139df3c6f1d85d44be12110f8caaab9ab1a3334d5225b5933e991ed037",false,false],
+      ["m4b-274b2db-20260831-debug-m4btrace01",337239,360448,4,"aa13543b0548539bab79f70b298feaa908143955f12ed643cc54de0b4b68db22",false,false],
+      ["m4b-274b2db-20260831-debug-m4btrace02",8123481,8380416,73,"c2206565c8778f9b3b7ef523f9fc0d35b8243c5646c1926f3efceb137050f74c",false,false],
+      ["m4b-274b2db-20260831-debug-shutdown01",35430,45056,3,"25a44f4ab753575ba0da879966e79d900dfde3a5ccd1471a22462f390a0cf074",false,false],
+      ["m4b-274b2db-20260831-pi01",220009,344064,33,"68a362717ae8493d022e9b006be55b0fe2ce5b014171fb518e6eaadd22e3bd11",true,true],
+      ["m4b-8279e79-20260831-debug-config15",3739,12288,2,"aa600980731d62ae8838b2fdbc82976a0e241bff4867d27c59b2e4e5497994e5",false,false],
+      ["m4b-8279e79-20260831-debug-fix02",74870,98304,5,"bb8711ccda533362393b6d2df07b3793f5c623d083ddcba35e7d613f5626feb3",false,false],
+      ["m4b-8279e79-20260831-debug-fix03",38473,65536,5,"ed59b6eff049053dc1522fa100265f21454241dc57fdd82ba0ddba9e725f430d",false,false],
+      ["m4b-8279e79-20260831-debug-fix04",9389,28672,5,"17bcaa31e58f3ee52f8d70a4026bbf998908ef0b6575aac81d7d807db98bbaf8",false,false],
+      ["m4b-8279e79-20260831-debug-fix04b",80168,102400,5,"62e9b2e2332973440724b14ba0e0b46c250d6be4525b5a07020638e5ac2940e1",false,false],
+      ["m4b-8279e79-20260831-debug-fix05",208249,294912,22,"7ac43ec2460f25a8ccf4745ddbb818a9dda8434d76580e6ed0ed6d93cda58b22",false,false],
+      ["m4b-8279e79-20260831-debug-fix06",3443,28672,5,"abdb547d43894d3deac22b9b258b87256fe28f89da8b007f58db515c806c0460",false,false],
+      ["m4b-8279e79-20260831-debug-fix06b",80311,102400,5,"a45802f412f3cdbb0f7060539ce4f7b849595ff14c0887b17696328527e0a019",false,false],
+      ["m4b-8279e79-20260831-debug-fix07",2565,20480,3,"244f2ec7564b26a492f5935d307bc2ff6b46456a7950273c25e09c8e27abab32",false,false],
+      ["m4b-8279e79-20260831-debug-fix07b",45535,69632,4,"931728c183b27b35d2049dcd0b26449c0c984b48c8e4d50da7ed21f3934d9636",false,false],
+      ["m4b-8279e79-20260831-debug-fix08",80059,102400,5,"e38e4f7abe6514b5e56b50672c7055467488c856323b3e046346052d09f2f430",false,false],
+      ["m4b-8279e79-20260831-debug-fix09",40253,61440,4,"a2b4ee0ae3174c4e36ea97dd97cc2a651a922c21abf8ee38e83cf74710bce0f0",false,false],
+      ["m4b-8279e79-20260831-dev01",130702,221184,23,"f625720bcde663ab29d1b4c51d73db4eb9d22dcafa8aad749b6dae36160c66b6",false,true],
+      ["m4b-8279e79-20260831-dev02",170023,262144,25,"61c99e381b3e57a757ebc7729265e32ea7be480db204d01ef1a063bd835e00e8",true,true],
+      ["m4b-8279e79-20260831-dev03",127255,192512,17,"9a8a254e5c994ff50426db5bc59bdd55fe81f3d766ecabba509c680df4b72606",false,false],
+      ["m4b-8279e79-20260831-dev04",209055,339968,33,"ec65c5a682882c6a32465376435557e9b6b5c9495165ded830cf59d41c4e3110",false,true],
+      ["m4b-c242b86-20260901-debug-full01",18671,98304,20,"b528ae73edbd156b3610cce3d30f29a9a60cf45936c40047f1b14dfa1c107a0a",false,false],
+      ["m4b-c242b86-20260901-debug-full02",2804,28672,3,"c23f79980b5f0ab036751f4df66875cd2075452c7521d8da6dd96049d60d0cb2",false,false],
+      ["m4b-c242b86-20260901-debug-m4b01",3467,36864,7,"ed4ea47f71935647c151bac106b132e966b3e7be2e4a656678ea4b89ce0bb71b",false,false],
+      ["m4b-c242b86-20260901-debug-m4b02",3467,36864,7,"3a5cba2eb041f956bccbe8af2d0319327e971963ed93f1dca1dac4096bec318f",false,false],
+      ["m4b-c242b86-20260901-debug-m4b03",87046,122880,7,"9830f36ac1071d6aa65bda3738cb97d7d36aa1ba25638c2835eac7f30edb6af1",false,false],
+      ["m4b-c242b86-20260901-debug-m4b04",87155,122880,7,"17f402c8301fcb10bca30488ce1995562cd01eee102faa10d29173349fc62797",false,false],
+      ["m4b-c242b86-20260901-overlaydiag-m4b05",87418,122880,7,"4d35b25b71f1c28ad55e108b3df7510933944ee2bf06c5c5f518d257282ef7bd",false,false],
+      ["m4b-c242b86-20260901-overlaydiag-m4b06",50939,90112,7,"ac32d616c6e73d7c60348eb3211d3d271b181c6285718d0794a38ed68f7f1a8e",false,false],
+      ["m4b-c242b86-20260901-overlayfix-pass01",111737,147456,7,"3c2f732bf2bc95e4e12412a79b53b5bc5136e9d5fa96a218bc5dc04b1e460b03",false,false],
+      ["m4b-c242b86-20260901-overlayfix2-pass01",86483,118784,7,"c2719569a3054de45ad8bd013ceda5f28efa849c09f2546b013ca476cf394dd2",false,false],
+      ["m4b-c242b86-20260901-overlayfix3-pass01",115058,155648,7,"533db844f7a6757872adde97bde0e9efa1ab8bcb04ea6ea3c89b12c67eaa2f36",false,false]
+    ]
+  },
+  "actions_performed": ["read-only remote inspection", "SHA-256 calculation", "git worktree prune --dry-run --verbose"],
+  "actions_not_performed": ["checkout", "worktree creation", "worktree prune", "move", "delete", "benchmark", "reboot", "service change"],
+  "final_recheck": {
+    "observed_at": "2026-09-06T10:49:03+08:00",
+    "worktree_records": 13,
+    "live_worktrees": 12,
+    "tracked_dirty_total": 0,
+    "private_locator_bundle": {
+      "locator": "PI_PRIVATE_BUNDLE/llm-pi-storage-locators-v1.private.json",
+      "outside_git": true,
+      "mode": "0600",
+      "logical_root_count": 6,
+      "logical_item_count": 3,
+      "sha256": "bc10368e1eb6cd59bf31e3b3a6aa2cde3eed96ff1b2829da89e18eb4da2069d3"
+    },
+    "protected_hashes_match_inventory": true
+  },
+  "core_phase2_workspace_receipt": {
+    "verified_at": "2026-09-06",
+    "mode": "READ_ONLY",
+    "canonical_worktree": {
+      "locator": "PI_DEV_ROOT/poc_llm",
+      "branch": "llm",
+      "head": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+      "remote_tracking_sha": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+      "tracked_dirty_count": 0,
+      "untracked_count": 0
+    },
+    "assigned_data_roots": [
+      {"locator":"PI_DEV_ROOT/runs/poc_llm","exists":true,"directory":true,"symlink":false,"writable_access":true},
+      {"locator":"PI_DEV_ROOT/evidence-export/poc_llm","exists":true,"directory":true,"symlink":false,"writable_access":true},
+      {"locator":"PI_DEV_ROOT/cache/poc_llm","exists":true,"directory":true,"symlink":false,"writable_access":true}
+    ],
+    "filesystem_use_percent": 78,
+    "phase3_started": false,
+    "writes_performed": false,
+    "constraints": ["no nonessential benchmark", "no duplicate venv/model/runtime", "no bulky output", "protected holds and purge gate unchanged"]
+  }
+}

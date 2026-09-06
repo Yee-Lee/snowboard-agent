@@ -10,21 +10,21 @@ import zipfile
 from poc_llm.harness.pi_artifact_auth import authenticate_model, stat_identity, streaming_digest, verify_model_receipt
 from poc_llm.harness.mva_surface import canonical_bytes
 from poc_llm.harness.mva_process import RunError
+from poc_llm.harness.mva_product_layout import (
+    STORAGE_PATH as PRODUCT_STORAGE_PATH,
+    cache_identity,
+    cache_key,
+    load_product_storage,
+    validate_product_paths,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = ROOT / "poc_llm/contracts/mva/mva-profile-001.json"
 
 
-def load_config(path: Path) -> dict:
+def load_config(path: Path, *, checkout_root: Path | None = None) -> dict:
     config = json.loads(path.read_text())
-    if set(config) != {"model_path", "runtime_root", "runtime_wheel", "install_generation"}:
-        raise RunError("IDENTITY_DRIFT")
-    if not isinstance(config["install_generation"], int) or isinstance(config["install_generation"], bool) or config["install_generation"] < 1:
-        raise RunError("IDENTITY_DRIFT")
-    for key in ("model_path", "runtime_root", "runtime_wheel"):
-        value = Path(config[key])
-        if not value.is_absolute() or value.resolve() != value:
-            raise RunError("IDENTITY_DRIFT")
+    validate_product_paths(config, load_product_storage(), checkout_root=checkout_root)
     return config
 
 
@@ -42,10 +42,19 @@ def _runtime_files(root: Path) -> list[Path]:
 
 def prepare_receipt(config: dict) -> dict:
     profile = json.loads(PROFILE_PATH.read_text())
+    storage = load_product_storage()
+    validate_product_paths(config, storage)
     model = Path(config["model_path"])
     wheel = Path(config["runtime_wheel"])
     runtime = Path(config["runtime_root"])
+    runtime_manifest = Path(config["runtime_manifest"])
+    native_library = Path(config["runtime_native_library"])
+    if streaming_digest(runtime_manifest, timeout_s=120) != storage["runtime"]["runtime_manifest_sha256"]:
+        raise RunError("IDENTITY_DRIFT")
     if streaming_digest(wheel, timeout_s=120) != profile["candidate"]["runtime_wheel_sha256"]:
+        raise RunError("IDENTITY_DRIFT")
+    wheel_before = stat_identity(wheel)
+    if not stat.S_ISREG(wheel_before["mode"]) or wheel_before["mode"] & 0o222:
         raise RunError("IDENTITY_DRIFT")
     # Bind installed LiteRT package bytes to the selected wheel, not merely its label.
     with zipfile.ZipFile(wheel) as archive:
@@ -65,11 +74,30 @@ def prepare_receipt(config: dict) -> dict:
         if before != stat_identity(path):
             raise RunError("IDENTITY_DRIFT")
         files[str(path.relative_to(runtime))] = {"sha256": digest, "stat": before}
+    native_before = stat_identity(native_library)
+    native_digest = streaming_digest(native_library, timeout_s=120)
+    if (native_digest != storage["runtime"]["native_library_sha256"]
+            or native_before != stat_identity(native_library)):
+        raise RunError("IDENTITY_DRIFT")
     return {
-        "format": "mva-install-receipt-v1", "config_sha256": hashlib.sha256(canonical_bytes(config)).hexdigest(),
+        "format": "mva-install-receipt-v2", "config_sha256": hashlib.sha256(canonical_bytes(config)).hexdigest(),
         "install_generation": config["install_generation"], "runtime_files": files,
         "model": authenticate_model(model, profile["candidate"]["model_sha256"], model.stat().st_size),
-        "wheel_stat": stat_identity(wheel), "wheel_sha256": profile["candidate"]["runtime_wheel_sha256"],
+        "wheel_stat": wheel_before, "wheel_sha256": profile["candidate"]["runtime_wheel_sha256"],
+        "native_library": {
+            "relative_path": str(native_library.relative_to(runtime)),
+            "sha256": native_digest,
+            "stat": native_before,
+        },
+        "product_storage_sha256": hashlib.sha256(PRODUCT_STORAGE_PATH.read_bytes()).hexdigest(),
+        "storage_identity": {
+            "selected_profile_sha256": storage["selected_profile"]["sha256"],
+            "model_object_id": storage["model"]["object_id"],
+            "runtime_object_id": storage["runtime"]["object_id"],
+            "runtime_manifest_sha256": storage["runtime"]["runtime_manifest_sha256"],
+            "cache_key": cache_key(config, storage),
+            "cache_identity": cache_identity(config, storage),
+        },
     }
 
 
@@ -77,11 +105,34 @@ def verify_receipt(config: dict, receipt: dict, expected_digest: str) -> None:
     if hashlib.sha256(canonical_bytes(receipt)).hexdigest() != expected_digest:
         raise RunError("IDENTITY_DRIFT")
     profile = json.loads(PROFILE_PATH.read_text())
-    if (receipt["format"] != "mva-install-receipt-v1"
+    storage = load_product_storage()
+    validate_product_paths(config, storage)
+    expected_storage_identity = {
+        "selected_profile_sha256": storage["selected_profile"]["sha256"],
+        "model_object_id": storage["model"]["object_id"],
+        "runtime_object_id": storage["runtime"]["object_id"],
+        "runtime_manifest_sha256": storage["runtime"]["runtime_manifest_sha256"],
+        "cache_key": cache_key(config, storage),
+        "cache_identity": cache_identity(config, storage),
+    }
+    native_library = Path(config["runtime_native_library"])
+    expected_native = {
+        "relative_path": str(native_library.relative_to(Path(config["runtime_root"]))),
+        "sha256": storage["runtime"]["native_library_sha256"],
+        "stat": stat_identity(native_library),
+    }
+    if (receipt["format"] != "mva-install-receipt-v2"
             or receipt["config_sha256"] != hashlib.sha256(canonical_bytes(config)).hexdigest()
             or receipt["install_generation"] != config["install_generation"]
             or receipt["wheel_sha256"] != profile["candidate"]["runtime_wheel_sha256"]
-            or receipt["wheel_stat"] != stat_identity(Path(config["runtime_wheel"]))):
+            or receipt["wheel_stat"] != stat_identity(Path(config["runtime_wheel"]))
+            or receipt["product_storage_sha256"] != hashlib.sha256(PRODUCT_STORAGE_PATH.read_bytes()).hexdigest()
+            or receipt["storage_identity"] != expected_storage_identity
+            or receipt["native_library"] != expected_native
+            or streaming_digest(native_library, timeout_s=120)
+                != storage["runtime"]["native_library_sha256"]
+            or streaming_digest(Path(config["runtime_manifest"]), timeout_s=120)
+                != storage["runtime"]["runtime_manifest_sha256"]):
         raise RunError("IDENTITY_DRIFT")
     verify_model_receipt(receipt["model"], Path(config["model_path"]), profile["candidate"]["model_sha256"])
     runtime = Path(config["runtime_root"])

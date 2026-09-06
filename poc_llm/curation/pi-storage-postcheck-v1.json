@@ -1,0 +1,4340 @@
+{
+  "active_reference_audit": {
+    "inaccessible_or_exited_process_count": 3,
+    "persistent_service_reference_audit_complete": false,
+    "references": []
+  },
+  "collector_sha256": "060974d1582a964c5104d3d648e9baab8cab9de89625b0d9eec6a93cb594d2fe",
+  "items": [
+    {
+      "allocated_unique_bytes": 3313664,
+      "apparent_file_bytes": 2359545,
+      "git": {
+        "branch": null,
+        "head": "26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 483328,
+        "apparent_file_bytes": 441962,
+        "regular_file_count": 16,
+        "unique_file_bytes": 441962,
+        "unique_inode_count": 19
+      },
+      "regular_file_count": 372,
+      "unique_file_bytes": 2359545
+    },
+    {
+      "allocated_unique_bytes": 3297280,
+      "apparent_file_bytes": 2337658,
+      "git": {
+        "branch": null,
+        "head": "2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 475136,
+        "apparent_file_bytes": 434576,
+        "regular_file_count": 16,
+        "unique_file_bytes": 434576,
+        "unique_inode_count": 19
+      },
+      "regular_file_count": 372,
+      "unique_file_bytes": 2337658
+    },
+    {
+      "allocated_unique_bytes": 3293184,
+      "apparent_file_bytes": 2335432,
+      "git": {
+        "branch": null,
+        "head": "8bd37149b9321a0d40c15abeeb514eef223670d5",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-8bd37149b9321a0d40c15abeeb514eef223670d5",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 475136,
+        "apparent_file_bytes": 433899,
+        "regular_file_count": 16,
+        "unique_file_bytes": 433899,
+        "unique_inode_count": 19
+      },
+      "regular_file_count": 372,
+      "unique_file_bytes": 2335432
+    },
+    {
+      "allocated_unique_bytes": 3575808,
+      "apparent_file_bytes": 2604698,
+      "git": {
+        "branch": null,
+        "head": "00e6ae1401f21dd498a29bba7985ca387130884c",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 647168,
+        "apparent_file_bytes": 595349,
+        "regular_file_count": 23,
+        "unique_file_bytes": 595349,
+        "unique_inode_count": 26
+      },
+      "regular_file_count": 384,
+      "unique_file_bytes": 2604698
+    },
+    {
+      "allocated_unique_bytes": 3567616,
+      "apparent_file_bytes": 2591195,
+      "git": {
+        "branch": null,
+        "head": "e055df36683b7594f3a2de18233d9c72098aa0ea",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-controller-e055df3",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 643072,
+        "apparent_file_bytes": 588491,
+        "regular_file_count": 23,
+        "unique_file_bytes": 588491,
+        "unique_inode_count": 26
+      },
+      "regular_file_count": 384,
+      "unique_file_bytes": 2591195
+    },
+    {
+      "allocated_unique_bytes": 3162112,
+      "apparent_file_bytes": 2208823,
+      "git": {
+        "branch": null,
+        "head": "509cd204628543489ec497f267f1af7cfc3dac92",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-corrective-509cd20",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 274432,
+        "apparent_file_bytes": 241348,
+        "regular_file_count": 13,
+        "unique_file_bytes": 241348,
+        "unique_inode_count": 15
+      },
+      "regular_file_count": 374,
+      "unique_file_bytes": 2208823
+    },
+    {
+      "allocated_unique_bytes": 3280896,
+      "apparent_file_bytes": 2318345,
+      "git": {
+        "branch": null,
+        "head": "a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-corrective-a69ac1a",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 380928,
+        "apparent_file_bytes": 347926,
+        "regular_file_count": 16,
+        "unique_file_bytes": 347926,
+        "unique_inode_count": 18
+      },
+      "regular_file_count": 378,
+      "unique_file_bytes": 2318345
+    },
+    {
+      "allocated_unique_bytes": 3158016,
+      "apparent_file_bytes": 2202091,
+      "git": {
+        "branch": null,
+        "head": "c2605f24016192770e5c214d769a771f7e94c09d",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-corrective-c2605f2",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 258048,
+        "apparent_file_bytes": 227456,
+        "regular_file_count": 12,
+        "unique_file_bytes": 227456,
+        "unique_inode_count": 14
+      },
+      "regular_file_count": 374,
+      "unique_file_bytes": 2202091
+    },
+    {
+      "allocated_unique_bytes": 3305472,
+      "apparent_file_bytes": 2344975,
+      "git": {
+        "branch": null,
+        "head": "d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 1
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 475136,
+        "apparent_file_bytes": 436108,
+        "regular_file_count": 16,
+        "unique_file_bytes": 436108,
+        "unique_inode_count": 19
+      },
+      "regular_file_count": 372,
+      "unique_file_bytes": 2344975
+    },
+    {
+      "allocated_unique_bytes": 3194880,
+      "apparent_file_bytes": 2247913,
+      "git": {
+        "branch": null,
+        "head": "bca22df6f5153db39382014dc210b4e2c442bbba",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-debug-7617afe",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 339968,
+        "apparent_file_bytes": 307062,
+        "regular_file_count": 14,
+        "unique_file_bytes": 307062,
+        "unique_inode_count": 16
+      },
+      "regular_file_count": 371,
+      "unique_file_bytes": 2247913
+    },
+    {
+      "allocated_unique_bytes": 3579904,
+      "apparent_file_bytes": 2597371,
+      "git": {
+        "branch": null,
+        "head": "0c75536e6ee99b502c59438989ca852194648946",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 643072,
+        "apparent_file_bytes": 589271,
+        "regular_file_count": 23,
+        "unique_file_bytes": 589271,
+        "unique_inode_count": 26
+      },
+      "regular_file_count": 385,
+      "unique_file_bytes": 2597371
+    },
+    {
+      "allocated_unique_bytes": 10780672,
+      "apparent_file_bytes": 5676638,
+      "git": {
+        "branch": "llm",
+        "head": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+        "reachable_from_origin_llm": true,
+        "tracked_clean": true,
+        "untracked_count": 0
+      },
+      "locator": "PI_LLM_WORKSPACE/snowboard-agent",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "LLM POC",
+      "python_cache": {
+        "allocated_unique_bytes": 348160,
+        "apparent_file_bytes": 291541,
+        "regular_file_count": 19,
+        "unique_file_bytes": 291541,
+        "unique_inode_count": 22
+      },
+      "regular_file_count": 1337,
+      "unique_file_bytes": 5676638
+    },
+    {
+      "allocated_unique_bytes": 151470080,
+      "apparent_file_bytes": 151374544,
+      "locator": "PI_M4B_PRODUCTS/0f7359f",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374544
+    },
+    {
+      "allocated_unique_bytes": 4096,
+      "apparent_file_bytes": 0,
+      "locator": "PI_M4B_PRODUCTS/60cb29d",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 0,
+      "unique_file_bytes": 0
+    },
+    {
+      "allocated_unique_bytes": 151470080,
+      "apparent_file_bytes": 151374544,
+      "locator": "PI_M4B_PRODUCTS/8279e79",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374544
+    },
+    {
+      "allocated_unique_bytes": 151470080,
+      "apparent_file_bytes": 151374559,
+      "locator": "PI_M4B_PRODUCTS/diag-site-packages-fix",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374559
+    },
+    {
+      "allocated_unique_bytes": 3422662656,
+      "apparent_file_bytes": 3422646202,
+      "locator": "PI_M4B_ARTIFACTS/60cb29d",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 3,
+      "unique_file_bytes": 3422646202
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 331776,
+      "apparent_file_bytes": 190895,
+      "evidence_file_index_sha256": "6173ee208ab8a1652210f87615caf4ae2c87803ca953687885bd5517a3e3a698",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "49c52021ffa3fb98b415cdef1e66fbf4d0276e842f34aa4c1caa054fe0dd33a6",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "8c3c08dd5632e48c80627cf3eb25d7fa0577d30c33039bfa312678b8a7773f0c",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "bb4244a7b14f80326bfd5ec9abb2a135470fe55de68edaac1c35d1ce2c89a10e",
+          "size_bytes": 3028
+        },
+        {
+          "relative_path": "debug-startup-01/native.stderr.residue",
+          "sha256": "2d5361f0daae187cb8b39a42b3ca716ee3f3ee4b2db3c7985d2f217984f50c17",
+          "size_bytes": 1596
+        },
+        {
+          "relative_path": "debug-startup-01/stderr.log",
+          "sha256": "6f3f5c1d1d176cf3c46069b6281f2abdd0bcbd8c7dd9ba3a0cb90f5b90af4901",
+          "size_bytes": 1207
+        },
+        {
+          "relative_path": "debug-startup-01/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "debug-startup-02/stderr.log",
+          "sha256": "68b8db7bf9899ec00e04e0564541dab2e160e9a55287c0a43a10027008a6fd44",
+          "size_bytes": 643
+        },
+        {
+          "relative_path": "debug-startup-02/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/junit.xml",
+          "sha256": "610771ba3edbbc8af76b64be09667c3596215c8d5c2ec3014496dd1ae3e19923",
+          "size_bytes": 23772
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "99d5358f50bccc4e86fb3bc5790122d39b5a6d46a8dfc1cc0c70bab94c4b4ada",
+          "size_bytes": 2478
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-001.json",
+          "sha256": "c8ae6b84019a77111b3080225b82ff145370b19a82e7702a53af08cd84e3f2f7",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-002.json",
+          "sha256": "4d36c2e9b2085fbf0c42659dc1627438f3256bbbe77ecad51957c2bbb9017229",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-003.json",
+          "sha256": "a8bbc3e02ca8c285ea7ca087f5c7acd7c9469bd75579aa4b29a73992f724db94",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-OFF-001.json",
+          "sha256": "915e5d1a67e5c01218012ebf02d45e5706c3621f472b5b0228e05c3f9580c935",
+          "size_bytes": 172
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-PKG-001.json",
+          "sha256": "f0cb071e759fb3888bb69d3c99ed5eab5dcaf34e82d80cb19795c52e47f58ff6",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-PRIV-001.json",
+          "sha256": "52093dc62b9e84d5c2a1195e3df7f6e103dd6411136c8840f449b654d73f96f4",
+          "size_bytes": 130
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-RES-001.json",
+          "sha256": "72c2611d63d8375497e4e485d8cb4322860b88a02bee61cb315ada56b6798d1f",
+          "size_bytes": 347
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-001.json",
+          "sha256": "f6291e68c6e4f0ae0fc7a0547aef79c12bf150aa1b810853dd6c214c9261c5d6",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-002.json",
+          "sha256": "f45cc27d7bb30c456849487bd8fd7dfad8347a9d37931f6ec38727f2cbd4d3ea",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "acceptance/logs/network.trace.log",
+          "sha256": "500e8a31c42a6e9886e1186fb1a651fe02947c46541daf3534ecc9d6210fb499",
+          "size_bytes": 7394
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stdout.log",
+          "sha256": "f84e51f97f35aad9bbce0abb71c855d3b2dd78a7a87184834f689593286bba07",
+          "size_bytes": 24807
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "7abe5e1984a168b8418a6daa18c867e5c89b10eac24b0192c4b337760b3375ef",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "1229a9d69fc3d982af14fb2041416ef8801a8f1050f58b62fda3c03724c0b2d1",
+          "size_bytes": 35199
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "8822559e6a6b3a036f35f22e83b849015c7595866840aeb2b532a63b9d1e12c0",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "83df043e0654711e0f12d1d313b14139fdd7b26ccc228d1f06a3d33e992aa2ac",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "45f741731b141bad95ab4d1f120d1931fda6f3111f2386dd3dd8db0d167a9789",
+          "size_bytes": 35199
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "0eacd77d933eeaee4a223fd617abd0a51e76d0fa666f4ce92297bbcba7005464",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "72902c7681c53f6d789ef0ca44633359ca15b69c43013ac68ef1d0d74ed0bfed",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "69980270ee8134c4e21e3968c3285b26623424f3f494bf6e52f5cd2389a5eb38",
+          "size_bytes": 35199
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "fd5690870b3dade75cca4fe990d2b565466486068b5f7aafc255d7359c6ed91b",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "a6dc6862fe2bfc7f310a296e963746eb3e55ab25df494b54b518f69d4403d3cc",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-0f7359f-20260831-dev01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 36,
+      "unique_file_bytes": 190895
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 57344,
+      "apparent_file_bytes": 31980,
+      "evidence_file_index_sha256": "f1ed69c3c3b0fb6a26af6c92fbfe5fc1c4acdcc2b864369bd19a8cf961074e29",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "bd7320978d7bd25f09ac1b707cbd65ce4f21f6370ebb349b6550d77c2b2d4c8c",
+          "size_bytes": 15375
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "3ecbae6afe5cdf5cd08c0d587a2cee1e35529d5e2d33a1219fde1dc98aa3aefd",
+          "size_bytes": 710
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "bccd5353a0f24392f79369e33fdd2cc54f7bc6b81779cc943b6e4493bba68419",
+          "size_bytes": 1634
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "66c8ab1fcfc7e56459a41ca77f11eac4bed314985fbbb2564eb5eb46ce1de21c",
+          "size_bytes": 14261
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 31980
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 151552,
+      "apparent_file_bytes": 96670,
+      "evidence_file_index_sha256": "687ce8849c8edbfa818f00afd7292414bf750c07ec86b3593bbc911449b29a12",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "f411cd1d050aa6ca81f8fe1aa84f5ebf90a8c04bfdddfd4c9033d67f32211cb7",
+          "size_bytes": 26224
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "3ecbae6afe5cdf5cd08c0d587a2cee1e35529d5e2d33a1219fde1dc98aa3aefd",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-001.json",
+          "sha256": "db59c7c96d0e4b5ab1f2287ae6acab5281543b77b86e5effc9c47cf616970206",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-002.json",
+          "sha256": "944b816fe66f4954269a120075e65a50f63af0a29cbcb64a98dd0175a0b46437",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-003.json",
+          "sha256": "2365ada4b3dadce7c922b853bd8fe0947652fa38d32b6fd669fd72265aa28b00",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PKG-001.json",
+          "sha256": "4f09f7a1becf3bb792eafae5749eea586670575f52f5ed189bb7538acbb202c6",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PRIV-001.json",
+          "sha256": "8be263f43f290effe086bf031909134ab8c00f1615681c3b904ec2d30f969f47",
+          "size_bytes": 130
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-001.json",
+          "sha256": "8352df4b08ace9c222c5bc432769393cf6d871250dc84d2f13f07f08b2863edd",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-002.json",
+          "sha256": "88357ffa22ee061aa889904818e1447d02bfd4e9e1f7d8863b8ba0cbd08967dc",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "213a0d17900e7de5d1c0c734eddadbc333d430c33b465ba4ceea2dbb114c9c5b",
+          "size_bytes": 40619
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "1f9e09775233fe85a77d779c490a11e53473c794aa03b0378fd3ea54ef9a5298",
+          "size_bytes": 27746
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 12,
+      "unique_file_bytes": 96670
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 147456,
+      "apparent_file_bytes": 84372,
+      "evidence_file_index_sha256": "0bb652afcd2b77e76a36fb80ac79ba24122017a6ad78a9414de603a91e848f4d",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "ebb55a7f5e197ba126f29edb3ad0bdcf509a406bfd738471731b1eff120de5c7",
+          "size_bytes": 19446
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "3ecbae6afe5cdf5cd08c0d587a2cee1e35529d5e2d33a1219fde1dc98aa3aefd",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-001.json",
+          "sha256": "2e2dcc43d5132b9447fa4e8f82a615a1c743377f7ebab418b82d23b7c54d9f27",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-002.json",
+          "sha256": "a2a5964ca75c4266e361006bc66408e2307cda2ee5b559eb3bff59752d725fcb",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-003.json",
+          "sha256": "2365ada4b3dadce7c922b853bd8fe0947652fa38d32b6fd669fd72265aa28b00",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-OFF-001.json",
+          "sha256": "4d5711eb38b6102d24f6b11237609c336300b4c452342991f90735b713293a22",
+          "size_bytes": 172
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PKG-001.json",
+          "sha256": "4f09f7a1becf3bb792eafae5749eea586670575f52f5ed189bb7538acbb202c6",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PRIV-001.json",
+          "sha256": "674c9d04bb1ae0c456bd5ac9aeedd966b5cc471be15bfec9929beaa69f46294d",
+          "size_bytes": 130
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-RES-001.json",
+          "sha256": "94064fa83e1fa2d7cb3ba0d366314dea49abfaa14a875557b832d886ee52d75f",
+          "size_bytes": 346
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-001.json",
+          "sha256": "f7754f912092a89c09e702b0a6dbba95c66000de24b889524dc4dd5a3f5fdf50",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-002.json",
+          "sha256": "88357ffa22ee061aa889904818e1447d02bfd4e9e1f7d8863b8ba0cbd08967dc",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "7c2f1df493896703ecdee08e4bc7cffc2480dc4bf36388c9d2973e8489642fa6",
+          "size_bytes": 40944
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "5e451675c04457383bbbd06b2117b342bbc85e8f59e4ea066e26bad0022e93f5",
+          "size_bytes": 21383
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full03",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 14,
+      "unique_file_bytes": 84372
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 94208,
+      "apparent_file_bytes": 70943,
+      "evidence_file_index_sha256": "f4ad509afad8f74e2183a9bc5b6da6aa9121bbe553625de09abcc7ac3b3c2b2b",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "0792ae17858803cefc22bce33cdd909ab0a44f57cf592b0e6b4182f3b991dcdd",
+          "size_bytes": 16619
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "75fa464d55086fb6876c4964270cd80bbc66bdf34fad4c26e6f55caf6ecf594f",
+          "size_bytes": 36171
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "be467dcc80c4811044058fad0002b7e1b0afefed3488d466102f4f66736eccdc",
+          "size_bytes": 18153
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4bonly01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 4,
+      "unique_file_bytes": 70943
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 360448,
+      "apparent_file_bytes": 337239,
+      "evidence_file_index_sha256": "8049c91a3479fbff25e63eb00b203438c6455139218d20497c3ef5778cf15421",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "a029f7cb2c8a6191e51c7e4b36189ff06067e8e437224b1c9221a7cdcad5785e",
+          "size_bytes": 235
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "4f7100d6acb58ff883b649068c11c207b2cf86b30cc67f5c96a385cf7b77f495",
+          "size_bytes": 595
+        },
+        {
+          "relative_path": "logs/syscall.6458",
+          "sha256": "eee2a36241f5bf39da1f6628cf18a34358e5f77538b08f5b8f565e34a15bd18b",
+          "size_bytes": 336409
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 4,
+      "unique_file_bytes": 337239
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 8380416,
+      "apparent_file_bytes": 8123481,
+      "evidence_file_index_sha256": "0edd24de3e10e9a5958f6ba93e0c30610391fbc790649ede788bd1c1fd566d89",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "758b349dcf9995bfd6b31d08adbc5bc05daa86addd328b815e3e5c20d9fe21af",
+          "size_bytes": 18477
+        },
+        {
+          "relative_path": "logs/pytest.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/pytest.stdout.log",
+          "sha256": "c15fafac4b858ae82b5512910987b830c9427d8d2d6a6a21b141886f3bae68bf",
+          "size_bytes": 20184
+        },
+        {
+          "relative_path": "logs/syscall.6587",
+          "sha256": "a9776c347ab0c65f8eab8a0ea68e8090fd89df59343d174a1c84beafaf8fce32",
+          "size_bytes": 6524791
+        },
+        {
+          "relative_path": "logs/syscall.6588",
+          "sha256": "0b9072d2dc6dfa7be2543311dbefba4be8294404c0ac67e7cceb818bfbbace41",
+          "size_bytes": 22646
+        },
+        {
+          "relative_path": "logs/syscall.6589",
+          "sha256": "ff0278144229c6ab6c692a50b60a280731e6c494fd798ffda15e39d9f92b703c",
+          "size_bytes": 2257
+        },
+        {
+          "relative_path": "logs/syscall.6590",
+          "sha256": "7fbc036d31738c2bfb0c18f850b2ba7b0cd77665fa3c924736341707baf00dd8",
+          "size_bytes": 2256
+        },
+        {
+          "relative_path": "logs/syscall.6591",
+          "sha256": "93a77025a7b26124b9e5b3ba51e18188fa68d18fe79ababc81883ce2e386ec70",
+          "size_bytes": 2246
+        },
+        {
+          "relative_path": "logs/syscall.6592",
+          "sha256": "5248874b6b25588fbcffa9262cdaaecd3d180cd7cab6fc4b3af6cb0fe0ece0bb",
+          "size_bytes": 2254
+        },
+        {
+          "relative_path": "logs/syscall.6593",
+          "sha256": "e02039df875d89446fcb2236467a885748fa6c5f54ae6d16e5030ce61a1a0a9b",
+          "size_bytes": 2251
+        },
+        {
+          "relative_path": "logs/syscall.6594",
+          "sha256": "906b73db46c80f39c2fa856e8db6c09e14d7507feb9044d42d7d0706485fe7f9",
+          "size_bytes": 26582
+        },
+        {
+          "relative_path": "logs/syscall.6595",
+          "sha256": "1c056ff85adb99e01fb0fd96bba8daf061ee9e0acab192834ec5b2c0c9615e5e",
+          "size_bytes": 1266
+        },
+        {
+          "relative_path": "logs/syscall.6597",
+          "sha256": "93bcf63d0635fc56b7b6c6c5bf36b608f0c77dcbddb2e76a4cbfce5a6baef909",
+          "size_bytes": 661999
+        },
+        {
+          "relative_path": "logs/syscall.6598",
+          "sha256": "cf895e94c1bd65157c3ef78fb1e0c07af43a87b8d56cb59aa7e488bb9df7686c",
+          "size_bytes": 209011
+        },
+        {
+          "relative_path": "logs/syscall.6599",
+          "sha256": "c9bf50ba30e46772b8594f00c526af7639fcabe3b1e0024b0489d8a7c68986ec",
+          "size_bytes": 249438
+        },
+        {
+          "relative_path": "logs/syscall.6600",
+          "sha256": "dcc7410b21705bea4026846f5ab525b8b53189e4817b9eeae9c403bccdea6002",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6601",
+          "sha256": "b12227026821f56e6df2aae9fc87cddbbd0607e549b24b24b1f95b887d1916a0",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6602",
+          "sha256": "4b110cd71a7b4528b434a1a554a35390374aba821ee54a05948d61ac9c8da9da",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6603",
+          "sha256": "a7d733c14edb10c29c21ca00dfc60d6c51912cf7710c9ea63e06af72fddc1513",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6604",
+          "sha256": "f0eabef00746a1196a63300f989527eebabf3acae2957aa855c8179dc1a781d7",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6605",
+          "sha256": "1a5ac546d4b3f8ac6d61ebb5363f7d671dfc1b74b6e733402a5f963371125151",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6606",
+          "sha256": "f175dacc0dfd6fe4f296c49ec82b8d3326642ff141f7e817adefc757475f35d7",
+          "size_bytes": 9886
+        },
+        {
+          "relative_path": "logs/syscall.6607",
+          "sha256": "4e3d4ed15a7a3191d2e308aab44d8c696538061896a47c480d039567c1f557d6",
+          "size_bytes": 9260
+        },
+        {
+          "relative_path": "logs/syscall.6608",
+          "sha256": "af7454caa03e9f3d159eb8c4c0cd2559e4722aee97ae121cedad21f85e61061c",
+          "size_bytes": 9284
+        },
+        {
+          "relative_path": "logs/syscall.6609",
+          "sha256": "0fda0b7f8482e61815f3557f7bcddd82fdc3f0b2305ab53c8a33defb1d9637f4",
+          "size_bytes": 9284
+        },
+        {
+          "relative_path": "logs/syscall.6610",
+          "sha256": "8fe12694cf3c713768db9999d03ed73b1f12bc56dff6eef7ee644c9cfae497ba",
+          "size_bytes": 1608
+        },
+        {
+          "relative_path": "logs/syscall.6611",
+          "sha256": "71d8d2776058c6755c377045313b8cb8d2feee35056ca739363d3a1f327efdf8",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6612",
+          "sha256": "9d943f75b233729f23464730c0506f745e4638c2a88352f40c1f2a8436a796fb",
+          "size_bytes": 327003
+        },
+        {
+          "relative_path": "logs/syscall.6613",
+          "sha256": "5b01ac4aa44c05cd37a90edea9b0efa37ed642fd954503560baa7ffbae64b59c",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6614",
+          "sha256": "c77a014fe6f3b453429049998b6c0fb1166c1905cf14eb5c0e6cec6739add544",
+          "size_bytes": 40
+        },
+        {
+          "relative_path": "logs/syscall.6615",
+          "sha256": "e90931997cebf87bf71e02e0825293568f97e872f0381a3003c3b9aaad640a67",
+          "size_bytes": 2396
+        },
+        {
+          "relative_path": "logs/syscall.6616",
+          "sha256": "4e91dd9f7ede8b271fa47c714683651297b2aa7a5b0e07506572ac41db4c1b76",
+          "size_bytes": 3620
+        },
+        {
+          "relative_path": "logs/syscall.6617",
+          "sha256": "b5c4bbea67d96f5c5936121cdcdd06ca259270ea065dc57813b85b404a6f004d",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6618",
+          "sha256": "115f5fdbc7d28c14b5782ee4594b56438c520d4672185e4ee46fb581e0e455e8",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6619",
+          "sha256": "67bba54f83ee8ba36a3c03bec8d694e4babc8c41e663a766123680db4c70f143",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6620",
+          "sha256": "80a62e14c587bea1bdb2aa11fbcca93f562ae0b4f00a041e90301a1d8eddc4f1",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6621",
+          "sha256": "6b1f212dfaaa16e69e85b8eb2f05d5e54a7cd495fa08e8cdffd3ba86388fdf1b",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6622",
+          "sha256": "dc40f12d5905d0a5b78d79d46e0c4f47369b975c22e6ae8f4e9ccb559ad66c3d",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6623",
+          "sha256": "70f0ff158bcd1d1f0de7eded046ec853939978be267a41e30b91bff6f0124f70",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6624",
+          "sha256": "bce0d20d5bbf60b5689281e45dc734b0e5192a19ae0b5c40d4bc0601a22befd5",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6625",
+          "sha256": "20cb4333675bf16910f72fae83f722875a9ebd4b0aebf431179996171bb7be3e",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6626",
+          "sha256": "781d3e5860004503e48bfc396a6b95cc5652ec5792d8ab0c06fab758bef2d14e",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6627",
+          "sha256": "bfd60fa09db90d63d04865b359a605a12c1808bbc76044514d7854af36795e32",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6628",
+          "sha256": "7f6a20dea49da11e7dcc4dd9332765e7106dd0a2b86f3f2f2f16c2858a839c65",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6629",
+          "sha256": "0a81bbf0a07412e0972a03e7db5e44be6e73d7b8e81e590f3990a9dd237b8168",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6630",
+          "sha256": "d8f30978848afcfa26c5f76f685168bbb12224dc6f3be68ff3d20487691a0a3d",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6631",
+          "sha256": "f5159d82aa7942ec00d3035112f5a3d5a306f1d44da320ae66794c554cc9827a",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6632",
+          "sha256": "274b2fbfca13c3f708d72545fb75b67a3cf11df74aeeb251538fb319861266dc",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6633",
+          "sha256": "db9df09f7f88ff0db4f351f96857db6a016a3ba51e921873b7aedd7c883ae3e4",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6634",
+          "sha256": "92533c508b9f3562b4fa7798c85ffdbd5b3de3ffcc51c3b154a741c74b922db9",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6635",
+          "sha256": "90ac6d9cf1c5c0f78e31fd272e7b415fc91130e175304680eda4b89abf02ee39",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6636",
+          "sha256": "de1b319cceebb5f8e69194f8c6a036feacc977a4b0e7c6d0cf653995a1019141",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6637",
+          "sha256": "2dfa09f24d997a4bc6db4ad6c5fa09d594f8368a832231bcf35d7c0f3aaadfdf",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6638",
+          "sha256": "afbbe7d722ad5b086afdbd6d488f85d0875e9222c22f5cd7f54be3cf468126fb",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6639",
+          "sha256": "b0897152bec0a4f5e0d1847a8766e05bb5f9c922293c025921b06ff3508b0b2f",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6640",
+          "sha256": "36789d933c086f3f30850c24e7eca63b5b995bbd0ed6cbbd4cfc7762f153eb11",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6641",
+          "sha256": "f7ca0f2471cf4bd07e8cf80be7f71ae8f88b8c422b2e28f93d3f4b97f299dbf4",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6642",
+          "sha256": "644a1e5d1af4d8ee2852023a913bb4d5b53f17b7247b04084090ad5c798f89b3",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6643",
+          "sha256": "d5c943e4574dc4e41d0bb0d7b4e58a49502f667edf18978be259d12fc30d8e69",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6644",
+          "sha256": "b1bf25b57a03e5eea592b3489ceab0ddabcfb209a76c0fcdb46e81dc69f2efdb",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6645",
+          "sha256": "18766aab4d6062a0447c313aeb6eb6d5394f2f334247fc54a8fdc9a66017af3b",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6646",
+          "sha256": "4c16e03803e3143a07223218af0368de6aabb66bdf89077f8e4235fa54d37d13",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6647",
+          "sha256": "7a0599f909ad2582296a11831ab0057fac80cb8e23aaa4fc85e16a4fbee05233",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6648",
+          "sha256": "5821c7d74ba1abad927207a9a2cbc48cf29a529d46ff3473c707518a25b6fc5e",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6649",
+          "sha256": "2eca9d7b04d7f45ae973adcc1c58d4f24797f708d1010d2af390b1064cd1cbf6",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6650",
+          "sha256": "7cef9c5c4e8ec4e3265a38e78850aefb014a8ae1bcbb948e6e5d4a0b9cdf8c06",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6651",
+          "sha256": "80c1bf6576b6e53de0cb82bd08259708943f024f7915691f479578caf4c3aedd",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6652",
+          "sha256": "bbfcaf2c056a1774d670304116783d95b5e469b6a4b8463ae1237977102d8e00",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6653",
+          "sha256": "71f42c0477bea0aa239dd4051b4c2d74b9908792ce9b99627ac6e324ffbe7e6c",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6654",
+          "sha256": "3eddc251160f88e222d0658572954f131e40f998d2f6835d49bc90c1b64b77fa",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6655",
+          "sha256": "4a5e5bb0a8980e02c939c8dc4ebf7f480388ad6ce82c88bf9c3adb68ff9f5e13",
+          "size_bytes": 84
+        },
+        {
+          "relative_path": "logs/syscall.6656",
+          "sha256": "f366e577cb3e71774c54f9ae8935128d19cae91fda0627a771cd4f91176d6a55",
+          "size_bytes": 637
+        },
+        {
+          "relative_path": "logs/syscall.6657",
+          "sha256": "b522e323afbff6a8eb2e9024fc5bfcbd63286a199b1563c0fd43c0fdbd6b428d",
+          "size_bytes": 1165
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 73,
+      "unique_file_bytes": 8123481
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 45056,
+      "apparent_file_bytes": 35430,
+      "evidence_file_index_sha256": "0dea1b9cb843ded86caf2aa5e52e29e4e3b84908ef8a1f73a24239a058dc2754",
+      "evidence_files": [
+        {
+          "relative_path": "network.trace.log",
+          "sha256": "d0411cf41c572ec272b7b1f67177f781d18717e2870a4364840b082aef2c0830",
+          "size_bytes": 33606
+        },
+        {
+          "relative_path": "stderr.log",
+          "sha256": "c8945d980894173f19c83a24af49767ff48243cae23a094f50b7a3452e4d01d0",
+          "size_bytes": 1824
+        },
+        {
+          "relative_path": "stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-shutdown01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 3,
+      "unique_file_bytes": 35430
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 344064,
+      "apparent_file_bytes": 220009,
+      "evidence_file_index_sha256": "80ceb26c799a74635644f580e9d03c1cec02d657bd14dc9187639aef49263b2f",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "3ecbae6afe5cdf5cd08c0d587a2cee1e35529d5e2d33a1219fde1dc98aa3aefd",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight-02.json",
+          "sha256": "79951605cf42c97faff9ac44f1194c5b7432b0b6965175ac4737c1f1f5564d70",
+          "size_bytes": 851
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "0b058996d617c2a7c9b2153fdcfb9f93da99b41b5b2b352be60077a11227b0fd",
+          "size_bytes": 82
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "f8ba7e9927f4fb9a6c7969903c99b99f522dd63093c54c96cc0f94482931038f",
+          "size_bytes": 3028
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/accept-failure.json",
+          "sha256": "e90a91cf285398a6b366d50540372ce56bd5e872df3502d8d0743df3b30e6d83",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "acceptance/junit.xml",
+          "sha256": "b034f754275dca752aeba60aeaf7677372335384f280ce9ca3bfb5e28493eba1",
+          "size_bytes": 21115
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "8375a49ca16b8d7328e8cf235f3c8913a4a8b846427dfe0b9e3727aa02c13359",
+          "size_bytes": 2468
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/result.json",
+          "sha256": "5eb74d19a972b0336b98c841f637e46e84ecf174a6a8e51a96178376876806b9",
+          "size_bytes": 1697
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-001.json",
+          "sha256": "2be2e9edcb8637e254b6f3eaa602fb2fb8892a94afc1e23c827ddf5255711117",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-002.json",
+          "sha256": "0e6c86252f48ca5369d7381e645ede7a3b586bd5ef21ddd1255b2b41cd41933a",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-003.json",
+          "sha256": "2365ada4b3dadce7c922b853bd8fe0947652fa38d32b6fd669fd72265aa28b00",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-OFF-001.json",
+          "sha256": "4d5711eb38b6102d24f6b11237609c336300b4c452342991f90735b713293a22",
+          "size_bytes": 172
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-RES-001.json",
+          "sha256": "5b981efca45966daac1281ad6cf3e9bcf7a4c182c159392b22e96d01de150c5b",
+          "size_bytes": 346
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-001.json",
+          "sha256": "884822c926e3bda540c7e32a7205f837c0708c52c08d8288b1e30348ad6ff790",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-002.json",
+          "sha256": "88357ffa22ee061aa889904818e1447d02bfd4e9e1f7d8863b8ba0cbd08967dc",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "acceptance/logs/accept.stderr.log",
+          "sha256": "36602ef0910ffc8ece1ef56871667d7fcec010dd1e6a521a6d54c22837a1cb82",
+          "size_bytes": 64
+        },
+        {
+          "relative_path": "acceptance/logs/network.trace.log",
+          "sha256": "e61ea5c5e49243d91855222312fd4202027b767851224b378dc10697f4c45f85",
+          "size_bytes": 40936
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stdout.log",
+          "sha256": "40fecd52b2d8492c02098cf07d56cdcddd9c77e7d7f4c7ffc1dc0eff94081504",
+          "size_bytes": 22789
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "8f141f25073186aaf039a0b899733bac6c4d17b15d80a62f0f03c53db9e1bb86",
+          "size_bytes": 674
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "29053de302cc095d8a4b149829ca9e4ebda78bcaa0515cd570eabee7efa342d4",
+          "size_bytes": 35978
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "f0c9903923b96db4e4eac545147766b3513387c3741c82c1b11ef2d94abc5900",
+          "size_bytes": 1931
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "e4b592876e6c2e3635b6a1a71e2621277d38b8a4e1c66c6b4efa2c8c581b44bf",
+          "size_bytes": 2000
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "2f03ad8e072098be7dc58868a65ddd671a471bb95a1990d3333bfb804875440f",
+          "size_bytes": 35978
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "576f4eaed1fa8794dc12c46d3fd16648f1869b6c9d329ef68ee671c0b0375077",
+          "size_bytes": 1931
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "e23259b84078735e7405c157f077bdfd244c7bcc4a0dbe4e2636e4757d947ce6",
+          "size_bytes": 2000
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "a9468318f224d352cfeeaa0942950b849e06b1ccc1948e3359170dab61630ec5",
+          "size_bytes": 35978
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "251df63c1a610d08b1c1db4e8eeea61ba362ae75461cd8ece7a9db038e3a24a4",
+          "size_bytes": 1929
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "a5f75a4a16554aef848b2260e930b725f1087981039118ec71a96bf9dd006d26",
+          "size_bytes": 1999
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-274b2db-20260831-pi01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 33,
+      "unique_file_bytes": 220009
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 12288,
+      "apparent_file_bytes": 3739,
+      "evidence_file_index_sha256": "510f1af5f70676f33c28e088fe3c90ef6936e4c732b08a4ac9f6e87c240f674b",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "0bad3dba178455b39ab816392804fffd15db5fbc06f989139281ab70ab03121a",
+          "size_bytes": 710
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "0464f380ed6273f8fcec6eb1faaa747a30a1587583ff28da8577f4eafa3360ad",
+          "size_bytes": 3029
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-config15",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 2,
+      "unique_file_bytes": 3739
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 98304,
+      "apparent_file_bytes": 74870,
+      "evidence_file_index_sha256": "6423f1223e86fcc9cbc2801669db05410f72132e8cf245827bd51c69317261ab",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "d4a0b7e9b28c9c71680fc4d0d3b8228eecc677dcb9fd427adef24a991fd27815",
+          "size_bytes": 17455
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "5dddf3052efec41216137aba20f91d3dcf249de2b863d400553e1fc02532a4c7",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "7654501e06a1cf71eb5a18a10ff54e7ad122bc911580a2eb4a2f5beb7ae1f3b8",
+          "size_bytes": 35837
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "3a03e411767c89149a5b2535e6309dd1e64da9a8f13e2ce18b1a52aaf9a66809",
+          "size_bytes": 19094
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 74870
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 65536,
+      "apparent_file_bytes": 38473,
+      "evidence_file_index_sha256": "0837e74d479b2239fc26633faccd37a5e04dc702be30a008c5339366b6fdd065",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "0aeff733c4685681e0bd0e05eb62ef8aef1af701eb3f5b8044106a32b42d4024",
+          "size_bytes": 17455
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "c8ed0812e8ac52a5fb870ca203c95ee14fef182fa5850d268b6dfd31b096ac78",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "rendered-token-count.txt",
+          "sha256": "dbae772db29058a88f9bd830e957c695347c41b6162a7eb9a9ea13def34be56b",
+          "size_bytes": 3
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "bb72a07422d7e3c5e5cbcede771786ac59ccfa15215bac7f985894e00b5e26f6",
+          "size_bytes": 18531
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix03",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 38473
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 28672,
+      "apparent_file_bytes": 9389,
+      "evidence_file_index_sha256": "e35131e8358ecfc7dcaec87715ed459bb71c44c5176d5c8b1bad81f47975e3fc",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "640610c03c03707e8311a27ed3c69767279d9ab61283072e696d80f4058c7295",
+          "size_bytes": 2043
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "1890974981b12cb2fe9f8d5815fa1f3a0e113a6c8e62911c740abc63e59e7af3",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "19a05c1c711c79f21d79840a00ab7f3d2ef3401349aeb4eb627f8726db066ef3",
+          "size_bytes": 1758
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "a7964338c1ff92ede60772c72a2e3240bf2d2cdb3ec5750b2acab7d47a9588cd",
+          "size_bytes": 3104
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 9389
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 102400,
+      "apparent_file_bytes": 80168,
+      "evidence_file_index_sha256": "010ef885981d77ba2162e6e3547494d4e7b4f8e90b40524f77291683a4af0ff2",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "e24eb68c7a7dca0673c2670c118bdda0ea80d3e87c29a3e6798ea0e7cfdbf6d5",
+          "size_bytes": 19954
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "7cf2176d84b97a254998eed9bf1ff447d2140fe9cca1375646b04d8ebf422c1d",
+          "size_bytes": 2486
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "cd7bc4db142ffe1882b8ccd45ecdb095af8e3a06a2cb7bcec8cc6290f8782160",
+          "size_bytes": 35887
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "f1940a734a9c9820f0b66f3219aeb7f2456c03b474af9cd5023c54b83b4a7d3a",
+          "size_bytes": 21841
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04b",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 80168
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 294912,
+      "apparent_file_bytes": 208249,
+      "evidence_file_index_sha256": "a4ae28ccde9629846812a298a9560ffe487f2da1d7799df66fc82b75d5434856",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "9b9d831e3a735ec80cc5f7ce4f2e2515aba7c90c2a931fd03d101eaf186c1132",
+          "size_bytes": 19953
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "0bad3dba178455b39ab816392804fffd15db5fbc06f989139281ab70ab03121a",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "49eb66154f8b46e776fba0d373f70923745ced7e5e565bfc92417cf1248ddd3f",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "0464f380ed6273f8fcec6eb1faaa747a30a1587583ff28da8577f4eafa3360ad",
+          "size_bytes": 3029
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "c040edc518e228ad4f984009f29520cf5bc43281f85a122fcde5899350290ab0",
+          "size_bytes": 2550
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "3c17ece7fdc08d00d8118c2e766ee0b462d05623b60097b18d08717651e89568",
+          "size_bytes": 36016
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "dafd1b3b95a5dd1e2a1dd02a7db71d0734e513de2245379eb0167cfa22699845",
+          "size_bytes": 21841
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "c0bbbfca30475ef001146962b1f98fca37f0593924346bdf166258ed0eaef126",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "7e9de7c602592724a199ead91c23619b5dff95b155296d6e1b60ccf91d8c7f8d",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "94804b6d9d31cc77d3ec9a4e87cd5a844bc65b74f9deabb20a509aa89d950bf2",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "38604b6fae299612433931f1115b472afe604b535cf736ef0ac43d14f878505e",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "96584d8c2784c8cbaf13dbb1aa60b378418d7e44df5eec2cfba100d0ab82eebf",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "2c852f607755810aef69c00201d33333cd8b357d337579d247947605a24c2594",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "00c751e729afb199f73cc6e122ccca1843a4f5c11934d5662a05568849151959",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "77cdb232475915f25e126fcc1c47b36ac7eb8b25565ff8d4ba28f224f4b7c2fb",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "8384cfb94ea21f1d3dd9c22188adc6805c777ee80ef036d88d5538cd06e7f9bb",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "4853c5b01df4336624ebe0dcee34c5d6f1085a98c6961a741404c296e4b3e9e4",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix05",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 22,
+      "unique_file_bytes": 208249
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 28672,
+      "apparent_file_bytes": 3443,
+      "evidence_file_index_sha256": "cb5b5a43ac8306666f0d5ab70b7163f737c8c23375c9c082a6c3e15b6d054add",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "24d3bf5fc877aa751e7947cf22e2ee47c2c3d8c99e3af3fb263f19dc876910eb",
+          "size_bytes": 235
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "ef44dca5b53adfd65831fe4731907e56eddea95131d06c8ad54efe7e846a4dac",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "c5dc10f34d2c00cd81946daeb1b98c7bf193f3f2e595b7d81e39621631f9682c",
+          "size_bytes": 114
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "2564d6a12a181b804d7d5f3e498febc9de079a2413173deb80ad16b967067a77",
+          "size_bytes": 610
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 3443
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 102400,
+      "apparent_file_bytes": 80311,
+      "evidence_file_index_sha256": "4fb45d04f011cc4a1d139b91157e4a3a534593f4d46b745a1f4ede1fbf75d38e",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "6b8d1261debffcc4fc4c94f5ef7c3d669c4ef90a89bf7ebcde4eba55428894d7",
+          "size_bytes": 19952
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "27ccb0e452f32b06116f8819d952fb97ee6bb745505df33981636b2ab7279dae",
+          "size_bytes": 2486
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "ec1af71b3227af8808e0a90058f3cad31f029e3a72afaad8e09a5f016f3acf58",
+          "size_bytes": 36032
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "98190d14884320d62b74f2026f41851ab1096fb23849882ffaddcc9c9e2efc73",
+          "size_bytes": 21841
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06b",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 80311
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 20480,
+      "apparent_file_bytes": 2565,
+      "evidence_file_index_sha256": "acbbcb14f7615980c2118c286b1fcd7328c8573ea73a0a8e720cd8aab39e7447",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "aa5e6e8a6c6d9a925ddca828a7d1afa66bab5794c5d48a5ff726a8152fc50d96",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "27bdde0f20de2adeb9dd0c06556277d2632e91b2c5ee231d544aa10ab768f631",
+          "size_bytes": 81
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 3,
+      "unique_file_bytes": 2565
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 69632,
+      "apparent_file_bytes": 45535,
+      "evidence_file_index_sha256": "a5fa0a9ef68202093d990c91b9d655f7acc555fe1f78d061ac6b1b78850841cb",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "1a9843d7abde89ba1c53a6434464207940a028dfcd00d7f5114c65ed4bbb2677",
+          "size_bytes": 20842
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "0803e9ee3e5c066e2e3c9894a39acfac52c0582a889b1b60614ef797bdb5549c",
+          "size_bytes": 2486
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "ee3d2e8fe75bdb786ee8cf1c65b55e5fd47a2da954674c7d1efc5c2186e7b7c7",
+          "size_bytes": 22207
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07b",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 4,
+      "unique_file_bytes": 45535
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 102400,
+      "apparent_file_bytes": 80059,
+      "evidence_file_index_sha256": "d6567f9ea10575182be3e35d35ce07a1a229b83da4101fe4daff678a209f3e2c",
+      "evidence_files": [
+        {
+          "relative_path": "junit.xml",
+          "sha256": "55bafe863e53a75705875ef8d6e22cf4fa950fbf44066182cdae041724abe48d",
+          "size_bytes": 20116
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "14f73a32888f092333bd0953f715b87de108183c6b94913f53671017916dfd54",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "07f0e21d94cf81f6d4494eddac6e888759c30608cb2b3d58ce73d463a736578c",
+          "size_bytes": 36019
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "1a58a514f67c7cd15c782805857392a71700c784f41cd97537bcbc219c9c343d",
+          "size_bytes": 21440
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix08",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 5,
+      "unique_file_bytes": 80059
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 61440,
+      "apparent_file_bytes": 40253,
+      "evidence_file_index_sha256": "de0906ef398f201a8d0c60627a97c463612c691d8557109668401c6e267f4db8",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "preflight.json",
+          "sha256": "64c21fdd735e3dbdf97178a69f0f8a526c2a9f1e026affc2216c382a91d6cd9f",
+          "size_bytes": 2484
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "9ffdaadc82f80698c178d28ae16dd839a15e111e23d185c02f9bb478435ed845",
+          "size_bytes": 37769
+        },
+        {
+          "relative_path": "logs/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix09",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 4,
+      "unique_file_bytes": 40253
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 221184,
+      "apparent_file_bytes": 130702,
+      "evidence_file_index_sha256": "995197a056b3e05239b8e06ed2dbc877f9540aa12d48c220b9b5617dd66eea6c",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "49c52021ffa3fb98b415cdef1e66fbf4d0276e842f34aa4c1caa054fe0dd33a6",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "49eb66154f8b46e776fba0d373f70923745ced7e5e565bfc92417cf1248ddd3f",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "f8ba7e9927f4fb9a6c7969903c99b99f522dd63093c54c96cc0f94482931038f",
+          "size_bytes": 3028
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/accept-failure.json",
+          "sha256": "9d0c7d34bc1efdd243466b9780a9aaa4634e4831160106d332f990be4405e5ec",
+          "size_bytes": 255
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "e1c141def2b4ac21c46848649d4f47e164c88b70bb2d437833efd6adc2519a6b",
+          "size_bytes": 2478
+        },
+        {
+          "relative_path": "acceptance/logs/accept.stderr.log",
+          "sha256": "edcca3bd8af84f2e5b667bee12c416c2d9c3a94bac5a30f6d602496ab37726e7",
+          "size_bytes": 37
+        },
+        {
+          "relative_path": "acceptance/logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stderr.log",
+          "sha256": "0260ef1e4d59b0495858ad1eb3f3ebe4277d62379e2675f4b5f7de20b4663e0a",
+          "size_bytes": 44
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "c0bbbfca30475ef001146962b1f98fca37f0593924346bdf166258ed0eaef126",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "7e9de7c602592724a199ead91c23619b5dff95b155296d6e1b60ccf91d8c7f8d",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "94804b6d9d31cc77d3ec9a4e87cd5a844bc65b74f9deabb20a509aa89d950bf2",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "38604b6fae299612433931f1115b472afe604b535cf736ef0ac43d14f878505e",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "96584d8c2784c8cbaf13dbb1aa60b378418d7e44df5eec2cfba100d0ab82eebf",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "2c852f607755810aef69c00201d33333cd8b357d337579d247947605a24c2594",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "00c751e729afb199f73cc6e122ccca1843a4f5c11934d5662a05568849151959",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "77cdb232475915f25e126fcc1c47b36ac7eb8b25565ff8d4ba28f224f4b7c2fb",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "8384cfb94ea21f1d3dd9c22188adc6805c777ee80ef036d88d5538cd06e7f9bb",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "4853c5b01df4336624ebe0dcee34c5d6f1085a98c6961a741404c296e4b3e9e4",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 23,
+      "unique_file_bytes": 130702
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 262144,
+      "apparent_file_bytes": 170023,
+      "evidence_file_index_sha256": "dcd2fded5467829cd50740715329bdb1e0f7c8a88be9a4a6e3ac7fef93479e72",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "49c52021ffa3fb98b415cdef1e66fbf4d0276e842f34aa4c1caa054fe0dd33a6",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "49eb66154f8b46e776fba0d373f70923745ced7e5e565bfc92417cf1248ddd3f",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "f8ba7e9927f4fb9a6c7969903c99b99f522dd63093c54c96cc0f94482931038f",
+          "size_bytes": 3028
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/accept-failure.json",
+          "sha256": "335a94fb23e277fb384a5244647f2d2ca78fec247d1389bfe70b4f2c448c5e7b",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "acceptance/junit.xml",
+          "sha256": "39e96a994877aeaaf94aa02181770b1354db3ad54fc443d7036fa4ceddaa35dc",
+          "size_bytes": 19228
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "800875b54d50a0e0097ef33f1a96fc0611a3470e3f921c36e02bde91d8ed0bf3",
+          "size_bytes": 2478
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/result.json",
+          "sha256": "6f4ffd65ca20e3d9c880137abe39fbe5dda95ba9e125dbd8f8f454f61e1d31b6",
+          "size_bytes": 1708
+        },
+        {
+          "relative_path": "acceptance/logs/accept.stderr.log",
+          "sha256": "36602ef0910ffc8ece1ef56871667d7fcec010dd1e6a521a6d54c22837a1cb82",
+          "size_bytes": 64
+        },
+        {
+          "relative_path": "acceptance/logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stdout.log",
+          "sha256": "55bd18cd7e17a2159b333013904c06ef2029580b216b9211f0a06de670360eeb",
+          "size_bytes": 18375
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "c0bbbfca30475ef001146962b1f98fca37f0593924346bdf166258ed0eaef126",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "7e9de7c602592724a199ead91c23619b5dff95b155296d6e1b60ccf91d8c7f8d",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "94804b6d9d31cc77d3ec9a4e87cd5a844bc65b74f9deabb20a509aa89d950bf2",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "38604b6fae299612433931f1115b472afe604b535cf736ef0ac43d14f878505e",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "96584d8c2784c8cbaf13dbb1aa60b378418d7e44df5eec2cfba100d0ab82eebf",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "2c852f607755810aef69c00201d33333cd8b357d337579d247947605a24c2594",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "00c751e729afb199f73cc6e122ccca1843a4f5c11934d5662a05568849151959",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "77cdb232475915f25e126fcc1c47b36ac7eb8b25565ff8d4ba28f224f4b7c2fb",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "8384cfb94ea21f1d3dd9c22188adc6805c777ee80ef036d88d5538cd06e7f9bb",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "4853c5b01df4336624ebe0dcee34c5d6f1085a98c6961a741404c296e4b3e9e4",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 25,
+      "unique_file_bytes": 170023
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 192512,
+      "apparent_file_bytes": 127255,
+      "evidence_file_index_sha256": "f5e1f1122a6ed646fd9abd5a71ccf4ca0213271c6b86baf79825056e66c6a26c",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "3d2641a83b7a184d463d056277651a1f4aea3876232e1e8628d3ca3c858fe81b",
+          "size_bytes": 77
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "49eb66154f8b46e776fba0d373f70923745ced7e5e565bfc92417cf1248ddd3f",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "f8ba7e9927f4fb9a6c7969903c99b99f522dd63093c54c96cc0f94482931038f",
+          "size_bytes": 3028
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "c0bbbfca30475ef001146962b1f98fca37f0593924346bdf166258ed0eaef126",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "7e9de7c602592724a199ead91c23619b5dff95b155296d6e1b60ccf91d8c7f8d",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "94804b6d9d31cc77d3ec9a4e87cd5a844bc65b74f9deabb20a509aa89d950bf2",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "38604b6fae299612433931f1115b472afe604b535cf736ef0ac43d14f878505e",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "96584d8c2784c8cbaf13dbb1aa60b378418d7e44df5eec2cfba100d0ab82eebf",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "2c852f607755810aef69c00201d33333cd8b357d337579d247947605a24c2594",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "00c751e729afb199f73cc6e122ccca1843a4f5c11934d5662a05568849151959",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "77cdb232475915f25e126fcc1c47b36ac7eb8b25565ff8d4ba28f224f4b7c2fb",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "8384cfb94ea21f1d3dd9c22188adc6805c777ee80ef036d88d5538cd06e7f9bb",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "4853c5b01df4336624ebe0dcee34c5d6f1085a98c6961a741404c296e4b3e9e4",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev03",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 17,
+      "unique_file_bytes": 127255
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 339968,
+      "apparent_file_bytes": 209055,
+      "evidence_file_index_sha256": "8d1a05ab8bf403abb5537c79bcec089ccc5ec7a3f44a928fd8eda16c0fc76a34",
+      "evidence_files": [
+        {
+          "declared_status_fields": [],
+          "relative_path": "hardware.json",
+          "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af",
+          "size_bytes": 3973
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4a-product-preflight.json",
+          "sha256": "5e455b0d44d3006c06645bfc938b982e8ebaef89adbf82eb5c4ebdb85cb994de",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "m4b-product-preflight.json",
+          "sha256": "49eb66154f8b46e776fba0d373f70923745ced7e5e565bfc92417cf1248ddd3f",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "target-config.yaml",
+          "sha256": "f8ba7e9927f4fb9a6c7969903c99b99f522dd63093c54c96cc0f94482931038f",
+          "size_bytes": 3028
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "acceptance/accept-failure.json",
+          "sha256": "d541dce1afe3251bd217b3a7d12eaa4bcd04e2fb61fa7a49925f3183e2c49aba",
+          "size_bytes": 273
+        },
+        {
+          "relative_path": "acceptance/junit.xml",
+          "sha256": "23d83ed6788e482cf9eb7eb9f3811e7cf5413ac87b5343366dbdfb6f95222571",
+          "size_bytes": 25468
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "acceptance/preflight.json",
+          "sha256": "e29af41fc5385c1e4d78b164bc021f0d29243f56fee2952665a4bbe5e4b06e9c",
+          "size_bytes": 2478
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-001.json",
+          "sha256": "7f1d9c91e860eb0c65ee8c53f2d3e64de9a00b4db94ac89e1d889c487d57e976",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-002.json",
+          "sha256": "1985a6def29e911cf550e09f85a3e7d45b52a48514a3671e8f2d41d1aac1f9c0",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-ASR-003.json",
+          "sha256": "4a36b09879dd063ca1e24c291ee62f2e4fdec3736b8ed94dee71bb712aac96ce",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-OFF-001.json",
+          "sha256": "95601216faeace814a8c2b020ba1a2c8c526f02f6f369540fe169b52409e331b",
+          "size_bytes": 172
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-PKG-001.json",
+          "sha256": "964ce0a8fad3fddf3685d6bb9214e3cbd79af9c2a684a667fa0e1bd8e8d44db3",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-PRIV-001.json",
+          "sha256": "f1c834a255adc64e27c730887fca2eb579d0c1bf9c090db90c52f5a0c06a908f",
+          "size_bytes": 130
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-RES-001.json",
+          "sha256": "da90a2574a1b452b8f311029d80a47f6c4b6be6612b1c97ba8b2c357bddb2074",
+          "size_bytes": 347
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-001.json",
+          "sha256": "132333558722832dbe8dc1033ecac461ee93ad8ea8121def9446ba6c90adca4e",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "acceptance/cards/M4A-TTS-002.json",
+          "sha256": "e88064bdf1f1c51f514af2901aaaa94663d7ce6963241d70a43e307068dcdbab",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "acceptance/logs/accept.stderr.log",
+          "sha256": "f44d6731ff537f19fde09d5757349beb5059505442526099069349c4941361d3",
+          "size_bytes": 55
+        },
+        {
+          "relative_path": "acceptance/logs/network.trace.log",
+          "sha256": "7bbe48c7a5278c9038130488909aefd77f2f8897eb09810cc2edeb20c2241fd2",
+          "size_bytes": 24353
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "acceptance/logs/suite.stdout.log",
+          "sha256": "9690d7527cc53b975b7747839c438eedd2c7f393698aee943c9fd30d356f68d1",
+          "size_bytes": 26650
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/matrix-index.json",
+          "sha256": "c0bbbfca30475ef001146962b1f98fca37f0593924346bdf166258ed0eaef126",
+          "size_bytes": 680
+        },
+        {
+          "relative_path": "portable/python-3.13/junit.xml",
+          "sha256": "7e9de7c602592724a199ead91c23619b5dff95b155296d6e1b60ccf91d8c7f8d",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.13/result.json",
+          "sha256": "94804b6d9d31cc77d3ec9a4e87cd5a844bc65b74f9deabb20a509aa89d950bf2",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.13/logs/suite.stdout.log",
+          "sha256": "38604b6fae299612433931f1115b472afe604b535cf736ef0ac43d14f878505e",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.11/junit.xml",
+          "sha256": "96584d8c2784c8cbaf13dbb1aa60b378418d7e44df5eec2cfba100d0ab82eebf",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.11/result.json",
+          "sha256": "2c852f607755810aef69c00201d33333cd8b357d337579d247947605a24c2594",
+          "size_bytes": 1941
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.11/logs/suite.stdout.log",
+          "sha256": "00c751e729afb199f73cc6e122ccca1843a4f5c11934d5662a05568849151959",
+          "size_bytes": 2151
+        },
+        {
+          "relative_path": "portable/python-3.12/junit.xml",
+          "sha256": "77cdb232475915f25e126fcc1c47b36ac7eb8b25565ff8d4ba28f224f4b7c2fb",
+          "size_bytes": 35459
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "portable/python-3.12/result.json",
+          "sha256": "8384cfb94ea21f1d3dd9c22188adc6805c777ee80ef036d88d5538cd06e7f9bb",
+          "size_bytes": 1935
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "portable/python-3.12/logs/suite.stdout.log",
+          "sha256": "4853c5b01df4336624ebe0dcee34c5d6f1085a98c6961a741404c296e4b3e9e4",
+          "size_bytes": 2150
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev04",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 33,
+      "unique_file_bytes": 209055
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 98304,
+      "apparent_file_bytes": 18671,
+      "evidence_file_index_sha256": "92609026a75b0eb8aeb7f330a6957b9f82ed84b05de5c2ffdc4fb4c31d57f22a",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "d46491e9c450e611eb6988c9d837ad6930b01a105badb5b87c35c21b55c8ddf6",
+          "size_bytes": 1246
+        },
+        {
+          "relative_path": "junit-02.xml",
+          "sha256": "312d078f29b4f8f919acd39506f5878c7f4a3eb9e28b8fddcc4a2dcce3537a26",
+          "size_bytes": 2972
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight-02.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Fail"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "1b3d659962916972f05dba2eb6acd2fa63b53fce7f3abc0618a9a3e6fb45a9ae",
+          "size_bytes": 68
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-001.json",
+          "sha256": "59e7095a0f33beb76d1983d1a5f82b15c53a15eaf46c9bed58085375964072cf",
+          "size_bytes": 120
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-002.json",
+          "sha256": "35410651930fb53473379673e09e7f408ebe99ede4402b7f0794ecbf2ef953dd",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-ASR-003.json",
+          "sha256": "6003ae5b56b484b44e3228930b47baf876fdaf8066d7095603156a3e76667697",
+          "size_bytes": 276
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-OFF-001.json",
+          "sha256": "5c3672766de1504ee93f8ef2208e596c8ab1a2386bf3387c1dca56bd9e081af1",
+          "size_bytes": 172
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PKG-001.json",
+          "sha256": "0948a4e757b181302f93e6c3ac8241dc5db116a5577a9e269c68849b02c8880e",
+          "size_bytes": 143
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-PRIV-001.json",
+          "sha256": "28477a0529a133496ed16938a4aff200b87e9169e097541cf17226eeb366face",
+          "size_bytes": 131
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-RES-001.json",
+          "sha256": "f50b3c8b44dfa3dca2454e1bbb08ebad4e739c8c87da6a45bdc50f8860f5ecb2",
+          "size_bytes": 346
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-001.json",
+          "sha256": "b8581e4fb1353b678ae93581aba4935473d0d218eaecfb859ab57270e194890d",
+          "size_bytes": 277
+        },
+        {
+          "declared_status_fields": [],
+          "relative_path": "cards/M4A-TTS-002.json",
+          "sha256": "9ac2022ac474294041965649f42ad09b983aac1313650cb4238b0d8f2cfd6b92",
+          "size_bytes": 282
+        },
+        {
+          "relative_path": "logs/network-02.trace.log",
+          "sha256": "cdfa92f0a2cda67d15cc233524b3454b377e1376d394d0b901c5f6eddaa33562",
+          "size_bytes": 6702
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite-02.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite-02.stdout.log",
+          "sha256": "6fbb85b6ea58c73100f752724837ce5a219c57c37a1b8e3c7d0047368a156aed",
+          "size_bytes": 4188
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "0260ef1e4d59b0495858ad1eb3f3ebe4277d62379e2675f4b5f7de20b4663e0a",
+          "size_bytes": 44
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 20,
+      "unique_file_bytes": 18671
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 28672,
+      "apparent_file_bytes": 2804,
+      "evidence_file_index_sha256": "7805ac5d51d6530b5c2e92698f29a56bd2b3370c67f85c3e3268d7737d03ca66",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "b66e33498c9056b5eb16cb0caef26f6ef96ed16c1b1aee017345bf5e1a2736de",
+          "size_bytes": 1243
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 3,
+      "unique_file_bytes": 2804
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 36864,
+      "apparent_file_bytes": 3467,
+      "evidence_file_index_sha256": "7a1ecee4ac4ef4ad74f17884730994d329ab389b053bd9ab23fdd93b2e8750de",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "709e22cedd884f285abc861a5aebea985ec84e7f3444760a7b559afbbf34aa4b",
+          "size_bytes": 1240
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "2bd44c78a163b6c8c789a662567cafaad325526fb002cf57fffe54e47ca8c99d",
+          "size_bytes": 235
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "99ffb4a8533719d177f9e4c77485e3718206fa1ed02c30ee9f8dac6f3eb7d09f",
+          "size_bytes": 431
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 3467
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 36864,
+      "apparent_file_bytes": 3467,
+      "evidence_file_index_sha256": "c98c063a1864b35915d75a3d6030ffc69fe52b5d792110ab60fb37b0bc130550",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "3533f3fc7b6301354ef721e3801d8b680c65eb547259ceed73c4067f20e33c80",
+          "size_bytes": 1240
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "9ed7632df341d3124ff3e83166a46acdf659bee5ad0b1e35f8f7be6c2de721cf",
+          "size_bytes": 235
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "067dadcedda0e6c620af88948d61e8230225c7ccde990962177bef856868277f",
+          "size_bytes": 431
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b02",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 3467
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 122880,
+      "apparent_file_bytes": 87046,
+      "evidence_file_index_sha256": "7ad567bbcb0e9859d56c1c628a1a310d4b3265173496b2d8f54aa0eda1c457b5",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "61c9e827137b4d92d80186ed8cdc3f2fb9d195a5391405761d9b09de2c04a823",
+          "size_bytes": 1240
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "9918d268b951cad8522ef01388a0f7c6ec25d9800f0c484fe4388bdc3a5dbcd3",
+          "size_bytes": 23437
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "ba60c768ce993bb31a65f9578374fb61e2c9a82413d9e6259e94cf398d95c125",
+          "size_bytes": 35716
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "b64715da4c1d2e4e8c39a669efc77184a6db663a2538aeaa1e456be7c37d5253",
+          "size_bytes": 25092
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b03",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 87046
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 122880,
+      "apparent_file_bytes": 87155,
+      "evidence_file_index_sha256": "4d30738714c00b1e7c5206ab0f9d5e3e813e2092d763478bce87498b323c3aee",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "a0515e5cae9393e14cc5cfe869f7c233ad2b75717cc6eef39b903488f7152a74",
+          "size_bytes": 1240
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "013110ebb2c96221b1a302b5a927815f9b9bba97592ddc6ba084b2ce8c2457c2",
+          "size_bytes": 23437
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "e656e71f77e528aab762b7beee3a39e2cd6ecb048132f20ece54191a7b33c081",
+          "size_bytes": 35825
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "da78dd0ffb36b95d45d4db8f0a08e354eb8c6821a18fc6af4f4bcb2f55c88a9c",
+          "size_bytes": 25092
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b04",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 87155
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 122880,
+      "apparent_file_bytes": 87418,
+      "evidence_file_index_sha256": "952a4c80fa1c42f50e18dd150665442dbd5abc330633236ac8f7e874645486b8",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "5d2ed10a125d4e9c477f9c757723911b96a3ca16e909d7f726b7c5b5e77ed2a8",
+          "size_bytes": 1258
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "9f18b54549eb2c499630519944c78eef5142e9d8ba1361063db3a96b6d8839fe",
+          "size_bytes": 23437
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "716250bebd42ce93cb981a91871c19c6fb3487688f6321058ce285abecd2e17b",
+          "size_bytes": 36064
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "5b932ca8bb6353fd04ab63f1ea23f6d4af70256ef77b288434a101e4ed21a412",
+          "size_bytes": 25098
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b05",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 87418
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 90112,
+      "apparent_file_bytes": 50939,
+      "evidence_file_index_sha256": "3a41d92284f55e7b017f0d9fbb50f87faf45b405fbe8d8a0aa9782c9e09ffb42",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "35dae93a29fd852e2dc1d605e290f65a99f53efde94b88d6cc7c373336d870ee",
+          "size_bytes": 1258
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "8c1e0efee8b4efe2680fa778110f3afd01e33bef8c11fe2dd313a4c696856630",
+          "size_bytes": 23437
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "f5bba4f45eb707f422dbce914a2712e9715e4470223b9a8b3432a3f676ea1c31",
+          "size_bytes": 24659
+        },
+        {
+          "relative_path": "logs/worker-error-type.txt",
+          "sha256": "ccf00d6385e5481e261b25b918919e2b809c15440f43b8c0e7024eb6a7c11903",
+          "size_bytes": 24
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b06",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 50939
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 147456,
+      "apparent_file_bytes": 111737,
+      "evidence_file_index_sha256": "9284fdee5bbaeb5cf0a608a4d6c85798877a56835a0b8db1db7fc845d552b0cf",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "ba08518dac067ebb689df9b7cdc3f602b72fde28b59020a52cde0d671e6e2ccc",
+          "size_bytes": 1258
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "e31d1657b7517457586a19649c67f54cce997004452e51feb39d2c44a80c2756",
+          "size_bytes": 27161
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "32c35091abaa90dd3b63d6449687c760c84254b52f47cb9a2266203df54775ce",
+          "size_bytes": 52912
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "8220633e279076fc3a58277d3123020a72fd5fe7fc66c169b9510c670efcccb5",
+          "size_bytes": 28845
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix-pass01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 111737
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 118784,
+      "apparent_file_bytes": 86483,
+      "evidence_file_index_sha256": "d1f8aca643b229868f2975b6735577e20bf99e250d451213273598f92e62e431",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "749a7c1da965b0c04afdcbffb3633200dde9cec440c062cedb3845cc2762dd17",
+          "size_bytes": 1261
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "836a7dbafa2e32f3b05c0a44cf931a151a82055b21cf7d11ca8d1fee26df43a5",
+          "size_bytes": 22910
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "7392eb1bcc3cfaa51aee777c832846e5ab1b1498066f274b5e09dfcb645fd7c4",
+          "size_bytes": 36181
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "645e42122e8cf72e9f7f57a14f25dc151b07f5f17a91e5a78c24ae7c8a4ef08b",
+          "size_bytes": 24570
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix2-pass01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 86483
+    },
+    {
+      "all_regular_files_hashed": true,
+      "allocated_unique_bytes": 155648,
+      "apparent_file_bytes": 115058,
+      "evidence_file_index_sha256": "410b6c36a0784b466a5df05181a98bb71f346c493c50e01605b9aea75fb8573b",
+      "evidence_files": [
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "debug-preflight.json",
+          "sha256": "eee4b826f416024282794717fecf1d4b4d9e30854df8df4975b41663acb416f0",
+          "size_bytes": 1261
+        },
+        {
+          "relative_path": "junit.xml",
+          "sha256": "f924c72d868e751475612d67ef5575411b8fbaffec4e720f726f563d6404c2af",
+          "size_bytes": 28629
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4a-product-preflight.json",
+          "sha256": "29e5434b774586d7b8d832224e3c6d52be96e1415d5cbf412a296926629d9896",
+          "size_bytes": 710
+        },
+        {
+          "declared_status_fields": [
+            {
+              "json_pointer": "/status",
+              "value": "Pass"
+            }
+          ],
+          "relative_path": "product-logs/m4b-product-preflight.json",
+          "sha256": "65fe91ddcf42f6f8aa95d9efb2c4f022552d9506fc54b12f25899c42b4f342bc",
+          "size_bytes": 851
+        },
+        {
+          "relative_path": "logs/network.trace.log",
+          "sha256": "bf4131510ef9d383a18cd3a7a19a7085f607b747d7d4f90f63d0d23ead2f3309",
+          "size_bytes": 53406
+        },
+        {
+          "relative_path": "logs/suite.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "relative_path": "logs/suite.stdout.log",
+          "sha256": "35cb76de58cb5b90a90009b5307b7b23edc81b6f6ab0a1582343fbac5050b230",
+          "size_bytes": 30201
+        }
+      ],
+      "locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix3-pass01",
+      "outcome_rule": "Per-file declared statuses only; component PASS is not overall PASS",
+      "overall_result": null,
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "python_cache": {
+        "allocated_unique_bytes": 0,
+        "apparent_file_bytes": 0,
+        "regular_file_count": 0,
+        "unique_file_bytes": 0,
+        "unique_inode_count": 0
+      },
+      "regular_file_count": 7,
+      "unique_file_bytes": 115058
+    }
+  ],
+  "known_limits": [
+    "No model/cache full hash in this scan",
+    "No persistent service configuration audit",
+    "Allocation counts are inode-based st_blocks, not a filesystem snapshot or reflink exclusivity proof",
+    "Scan covers named roots only; symlink targets outside scope are not followed",
+    "Concurrent pre-check documents are preserved; this observation supersedes their checkout state only",
+    "Root-level non-directory entries and shared caches outside named roots are not covered",
+    "Checksums identify files, not correctness or acceptance; no benchmark was performed"
+  ],
+  "llm_m4_tag_commit": "b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1",
+  "llm_m4_tag_object": "1b9ece39c77932cd2f92c1739ec2b38d83dece71",
+  "observed_utc": "2026-09-06T02:44:23.812697+00:00",
+  "origin_llm_sha": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+  "private_inventory_sha256": "f1c2f0b92a7dbf0c4e820149af43a6c1f6899b4b47a9f80dc8c77968a7c1c2ac",
+  "runtime_trees": [
+    {
+      "allocated_unique_bytes": 151465984,
+      "apparent_file_bytes": 151374544,
+      "content_tree_sha256": "c284b4ef3130b65c316faa11d5b3562bfe3135bf6204720eb81c1509edc134e4",
+      "file_count": 23,
+      "files": [
+        {
+          "path": ".gitignore",
+          "sha256": "36692e1840f82f75adce103fd03e65b1eaa35f798c885b3b545e3abc14ffcbf0"
+        },
+        {
+          "path": "THIRD_PARTY_NOTICES.md",
+          "sha256": "0764aa43b64cd78b09dca8f5ae3ae3c79bb98893832c9666ad9404d64599b0ef"
+        },
+        {
+          "path": "install-inventory.json",
+          "sha256": "79ed188eb9af56c0d471341f4e9cadd06ef5f7ceb311ac42dfe5e53a4c480449"
+        },
+        {
+          "path": "llm-artifacts.json",
+          "sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99"
+        },
+        {
+          "path": "llm-runtime-rpi-cp313.json",
+          "sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2"
+        },
+        {
+          "path": "pyvenv.cfg",
+          "sha256": "0984ac55eb2585aafe80530a164605d07cc592e5af38cd4a8c8a775224b500a2"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/__init__.py",
+          "sha256": "6fd72b12ddef4c64c0c78df62002083fb6404a39f1cf71815d429f92f392bdf0"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_ffi.py",
+          "sha256": "be300a5fb939356ee2ebf78e76b8aa40358cc8af8faf3ffe71a1d73c6e4550b9"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_messages.py",
+          "sha256": "9cabe70cf26c07fd34283cade50abbd6056ac63329c2e6e513575939707821c4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/benchmark.py",
+          "sha256": "c1bc8961dfbb45a43448fae4cd698c0a0d81edac1d592dc029e2853e60b8adc6"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/conversation.py",
+          "sha256": "eb45d74fa60318388bb44572c3d1e6ceef65e1ad863b3278c0636d57edf8bbd4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/engine.py",
+          "sha256": "da40bdd89d66a16537861a674f8a97aba19a78219e351509bd0d94804751c91a"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/interfaces.py",
+          "sha256": "23a47a8b921beb717a8299be459007ac7a0c68787538befe12142c6d912906a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/liblitert-lm.so",
+          "sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/session.py",
+          "sha256": "786ea19f5ed01134db650ee2c6dd1585d88808bf34c927109bdde664ff31ca75"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/tools.py",
+          "sha256": "acbd43a0f8498b6a61e6fa67af39e4a1bd0abf547a3fb594171de9f03d7e62f3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/utils.py",
+          "sha256": "ddd9486650eb963dddc47f07e1ac29af3e24fb21c388a97f8b4e840f99c6624c"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/METADATA",
+          "sha256": "61418790e1681e08720bfce61f9cbff9ab9fa3373ab84e5af47fd5967ad0b7a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/RECORD",
+          "sha256": "f2cc0a97f35d261ebbe43a52ea9bdd5e6212d7e8dc052c034c939b8785f2098b"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/WHEEL",
+          "sha256": "02a00643f059cd48b88240900282090ea0b08edf837ec4605dadce114014e43b"
+        },
+        {
+          "path": "bin/python",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3.13",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        }
+      ],
+      "locator": "PI_M4B_PRODUCTS/0f7359f/runtime",
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374544,
+      "unique_inode_count": 32
+    },
+    {
+      "allocated_unique_bytes": 151465984,
+      "apparent_file_bytes": 151374544,
+      "content_tree_sha256": "ce0f01f819804ff7c2c2f339bf41b0e975952f12a3a20c65ef8fbdc202b18db4",
+      "file_count": 23,
+      "files": [
+        {
+          "path": ".gitignore",
+          "sha256": "36692e1840f82f75adce103fd03e65b1eaa35f798c885b3b545e3abc14ffcbf0"
+        },
+        {
+          "path": "THIRD_PARTY_NOTICES.md",
+          "sha256": "0764aa43b64cd78b09dca8f5ae3ae3c79bb98893832c9666ad9404d64599b0ef"
+        },
+        {
+          "path": "install-inventory.json",
+          "sha256": "ab06241062b22500b5d857be04ad78e61312167f192ffcb14c9a69a45e0e4c95"
+        },
+        {
+          "path": "llm-artifacts.json",
+          "sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99"
+        },
+        {
+          "path": "llm-runtime-rpi-cp313.json",
+          "sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2"
+        },
+        {
+          "path": "pyvenv.cfg",
+          "sha256": "c8067425200fbe65c86001962ffe561073df623dda2208b3a943c7f1c987e90e"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/__init__.py",
+          "sha256": "6fd72b12ddef4c64c0c78df62002083fb6404a39f1cf71815d429f92f392bdf0"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_ffi.py",
+          "sha256": "be300a5fb939356ee2ebf78e76b8aa40358cc8af8faf3ffe71a1d73c6e4550b9"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_messages.py",
+          "sha256": "9cabe70cf26c07fd34283cade50abbd6056ac63329c2e6e513575939707821c4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/benchmark.py",
+          "sha256": "c1bc8961dfbb45a43448fae4cd698c0a0d81edac1d592dc029e2853e60b8adc6"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/conversation.py",
+          "sha256": "eb45d74fa60318388bb44572c3d1e6ceef65e1ad863b3278c0636d57edf8bbd4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/engine.py",
+          "sha256": "da40bdd89d66a16537861a674f8a97aba19a78219e351509bd0d94804751c91a"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/interfaces.py",
+          "sha256": "23a47a8b921beb717a8299be459007ac7a0c68787538befe12142c6d912906a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/liblitert-lm.so",
+          "sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/session.py",
+          "sha256": "786ea19f5ed01134db650ee2c6dd1585d88808bf34c927109bdde664ff31ca75"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/tools.py",
+          "sha256": "acbd43a0f8498b6a61e6fa67af39e4a1bd0abf547a3fb594171de9f03d7e62f3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/utils.py",
+          "sha256": "ddd9486650eb963dddc47f07e1ac29af3e24fb21c388a97f8b4e840f99c6624c"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/METADATA",
+          "sha256": "61418790e1681e08720bfce61f9cbff9ab9fa3373ab84e5af47fd5967ad0b7a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/RECORD",
+          "sha256": "f2cc0a97f35d261ebbe43a52ea9bdd5e6212d7e8dc052c034c939b8785f2098b"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/WHEEL",
+          "sha256": "02a00643f059cd48b88240900282090ea0b08edf837ec4605dadce114014e43b"
+        },
+        {
+          "path": "bin/python",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3.13",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        }
+      ],
+      "locator": "PI_M4B_PRODUCTS/8279e79/runtime",
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374544,
+      "unique_inode_count": 32
+    },
+    {
+      "allocated_unique_bytes": 151465984,
+      "apparent_file_bytes": 151374559,
+      "content_tree_sha256": "e909d2617ac8c95ce70e0424bfc8360f2672b93f0e04d738f96d266c6b04aeb6",
+      "file_count": 23,
+      "files": [
+        {
+          "path": ".gitignore",
+          "sha256": "36692e1840f82f75adce103fd03e65b1eaa35f798c885b3b545e3abc14ffcbf0"
+        },
+        {
+          "path": "THIRD_PARTY_NOTICES.md",
+          "sha256": "0764aa43b64cd78b09dca8f5ae3ae3c79bb98893832c9666ad9404d64599b0ef"
+        },
+        {
+          "path": "install-inventory.json",
+          "sha256": "ee171385e108dcfbb45de0a402d5ca8b3646946aed5e2ebaf2eb02659846a23c"
+        },
+        {
+          "path": "llm-artifacts.json",
+          "sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99"
+        },
+        {
+          "path": "llm-runtime-rpi-cp313.json",
+          "sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2"
+        },
+        {
+          "path": "pyvenv.cfg",
+          "sha256": "b84d615dd74b8bab0143a232ed834a927e77620206485eb5003e69390f829f54"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/__init__.py",
+          "sha256": "6fd72b12ddef4c64c0c78df62002083fb6404a39f1cf71815d429f92f392bdf0"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_ffi.py",
+          "sha256": "be300a5fb939356ee2ebf78e76b8aa40358cc8af8faf3ffe71a1d73c6e4550b9"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/_messages.py",
+          "sha256": "9cabe70cf26c07fd34283cade50abbd6056ac63329c2e6e513575939707821c4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/benchmark.py",
+          "sha256": "c1bc8961dfbb45a43448fae4cd698c0a0d81edac1d592dc029e2853e60b8adc6"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/conversation.py",
+          "sha256": "eb45d74fa60318388bb44572c3d1e6ceef65e1ad863b3278c0636d57edf8bbd4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/engine.py",
+          "sha256": "da40bdd89d66a16537861a674f8a97aba19a78219e351509bd0d94804751c91a"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/interfaces.py",
+          "sha256": "23a47a8b921beb717a8299be459007ac7a0c68787538befe12142c6d912906a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/liblitert-lm.so",
+          "sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/session.py",
+          "sha256": "786ea19f5ed01134db650ee2c6dd1585d88808bf34c927109bdde664ff31ca75"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/tools.py",
+          "sha256": "acbd43a0f8498b6a61e6fa67af39e4a1bd0abf547a3fb594171de9f03d7e62f3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm/utils.py",
+          "sha256": "ddd9486650eb963dddc47f07e1ac29af3e24fb21c388a97f8b4e840f99c6624c"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/METADATA",
+          "sha256": "61418790e1681e08720bfce61f9cbff9ab9fa3373ab84e5af47fd5967ad0b7a3"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/RECORD",
+          "sha256": "f2cc0a97f35d261ebbe43a52ea9bdd5e6212d7e8dc052c034c939b8785f2098b"
+        },
+        {
+          "path": "lib/python3.13/site-packages/litert_lm_api-0.16.0.dist-info/WHEEL",
+          "sha256": "02a00643f059cd48b88240900282090ea0b08edf837ec4605dadce114014e43b"
+        },
+        {
+          "path": "bin/python",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        },
+        {
+          "path": "bin/python3.13",
+          "sha256": "5a8d634b3cf42fa618c2a39c7e674206cefc3b0be3d2f7023d5b1f8ebb51a013"
+        }
+      ],
+      "locator": "PI_M4B_PRODUCTS/diag-site-packages-fix/runtime",
+      "regular_file_count": 23,
+      "unique_file_bytes": 151374559,
+      "unique_inode_count": 32
+    }
+  ],
+  "schema_version": "llm-curation-postcheck/1",
+  "whole_scope": {
+    "allocated_unique_bytes": 3937583104,
+    "apparent_file_bytes": 3919743886,
+    "regular_file_count": 5985,
+    "unique_file_bytes": 3919743886,
+    "unique_inode_count": 6986
+  }
+}

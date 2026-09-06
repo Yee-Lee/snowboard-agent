@@ -9,7 +9,10 @@
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 * [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
-* [`REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md`](pm_handoff/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md) - 新到達的Pi儲存／worktree／result-index整理請求；unresolved，protected holds有效，本輪不連接Pi
+* [`REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md`](pm_handoff/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md) - Pi儲存整理 governing income；Phase 1完成、Core Phase 2 workspace receipt已驗證；Phase 3與purge review待續
+* [`RECEIPT-PI-PHASE2-WORKSPACES-001.md`](pm_handoff/RECEIPT-PI-PHASE2-WORKSPACES-001.md) - Core Phase 2 canonical workspaces與assigned data roots governing receipt；未啟用deployment或cleanup
+* [`REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md) - Active Phase 3 stable product/model/runtime/cache identity與migration-manifest實作要求
+* [`FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md) - Active blocking review；九項修正與完整candidate proposal required
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -54,6 +57,10 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-LLM-POC-M4B-MVA-MEASURE-001.md`](response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md) - M4B-MVA正式收件、Core exact-source核對、產品等價設計修正與授權邊界
 * [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md`](response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md) - 工作站更換前的Step 5完整continuation record、測試、round-close audit、未完成項目與授權邊界
 * [`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md`](response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md) - 新工作站WP01 controller/writer/lock驗證與平台差異對照；execution snapshot及Pi連接前handoff
+* [`ACK-POC-LLM-PI-STORAGE-CURATION-001.md`](response/ACK-POC-LLM-PI-STORAGE-CURATION-001.md) - 已被完成handoff及Phase 2 receipt取代的Phase 1 pre-execution intake snapshot
+* [`ACK-LLM-PI-CANONICAL-WORKSPACE-RECEIPT-001.md`](response/ACK-LLM-PI-CANONICAL-WORKSPACE-RECEIPT-001.md) - Core Phase 2 canonical LLM worktree與三個writable data roots的read-only驗證回條
+* [`RESP-POC-LLM-PI-STORAGE-PHASE3-R2-001.md`](response/RESP-POC-LLM-PI-STORAGE-PHASE3-R2-001.md) - 依governing feedback完成九項修訂、回歸分類、Pi bounded preflight與scope separation
+* [`COMMIT-PROPOSAL-LLM-PI-CURATION-R2-001.md`](response/COMMIT-PROPOSAL-LLM-PI-CURATION-R2-001.md) - Phase 1/2/3 exact in-scope candidate提案；待User明確核准
 * [`RESP-POC-LLM-READINESS-2026-001.md`](response/RESP-POC-LLM-READINESS-2026-001.md) - 逐 finding 修訂回覆；Team revised 不代表 PM/Core 已關閉 finding
 * [`RESP-PM-OUT-260817-015.md`](response/RESP-PM-OUT-260817-015.md) - 015 複驗回覆、changed paths 與 remaining Core decisions
 * [`RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md`](response/RESP-DELIVERY-LLM-POC-M4B-GATE0-R2-REVISION-001.md) - OUT-M4B-2026-007 fail-closed packet 修正與複驗回覆
@@ -102,6 +109,10 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 
 ## 4. Delivery (位於 `docs/delivery/`)
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
+
+* [`DELIVERY-LLM-PI-CURATION-POSTCHECK-001.md`](delivery/DELIVERY-LLM-PI-CURATION-POSTCHECK-001.md) - Phase 1 Pi整理後核對、protected holds與Phase 2 workspace receipt銜接
+* [`DELIVERY-LLM-PI-STORAGE-PHASE3-R2-001.md`](delivery/DELIVERY-LLM-PI-STORAGE-PHASE3-R2-001.md) - Core Phase 3 blocking feedback九項修訂的正式R2 return；未轉交、未commit
+* [`DELIVERY-LLM-PI-STORAGE-PHASE3-001.md`](delivery/DELIVERY-LLM-PI-STORAGE-PHASE3-001.md) - Phase 3 product/artifact/cache identity、private exporter、post-download cleanup gate與Core review return
 
 * [`DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/delivery/DELIVERY-001-PM-LLM-POC-GATE0-RECEIPT.md) - 回覆 `DELIVERY-LLM-POC-M4B-CONTRACT-001` 的 Gate 0 簽收回條與 Initial Manifest
 * [`DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md`](delivery/DELIVERY-002-PM-LLM-POC-GATE1-PLATFORM-CHANGE-REQUEST.md) - 請 Core 核准 Gate 1 以 Ubuntu x86_64 完整初篩，最多兩個候選再於產品 Debian Pi 執行 bounded compatibility try-run

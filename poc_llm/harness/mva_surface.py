@@ -18,6 +18,7 @@ SURFACE_FILES = (
     "poc_llm/contracts/mva/machine-sample-v1.schema.json",
     "poc_llm/contracts/mva/manual-sample-v1.schema.json",
     "poc_llm/contracts/mva/mva-profile-001.json",
+    "poc_llm/contracts/mva/product-storage-v1.json",
     "poc_llm/contracts/mva/semantic-output-v1.schema.json",
     "poc_llm/contracts/mva/session-facts-v1.schema.json",
     "poc_llm/contracts/mva/system-prompt-v1.txt",
@@ -30,6 +31,7 @@ SURFACE_FILES = (
     "poc_llm/harness/mva_identity.py",
     "poc_llm/harness/mva_litert_backend.py",
     "poc_llm/harness/mva_process.py",
+    "poc_llm/harness/mva_product_layout.py",
     "poc_llm/harness/mva_resources.py",
     "poc_llm/harness/mva_surface.py",
     "poc_llm/harness/mva_worker.py",
@@ -41,6 +43,7 @@ SURFACE_FILES = (
     "poc_llm/tests/mva/test_mva_controller.py",
     "poc_llm/tests/mva/test_mva_identity.py",
     "poc_llm/tests/mva/test_mva_litert_backend.py",
+    "poc_llm/tests/mva/test_mva_product_layout.py",
     "poc_llm/tests/mva/test_mva_surface.py",
     "poc_llm/tools/run_mva.py",
 )

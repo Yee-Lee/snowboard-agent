@@ -4,6 +4,13 @@
 
 最後更新：2026-09-06
 
+Pi storage補記：Phase 1 inventory完成；Core Phase 2 receipt已建立乾淨canonical LLM workspace
+與三個assigned data roots。Core Phase 3 feedback要求修正path/cache/native identity、完整hold
+migration manifest及新candidate proposal；本機修訂與bounded Pi preflight已完成，待Core review。
+此工作仍不授權MVA量測、model load、materialization、service activation、hold movement、purge、
+commit或push。下列MVA stop-before-Pi只指target measurement execution。Gate狀態不變；
+Attempt 005、MVA量測／採用、Core migration acceptance及purge gate仍未結案。
+
 ## Current reachability
 
 狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 IN PROGRESS`。
@@ -66,9 +73,15 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Open dependencies and risks
 
-- **New storage-curation Income**：`REQUEST-POC-LLM-PI-STORAGE-CURATION-001`於本輪收斂時到達，
-  保留原文並列為unresolved。Canonical profile/result index、Pi inventory與cleanup proposal尚未執行；
-  protected holds有效，User仍要求停在Pi連接前，沒有刪除授權。此Income不改變MVA milestone狀態。
+- **Pi storage migration**：Phase 1 inventory與sanitized indexes已完成；Core Phase 2
+  `RECEIPT-PI-PHASE2-WORKSPACES-001`已補入read-only Income。Phase 3 request及blocking feedback
+  現為active：本機已修正40-character Git SHA、cache forwarding、native runtime digest與完整protected
+  hold manifest；Pi只執行bounded workspace preflight。後續MVA須等待Core migration receipt並由LLM執行。
+  Materialization、搬移、cleanup及activation禁止。
+- **Local-only follow-up**：MVA snapshot已local commit為`57390cc1ed7aef7a3a172716bb71e622649c4f67`；
+  Remote `llm`仍為`7a56137b…`。Phase 3 source修改使舊surface lock預期失效；不得靜默更新或執行
+  target measurement。先完成source/test review與完整commit proposal，再依User授權重走
+  governed snapshot／portable validation／freeze。Attempt 005維持unknown。
 - **Workstation migration / WP01**：新checkout已核對交接SHA `7a56137b…`並建立ignored local
   context；隔離測試環境、controller、sanitized writer與surface lock已完成。MVA targeted tests
   通過；完整suite的macOS/Linux/x86與canonical-path限制已在原交接SHA對照重現，並未宣告全綠。

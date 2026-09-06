@@ -1,0 +1,1525 @@
+{
+  "schema_version": "llm-post-download-cleanup-v1",
+  "request_id": "REQUEST-POC-LLM-PI-STORAGE-PHASE3-001",
+  "mode": "DRY_RUN_ONLY",
+  "deletion_authorized": false,
+  "receipt_contract": {
+    "archive_sha256": "required 64 lowercase hex",
+    "archive_size_bytes": "required positive integer",
+    "verification": "Core downloader records local regular-file stat and streaming SHA-256 after gzip tar verification"
+  },
+  "items": [
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3313664,
+      "reclaim_bytes": 3313664,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3297280,
+      "reclaim_bytes": 3297280,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-8bd37149b9321a0d40c15abeeb514eef223670d5",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3293184,
+      "reclaim_bytes": 3293184,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-controller-e055df3",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3567616,
+      "reclaim_bytes": 3567616,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-corrective-509cd20",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3162112,
+      "reclaim_bytes": 3162112,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-corrective-a69ac1a",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3280896,
+      "reclaim_bytes": 3280896,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-corrective-c2605f2",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3158016,
+      "reclaim_bytes": 3158016,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3305472,
+      "reclaim_bytes": 3305472,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-debug-7617afe",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3194880,
+      "reclaim_bytes": 3194880,
+      "archive_bundle_id": "llm-historical-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-historical-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "git reachability rechecked",
+        "no active process references"
+      ],
+      "hold_reason": "retained until evidence download receipt exists",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_M4B_PRODUCTS/diag-site-packages-fix/runtime",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 151465984,
+      "reclaim_bytes": 151465984,
+      "archive_bundle_id": "llm-duplicate-runtimes-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-duplicate-runtimes-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "historical run configs"
+      ],
+      "canonical_replacement": "PI_PROD_PRODUCTS/m4b/8279e79/runtime",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "canonical runtime identity and native digest verified",
+        "active references rebound"
+      ],
+      "hold_reason": "duplicate runtime remains referenced by historical evidence",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_PRODUCTS/0f7359f/runtime",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 151465984,
+      "reclaim_bytes": 151465984,
+      "archive_bundle_id": "llm-duplicate-runtimes-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-duplicate-runtimes-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "historical run configs"
+      ],
+      "canonical_replacement": "PI_PROD_PRODUCTS/m4b/8279e79/runtime",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "canonical runtime identity and native digest verified",
+        "active references rebound"
+      ],
+      "hold_reason": "duplicate runtime remains referenced by historical evidence",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_XNNPACK_CACHE",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 788418560,
+      "reclaim_bytes": 788418560,
+      "archive_bundle_id": "llm-legacy-cache-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-legacy-cache-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "legacy cache identity only"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/cache/poc_llm/objects/{cache_key}",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "new cache-key contract preflight passes",
+        "no active process references"
+      ],
+      "hold_reason": "legacy cache cannot be removed before receipt and cache rebinding",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_PRODUCTS/60cb29d",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 4096,
+      "reclaim_bytes": 4096,
+      "archive_bundle_id": "llm-empty-product-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-empty-product-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": null,
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "directory remains empty",
+        "no active references"
+      ],
+      "hold_reason": "empty product directory held for owner review",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-0f7359f-20260831-dev01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 331776,
+      "reclaim_bytes": 331776,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-0f7359f-20260831-dev01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 57344,
+      "reclaim_bytes": 57344,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-full01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 151552,
+      "reclaim_bytes": 151552,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-full02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full03",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 147456,
+      "reclaim_bytes": 147456,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-full03",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4bonly01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 94208,
+      "reclaim_bytes": 94208,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-m4bonly01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 360448,
+      "reclaim_bytes": 360448,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-m4btrace01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 8380416,
+      "reclaim_bytes": 8380416,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-m4btrace02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-shutdown01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 45056,
+      "reclaim_bytes": 45056,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-debug-shutdown01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-pi01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 344064,
+      "reclaim_bytes": 344064,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-274b2db-20260831-pi01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-config15",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 12288,
+      "reclaim_bytes": 12288,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-config15",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 98304,
+      "reclaim_bytes": 98304,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix03",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 65536,
+      "reclaim_bytes": 65536,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix03",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 28672,
+      "reclaim_bytes": 28672,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix04",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04b",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 102400,
+      "reclaim_bytes": 102400,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix04b",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix05",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 294912,
+      "reclaim_bytes": 294912,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix05",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 28672,
+      "reclaim_bytes": 28672,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix06",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06b",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 102400,
+      "reclaim_bytes": 102400,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix06b",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 20480,
+      "reclaim_bytes": 20480,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix07",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07b",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 69632,
+      "reclaim_bytes": 69632,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix07b",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix08",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 102400,
+      "reclaim_bytes": 102400,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix08",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix09",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 61440,
+      "reclaim_bytes": 61440,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-debug-fix09",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 221184,
+      "reclaim_bytes": 221184,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-dev01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 262144,
+      "reclaim_bytes": 262144,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-dev02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev03",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 192512,
+      "reclaim_bytes": 192512,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-dev03",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev04",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 339968,
+      "reclaim_bytes": 339968,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-8279e79-20260831-dev04",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 98304,
+      "reclaim_bytes": 98304,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-full01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 28672,
+      "reclaim_bytes": 28672,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-full02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 36864,
+      "reclaim_bytes": 36864,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-m4b01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b02",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 36864,
+      "reclaim_bytes": 36864,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-m4b02",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b03",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 122880,
+      "reclaim_bytes": 122880,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-m4b03",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b04",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 122880,
+      "reclaim_bytes": 122880,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-debug-m4b04",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b05",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 122880,
+      "reclaim_bytes": 122880,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-overlaydiag-m4b05",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b06",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 90112,
+      "reclaim_bytes": 90112,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-overlaydiag-m4b06",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix-pass01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 147456,
+      "reclaim_bytes": 147456,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-overlayfix-pass01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix2-pass01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 118784,
+      "reclaim_bytes": 118784,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-overlayfix2-pass01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix3-pass01",
+      "cleanup_class": "a_download_receipt",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 155648,
+      "reclaim_bytes": 155648,
+      "archive_bundle_id": "llm-core-m4b-runs-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-core-m4b-runs-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "Core shared evidence"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/evidence-export/poc_llm/retained-m4b-runs/m4b-c242b86-20260901-overlayfix3-pass01",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "all 36 tree digests verified",
+        "Core confirms evidence replacement",
+        "no active references"
+      ],
+      "hold_reason": "Core-owned shared evidence; receipt and Core release required",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_M4B_PRODUCTS/8279e79/runtime",
+      "cleanup_class": "b_canonical_materialization",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 151465984,
+      "reclaim_bytes": 151465984,
+      "archive_bundle_id": "llm-current-runtime-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-current-runtime-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "current M4B runtime"
+      ],
+      "canonical_replacement": "PI_PROD_PRODUCTS/m4b/8279e79/runtime",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "immutable runtime product materialized",
+        "runtime manifest and native library digests verified",
+        "bounded product preflight passes"
+      ],
+      "hold_reason": "current dependency remains protected",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_SELECTED_MODEL",
+      "cleanup_class": "b_canonical_materialization",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 2588151808,
+      "reclaim_bytes": 2588151808,
+      "archive_bundle_id": "llm-current-artifacts-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-current-artifacts-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "selected M4B model"
+      ],
+      "canonical_replacement": "PI_ARTIFACT_STORE/sha256/18/181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c/payload",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "content-addressed model materialized",
+        "digest and 2588147712-byte size verified",
+        "bounded product preflight passes"
+      ],
+      "hold_reason": "sole selected model input remains protected",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_LOCKED_RUNTIME_WHEEL",
+      "cleanup_class": "b_canonical_materialization",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 46088192,
+      "reclaim_bytes": 46088192,
+      "archive_bundle_id": "llm-current-artifacts-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-current-artifacts-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "runtime reconstruction"
+      ],
+      "canonical_replacement": "PI_ARTIFACT_STORE/sha256/5e/5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00/payload",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "content-addressed wheel materialized",
+        "wheel digest verified",
+        "bounded product preflight passes"
+      ],
+      "hold_reason": "locked runtime input remains protected",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1",
+      "cleanup_class": "b_canonical_materialization",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3575808,
+      "reclaim_bytes": 3575808,
+      "archive_bundle_id": "llm-current-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-current-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "selected profile source"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "canonical source contains recorded Git SHA",
+        "selected profile/schema product copies verified",
+        "bounded product preflight passes"
+      ],
+      "hold_reason": "active historical input remains protected",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536",
+      "cleanup_class": "b_canonical_materialization",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 3579904,
+      "reclaim_bytes": 3579904,
+      "archive_bundle_id": "llm-current-worktrees-v1",
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": "llm-current-worktrees-v1",
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "accepted execution checkout"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "local archive receipt hash/size verified",
+        "canonical source contains recorded Git SHA",
+        "selected profile/schema product copies verified",
+        "bounded product preflight passes"
+      ],
+      "hold_reason": "active historical input remains protected",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/snowboard-agent",
+      "cleanup_class": "c_unresolved_hold",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 9973760,
+      "reclaim_bytes": 9973760,
+      "archive_bundle_id": null,
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": null,
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "legacy checkout ownership unresolved"
+      ],
+      "canonical_replacement": "PI_DEV_ROOT/poc_llm",
+      "preflight_conditions": [
+        "Core assigns disposition",
+        "active references rechecked"
+      ],
+      "hold_reason": "not included in Phase 1 reclaim proposal",
+      "deletion_command_kind": "git-worktree-remove"
+    },
+    {
+      "logical_locator": "PI_SHARED_CACHE",
+      "cleanup_class": "c_unresolved_hold",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": 569958400,
+      "reclaim_bytes": 569958400,
+      "archive_bundle_id": null,
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": null,
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [],
+      "canonical_replacement": null,
+      "preflight_conditions": [
+        "shared ownership resolved",
+        "non-LLM content independently retained"
+      ],
+      "hold_reason": "shared multi-owner cache is out of LLM cleanup scope",
+      "deletion_command_kind": "filesystem-path-after-core-review"
+    },
+    {
+      "logical_locator": "PI_LLM_WORKSPACE/{accepted-authority,locks,licenses,notices,sole-results}",
+      "cleanup_class": "c_unresolved_hold",
+      "delete_after_verified_receipt": false,
+      "allocated_bytes": null,
+      "reclaim_bytes": null,
+      "archive_bundle_id": null,
+      "required_local_receipt": {
+        "schema_version": 1,
+        "bundle_id": null,
+        "archive_sha256": null,
+        "archive_size_bytes": null,
+        "state": "REQUIRED_NOT_YET_RECORDED"
+      },
+      "active_references": [
+        "accepted closure and publication evidence"
+      ],
+      "canonical_replacement": null,
+      "preflight_conditions": [
+        "complete exact set inventory",
+        "local receipt per file",
+        "Core accepts replacement"
+      ],
+      "hold_reason": "Phase 1 did not establish a complete set boundary",
+      "deletion_command_kind": "manifest-expansion-required"
+    }
+  ],
+  "summary": {
+    "a_download_receipt_allocated_bytes": 1133924352,
+    "b_canonical_materialization_allocated_bytes": 2792861696,
+    "c_unresolved_hold_allocated_bytes": 579932160
+  },
+  "standard_command_templates": {
+    "receipt_verify_local": "sha256sum LOCAL_ARCHIVE && tar -tzf LOCAL_ARCHIVE && tar -xOzf LOCAL_ARCHIVE SHA256SUMS",
+    "worktree_dry_run": "git -C PI_LLM_WORKSPACE/snowboard-agent worktree list --porcelain && git -C PI_LLM_WORKSPACE/snowboard-agent worktree prune --dry-run --verbose",
+    "worktree_delete_after_approval": "git -C PI_LLM_WORKSPACE/snowboard-agent worktree remove EXACT_PRIVATE_MAPPED_PATH",
+    "worktree_metadata_after_approval": "git -C PI_LLM_WORKSPACE/snowboard-agent worktree prune --verbose",
+    "filesystem_delete_after_approval": "Core-owned exact-path cleanup mechanism for one reviewed private-mapped locator; shell globbing is forbidden"
+  },
+  "execution_rule": "No item becomes eligible until required receipt fields are populated, all preflight conditions are evidenced, active references are empty, Core review accepts the exact locator, and User authorizes cleanup. Worktrees use standard git worktree remove and prune commands only."
+}

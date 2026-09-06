@@ -139,6 +139,37 @@ def backend(engine: FakeEngine, **overrides) -> MvaLiteRtBackend:
 
 
 class MvaLiteRtBackendTests(unittest.TestCase):
+    def test_engine_receives_content_addressed_cache_directory(self) -> None:
+        captured = {}
+        engine = FakeEngine([])
+
+        class Backend:
+            @staticmethod
+            def CPU(**kwargs):
+                return kwargs
+
+        class Module(FakeLiteRt):
+            @staticmethod
+            def Engine(model_path, **kwargs):
+                captured.update(model_path=model_path, **kwargs)
+                return engine
+        Module.Backend = Backend
+
+        value = config(
+            model_path="/logical-model",
+            cache_dir="/logical-cache/objects/" + "a" * 64,
+        )
+        subject = MvaLiteRtBackend.from_paths(
+            value,
+            system_prompt_path=CONTRACT / "system-prompt-v1.txt",
+            user_template_path=CONTRACT / "user-turn-template-v1.txt",
+            semantic_schema_path=CONTRACT / "semantic-output-v1.schema.json",
+            litert_lm_module=Module,
+        )
+        self.assertEqual(captured["cache_dir"], value["cache_dir"])
+        self.assertEqual(captured["model_path"], value["model_path"])
+        subject.close()
+
     def test_public_census_is_preinference_and_rejects_oversize(self) -> None:
         engine = FakeEngine([])
         subject = backend(engine)

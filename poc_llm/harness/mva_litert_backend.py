@@ -80,6 +80,7 @@ class MvaLiteRtBackend:
             engine = litert_lm_module.Engine(
                 config["model_path"],
                 backend=litert_lm_module.Backend.CPU(thread_count=config["threads"]),
+                cache_dir=config["cache_dir"],
                 enable_benchmark=True,
                 max_num_tokens=config["engine_kv_tokens"],
             )

@@ -15,6 +15,12 @@ from poc_llm.harness.mva_controller import Controller, ORDER, verify_next_case
 from poc_llm.harness.mva_evidence import EvidenceWriter
 from poc_llm.harness.mva_identity import load_config, prepare_receipt, verify_receipt
 from poc_llm.harness.mva_process import RunError
+from poc_llm.harness.mva_product_layout import (
+    STORAGE_PATH as PRODUCT_STORAGE_PATH,
+    cache_key,
+    load_product_storage,
+    verify_workspace,
+)
 from poc_llm.harness.mva_resources import PiSampler
 from poc_llm.harness.mva_surface import build_manifest, canonical_bytes, surface_digest, verify_manifest
 
@@ -59,7 +65,9 @@ def require_checkout(expected_sha):
 
 def parser():
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument("case", choices=["snapshot", "verify-snapshot", "prepare-install", *ORDER])
+    result.add_argument("case", choices=[
+        "snapshot", "verify-snapshot", "workspace-preflight", "prepare-install", *ORDER,
+    ])
     result.add_argument("--implementation-sha")
     result.add_argument("--surface-sha256")
     result.add_argument("--config", type=Path)
@@ -83,13 +91,22 @@ def main():
         verify_manifest(ROOT, manifest, args.surface_sha256 or surface_digest(manifest))
         print(json.dumps({"surface_sha256": surface_digest(manifest), "status": "PASS"}))
         return 0
+    if args.case == "workspace-preflight":
+        if not args.operator_authorized or not args.implementation_sha:
+            raise RunError("PREFLIGHT_BLOCKED")
+        print(json.dumps(verify_workspace(ROOT, args.implementation_sha), sort_keys=True))
+        return 0
     if not args.operator_authorized or not all((args.implementation_sha, args.surface_sha256, args.config, args.receipt)):
         raise RunError("PREFLIGHT_BLOCKED")
     require_pi()
     require_checkout(args.implementation_sha)
     verify_manifest(ROOT, json.loads(LOCK.read_text()), args.surface_sha256)
-    config = load_config(args.config)
-    if args.receipt.resolve().is_relative_to(ROOT):
+    config = load_config(args.config, checkout_root=ROOT)
+    receipt_path = args.receipt.resolve()
+    evidence_export_root = Path(config["evidence_export_root"])
+    if (receipt_path.is_relative_to(ROOT)
+            or not receipt_path.is_relative_to(evidence_export_root)
+            or receipt_path == evidence_export_root):
         raise RunError("PREFLIGHT_BLOCKED")
     if args.case == "prepare-install":
         receipt = prepare_receipt(config)
@@ -98,6 +115,8 @@ def main():
         print(json.dumps({"receipt_sha256": hashlib.sha256(canonical_bytes(receipt)).hexdigest(), "status": "VERIFIED_NOT_MEASURED"}))
         return 0
     if not args.evidence_root or not args.receipt_sha256:
+        raise RunError("PREFLIGHT_BLOCKED")
+    if args.evidence_root.resolve() != Path(config["runs_root"]):
         raise RunError("PREFLIGHT_BLOCKED")
     receipt = json.loads(args.receipt.read_text())
     profile_path = ROOT / "poc_llm/contracts/mva/mva-profile-001.json"
@@ -108,6 +127,8 @@ def main():
         "wire_schema_sha256": sha(ROOT / profile["surface"]["wire_schema_path"]),
         "config_sha256": hashlib.sha256(canonical_bytes(config)).hexdigest(),
         "model_sha256": profile["candidate"]["model_sha256"], "runtime_sha256": profile["candidate"]["runtime_wheel_sha256"],
+        "product_storage_sha256": sha(PRODUCT_STORAGE_PATH),
+        "cache_key": cache_key(config, load_product_storage()),
         "audio_sha256": None}
     identity_key = hashlib.sha256(canonical_bytes([args.implementation_sha, identity, args.receipt_sha256])).hexdigest()
     run_id = "MVA-001-" + args.case

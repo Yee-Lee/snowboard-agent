@@ -17,6 +17,7 @@ import time
 from poc_llm.harness.mva_contract import fixed_steady_window, ordinary_least_squares_slope, reasoner_projection
 from poc_llm.harness.mva_evidence import fill_missing_reasons, TERMINALS
 from poc_llm.harness.mva_process import Child, RunError
+from poc_llm.harness.mva_product_layout import cache_object_path
 from poc_llm.harness.mva_resources import stop_reason
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -173,7 +174,9 @@ class Controller:
         self.child = self.child_factory([sys.executable, "-m", "poc_llm.harness.mva_worker"], cwd=directory, env=env)
         inference = {key: PROFILE["inference"][key] for key in (
             "temperature", "top_p", "maximum_output_tokens", "user_new_token_admission", "engine_kv_tokens")}
-        inference.update({"threads": 4, "model_path": self.config["model_path"], "runtime_root": self.config["runtime_root"]})
+        inference.update({"threads": 4, "model_path": self.config["model_path"],
+                          "runtime_root": self.config["runtime_root"],
+                          "cache_dir": str(cache_object_path(self.config))})
         self.child.send({"op": "START", "config": inference, "mode": self.mode})
         result = self.child.receive(120, self.monitor)
         if result.get("terminal") != "ENGINE_READY":

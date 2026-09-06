@@ -1,0 +1,989 @@
+{
+  "collector_sha256": "060974d1582a964c5104d3d648e9baab8cab9de89625b0d9eec6a93cb594d2fe",
+  "conditional_reclaimable_unique_bytes": null,
+  "execution_authorized": false,
+  "immediate_reclaimable_unique_bytes": 0,
+  "items": [
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3313664,
+      "apparent_bytes": 2359545,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-26e654968bbd4c9b2a9a2796d21cfbc01fba7446",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2359545
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3297280,
+      "apparent_bytes": 2337658,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-2dd7d28270afe15d2b31ab8c4ee5c3c98b694cd5",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2337658
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3293184,
+      "apparent_bytes": 2335432,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-8bd37149b9321a0d40c15abeeb514eef223670d5",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "8bd37149b9321a0d40c15abeeb514eef223670d5",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-8bd37149b9321a0d40c15abeeb514eef223670d5",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2335432
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3575808,
+      "apparent_bytes": 2604698,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-contained-00e6ae1",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "00e6ae1401f21dd498a29bba7985ca387130884c",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-contained-00e6ae1",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2604698
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3567616,
+      "apparent_bytes": 2591195,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-controller-e055df3",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "e055df36683b7594f3a2de18233d9c72098aa0ea",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-controller-e055df3",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2591195
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3162112,
+      "apparent_bytes": 2208823,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-corrective-509cd20",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "509cd204628543489ec497f267f1af7cfc3dac92",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-corrective-509cd20",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2208823
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3280896,
+      "apparent_bytes": 2318345,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-corrective-a69ac1a",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "a69ac1ab19bf6c6c4a54b032dcd7c89870d76d7f",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-corrective-a69ac1a",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2318345
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3158016,
+      "apparent_bytes": 2202091,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-corrective-c2605f2",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "c2605f24016192770e5c214d769a771f7e94c09d",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-corrective-c2605f2",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2202091
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3305472,
+      "apparent_bytes": 2344975,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-d79ade7cacc5bcd7abe4fbc2825d601c3fb58c39",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2344975
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3194880,
+      "apparent_bytes": 2247913,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-debug-7617afe",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "bca22df6f5153db39382014dc210b4e2c442bbba",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-debug-7617afe",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2247913
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3579904,
+      "apparent_bytes": 2597371,
+      "category": "hold",
+      "original_locator": "PI_LLM_WORKSPACE/gate2b-no-psi-0c75536",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "0c75536e6ee99b502c59438989ca852194648946",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/gate2b-no-psi-0c75536",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 2597371
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 10780672,
+      "apparent_bytes": 5676638,
+      "category": "retain",
+      "original_locator": "PI_LLM_WORKSPACE/snowboard-agent",
+      "owner": "LLM POC",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "reachable_from_origin_llm": true,
+        "tracked_source_sha": "7a56137b7b2d65219ea4ff2065ab2773c179a0af",
+        "untracked_and_ignored_content_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_LLM_WORKSPACE/snowboard-agent",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 5676638
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 151470080,
+      "apparent_bytes": 151374544,
+      "category": "hold",
+      "original_locator": "PI_M4B_PRODUCTS/0f7359f",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_PRODUCTS/0f7359f",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 151374544
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 4096,
+      "apparent_bytes": 0,
+      "category": "hold",
+      "original_locator": "PI_M4B_PRODUCTS/60cb29d",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_PRODUCTS/60cb29d",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 0
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 151470080,
+      "apparent_bytes": 151374544,
+      "category": "hold",
+      "original_locator": "PI_M4B_PRODUCTS/8279e79",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_PRODUCTS/8279e79",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 151374544
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 151470080,
+      "apparent_bytes": 151374559,
+      "category": "hold",
+      "original_locator": "PI_M4B_PRODUCTS/diag-site-packages-fix",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_PRODUCTS/diag-site-packages-fix",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 151374559
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 3422662656,
+      "apparent_bytes": 3422646202,
+      "category": "hold",
+      "original_locator": "PI_M4B_ARTIFACTS/60cb29d",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_ARTIFACTS/60cb29d",
+      "retained_evidence_sha256": null,
+      "unique_file_bytes": 3422646202
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 331776,
+      "apparent_bytes": 190895,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-0f7359f-20260831-dev01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-0f7359f-20260831-dev01",
+      "retained_evidence_sha256": "6173ee208ab8a1652210f87615caf4ae2c87803ca953687885bd5517a3e3a698",
+      "unique_file_bytes": 190895
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 57344,
+      "apparent_bytes": 31980,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-full01",
+      "retained_evidence_sha256": "f1ed69c3c3b0fb6a26af6c92fbfe5fc1c4acdcc2b864369bd19a8cf961074e29",
+      "unique_file_bytes": 31980
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 151552,
+      "apparent_bytes": 96670,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-full02",
+      "retained_evidence_sha256": "687ce8849c8edbfa818f00afd7292414bf750c07ec86b3593bbc911449b29a12",
+      "unique_file_bytes": 96670
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 147456,
+      "apparent_bytes": 84372,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-full03",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-full03",
+      "retained_evidence_sha256": "0bb652afcd2b77e76a36fb80ac79ba24122017a6ad78a9414de603a91e848f4d",
+      "unique_file_bytes": 84372
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 94208,
+      "apparent_bytes": 70943,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4bonly01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4bonly01",
+      "retained_evidence_sha256": "f4ad509afad8f74e2183a9bc5b6da6aa9121bbe553625de09abcc7ac3b3c2b2b",
+      "unique_file_bytes": 70943
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 360448,
+      "apparent_bytes": 337239,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace01",
+      "retained_evidence_sha256": "8049c91a3479fbff25e63eb00b203438c6455139218d20497c3ef5778cf15421",
+      "unique_file_bytes": 337239
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 8380416,
+      "apparent_bytes": 8123481,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-m4btrace02",
+      "retained_evidence_sha256": "0edd24de3e10e9a5958f6ba93e0c30610391fbc790649ede788bd1c1fd566d89",
+      "unique_file_bytes": 8123481
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 45056,
+      "apparent_bytes": 35430,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-debug-shutdown01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-debug-shutdown01",
+      "retained_evidence_sha256": "0dea1b9cb843ded86caf2aa5e52e29e4e3b84908ef8a1f73a24239a058dc2754",
+      "unique_file_bytes": 35430
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 344064,
+      "apparent_bytes": 220009,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-274b2db-20260831-pi01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-274b2db-20260831-pi01",
+      "retained_evidence_sha256": "80ceb26c799a74635644f580e9d03c1cec02d657bd14dc9187639aef49263b2f",
+      "unique_file_bytes": 220009
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 12288,
+      "apparent_bytes": 3739,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-config15",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-config15",
+      "retained_evidence_sha256": "510f1af5f70676f33c28e088fe3c90ef6936e4c732b08a4ac9f6e87c240f674b",
+      "unique_file_bytes": 3739
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 98304,
+      "apparent_bytes": 74870,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix02",
+      "retained_evidence_sha256": "6423f1223e86fcc9cbc2801669db05410f72132e8cf245827bd51c69317261ab",
+      "unique_file_bytes": 74870
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 65536,
+      "apparent_bytes": 38473,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix03",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix03",
+      "retained_evidence_sha256": "0837e74d479b2239fc26633faccd37a5e04dc702be30a008c5339366b6fdd065",
+      "unique_file_bytes": 38473
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 28672,
+      "apparent_bytes": 9389,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04",
+      "retained_evidence_sha256": "e35131e8358ecfc7dcaec87715ed459bb71c44c5176d5c8b1bad81f47975e3fc",
+      "unique_file_bytes": 9389
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 102400,
+      "apparent_bytes": 80168,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04b",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix04b",
+      "retained_evidence_sha256": "010ef885981d77ba2162e6e3547494d4e7b4f8e90b40524f77291683a4af0ff2",
+      "unique_file_bytes": 80168
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 294912,
+      "apparent_bytes": 208249,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix05",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix05",
+      "retained_evidence_sha256": "a4ae28ccde9629846812a298a9560ffe487f2da1d7799df66fc82b75d5434856",
+      "unique_file_bytes": 208249
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 28672,
+      "apparent_bytes": 3443,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06",
+      "retained_evidence_sha256": "cb5b5a43ac8306666f0d5ab70b7163f737c8c23375c9c082a6c3e15b6d054add",
+      "unique_file_bytes": 3443
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 102400,
+      "apparent_bytes": 80311,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06b",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix06b",
+      "retained_evidence_sha256": "4fb45d04f011cc4a1d139b91157e4a3a534593f4d46b745a1f4ede1fbf75d38e",
+      "unique_file_bytes": 80311
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 20480,
+      "apparent_bytes": 2565,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07",
+      "retained_evidence_sha256": "acbbcb14f7615980c2118c286b1fcd7328c8573ea73a0a8e720cd8aab39e7447",
+      "unique_file_bytes": 2565
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 69632,
+      "apparent_bytes": 45535,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07b",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix07b",
+      "retained_evidence_sha256": "a5fa0a9ef68202093d990c91b9d655f7acc555fe1f78d061ac6b1b78850841cb",
+      "unique_file_bytes": 45535
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 102400,
+      "apparent_bytes": 80059,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix08",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix08",
+      "retained_evidence_sha256": "d6567f9ea10575182be3e35d35ce07a1a229b83da4101fe4daff678a209f3e2c",
+      "unique_file_bytes": 80059
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 61440,
+      "apparent_bytes": 40253,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix09",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-debug-fix09",
+      "retained_evidence_sha256": "de0906ef398f201a8d0c60627a97c463612c691d8557109668401c6e267f4db8",
+      "unique_file_bytes": 40253
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 221184,
+      "apparent_bytes": 130702,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-dev01",
+      "retained_evidence_sha256": "995197a056b3e05239b8e06ed2dbc877f9540aa12d48c220b9b5617dd66eea6c",
+      "unique_file_bytes": 130702
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 262144,
+      "apparent_bytes": 170023,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-dev02",
+      "retained_evidence_sha256": "dcd2fded5467829cd50740715329bdb1e0f7c8a88be9a4a6e3ac7fef93479e72",
+      "unique_file_bytes": 170023
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 192512,
+      "apparent_bytes": 127255,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev03",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-dev03",
+      "retained_evidence_sha256": "f5e1f1122a6ed646fd9abd5a71ccf4ca0213271c6b86baf79825056e66c6a26c",
+      "unique_file_bytes": 127255
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 339968,
+      "apparent_bytes": 209055,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-8279e79-20260831-dev04",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-8279e79-20260831-dev04",
+      "retained_evidence_sha256": "8d1a05ab8bf403abb5537c79bcec089ccc5ec7a3f44a928fd8eda16c0fc76a34",
+      "unique_file_bytes": 209055
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 98304,
+      "apparent_bytes": 18671,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-full01",
+      "retained_evidence_sha256": "92609026a75b0eb8aeb7f330a6957b9f82ed84b05de5c2ffdc4fb4c31d57f22a",
+      "unique_file_bytes": 18671
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 28672,
+      "apparent_bytes": 2804,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-full02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-full02",
+      "retained_evidence_sha256": "7805ac5d51d6530b5c2e92698f29a56bd2b3370c67f85c3e3268d7737d03ca66",
+      "unique_file_bytes": 2804
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 36864,
+      "apparent_bytes": 3467,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b01",
+      "retained_evidence_sha256": "7a1ecee4ac4ef4ad74f17884730994d329ab389b053bd9ab23fdd93b2e8750de",
+      "unique_file_bytes": 3467
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 36864,
+      "apparent_bytes": 3467,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b02",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b02",
+      "retained_evidence_sha256": "c98c063a1864b35915d75a3d6030ffc69fe52b5d792110ab60fb37b0bc130550",
+      "unique_file_bytes": 3467
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 122880,
+      "apparent_bytes": 87046,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b03",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b03",
+      "retained_evidence_sha256": "7ad567bbcb0e9859d56c1c628a1a310d4b3265173496b2d8f54aa0eda1c457b5",
+      "unique_file_bytes": 87046
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 122880,
+      "apparent_bytes": 87155,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b04",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-debug-m4b04",
+      "retained_evidence_sha256": "4d30738714c00b1e7c5206ab0f9d5e3e813e2092d763478bce87498b323c3aee",
+      "unique_file_bytes": 87155
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 122880,
+      "apparent_bytes": 87418,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b05",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b05",
+      "retained_evidence_sha256": "952a4c80fa1c42f50e18dd150665442dbd5abc330633236ac8f7e874645486b8",
+      "unique_file_bytes": 87418
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 90112,
+      "apparent_bytes": 50939,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b06",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-overlaydiag-m4b06",
+      "retained_evidence_sha256": "3a41d92284f55e7b017f0d9fbb50f87faf45b405fbe8d8a0aa9782c9e09ffb42",
+      "unique_file_bytes": 50939
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 147456,
+      "apparent_bytes": 111737,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix-pass01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix-pass01",
+      "retained_evidence_sha256": "9284fdee5bbaeb5cf0a608a4d6c85798877a56835a0b8db1db7fc845d552b0cf",
+      "unique_file_bytes": 111737
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 118784,
+      "apparent_bytes": 86483,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix2-pass01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix2-pass01",
+      "retained_evidence_sha256": "d1f8aca643b229868f2975b6735577e20bf99e250d451213273598f92e62e431",
+      "unique_file_bytes": 86483
+    },
+    {
+      "active_references": [],
+      "allocated_unique_bytes": 155648,
+      "apparent_bytes": 115058,
+      "category": "retain",
+      "original_locator": "PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix3-pass01",
+      "owner": "Core M4B; mixed evidence may include Audio",
+      "proposed_expiry": "None before Core canonical receipt, independent evidence retention, fresh reference audit and explicit User purge approval",
+      "reason": "Retain authoritative source/evidence and protected inputs; no purge authority or verified canonical receipt",
+      "rebuild_proof": {
+        "complete_rebuild_proven": false
+      },
+      "reclaimable_unique_bytes": 0,
+      "reference_audit_complete": false,
+      "retained_evidence_locator": "pi-storage-postcheck-v1.json#PI_M4B_RUNS/m4b-c242b86-20260901-overlayfix3-pass01",
+      "retained_evidence_sha256": "410b6c36a0784b466a5df05181a98bb71f346c493c50e01605b9aea75fb8573b",
+      "unique_file_bytes": 115058
+    }
+  ],
+  "observed_utc": "2026-09-06T02:44:23.812697+00:00",
+  "private_inventory_sha256": "f1c2f0b92a7dbf0c4e820149af43a6c1f6899b4b47a9f80dc8c77968a7c1c2ac",
+  "schema_version": "llm-curation-postcheck-cleanup/1"
+}

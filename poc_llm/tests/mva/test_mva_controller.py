@@ -73,7 +73,8 @@ def controller(case="cold-N1", **kwargs):
         "wire_schema_sha256", "config_sha256", "model_sha256", "runtime_sha256")}
     identity["audio_sha256"] = None
     return Controller(case=case, run_id="MVA-001-" + case, implementation_sha="b" * 40, identity=identity,
-        config={"model_path": "/unused-model", "runtime_root": "/unused-runtime"},
+        config={"model_path": "/unused-model", "runtime_root": "/unused-runtime",
+                "cache_root": "/unused-cache", "active_cache_key": "c" * 64},
         writer=writer, sampler=kwargs.pop("sampler", Sampler()), verify_install=kwargs.pop("verify_install", lambda: None),
         child_factory=kwargs.pop("child_factory", FakeChild), **kwargs)
 

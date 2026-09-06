@@ -1,0 +1,57 @@
+{
+  "format": "m4b-product-storage-v1",
+  "product": {
+    "id": "8279e79"
+  },
+  "selected_profile": {
+    "path": "poc_llm/fixtures/gate2/pi-configs-v2/CAND-LRT-G4E2B-MOBILE-R1-gate2b-product-v2.json",
+    "sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e"
+  },
+  "selected_schema": {
+    "path": "poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json",
+    "sha256": "ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34"
+  },
+  "model": {
+    "object_id": "sha256:181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "size_bytes": 2588147712
+  },
+  "runtime": {
+    "object_id": "sha256:6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+    "artifact_manifest_sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99",
+    "runtime_manifest_sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+    "wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+    "api_revision": "0.16.0",
+    "source_revision": "924e79c91542761242244e4f1651851f822e4cbb"
+  },
+  "cache": {
+    "format_revision": "litert-lm-xnnpack-cache-v1",
+    "key_algorithm": "sha256-canonical-json-v1",
+    "required_fields": [
+      "model_sha256",
+      "model_size_bytes",
+      "runtime_manifest_sha256",
+      "runtime_wheel_sha256",
+      "runtime_native_library_sha256",
+      "runtime_api_revision",
+      "runtime_source_revision",
+      "device_abi",
+      "backend",
+      "delegate",
+      "cache_format_revision"
+    ]
+  },
+  "logical_layout": {
+    "source": "PI_DEV_ROOT/poc_llm",
+    "runs": "PI_DEV_ROOT/runs/poc_llm",
+    "evidence_export": "PI_DEV_ROOT/evidence-export/poc_llm",
+    "cache": "PI_DEV_ROOT/cache/poc_llm/objects/{cache_key}",
+    "selected_profile": "PI_PROD_PRODUCTS/m4b/{product_id}/profiles/product-profile.json",
+    "selected_schema": "PI_PROD_PRODUCTS/m4b/{product_id}/schemas/product-profile.schema.json",
+    "model": "PI_ARTIFACT_STORE/sha256/{model_sha256_prefix2}/{model_sha256}/payload",
+    "runtime_wheel": "PI_ARTIFACT_STORE/sha256/{wheel_sha256_prefix2}/{wheel_sha256}/payload",
+    "runtime": "PI_PROD_PRODUCTS/m4b/{product_id}/runtime",
+    "runtime_native_library": "PI_PROD_PRODUCTS/m4b/{product_id}/runtime/{relative_library_path}"
+  }
+}
