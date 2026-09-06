@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - From: Core
 - Intended owner: LLM POC Team
-- Status: OPEN — AUTHORIZED FOR INTAKE AND NON-DESTRUCTIVE CURATION
+- Status: OPEN — PHASE 1 PI CURATION / REPORT REQUIRED
 - Governing design: Core `docs/arch_pi_directory.md`; applicable storage and
   evidence requirements are restated below for cross-repository intake.
 - Accepted winner input: Gemma 4 E2B mobile / `POC-llm-DEL-2026-001-R3`
@@ -16,6 +16,12 @@ authorizes SSH inventory, checksum/index generation, evidence curation, and
 non-destructive staging within the paths named below. It does not authorize a new
 benchmark, reboot, result publication, commit/push, milestone change, Core checkout
 edit, or permanent purge. Those actions retain their existing workflow gates.
+
+This is Phase 1. When the deliverables below are ready, return them to Core and stop.
+Do not create `$HOME/snowboard-agent-dev`, a bare repository, new Pi worktrees,
+`/opt/snowboard`, `/etc/snowboard`, `/var/lib/snowboard`, service accounts,
+permissions, or activation pointers. Core owns that Phase 2 provisioning and will
+return a workspace receipt before LLM begins Phase 3 work on the new layout.
 
 ## Purpose
 
@@ -64,10 +70,9 @@ responses, and sensitive inputs must not be copied into Git.
    and unique bytes, category (`retain`, `archive`, `rebuildable`, `quarantine`,
    `hold`), reason, active references, retained evidence locator/hash,
    reacquisition/rebuild proof, and proposed expiry.
-6. Change future POC runners to reference the canonical content-addressed model and
-   immutable runtime product. Do not copy the 2.5 GiB model or generated accelerator
-   cache into each run. Key cache identity by model/runtime/device profile and keep
-   only active/rollback identities after verification.
+6. Identify the Phase 3 runner changes needed to reference one content-addressed
+   model and immutable runtime product. Record the proposed files, cache identity,
+   and tests in the report; do not bind them to paths Core has not provisioned.
 7. Provide Core the tracked selected profile/schema locators and hashes needed to
    build `/var/lib/snowboard/products/m4b/<product-id>` without any dependency on a
    mutable or scratch POC worktree.
@@ -93,9 +98,9 @@ or reconstructed from the Pi.
 - a committed LLM evidence/result index;
 - a committed storage/worktree inventory and exact cleanup manifest;
 - stable selected profile/schema locators with checksums;
-- runner/storage changes needed to prevent large per-run duplication, with
-  appropriate validation;
-- an external handoff giving the full 40-character LLM SHA, changed files,
+- a Phase 3 runner/storage change plan to prevent large per-run duplication;
+- a return handoff giving the full 40-character LLM SHA when committed, or the base
+  SHA and exact uncommitted file list otherwise; changed files,
   validation, protected holds, proposed reclaim bytes, and every unfinished item.
 
 The cleanup manifest must distinguish apparent size from reclaimable unique bytes.
@@ -113,8 +118,9 @@ profile/model/runtime without a `gate2b-*` path, historical results remain
 discoverable through sanitized committed indexes, and the removal proposal is
 path-specific and independently reviewable.
 
-The team may create indexes, copy stable non-sensitive profile/schema inputs, fix
-its runners, and stage proposed removals. Permanent deletion is outside this
-delivery step until the exact manifest has been reviewed, the canonical M4B product
-is deployed, references are rechecked, and the User approves the purge. Accepted
-and submitted SHAs remain immutable; all fixes are append-only.
+The team may create indexes, copy stable non-sensitive profile/schema inputs, and
+stage proposed removals inside its current owned roots. Runner path changes and
+canonical migration wait for Core's workspace receipt. Permanent deletion is
+outside this delivery step until the exact manifest has been reviewed, the canonical
+M4B product is deployed, references are rechecked, and the User approves the purge.
+Accepted and submitted SHAs remain immutable; all fixes are append-only.

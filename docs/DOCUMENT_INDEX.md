@@ -9,13 +9,15 @@
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 * [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
-* [`REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md`](pm_handoff/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md) - Pi儲存整理 governing income；Phase 1完成、Core Phase 2 workspace receipt已驗證；Phase 3與purge review待續
-* [`RECEIPT-PI-PHASE2-WORKSPACES-001.md`](pm_handoff/RECEIPT-PI-PHASE2-WORKSPACES-001.md) - Core Phase 2 canonical workspaces與assigned data roots governing receipt；未啟用deployment或cleanup
-* [`REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md) - Active Phase 3 stable product/model/runtime/cache identity與migration-manifest實作要求
-* [`FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md) - Active blocking review；九項修正與完整candidate proposal required
+* [`REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md`](pm_handoff/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md) - Core接受Pi搬遷後交付的exact-SHA離線MVA執行指示；User現指示暫停Pi測試
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
+
+* [`REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md`](pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md) - Phase 1 intake；搬遷已由Core接受
+* [`RECEIPT-PI-PHASE2-WORKSPACES-001.md`](pm_handoff/history/RECEIPT-PI-PHASE2-WORKSPACES-001.md) - Phase 2 canonical workspace receipt；已由Phase 3 acceptance承接
+* [`REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-PHASE3-001.md) - Phase 3 request；已完成並獲Core接受
+* [`FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md`](pm_handoff/history/FEEDBACK-POC-LLM-PI-STORAGE-PHASE3-001.md) - Phase 3 blocking findings；已修正並獲Core接受
 
 * `DELIVERY-014-CORE-LLM-POC-PACKETS-ACK.md` - (被取代) 由 016 取代
 * `RESP-LLM-POC-PI-EXECUTION-PACKETS-001.md` - (被取代) 由 002 取代

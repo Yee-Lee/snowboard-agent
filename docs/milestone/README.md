@@ -4,12 +4,11 @@
 
 最後更新：2026-09-06
 
-Pi storage補記：Phase 1 inventory完成；Core Phase 2 receipt已建立乾淨canonical LLM workspace
-與三個assigned data roots。Core Phase 3 feedback要求修正path/cache/native identity、完整hold
-migration manifest及新candidate proposal；本機修訂與bounded Pi preflight已完成，待Core review。
-此工作仍不授權MVA量測、model load、materialization、service activation、hold movement、purge、
-commit或push。下列MVA stop-before-Pi只指target measurement execution。Gate狀態不變；
-Attempt 005、MVA量測／採用、Core migration acceptance及purge gate仍未結案。
+Pi storage補記：Core已接受Phase 3搬遷；Pi的clean canonical checkout、指定data roots、
+product `8279e79`、artifact identity與private evidence transfer/legacy-run cleanup均有receipt。
+2026-09-06只讀驗收再次確認SHA、workspace、config、current binding、零product symlink與
+零writable product file。Core已授權exact-SHA離線MVA，但User現指示暫停Pi測試；尚未執行
+prepare-install、model load、offline job、reboot或target case。Permanent purge仍需獨立User授權。
 
 ## Current reachability
 
@@ -56,7 +55,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / WORKSTATION SNAPSHOT` | Controller/writer/lock與本機verification完成；停在Pi連接前，硬體證據尚未建立 |
+| M4B-MVA | `IN_PROGRESS / PI EXECUTION PAUSED BY USER` | exact SHA/surface及搬遷驗收完成；尚未建立硬體量測證據 |
 
 ## Cumulative P1～P12 rule
 
@@ -199,7 +198,8 @@ Cumulative、Gate 2A及Gate 2B ACK/review仍是history；新Income不回退或�
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [M4B-MVA measurement request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
-- [Pi storage-curation request](../pm_handoff/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md)
+- [Pi storage-curation request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md)
+- [M4B-MVA offline execution request](../pm_handoff/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
 - [Gate 1 closure ACK (governing locked input)](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
