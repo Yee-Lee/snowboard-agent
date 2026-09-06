@@ -1,6 +1,6 @@
 # Snowboard 架構設計
 
-離線 AI 語音助理，執行於 Raspberry Pi 5 (Pi OS)。本文件描述模組權責、邊界、能力範圍與流程；實作進度與檔案清單見 `implement.md`。
+離線 AI 語音助理，執行於 Raspberry Pi 5 (Pi OS)。本文件描述模組權責、邊界、能力範圍與流程；實作進度與檔案清單見 `implement.md`，Pi 開發、正式部署、資產與證據的實體儲存邊界見 `arch_pi_directory.md`。
 
 ## 1. 目標與邊界
 
