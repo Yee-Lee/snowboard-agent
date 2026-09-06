@@ -7,7 +7,10 @@ Status：`REPLACEMENT SNAPSHOT / PI PATH PROVED / FORMAL EXACT-SHA PROOF PENDING
 - POC starting SHA：`b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1`
 - Execution SHA：the full pushed SHA accompanying this packet's workstation handoff; supplied literally
   through `--implementation-sha`. It is deliberately outside the hashed source surface to avoid recursion.
-- Pi run IDs：`MVA-001-` plus exactly one case ID from the ordered list below; no overwrite/retry.
+- Current Pi run IDs：`MVA-002-` plus exactly one case ID from the ordered list below; no overwrite/retry.
+  `MVA-001-api-proof` is retained as an INCONCLUSIVE first formal attempt: its operator wrapper supplied
+  the pretty-printed receipt file digest instead of the runner-issued canonical-JSON digest, so identity
+  validation stopped before model load. `MVA-002` uses a separate immutable ledger and directory namespace.
 
 ## Frozen method inherited from the delivered request
 

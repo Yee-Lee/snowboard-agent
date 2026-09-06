@@ -14,26 +14,26 @@
     "poc_llm/fixtures/mva/public-catalog-001.json": "35ef6dda86fc8d7e20e905cd37e99f43214232d2ff292bf93a8db4d9e4b3bfe0",
     "poc_llm/harness/mva_contract.py": "22c46f2fb66be7b50c669dddfb1f50cd17cae032cc70d5391cc0ee4fd5e879f8",
     "poc_llm/harness/mva_controller.py": "4923fd985792e41fe7bbe2d65fa2e8dcb5793c2c1ae9ab2e4b5ff76ef16a93d1",
-    "poc_llm/harness/mva_evidence.py": "b8106a15e4f4678f5af11035dd288d8f0a18f210f6e1e98ab26b52709ef64c71",
+    "poc_llm/harness/mva_evidence.py": "940089b36cfe12b966782f527fe029744765829dd2d6a58b9d69351ef1304b55",
     "poc_llm/harness/mva_identity.py": "e49ed9d83735a5cdab7c3c8024476b961c0d0de5919dc61b0a1767e61a8c76d7",
     "poc_llm/harness/mva_litert_backend.py": "9bc8ae29b385d0930b62748740b8fb892ca732aed73d905c0b2057e033631104",
     "poc_llm/harness/mva_process.py": "2c9161f72ab348b944e5c0e07722273f0b74a8719e9ba3d13f48817cb320037d",
     "poc_llm/harness/mva_product_layout.py": "8c4936fe02d104f72a66a51ab716d9f2a4fca22f542fced885575ff7aaa91c7a",
     "poc_llm/harness/mva_resources.py": "5125b2b446fc40e3bab177cc0828a159376cb436eae9e8a742acc29aa462659a",
-    "poc_llm/harness/mva_surface.py": "cdccd9646c4fe5a98702fd173f3c85d7cb111fe9203732e2d384cd8568d3086d",
+    "poc_llm/harness/mva_surface.py": "8cafa58a4da166521afaf9de0bd66cd0cdfefc60229608e2e97af28477bb0e1a",
     "poc_llm/harness/mva_worker.py": "3c066a019c9dfd6278bb7830d5563160088ded97bf3f686545d2caf57a1f77a2",
     "poc_llm/harness/pi_artifact_auth.py": "db3a3e1c1beedcd33f2074a0ef7ec549c5bbae56e283fb9bb78e171d4073e328",
     "poc_llm/requirements-gate1.lock": "f2445069e859dabdd740437faa97fcfa3ee3718432ac388fcf750d5f51a7ccd6",
     "poc_llm/requirements-mva-workstation.lock": "07b598dbc000454bd0850b6978ce315bb061b021a63f7a9608c0a05cf1a1c6af",
-    "poc_llm/tests/mva/M4B-MVA-POC-PACKET-001.md": "b32e9e3b9f99ab3bea5e7040cc9998fda36d9438e4adc41773972a8a23a8ad0a",
+    "poc_llm/tests/mva/M4B-MVA-POC-PACKET-001.md": "eb3c7d267bf3ef85923333121fa4b4b4caaa355dc6b8ca7f6f5859bd0f6f99bc",
     "poc_llm/tests/mva/test_mva_contract.py": "219b42e0d15d1ef798e398f8bb12a19998195c8c4f9a036759b1ae5937820e34",
-    "poc_llm/tests/mva/test_mva_controller.py": "dffe9c6cf8a8364a3f75ad44dd0c9a58f5df0ac51ca41e45e4c54aa808dc7f44",
+    "poc_llm/tests/mva/test_mva_controller.py": "8930f28c65a25fcac190e0794bd77594b30e366729edb17a7c659fd760847cb9",
     "poc_llm/tests/mva/test_mva_identity.py": "fa7c43c96ba14fcbe9873bebe5f934a0aa93979e249ce3722a8f11cc5ba3e089",
     "poc_llm/tests/mva/test_mva_litert_backend.py": "758dfd4653da4b3e90045131430c03f7657a325648fac2278c4ee920f68bb234",
     "poc_llm/tests/mva/test_mva_product_layout.py": "145e46d0e3c261fd3a032af048bb86f416a40b700a67737b1d43d8b0148b6f57",
     "poc_llm/tests/mva/test_mva_surface.py": "c30f728352c5f1a448ffaa0173b2239a4a9092b957fe4f883ebaa0712d398a64",
-    "poc_llm/tools/run_mva.py": "0abafbc3c4863828fe32e76b9d86f29c94357958abc624d64c554d21fad4ca02"
+    "poc_llm/tools/run_mva.py": "d35e99702244b0fc953a4cbe2e89db3ee71f9d4578e944431293d4ce9002757a"
   },
   "format": "m4b-mva-source-surface-v1",
-  "readiness": "replacement_snapshot_requires_exact_sha_formal_pi_proof"
+  "readiness": "replacement_attempt_002_requires_exact_sha_formal_pi_proof"
 }

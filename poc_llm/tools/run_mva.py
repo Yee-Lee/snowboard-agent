@@ -26,6 +26,7 @@ from poc_llm.harness.mva_surface import build_manifest, canonical_bytes, surface
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCK = ROOT / "poc_llm/harness/mva-surface-lock-v1.json"
+RUN_SERIES = "MVA-002"
 
 
 def sha(path):
@@ -131,10 +132,10 @@ def main():
         "cache_key": cache_key(config, load_product_storage()),
         "audio_sha256": None}
     identity_key = hashlib.sha256(canonical_bytes([args.implementation_sha, identity, args.receipt_sha256])).hexdigest()
-    run_id = "MVA-001-" + args.case
+    run_id = RUN_SERIES + "-" + args.case
     # Reserve the immutable run before probes, so preflight failures also remain visible.
     writer = EvidenceWriter(args.evidence_root, run_id)
-    ledger_path = args.evidence_root / "mva-001-ledger.jsonl"
+    ledger_path = args.evidence_root / (RUN_SERIES.lower() + "-ledger.jsonl")
     with ledger_path.open("a+", encoding="utf-8") as ledger:
         fcntl.flock(ledger, fcntl.LOCK_EX | fcntl.LOCK_NB)
         ledger.seek(0)
@@ -145,7 +146,7 @@ def main():
         try:
             verify_next_case(entries, args.case, boot, identity_key)
             for entry in entries:
-                summary_path = args.evidence_root / ("MVA-001-" + entry["case"]) / "summary.json"
+                summary_path = args.evidence_root / (RUN_SERIES + "-" + entry["case"]) / "summary.json"
                 if sha(summary_path) != entry["summary_sha256"]:
                     raise RunError("IDENTITY_DRIFT")
             sampler = PiSampler()

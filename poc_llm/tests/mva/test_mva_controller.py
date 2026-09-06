@@ -259,6 +259,20 @@ class OrderAndEvidenceTests(unittest.TestCase):
             data = (writer.directory / "samples.jsonl").read_text()
             self.assertEqual(json.loads(data), original)
 
+    def test_replacement_attempt_series_is_explicit_and_previous_series_remains_valid(self):
+        subject = controller()
+        subject.run()
+        original = subject.writer.rows[-1]
+        for series in ("MVA-001", "MVA-002"):
+            sample = deepcopy(original)
+            sample["run_id"] = series + "-" + sample["case_id"]
+            sample["raw_sanitized_log_path"] = sample["run_id"] + "/samples.jsonl"
+            validate_sample(sample)
+        sample["run_id"] = "MVA-003-" + sample["case_id"]
+        sample["raw_sanitized_log_path"] = sample["run_id"] + "/samples.jsonl"
+        with self.assertRaises(EvidenceError):
+            validate_sample(sample)
+
 
 class ProcessTests(unittest.TestCase):
     def make_child(self, script):

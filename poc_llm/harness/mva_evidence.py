@@ -14,6 +14,7 @@ from poc_llm.harness.mva_surface import canonical_bytes
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "poc_llm/contracts/mva/machine-sample-v1.schema.json"
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.-]{1,96}$")
+ACCEPTED_RUN_SERIES = {"MVA-001", "MVA-002"}
 TERMINALS = {
     "READY", "SESSION_OPENED", "RESULT", "SESSION_CLOSED", "SHUTDOWN_ACK",
     "API_PROOF", "RECOVERY_READY", "TIMEOUT", "CANCELLED", "INPUT_TOO_LARGE",
@@ -54,8 +55,9 @@ def validate_sample(sample: dict) -> None:
     for key in ("run_id", "case_id", "cycle_id", "session_id"):
         if sample[key] is not None and not SAFE_ID.fullmatch(sample[key]):
             raise EvidenceError("invalid evidence identity")
+    expected_run_ids = {series + "-" + sample["case_id"] for series in ACCEPTED_RUN_SERIES}
     if (not re.fullmatch(r"api-proof|cold-[NO][1-3]|replacement-[NO][1-5]|memory-[1-3]|recovery-[1-3]", sample["case_id"])
-            or sample["run_id"] != "MVA-001-" + sample["case_id"]):
+            or sample["run_id"] not in expected_run_ids):
         raise EvidenceError("unfrozen case or run ID")
     if sample["session_id"] is not None and not re.fullmatch(r"session-([1-9]|1[0-9]|20)|cancel-proof", sample["session_id"]):
         raise EvidenceError("unfrozen session ID")

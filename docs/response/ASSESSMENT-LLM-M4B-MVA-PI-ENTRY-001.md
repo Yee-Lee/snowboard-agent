@@ -73,3 +73,12 @@ Afterward the User reviews benchmark values before any result/profile publicatio
 a separate evaluator-owned WP04 activity. Audible-onset parity remains `null` with a missing reason unless
 an accepted M4a Audio identity and common timebase are supplied; it is not required for the LLM-only
 machine runner.
+
+## Formal attempt 001 follow-up
+
+Replacement SHA `4f34226728bafba445aa736e5e8ba24c0e2a69cd` passed offline `prepare-install`, but
+`MVA-001-api-proof` stopped as INCONCLUSIVE before model load. The operator wrapper supplied the SHA-256
+of the pretty-printed receipt file (`d1927c31…a213b`) where `verify_receipt` requires the runner-issued
+canonical-JSON digest (`6524d545…e473`). The retained run has one `IDENTITY_DRIFT` sample and no child or
+cleanup owner. It is not overwritten or relabeled. The replacement formal series is `MVA-002`, with a
+separate ledger and run directories, and uses the canonical digest literally.

@@ -104,7 +104,7 @@ def build_manifest(root: Path) -> dict:
     return {
         "format": "m4b-mva-source-surface-v1",
         "baseline_id": "M4B-MVA-001",
-        "readiness": "replacement_snapshot_requires_exact_sha_formal_pi_proof",
+        "readiness": "replacement_attempt_002_requires_exact_sha_formal_pi_proof",
         "files": files,
     }
 
