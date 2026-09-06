@@ -1,0 +1,7 @@
+# Workstation tests only; never replaces the selected Pi runtime/dependency lock.
+-r requirements-gate1.lock
+pytest==8.4.2
+iniconfig==2.3.0
+packaging==26.3
+pluggy==1.6.0
+pygments==2.21.0

@@ -21,6 +21,12 @@ execution已完成；User選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC win
 [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001`](../docs/response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md)
 為完整checkpoint；新工作站仍須重新建立自己的ignored `.workstation-context.md`，不得繼承舊機能力。
 
+2026-09-06 WP01已接續完成，本機execution snapshot及Pi進場前的唯一最新handoff為
+[`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001`](../docs/response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
+本機測試依賴使用`requirements-mva-workstation.lock`於ignored `.venv`；Pi維持原selected
+runtime，不能使用workstation lock替代。執行命令與離線／receipt／reboot／cleanup條件見
+[`M4B-MVA-POC-PACKET-001`](tests/mva/M4B-MVA-POC-PACKET-001.md)。
+
 Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence schema；它們
 目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC
 工具或結果替代 LLM M0。

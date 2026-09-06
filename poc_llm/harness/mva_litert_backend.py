@@ -14,7 +14,6 @@ import threading
 import time
 from typing import Any
 
-from poc_llm.harness.litert_lm_child_adapter import _text_content
 from poc_llm.harness.mva_contract import (
     ContractViolation,
     SESSION_FACTS,
@@ -23,6 +22,19 @@ from poc_llm.harness.mva_contract import (
     validate_semantic,
     validate_session_facts,
 )
+
+
+def _text_content(value: Any) -> str:
+    """Extract streamed text without importing the historical full-envelope adapter."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        if isinstance(value.get("text"), str):
+            return value["text"]
+        return "".join(_text_content(item) for item in value.get("content", []))
+    if isinstance(value, list):
+        return "".join(_text_content(item) for item in value)
+    return ""
 
 
 class MvaBackendError(RuntimeError):
@@ -92,8 +104,8 @@ class MvaLiteRtBackend:
     ) -> "MvaLiteRtBackend":
         return cls(
             config,
-            system_message=system_prompt_path.read_text(encoding="utf-8").rstrip("\n"),
-            user_template=user_template_path.read_text(encoding="utf-8").rstrip("\n"),
+            system_message=system_prompt_path.read_text(encoding="utf-8"),
+            user_template=user_template_path.read_text(encoding="utf-8"),
             semantic_schema=json.loads(semantic_schema_path.read_text(encoding="utf-8")),
             litert_lm_module=litert_lm_module,
             engine=engine,
@@ -103,6 +115,15 @@ class MvaLiteRtBackend:
     def session_id(self) -> str | None:
         with self._lock:
             return self._session_id
+
+    def census(self, cases: dict[str, list[str]]) -> dict[str, list[int]]:
+        """Count every public new-user input before any inference, without logging it."""
+        counts = {key: [len(self._engine.tokenize(text)) for text in turns]
+                  for key, turns in cases.items()}
+        if any(count > self._config["user_new_token_admission"]
+               for turns in counts.values() for count in turns):
+            raise MvaBackendError("INPUT_TOO_LARGE", dirty=False)
+        return counts
 
     def _new_conversation(self) -> Any:
         return self._engine.create_conversation(
@@ -234,32 +255,12 @@ class MvaLiteRtBackend:
 
     def prewarm_once(self, public_text: str) -> dict[str, int | float | None]:
         """Run one disposable public inference without publishing a product session."""
-
-        with self._lock:
-            if self._conversation is not None or self._session_id is not None:
-                raise MvaBackendError("BUSY", dirty=False)
-        conversation = self._new_conversation()
+        self.open_session("mva-disposable-prewarm", SESSION_FACTS)
         try:
-            prompt = render_user_turn(self._user_template, public_text)
-            response_format = self._litert_lm.ResponseFormat.json(self._semantic_schema)
-            started = time.monotonic_ns()
-            chunks = [
-                text
-                for chunk in conversation.send_message_async(prompt, response_format=response_format)
-                if (text := _text_content(chunk))
-            ]
-            validate_semantic(json.loads("".join(chunks)))
-            benchmark = conversation.get_benchmark_info()
-            return {
-                "ttft_ms": benchmark.time_to_first_token_in_second * 1000,
-                "ttc_ms": (time.monotonic_ns() - started) / 1_000_000,
-                "output_tokens": benchmark.last_decode_token_count,
-                "kv_tokens": conversation.token_count,
-            }
-        except Exception as error:
-            raise MvaBackendError("GENERATION_FAILED", dirty=True) from error
+            return self.generate("mva-disposable-prewarm", 1, public_text).metrics
         finally:
-            conversation.close()
+            if self.session_id is not None:
+                self.close_session("mva-disposable-prewarm")
 
     def cancel(self) -> None:
         """Cancel at most once; the active Conversation must subsequently be discarded."""

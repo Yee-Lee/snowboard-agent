@@ -139,6 +139,23 @@ def backend(engine: FakeEngine, **overrides) -> MvaLiteRtBackend:
 
 
 class MvaLiteRtBackendTests(unittest.TestCase):
+    def test_public_census_is_preinference_and_rejects_oversize(self) -> None:
+        engine = FakeEngine([])
+        subject = backend(engine)
+        self.assertEqual(subject.census({"case": ["短句"]}), {"case": [2]})
+        with self.assertRaises(MvaBackendError) as raised:
+            subject.census({"case": ["x" * 33]})
+        self.assertEqual(raised.exception.code, "INPUT_TOO_LARGE")
+        self.assertEqual(engine.created, [])
+
+    def test_prompt_bytes_are_not_trimmed(self) -> None:
+        engine = FakeEngine([[{"text": "回答", "end": False}]])
+        subject = backend(engine)
+        subject.open_session("session-a", SESSION_FACTS)
+        self.assertEqual(engine.create_kwargs[0]["system_message"], (CONTRACT / "system-prompt-v1.txt").read_text())
+        subject.generate("session-a", 1, "問題")
+        self.assertTrue(engine.created[0].messages[0].endswith("\n"))
+
     def test_two_turns_use_one_conversation_and_compact_constraint(self) -> None:
         engine = FakeEngine([[
             {"text": "第一輪回答", "end": False},
@@ -173,7 +190,7 @@ class MvaLiteRtBackendTests(unittest.TestCase):
         subject.open_session("session-b", SESSION_FACTS)
         subject.generate("session-b", 1, "問題二")
         self.assertEqual(len(engine.created), 2)
-        self.assertEqual(engine.created[1].messages, ['{"perceptions":[{"kind":"listen","status":"ok","text":"問題二"}]}'])
+        self.assertEqual(engine.created[1].messages, ['{"perceptions":[{"kind":"listen","status":"ok","text":"問題二"}]}\n'])
 
     def test_input_too_large_is_rejected_before_inference_and_retains_session(self) -> None:
         engine = FakeEngine([[{"text": "unused", "end": False}]])

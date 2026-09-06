@@ -1,6 +1,6 @@
 # M4B-MVA：產品等價量測
 
-狀態：`IN_PROGRESS / WORKSTATION CONTRACT AND RUNNER PREPARATION`
+狀態：`IN_PROGRESS / WORKSTATION SNAPSHOT / STOP BEFORE PI CONNECTION`
 
 External gate：`M4B-MVA-POC OPEN`
 
@@ -31,6 +31,10 @@ User發布前審核的committed result packet，供Core Designer採用profile並
 Entry review結論：本機contract/schema/runner準備已獲範圍；commit、push、Pi存取／重開機／執行、
 benchmark發布與candidate/profile建議仍各自需要User核准。因此milestone進入workstation
 `IN_PROGRESS`，hardware work維持`Blocked — authorization not yet requested`。
+
+2026-09-06 User接續指示「同意。直接做到要連接pi之前」：授權本機依賴恢復與完成WP01，
+並涵蓋供Pi取得的execution snapshot commit/push；Pi連接、reboot、執行及benchmark/profile
+發布仍未授權。此指示取代前段對本機commit/push的pending狀態。
 
 ## Product-parity surface
 
@@ -112,12 +116,25 @@ workstation contract evidence，不是runtime API proof、Pi result或benchmark�
 工作站更換所需的完整續接資訊、檔案inventory、測試命令、round-close audit與所有open items見
 [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001`](../response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md)。
 
-1. 完成WP01 controller、sanitized evidence writer、non-recursive surface lock及其workstation verification。
-2. execution snapshot需User核准commit/push；尚未請求。
-3. Pi目前關機；WP02/WP03的存取、6次reboot與執行尚未請求授權。
+1. WP01 controller、sanitized evidence writer、non-recursive surface lock及MVA本機verification已完成；
+   完整suite的既有平台限制仍有待Linux/x86 runner驗證，不得沿用舊機全綠結果。
+2. Execution snapshot commit/push屬本輪授權；full SHA與surface digest隨本輪handoff提供。
+3. Pi電源／存取狀態尚未重新確認；WP02/WP03的存取、6次reboot與執行尚未授權。
 4. Accepted Audio MVA parity及physical audible-onset方法尚未確認；未解除前只規劃LLM subsystem claim。
 5. 12個private held-out sessions的評估者、operator與受控呈現方式待執行前指定。
 6. 所有benchmark結果與profile建議在User審核前不得發布。
+
+2026-09-06新工作站續接：確認`llm`位於交接SHA
+`7a56137b7b2d65219ea4ff2065ab2773c179a0af`且起始worktree clean，建立ignored local context。
+新增`poc_llm/harness/mva_surface.py`，以explicit inventory產生non-recursive source manifest；
+驗證完整inventory、exact bytes、trusted digest並拒絕missing input、越界與symlink。
+最初六項standard-library測試PASS，`git diff --check`通過；隨後完成controller/writer，
+擴充完整inventory並產生execution lock，最終MVA targeted為53項PASS。
+新機Python 3.14.6最初缺`jsonschema`，既有MVA測試在import階段停止；User隨後授權安裝並
+直接完成Pi連接前準備。隔離`.venv`已恢復，controller、worker、receipt驗證、resource probes、
+durable evidence writer與surface manifest已完成；本輪最終驗證與平台差異詳見
+[`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001`](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
+此為workstation self-test，沒有執行Pi或產生benchmark；MVA gate仍Open。
 
 ## Prohibited
 
