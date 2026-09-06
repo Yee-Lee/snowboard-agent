@@ -8,6 +8,12 @@
 
 - **Git Commit Message 規範**：
 
+  **公開資料檢查**：準備 commit 前，必須確認 staged blobs 不含私人家目錄、
+  本機 host identity、工作站型號／OS、credential、原始私有測試內容或大型 payload。
+  `Yee.Lee` 與 `yeelee.tw@gmail.com` 可公開。涉及 Pi／POC evidence 時執行
+  `python scripts/privacy_gate.py scan-staged`；標準化公開 evidence JSON 另以
+  `--strict-evidence` 驗證。檢查通過不能取代 `git diff --cached` 人工審閱。
+
   **標題格式**：`[work_type][milestone]: [title]`
 
   | work_type | 用途 |

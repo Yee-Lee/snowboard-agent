@@ -39,3 +39,18 @@ htmlcov/
 
 # Device-local runtime configuration
 config.*.local.yaml
+
+# Private evidence and non-Git payloads
+private-evidence/
+*.private.tar
+*.private.tar.gz
+*.private.tgz
+*.age
+*.pcm
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.sqlite
+*.sqlite3
+*.ses
