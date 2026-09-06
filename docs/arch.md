@@ -247,6 +247,10 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 
 **Fire-and-forget 語意（tool）**：派發完成即 `ActionCompleted`，不等待結果。真正的執行結果由外部通道以獨立事件回到系統，屬下一次 wake 或下一 turn 的 input。
 
+**Speak 執行語意（delivery mode 與 M4C streaming-speak）**：M4B full-response 模式下，terminal `LLMResponse` 後才啟動 speak worker，不啟用下述 streaming control。M4C 的 THINK Entry 可由 SM 建立一個綁定 `(session_id, turn_id, correlation_id)` 的單次 streaming-speak control，並交給本 turn Reasoner。第一個經 Reasoner 判定可交付的 semantic text 由該 control 啟動唯一 speak worker；SM 在 THINK 期間即把該 worker 納入同一 turn 的 in-flight tracking。後續有序 fragment 只進同一 worker。Fragment 是 operation 內資料，不是 Fact、獨立 action 或新 turn，也不觸發 state transition。若 delivery/playback stage 在 THINK 期間先完成，只形成 SM private completion notice；speak worker 保持 in-flight，不得 return，也不得在 semantic terminal 驗證前發布 `ActionCompleted`。Terminal `LLMResponse` 驗證通過並進 ACTION 後，若 private completion 已記錄，speak worker 才發布唯一 `ActionCompleted` 並 return；若驗證失敗或發生 cancel，worker 依 §6.3 收斂且不發布正常 Fact。
+
+Reasoner terminal `LLMResponse` 仍是一 turn 唯一 cognition Fact。若已啟動 streaming speak，terminal response 必須驗證為同一 speak intent；驗證通過才由 THINK 進 ACTION，並在 ACTION 等待該既有 speak worker 的 terminal。只有 terminal semantic validation 與 speak terminal 都成功，才發布並接受唯一 `ActionCompleted(status=ok)`、再進下一 turn。Invalid/failed terminal、intent 不一致或 interrupt 必須共同取消 generation、queue、TTS 與 playback，結束 dirty session，且不得接受或發布正常成功。確切 port、chunk 與 backpressure 數值屬 implement。
+
 > 註：query（查詢式派發，例：雲端查詢／雲端 LLM）為重要但尚未定義的第四類 action，見 §8。
 
 **Rest 的意義與邊界**：Reasoner 判定 session 該結束時產出 `LLMResponse(action_kind=rest)`。`rest` 是可選的使用者可感知收尾，不擁有 session 或資源生命週期。責任分工：
@@ -389,10 +393,11 @@ Guard 三步判定：SM dispatch loop 從 inbox 取出事件後，依序執行�
 
 **Session 內 Conversation（runtime continuity）**
 
-Session 期間，Reasoner 可持有 `Conversation` 物件（history 列表 / KV context），在同一 session 的多 turn 之間保持對話脈絡（例：承接上一句、保留已知使用者意圖）。架構邊界：
+Session 期間，系統在同一 session 的多 turn 之間保持對話脈絡（例：承接上一句、保留已知使用者意圖）。架構邊界：
 
-* **Core 的職責**：只管 `Conversation` 的 owner（Reasoner 持有）、lifetime（與 session 共生）、capacity（最大 token / turn 數，config-driven）；不介入訊息摘要、檢索或 task restoration。
-* **Session 結束即清棄**：session 結束時（rest、interrupt、error、shutdown 四路），SM 通知 Reasoner session end；Reasoner 在 close 流程中丟棄 `Conversation` 全部內容（history / KV）。不做跨 session 持久化——此設計確保每次 wake 為乾淨的 context。
+* **Lifetime 契約**：Product session 至多 claim 一個 Conversation。Implement 可在 SM begin 前準備一個未綁定、不含 user/session history 的 clean Conversation；SM begin 必須原子地綁定相容的 prepared object，或按需建立後綁定。綁定後 Conversation 才與該 session 共生，且不得被其他 session 使用。Prepared/claimed object 的 component owner 與初始化 API 屬 implement。
+* **Capacity 原則**：capacity 上限由 config 驅動；超出上限時關閉 session 並回 IDLE，不做 silent reset 或自動截斷。具體 KV limit 值、token 計算策略屬 implement。
+* **Session 結束即清棄**：session 結束時（rest、interrupt、error、shutdown 四路），SM 觸發 session end；Conversation 全部內容在完成 close 流程後清棄。不做跨 session 持久化——此設計確保每次 wake 為乾淨的 context。
 * **無產品記憶系統**：不建立任何持久化記憶層；長期 / 跨 session 記憶、摘要、檢索仍為未納入項目（見 §8.3）。
 
 ### 4.2 狀態集合
@@ -411,6 +416,8 @@ Session 期間，Reasoner 可持有 `Conversation` 物件（history 列表 / KV 
 `IDLE` -> `WAKE` -> 等 `wake_ack_seconds` ( config ) -> `PERCEPTION`。
 
 進 `WAKE` 時 SM 發 `StateChanged`，`StatusBar` 狀態 `slot` 更新顯示 ( 見 §5.3 ) ; 反饋亦可含 `earcon` 等其他通道。`wake_ack_seconds` 是刻意的 `UX buffer`，讓使用者感知系統已醒來、開始收音才穩定。
+
+**系統狀態顯示邊界**：系統狀態提示必須由 §5.3 三角色經 Arbiter 呈現；對話 state 投影使用 `StateChanged`，startup/shutdown 使用 lifecycle client，sanitized error detail 使用 error observer。`display_spec.md` 決定合法畫面、時機、文案與 Normal/Fullscreen 模式。架構不為顯示新增 SM state。若 M4C 採用 pre-session preparing，Designer 必須先修訂 display spec 並定義其 lifecycle trigger；在該修訂核准前，boot 維持現有 Fullscreen Blank。
 
 ### 4.4 Wake source -> 首 turn perception 映射
 
@@ -448,7 +455,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 | IDLE | `ButtonPressed` / `WakeWordDetected` / `ExternalMessageArrived` | WAKE | 記錄 wake source |
 | WAKE | `wake_ack_seconds` timer 到期 | PERCEPTION | — |
 | PERCEPTION | 所有 perception 完成或 timeout | THINK | — |
-| THINK | `LLMResponse` 產出且通過契約驗證 | ACTION | 驗證項見 §4.6 THINK Exit |
+| THINK | `LLMResponse` 產出且通過契約驗證 | ACTION | 驗證項見 §4.6 THINK Exit；若本 turn 有 streaming speak 的 delivery/playback stage 已記錄 private completion，該 notice 只記錄、不提前轉移，待 terminal 驗證通過才進 ACTION |
 | THINK | `LLMResponse` 產出但驗證不通過（schema 不合、payload 不合，或剔除未註冊 kind 後 `next_perceptions` 空） | ERROR | 視為 reasoner bug（P5 降級亦失敗）；走 §3.2「SM 自檢」ERROR 路徑，SM 不 publish `ErrorOccurred`、不升級為 process 崩 |
 | ACTION | `ActionCompleted(kind∈{speak,tool}, status=ok)` | PERCEPTION | 依 reasoner `next_perceptions` |
 | ACTION | `ActionCompleted(kind∈{speak,tool}, status=error)` | PERCEPTION | 依 SM `default_perceptions` (§4.8) |
@@ -483,7 +490,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * 呼叫 reasoner，加入 in-flight 集合
 * 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供 reasoner 決定 `next_perceptions` 是否含 `read`
-* 若為 session 首 turn（`turn_id == 1`）：SM 通知 Reasoner **session begin**（傳入 `session_id`），Reasoner 建立 `Conversation` 物件並初始化 context。通知以控制流方法呼叫傳入，不阻塞 SM inbox——SM 呼叫後即繼續，不 await Reasoner 內部推論完成；SM inbox 在任何 Reasoner 操作期間均保持可消費（late ACK / 遲來 Signal 不因此堵塞）。
+* 若為 session 首 turn（`turn_id == 1`）：SM session begin 觸發取得本 session 的 Conversation——原子綁定相容的 prepared object，或按需建立後綁定；取得完成前不得開始 generate。控制流方法呼叫不阻塞 SM inbox；SM inbox 在任何 component 內部操作期間均保持可消費（late ACK / 遲來 Signal 不因此堵塞）。
 
 **THINK Exit**
 
@@ -496,19 +503,17 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 **ACTION Entry**
 
-* 依 `LLMResponse.action_kind` 啟動對應 action worker，加入 in-flight 集合
+* 若本 turn streaming speak 已於 THINK 期間啟動，則沿用該既有 speak worker（已在 in-flight tracking）；否則依 `LLMResponse.action_kind` 啟動對應 action worker，加入 in-flight 集合
 
 **ACTION Exit（`kind=rest`）**
 
-* SM 通知 Reasoner **session end**：Reasoner 在 close 流程中丟棄 `Conversation`（history / KV）；此通知於 in-flight 收斂之前發出，確保 rest / interrupt / error / shutdown 四路皆在 clear tracking 欄位前完成 close。通知為控制流方法呼叫，不阻塞 SM inbox。
-* 對本 session 剩餘 in-flight 執行 §6.5 error 收斂機制
+* SM end 先登記 end intent 並拒絕新 admission，再依 §6.5 一次收斂本 session 全部 in-flight work（包含 active open/generate 及 streaming speak）；取得 terminal/join proof 後完成 Conversation close，最後才清 session tracking 或接受新 session。Rest、interrupt、error、shutdown 與 late completion 均遵循此順序；具體 component/API 屬 implement。
 * 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source` 記錄、上一輪 `next_perceptions` 記錄等）
 * 通知 `external_message` `flush-to-wake`（§5.1）——buffer 內未消化訊息重新發 `ExternalMessageArrived` ，於 IDLE 自然開新 session
 
 **ERROR Entry**
 
-* SM 通知 Reasoner **session end**（若當前有活躍 session）：Reasoner 丟棄 `Conversation`；通知先於 in-flight 收斂，與 rest 路徑對稱。
-* 對 in-flight 集合執行 §6.5 error 收斂機制
+* SM end（若有活躍 session）先登記 end intent 並拒絕新 admission，再依 §6.5 一次收斂本 session 全部 in-flight work；取得 terminal/join proof 後完成 Conversation close。具體 component/API 屬 implement。
 
 **ERROR Exit**
 
@@ -521,9 +526,9 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 | 事件 | SM 反應 | 目的狀態 |
 | --- | --- | --- |
-| `InterruptRequested` | 先通知 Reasoner session end（丟棄 `Conversation`）→ 觸發收斂（§6.5）；收斂正常完成後清 session 追蹤欄位、隱性收斂不進顯性中間狀態 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) |
-| `ErrorOccurred` | 進 ERROR（session end 通知及收斂動作於 ERROR Entry 執行） | ERROR |
-| `ShutdownRequested` / `SIGTERM` / `SIGINT` | 先通知 Reasoner session end（若有活躍 session）→ SM 進 shutdown 模式（拒新 wake 類 Signal）→ 收斂（§6.5）→ in-flight 集合空後停 dispatch loop → `main.py` 依 Resource Manager 反向呼叫各模組 `stop()`（§6.2） | (終止) |
+| `InterruptRequested` | 登記 end intent 並拒新 admission → 依 §6.5 一次收斂全部 in-flight work → 取得 terminal/join proof → Conversation close → 清 session tracking；隱性收斂不進顯性中間狀態 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) |
+| `ErrorOccurred` | 進 ERROR（session end 依統一順序及收斂動作於 ERROR Entry 執行） | ERROR |
+| `ShutdownRequested` / `SIGTERM` / `SIGINT` | SM 先進 shutdown mode 並拒絕新 wake；若有活躍 session，再登記 end intent 並拒絕新 admission，依 §6.5 一次收斂全部 in-flight work；取得 terminal/join proof 後完成 Conversation close。In-flight 集合空後停 dispatch loop，`main.py` 再依 Resource Manager 反向呼叫各模組 `stop()`（§6.2） | (終止) |
 
 **若已在 ERROR 狀態**
 
@@ -630,9 +635,12 @@ Protocol 方法簽名細節屬 `implement.md`。`Adjuster / Overlay` 短暫覆�
 * 例：對話按鈕 `pin` 註冊給 `input_events/button`，短按（`duration_ms` ≥ `short_press_min_ms`，預設 50 ms，且 < `long_press_min_ms`）→ `ButtonPressed` Signal；長按（`duration_ms` ≥ `long_press_min_ms`，預設 1500 ms）→ `ShutdownRequested` Signal
 * 例：音量鍵 `pin` 註冊給 `adjustments/volume`，短按 / 長按皆直控 `core/audio`
 
-按法分類由 `input_events/button` 負責；GPIO HAL 只提供 pin / edge / `duration_ms` 的低階原語，不解讀語意。短按 / 長按門檻（`short_press_min_ms` / `long_press_min_ms`）固定於 config（Ch 10），預設值 50 ms / 1500 ms；產品層可覆寫，架構語意不變。App 未執行時的長按啟動由外部 launcher 處理，不屬 Snowboard App 本輪開發範圍。本產品不控制 Raspberry Pi OS shutdown 或實體電源。
+按法分類由 `input_events/button` 負責；GPIO HAL 只提供 pin / edge / `duration_ms` 的低階原語，不解讀語意。短按 / 長按門檻（`short_press_min_ms` / `long_press_min_ms`）固定於 config（Ch 10），預設值 50 ms / 1500 ms；產品層可覆寫，架構語意不變。本產品不控制 Raspberry Pi OS shutdown 或實體電源。
+
+**Launcher 外部化邊界**：App 主動要求的唯一 graceful exit 是 `ShutdownRequested` → convergence → process exit；§6.4 Level 3 fatal termination 仍是獨立非 graceful 出口。App process 內的 SM/RM 不決定或執行 self-restart；重新啟動由 external launcher 負責。External 表示 process ownership 邊界，不表示免除產品交付：launcher artifact、start mode、restart policy 與 M4C/ALPHA 驗證責任依 milestone/deploy design 固定。
 
 — `pin` 多訂閱者屬進階分流場景，尚未定案（見 §8）。
+
 
 ---
 
