@@ -1,10 +1,12 @@
 # M4B-MVA：產品等價量測
 
-狀態：`IN_PROGRESS / STEP 5 DELIVERED / CORE STEP 6 ACK PENDING`
+狀態：`IN_PROGRESS / STEP 5 DELIVERED / EFFICIENCY PLAN FREEZE`
 
-External gate：`M4B-MVA-POC OPEN`
+External gates：`M4B-MVA-POC OPEN`；`M4B-MVA-EFFICIENCY OPEN`
 
 Baseline：`M4B-MVA-001`
+
+Dependent baseline：`M4B-MVA-002`
 
 Core profile candidate：`core-m4b-mva-001`（非production lock）
 
@@ -30,6 +32,17 @@ User發布前審核的committed result packet，供Core Designer採用profile並
 
 Entry review結論：本機contract/schema/runner準備已獲範圍；原始workstation階段時，
 commit、push、Pi存取／重開機／執行、benchmark發布與candidate/profile建議仍各自需要User核准。
+
+2026-09-06 Core在收到DELIVERY-025後交付
+`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002`。Core source `f6e0c742f6e32fdc0e16915c6e59f42e5dd6cd69`
+與本repo Income byte-identical，SHA-256為`e13b71756382c067a207caa520c999d4b6ce5ceccbf0a91f7e08d27a07f792c4`。
+新工作不取代或重跑既有結果；它延伸Step 6所需證據，另比較J/P encoding及D/H clean
+Conversation readiness。詳細entry、work packages與exit見
+[`m4b_mva_efficiency.md`](m4b_mva_efficiency.md)。
+
+User後續要求保留D/H的target風險量測，並將P constraint不支援後的POC責任擴大為尋找可行
+solution。這與Income的`UNSUPPORTED then retain J / no other candidate`停止規則有實質delta；POC可先
+做bounded workstation discovery，但fallback進入formal matched comparison前須Core Designer revision。
 
 2026-09-06 User接續指示「同意。直接做到要連接pi之前」：授權本機依賴恢復與完成WP01，
 並涵蓋供Pi取得的execution snapshot commit/push；Pi連接、reboot、執行及benchmark/profile
@@ -189,4 +202,11 @@ durable evidence writer與surface manifest已完成；本輪最終驗證與平�
 private prompt/audio、credential或endpoint；不得沿用舊single-turn/full-envelope數字冒稱產品等價；不得
 在未授權時存取Pi、reboot、安裝、傳輸artifact、切換網路、修改canonical權限、
 commit、push或發布結果。本輪Pi execution/reboot、兩個artifact group-read修正、正式離線執行、
-長Conversation補測、人工評估與結果發布均已獲User授權／審閱；push未包含在本輪commit授權內。
+長Conversation補測、人工評估與結果發布均指已完成的M4B-MVA-001 round，當時已獲User授權／審閱。
+新的M4B-MVA-EFFICIENCY round已由User擴大為bounded solution discovery。直接在Pi POC workspace
+開發、測試與除錯至完成、再回workstation commit是repository general rule，不限本輪。Pi development run不取得formal credit；
+formal fallback另須Core revision及commit/push後clean exact-SHA rerun。本輪完成後的workstation
+commit/push已獲User授權；結果發布仍未授權。
+
+User指定本輪在implementation前先commit/push規劃freeze；Pi development以該SHA為base。開發完成後
+另建implementation commit/push，只有後者的clean exact SHA可進formal evidence。

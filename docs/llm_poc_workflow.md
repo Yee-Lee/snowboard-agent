@@ -54,7 +54,7 @@ open exit conditions、risk/blocker/change request 與唯一下一個獲准工�
 | 角色 | 責任與邊界 |
 | --- | --- |
 | Technical Lead | 定義 packet、review evidence、提出 `PASS/FAIL/INCONCLUSIVE` 建議、維護 risk/change request；不能取代 Tester acceptance。 |
-| Developer | 僅在 workstation 修改 source/tests/docs，完成 local/fake test，交付 exact SHA；不得宣告 hardware pass。 |
+| Developer | 在workstation或Pi POC workspace修改source/tests；Pi-native開發是general rule，不需逐任務例外；完成後將受控diff帶回workstation審查、commit與push；不得把development run宣告為hardware pass。 |
 | POC Test Controller | 在 Pi 對指定 SHA 執行 immutable packet 並回收 evidence；不修改 Pi source、不改 gate、不挑最好 run。 |
 | Internal Tester | 獨立確認 delivery SHA、packet 與 evidence；Developer self-test 不得冒充。 |
 | User | 核准硬體存取、下載/安裝、網路/特權、commit/push/tag 與產品決策。 |
@@ -85,15 +85,21 @@ Technical Lead review 順序為 SHA/environment/packet、artifact/fixture checks
 
 ## 6. Git and Pi Workflow
 
-本節承接已歸檔的 [`commit_workflow_update.md`](pm_handoff/history/commit_workflow_update.md)。POC repo 是
-source 與 sanitized delivery record 的唯一來源；Pi 是受控 test worktree，不是開發來源。
+本節承接已歸檔的 [`commit_workflow_update.md`](pm_handoff/history/commit_workflow_update.md)。POC repo的
+workstation checkout是Git commit與sanitized delivery record的唯一authority。依User 2026-09-06 general
+rule，Pi POC workspace預設可作Pi-specific開發、測試與除錯，不需逐輪取得開發方式例外；但不在Pi
+commit、push或發布delivery。
 
 - 預設唯一開發、驗證與 milestone 交付 branch 是 `llm`；不得 force-push。Core 以
   `ACK-LLM-M2-ARM64-PREFLIGHT-DIAGNOSTIC-001` 例外核准兩個 bounded remote tracks：
   `wip/m2-arm64-preflight` 與 `wip/m2-x86_64-preflight`。只允許各自的 workstation scope，
   不得 force-push、互相改寫 evidence或擴張至Pi/Gate 2。兩位owner回報且Technical Lead確認
   sanitized merge boundary後，才可依User授權整合回`llm`；其他POC branch仍禁止。
-- Fast loop 原則上使用 working tree。必要的 WIP commit 必須保持 local、未 push、未送驗；
+- 非Pi-specific fast loop原則上使用workstation working tree。Pi-specific fast loop預設在Pi POC
+  workspace直接修改與反覆測試；完成後只帶回受控、可審查的source/test diff，不帶model、
+  cache、raw/private evidence、credential、endpoint或host detail。回到workstation重現diff、執行
+  applicable checks並完成packet/plan後，才依User授權commit與push。必要的WIP commit必須保持local、
+  未push、未送驗；
   在跨平台、硬體或 milestone review 前，將上一個 frozen SHA 之後的 WIP squash 成單一
   clean Candidate Commit。
 - Candidate SHA 一旦 push 並送驗，其可達歷史永久凍結。Reject、`FAIL`、`INCONCLUSIVE`
@@ -115,8 +121,15 @@ domain 前綴避免與其他 POC 軌道的 milestone tag 衝突。Tag 指向 `ll
 前須核對原 completion SHA 與 review record，不得使用目前 HEAD。Commit、branch push 與
 tag push 均須 User 核准。
 
-Pi 執行時必須 clean checkout exact SHA、先做 pre-test、再執行 immutable packet；不得在 Pi
-臨時修補 source。回收 evidence/checksum 並完成 cleanup 後才進入 review。
+Pi development/test/debug run可在記錄base SHA的dirty POC workspace進行，並須明標
+`ENGINEERING / NON-FORMAL`；允許在Pi直接修正source直到bounded work完成。Pi上不得commit或push。
+完成後將source/test diff帶回workstation，核對敏感資料與generated artifact、重跑applicable checks、
+補齊plan/packet，再由workstation commit與push。commit/push前不得開始formal run。
+
+正式hardware/benchmark run仍必須使用workstation完成並依User授權commit/push後的clean exact SHA，
+先做pre-test、再執行immutable packet；正式run中不得臨時修補source。任何finding回到development
+loop形成新的workstation commit，再以新的clean exact SHA執行affected formal cases。回收
+evidence/checksum並完成cleanup後才進入review。
 
 ## 7. Data、Artifact 與 Offline
 

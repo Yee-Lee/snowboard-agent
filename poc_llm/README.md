@@ -2,9 +2,12 @@
 
 目前狀態只以 [milestone index](../docs/milestone/README.md) 為準。Gate 1、Gate 2A與Gate 2B POC
 execution已完成；User選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC winner，且Core final ACK
-已收到。2026-09-05另行交付的`M4B-MVA-001`產品等價量測目前在Step 5 workstation準備階段；
-它不回退舊gate或改寫machine結果。任何production lock、Gate 3 acceptance、MVA Pi執行、commit/push
-或benchmark發布仍由Core文件、exact SHA與User授權控制。
+已收到。`M4B-MVA-001` Step 5結果已於`23fb481…`交付；Core其後新增`M4B-MVA-002` dependent
+efficiency experiment，比較J/P encoding與D/H Conversation readiness。它不回退舊gate或改寫
+MVA-002 machine結果。User已要求POC在P constraint path不支援時繼續bounded solution discovery；
+依repository general rule，Pi-specific工作預設在Pi POC workspace直接開發、測試與除錯，完成後
+回workstation補齊規劃、commit並push；不需每個任務另取得Pi開發方式例外。benchmark/profile發布
+仍由Core文件、exact SHA與User授權控制。
 
 ## Layout
 
@@ -26,6 +29,11 @@ execution已完成；User選定Gemma 4 E2B / LiteRT-LM v0.16.0 pairing為POC win
 本機測試依賴使用`requirements-mva-workstation.lock`於ignored `.venv`；Pi維持原selected
 runtime，不能使用workstation lock替代。執行命令與離線／receipt／reboot／cleanup條件見
 [`M4B-MVA-POC-PACKET-001`](tests/mva/M4B-MVA-POC-PACKET-001.md)。
+
+最新bounded efficiency工作以
+[`m4b_mva_efficiency.md`](../docs/milestone/m4b_mva_efficiency.md)為執行計畫；目前先做exact
+規劃freeze commit/push，implementation尚未開始。其後才做API/source inventory與fallback
+feasibility；正式candidate須經User review及Core revision，既有MVA packet不得被覆寫或冒充新實驗。
 
 Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence schema；它們
 目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC
@@ -98,9 +106,14 @@ Gate 2A重新執行邊界，集中在
 Pi operator應先讀該文件，不需回查UTM `/tmp` raw history；但它是pending scope request，不是
 Pi execution authorization或Gate 2 evidence。
 
-Pi checkout 是 clean deployment/test worktree，不是開發來源。Tester 只能 checkout
-test request 指定的完整 SHA、執行 pre-test 與 immutable packet、回收 evidence；
-不得在 Pi 修改 source 或調整 gate。
+Pi POC workspace預設用於Pi-specific開發、測試與除錯，並可直接修改source；這是general rule，
+不需逐任務例外。開始時記錄base SHA，所有run標為`ENGINEERING / NON-FORMAL`，Pi上不得commit/push。完成後只將受控source/test
+diff帶回workstation，排除model、cache、raw/private evidence、credential與host資訊，在workstation
+審查、重跑applicable checks並補齊plan/packet後commit與push。
+
+正式hardware/benchmark仍使用另一個clean exact-SHA階段：checkout test request指定SHA、執行
+pre-test及immutable packet、回收append-only evidence，且正式run中不得臨時修改source。若發現缺陷，
+回到Pi development loop修正，再經workstation新commit/push後重跑affected formal cases。
 
 正式 run 前必須驗證：
 

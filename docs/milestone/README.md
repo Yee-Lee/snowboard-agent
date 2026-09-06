@@ -14,10 +14,16 @@ replacement source已修正venv import root、model suffix presentation、native
 evidence identity及shutdown邊界，並在Pi完成全部23個machine case rehearsal。replacement
 commit/surface的exact-SHA `MVA-002`已正式完成23/23 machine cases；User亦完成benchmark、長對話
 補測與H01–H12審閱。permanent purge仍需獨立User授權，Audio整合測試由User批示暫不執行。
+Core其後於`f6e0c742f6e32fdc0e16915c6e59f42e5dd6cd69`交付`M4B-MVA-EFFICIENCY-002`；
+source/destination byte comparison PASS，Income SHA-256為`e13b7175…92c4`。新gate已Open；User要求
+POC把constraint不支援後的停止點擴大為bounded solution discovery，並授權Pi-native
+development/test/debug後回workstation完成規劃、commit及push。Pi-native開發方式是repository
+general rule，不需逐任務例外。新增fallback進formal comparison前仍需Core revision；
+dirty Pi development run不取得正式credit。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 DELIVERED / CORE STEP 6 ACK PENDING`。
+狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / MVA-EFFICIENCY OPEN / PLAN COMMIT FIRST`。
 
 原LLM POC M0～M4與Gate 1/2A/2B保持完成且結果immutable。Core於2026-09-05正式交付
 `M4B-MVA-001`產品等價量測，User確認由既有POC團隊進入七步流程Step 5；本機先修正為
@@ -25,6 +31,9 @@ same-session Conversation reuse、compact `text/end`及evidence-backed prewarm/r
 2026-09-06 User先授權恢復本機測試環境並完成連接Pi前的準備，後續
 確認Pi可連線並指示開始Pi測試。Pi 5、Debian 13、CPython 3.13.5、乾淨
 checkout及入場resource gates已實測確認；hardware execution與User benchmark review均已完成。
+DELIVERY-025已在`23fb481007ebaf9d4c58d66b762a65aacec9196c`提交並由Core接收。Core未直接
+解除原gate，而是以`M4B-MVA-002`新增dependent efficiency experiment。User已要求保留D/H風險
+量測並擴大P fallback responsibility；POC先做exact API/source discovery，並保留既有結果immutable。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -48,7 +57,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 2A | `CLOSED / CORE ACK` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫 |
 | Gate 2B | `CLOSED / CORE FINAL WINNER ACK` | P9, P10B | Attempt 006完成20/20；machine P9/P10B FAIL不改寫；Core接受User known-runtime-defect waiver與Gemma winner |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
-| M4B-MVA-POC | `OPEN / STEP 5` | new MVA measurements；no legacy P credit | POC交付產品等價結果；Designer採用完整profile並明確解除gate |
+| M4B-MVA-POC | `OPEN / STEP 5 DELIVERED` | MVA-002 result；no legacy P credit | Designer採用完整profile、完成dependent experiment與affected review後明確解除gate |
+| M4B-MVA-EFFICIENCY | `OPEN / PLAN FREEZE` | J/P、bounded fallback與D/H readiness新量測 | plan commit/push → Pi development → implementation commit/push → clean exact-SHA formal packet |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
 
@@ -61,7 +71,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / USER-APPROVED RESULT` | exact-SHA MVA-002為23/23 machine PASS；long-session supplemental完成；H01–H12為8 Pass/4 accepted non-blocking Fail；待delivery commit與Core Step 6 ACK |
+| M4B-MVA | `IN_PROGRESS / EFFICIENCY PLAN COMMIT` | Step 5 result已於`23fb481…`交付；MVA-002保持immutable；先commit/push規劃，development尚未開始 |
 
 ## Cumulative P1～P12 rule
 
@@ -78,11 +88,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Open dependencies and risks
 
-- **Pi storage migration**：Phase 1 inventory與sanitized indexes已完成；Core Phase 2
-  `RECEIPT-PI-PHASE2-WORKSPACES-001`已補入read-only Income。Phase 3 request及blocking feedback
-  現為active：本機已修正40-character Git SHA、cache forwarding、native runtime digest與完整protected
-  hold manifest；Pi只執行bounded workspace preflight。後續MVA須等待Core migration receipt並由LLM執行。
-  Materialization、搬移、cleanup及activation禁止。
+- **Pi storage migration**：Phase 1～3已完成並獲Core接受；2026-09-06 read-only postcheck再次確認
+  canonical checkout、product/artifact identity、private evidence root與零product symlink/writable file。
+  它不再阻擋MVA。permanent purge仍需獨立User授權，本輪efficiency工作不要求purge。
 - **Execution snapshot**：Core原授權exact SHA
   `ac25aa104adcadb3b6274ca6f9c3d4154b4004ee`與surface `f774c8d0…c461`；Pi目前位於
   exact SHA且保持乾淨。首次offline prepare-install的artifact group-read已依User授權修正；後續
@@ -95,8 +103,14 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   詳見[Pi entry handoff](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
 - **M4B-MVA Step 5**：Core frozen source `034a50f260e7434e586dddf64ef500da3b1b2b4e`、delivery
   receipt `492f022c06962eb93b37fa0e93765f43690be1b2`與Income SHA-256 `5afb24e8…2c2`已核對。
-  Workstation contract/runner與execution snapshot已完成；Pi執行及benchmark User review均已完成，
-  正在收斂Step 5 delivery commit。
+  Workstation/Pi執行、User benchmark review及DELIVERY-025 commit `23fb481…`均已完成；原結果保持immutable。
+- **M4B-MVA-EFFICIENCY**：Core source `f6e0c742f6e32fdc0e16915c6e59f42e5dd6cd69`、
+  Income SHA-256 `e13b7175…92c4`及destination baseline `23fb481…`已核對。User要求POC在P path
+  不支援時繼續尋找solution；WP00先核對native regex/grammar、incremental constrained J、compact
+  constrained JSON與last-resort diagnostic。新增formal candidate須先經User review及Core revision；
+  implementation前先commit/push本規劃；Pi-native development/test/debug其後依general rule執行，
+  完成後回workstation建立implementation commit/push。本輪兩階段commit/push均獲授權。formal target
+  result仍須clean pushed implementation SHA、frozen packet及append-only evidence，結果發布另行授權。
 - **MVA parity delta**：舊fresh-per-operation/full-envelope/mandatory-prewarm surface只作provenance；
   新量測必須使用same-session Conversation reuse、exact `text/end`、Reasoner-owned action policy、
   no/once prewarm A/B及獨立natural-soak/recovery。舊Gate結果不得混入主要樣本或改標。
@@ -175,6 +189,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 ## Active packets
 
 - [M4B-MVA product-parity milestone](m4b_mva_product_parity.md)
+- [M4B-MVA efficiency experiment plan](m4b_mva_efficiency.md)
+- [M4B-MVA efficiency intake and arrangement](../response/ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
+- [M4B-MVA efficiency scope-expansion assessment](../response/ASSESSMENT-LLM-M4B-MVA-EFFICIENCY-SCOPE-EXPANSION-001.md)
 - [M4B-MVA workstation snapshot and Pi entry handoff](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)
 - [M4B-MVA intake and design mapping](../response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md)
 
@@ -203,12 +220,14 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Governing and historical inputs
 
-2026-09-05 intake audit：`docs/pm_handoff/`新增已交付的M4B-MVA measurement request，作為Step 5
-active governing Income；原M4b contract、Core task boundary及Gate 1 locked ACK維持原路徑。
-Cumulative、Gate 2A及Gate 2B ACK/review仍是history；新Income不回退或改寫既有closure。
+2026-09-06 intake audit：M4B-MVA measurement request仍治理尚未由Core release的原gate；新增的
+efficiency request是active dependent Income。兩者都保留於`docs/pm_handoff/`，不互相取代，也不回退
+或改寫既有MVA-002、cumulative、Gate 2A或Gate 2B結果。原M4b contract、Core task boundary及
+Gate 1 locked ACK維持原路徑；historical ACK/review仍在history。
 
 - [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
 - [M4B-MVA measurement request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+- [M4B-MVA efficiency request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
 - [Pi storage-curation request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md)
 - [M4B-MVA offline execution request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)

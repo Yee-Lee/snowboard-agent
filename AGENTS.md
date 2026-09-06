@@ -62,6 +62,24 @@ the local context file.
 - At every milestone gate, update the milestone index, risks, and adjustment requests.
 - Editing plans or scaffolds does not start a milestone. A milestone starts only after its entry review is complete and the milestone index is explicitly changed to `IN_PROGRESS`.
 
+## Pi-Native Development Loop
+
+For Pi-specific work, use the Pi POC workspace directly during development,
+testing, and debugging. This is the repository-wide default workflow and does
+not require a task-specific exception. Source may be edited on the Pi until the
+bounded work is complete. The Pi is never the Git commit or delivery authority:
+bring the reviewed, non-sensitive source diff back to the workstation, reconcile
+it there, run applicable workstation checks, and create the commit and push only
+from the workstation under the repository commit policy and User authorization.
+
+Pi development runs are engineering evidence, not formal milestone or benchmark
+evidence. After the workstation commit and push, any formal hardware result must
+be rerun from a clean checkout of the exact pushed SHA with the frozen packet and
+append-only evidence. Never transfer models, raw/private evidence, credentials,
+host details, caches, or generated artifacts into Git. Reboot, network switching,
+privileged changes, destructive cleanup, and result publication retain their
+separate authorization requirements unless the User explicitly includes them.
+
 ## Final Outcome
 
 The POC must deliver an approved LiteRT-LM runtime, model baseline, prompt boundary, and child process protocol. The result must be reproducible on Raspberry Pi 5, offline, cancellable, clean after failure, integrated with an accepted M4a Audio HAL SHA, and proven with at least 20 combined sessions. Submission is only ready for internal review until all blocking findings are closed.
