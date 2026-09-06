@@ -7,18 +7,24 @@
 Pi storage補記：Core已接受Phase 3搬遷；Pi的clean canonical checkout、指定data roots、
 product `8279e79`、artifact identity與private evidence transfer/legacy-run cleanup均有receipt。
 2026-09-06只讀驗收再次確認SHA、workspace、config、current binding、零product symlink與
-零writable product file。Core已授權exact-SHA離線MVA，但User現指示暫停Pi測試；尚未執行
-prepare-install、model load、offline job、reboot或target case。Permanent purge仍需獨立User授權。
+零writable product file。Core已授權exact-SHA離線MVA；User於2026-09-06確認Pi可連線並指示
+開始Pi測試。LLM operator已確認SSH、乾淨checkout、frozen surface、private config、
+resource stop gates與離線one-shot回復能力。User授權後已修正model/wheel的group-read；private
+replacement source已修正venv import root、model suffix presentation、native constrained-schema subset、
+evidence identity及shutdown邊界，並在Pi完成全部23個machine case rehearsal。正式結果仍須replacement
+commit/surface的exact-SHA離線執行。
+Benchmark/profile發布與permanent purge仍需各自獨立User授權。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 IN PROGRESS`。
+狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / STEP 5 PI EXECUTION IN PROGRESS`。
 
 原LLM POC M0～M4與Gate 1/2A/2B保持完成且結果immutable。Core於2026-09-05正式交付
 `M4B-MVA-001`產品等價量測，User確認由既有POC團隊進入七步流程Step 5；本機先修正為
 same-session Conversation reuse、compact `text/end`及evidence-backed prewarm/resource設計。
-2026-09-06 User授權恢復本機測試環境並直接完成連接Pi前的準備，涵蓋execution snapshot
-commit/push。Pi目前電源／存取狀態未重新確認，hardware execution與benchmark發布仍需User授權。
+2026-09-06 User先授權恢復本機測試環境並完成連接Pi前的準備，後續
+確認Pi可連線並指示開始Pi測試。Pi 5、Debian 13、CPython 3.13.5、乾淨
+checkout及入場resource gates已實測確認；hardware execution已授權，benchmark發布仍需User審核。
 
 Gate 0與M1已完成。ARM64 UTM只作工程輸入；Gemma 4 E2B與Qwen2.5 1.5B為固定Pi inputs。
 歷史`G1-PI-COMPAT-006` run永久保留，但其READY clock錯誤包含完整模型SHA，定性為packet defect，
@@ -55,7 +61,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / PI EXECUTION PAUSED BY USER` | exact SHA/surface及搬遷驗收完成；尚未建立硬體量測證據 |
+| M4B-MVA | `IN_PROGRESS / PI PATH PROVED` | replacement source已在Pi完成23/23 machine rehearsal；待commit/surface與exact-SHA離線正式輪 |
 
 ## Cumulative P1～P12 rule
 
@@ -77,17 +83,18 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
   現為active：本機已修正40-character Git SHA、cache forwarding、native runtime digest與完整protected
   hold manifest；Pi只執行bounded workspace preflight。後續MVA須等待Core migration receipt並由LLM執行。
   Materialization、搬移、cleanup及activation禁止。
-- **Local-only follow-up**：MVA snapshot已local commit為`57390cc1ed7aef7a3a172716bb71e622649c4f67`；
-  Remote `llm`仍為`7a56137b…`。Phase 3 source修改使舊surface lock預期失效；不得靜默更新或執行
-  target measurement。先完成source/test review與完整commit proposal，再依User授權重走
-  governed snapshot／portable validation／freeze。Attempt 005維持unknown。
+- **Execution snapshot**：Core原授權exact SHA
+  `ac25aa104adcadb3b6274ca6f9c3d4154b4004ee`與surface `f774c8d0…c461`；Pi目前位於
+  exact SHA且保持乾淨。首次offline prepare-install的artifact group-read已依User授權修正；後續
+  runtime/layout/API缺口已在獨立private candidate修正並完成23/23 Pi machine rehearsal。舊SHA不被
+  靜默修改；下一步是固定replacement source/surface/exact SHA後重跑正式離線證據。
 - **Workstation migration / WP01**：新checkout已核對交接SHA `7a56137b…`並建立ignored local
   context；隔離測試環境、controller、sanitized writer與surface lock已完成。MVA targeted tests
   通過；完整suite的macOS/Linux/x86與canonical-path限制已在原交接SHA對照重現，並未宣告全綠。
   詳見[Pi entry handoff](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
 - **M4B-MVA Step 5**：Core frozen source `034a50f260e7434e586dddf64ef500da3b1b2b4e`、delivery
   receipt `492f022c06962eb93b37fa0e93765f43690be1b2`與Income SHA-256 `5afb24e8…2c2`已核對。
-  Workstation已準備MVA contract/runner與execution snapshot；Pi存取與benchmark發布未授權。
+  Workstation已準備MVA contract/runner與execution snapshot；Pi執行已授權，benchmark發布仍待User審核。
 - **MVA parity delta**：舊fresh-per-operation/full-envelope/mandatory-prewarm surface只作provenance；
   新量測必須使用same-session Conversation reuse、exact `text/end`、Reasoner-owned action policy、
   no/once prewarm A/B及獨立natural-soak/recovery。舊Gate結果不得混入主要樣本或改標。

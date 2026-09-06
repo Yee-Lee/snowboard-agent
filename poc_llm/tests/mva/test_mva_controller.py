@@ -70,16 +70,30 @@ class FakeChild:
 def controller(case="cold-N1", **kwargs):
     writer = kwargs.pop("writer", Writer())
     identity = {key: "a" * 64 for key in ("plan_sha256", "surface_sha256", "profile_sha256", "semantic_schema_sha256",
-        "wire_schema_sha256", "config_sha256", "model_sha256", "runtime_sha256")}
+        "wire_schema_sha256", "config_sha256", "model_sha256", "runtime_sha256",
+        "product_storage_sha256", "cache_key")}
     identity["audio_sha256"] = None
     return Controller(case=case, run_id="MVA-001-" + case, implementation_sha="b" * 40, identity=identity,
-        config={"model_path": "/unused-model", "runtime_root": "/unused-runtime",
+        config={"model_path": "/unused-artifact/payload", "runtime_root": "/unused-runtime",
+                "runtime_native_library": "/unused-runtime/lib/python3.13/site-packages/litert_lm/liblitert-lm.so",
                 "cache_root": "/unused-cache", "active_cache_key": "c" * 64},
         writer=writer, sampler=kwargs.pop("sampler", Sampler()), verify_install=kwargs.pop("verify_install", lambda: None),
         child_factory=kwargs.pop("child_factory", FakeChild), **kwargs)
 
 
 class ControllerTests(unittest.TestCase):
+    def test_child_receives_run_owned_litertlm_presentation_path(self):
+        children = []
+        def factory(*args, **kwargs):
+            child = FakeChild()
+            children.append(child)
+            return child
+        subject = controller(child_factory=factory)
+        self.assertEqual(subject.run()["status"], "PASS")
+        model_path = Path(children[0].calls[0]["config"]["model_path"])
+        self.assertEqual(model_path.name, "model.litertlm")
+        self.assertFalse(model_path.exists())
+
     def test_normal_two_turn_session_costs_and_sanitization(self):
         subject = controller()
         result = subject.run()
@@ -262,6 +276,18 @@ class ProcessTests(unittest.TestCase):
         self.assertTrue(cleanup["owners_absent"])
         self.assertIsNotNone(cleanup["exit_code"])
 
+    def test_native_sized_shutdown_can_finish_cooperatively(self):
+        child = self.make_child(
+            "import json,sys,time; "
+            "json.loads(sys.stdin.readline()); "
+            "time.sleep(2.2); "
+            "print(json.dumps({'ticket':1,'terminal':'SHUTDOWN_ACK'}),flush=True)"
+        )
+        cleanup = child.cleanup()
+        self.assertTrue(cleanup["cooperative"])
+        self.assertTrue(cleanup["owners_absent"])
+        self.assertEqual(cleanup["exit_code"], 0)
+
     def test_watchdog_stops_native_child_while_monitor_is_stalled(self):
         import time
         child = self.make_child("import time; time.sleep(60)")
@@ -319,9 +345,13 @@ class Engine:
 '''
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory).resolve()
-            (runtime / "litert_lm.py").write_text(source)
+            import_root = runtime / "lib/python3.13/site-packages"
+            package = import_root / "litert_lm"
+            package.mkdir(parents=True)
+            (package / "__init__.py").write_text(source)
             subject = controller("api-proof", child_factory=Child)
             subject.config["runtime_root"] = str(runtime)
+            subject.config["runtime_native_library"] = str(package / "liblitert-lm.so")
             result = subject.run()
         self.assertEqual(result["status"], "PASS")
         self.assertIn("API_PROOF", [row["terminal"] for row in subject.rows])

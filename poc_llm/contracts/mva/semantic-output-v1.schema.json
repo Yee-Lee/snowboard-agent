@@ -8,15 +8,5 @@
   "properties": {
     "text": {"type": "string", "maxLength": 4096},
     "end": {"type": "boolean"}
-  },
-  "allOf": [
-    {
-      "if": {
-        "required": ["end"],
-        "properties": {"end": {"const": true}}
-      },
-      "then": {"properties": {"text": {"const": ""}}},
-      "else": {"properties": {"text": {"pattern": "\\S"}}}
-    }
-  ]
+  }
 }

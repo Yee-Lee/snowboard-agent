@@ -55,9 +55,11 @@ class MvaSchemaTests(unittest.TestCase):
         validator = Draft202012Validator(self.semantic_schema)
         validator.validate({"text": "天空中的光會散射。", "end": False})
         validator.validate({"text": "", "end": True})
+        # Cross-field text/end semantics are enforced by validate_semantic; the
+        # runtime schema stays within the LLGuidance-supported structural subset.
+        validator.validate({"text": "", "end": False})
+        validator.validate({"text": "再見", "end": True})
         invalid = (
-            {"text": "", "end": False},
-            {"text": "再見", "end": True},
             {"text": "好", "end": 0},
             {"text": "好", "end": False, "next_perceptions": ["listen"]},
             {"action_kind": "speak", "action_payload": {"text": "好"}, "next_perceptions": ["listen"]},

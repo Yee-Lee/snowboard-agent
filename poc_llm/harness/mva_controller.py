@@ -17,7 +17,11 @@ import time
 from poc_llm.harness.mva_contract import fixed_steady_window, ordinary_least_squares_slope, reasoner_projection
 from poc_llm.harness.mva_evidence import fill_missing_reasons, TERMINALS
 from poc_llm.harness.mva_process import Child, RunError
-from poc_llm.harness.mva_product_layout import cache_object_path
+from poc_llm.harness.mva_product_layout import (
+    cache_object_path,
+    runtime_import_root,
+    runtime_model_path,
+)
 from poc_llm.harness.mva_resources import stop_reason
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -169,12 +173,12 @@ class Controller:
         self.started = utc()
         begin = time.monotonic()
         env = {key: value for key, value in os.environ.items() if key in {"PATH", "LANG", "LC_ALL"}}
-        env.update({"PYTHONPATH": str(ROOT) + os.pathsep + self.config["runtime_root"],
+        env.update({"PYTHONPATH": str(ROOT) + os.pathsep + str(runtime_import_root(self.config)),
                     "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1"})
         self.child = self.child_factory([sys.executable, "-m", "poc_llm.harness.mva_worker"], cwd=directory, env=env)
         inference = {key: PROFILE["inference"][key] for key in (
             "temperature", "top_p", "maximum_output_tokens", "user_new_token_admission", "engine_kv_tokens")}
-        inference.update({"threads": 4, "model_path": self.config["model_path"],
+        inference.update({"threads": 4, "model_path": str(runtime_model_path(self.config, directory)),
                           "runtime_root": self.config["runtime_root"],
                           "cache_dir": str(cache_object_path(self.config))})
         self.child.send({"op": "START", "config": inference, "mode": self.mode})

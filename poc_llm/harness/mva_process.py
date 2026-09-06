@@ -20,6 +20,10 @@ class RunError(RuntimeError):
         self.code = code
 
 
+SHUTDOWN_TIMEOUT_S = 10
+PROCESS_WAIT_S = 2
+
+
 class Child:
     def __init__(self, command: list[str], *, cwd: str, env: dict):
         self.process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE,
@@ -155,9 +159,12 @@ class Child:
         cooperative = False
         try:
             if self.process.poll() is None:
-                reply = self.call("SHUTDOWN", timeout=2)
+                # Releasing a multi-gigabyte native Engine on Pi can exceed the RPC's
+                # ordinary two-second convergence window. Keep it bounded, but allow
+                # normal teardown to finish before escalating to process-group signals.
+                reply = self.call("SHUTDOWN", timeout=SHUTDOWN_TIMEOUT_S)
                 cooperative = reply["terminal"] == "SHUTDOWN_ACK"
-                self.process.wait(timeout=2)
+                self.process.wait(timeout=PROCESS_WAIT_S)
             else:
                 self.process.wait(timeout=0)
         except (RunError, OSError, subprocess.TimeoutExpired):
@@ -171,7 +178,7 @@ class Child:
                 # Still reap the direct child; do not claim group cleanup without proof.
                 self.process.send_signal(sig)
             try:
-                self.process.wait(timeout=2)
+                self.process.wait(timeout=PROCESS_WAIT_S)
             except subprocess.TimeoutExpired:
                 pass
         try:

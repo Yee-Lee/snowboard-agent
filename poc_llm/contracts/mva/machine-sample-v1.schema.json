@@ -24,7 +24,7 @@
     "identity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["plan_sha256", "surface_sha256", "profile_sha256", "semantic_schema_sha256", "wire_schema_sha256", "config_sha256", "model_sha256", "runtime_sha256", "audio_sha256"],
+      "required": ["plan_sha256", "surface_sha256", "profile_sha256", "semantic_schema_sha256", "wire_schema_sha256", "config_sha256", "model_sha256", "runtime_sha256", "product_storage_sha256", "cache_key", "audio_sha256"],
       "properties": {
         "plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -34,6 +34,8 @@
         "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "model_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "runtime_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "product_storage_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "cache_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "audio_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
       }
     },

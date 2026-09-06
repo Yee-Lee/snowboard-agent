@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 from poc_llm.harness import mva_product_layout as layout
-from poc_llm.harness.mva_identity import load_config, verify_receipt
+from poc_llm.harness.mva_identity import load_config, prepare_receipt, verify_receipt
 from poc_llm.harness.mva_process import RunError
 from poc_llm.harness.mva_surface import canonical_bytes
 from poc_llm.harness.pi_artifact_auth import authenticate_model, stat_identity
@@ -27,9 +29,14 @@ class IdentityTests(unittest.TestCase):
         profile_bytes = b"public selected profile"
         schema_bytes = b"public selected schema"
         model_bytes = b"public fake model"
-        wheel_bytes = b"public fake wheel"
         manifest_bytes = b"public runtime manifest"
         native_bytes = b"public native library"
+        runtime_source_bytes = b"public fake runtime"
+        wheel_buffer = io.BytesIO()
+        with zipfile.ZipFile(wheel_buffer, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr("litert_lm/runtime.py", runtime_source_bytes)
+            archive.writestr("litert_lm/liblitert-lm.so", native_bytes)
+        wheel_bytes = wheel_buffer.getvalue()
         model_sha = hashlib.sha256(model_bytes).hexdigest()
         wheel_sha = hashlib.sha256(wheel_bytes).hexdigest()
         manifest_sha = hashlib.sha256(manifest_bytes).hexdigest()
@@ -55,12 +62,13 @@ class IdentityTests(unittest.TestCase):
         wheel = artifact_root / "sha256" / wheel_sha[:2] / wheel_sha / "payload"
         runtime = product_root / "runtime"
         runtime_manifest = runtime / "runtime-manifest.json"
-        runtime_source = runtime / "runtime.py"
-        native_library = runtime / "lib" / "libLiteRtLm.so"
+        package = runtime / "lib/python3.13/site-packages/litert_lm"
+        runtime_source = package / "runtime.py"
+        native_library = package / "liblitert-lm.so"
         for target in (
             source_root, runs_root, evidence_root, cache_root, selected_profile.parent,
             selected_schema.parent, model.parent, wheel.parent, runtime,
-            native_library.parent,
+            package,
         ):
             target.mkdir(parents=True, exist_ok=True)
         selected_profile.write_bytes(profile_bytes)
@@ -68,7 +76,7 @@ class IdentityTests(unittest.TestCase):
         model.write_bytes(model_bytes)
         wheel.write_bytes(wheel_bytes)
         runtime_manifest.write_bytes(manifest_bytes)
-        runtime_source.write_bytes(b"public fake runtime")
+        runtime_source.write_bytes(runtime_source_bytes)
         native_library.write_bytes(native_bytes)
         for target in (
             selected_profile, selected_schema, model, wheel, runtime_manifest, runtime_source,
@@ -99,6 +107,34 @@ class IdentityTests(unittest.TestCase):
         }
         config["active_cache_key"] = layout.cache_key(config, storage)
         return storage, config, model, wheel, runtime_manifest, runtime_source, native_library
+
+    def test_prepare_receipt_accepts_canonical_venv_layout(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            layout, "SCRATCH_PARTS", {"m4b-test-runs"}
+        ):
+            root = Path(directory).resolve()
+            (storage, config, model, wheel, runtime_manifest, runtime_source,
+             native_library) = self.fixture(root)
+            product_storage = root / "product-storage.json"
+            product_storage.write_text("public product storage")
+            profile = root / "profile.json"
+            profile.write_text(json.dumps({"candidate": {
+                "model_sha256": storage["model"]["sha256"],
+                "runtime_wheel_sha256": storage["runtime"]["wheel_sha256"],
+            }}))
+            with (
+                patch("poc_llm.harness.mva_identity.PROFILE_PATH", profile),
+                patch("poc_llm.harness.mva_identity.PRODUCT_STORAGE_PATH", product_storage),
+                patch("poc_llm.harness.mva_identity.load_product_storage", return_value=storage),
+            ):
+                receipt = prepare_receipt(config)
+                digest = hashlib.sha256(canonical_bytes(receipt)).hexdigest()
+                verify_receipt(config, receipt, digest)
+            self.assertEqual(set(receipt["runtime_files"]), {
+                "runtime-manifest.json",
+                "lib/python3.13/site-packages/litert_lm/runtime.py",
+                "lib/python3.13/site-packages/litert_lm/liblitert-lm.so",
+            })
 
     def test_same_install_check_uses_metadata_and_rejects_drift(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(

@@ -1,6 +1,6 @@
 # M4B-MVA：產品等價量測
 
-狀態：`IN_PROGRESS / WORKSTATION SNAPSHOT / STOP BEFORE PI CONNECTION`
+狀態：`IN_PROGRESS / PI EXECUTABLE PATH PROVED / FORMAL EXACT-SHA RUN PENDING`
 
 External gate：`M4B-MVA-POC OPEN`
 
@@ -28,13 +28,18 @@ User發布前審核的committed result packet，供Core Designer採用profile並
 - 既有M4已完成且保持immutable；本工作不新增model selection、不重標P8/P9/P10B，亦不修改
   product composition root、Reasoner產品政策或Accepted Audio實作。
 
-Entry review結論：本機contract/schema/runner準備已獲範圍；commit、push、Pi存取／重開機／執行、
-benchmark發布與candidate/profile建議仍各自需要User核准。因此milestone進入workstation
-`IN_PROGRESS`，hardware work維持`Blocked — authorization not yet requested`。
+Entry review結論：本機contract/schema/runner準備已獲範圍；原始workstation階段時，
+commit、push、Pi存取／重開機／執行、benchmark發布與candidate/profile建議仍各自需要User核准。
 
 2026-09-06 User接續指示「同意。直接做到要連接pi之前」：授權本機依賴恢復與完成WP01，
 並涵蓋供Pi取得的execution snapshot commit/push；Pi連接、reboot、執行及benchmark/profile
 發布仍未授權。此指示取代前段對本機commit/push的pending狀態。
+
+2026-09-06 User後續確認Pi已可連線，並明確指示開始Pi測試。Core offline
+execution Income指定exact SHA `ac25aa104adcadb3b6274ca6f9c3d4154b4004ee`與surface
+`f774c8d018445b91bef4fa3b59bcc4f288d6699deb1fd09a2cb9baf8f2ddc461`。LLM operator已完成
+SSH、乾淨checkout、surface、private config、resource stop gate與NetworkManager回復能力確認；
+Pi execution/reboot現已授權，benchmark/profile發布仍需User審核。
 
 ## Product-parity surface
 
@@ -116,10 +121,16 @@ workstation contract evidence，不是runtime API proof、Pi result或benchmark�
 工作站更換所需的完整續接資訊、檔案inventory、測試命令、round-close audit與所有open items見
 [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001`](../response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md)。
 
-1. WP01 controller、sanitized evidence writer、non-recursive surface lock及MVA本機verification已完成；
-   完整suite的既有平台限制仍有待Linux/x86 runner驗證，不得沿用舊機全綠結果。
-2. Execution snapshot commit/push屬本輪授權；full SHA與surface digest隨本輪handoff提供。
-3. Pi電源／存取狀態尚未重新確認；WP02/WP03的存取、6次reboot與執行尚未授權。
+1. WP01 controller、sanitized evidence writer及non-recursive surface lock已完成；replacement source
+   尚須以最終內容重建lock、完成本機回歸並commit成乾淨exact SHA。
+2. Pi已直接驗證selected Engine、public constrained generation、完整API proof與66/66 MVA suite。
+   私有replacement rehearsal已完成全部23個machine case：六個不同boot cold、十個same-boot
+   replacement、三個20-session memory cycle及三個recovery；結構稽核為PASS。這是可執行性證明，
+   不是未commit candidate的正式hardware result或benchmark發布。
+3. 修正範圍固定為canonical venv import root、同inode `.litertlm` temporary presentation、LiteRT-LM
+   v0.16可接受的constrained schema subset、evidence identity欄位與native shutdown期限；不改case順序、
+   prompt、profile、model/runtime bytes或measurement語意。正式WP02/WP03須由replacement exact SHA
+   在離線條件重新執行並經evidence review。
 4. Accepted Audio MVA parity及physical audible-onset方法尚未確認；未解除前只規劃LLM subsystem claim。
 5. 12個private held-out sessions的評估者、operator與受控呈現方式待執行前指定。
 6. 所有benchmark結果與profile建議在User審核前不得發布。
@@ -134,10 +145,13 @@ workstation contract evidence，不是runtime API proof、Pi result或benchmark�
 直接完成Pi連接前準備。隔離`.venv`已恢復，controller、worker、receipt驗證、resource probes、
 durable evidence writer與surface manifest已完成；本輪最終驗證與平台差異詳見
 [`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001`](../response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md)。
-此為workstation self-test，沒有執行Pi或產生benchmark；MVA gate仍Open。
+此為workstation self-test，沒有產生benchmark；Pi executable-path proof與private 23-case rehearsal見
+[`ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001`](../response/ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md)，MVA gate仍Open。
 
 ## Prohibited
 
 不得修改Income、Core product repo或composition root；不得提交model/wheel/native binary、raw output、
 private prompt/audio、credential或endpoint；不得沿用舊single-turn/full-envelope數字冒稱產品等價；不得
-在未授權時存取Pi、reboot、安裝、傳輸artifact、切換網路、commit、push或發布結果。
+在未授權時存取Pi、reboot、安裝、傳輸artifact、切換網路、修改canonical權限、
+commit、push或發布結果。本輪Pi execution/reboot及兩個artifact group-read修正已獲User授權；
+replacement exact-SHA正式離線執行與結果發布仍需各自審核。

@@ -142,6 +142,44 @@ def cache_object_path(config: dict) -> Path:
     return Path(config["cache_root"]) / "objects" / config["active_cache_key"]
 
 
+def runtime_import_root(config: dict) -> Path:
+    """Return the canonical venv site-packages root bound by the native path."""
+    runtime = Path(config["runtime_root"])
+    native = Path(config["runtime_native_library"])
+    try:
+        relative = native.relative_to(runtime)
+    except ValueError:
+        raise RunError("IDENTITY_DRIFT") from None
+    parts = relative.parts
+    if (len(parts) != 5
+            or parts[0] != "lib"
+            or re.fullmatch(r"python3\.\d+", parts[1]) is None
+            or parts[2:4] != ("site-packages", "litert_lm")):
+        raise RunError("IDENTITY_DRIFT")
+    return runtime / parts[0] / parts[1] / parts[2]
+
+
+def runtime_model_path(config: dict, directory: str | Path) -> Path:
+    """Present the authenticated content-addressed payload with its runtime format suffix."""
+    model = Path(config["model_path"])
+    if model.name != "payload":
+        raise RunError("IDENTITY_DRIFT")
+    alias = Path(directory) / "model.litertlm"
+    try:
+        if os.path.lexists(alias):
+            if not alias.is_symlink() or os.readlink(alias) != str(model):
+                raise RunError("IDENTITY_DRIFT")
+        else:
+            alias.symlink_to(model)
+        if not alias.is_symlink() or os.readlink(alias) != str(model):
+            raise RunError("IDENTITY_DRIFT")
+    except RunError:
+        raise
+    except OSError:
+        raise RunError("PREFLIGHT_BLOCKED") from None
+    return alias
+
+
 def validate_product_paths(
     config: dict, storage: dict, *, checkout_root: Path | None = None,
 ) -> None:
@@ -192,6 +230,7 @@ def validate_product_paths(
     wheel = paths["runtime_wheel"]
     manifest = paths["runtime_manifest"]
     native_library = paths["runtime_native_library"]
+    runtime_import_root(config)
     if (_is_relative(product, dev_root) or _is_relative(dev_root, product)
             or _is_relative(artifact, dev_root) or _is_relative(dev_root, artifact)
             or _is_relative(product, artifact) or _is_relative(artifact, product)

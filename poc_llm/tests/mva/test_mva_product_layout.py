@@ -14,6 +14,34 @@ from poc_llm.harness.mva_process import RunError
 
 
 class ProductLayoutTests(unittest.TestCase):
+    def test_runtime_model_path_presents_payload_without_copying_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = root / "artifact" / "payload"
+            model.parent.mkdir()
+            model.write_bytes(b"model")
+            run = root / "run"
+            run.mkdir()
+
+            alias = layout.runtime_model_path({"model_path": str(model)}, run)
+
+            self.assertEqual(alias, run / "model.litertlm")
+            self.assertTrue(alias.is_symlink())
+            self.assertEqual(os.readlink(alias), str(model))
+            self.assertEqual(alias.stat().st_ino, model.stat().st_ino)
+
+    def test_runtime_model_path_rejects_wrong_existing_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "run"
+            run.mkdir()
+            (run / "model.litertlm").write_bytes(b"do-not-overwrite")
+            with self.assertRaises(RunError) as raised:
+                layout.runtime_model_path(
+                    {"model_path": str(root / "artifact" / "payload")}, run
+                )
+            self.assertEqual(raised.exception.code, "IDENTITY_DRIFT")
+
     def fixture(self, root: Path) -> tuple[dict, dict]:
         storage = copy.deepcopy(layout.load_product_storage())
         profile_bytes = b"small selected profile fixture"
@@ -50,7 +78,9 @@ class ProductLayoutTests(unittest.TestCase):
         wheel = artifact / "sha256" / wheel_sha[:2] / wheel_sha / "payload"
         runtime = product / "runtime"
         manifest = runtime / "runtime-manifest.json"
-        native_library = runtime / "lib" / "libLiteRtLm.so"
+        native_library = (
+            runtime / "lib/python3.13/site-packages/litert_lm/liblitert-lm.so"
+        )
         for directory in (
             source, runs, export, cache, profile.parent, schema.parent, model.parent,
             wheel.parent, runtime, native_library.parent,
@@ -96,6 +126,10 @@ class ProductLayoutTests(unittest.TestCase):
         ):
             storage, config = self.fixture(Path(directory))
             layout.validate_product_paths(config, storage)
+            self.assertEqual(
+                layout.runtime_import_root(config),
+                Path(config["runtime_root"]) / "lib/python3.13/site-packages",
+            )
             identity = layout.cache_identity(config, storage)
             self.assertEqual(list(identity), storage["cache"]["required_fields"])
             self.assertEqual(
@@ -217,6 +251,22 @@ class ProductLayoutTests(unittest.TestCase):
             native_library.chmod(0o400)
             with self.assertRaises(RunError):
                 layout.validate_product_paths(config, storage)
+
+    def test_runtime_import_root_rejects_flat_or_unrelated_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            layout, "SCRATCH_PARTS", {"m4b-test-runs"}
+        ):
+            storage, original = self.fixture(Path(directory))
+            for relative in (
+                "litert_lm/liblitert-lm.so",
+                "lib/python3.13/site-packages/other/liblitert-lm.so",
+            ):
+                changed = copy.deepcopy(original)
+                changed["runtime_native_library"] = str(
+                    Path(changed["runtime_root"]) / relative
+                )
+                with self.subTest(relative=relative), self.assertRaises(RunError):
+                    layout.runtime_import_root(changed)
 
 
 if __name__ == "__main__":

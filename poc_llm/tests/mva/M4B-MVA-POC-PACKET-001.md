@@ -1,6 +1,6 @@
 # M4B-MVA-POC-PACKET-001 — workstation execution snapshot
 
-Status：`WORKSTATION SNAPSHOT / PI NOT AUTHORIZED / HARDWARE PROOF PENDING`
+Status：`REPLACEMENT SNAPSHOT / PI PATH PROVED / FORMAL EXACT-SHA PROOF PENDING`
 
 - Work / baseline / gate：`M4B-MVA` / `M4B-MVA-001` / `M4B-MVA-POC`
 - Income SHA-256：`5afb24e8ec7ad67853745ec290672c6b48a174819928936609556fefd184a2c2`
@@ -70,6 +70,17 @@ sampler work is POC overhead and its timing cannot be subtracted post hoc to cla
 
 The current scope is strictly `llm_subsystem`; Audio digest and audible latency remain null. ALSA
 cleanup is not applicable to this LLM-only runner and remains null, never a fabricated zero.
+
+The accepted runtime is a CPython virtual-environment layout. The runner derives the import root from
+the authenticated native-library path, compares the selected wheel to that exact package tree and gives
+the child the derived `site-packages` root. The authenticated content-addressed model object remains the
+original `payload`; each child receives a run-owned temporary `.litertlm` symlink to the same inode because
+the native loader requires that suffix. The presentation link is removed during run cleanup.
+
+LiteRT-LM v0.16 LLGuidance does not implement JSON Schema `if/then/else`. The native constrained schema
+therefore freezes only the supported exact-object/type/length constraints, while the existing Python
+semantic validator still rejects `end=false` with blank text and `end=true` with nonblank text before any
+result is accepted. Evidence identity includes the authenticated product-storage digest and cache key.
 
 ## Initial install verification and same-install trust
 
@@ -163,7 +174,7 @@ An independent receive watchdog requests cancel at the frozen deadline and force
 process group after two seconds even if the main-thread resource probe stalls. RPC writes are also
 bounded (one second); output frames are limited to 64 KiB. Generation timeout or failure requests
 native cancel (the backend invokes native cancel at most once), waits at most two seconds for convergence,
-then cleanup requests SHUTDOWN (two seconds) and wait (two seconds), followed by process-group
+then cleanup requests SHUTDOWN (ten seconds) and wait (two seconds), followed by process-group
 TERM/wait and KILL/wait (two seconds each). Absence of all owned process-group PIDs is checked;
 forced cleanup never converts a failed run to PASS. Cleanup failure prevents replacement and
 all later work. Ctrl-C follows the same cleanup path. Native crashes/unknown exceptions are typed

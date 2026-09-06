@@ -15,6 +15,7 @@ from poc_llm.harness.mva_product_layout import (
     cache_identity,
     cache_key,
     load_product_storage,
+    runtime_import_root,
     validate_product_paths,
 )
 
@@ -47,6 +48,8 @@ def prepare_receipt(config: dict) -> dict:
     model = Path(config["model_path"])
     wheel = Path(config["runtime_wheel"])
     runtime = Path(config["runtime_root"])
+    import_root = runtime_import_root(config)
+    package_root = import_root / "litert_lm"
     runtime_manifest = Path(config["runtime_manifest"])
     native_library = Path(config["runtime_native_library"])
     if streaming_digest(runtime_manifest, timeout_s=120) != storage["runtime"]["runtime_manifest_sha256"]:
@@ -59,11 +62,11 @@ def prepare_receipt(config: dict) -> dict:
     # Bind installed LiteRT package bytes to the selected wheel, not merely its label.
     with zipfile.ZipFile(wheel) as archive:
         expected = {name for name in archive.namelist() if name.startswith("litert_lm/") and not name.endswith("/")}
-        actual = {str(path.relative_to(runtime)) for path in (runtime / "litert_lm").rglob("*") if path.is_file()}
+        actual = {str(path.relative_to(import_root)) for path in package_root.rglob("*") if path.is_file()}
         if not expected or expected != actual:
             raise RunError("IDENTITY_DRIFT")
         for name in expected:
-            if hashlib.sha256(archive.read(name)).hexdigest() != streaming_digest(runtime / name, timeout_s=120):
+            if hashlib.sha256(archive.read(name)).hexdigest() != streaming_digest(import_root / name, timeout_s=120):
                 raise RunError("IDENTITY_DRIFT")
     files = {}
     for path in _runtime_files(runtime):
@@ -107,6 +110,7 @@ def verify_receipt(config: dict, receipt: dict, expected_digest: str) -> None:
     profile = json.loads(PROFILE_PATH.read_text())
     storage = load_product_storage()
     validate_product_paths(config, storage)
+    runtime_import_root(config)
     expected_storage_identity = {
         "selected_profile_sha256": storage["selected_profile"]["sha256"],
         "model_object_id": storage["model"]["object_id"],
