@@ -6,6 +6,13 @@
 
 ## M4 MVA revision（2026-09-05）
 
+2026-09-06 update supersedes the following historical summary where changed:
+[002 design](implement/m4b_mva_002_decisions.md) and the new POC efficiency gate precede M4B
+implementation. [M4C](milestones/M4C.md) completes streaming voice, basic Display, session reset,
+App lifecycle integration and combined resources. [ALPHA](milestones/ALPHA.md) accepts complete-product
+performance/reliability; 2s/3s and 10s targets are measured progressively, accepted there. Camera/look
+remain M6. Start-mode selection and affected architecture review remain explicit entry decisions.
+
 USER確認M4以最小可行語音架構為目標：M4B完成最小Reasoner與session內連續對話，
 M4整合驗speech-end到meaningful audible onset；ALPHA擴大品質/穩定性，實際tool在M5。
 2秒目標／3秒上限、10秒恢復是可修訂目標，不是整個計畫no-go條件；

@@ -1,9 +1,8 @@
 # ALPHA 規劃 ── Voice-only 產品化收斂 Gate
 
-> 2026-09-05 MVA scope clarification：M4B先完成最小Reasoner與session內對話連續性，
-> M4整合已有短句語音正確性／回應時間證據；ALPHA擴大case與soak，
-> 不將基本Reasoner設計或短句3秒可行性首次驗證延到本gate。
-> 目標可依實測與USER決策修訂，未達標不自動取消整體計畫。詳見[M4](M4.md)。
+> 2026-09-06: M4B records subsystem performance; M4C completes functionality and full-path measurement.
+> ALPHA accepts 2s response target / 3s ceiling and 10s recovery on the integrated product.
+> Missing basic functionality cannot be deferred here. See [M4C](M4C.md).
 
 ## 定位
 
@@ -45,12 +44,42 @@ ALPHA 固定為以下能力的產品化收斂，必須在同一候選 SHA 全數
 * MQTT / external message / 實際 tool dispatch（屬 M5）
 * Voice wake / Vision（屬 M6）
 * M7 正式動畫、完整 icons、Progress UI 或生產級 assets
-* systemd / supervisor / deployment / persistent config / update / rollback（外部獨立處理，不在本文件範圍）
+* 新增systemd / supervisor / update / rollback實作；外部launcher由M4C明確交接，ALPHA必須驗證實際啟動、關閉與再次啟動，不因owner在外部而豁免產品操作流程。
 * 任何 GA / production release 等同語義
 
 ---
 
 ## 3. Entry / Exit Gate
+
+### 2026-09-06 objective completion plan
+
+M4C must deliver an operable voice-only device: start/ready/error visibility, basic Session Display,
+normal conversation, interrupt/session reset, idle end, shutdown and start again. Camera/look remain M6,
+formal animation/icons M7. Startup mode must be selected and implemented before ALPHA; boot automation
+is not assumed. Test against the delivered launcher and hardware controls, not an invented factory reset.
+
+Proposed bounded acceptance corpus: 20 fixed two-turn short-voice sessions, three clean App starts,
+three shutdown/start cycles, three controlled recoveries and a two-hour repeated-session soak.
+Tester freezes inputs, silence intervals, deployment, ambient conditions and onset measurement error
+before execution. Same fixed corpus is used for comparison; no best-of retries or changed answers to pass.
+Report every first/subsequent-turn latency: <=2s is target, every valid supported response <=3s is the
+ceiling; recovery <=10s from accepted request through old-owner cleanup to usable barrier. Report
+invalid/fallback/failed responses separately, never drop them to improve latency. A miss keeps the metric
+open until corrected or explicitly revised by User; no retroactive relabeling.
+
+Objective gates: no lost control, cross-session content, orphan owners, unbounded queue/restart loop,
+OOM/swap growth or thermal violation; startup/shutdown/reset complete under adopted deadlines.
+Display must follow the real state and clear prior-session content. The two-hour duration establishes
+only that bounded observation, not indefinite stability. Final numeric resource thresholds come from
+M4C composition evidence, not LLM-only headroom.
+
+Quality review records observed error counts/categories on the fixed complete ASR-to-TTS corpus.
+There is no open-ended subjective quality threshold. POC H03/H05/H06/H11 stay acknowledged observations;
+software contract failures remain objective defects. Optional tuning requires its own budget, surface,
+fixed before/after comparison and stopping rule; no tuning loop is part of ALPHA exit by default.
+
+The corpus/durations above are Designer planning proposals to be frozen with test-spec coverage before
+candidate execution, not claims of User-approved hardware execution or completed validation.
 
 ### 3.1 Entry（進入 ALPHA 的前提）
 

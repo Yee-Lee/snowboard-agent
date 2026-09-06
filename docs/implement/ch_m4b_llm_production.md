@@ -1,5 +1,10 @@
 # M4B-MVA — 最小 Reasoner 與語音架構設計
 
+> 2026-09-06 prospective revision: [M4B-MVA-002 decision package](m4b_mva_002_decisions.md)
+> defines the new encoding/readiness experiment, idle/capacity/reset policies and M4B/C/ALPHA boundary.
+> The 001 text below remains the historical frozen design; where changed, 002 is the current proposal,
+> pending POC adoption and affected architecture/reviewer approval. No Development Ready claim.
+
 狀態：M4B-MVA-001 Designer design / POC plan frozen；Architecture與Reviewer已通過。
 POC request已交付，量測profile與Tester coverage尚未簽核。不是Development Ready、candidate freeze或Gate 3 PASS。
 日期：2026-09-05。追蹤：[IR_dev_M4B_III](../reviews/IR_dev_M4B_III.md)、

@@ -1,5 +1,22 @@
 # M4B-MVA — 跨團隊名稱與 POC 進場 Gate
 
+## Current revision — 2026-09-06
+
+DELIVERY-025 (`23fb481007ebaf9d4c58d66b762a65aacec9196c`) has been received and reviewed as a report:
+23 machine PASS reported, manual 8 Pass/4 Fail retained, Audio deferred by User. The original Step 5
+delivery is complete; Step 6 adoption is pending. The historical current-state section below describes 001 issuance only.
+
+New baseline: M4B-MVA-002; dependent gate `M4B-MVA-EFFICIENCY` tracks
+[REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md).
+Gate is OPEN following [verified delivery](../outsource/deliveries/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md). `M4B-MVA-POC` remains Open.
+Designer design is in [002 decisions](../implement/m4b_mva_002_decisions.md): POC report adoption,
+affected architecture/reviewer clearance and profile freeze precede explicit release of both gates.
+Developer/Tester entry remains deferred. USER separately authorized this Core commit/push and task
+delivery on 2026-09-06; Pi execution remains separately controlled. No old result, request or SHA is rewritten.
+
+M4B validates objective subsystem control and records timings; [M4C](M4C.md) owns integrated
+speech/display/lifecycle and combined resources; ALPHA owns 2s/3s response and 10s recovery acceptance.
+
 日期：2026-09-05。USER已明確指定本文件的七步順序。
 本文件是M4B的設計／量測工作基線，不新增milestone、永久Git branch或milestone tag。
 

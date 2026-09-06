@@ -1,18 +1,14 @@
 # Milestone Progress
 
-## Current M4B disposition — 2026-09-05 USER MVA revision
+## Current M4 disposition — 2026-09-06
 
-M4A維持Accepted；M4B-MVA architecture/design/POC plan已定版，尚未Development Ready／Gate3 PASS。
-USER確認session內continuity、不建context management、最小Reasoner擁有next_perceptions、
-短句語音2秒目標/3秒上限、10秒完整recovery、cold startup無產品SLA。
-數字可依量測與USER裁決調整，miss不構成計畫no-go。
-[IR_dev_M4B_III](IR_dev_M4B_III.md)已由Designer回覆Revised，requestor結案待後續進場，當前不另放行Developer；
-[AR_impl_M4B_I](history/AR_impl_M4B_I.md)已Resolved；[TR_spec_M4B_IV](TR_spec_M4B_IV.md)維持deferred Open。
-本工作統一M4B-MVA／M4B-MVA-001，依[USER七步流程](../milestones/M4B_MVA.md)。
-目前步驟5；Designer已交付定版request並開啟M4B-MVA-POC，等待POC execution snapshot與結果。
-POC尚未執行；只有Designer審核結果並解除M4B-MVA-POC後Developer／Tester才進場。
-舊WIP五檔依USER授權捨棄；沒有新product code/test、candidate、commit或外部repo異動。
-下方較早dated段落／approval屬R1歷史snapshot；其candidate-ready敘述不覆蓋本節。
+M4A維持Accepted。M4B DELIVERY-025 report已收到，Step 6 pending；[002 design](../implement/m4b_mva_002_decisions.md)
+與[efficiency request](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)已完成並交付，
+[receipt](../outsource/deliveries/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md)開啟M4B-MVA-EFFICIENCY。
+兩個POC gate、affected review與profile freeze阻擋M4B implementation/spec activation。
+[M4C](../milestones/M4C.md)與[ALPHA](../milestones/ALPHA.md)規劃已更新：ALPHA前完成整機功能，
+ALPHA作客觀性能／成熟度驗收，Camera/look在M6。啟動方式仍為M4C entry決策。
+下方早期狀態只作歷史，不覆蓋本節。
 
 
 本文件由 **Designer** 維護，記錄 milestone 定案 gate、跨角色阻擋、外部 POC 相依與下一動作。穩定範圍及驗收原則以 `docs/milestone.md`、`docs/milestones/M{x}.md` 為準；Developer 估點與工作包由 `docs/reviews/dev_progress_M{x}.md` 維護。
@@ -21,7 +17,7 @@ POC尚未執行；只有Designer審核結果並解除M4B-MVA-POC後Developer／T
 * **Permanent development branch**: `core`
 * **M3 gate status**: `Accepted — Designer transition direct review complete`
 * **M3 implementation SHA**: `5c9e5aac47e7f4f0dd168d8c75541438ee74f858`
-* **Last updated**: 2026-09-05
+* **Last updated**: 2026-09-06
 * **Owner**: Designer
 
 ---
@@ -124,8 +120,8 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4 Candidate process gate | `MINIMAL RUNNER IMPLEMENTED — M4A EXACT-CANDIDATE FLOW PROVEN` | `PM-OUT-260818-018`已由`f87c5e6`收斂；M4A candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成三minor portable、Designer freeze、target preflight、正式acceptance與final reconciliation。後續M4B/M4C仍依相同minimal flow；M4A Accepted不回退，但final M4 candidate須對未變更M4A scope建立inheritance，並在final SHA重跑受新composition影響的Audio/resource/offline/privacy/session regression，不無差別重跑已Accepted的M4A-only target rows。 |
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
-| M4b LLM | `M4B-MVA POC REQUEST DELIVERED — RESULT/PROFILE/SPEC PENDING` | R1 Gate2B/ABI/spec歷史不改；IR_dev_M4B_III Revised，AR_impl_M4B_I Resolved，TR_spec_M4B_IV deferred Open。POC量測包已定版並交付；profile採用與coverage收斂前不準備coupled candidate。 |
-| M4c Session Display | `PENDING` | 依賴 M4a + M4b；Display content / privacy design 已在 `display_spec.md` |
+| M4b LLM | `DELIVERY-025 RECEIVED — 002 EFFICIENCY GATE OPEN` | 等待POC comparison、Designer profile採用、affected review與TR_spec_M4B_IV；coupled candidate未放行。 |
+| M4c Session Display | `PLAN COMPLETE / ENTRY BLOCKED` | [M4C plan](../milestones/M4C.md)已定義整機、streaming、Display、reset與組合資源；等待M4B與啟動方式決策。 |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
 
@@ -176,7 +172,7 @@ Core integration advisory（不重開已結案Gate 1／2A）：`e2b59fac...` wor
 | ALPHA Design Ready | `PENDING` | 阻擋：M4 Accepted；需 Tester 完成 `test_spec_ALPHA.md` 並由 Designer 簽核（`TR_spec_ALPHA_I`） |
 | ALPHA Accepted | `PENDING` | 阻擋：ALPHA Design Ready；Tester 驗收 + Designer CR；是 M5 baseline selection 的原線候選 |
 | ASR Product R1 outcome contract | `AUTHORED / AUDIO DELIVERY PENDING` | `DELIVERY-AUDIO-POC-ASR-PRODUCT-R1-CONTRACT-001`已在Core建立；依User順序先完成Core內部紀錄，尚未複製至Audio `docs/pm_handoff/` |
-| Audio `asr-r1` worktree | `CREATED / INTAKE NOT STARTED` | 當前實體路徑 `/home/yee/workspace/snowboard/asr_r1`，branch `audio`，建立點 `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`；目標common-Git hub路徑尚未遷移 |
+| Audio `asr-r1` worktree | `CREATED / INTAKE NOT STARTED` | logical locator `<workspace-root>/asr_r1`，branch `audio`，建立點 `5694ead4ba6be928fdb4dbdf6da7155b214d72bd`；目標common-Git hub路徑尚未遷移 |
 | Core `core-r1` worktree | `NOT CREATED` | 不等待ALPHA Accepted；User確認fork checkpoint後，從已commit的Core full SHA建立`candidate/asr-r1`，單向同步`core → candidate/asr-r1` |
 | ALPHA.R1 | `CONDITIONAL / NOT DESIGN READY` | 規劃見`docs/milestones/ALPHA_R1.md`；POC evidence不取代Core design / test / exact-SHA acceptance |
 | M5 baseline selection | `PENDING` | M5只能選定`ALPHA`或`ALPHA.R1`其一Accepted exact SHA；不得並行進入或拼接evidence |

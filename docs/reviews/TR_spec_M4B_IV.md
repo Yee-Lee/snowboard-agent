@@ -8,6 +8,13 @@ activation: "Deferred until M4B-MVA-POC released"
 
 # TR_spec_M4B_IV — MVA automatic policy and manual semantic coverage
 
+> 2026-09-06 scope delta: follow [002 decisions](../implement/m4b_mva_002_decisions.md).
+> Activation additionally waits for M4B-MVA-EFFICIENCY adoption and affected design approval.
+> Replace the historical human-quality requirement below with objective subsystem control checks;
+> full ASR-to-TTS observations, audible latency and Audio-combined resource tests belong to M4C.
+> 2s/3s response and 10s recovery are ALPHA acceptance metrics; M4B records progress and enforces
+> operational deadlines. Include idle expiry/reset and selected encoding/readiness policy after adoption.
+
 日期：2026-09-05。這是spec revision request，非Tester執行新Pi驗收的要求。
 依據：[M4B-MVA設計](../implement/ch_m4b_llm_production.md)；
 Architecture與Designer設計已定版；架構結案見[AR_impl_M4B_I](history/AR_impl_M4B_I.md)。
