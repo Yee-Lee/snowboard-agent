@@ -2,8 +2,8 @@
 # Full frozen ASR/TTS fixture qualification; emits no PCM and never opens playback.
 set -euo pipefail
 
-if [[ $# -lt 10 ]]; then
-  echo "usage: $0 --artifact-dir DIR --runtime-dir DIR --fixture-dir DIR --work-dir DIR --output FILE" >&2
+if [[ $# -lt 12 ]]; then
+  echo "usage: $0 --artifact-dir DIR --runtime-dir DIR --product-root DIR --fixture-dir DIR --work-dir DIR --output FILE" >&2
   exit 2
 fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

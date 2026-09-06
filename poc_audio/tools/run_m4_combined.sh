@@ -6,7 +6,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 packet="$repo_root/poc_audio/manifests/m4_combined_packet.json"
 
 if [[ $# -lt 1 ]]; then
-  echo "usage: $0 validate | fake --output FILE | lock-fixtures --fixture-dir DIR --fixture-lock FILE --audio-execution-sha SHA | formal <p9_1|combined|failure> [formal arguments]" >&2
+  echo "usage: $0 validate | fake --output FILE | lock-fixtures --fixture-dir DIR --fixture-lock FILE --audio-execution-sha SHA | formal <p9_1|combined|failure> --run-root DIR --evidence-root DIR --cache-root DIR --product-root DIR --tts-model-dir DIR --tts-vocos FILE [formal arguments]" >&2
   exit 2
 fi
 

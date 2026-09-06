@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from .m4a_authorized_preflight import AUTHORIZED_CANDIDATES, repo_root, verify_candidate_inputs
-from .m4a_candidate_smoke import safe_extract
 from .m4a_runtime_preflight import assert_target, audio_device_owner_count, target_platform
+from .m4_storage import validate_product_inputs, verify_product_model
 from .validation import GIT_SHA_RE, validate_m4a_qualification
 
 
@@ -28,6 +28,9 @@ PROMPTS_SHA256 = "1f9699344394e718fa0d30fb24df3219407680268340418e564c70cc130077
 COLD_REPETITIONS = 3
 WARMUPS = 3
 HOT_REPETITIONS = 20
+ASR_ARCHIVE_SHA256 = "7305f7905bfcf77fa0b39388a313f3da35c68d971661a65475b56fb2162c8e63"
+TTS_ARCHIVE_SHA256 = "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef"
+VOCOS_SHA256 = "b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e"
 
 
 def sha256_file(path: Path) -> str:
@@ -294,6 +297,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-dir", type=Path, required=True)
     parser.add_argument("--runtime-dir", type=Path, required=True)
+    parser.add_argument("--product-root", type=Path, required=True)
     parser.add_argument("--fixture-dir", type=Path, required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--source-sha", required=True)
@@ -309,6 +313,12 @@ def main() -> int:
         raise ValueError("output and work directory must be new paths")
     target = target_platform()
     assert_target(target)
+    asr_model_dir = args.product_root / "models" / ASR_ARCHIVE_SHA256 / "sensevoice"
+    tts_model_dir = args.product_root / "models" / TTS_ARCHIVE_SHA256 / "matcha"
+    vocos = args.product_root / "models" / VOCOS_SHA256 / "vocos-16khz-univ.onnx"
+    validate_product_inputs(
+        args.product_root, [args.runtime_dir, asr_model_dir, tts_model_dir, vocos],
+    )
     manifest = json.loads((repo_root() / "poc_audio/manifests/m4a_gate1b_candidates.json").read_text())
     for candidate_id in sorted(AUTHORIZED_CANDIDATES):
         verify_candidate_inputs(manifest, candidate_id, args.artifact_dir)
@@ -323,15 +333,15 @@ def main() -> int:
     if len(prompts) != 20:
         raise ValueError("frozen TTS prompt set must contain exactly 20 prompts")
 
+    asr_model = verify_product_model(
+        asr_model_dir,
+        ASR_ARCHIVE_SHA256, args.product_root, args.work_dir,
+    ).path
+    tts_model = verify_product_model(
+        tts_model_dir,
+        TTS_ARCHIVE_SHA256, args.product_root, args.work_dir,
+    ).path
     args.work_dir.mkdir(parents=True)
-    asr_model = safe_extract(
-        args.artifact_dir / "models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09.tar.bz2",
-        args.work_dir, "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09",
-    )
-    tts_model = safe_extract(
-        args.artifact_dir / "models/matcha-icefall-zh-en.tar.bz2",
-        args.work_dir, "matcha-icefall-zh-en",
-    )
     runtime_python = args.runtime_dir / "bin/python"
     if not runtime_python.is_file():
         raise ValueError("authorized runtime Python is unavailable")
@@ -345,11 +355,11 @@ def main() -> int:
     thermal_before = thermal_observation()
     asr_run = run_candidate(
         runtime_python, "asr", asr_model, args.fixture_dir, plan_path, prompts_path,
-        args.artifact_dir / "models/vocos-16khz-univ.onnx", environment,
+        vocos, environment,
     )
     tts_run = run_candidate(
         runtime_python, "tts", tts_model, args.fixture_dir, plan_path, prompts_path,
-        args.artifact_dir / "models/vocos-16khz-univ.onnx", environment,
+        vocos, environment,
     )
     thermal_after = thermal_observation()
     owners_after = audio_device_owner_count()
@@ -394,7 +404,7 @@ def main() -> int:
         "summaries": summaries,
         "resources": {
             "asr": _resource_summary(asr_run, 1250, tree_size_mib(asr_model)),
-            "tts": _resource_summary(tts_run, 1000, tree_size_mib(tts_model) + tree_size_mib(args.artifact_dir / "models/vocos-16khz-univ.onnx")),
+            "tts": _resource_summary(tts_run, 1000, tree_size_mib(tts_model) + tree_size_mib(vocos)),
             "thermal_before": thermal_before,
             "thermal_after": thermal_after,
         },

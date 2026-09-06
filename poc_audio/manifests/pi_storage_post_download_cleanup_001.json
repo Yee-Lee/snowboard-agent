@@ -1,0 +1,268 @@
+{
+  "completed_cleanup": {
+    "bundle_source_apparent_bytes_removed": 174360,
+    "bundle_source_files": 8,
+    "bundle_source_locators": [
+      "PI_AUDIO_WORKSPACE/m4-p91-b7b25ff/p9.1-result.json",
+      "PI_AUDIO_WORKSPACE/m4-p91-d36490f/p9.1-result.json",
+      "PI_AUDIO_WORKSPACE/m4-p91-ffcfaa8/p9.1-result.json",
+      "PI_AUDIO_WORKSPACE/m4-p91-8be3bc0/p9.1-result.json",
+      "PI_AUDIO_WORKSPACE/m4-combined-8be3bc0/result.json",
+      "PI_AUDIO_WORKSPACE/m4-failure-8be3bc0/raw.json",
+      "PI_AUDIO_WORKSPACE/m4-failure-26f33a3/raw.json",
+      "PI_AUDIO_WORKSPACE/m4-failure-26f33a3/result.json"
+    ],
+    "work_scratch_allocated_bytes_reclaimed": 2214473728,
+    "work_scratch_roots": 8
+  },
+  "deletion_authorized": true,
+  "entries": [
+    {
+      "active_references": [],
+      "allocated_bytes": 364085248,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "rebuildable scratch",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 364085248,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 97525760,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "retained rejected result",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-p91-b7b25ff/p9.1-work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 97525760,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 99172352,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "retained inconclusive result",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-p91-d36490f/p9.1-work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 99172352,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 99172352,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "retained failed result",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-p91-ffcfaa8/p9.1-work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 99172352,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 99172352,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "accepted result hash 3f1013c7dfcdc50f92a03441c76d887003927598cb21ebedcac5f9f9f5f2b923",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-p91-8be3bc0/p9.1-work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 99172352,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 99172352,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "accepted result hash 4e5fdcdda45a6baac252b47f1ba72aadc4e546034788ca0a180afe4bcbf4d962",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-combined-8be3bc0/work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 99172352,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 678088704,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "retained inconclusive result",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-failure-8be3bc0/work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 678088704,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [],
+      "allocated_bytes": 678084608,
+      "archive_bundle_id": "audio-phase1-private-001",
+      "canonical_replacement": "accepted result hash 79360c05f514311ce042057759a9d2a4c23c9a4a890a133bf5fa92cea497c115",
+      "class": "download_receipt",
+      "cleanup_status": "DELETED_AFTER_VERIFIED_RECEIPT_AND_REFERENCE_GATE",
+      "delete_after_verified_receipt": true,
+      "hold_reason": null,
+      "locator": "PI_AUDIO_WORKSPACE/m4-failure-26f33a3/work",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "reference_check_clean"
+      ],
+      "reclaim_bytes": 678084608,
+      "required_local_receipt_hash": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "required_local_receipt_size": 21574
+    },
+    {
+      "active_references": [
+        "accepted tester bundle"
+      ],
+      "allocated_bytes": 999239680,
+      "archive_bundle_id": "audio-m4a-acceptance-001",
+      "canonical_replacement": "PI_PROD_PRODUCTS/m4a/<product-manifest-sha256>",
+      "class": "canonical_product",
+      "delete_after_verified_receipt": false,
+      "hold_reason": "canonical product is not materialized",
+      "locator": "PI_M4A_RUNS/6c3ba95-20260829-dev01",
+      "preflight_conditions": [
+        "private_bundle_download_verified",
+        "canonical_product_materialized",
+        "product_manifest_verified",
+        "bounded_product_preflight_pass"
+      ],
+      "reclaim_bytes": 0,
+      "required_local_receipt_hash": null,
+      "required_local_receipt_size": null
+    },
+    {
+      "active_references": [
+        "accepted M4A product"
+      ],
+      "allocated_bytes": 995495936,
+      "archive_bundle_id": "audio-m4a-runtime-001",
+      "canonical_replacement": "PI_PROD_PRODUCTS/m4a/<product-manifest-sha256>/runtime",
+      "class": "canonical_product",
+      "delete_after_verified_receipt": false,
+      "hold_reason": "canonical runtime is not materialized",
+      "locator": "PI_M4A_PRODUCTS/m4a-runtime-closure-002",
+      "preflight_conditions": [
+        "canonical_product_materialized",
+        "runtime_native_inventory_verified",
+        "bounded_product_preflight_pass"
+      ],
+      "reclaim_bytes": 0,
+      "required_local_receipt_hash": null,
+      "required_local_receipt_size": null
+    },
+    {
+      "active_references": [
+        "uncommitted Core edits"
+      ],
+      "allocated_bytes": 27979776,
+      "archive_bundle_id": null,
+      "canonical_replacement": null,
+      "class": "unresolved_hold",
+      "delete_after_verified_receipt": false,
+      "hold_reason": "dirty worktree",
+      "locator": "PI_M4A_RUNS/telemetry-wt-20260829-d01/repo",
+      "preflight_conditions": [
+        "core_owner_resolution"
+      ],
+      "reclaim_bytes": 0,
+      "required_local_receipt_hash": null,
+      "required_local_receipt_size": null
+    },
+    {
+      "active_references": [
+        "M2A/M2B reproduction"
+      ],
+      "allocated_bytes": 1432002560,
+      "archive_bundle_id": null,
+      "canonical_replacement": "PI_PROD_ARTIFACTS/sha256/<object-sha256>",
+      "class": "unresolved_hold",
+      "delete_after_verified_receipt": false,
+      "hold_reason": "only-copy inputs may remain",
+      "locator": "PI_AUDIO_PRIVATE/m2a/artifacts",
+      "preflight_conditions": [
+        "durable_reacquisition_proof",
+        "product_materialization_review"
+      ],
+      "reclaim_bytes": 0,
+      "required_local_receipt_hash": null,
+      "required_local_receipt_size": null
+    }
+  ],
+  "manifest_id": "PI-STORAGE-POST-DOWNLOAD-CLEANUP-001",
+  "pending_ready_bundle": {
+    "bundle_id": "audio-phase1-private-incremental-003",
+    "estimated_bytes": 525376484,
+    "status": "READY_PENDING_DOWNLOAD_RECEIPT"
+  },
+  "post_review_path_level_reclaim_bytes": 2214473728,
+  "receipt_schema": "bundle_id, archive_sha256, archive_bytes",
+  "schema_version": "1.0",
+  "status": "PARTIAL_CLEANUP_COMPLETED",
+  "verified_receipts": [
+    {
+      "archive_entry_count": 10,
+      "archive_sha256": "fb6b4080570aa04145ece41331bd7ae4acd97a76a3008cd281ba852ecd23923c",
+      "archive_size_bytes": 21574,
+      "bundle_id": "audio-phase1-private-001",
+      "status": "VERIFIED_AND_CLEARED_FROM_PI_EXPORT"
+    },
+    {
+      "archive_sha256": "2ecbae3cf5402618013f43f40feb6732441feb11c660d50dbd585988634f4fe8",
+      "archive_size_bytes": 17888533,
+      "bundle_id": "audio-phase1-private-incremental-002",
+      "status": "VERIFIED_AND_CLEARED_FROM_PI_EXPORT"
+    }
+  ]
+}

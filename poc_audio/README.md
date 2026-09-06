@@ -380,17 +380,23 @@ never writes PCM, opens ALSA or plays a speaker:
 
 ```bash
 bash poc_audio/tools/run_m4a_qualification.sh \
-  --artifact-dir poc_audio/artifacts/gate1b \
-  --runtime-dir /controlled/audio-poc/runtime/sherpa-onnx-1.13.5 \
-  --fixture-dir /controlled/audio-poc/fixtures/delivered-option-a-v1 \
-  --work-dir /controlled/audio-poc/work/qualification-001 \
-  --output /tmp/m4a-qualification.json
+  --artifact-dir PI_DEV_ROOT/cache/audio/gate1b \
+  --runtime-dir PI_PROD_PRODUCTS/m4a/<product-id>/runtime \
+  --product-root PI_PROD_PRODUCTS/m4a/<product-id> \
+  --fixture-dir PI_CONTROLLED_PRIVATE_AUDIO/fixtures/delivered-option-a-v1 \
+  --work-dir PI_DEV_ROOT/runs/audio/qualification-001 \
+  --output PI_DEV_ROOT/evidence-export/audio/m4a-qualification.json
 ```
 
 The report may close only the full-fixture ASR quality and TTS latency/RTF
 observations. Candidate lifecycle, network-disabled P12 evidence, RSS-growth
 review and User TTS quality review remain explicit pending items. Keep the raw
 JSON outside Git and commit only a reviewed sanitized evidence summary.
+The product root must contain a verified product manifest, runtime/native
+inventory, and read-only models at
+`models/<source-archive-sha256>/<sensevoice|matcha>` plus the Vocos file at
+`models/<vocos-sha256>/vocos-16khz-univ.onnx`. Candidate archives in the cache
+are qualification inputs only and never formal runtime dependencies.
 
 After reviewing the full-fixture result, exercise the still-eligible Matcha
 persistent-child lifecycle with a new work/output pair:
@@ -455,27 +461,52 @@ be invoked from a dirty checkout or with an unapproved authorization document:
 
 ```sh
 bash poc_audio/tools/run_m4_combined.sh formal p9 \
-  --authorization /controlled/audio-poc/m4/authorization.json \
-  --core-root /controlled/core-at-pinned-sha \
-  --fixture-dir /controlled/audio-poc/m4-fixtures \
-  --fixture-lock /controlled/audio-poc/m4/fixture-lock.json \
-  --artifact-dir /controlled/audio-poc/artifacts \
-  --runtime-python /controlled/audio-poc/runtime/python \
-  --binary /controlled/audio-poc/asr/whisper-worker \
-  --model /controlled/audio-poc/asr/ggml-base-q8_0.bin \
-  --vad-runtime-python /controlled/audio-poc/vad/python \
-  --vad-model /controlled/audio-poc/vad/silero_vad.onnx \
-  --work-dir /controlled/audio-poc/m4/p9-work \
+  --authorization PI_DEV_ROOT/evidence-export/audio/m4/authorization.json \
+  --core-root PI_DEV_ROOT/core \
+  --fixture-dir PI_CONTROLLED_PRIVATE_AUDIO/m4-fixtures \
+  --fixture-lock PI_CONTROLLED_PRIVATE_AUDIO/m4/fixture-lock.json \
+  --run-root PI_DEV_ROOT/runs/audio \
+  --evidence-root PI_DEV_ROOT/evidence-export/audio \
+  --cache-root PI_DEV_ROOT/cache/audio \
+  --product-root PI_PROD_PRODUCTS/m4a/<product-id> \
+  --runtime-python PI_PROD_PRODUCTS/m4a/<product-id>/runtime/tts/bin/python \
+  --binary PI_PROD_PRODUCTS/m4a/<product-id>/asr/whisper-worker \
+  --model PI_PROD_PRODUCTS/m4a/<product-id>/models/base-q8/ggml-base-q8_0.bin \
+  --vad-runtime-python PI_PROD_PRODUCTS/m4a/<product-id>/runtime/vad/bin/python \
+  --vad-model PI_PROD_PRODUCTS/m4a/<product-id>/models/vad/silero_vad.onnx \
+  --tts-model-dir PI_PROD_PRODUCTS/m4a/<product-id>/models/271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef/matcha \
+  --tts-vocos PI_PROD_PRODUCTS/m4a/<product-id>/models/b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e/vocos-16khz-univ.onnx \
+  --work-dir PI_DEV_ROOT/runs/audio/p9-work \
   --input-device hw:<card>,<device> --output-device hw:<card>,<device> \
   --input-channel 0 --controlled-locator controlled://m4/p9-001 \
-  --evidence-log /controlled/audio-poc/m4/p9-evidence.json \
-  --output /controlled/audio-poc/m4/p9-result.json
+  --evidence-log PI_DEV_ROOT/evidence-export/audio/m4/p9-evidence.json \
+  --output PI_DEV_ROOT/evidence-export/audio/m4/p9-result.json
 ```
 
 Replace `p9` with `combined` and use new output/work paths for the independent
 audio-only 20-session run; use `failure` for the separately controlled
 12-case finalist lifecycle packet. Neither command may be treated as a formal PASS until
 the resulting draft, method and limits are reviewed and you confirm publication.
+
+### Private evidence export
+
+Raw audio, transcripts, detailed comments, content-bearing logs, and private
+environment output stay outside every checkout and outside the shared evidence
+export root. Prepare one owner-only directory at
+`PI_AUDIO_PRIVATE/<bundle-id>` containing a `*.private.json` READY manifest and
+its relative payload files. List or stream it without creating another Pi copy:
+
+```sh
+python3 poc_audio/tools/export_private_evidence.py list-ready \
+  --ready-root PI_AUDIO_PRIVATE/<bundle-id>
+python3 poc_audio/tools/export_private_evidence.py stream \
+  --ready-root PI_AUDIO_PRIVATE/<bundle-id> --bundle-id <bundle-id>
+```
+
+The second command writes gzip-tar bytes to stdout. The controlled downloader
+must create its destination with owner-only permissions, verify SHA-256 and byte size,
+and return a receipt before any cleanup candidate can advance. Only a separately
+constructed sanitized projection may enter Git or `PI_DEV_ROOT/evidence-export/audio`.
 
 ## M1 P4 Option A validation packet
 

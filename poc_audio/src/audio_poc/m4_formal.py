@@ -44,6 +44,10 @@ from .m4_failure_runner import M4FailureRunner
 from .m4_finalist_failure import FinalistFailureAdapter
 from .m4_p9 import P9Client, locked_p9_paths
 from .m4_packet import P9_1_TEST_ID, PACKET_ID, PUBLICATION_STATUS, load_packet, validate_repo_inputs
+from .m4_storage import validate_storage_roots, verify_product_model
+
+
+TTS_ARCHIVE_SHA256 = "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef"
 
 
 class M4ExecutionError(RuntimeError):
@@ -181,7 +185,8 @@ async def execute(args: argparse.Namespace, fixture_lock: dict[str, Any]) -> dic
         args.binary, args.model, args.work_dir / "asr", args.operation_timeout,
     )
     tts = PersistentTtsDomain(
-        args.repo_root, args.artifact_dir, args.runtime_python, args.work_dir / "tts",
+        args.repo_root, args.tts_model_dir, args.tts_vocos, args.runtime_python,
+        args.work_dir / "tts",
         audio, config, args.operation_timeout,
     )
     coordinator = M4CombinedCoordinator(vad, asr, tts)
@@ -249,7 +254,8 @@ async def execute_failure(args: argparse.Namespace, fixture_lock: dict[str, Any]
 
     def tts_factory() -> PersistentTtsDomain:
         indices["tts"] += 1
-        return PersistentTtsDomain(args.repo_root, args.artifact_dir, args.runtime_python,
+        return PersistentTtsDomain(args.repo_root, args.tts_model_dir, args.tts_vocos,
+                                   args.runtime_python,
                                    args.work_dir / f"failure-tts-{indices['tts']}", audio, config,
                                    args.operation_timeout)
 
@@ -409,13 +415,18 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--core-root", type=Path, required=True)
     root.add_argument("--fixture-dir", type=Path, required=True)
     root.add_argument("--fixture-lock", type=Path, required=True)
-    root.add_argument("--artifact-dir", type=Path, required=True)
+    root.add_argument("--tts-model-dir", type=Path, required=True)
+    root.add_argument("--tts-vocos", type=Path, required=True)
     root.add_argument("--runtime-python", type=Path, required=True)
     root.add_argument("--binary", type=Path, required=True)
     root.add_argument("--model", type=Path, required=True)
     root.add_argument("--vad-runtime-python", type=Path, required=True)
     root.add_argument("--vad-model", type=Path, required=True)
     root.add_argument("--work-dir", type=Path, required=True)
+    root.add_argument("--run-root", type=Path, required=True)
+    root.add_argument("--evidence-root", type=Path, required=True)
+    root.add_argument("--cache-root", type=Path, required=True)
+    root.add_argument("--product-root", type=Path, required=True)
     root.add_argument("--input-device", required=True)
     root.add_argument("--output-device", required=True)
     root.add_argument("--input-channel", type=int, choices=(0, 1), required=True)
@@ -439,10 +450,23 @@ def main() -> int:
     _validate_device(args.output_device, "output device")
     for name, path in (
         ("fixture directory", args.fixture_dir), ("fixture lock", args.fixture_lock),
-        ("artifact directory", args.artifact_dir), ("work directory", args.work_dir),
+        ("work directory", args.work_dir),
         ("controlled evidence log", args.evidence_log),
     ):
         _require_outside_repo(path, args.repo_root, name)
+    product_identity = validate_storage_roots(
+        work_dir=args.work_dir, evidence_log=args.evidence_log, output=args.output,
+        run_root=args.run_root, evidence_root=args.evidence_root,
+        cache_root=args.cache_root, product_root=args.product_root,
+        immutable_inputs=[
+            args.runtime_python, args.binary, args.model,
+            args.vad_runtime_python, args.vad_model, args.tts_model_dir,
+            args.tts_vocos,
+        ],
+    )
+    tts_model = verify_product_model(
+        args.tts_model_dir, TTS_ARCHIVE_SHA256, args.product_root, args.run_root,
+    )
     authorization = load_authorization(args.authorization)
     validate_formal_authorization(authorization, args.packet, args.repo_root, args.core_root)
     packet = load_packet(args.packet)
@@ -486,6 +510,18 @@ def main() -> int:
     details["input_device"] = args.input_device
     details["output_device"] = args.output_device
     details["input_channel"] = args.input_channel
+    details["storage_identity"] = {
+        "run_root": "PI_DEV_ROOT/runs/audio",
+        "evidence_root": "PI_DEV_ROOT/evidence-export/audio",
+        "cache_root": "PI_DEV_ROOT/cache/audio",
+        "product_root": "PI_PROD_PRODUCTS/m4a",
+        "product_id": product_identity["product_id"],
+        "product_manifest_sha256": product_identity["manifest_sha256"],
+        "tts_model_object_id": tts_model.object_id,
+        "per_run_model_copy": False,
+        "per_run_runtime_copy": False,
+        "per_run_venv_copy": False,
+    }
     resource_samples = details.pop("_resource_samples", [])
     raw_evidence = {
         "schema_version": "1.0", "packet_id": PACKET_ID,

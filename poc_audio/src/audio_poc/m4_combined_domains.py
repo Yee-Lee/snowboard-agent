@@ -16,9 +16,7 @@ from .m3_asr import BINARY_SHA256, MODEL_SHA256, PROMPT
 from .m3_core_hal import play_stream_pcm
 from .m3_packet import TTS_PROMPT_SHA256
 from .m3_tts_playback import _read_json_line, _terminate
-from .m4a_authorized_preflight import verify_candidate_inputs
-from .m4a_candidate_smoke import safe_extract
-from .m4a_tts_lifecycle import TTS_ID, sha256_file
+from .m4a_tts_lifecycle import sha256_file
 from .m4a_whispercpp_qualification import NativeWhisperWorker
 from .m4_p9 import P9Client
 
@@ -261,7 +259,8 @@ class PersistentTtsDomain:
     def __init__(
         self,
         repo_root: Path,
-        artifact_dir: Path,
+        model_dir: Path,
+        vocos: Path,
         runtime_python: Path,
         work_dir: Path,
         audio: Any,
@@ -269,7 +268,8 @@ class PersistentTtsDomain:
         timeout: float,
     ) -> None:
         self.repo_root = repo_root
-        self.artifact_dir = artifact_dir
+        self.model_dir = model_dir
+        self.vocos = vocos
         self.runtime_python = runtime_python
         self.work_dir = work_dir
         self.audio = audio
@@ -282,10 +282,6 @@ class PersistentTtsDomain:
         if self.process is not None or self.work_dir.exists() or not self.runtime_python.is_file():
             raise RuntimeError("M4 TTS runtime is unavailable or already started")
         await asyncio.to_thread(_validate_tts_runtime, self.runtime_python)
-        manifest = json.loads(
-            (self.repo_root / "poc_audio/manifests/m4a_gate1b_candidates.json").read_text(encoding="utf-8")
-        )
-        verify_candidate_inputs(manifest, TTS_ID, self.artifact_dir)
         prompts_path = self.repo_root / "poc_audio/fixtures/fake/tts_prompts.json"
         if sha256_file(prompts_path) != TTS_PROMPT_SHA256:
             raise ValueError("M4 TTS prompt checksum mismatch")
@@ -294,10 +290,6 @@ class PersistentTtsDomain:
             for item in json.loads(prompts_path.read_text(encoding="utf-8"))["prompts"]
         }
         self.work_dir.mkdir(parents=True)
-        model_dir = safe_extract(
-            self.artifact_dir / "models/matcha-icefall-zh-en.tar.bz2",
-            self.work_dir, "matcha-icefall-zh-en",
-        )
         environment = os.environ.copy()
         environment.update({
             "PYTHONPATH": str(self.repo_root / "poc_audio/src"),
@@ -306,8 +298,8 @@ class PersistentTtsDomain:
         })
         self.process = await asyncio.create_subprocess_exec(
             str(self.runtime_python), "-m", "audio_poc.m3_tts_worker",
-            "--model-dir", str(model_dir),
-            "--vocos", str(self.artifact_dir / "models/vocos-16khz-univ.onnx"),
+            "--model-dir", str(self.model_dir),
+            "--vocos", str(self.vocos),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL, env=environment, start_new_session=True,
         )

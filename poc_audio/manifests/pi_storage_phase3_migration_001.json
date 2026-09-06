@@ -1,0 +1,135 @@
+{
+  "delete_authorized": false,
+  "hardlink_authorized": false,
+  "holds": [
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_WORKSPACE/m4-completion-5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
+      "hold_id": "AUDIO_M4_COMPLETION",
+      "identity": "git:5694ead4ba6be928fdb4dbdf6da7155b214d72bd;tag:audio_m4",
+      "intended_identity": "PI_DEV_ROOT/audio@5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
+      "status": "CANONICAL_SOURCE_VERIFIED_OLD_HOLD_UNCHANGED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_M4A_RUNS/6c3ba95-20260829-dev01/product",
+      "hold_id": "M4A_ACCEPTED_PRODUCT",
+      "identity": "core:6c3ba95455dc5c2a152aa230b8ae5915887fe6a9;acceptance:f53b6f9d74fab8b3470e12dbed0b2734b6c6ab3a3ce3ecb0f3ae4d09b905d5c0",
+      "intended_identity": "PI_PROD_PRODUCTS/m4a/audio_m4-5694ead4-v2",
+      "status": "CANONICAL_PRODUCT_VERIFIED_CURRENT_OLD_RUN_PENDING_CLEANUP"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_M4A_RUNS/6c3ba95-20260829-tester01",
+      "hold_id": "M4A_ACCEPTED_TESTER_BUNDLE",
+      "identity": "sha256:f53b6f9d74fab8b3470e12dbed0b2734b6c6ab3a3ce3ecb0f3ae4d09b905d5c0",
+      "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4a/6c3ba954/acceptance",
+      "status": "HOLD_NO_COPY_AUTHORIZED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_M4A_PRODUCTS/m4a-runtime-closure-002",
+      "hold_id": "M4A_RUNTIME_CLOSURE",
+      "identity": "REQ-AUDIO-M4-RUNTIME-CLOSURE-002",
+      "intended_identity": "PI_PROD_PRODUCTS/m4a/audio_m4-5694ead4-v2",
+      "status": "CANONICAL_RUNTIME_REPLACEMENT_VERIFIED_OLD_CLOSURE_PENDING_CLEANUP"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_M4A_RUNS/telemetry-wt-20260829-d01/repo",
+      "hold_id": "CORE_TELEMETRY_DIRTY_WORKTREE",
+      "identity": "uncommitted-core-telemetry-edits",
+      "intended_identity": null,
+      "status": "HOLD_PENDING_CORE_OWNER"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_WORKSPACE/m3-session-20260824-r3",
+      "hold_id": "M3_ACCEPTED_CONTROLLED_RESULT",
+      "identity": "audio:f7b9694d1477f26513880526e0718d2b3c5766b3;result:M3-RISK-FOCUSED-QUALIFICATION-001",
+      "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m3/f7b9694d",
+      "status": "HOLD_NO_COPY_AUTHORIZED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_WORKSPACE/m4-p91-8be3bc0",
+      "hold_id": "M4_P91_ACCEPTED_RESULT",
+      "identity": "sha256:3f1013c7dfcdc50f92a03441c76d887003927598cb21ebedcac5f9f9f5f2b923",
+      "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/p9.1/8be3bc09",
+      "status": "HOLD_NO_COPY_AUTHORIZED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_WORKSPACE/m4-combined-8be3bc0",
+      "hold_id": "M4_COMBINED_ACCEPTED_RESULT",
+      "identity": "sha256:4e5fdcdda45a6baac252b47f1ba72aadc4e546034788ca0a180afe4bcbf4d962",
+      "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/combined/8be3bc09",
+      "status": "HOLD_NO_COPY_AUTHORIZED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_WORKSPACE/m4-failure-26f33a3",
+      "hold_id": "M4_FAILURE_ACCEPTED_RESULT",
+      "identity": "sha256:79360c05f514311ce042057759a9d2a4c23c9a4a890a133bf5fa92cea497c115",
+      "intended_identity": "PI_DEV_ROOT/evidence-export/audio/m4/failure/26f33a3c",
+      "status": "HOLD_NO_COPY_AUTHORIZED"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_PRIVATE",
+      "hold_id": "CONTROLLED_PRIVATE_AUDIO_AND_TEXT",
+      "identity": "fixture-lock-and-retention-policy",
+      "intended_identity": "PI_CONTROLLED_PRIVATE_AUDIO/<fixture-lock-sha256>",
+      "status": "HOLD_PENDING_USER_RETENTION_DECISION"
+    },
+    {
+      "action": "VERIFY_ONLY",
+      "current_locator": "PI_AUDIO_PRIVATE/m2a/artifacts",
+      "hold_id": "ONLY_COPY_REPRODUCTION_INPUTS",
+      "identity": "per-object-sha256-from-candidate-manifests",
+      "intended_identity": "PI_PROD_ARTIFACTS/sha256/<object-sha256>",
+      "status": "HOLD_PENDING_DURABLE_REACQUISITION_PROOF"
+    }
+  ],
+  "locator_policy": "Logical locators only; private root mappings remain outside Git.",
+  "manifest_id": "PI-STORAGE-PHASE3-MIGRATION-001",
+  "move_authorized": false,
+  "request_id": "REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001",
+  "schema_version": "1.0",
+  "status": "VERIFIED_PLAN_ONLY",
+  "storage_contract": {
+    "cache": "PI_DEV_ROOT/cache/audio",
+    "cache_role": "Reacquirable archives, downloads, and build intermediates only; never a formal runtime dependency.",
+    "evidence": "PI_DEV_ROOT/evidence-export/audio",
+    "immutable_object_layout": "PRODUCT/models/<source_sha256>/<model_name>",
+    "model_identity_kind": "product_model",
+    "model_identity_marker": ".audio-poc-object.json",
+    "private_evidence": {
+      "archive_transport": "verified streamed gzip tar; no second Pi archive",
+      "bundle_permissions": "owner-only",
+      "bundle_root": "PI_AUDIO_PRIVATE/<bundle-id>",
+      "public_projection": "sanitized identifiers, hashes, status, and aggregate metrics only",
+      "shared_evidence_export_allowed": false
+    },
+    "product": "PI_PROD_PRODUCTS/m4a/audio_m4-5694ead4-v2",
+    "product_dependency_bytes": 806492922,
+    "product_dependency_entries": 10876,
+    "product_identity_kind": "audio_m4a_product",
+    "product_identity_marker": ".audio-poc-product.json",
+    "product_manifest_hashed": true,
+    "product_manifest_sha256": "3325c5a7cb40634d60c1ab58ef75a0ff3e0008bf12dc15b5a98ba2189c1c69cb",
+    "product_materialized": true,
+    "product_model_entries": 366,
+    "product_native_entries": 103,
+    "product_runtime_entries": 10506,
+    "product_symlink_count": 0,
+    "product_symlinks_allowed": false,
+    "product_tree_read_only_required": true,
+    "product_verifier_status": "PASS",
+    "product_writable_entry_count": 0,
+    "production_activation_authorized": false,
+    "run": "PI_DEV_ROOT/runs/audio",
+    "source": "PI_DEV_ROOT/audio",
+    "storage_root_nesting_allowed": false
+  }
+}
