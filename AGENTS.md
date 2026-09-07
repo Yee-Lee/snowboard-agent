@@ -1,13 +1,19 @@
-當被指派角色時（如「請擔任 XXX」），AI 須立刻用 `view_file` 讀取 `docs/roles/{xxx}.md`（小寫）的原則與限制，並閱讀 `docs/roles/workflow.md` 以遵循工作流程規範。
+# Agent entry rules
 
-- 所有 AI 在準備任何 `git commit` 前，無論是否被指派角色，均須先讀取 `docs/roles/workflow.md` 的 Git Commit Message 規範，並在取得 USER 明確確認前展示完整的標題、Body 與待提交檔案。
+- 被指派角色（例如「請擔任 Developer」）時，只先讀取 `docs/roles/{role}.md` 與
+  `docs/roles/workflow.md`。依其中的 task trigger 再讀相關規格；不得預載整個 `docs/`、
+  `reviews/history/`、`outsource/deliveries/archive/` 或 `pm_handoff/history/`。
+- 使用者要求「接手／繼續目前工作」時，再讀 `docs/status/current.md`；依其中的 next owner
+  與精確路由決定是否載入其他文件。Gate 未開啟即停止，不以歷史推測任務。
+- 交接預設只更新既有 owner 文件並在對 USER 的回覆中說明；建立新 Markdown 前先找既有
+  authority/status/review。除非 USER 明確要求，或 `review-process.md`／外部交付契約要求
+  一份具唯一 ID 的紀錄，不得新增 handoff、progress、summary、ACK 或重複規格文件。
+- 未被指派角色時，不需讀角色文件；直接依使用者任務尋找最小必要上下文。
+- 歷史文件只用於追查指定 ID、SHA 或決策來源，不是背景必讀，也不得覆蓋現行權威文件。
 
-- Git 操作原則：禁止直接修改或存取 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制操作必須一律使用標準 `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。
+# Git safety
 
-- 開發驗證與 Commit 整理：
-  1. 開發者 (Agent) 自行管理本地 WIP commit，送交驗證前須收斂。
-  2. 驗證遭 Reject 的 SHA 不要求回退，應直接記錄 Feedback 並向前疊加修正 (Append-only)。
-
-- Core 只維持一條永久開發分支 `core`；不再為 milestone 建立 `dev_agent_m*` 或其他長期分支。舊分支僅作歷史參考，不刪除、不改寫。
-- Candidate SHA 一旦 push、送驗或用於正式驗證即不可變；禁止 amend、rebase、reset 或 force-push 改寫該 SHA，Reject 後只能 append fix 產生新 candidate。
-- Milestone 只在正式 Accepted 後對 completion commit 建立小寫 annotated tag `core_m1`、`core_m2`、……；tag 不得刪除、重建或移動。M0 不是 Core milestone，不建立 `core_m0`。
+- 不得直接修改或存取 `.git/` 內部；版本控制一律使用標準 `git` 命令。
+- 準備任何 commit 前，先讀 `docs/roles/git.md`。向 USER 展示完整 subject、60–100 words
+  的英文條列 body 與待提交檔案，取得明確同意後才可 commit。
+- Candidate 一經 push、送驗或正式驗證即不可改寫；Reject 後只能 append fix。

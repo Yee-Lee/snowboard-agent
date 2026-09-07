@@ -4,6 +4,7 @@ owner: "Tester"
 status: "Open"
 severity: "Blocking"
 activation: "Deferred until M4B-MVA-POC released"
+target: "docs/test_spec/test_spec_M4B.md"
 ---
 
 # TR_spec_M4B_IV — MVA automatic policy and manual semantic coverage
@@ -20,7 +21,8 @@ activation: "Deferred until M4B-MVA-POC released"
 Architecture與Designer設計已定版；架構結案見[AR_impl_M4B_I](history/AR_impl_M4B_I.md)。
 本單是Designer預備handoff；Tester不得提前寫draft或執行。依USER七步流程，
 Designer審核POC並解除[M4B-MVA-POC](../milestones/M4B_MVA.md)後才進場。
-現有test_spec_M4.md與candidate cards是R1驗收，不能用它们替M4B-MVA宣告PASS。
+既有 [`M4B R1 spec`](../test_spec/archive/test_spec_M4B_R1.md) 與 candidate cards 是歷史驗收，
+不能用它們替 M4B-MVA 宣告 PASS；activation 後由 Tester 建立 `test_spec_M4B.md`。
 
 ## One coordinated revision
 

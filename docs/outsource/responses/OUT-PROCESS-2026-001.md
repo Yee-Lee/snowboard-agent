@@ -37,7 +37,7 @@
 | `docs/test_spec.md` §2.1 / §2.4 / §3 | 正式支援CPython 3.11 / 3.12 / 3.13；Pi固定3.13部署runtime；定義external SHA、protected paths、run isolation、bounded timeout、manual handshake與共同evidence fields |
 | `docs/milestone.md` §1.1 / §1.4 | 將portable-first與單一Pi runtime提升為所有後續hardware milestone共同完成條件 |
 | `docs/milestones/M4.md` §6.2 / §6.4 | 將reform套用至下一個產品候選；M4 Accepted必須引用同一frozen SHA、portable matrix與單一acceptance run ID |
-| `docs/reviews/milestone_progress.md` M4 Forward Gates | 將process gate記為design revised但implementation / dry run pending；不把文件修訂誤報為可執行gate完成 |
+| `docs/status/archive/M4/milestone_progress_legacy.md` M4 Forward Gates | 將process gate記為design revised但implementation / dry run pending；不把文件修訂誤報為可執行gate完成 |
 | `docs/runbooks/candidate_hardware_gate.md` | 新增共用runbook與runner CLI / schema contract、debug / acceptance隔離、evidence layout及六項無硬體dry run |
 | `docs/runbooks/README.md` | 登錄M4起共用candidate gate |
 

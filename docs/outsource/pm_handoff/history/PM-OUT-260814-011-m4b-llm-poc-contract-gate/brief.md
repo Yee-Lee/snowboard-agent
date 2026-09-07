@@ -32,10 +32,10 @@ Core應提交可由PM轉交LLM POC Team的M4b contract，並補交002指定的�
 ## 驗收方式
 
 - Core在單一候選commit提交：
-  - Contract : `docs/outsource/deliveries/DELIVERY-LLM-POC-M4B-CONTRACT-001.md`
+  - Contract : `docs/outsource/deliveries/archive/llm/DELIVERY-LLM-POC-M4B-CONTRACT-001.md`
   - 本finding response : `docs/outsource/responses/OUT-M4B-2026-001.md`
   - 002正式response : `docs/outsource/responses/OUT-FB-2026-002-R1.md`
-  - 同步修訂 `docs/milestones/M4.md` 、 `docs/reviews/milestone_progress.md` 及必要的handoff index，明列contract owner、PM relay、POC receipt / return、Core ACK與M4b entry gate。
+  - 同步修訂 `docs/milestones/M4.md` 、 `docs/status/archive/M4/milestone_progress_legacy.md` 及必要的handoff index，明列contract owner、PM relay、POC receipt / return、Core ACK與M4b entry gate。
 - 每份response須列comparison baseline、完整candidate SHA、architecture-change聲明、逐項修改定位、未決產品門檻需要User / PM決定的項目。
 
 ## PM動作

@@ -96,8 +96,8 @@ Core提交的權威文件能讓Audio與LLM POC使用同一versioned baseline / s
 
 ## Core回交要求
 Core直接修訂既有權威contract / milestone / test specification，不另建立第二套Gate。至少檢查並按需更新：
-- `docs/outsource/deliveries/DELIVERY-LLM-POC-M4B-CONTRACT-001.md`
-- `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md`
+- `docs/outsource/deliveries/archive/llm/DELIVERY-LLM-POC-M4B-CONTRACT-001.md`
+- `docs/outsource/deliveries/archive/audio/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md`
 - `docs/milestones/M4.md`
 - 適用的M4a / M4b test specification、resource schema與surrogate specification
 

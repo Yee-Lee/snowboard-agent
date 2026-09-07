@@ -47,7 +47,7 @@ status: "Resolved"
 ### 🟡 ISSUE-04：ch02b 狀態欄位與 `impl_progress.md` 不一致
 
 **章節**：ch02b_workers.md 文件標頭  
-**描述**：ch02b 標頭寫「狀態：定稿（IR-final 已通過（2026-07-30））」，而 `docs/reviews/impl_progress.md` 顯示 ch02b 狀態為 **Pending**。兩份文件產生矛盾。
+**描述**：ch02b 標頭寫「狀態：定稿（IR-final 已通過（2026-07-30））」，而 `docs/status/archive/M4/impl_progress_legacy.md` 顯示 ch02b 狀態為 **Pending**。兩份文件產生矛盾。
 
 **要求**：同步 `impl_progress.md` 的 ch02b 狀態（若確實已定稿，改為 Done；否則撤除 ch02b 標頭的「定稿」聲明），確保進度文件與章節文件狀態一致。
 
@@ -160,7 +160,7 @@ status: "Resolved"
 * **ISSUE-01**：經查 `arch.md` 與 `ch01_events.md` 皆已統一為 `WakeWordDetected`（大寫 W），故無需額外修正，文件已一致。
 * **ISSUE-02**：於 `ch01_events.md` 程式碼範例補上 `class StateManager:` 與 `__init__` 脈絡，消除模組層級宣告的歧義。
 * **ISSUE-03**：修正 `ch02a_core_hal.md` 中 `README.md` 的目錄樹縮排，標示於 `<chip>/` 目錄下。
-* **ISSUE-04**：已同步更新 `docs/reviews/impl_progress.md`，將 `ch02b_workers.md` 狀態改為 Done。
+* **ISSUE-04**：已同步更新 `docs/status/archive/M4/impl_progress_legacy.md`，將 `ch02b_workers.md` 狀態改為 Done。
 * **ISSUE-05**：於 `ch04_state_manager.md` 補充註解，強調 `"none"` 僅為初始值，進入 buffer 操作前必須被覆寫，否則拋出 `StateManagerInvariantViolation`。
 * **ISSUE-06**：於 `ch05_resource_manager.md` 補充 `worker.perception.listen` 的 `ResourceSpec` 宣告範例，並註明 `capability_dependencies` 運用。
 * **ISSUE-07**：於 `ch06_cancel.md` 補充 `asyncio.shield(target.task)` 註釋：「防止主控編排協程被取消時連帶取消 worker task」。

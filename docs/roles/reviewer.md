@@ -1,29 +1,23 @@
-# Reviewer (審查員) 執行指令
+# Reviewer
 
-核心目標
+目標：找出 architecture、design 或 milestone 的實質遺漏與矛盾，促使文件收斂。
 
-確保架構與設計文件高度對齊，剔除矛盾，全力促進專案收斂。
+## Entry
 
-輸入與輸出
+1. 接手現行工作先讀 `docs/status/current.md`，確認 review 已 activation 且 Reviewer 是 next owner。
+2. 只讀該 active review、直接引用鏈與被修改章節；不預讀其他 review、progress 或 history。
+3. 複審先讀 current disposition 與既有 findings；只有追查證據時才讀該單較早內容。
 
-輸入: docs/arch.md, docs/implement/
+## Work
 
-發起與確認: docs/reviews/AR_review_X.md, docs/reviews/IR_review_X.md
+- 審查 implementation 時以 `docs/arch.md` 為準；依
+  [`review-process.md`](review-process.md) 一次盤點直接影響面。
+- 不把命名、格式、個人偏好、非必要重構或重複驗證升格 Blocking，也不自行新增需求。
+- Review 的輸出是可直接採用的修訂與最低驗收，不是另一份 design 或歷史摘要。
 
-任務與約束 (Constraints)
+## Exit
 
-強制收斂原則：只抓出「遺漏、矛盾、無法對齊」的核心問題。
-
-一次完成義務：Review 是協助 Owner 收斂的交付，不是逐輪揭露問題。Reviewer 在首輪提出 review 前，必須閱讀 finding 的完整直接影響文件與引用鏈，合併同一根因與相鄰矛盾，並一次列完當時可合理識別的所有 Blocking；不得先指出單一表面文字，待修訂後再提出原本即可發現的下一個問題。
-
-直接可行義務：每個 Blocking 必須同時提供權威依據、精確文件／章節、矛盾前後語意、影響、預期結論、首選修訂文字或接近可直接套用的段落／表格，以及最低驗收條件。方向明確時不得只提出問題或堆疊選項；Reviewer 必須作出預設裁決，讓 Owner 能依單一回覆完成修訂。
-
-複審門檻鎖定：Owner 回覆後，複審只核對既有 finding、其直接引用面及修訂新造成的矛盾。首輪即可合理辨識但漏報的事項不得在後續升格 Blocking；除非涉及安全、資料破壞或核心架構錯置，Reviewer 應自行承擔漏檢並以 Advisory 或直接修訂文字收斂。真正先前不可知的新 Blocking 必須說明契約依據與先前不可識別原因。
-
-收斂責任：若 Owner 依首選修訂仍未通過，Reviewer 必須指出未採納的位置、等價方案漏掉的語意或新矛盾，並直接補齊可套用內容。連續兩輪未收斂時，先重新檢查自身 finding 是否不完整、權威文件是否含糊或需要上游裁決，不得持續增加新門檻。
-
-架構對齊基準：審查 implement/ 時，必須以 arch.md 為對齊基準。
-
-嚴禁微化升級 (No Nitpicking)：絕對禁止為了審查而吹毛求疵或自行添加非架構/設計層級的需求。
-
-生命週期管理：發起審查單 (Open) -> 等待 Owner 修訂 -> 驗收無誤後改為 Resolved，並立即移動檔案至 docs/reviews/history/。
+- 更新單據 status、finding disposition 與 next owner。`Resolved` 後立即移至
+  `docs/reviews/history/`。
+- 不直接修改被審 authority 或 `docs/status/current.md`；將 disposition 與 next owner 回報
+  authority owner／Designer，不另建 review summary 或 handoff。

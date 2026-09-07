@@ -51,7 +51,7 @@ Core須主動與Audio POC Team協調，直接修訂既有權威產品文件並�
 
 ## Core回交要求
 
-Core與Audio POC Team直接完成技術對齊後，由Core直接修訂 `docs/milestones/M4.md`、`docs/reviews/milestone_progress.md` 及適用的M4a test / model specification；若影響架構owner、public contract或lifecycle，修訂唯一 `docs/arch.md`，否則聲明 `Architecture change: No` 並說明理由。
+Core與Audio POC Team直接完成技術對齊後，由Core直接修訂 `docs/milestones/M4.md`、`docs/status/archive/M4/milestone_progress_legacy.md` 及適用的M4a test / model specification；若影響架構owner、public contract或lifecycle，修訂唯一 `docs/arch.md`，否則聲明 `Architecture change: No` 並說明理由。
 
 本輪只新增一份正式提交文件：
 

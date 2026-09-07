@@ -22,7 +22,7 @@ Reviewed implementation scope:
 - `.github/workflows/candidate-portable.yml`
 - `scripts/candidate_gate.py`
 - `tests/test_candidate_gate.py`
-- `docs/reviews/dev_progress_M4.md`
+- `docs/status/archive/M4/dev_progress_M4_legacy.md`
 
 Authoritative basis:
 

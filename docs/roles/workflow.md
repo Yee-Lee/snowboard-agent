@@ -1,165 +1,65 @@
-# 開發工作流程與協議 (AI 執行標準)
+# 工作流程入口
 
-- **Git 操作與版控原則**：禁止任何 AI 角色直接修改、建立或寫入 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制與異動操作必須一律透過標準 CLI `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。需要實體／人工驗收的階段，得在 Developer convergence loop 完成後建立一次 **provisional candidate commit**，作為 portable matrix 的不可變受測 SHA；它尚未 freeze，也不代表 Tester PASS或milestone Accepted。portable gate或candidate review要求修改protected input時，必須先回Developer convergence loop，再重新取得USER同意建立新candidate commit。candidate commit與最終milestone commit都受本確認規則約束。
+本文件是角色啟動時的短路由，不承載各階段的完整操作細節。
 
-- **單一分支與不可變 milestone tags**：Core repo 只維持一條永久開發分支 `core`，所有 Candidate、修正與交付依時間順序直接 append。不再為 milestone 建立 `dev_agent_m*` 或長期 feature branch；舊分支保留為歷史參考，不刪除、不改寫。未送驗 WIP 可在本地整理；Candidate SHA 一旦 push、送驗或用於正式驗證，禁止 amend、rebase、reset 或 force-push，Reject / FAIL / INCONCLUSIVE 必須保留 evidence 並以 append fix 產生新 SHA。
+## 讀取原則
 
-- 每個 Core milestone 只在 Tester PASS、Designer final review 完成且狀態正式標記 `Accepted` 後，對完成記錄所在的 exact commit 建立小寫 annotated tag `core_m1`、`core_m2`、……。Tag 是不可移動的 milestone identity，不得刪除、重建或改指其他 SHA；delivery / evidence 仍必須同時記錄完整 40-character SHA，不得只寫 tag。Core 無 M0 milestone，因此不建立 `core_m0`。
+1. 先確認使用者任務與當前角色，只讀直接相關的現行文件。
+2. 權威順序為：USER 指示 → `AGENTS.md`／角色規則 → architecture／design／milestone／test spec。
+3. progress、review、delivery、response 與 history 是狀態或證據，不得自行改寫產品契約。
+4. 不因角色啟動而預讀整套 architecture、implementation、test、handoff 或歷史文件。
 
-- **Git Commit Message 規範**：
+## 接手方法
 
-  **公開資料檢查**：準備 commit 前，必須確認 staged blobs 不含私人家目錄、
-  本機 host identity、工作站型號／OS、credential、原始私有測試內容或大型 payload。
-  `Yee.Lee` 與 `yeelee.tw@gmail.com` 可公開。涉及 Pi／POC evidence 時執行
-  `python scripts/privacy_gate.py scan-staged`；標準化公開 evidence JSON 另以
-  `--strict-evidence` 驗證。檢查通過不能取代 `git diff --cached` 人工審閱。
+1. **Orient**：只有「接手／繼續」任務才讀 `docs/status/current.md`。
+2. **Gate**：確認 current stage、next owner 與角色 entry；未開放就回報 blocker 並停止。
+3. **Load**：依 current handoff 只讀指定文件與章節；歷史只用 ID/SHA/Test ID 查詢。
+4. **Work**：只修改本角色 authority 與 active scope，驗證直接影響面。
+5. **Handoff**：各角色只更新下表允許的既有文件；由 Designer 在已確認的 gate transition 後
+   更新 `current.md`。對 USER 的回覆就是一般交接，不另建摘要文件。
 
-  **標題格式**：`[work_type][milestone]: [title]`
+## 寫入矩陣
 
-  | work_type | 用途 |
-  |---|---|
-  | `feat` | 新功能、新模組 |
-  | `fix` | Bug 修正 |
-  | `docs` | 文件新增或修改 |
-  | `test` | 測試新增或修改 |
-  | `refactor` | 重構（不改行為） |
-  | `chore` | 建置、工具、設定類 |
+| 角色 | 可更新的現行狀態 | 不直接更新 |
+|---|---|---|
+| Architect | `arch.md`、自己負責的 active review | `status/current.md`、design/development status |
+| Designer | `status/current.md`、`status/design.md`、Designer-owned authority/review | Developer status、Tester spec/evidence |
+| Developer | `status/development.md`、`src/`、`tests/`、自己負責的 active review | `status/current.md`、design/test authority |
+| Reviewer | 指定的 active review | `status/current.md` 與被審 authority（由 owner 修） |
+| Tester | current test spec、指定 active review、正式 evidence | `status/current.md`、design/development status |
 
-  範例：`feat[M3]: add GPIO button InputSource with debounce`、`docs[M2]: restore §3.4 required_kinds derivation`
+新檔只允許三種情況：新 authority 已由上游核准、`review-process.md` 要求的新 review round，
+或 USER／外部契約明確要求具唯一 ID 的交付物。其他 checkpoint、交接與結果更新既有文件；
+不得為同一狀態再建立 `*_summary`、`*_handoff`、`*_progress` 或另一份 ACK。
 
-  **日常溝通文件標題分類**：以 `docs` 作為文件異動的第一層分類，
-  以 milestone scope 區分範圍；涉及 PM、POC、審查或驗收往返時，title 必須以
-  下列固定 category 開頭，格式為
-  ``docs[M{x}]: <category> — <concise action>``。這讓日常溝通可由 Git log
-  篩選，而不與 `feat` / `fix` / `test` 的產品工作混淆。
+## 任務路由
 
-  | category | 用途 | 範例 |
-  |---|---|---|
-  | `handoff` | 收件、移交或歸檔外部輸入 | `docs[M4A]: handoff — receive Audio POC evidence` |
-  | `ack` | 接受、核准或確認外部輸入 | `docs[M4A]: ack — accept final reference package` |
-  | `review` | 設計、測試或跨角色審查回覆 | `docs[M4A]: review — resolve test-spec findings` |
-  | `response` | 回覆 PM、POC 或其他團隊的請求 | `docs[M4A]: response — answer scope request` |
-  | `plan` | 更新執行、驗收或交付計畫 | `docs[M4A]: plan — revise Tester execution handoff` |
-  | `evidence` | 記錄 candidate、驗收或調查證據 | `docs[M4A]: evidence — record candidate verification results` |
+| 任務 | 必要時才讀 |
+|---|---|
+| 建立、回覆或結案 review | [`review-process.md`](review-process.md) |
+| 實體／人工驗收、candidate、freeze、acceptance | [`candidate-process.md`](candidate-process.md) |
+| 準備 commit、tag 或其他 Git 交付 | [`git.md`](git.md) |
+| PM handoff／外部 delivery | [`../outsource/README.md`](../outsource/README.md) 與該筆 active 文件 |
+| 接手目前工作 | [`../status/current.md`](../status/current.md) 後再依角色路由 |
+| 一般實作／設計／測試 | 指定工作包、當前 milestone 章節與其直接引用 |
 
-  不屬於上述日常溝通的產品設計或一般文件，可直接使用簡潔 action title；不得以
-  `docs` 隱藏 source、dependency、config contract、runner 或 test 的實質變更，這些
-  仍應依實際工作類型使用 `feat`、`fix`、`test`、`chore` 或 `refactor`。
+## 權責與主要產出
 
-  **內容（Body）規範**：
-  - 使用英文條列式（`-`）描述修改內容或緣由。
-  - 全文 60 words 以內。
-  - 引用相關 Handoff ID / Finding ID（如 `OUT-M2-2026-005`）或 Review 單號。
+| 角色 | 主要權威範圍 |
+|---|---|
+| Architect | `docs/arch.md` |
+| Designer | `docs/implement/`、`docs/milestone.md`、`docs/milestones/` |
+| Tester | `docs/test_spec/`、正式驗收 evidence |
+| Developer | `src/`、`tests/`、`docs/status/development.md` |
+| Reviewer | architecture／design／milestone 的跨文件審查 |
 
-1. 目錄與權責映射
+`docs/reviews/` 只放進行中的跨角色 review；結案移至 `history/`。操作指令放
+`docs/runbooks/`。動態接手狀態放 `docs/status/`；外部往返與證據依
+`docs/outsource/README.md` 分流。
 
+## Pipeline
 
-docs/arch.md : [Architect] 架構契約與邊界
-
-docs/implement/ : [Designer] 技術設計與介面
-
-docs/model_spec.md & docs/display_spec.md : [Designer] 軟硬體能力基準與顯示規範
-
-docs/milestone.md : [Designer] 開發里程碑總覽與基礎原則
-
-docs/milestones/M{x}.md : [Designer] 各開發里程碑詳細規劃 (按階段拆分)
-
-docs/test_spec/test_spec_M{x}.md : [Tester] 各里程碑測試規範與驗收標準
-
-docs/reviews/dev_progress_M{x}.md : [Developer] 各階段估點拆包與進度 (舊有單據歸檔至 history/)
-
-docs/reviews/ : 跨角色審查單 (結案移至 history/)
-
-docs/outsource/pm_handoff/ : [Product Team] PM 提供的產品規劃方向、需求反饋與建議
-
-docs/outsource/references/ : [All Roles] 外部團隊（POC / 硬體廠商等）主動交付給 Core Team 的技術參考文件（contract、spec draft、capability matrix 等）；按團隊分子目錄（poc_audio/ poc_display/ poc_llm/）存放。Core Team 採用決定記錄於 deliveries/ ACK 文件，不在此修改原始內容。
-
-docs/outsource/deliveries/ : [All Roles] 開發團隊完成後交付給產品團隊的產出物
-
-docs/outsource/responses/ : [All Roles] 開發團隊針對 PM 需求的回應
-
-docs/outsource/evidence/ : [Tester] 驗收測試的日誌與證據
-
-src/ & tests/ : [Developer] 軟體代碼與自動化測試
-
-2. 產品需求與外部溝通 (PM Interaction)
-
-- 產品團隊負責審核與建議產品規劃方向，透過 `docs/outsource/pm_handoff/` 提供反饋，不會介入實際開發流程。
-- 團隊角色（如 Architect 或 Designer）需定期檢視 `pm_handoff/` 中的建議，以調整架構或規劃。
-- 當開發團隊完成需求或里程碑後，應將交付物、回應文件及測試證據分別放置於 `docs/outsource/deliveries/`、`docs/outsource/responses/` 與 `docs/outsource/evidence/` 供產品團隊查閱。
-- 內部開發依然遵循原有的五階段流水線（Pipeline）與審查單（Review）生命週期約束，確保獨立性與品質。
-
-3. 審查單 (Review) 生命週期約束
-
-檔案命名：docs/reviews/{Type}_{Round}.md (例: AR_review_I.md) 或含有階段的單據 (例: TR_dev_M1_I.md)
-
-AR_review: Reviewer -> Architect (架構審查)
-
-AR_impl: Designer -> Architect (架構無法實作)
-
-IR_review: Reviewer -> Designer (設計審查)
-
-IR_dev: Developer -> Designer (設計無法開發)
-
-MR_review: Reviewer -> Designer (Milestone 規劃審查)
-
-TR_spec_M{x}: Designer -> Tester (測試規範涵蓋率審查)
-
-TR_dev_M{x}: Tester -> Developer (測試驗收未通過，退回開發)
-
-CR_M{x}: Designer -> Developer (Tester 通過後，最終代碼對齊設計審查)
-
-YAML 標頭與狀態機：
-
----
-requestor: "[發起角色]"
-owner: "[負責修訂角色]"
-status: "[Open | Revised | Rejected | Resolved]"
----
-
-
-流轉規則：Requestor 發起 (Open) -> Owner 修訂主文件並回覆 (Revised) -> Requestor 審核若不通過 (Rejected) -> Owner 再修訂 (Revised)，如此反覆。直到 Requestor 通過 (Resolved) 後該輪結束，整輪單據移至 docs/reviews/history/ 歸檔。若日後有全新議題，再開立下一輪 (如 _III.md)。
-
-審查收斂規則：
-
-- Finding 必須分為 `Blocking` 與 `Advisory`。只有違反已核准契約／acceptance criteria、具安全或資料風險、造成跨模組不一致、假綠燈或高回歸風險者可阻擋；純風格、個人偏好、可選重構與非必要的重複測試不得阻擋。
-- 每個 Blocking finding 首次提出時，必須完整提供：契約或 test spec 依據、可驗證證據或最小重現、預期／實際結果、影響、建議修正方向與最低驗收條件。建議方向用來降低來回成本，但除非契約指定，不得限制 Owner 採用唯一實作。
-- Requestor 應盡量在首輪完成同一審查範圍內的問題盤點。複審以既有 finding、直接影響範圍與新 regression 為主，不得逐輪加入無關偏好或提高門檻。新 Blocking finding 僅能在有明確契約依據與風險時追加，並須記錄先前未能辨識的原因。
-- 通過標準以行為與風險覆蓋為準，不以 finding、test function、assertion 或文件篇幅數量判定。允許參數化、table-driven、既有測試擴充及其他等價證據；同一風險已被有效覆蓋時，不要求重複測試。
-- Advisory 應清楚標記且不得影響 `Resolved`。Owner 可選擇本輪處理或另行記錄；不得因未採用 Advisory 而將狀態改為 `Rejected`。
-
-4. 五階段流水線 (Pipeline)
-
-[A] 架構：Architect 寫 arch.md -> Reviewer 審查通過 (AR_review)。
-
-[B] 設計：Designer 寫 implement/ (若架構矛盾發起 AR_impl) -> Reviewer 審查通過 (IR_review)。
-
-[C] 規劃：Designer 寫 milestone.md -> Reviewer 審查通過 (MR_review) -> Tester 依此寫 docs/test_spec/test_spec_M{x}.md -> Designer 審查 (TR_spec_M{x})，確認測試 100% 覆蓋設計；若 milestone 含實體／人工驗收，test spec 與 runbook 必須定義 portable / target scope、candidate SHA、bounded timeout、target preflight及最小 evidence 欄位，簽核後進入 [D]。
-
-[D] 開發：Developer 寫 docs/reviews/dev_progress_M{x}.md 估點拆包 -> 撰寫 src/ 與 tests/ (若遇阻發起 IR_dev)。
-
-[E] 驗收與提交：無實體／人工 gate 的 milestone 沿用「Tester PASS -> Designer 最終 Code/Test Review -> USER 確認 -> commit」。含實體／人工 gate 的 milestone 必須依下列候選流程執行。Pi 耦合工作先在隔離的 target-device 開發 checkout 收斂，再單次同步回工作站建立 candidate；working-tree diagnostic 與正式 evidence 必須嚴格分離：
-
-1. Developer convergence loop：先依test spec、工作包與直接regression記錄affected scope；失敗可擴充直接影響範圍，不得為取得綠燈而縮減。若受影響行為與target無關，在團隊指定的單一主要Python minor執行affected unit / integration tests。若涉及Pi硬體、原生相依、部署runtime、裝置權限、效能或資源行為，Pi是主要開發working tree；Developer必須直接在隔離checkout修正，反覆執行affected portable tests與target diagnostic至全綠。收斂後以記錄的base SHA、task paths與patch SHA-256，將單一tracked-only patch同步至同一base、相關路徑乾淨的工作站repo；兩端patch bytes / digest必須相同，工作站只再跑一次主要Python minor的affected portable tests。同步後若仍修改protected input，原Pi diagnostic失效並回到本步驟；不得讓兩端形成分叉修正。
-2. Provisional candidate snapshot：Designer核對candidate scope後，展示完整commit message與檔案，取得USER明確確認才建立candidate commit。它只提供步驟3可測的完整SHA，不是freeze或acceptance。
-3. Tester portable sign-off：只在準備或更新frozen candidate時，對外部指定的provisional SHA平行執行正式支援Python minor matrix；portable命令排除`rpi` marker，所有命令有bounded timeout，結果為0 Fail / Blocked / Skip / XFail。一般development push只跑主要版本與affected tests。
-4. Designer candidate review / freeze：聚焦設計對齊與高風險regression protection；Blocking全數解決後，記錄同一provisional SHA為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、candidate / acceptance runner或candidate workflow的異動撤銷freeze，並由步驟1重新收斂、步驟2建立新candidate、步驟3重跑matrix；branch名稱只作診斷資訊。
-5. Target preflight：Tester 或受委託 operator 驗證外部指定SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config checksum、portable matrix完整及run output未使用。Preflight不產生正式PASS card，也不要求獨立freeze manifest或多層checksum chain。
-6. Target acceptance / debug：正式acceptance以全新且不可重用的`acceptance/<run-id>/`完整執行target suite並保存result與raw log。Developer 在 candidate 前完成的 Pi diagnostic 不得複製、改名或合併為正式PASS；candidate 後也不要求 Developer 例行返回 Pi 驗證。Tester 的 exact-SHA acceptance 若失敗，可另開隔離 checkout 回步驟1進入 Developer Pi convergence loop；修正protected input時依序重走步驟1、2、3。只修正實體接線時可保留同一frozen SHA，但以新run ID重走preflight與完整acceptance。
-7. Tester final reconciliation：核對portable matrix與target result指向同一SHA，正式target result使用同一run ID；人工測項另在既有report / card記錄run ID、Test ID、operator、時間與Pass / Fail，再作milestone判定。
-8. Designer final confirmation：只確認 candidate review 後沒有 candidate-affecting 變更且 evidence 對齊；若有變更即撤銷 freeze，不以第二輪偏好審查改動已通過候選。通過後才標記 Accepted；provisional candidate commit 可成為最終 milestone commit，不要求為 acceptance evidence 再改 product tree。
-
-### 4.1 Candidate gate 的 owner、回退與證據
-
-| Gate | Owner | Entry | Exit | 失敗回退 | Evidence |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| Contract / static | Designer + Tester | design / test spec 已簽核 | schema / type / Test ID 檢查全綠 | 回 Designer / Developer | 既有測試輸出 |
-| Developer convergence loop | Developer | 工作包可執行；已判定是否 Pi 耦合 | Pi 耦合：Pi affected portable + target diagnostic 全綠、同 base/task paths/patch digest 單次同步、工作站 affected portable 全綠；非耦合：工作站 affected tests 全綠 | 留在單一 Developer loop；同步後變更 protected input 則 Pi 結論失效 | local log + Pi/workstation patch identity；非 acceptance |
-| Provisional candidate snapshot | Designer；commit需 USER | Developer convergence完成；candidate scope已核對 | 產生未freeze的完整SHA與clean protected paths | USER未同意則不commit；內容變更須建立新candidate | commit file list + SHA |
-| Portable candidate matrix | Tester | 外部指定provisional SHA | 每個正式 Python minor 0 Fail / Blocked / Skip / XFail，且 timeout 未觸發 | 回Developer convergence；修正後依新candidate重跑完整matrix | 每版本result / raw log + matrix index |
-| Candidate review / freeze | Designer | portable matrix完整 | review無Blocking；同一provisional SHA登記為frozen | finding造成protected input變更即回Developer convergence、建立新candidate、重跑portable gate | review記錄 + SHA |
-| Target preflight | Tester / operator | frozen SHA + 新 acceptance run ID | SHA、clean paths、runtime、hardware / artifact / config checksum與portable index吻合 | 不啟動 acceptance；修正 identity 或撤銷 freeze | 單一`preflight.json` |
-| Target acceptance | Tester / operator | preflight PASS | target suite 一次完整結束 | 保存 FAIL bundle；code 修正用新 SHA / 新 run 重啟 | `acceptance/<run-id>/` |
-| Final reconciliation | Tester；Designer confirmation | target run 完整 | matrix與target SHA一致；正式result的run ID一致 | 缺證據維持 Fail / Blocked，不拼接 | milestone sign-off + result / raw log |
-
-每個正式命令保存一份最小result：run ID、完整SHA、完整命令、平台、Python、開始／結束、exit code、status與raw log path；preflight另記Git外artifact / config checksum。Branch只作診斷資訊。人工測項只需在既有report / card記錄run ID、Test ID、operator、時間與Pass / Fail，不要求通用READY、nonce、producer PID或獨立record command。
+Architecture → design → milestone/test planning → development → verification/acceptance。
+每一任務只執行所處階段；遇到上游矛盾，依 `review-process.md` 回到權威 owner，
+不得由下游角色私自改契約。沒有實體／人工 gate 時，Tester PASS 後由 Designer 做
+最終對齊確認；有此類 gate 時改走 `candidate-process.md`。

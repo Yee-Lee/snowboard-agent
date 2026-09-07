@@ -53,7 +53,7 @@ Performance target miss只發現差距，按USER決策可調整，不代表no-go
 原結果保留，未裁決前不假標PASS。
 
 POC request：
-[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/archive/llm/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
 prepared in Core，未交付外部／未授權實體執行。
 Tester經TR_spec_M4B_IV寫自動/人工delta，Designer不修改Tester-owned spec。
 本回覆一次列出五項與直接影響面；後續複審以本範圍及新regression收斂。

@@ -25,7 +25,7 @@ public product contract與POC repository皆未改變。
 | :--- | :--- |
 | `scripts/m4_memory_preflight.py` | 包住一條既有smoke command，以bounded sampling收集system與process-group memory、處理timeout並收斂child process group |
 | `tests/test_m4_memory_preflight.py` | injected snapshot regression；不需Pi或真實POC artifact |
-| `docs/test_spec/test_spec_M4.md` | `M4-REG-001`平台、owner、命令、判定與非Gate邊界 |
+| `docs/test_spec/test_spec_M4_common.md` | `M4-REG-001`平台、owner、命令、判定與非Gate邊界 |
 | `docs/milestones/M4.md` | 固定實測順序及P9 / P10B不被取代 |
 | Audio / LLM M4 contracts | 固定POC與Core Tester責任，並消除M4B-P9的PSS / RSS歧義 |
 

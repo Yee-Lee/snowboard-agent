@@ -28,10 +28,10 @@ Core目前只定義M4 ~ M7功能milestone，並以M4→M5→M6→M7串行；尚�
 ## 驗收方式
 
 - Core在單一候選commit提交：
-  - Delivery : `docs/outsource/deliveries/DELIVERY-ALPHA-BETA-ROADMAP-001.md`
+  - Delivery : `docs/outsource/deliveries/archive/project/DELIVERY-ALPHA-BETA-ROADMAP-001.md`
   - Response : `docs/outsource/responses/OUT-ROADMAP-2026-001.md`
   - 新增ALPHA / BETA權威規劃文件，建議為 `docs/milestones/ALPHA.md` 與 `docs/milestones/BETA.md` ；若採其他路徑，response須說明唯一權威位置。
-  - 同步修訂 `docs/milestone.md` 、 `docs/milestones/M4.md` 、 `M5.md` 、 `M6.md` 、 `M7.md` 與 `docs/reviews/milestone_progress.md` ，使依賴、entry / exit、排除、owner、evidence、exact-SHA規則與狀態一致。
+  - 同步修訂 `docs/milestone.md` 、 `docs/milestones/M4.md` 、 `M5.md` 、 `M6.md` 、 `M7.md` 與 `docs/status/archive/M4/milestone_progress_legacy.md` ，使依賴、entry / exit、排除、owner、evidence、exact-SHA規則與狀態一致。
   - 提供M4→ALPHA、ALPHA→M5、M7→BETA的Requirement / future Test ID trace；本輪只做Design Ready規劃，不提前建立Developer工作包或實作Alpha / Beta code。
 - Response須列comparison baseline、完整candidate SHA、architecture-change聲明、逐項修改定位、文件檢查結果、尚待User / Designer / Architect / Tester決定的門檻及未完成事項。
 

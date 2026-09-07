@@ -1,6 +1,6 @@
 # Snowboard 測試規格總論 ( test_spec.md )
 
-本文件是角色間的長期驗收交接契約：將 `arch.md`、`implement/`、適用的 `display_spec.md` / `model_spec.md` 與 `milestone.md` 產品契約轉成可觀察、可重複的驗收條件。本文件維護跨里程碑共用的原則、fixture 定義與回歸策略；各里程碑測項見 `test_spec/` 子目錄下的子檔。測試執行狀態、阻擋與證據索引不寫在本文件，由 Tester 維護於 `reviews/test_progress.md`；Designer 只在 `reviews/milestone_progress.md` 摘要 gate 與階段結果。
+本文件是角色間的長期驗收交接契約：將 `arch.md`、`implement/`、適用的 `display_spec.md` / `model_spec.md` 與 `milestone.md` 產品契約轉成可觀察、可重複的驗收條件。本文件維護跨里程碑共用原則；各測項見 `test_spec/` 子檔。測試執行狀態與阻擋留在 active review／evidence，只有 gate 與下一角色摘要到 `status/current.md`。
 
 ---
 
@@ -10,7 +10,7 @@
 
 `arch.md` → `implement.md / implement/` → `display_spec.md / model_spec.md（適用時）` → `milestone.md` → `test_spec.md`
 
-本文件不得新增、刪除或改寫上游產品行為。若測試需要的可觀察行為未定義、互相矛盾或無法穩定驗證，Tester 交回 Designer；測試阻擋與證據先記於 `reviews/test_progress.md`，跨角色 gate 再由 Designer 摘要到 `reviews/milestone_progress.md`；涉及架構邊界或跨模組契約時再交 Architect。動態 finding、gate 與完成快照不寫入本文件。
+本文件不得新增、刪除或改寫上游產品行為。若測試需要的可觀察行為未定義、互相矛盾或無法穩定驗證，Tester 以 active `TR_spec`／`TR_dev` 交回；跨角色 gate 只摘要到 `status/current.md`。動態 finding、執行狀態與完成快照不寫入本文件。
 
 ### 1.2 子檔案索引
 
@@ -21,7 +21,10 @@
 | [test_spec_M1.md](test_spec/test_spec_M1.md) | M1 純軟體核心 | 完成 |
 | [test_spec_M2.md](test_spec/test_spec_M2.md) | M2 Mock 對話垂直切片 | 完成 |
 | [test_spec_M3.md](test_spec/test_spec_M3.md) | M3 Raspberry Pi HAL 與硬體 bring-up | 完成 |
-| [test_spec_M4.md](test_spec/test_spec_M4.md) | M4 本機 AI 語音主線 | 部分完成（017 memory preflight） |
+| [test_spec_M4.md](test_spec/test_spec_M4.md) | M4 路由 | M4A Accepted；M4B MVA spec deferred |
+| [test_spec_M4_common.md](test_spec/test_spec_M4_common.md) | M4 shared memory preflight | 完成；diagnostic only |
+| [test_spec_M4A.md](test_spec/test_spec_M4A.md) | M4A Audio Gate 3 | Accepted、唯讀 |
+| `test_spec_M4B.md` | M4B LLM Gate 3 | 尚未建立；等待 `TR_spec_M4B_IV` activation |
 | test_spec_M5.md | M5 外部訊息與工具 | 待補 |
 | test_spec_M6.md | M6 語音喚醒、視覺輸入與整體收斂 | 待補 |
 | test_spec_M7.md | M7 Display UX 完整化 | 待補 |
@@ -55,7 +58,7 @@
 - **Pass**：指定平台、fixture、刺激與全部可觀察結果一致，且所需證據完整。
 - **Fail**：已執行但任一可觀察結果不符，或測試本身無法證明其宣稱的風險。
 - **Blocked**：因缺少指定平台 / 硬體、上游契約矛盾或外部相依而無法執行或判定。Blocked 不等於 Pass。
-- **Developer 自驗成功只代表「待驗收」**；正式判定由 Tester 寫入 `reviews/test_progress.md`，再由 Designer 摘要到 milestone dashboard。
+- **Developer 自驗成功只代表「待驗收」**；正式判定寫入 active `TR_dev`／result evidence，gate 與下一角色只摘要到 `status/current.md`。
 
 ### 1.5 測試價值與範圍門檻
 

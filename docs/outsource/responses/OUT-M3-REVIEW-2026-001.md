@@ -74,7 +74,7 @@
 **Disposition**: Prepared；external exact-SHA submission remains Blocking until the user-approved commit exists
 
 - 本 Response 文件為 `docs/outsource/responses/OUT-M3-REVIEW-2026-001.md`
-- Delivery：`docs/outsource/deliveries/DELIVERY-M3-DESIGN-TEST-001.md`
+- Delivery：`docs/outsource/deliveries/archive/project/DELIVERY-M3-DESIGN-TEST-001.md`
 - Evidence：`docs/outsource/evidence/DELIVERY-M3-DESIGN-TEST-001/README.md`（Pi cards 全部 `Pending`）
 - 本輪為 design / test-spec only；Implementation SHA = `N/A - design/test-spec only`
 - 未執行 Pi 項目一律標 `Pending`，不宣稱 implementation 或 milestone Accepted

@@ -2,11 +2,11 @@
 
 ## Current M4 disposition — 2026-09-06
 
-M4A維持Accepted。M4B DELIVERY-025 report已收到，Step 6 pending；[002 design](../implement/m4b_mva_002_decisions.md)
-與[efficiency request](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)已完成並交付，
-[receipt](../outsource/deliveries/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md)開啟M4B-MVA-EFFICIENCY。
+M4A維持Accepted。M4B DELIVERY-025 report已收到，Step 6 pending；[002 design](../../../implement/m4b_mva_002_decisions.md)
+與[efficiency request](../../../outsource/deliveries/active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)已完成並交付，
+[receipt](../../../outsource/deliveries/active/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md)開啟M4B-MVA-EFFICIENCY。
 兩個POC gate、affected review與profile freeze阻擋M4B implementation/spec activation。
-[M4C](../milestones/M4C.md)與[ALPHA](../milestones/ALPHA.md)規劃已更新：ALPHA前完成整機功能，
+[M4C](../../../milestones/M4C.md)與[ALPHA](../../../milestones/ALPHA.md)規劃已更新：ALPHA前完成整機功能，
 ALPHA作客觀性能／成熟度驗收，Camera/look在M6。啟動方式仍為M4C entry決策。
 下方早期狀態只作歷史，不覆蓋本節。
 
@@ -121,7 +121,7 @@ M4 包含 M4a Audio、M4b LLM、M4c Session Display。M4a 與 M4b 可依各自 A
 | M4a Generic Scaffold | `IMPLEMENTED` | `9f1f32e`完成NullASRAdapter、NullTTSAdapter、factory、config placeholders、RM ResourceKey與portable regression；此scaffold不宣稱real engine Gate 3 |
 | M4a Audio | `ACCEPTED — CORE GATE 3 COMPLETE` | Accepted product candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`；Tester portable 3.11／3.12／3.13各171 passed，Pi run `m4a-6c3ba954-20260829-pi01` 7/7 passed、network attempts 0、cleanup 0，16-row inheritance Pass。Designer final confirmation見`CR_M4_II`。M4A+M4B shared resource row等待Accepted LLM input，不回退M4A Accepted。 |
 | M4b LLM | `DELIVERY-025 RECEIVED — 002 EFFICIENCY GATE OPEN` | 等待POC comparison、Designer profile採用、affected review與TR_spec_M4B_IV；coupled candidate未放行。 |
-| M4c Session Display | `PLAN COMPLETE / ENTRY BLOCKED` | [M4C plan](../milestones/M4C.md)已定義整機、streaming、Display、reset與組合資源；等待M4B與啟動方式決策。 |
+| M4c Session Display | `PLAN COMPLETE / ENTRY BLOCKED` | [M4C plan](../../../milestones/M4C.md)已定義整機、streaming、Display、reset與組合資源；等待M4B與啟動方式決策。 |
 
 ### M4a Audio Contract Relay Flow（2026-08-17 修訂）
 

@@ -9,12 +9,12 @@
 - **Reviewed Audio POC baseline**: `dev_audio_m2` / `aad41ce13333bdf94bf6d6ab0996f83982f9f0b1`
 - **Accepted Audio POC plan**: `poc_audio/deliveries/RESP-AUDIO-M4A-GATE-PLAN-001.md` / `dev_audio_m2` / `5d4086d2ae9011c559b10012b55414a87a3a8522`
 - **Initial Core response commit**: `d81601789ef40aeccd01dd8d4b9db67a01d76163`
-- **Core planning ACK**: [`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001`](../deliveries/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md) / `dev_agent_m4` / `6fe09257304a2eb56723a5e8e8d4ad94d9f41963`
+- **Core planning ACK**: [`DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001`](../deliveries/archive/audio/DELIVERY-AUDIO-POC-M4A-G1A-PLANNING-ACK-001.md) / `dev_agent_m4` / `6fe09257304a2eb56723a5e8e8d4ad94d9f41963`
 - **Architecture change**: `No`
 
 ## 1. 結論與交付
 
-Core已修訂既有權威contract [`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../deliveries/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)、[`M4.md`](../../milestones/M4.md)及[`milestone_progress.md`](../../reviews/milestone_progress.md)，沒有建立重複contract addendum。Audio POC已回交authoritative Gate plan；Core接受該plan並以獨立planning ACK記錄D01～D05與Gate 1A授權邊界。
+Core已修訂既有權威contract [`DELIVERY-AUDIO-POC-M4A-CONTRACT-001`](../deliveries/archive/audio/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md)、[`M4.md`](../../milestones/M4.md)及[`milestone_progress.md`](../../status/archive/M4/milestone_progress_legacy.md)，沒有建立重複contract addendum。Audio POC已回交authoritative Gate plan；Core接受該plan並以獨立planning ACK記錄D01～D05與Gate 1A授權邊界。
 
 已核對Audio POC工作目錄乾淨；`origin/dev_audio_m2`目前為`756ded69dd7b4661fcbac272d4d234c387890fc8`，且包含plan commit `5d4086d2ae9011c559b10012b55414a87a3a8522`。Core relay副本與POC authoritative plan的SHA-256同為`2c186c6f777c830c984bd476e7cb8a8f6e977110875b50bce732c18e2f8d2810`；POC保存的contract也與Core revision checksum一致。Core G1A ACK已由`6fe09257304a2eb56723a5e8e8d4ad94d9f41963` durable commit，因此016兩項行政closure條件均已完成。
 

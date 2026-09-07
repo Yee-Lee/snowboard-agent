@@ -3,11 +3,11 @@
 ## Current M4B disposition — 2026-09-06
 
 M4A維持Accepted。DELIVERY-025 report已收到；001 Step 5完成，Step 6 profile採用pending。
-Designer已完成[002 proposal](../implement/m4b_mva_002_decisions.md)及剩餘控制設計，並將
-[efficiency request](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
-交付LLM，見[receipt](../outsource/deliveries/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md)。
+Designer已完成[002 proposal](../../../implement/m4b_mva_002_decisions.md)及剩餘控制設計，並將
+[efficiency request](../../../outsource/deliveries/active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
+交付LLM，見[receipt](../../../outsource/deliveries/active/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md)。
 M4B-MVA-POC與M4B-MVA-EFFICIENCY均Open；POC採用、affected architecture/reviewer review及
-profile freeze阻擋Tester／Developer進場。[M4C](../milestones/M4C.md)與ALPHA規劃已完成；
+profile freeze阻擋Tester／Developer進場。[M4C](../../../milestones/M4C.md)與ALPHA規劃已完成；
 啟動方式仍為M4C entry決策。下方較早狀態與R1 approval只作歷史，不覆蓋本節。
 
 
@@ -17,22 +17,22 @@ profile freeze阻擋Tester／Developer進場。[M4C](../milestones/M4C.md)與ALP
 
 | 章節 | 標題 | 狀態 | 負責人 | 備註 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Ch 01** | [ch01_events.md](../implement/ch01_events.md) | Done | Designer | 事件 dataclass 定義 |
-| **Ch 02** | [ch02_contracts.md](../implement/ch02_contracts.md) | Done | Designer | 跨層貫穿契約 |
-| **Ch 02a** | [ch02a_core_hal.md](../implement/ch02a_core_hal.md) | Done | Designer | core HAL Protocol |
-| **Ch 02b** | [ch02b_workers.md](../implement/ch02b_workers.md) | Done | Designer | worker 契約與 library adapter |
-| **Ch 03** | [ch03_event_bus.md](../implement/ch03_event_bus.md) | Done | Designer | Event Bus 實作 |
-| **Ch 04** | [ch04_state_manager.md](../implement/ch04_state_manager.md) | Done | Designer | State Manager 實作 |
-| **Ch 05** | [ch05_resource_manager.md](../implement/ch05_resource_manager.md) | Done | Designer | Resource Manager 實作 |
-| **Ch 06** | [ch06_cancel.md](../implement/ch06_cancel.md) | Done | Designer | Cancel 三級收斂實作 |
-| **Ch 07** | [ch07_external_message.md](../implement/ch07_external_message.md) | Done | Designer | External message buffer |
-| **Ch 08** | [ch08_display_arbiter.md](../implement/ch08_display_arbiter.md) | Done | Designer | Display 仲裁層協定 |
-| **Ch 09** | [ch09_action_payload.md](../implement/ch09_action_payload.md) | Done | Designer | LLMResponse action_payload schema |
-| **Ch 10** | [ch10_config.md](../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
-| **Ch 11** | [ch11_error_logging.md](../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
-| **M4a production** | [ch_m4a_audio_production.md](../implement/ch_m4a_audio_production.md) | Accepted | Designer | Core candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成Tester exact-SHA驗收與Designer final confirmation |
-| **M4b production** | [ch_m4b_llm_production.md](../implement/ch_m4b_llm_production.md) / [002](../implement/m4b_mva_002_decisions.md) | 002 proposal delivered；adoption/review pending | Designer | DELIVERY-025收到；等待efficiency POC、profile採用、affected review與TR_spec_M4B_IV，coupled candidate尚未放行 |
-| **Child Protocol** | [protocol.md](../protocol.md) | Audio v1 approved；LLM v2 MVA design frozen | Designer | R1 approval是歷史；M4B-MVA execution/profile identity待POC與Step 6採用 |
+| **Ch 01** | [ch01_events.md](../../../implement/ch01_events.md) | Done | Designer | 事件 dataclass 定義 |
+| **Ch 02** | [ch02_contracts.md](../../../implement/ch02_contracts.md) | Done | Designer | 跨層貫穿契約 |
+| **Ch 02a** | [ch02a_core_hal.md](../../../implement/ch02a_core_hal.md) | Done | Designer | core HAL Protocol |
+| **Ch 02b** | [ch02b_workers.md](../../../implement/ch02b_workers.md) | Done | Designer | worker 契約與 library adapter |
+| **Ch 03** | [ch03_event_bus.md](../../../implement/ch03_event_bus.md) | Done | Designer | Event Bus 實作 |
+| **Ch 04** | [ch04_state_manager.md](../../../implement/ch04_state_manager.md) | Done | Designer | State Manager 實作 |
+| **Ch 05** | [ch05_resource_manager.md](../../../implement/ch05_resource_manager.md) | Done | Designer | Resource Manager 實作 |
+| **Ch 06** | [ch06_cancel.md](../../../implement/ch06_cancel.md) | Done | Designer | Cancel 三級收斂實作 |
+| **Ch 07** | [ch07_external_message.md](../../../implement/ch07_external_message.md) | Done | Designer | External message buffer |
+| **Ch 08** | [ch08_display_arbiter.md](../../../implement/ch08_display_arbiter.md) | Done | Designer | Display 仲裁層協定 |
+| **Ch 09** | [ch09_action_payload.md](../../../implement/ch09_action_payload.md) | Done | Designer | LLMResponse action_payload schema |
+| **Ch 10** | [ch10_config.md](../../../implement/ch10_config.md) | Done; M4a extension reviewed | Designer | 基礎Config schema與M4a real ASR/TTS strict profile已獲Reviewer核准 |
+| **Ch 11** | [ch11_error_logging.md](../../../implement/ch11_error_logging.md) | Done | Designer | 錯誤處理與 logging 慣例 |
+| **M4a production** | [ch_m4a_audio_production.md](../../../implement/ch_m4a_audio_production.md) | Accepted | Designer | Core candidate `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`已完成Tester exact-SHA驗收與Designer final confirmation |
+| **M4b production** | [ch_m4b_llm_production.md](../../../implement/ch_m4b_llm_production.md) / [002](../../../implement/m4b_mva_002_decisions.md) | 002 proposal delivered；adoption/review pending | Designer | DELIVERY-025收到；等待efficiency POC、profile採用、affected review與TR_spec_M4B_IV，coupled candidate尚未放行 |
+| **Child Protocol** | [protocol.md](../../../protocol.md) | Audio v1 approved；LLM v2 MVA design frozen | Designer | R1 approval是歷史；M4B-MVA execution/profile identity待POC與Step 6採用 |
 
 ## 跨章節 Gate 與備註
 
@@ -156,6 +156,6 @@ real-child recovery、composition/RM與product preflight，並完成T1～T12終�
 
 ### Developer — active：建立M4A-WP-09～13
 
-Developer現在更新`docs/reviews/dev_progress_M4.md`，估點並執行`M4A-WP-09`～
+Developer現在更新`docs/status/archive/M4/dev_progress_M4_legacy.md`，估點並執行`M4A-WP-09`～
 `M4A-WP-13`。首個production implementation仍只跑主要Python minor與affected tests；
 建立provisional candidate commit前另依workflow取得USER確認。

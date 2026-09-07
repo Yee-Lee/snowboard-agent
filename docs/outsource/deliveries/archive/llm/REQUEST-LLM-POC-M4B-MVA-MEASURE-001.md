@@ -5,7 +5,7 @@
 - Intended owner: LLM POC Team；需要Audio parity時由POC協調Accepted Audio package
 - Status: FROZEN FOR DELIVERY / REVIEWER PASS / NOT DELIVERED
 - Work / baseline / gate: M4B-MVA / M4B-MVA-001 / M4B-MVA-POC
-- Basis: [M4B-MVA design](../../implement/ch_m4b_llm_production.md)、IR_dev_M4B_III
+- Basis: [M4B-MVA design](../../../../implement/ch_m4b_llm_production.md)、IR_dev_M4B_III
 - USER direction: 工程量測優先POC；性能門檻可修訂，miss不代表放棄整個計畫。
 
 ## 1. Purpose and responsibility
@@ -15,7 +15,7 @@ Core固定產品語意与首選semantic text/end輸出；POC不得自行決定Re
 Developer不承擔參數試錯，Tester不反覆執行探索；POC不取代Core exact-SHA acceptance。
 本計畫與arch/design一同由Reviewer審查，Designer定版後才交付；交付使gate Open。
 POC依定版範圍建立runner、凍結執行snapshot後量測，無額外常規plan再授權gate。
-七步流程及release條件見[M4B-MVA gate](../../milestones/M4B_MVA.md)。
+七步流程及release條件見[M4B-MVA gate](../../../../milestones/M4B_MVA.md)。
 回交結果只有經Designer審核／採用並明確解除gate，Developer／Tester才能進場。
 本文件未複製至外部repo，無執行/發布/跨repo寫入授權。
 

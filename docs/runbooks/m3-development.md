@@ -100,7 +100,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -m 'not rpi'
 
 下列 candidate 要求只約束正式驗收，不得用來禁止 Developer 在 candidate 前於隔離的
 Pi 開發 checkout 修正。若日後有 M3 target-coupled 修正，必須先依
-[`workflow.md`](../roles/workflow.md) 的 Developer convergence loop，在 Pi 直接修正並跑完
+[`candidate-process.md`](../roles/candidate-process.md) 的 Developer convergence loop，在 Pi 直接修正並跑完
 affected portable tests與target diagnostic；以相同base/task paths/patch digest單次同步
 回工作站且 affected portable tests 再通過後，才建立 candidate 並進入正式手冊。
 

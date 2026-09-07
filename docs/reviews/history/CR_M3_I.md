@@ -191,7 +191,7 @@ RPI-NATIVE、Tester sign-off 或 Designer resolution 已完成。
 - delivery README 同步標示 Pending；`docs/runbooks/m3_rpi_validation.md` 詳列
   junior developer 的 20-card 刺激、PASS/FAIL 條件、log/JUnit、人工 checklist、
   bundle 檢查與交回 Tester 流程。
-- `docs/reviews/milestone_progress.md` 為 Designer-owned，現有 USER/Designer
+- `docs/status/archive/M4/milestone_progress_legacy.md` 為 Designer-owned，現有 USER/Designer
   working-tree 修改未由 Developer 覆寫；`docs/test_spec/test_spec_M3.md` 與
   `docs/outsource/pm_handoff/README.md` 亦依權責保留，待 Tester / Designer 在
   exact-SHA 重驗後更新。M3 目前不得標為 Accepted / Closed。

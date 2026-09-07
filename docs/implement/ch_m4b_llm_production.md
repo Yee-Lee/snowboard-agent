@@ -331,7 +331,7 @@ Designer已完成Step 3定版；數值由POC產生再由Designer於Step 6採用�
 
 ## 11. POC work package
 
-[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+[REQUEST-LLM-POC-M4B-MVA-MEASURE-001](../outsource/deliveries/archive/llm/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
 屬M4B-MVA-001；沿用既有LLM POC團隊/repository，必要時協調Audio。
 工作包已完成Reviewer審查、Designer定版與Step 4交付；receipt見M4B-MVA gate §4。
 POC依定版範圍執行，只有Designer審核並明確解除M4B-MVA-POC才容許Developer／Tester進場；

@@ -38,7 +38,7 @@ USER在Tester第二次submission後明確指示「剩下的你自己補完，不
 
 `Resolved — 100% planned M4a Gate 3 coverage approved.`
 
-TR-M4A-001～003均已關閉。Developer現在可先更新`docs/reviews/dev_progress_M4.md`，
+TR-M4A-001～003均已關閉。Developer現在可先更新`docs/status/archive/M4/dev_progress_M4_legacy.md`，
 建立M4A-WP-09～13估點與工作包，再依test spec實作；不得把尚未執行的Pi／combined
 `Pending`誤作M4a acceptance。
 
@@ -235,7 +235,7 @@ Tester可用table-driven或現有測試擴充，不要求每個Test ID一個func
 
 ### TR-M4A-001 [Blocking] Candidate命令與evidence schema偏離既有runner
 
-- **契約依據**：`docs/runbooks/candidate_hardware_gate.md` §1、§3、§4及`docs/roles/workflow.md` §4要求同一外部candidate SHA依序執行`candidate_gate.py portable`三版本、`matrix`、`preflight`與`accept`，保存既有runner result及raw log。
+- **契約依據**：`docs/runbooks/candidate_hardware_gate.md` §1、§3、§4及`docs/roles/candidate-process.md`要求同一外部candidate SHA依序執行`candidate_gate.py portable`三版本、`matrix`、`preflight`與`accept`，保存既有runner result及raw log。
 - **實際證據／根因**：`test_spec_M4.md`「Candidate SHA與Evidence」自行定義`run_id=acceptance/<run-id>/`、uppercase status、flat `python_version`／`start_time`／`end_time`／`raw_log_path`，命令又直接把`--timeout`、`--run-id`及`--candidate-sha`傳給pytest。現有`scripts/candidate_gate.py`要求run ID是3–128字元safe token，使用`--timeout-seconds`，並輸出nested `python`、`started_at_utc`、`ended_at_utc`、`raw_logs`、`Pass|Fail`、JUnit及`result.json`；本環境`pytest --help`亦沒有上述三個test-spec參數。
 - **預期／實際／影響**：預期是單一既有runner contract；實際規格要求另一套不存在的CLI與schema。Developer照規格實作會直接遇到argument error，或另造平行runner，portable matrix／Pi preflight因欄位不相容而無法驗證，形成不可執行gate或假綠燈。
 - **首選修法**：刪除直接pytest命令與平行result schema，逐字採用runbook的`portable`、`matrix`、`preflight`、`accept` command shapes。`run_id`只保存safe token，`acceptance/<run-id>/`是output directory；正式portable必須對同一SHA/run ID完整跑3.11、3.12、3.13後建立matrix index。各Test ID的result card只能擴充測項欄位，不得改名或取代runner既有identity／time／status／raw-log欄位；`Pending`只表示尚未執行的規格狀態，不可冒充正式runner Pass。

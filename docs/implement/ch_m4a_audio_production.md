@@ -274,7 +274,7 @@ Tester在同一產品candidate完成Gate 3執行後，使用該generator產生�
 | M4A-WP-12 | config/factory/composition/RM recovery wiring | strict config、lazy import、ASR/TTS recovery barrier regressions |
 | M4A-WP-13 | Gate 3 runner + inheritance generator/template + offline/resource/notice support | generator與schema regression全綠，same-SHA inputs ready for Tester；不寫正式evidence |
 
-Developer先更新`docs/reviews/dev_progress_M4.md`估點與狀態，再修改`src/`/`tests/`。Reviewer通過本設計且Designer簽核Tester revised `test_spec_M4.md`之前，不進入production implementation。
+M4A 開發時 Developer 先更新 `docs/status/development.md`；本階段現已 Accepted。其驗收權威為 `docs/test_spec/test_spec_M4A.md`，舊工作包快照保留於 `docs/status/archive/M4/dev_progress_M4_legacy.md`。
 
 ## 12. Completion boundary
 

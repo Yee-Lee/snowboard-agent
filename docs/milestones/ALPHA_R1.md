@@ -46,7 +46,7 @@ candidate identity；所有 gate 仍綁定 branch 診斷資訊與完整 SHA。
 ## 2. Audio POC outcome contract 與收件
 
 Core contract 為
-`docs/outsource/deliveries/DELIVERY-AUDIO-POC-ASR-PRODUCT-R1-CONTRACT-001.md`。它只要求
+`docs/outsource/deliveries/archive/audio/DELIVERY-AUDIO-POC-ASR-PRODUCT-R1-CONTRACT-001.md`。它只要求
 Audio POC 回答：
 
 > 是否有明確、可重現的證據，證明新 ASR pipeline 在產品相關限制下可行，且值得繼續

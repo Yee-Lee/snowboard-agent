@@ -44,7 +44,7 @@ Candidate SHA 待本輪文件修訂 commit 後由 PM 以 branch / 完整 HEAD SH
 | `docs/milestones/M4.md` §6.2 | Gate table 新增 ALPHA entry 與 M5 entry 說明（ALPHA Accepted 為 M5 entry 前提） |
 | `docs/milestones/M5.md` §7.2 | entry 依賴從「M4 exact SHA」改為「ALPHA Accepted exact SHA」 |
 | `docs/milestones/M7.md` §9.2 | 新增 BETA entry 說明（M7 Accepted ≠ BETA Accepted） |
-| `docs/reviews/milestone_progress.md` | 新增 ALPHA / BETA Gate Forward Planning 區段（四列狀態 + Architecture Change Declaration） |
+| `docs/status/archive/M4/milestone_progress_legacy.md` | 新增 ALPHA / BETA Gate Forward Planning 區段（四列狀態 + Architecture Change Declaration） |
 
 ## 5. 文件檢查結果
 

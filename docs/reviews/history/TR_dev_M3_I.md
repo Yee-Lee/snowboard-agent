@@ -78,7 +78,7 @@ SHA、時間、實際 state trace 與 exit code。這不推翻本輪硬體 gate�
   及 milestone wrapper 1 均為 0 errors / 0 failures / 0 skipped。
 - 本 Tester 執行環境為 x86_64，不能獨立重跑 RPI-NATIVE 實體刺激；現有硬體
   evidence 因 DEV gate 已 Fail，不能單獨形成 M3 PASS。
-- `docs/reviews/milestone_progress.md` 仍保留舊 SHA `bae36dcb...` 與不存在的
+- `docs/status/archive/M4/milestone_progress_legacy.md` 仍保留舊 SHA `bae36dcb...` 與不存在的
   `M3_tester_review.md` PASS 宣告；這是 `CR_M3_I` CR-M3-006 既有未解項，須在本單
   Resolved 且 Tester 真正簽核後由權責角色統一更新。
 

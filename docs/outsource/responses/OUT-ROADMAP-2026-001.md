@@ -42,10 +42,10 @@ Finding `OUT-ROADMAP-2026-001` 狀態：**Resolved**
 - 明確聲明 `BETA ≠ GA / production release`
 
 ### ✅ M4 Accepted 與 ALPHA Accepted 分開記錄
-`docs/milestones/M4.md`、`docs/milestones/ALPHA.md`、`docs/reviews/milestone_progress.md` 均分開列記，不以功能通過推定產品 gate。
+`docs/milestones/M4.md`、`docs/milestones/ALPHA.md`、`docs/status/archive/M4/milestone_progress_legacy.md` 均分開列記，不以功能通過推定產品 gate。
 
 ### ✅ M7 Accepted 與 BETA Accepted 分開記錄
-`docs/milestones/M7.md`、`docs/milestones/BETA.md`、`docs/reviews/milestone_progress.md` 均分開列記。
+`docs/milestones/M7.md`、`docs/milestones/BETA.md`、`docs/status/archive/M4/milestone_progress_legacy.md` 均分開列記。
 
 ### ✅ Designer 定義 scope 與 Requirement mapping；Tester 在各 gate Design Ready 後建立 test spec
 - ALPHA.md：Requirement mapping（ALPHA-T-001 ~ ALPHA-T-007）、test spec gate（`TR_spec_ALPHA_I`）
@@ -67,8 +67,8 @@ Finding `OUT-ROADMAP-2026-001` 狀態：**Resolved**
 | ALPHA 規劃 | `docs/milestones/ALPHA.md` |
 | BETA 規劃 | `docs/milestones/BETA.md` |
 | 里程碑總覽（含依賴鏈）| `docs/milestone.md` |
-| Gate 進度狀態 | `docs/reviews/milestone_progress.md` |
-| Delivery | `docs/outsource/deliveries/DELIVERY-ALPHA-BETA-ROADMAP-001.md` |
+| Gate 進度狀態 | `docs/status/archive/M4/milestone_progress_legacy.md` |
+| Delivery | `docs/outsource/deliveries/archive/project/DELIVERY-ALPHA-BETA-ROADMAP-001.md` |
 
 ---
 

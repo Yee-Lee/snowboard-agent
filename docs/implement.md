@@ -2,7 +2,7 @@
 
 本文件為 Snowboard 實作契約的索引：Protocol 方法簽名、事件 dataclass、SM 內部演算法、資源仲裁協定、config schema。回答「怎麼實作」。各章內容拆分於 `implement/` 子目錄。
 
-本文件只寫設計架構本身──章節切分、章節分工、旁掛文件關係。動態進度（章節狀態、跨章 gate、章節備註）見 [reviews/impl_progress.md](reviews/impl_progress.md) ；Designer 的職責邊界、文件分工、工作流程與同步原則見 [roles/designer.md](roles/designer.md) 。
+本文件只寫設計架構本身──章節切分、章節分工、旁掛文件關係。當前 design delta 與跨章 gate 見 [status/design.md](status/design.md)；Designer 的工作方法見 [roles/designer.md](roles/designer.md)。
 
 ## 文件權責分界
 
@@ -15,7 +15,7 @@
 | `milestone.md` | WHEN + VERIFY──階段、範圍、驗收 |
 | `protocol.md` | 對外 / 跨 process wire format；Audio Protocol v1已核准；LLM `snowboard.llm/2`設計已定版，profile identity待量測採用 |
 
-`arch.md` 未明或無法落實的項目，依 [roles/workflow.md](roles/workflow.md) §3 以 `AR_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有審查單保留於 [reviews/history/](reviews/history/) 供歷史追蹤。
+`arch.md` 未明或無法落實的項目，依 [roles/review-process.md](roles/review-process.md) 以 `AR_impl_<round>.md` 交 Architect 裁定；Designer 不自行改寫 `arch.md`。既有審查單保留於 [reviews/history/](reviews/history/) 供歷史追蹤。
 
 ---
 
@@ -45,7 +45,7 @@ prospective **M4B-MVA-002** 由[Designer decision package](implement/m4b_mva_002
 | **M4b.002** | [m4b_mva_002_decisions.md](implement/m4b_mva_002_decisions.md) | POC後效率候選、idle/capacity/reset、M4B/M4C/ALPHA邊界；採用與架構審查pending | §2.7 / §4 / §6.3 / §6.8 |
 | **M4b Gate intake** | [m4b_gate2a_intake.md](implement/m4b_gate2a_intake.md) | Gate 2A historical intake、Gemma selection與DELIVERY-019 adaptation lineage | M4b external Gate 2A / 2B |
 
-各章目前狀態與備註見 [reviews/impl_progress.md](reviews/impl_progress.md) 。
+目前需要接手的章節與 gate 見 [status/design.md](status/design.md)。
 
 ---
 
@@ -61,10 +61,10 @@ prospective **M4B-MVA-002** 由[Designer decision package](implement/m4b_mva_002
 ## 相關導覽
 
 * **Designer 職責 / 文件分工 / 工作流程 / 同步原則**： [roles/designer.md](roles/designer.md)
-* **章節動態進度與跨章 gate** ： [reviews/impl_progress.md](reviews/impl_progress.md)
+* **當前設計狀態與跨章 gate** ： [status/design.md](status/design.md)
 * **Display 內容與 UX profile** ： [display_spec.md](display_spec.md)
 * **ASR / TTS / LLM / Vision / wake-word 選型 gate** ： [model_spec.md](model_spec.md)
 * **跨 process child wire schema** ： [protocol.md](protocol.md)
-* **設計與審查流程**： [roles/workflow.md](roles/workflow.md) §3–§4
-* **Reviewer 工作原則**： [roles/reviewer.md](roles/reviewer.md)；新輪次與歸檔規範見 [roles/workflow.md](roles/workflow.md) §3
+* **設計與審查流程**： [roles/review-process.md](roles/review-process.md)
+* **Reviewer 工作原則**： [roles/reviewer.md](roles/reviewer.md)；新輪次與歸檔規範見 [roles/review-process.md](roles/review-process.md)
 * **審查紀錄**： [reviews/](reviews/)；已結案單據見 [reviews/history/](reviews/history/)

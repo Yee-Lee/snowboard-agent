@@ -7,8 +7,8 @@ DELIVERY-025 (`23fb481007ebaf9d4c58d66b762a65aacec9196c`) has been received and 
 delivery is complete; Step 6 adoption is pending. The historical current-state section below describes 001 issuance only.
 
 New baseline: M4B-MVA-002; dependent gate `M4B-MVA-EFFICIENCY` tracks
-[REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md).
-Gate is OPEN following [verified delivery](../outsource/deliveries/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md). `M4B-MVA-POC` remains Open.
+[REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002](../outsource/deliveries/active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md).
+Gate is OPEN following [verified delivery](../outsource/deliveries/active/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md). `M4B-MVA-POC` remains Open.
 Designer design is in [002 decisions](../implement/m4b_mva_002_decisions.md): POC report adoption,
 affected architecture/reviewer clearance and profile freeze precede explicit release of both gates.
 Developer/Tester entry remains deferred. USER separately authorized this Core commit/push and task
@@ -107,7 +107,7 @@ Gate解除不等於M4B Accepted；Core產品仍需Developer實作、Tester exact
 
 - Delivered at：2026-09-05T14:51:26Z。
 - Core source commit：`034a50f260e7434e586dddf64ef500da3b1b2b4e`。
-- Source：`docs/outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`。
+- Source：`docs/outsource/deliveries/archive/llm/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`。
 - Target baseline before intake：POC worktree `llm` at `b5ce101d1f75889bfcc1bf6f38ed563f59c2d9a1`。
 - Target incoming path：`poc_llm/docs/pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`。
 - SHA-256：`5afb24e8ec7ad67853745ec290672c6b48a174819928936609556fefd184a2c2`；source/target byte comparison PASS。

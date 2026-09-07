@@ -7,7 +7,7 @@ This prospective revision takes precedence over 001 draft timing/scope assumptio
 ## Ownership and implementation boundary
 
 - SM owns session identity and transitions; Reasoner owns capability and action policy; adapter owns model encoding and Conversation control; RM owns worker recovery. One generation and at most one Conversation are active.
-- Model encoding J/P is selected through [the experiment](../outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md). Stable internal SemanticGeneration(text,end) shields Reasoner from format changes. Product JSON is software-generated.
+- Model encoding J/P is selected through [the experiment](../outsource/deliveries/active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md). Stable internal SemanticGeneration(text,end) shields Reasoner from format changes. Product JSON is software-generated.
 - M4B implements selected encoding, lifecycle, capacity admission, idle end and bounded recovery plus full-response operation. M4C implements incremental Reasoner-to-TTS delivery and integrated cancellation. No model-generated action envelope, tool dispatch, look, summary, retrieval or cross-session memory.
 - Stream seam: Begin(sid,tid,cid), ordered Text(sequence,text), exactly one Complete or Failed. Identity and sequence are software fields. Before Complete, text is provisional; M4B full-response consumer buffers it. M4C maintains one speak action with bounded input queue; fragments are not Facts or independent actions. Terminal failure cancels queued/in-flight speech, closes dirty session and emits no success. Already audible content cannot be retracted.
 

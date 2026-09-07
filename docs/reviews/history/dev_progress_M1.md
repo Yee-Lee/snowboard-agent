@@ -56,7 +56,7 @@
   * `python -m pytest -p no:cacheprovider -q tests/milestones/test_m1_foundation.py` → `149 passed in 6.16s`
   * `python -m pytest -p no:cacheprovider -q` → `298 passed in 10.99s`
 * 同步修正 `pyproject.toml` 的 setuptools build backend，以及兩個使用 Python 3.12-only Protocol introspection 的測試，確保宣告的 Python ≥ 3.11 安裝與驗收路徑成立。
-* 新增精簡 [`M1 development runbook`](../../runbooks/m1-development.md)；完整 docs 搬遷延至 M1 定版後、M2 開發前，前置決策記於 [`docs restructure Note`](../../notes/docs-restructure-after-m1.md)。
+* 新增精簡 [`M1 development runbook`](../../runbooks/m1-development.md)；完整 docs 搬遷延至 M1 定版後、M2 開發前，前置決策記於 [`docs restructure Note`](../../notes/legacy/docs-restructure-after-m1.md)。
 
 ### 估點基準
 

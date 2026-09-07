@@ -4,7 +4,7 @@
 - Request: REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002
 - Baseline: M4B-MVA-002
 - Gate: M4B-MVA-EFFICIENCY — OPEN; M4B-MVA-POC remains OPEN
-- Source: `docs/outsource/deliveries/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`
+- Source: `docs/outsource/deliveries/active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`
 - Destination: LLM worktree, `docs/pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`
 - Both byte SHA-256: `e13b71756382c067a207caa520c999d4b6ce5ceccbf0a91f7e08d27a07f792c4`
 - Delivery mode: User-authorized exact file copy; destination did not previously exist.

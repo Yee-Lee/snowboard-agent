@@ -1,6 +1,6 @@
 # Snowboard 實作里程碑 ( milestone.md )
 
-本文件回答 WHEN + VERIFY：定義實作順序、每階段範圍、相依、排除項目與可重複驗收。架構原則以 `arch.md` 為準；Python 契約與演算法以 `implement.md` 及 `implement/` 各定稿章節為準。Display 內容 profile 見 `display_spec.md` ；runtime 模型選型 gate 見 `model_spec.md` 。本文件只維護穩定原則與規劃；階段狀態、定案 gate、跨角色阻擋與下一動作摘要見 `reviews/milestone_progress.md` 。Developer 明細見 `reviews/dev_progress_M{x}.md` ；Tester 明細見 `reviews/test_progress.md` 。Implement 章節狀態與跨章 gate 另見 `reviews/impl_progress.md` 。
+本文件回答 WHEN + VERIFY：定義實作順序、每階段範圍、相依、排除項目與可重複驗收。架構原則以 `arch.md` 為準；Python 契約與演算法以 `implement.md` 及 `implement/` 各定稿章節為準。Display 內容 profile 見 `display_spec.md`；runtime 模型選型 gate 見 `model_spec.md`。本文件只維護穩定原則與規劃；當前 stage、gate 與下一角色只見 `status/current.md`，Designer／Developer 動態內容分別見 `status/design.md` 與 `status/development.md`。
 
 ---
 
@@ -38,9 +38,9 @@ Architecture/Reviewer/Designer定版並完成POC交付；尚待POC結果、Desig
 2. Tester 依 `arch.md` 、 `implement/` 、適用的 `display_spec.md` / `model_spec.md` 與本文件產出 `docs/test_spec.md` ，且至少完成該階段的需求──測試對照。
 3. 該階段引用的上游契約不存在未解矛盾或無法實作 / 驗證的缺口。
 4. Developer 已提供必要估點；估點只影響排程，不改變契約或驗收門檻。
-5. 若階段依賴外部 POC，所有會影響開發介面、硬體 fixture 或 artifact provenance 的輸入，必須已有 Core Team 採用紀錄；開發阻擋條件與只阻擋最終驗收的 pending condition 必須分級記入 `reviews/milestone_progress.md`。Developer 工作包須引用已採用的 contract 版本、ACK / Delivery ID、artifact SHA/checksum/license 與已知限制，不得以 POC branch HEAD、自驗結果或未核准 draft 作為 baseline。
+5. 若階段依賴外部 POC，所有會影響開發介面、硬體 fixture 或 artifact provenance 的輸入，必須已有 Core Team 採用紀錄；開發阻擋條件與只阻擋最終驗收的 pending condition 必須分級記入 `status/current.md`。Developer 工作包須引用已採用的 contract 版本、ACK / Delivery ID、artifact SHA/checksum/license 與已知限制，不得以 POC branch HEAD、自驗結果或未核准 draft 作為 baseline。
 
-各條件的當前完成狀態只記於 `reviews/milestone_progress.md` 。條件未完成前，不得以「已有 milestone 規劃」推定 Developer 已獲准開始該階段。
+各條件的當前完成狀態只記於 `status/current.md`。條件未完成前，不得以「已有 milestone 規劃」推定 Developer 已獲准開始該階段。
 
 ### 1.3 階段依賴
 
@@ -82,7 +82,7 @@ SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
 * 測試與 log 不包含 credential、prompt、完整 payload、transcript、音訊或影像內容。
 * Windows 可執行的 pure-Python / mock 測試不得意外 import Pi-only dependency。
 * Pi-only 驗收明確標記，且在 Raspberry Pi 5 上保存命令、版本、config 與結果摘要。
-* 含 Pi 或人工驗收的 milestone 自 M4 起依 `docs/roles/workflow.md` §4 執行：candidate 前先完成 Pi Developer convergence 與單次工作站同步；candidate 後三版本 portable matrix 全綠才 review / freeze，target preflight 與正式 acceptance 只接受同一外部指定 SHA，Developer diagnostic 不得混入正式 evidence。
+* 含 Pi 或人工驗收的 milestone 自 M4 起依 `docs/roles/candidate-process.md` 執行：candidate 前先完成 Pi Developer convergence 與單次工作站同步；candidate 後三版本 portable matrix 全綠才 review / freeze，target preflight 與正式 acceptance 只接受同一外部指定 SHA，Developer diagnostic 不得混入正式 evidence。
 * 若實作發現定稿契約不可落實，停止該項實作並交回 Designer；涉及架構邊界時再交 Architect，不在 code 中自行發明另一套契約。
 
 ### 1.5 Designer 輔助規格文件產出時機
@@ -121,7 +121,7 @@ SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
 
 ### 10.1 估點與範圍調整
 
-工期與估點由 Developer 提供，統一記於 `reviews/dev_progress_M{x}.md` ，不寫回本文件。Designer 只把因此產生的 gate、跨角色阻擋或階段影響摘要到 `reviews/milestone_progress.md` 。估點變更不直接修改驗收條件；若估點顯示單一階段範圍過大，由 Designer 拆分階段並重新確認其相依與驗收。只有階段切分、穩定範圍或驗收原則改變時才修改本文件。
+工期、affected scope 與 active work package 由 Developer 記於 `status/development.md`，不寫回本文件。Designer 只把因此產生的 gate、跨角色阻擋或階段影響更新到 `status/current.md`。估點變更不直接修改驗收條件；若估點顯示單一階段範圍過大，由 Designer 拆分階段並重新確認其相依與驗收。只有階段切分、穩定範圍或驗收原則改變時才修改本文件。
 
 ### 10.2 docs/protocol.md 動筆 gate
 

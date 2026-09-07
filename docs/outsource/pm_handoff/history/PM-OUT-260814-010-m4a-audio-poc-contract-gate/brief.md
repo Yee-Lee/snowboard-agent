@@ -22,9 +22,9 @@ Core目前已定義M4a產品範圍並等待Accepted Audio POC winner，但尚未
 ## 驗收方式
 
 - Core在單一候選commit提交：
-  - Contract : `docs/outsource/deliveries/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md`
+  - Contract : `docs/outsource/deliveries/archive/audio/DELIVERY-AUDIO-POC-M4A-CONTRACT-001.md`
   - Response : `docs/outsource/responses/OUT-M4A-2026-001.md`
-  - 同步修訂 `docs/milestones/M4.md` 與 `docs/reviews/milestone_progress.md` ，使contract發出時點、owner、PM relay、POC return與Core ACK一致。
+  - 同步修訂 `docs/milestones/M4.md` 與 `docs/status/archive/M4/milestone_progress_legacy.md` ，使contract發出時點、owner、PM relay、POC return與Core ACK一致。
 - Response列出comparison baseline、完整candidate SHA、architecture-change聲明、逐項修改定位、未決產品門檻需要User / PM決定的項目。
 - PM拉回Core repo並通知完整HEAD SHA完成intake後，才把contract package正式轉交Audio POC Team；Audio POC Team以自己的repo完整SHA與manifest回交。
 

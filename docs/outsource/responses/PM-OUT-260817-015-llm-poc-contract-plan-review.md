@@ -14,7 +14,7 @@
 
 ## 1. 結論與交付
 
-Core已直接修訂既有權威contract [`DELIVERY-LLM-POC-M4B-CONTRACT-001`](../deliveries/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) 與 [`M4.md`](../../milestones/M4.md)，不建立重複addendum。User / PM應將該contract revision交付LLM POC Team；POC依contract §10在自己的repo修訂並commit一次，再回傳reply path、branch與完整40-character SHA。收到committed reply前，Gate 0未完成，Gate 1 / Pi Gate 2不得宣告通過。
+Core已直接修訂既有權威contract [`DELIVERY-LLM-POC-M4B-CONTRACT-001`](../deliveries/archive/llm/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) 與 [`M4.md`](../../milestones/M4.md)，不建立重複addendum。User / PM應將該contract revision交付LLM POC Team；POC依contract §10在自己的repo修訂並commit一次，再回傳reply path、branch與完整40-character SHA。收到committed reply前，Gate 0未完成，Gate 1 / Pi Gate 2不得宣告通過。
 
 本輪已核對POC repo的最新committed HEAD與handoff相同。該repo另有未commit的readiness-correction文件；它不屬於`4ac7ba3...`，不構成receipt、計畫修訂或gate evidence。
 
@@ -107,6 +107,6 @@ authenticated-input四條原Blocking路徑均已關閉。Validator self-test為`
 plan-only均為`PLAN_VALID`且`execution_performed=false`。
 
 最終裁決記錄於
-[`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`](../deliveries/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)。
+[`DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001`](../deliveries/archive/llm/DELIVERY-LLM-POC-M4B-GATE0-R2-ACK-001.md)。
 015與Gate 0 R2至此`Resolved`；Gate 1仍為`NOT_STARTED`，本結論不選定finalist、不授權Pi
 Gate 2A，也不把test-double結果當作candidate evidence。
