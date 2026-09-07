@@ -242,7 +242,7 @@ Portable doubles不得importreal engine；Pi cards指向同一provisional/frozen
 
 ## 10. Required inheritance / delta index
 
-Developer只負責在`scripts/`提供inheritance generator／template及其`tests/`驗證，不得直接建立或修改Tester-owned的`docs/outsource/evidence/`。Generator接受外部指定的40-character candidate SHA、POC locator與Gate 3 result locator，依下列schema輸出到caller明確指定的新路徑；Developer fast loop只使用temporary output。
+Developer只負責在`scripts/`提供inheritance generator／template及其`tests/`驗證，不得直接建立或修改Tester-owned的`docs/outsource/evidence/`。Generator接受外部指定的40-character candidate SHA、POC locator與Gate 3 result locator，依下列schema輸出到caller明確指定的新路徑；Developer convergence loop只使用temporary output。
 
 Tester在同一產品candidate完成Gate 3執行後，使用該generator產生並核對最終`docs/outsource/evidence/<M4-delivery>/m4a/inheritance.json`。Tester是該正式檔案唯一writer，且至少逐列涵蓋candidate/provenance、P1～P12及Audio internal M4 20-session/failure/offline：
 

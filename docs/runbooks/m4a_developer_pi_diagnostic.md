@@ -1,27 +1,30 @@
 # M4A Developer Raspberry Pi 送審前診斷 Runbook
 
-本手冊定義 Developer 在請求 M4A candidate 與交付 Tester 前，如何在 Raspberry
-Pi 上驗證真實 ASR、TTS、ALSA、offline 與 lifecycle 修正。它不產生正式 acceptance
-card，不取代 [`candidate_hardware_gate.md`](candidate_hardware_gate.md)，結果只能標記為
-`Developer Diagnostic` 或 `Developer Exact-Candidate Verification`。
+本手冊定義 Developer 在請求 M4A candidate 前，如何以 Raspberry Pi 作為主要開發
+working tree，直接修正並驗證真實 ASR、TTS、ALSA、offline 與 lifecycle，收斂後再將
+單一 patch 同步回工作站。它不產生正式 acceptance card，不取代
+[`candidate_hardware_gate.md`](candidate_hardware_gate.md)，例行結果只能標記為
+`Developer Diagnostic`。
 
 ## 1. Gate 邊界與責任
 
 | 階段 | 受測內容 | 允許結論 |
 | :--- | :--- | :--- |
-| Working-tree Diagnostic | 隔離 checkout 套用尚未提交的 patch | Diagnostic Pass / Fail；不得送作正式 evidence |
-| Exact-candidate Verification | USER 核准後的 clean provisional SHA | Developer Verified / Fail；通過後才可請 Tester 獨立驗收 |
+| Pi Working-tree Convergence | 從 clean base 建立的隔離 checkout；Developer 直接修正 | affected portable + target diagnostic 全綠；只能標記 Diagnostic Pass / Fail |
+| Workstation Sync | 同一 base SHA、task paths 乾淨；套用 Pi 匯出的 tracked-only patch | 兩端 patch bytes / SHA-256 相同，工作站 affected portable tests 全綠後才可請求 candidate |
 | Tester acceptance | frozen SHA、正式 matrix / preflight / acceptance | 依 candidate hardware gate 判定正式 Pass / Fail |
 
-Developer 不得要求 Tester 代跑本手冊來判斷修正是否有效。Tester 必須使用新的 run
-ID、fresh product / output，獨立執行正式 gate。
+Developer 不得要求 Tester 代跑本手冊來判斷修正是否有效，也不在 candidate 建立後
+例行返回 Pi 重複證明同一修正。Tester 必須使用新的 run ID、clean exact SHA、fresh
+product / output，獨立執行正式 gate。
 
 ## 2. 必要輸入
 
 所有路徑必須是 Git 外、受控且可由 operator 讀取的絕對路徑：
 
 - Raspberry Pi 5，aarch64，正式部署 CPython 3.13；
-- clean Core base checkout 或完整 provisional candidate SHA；
+- clean Core base checkout；若正式 gate 後另有明確診斷需求，才使用完整 provisional
+  candidate SHA；
 - `whisper.cpp-v1.9.2.tar.gz` 與 `requirements/m4a/` checksum 相符；
 - 13 個 flat install inputs：models、Matcha archive、8 個 locked wheels，以及 fresh
   build 產生的 worker / build-result；
@@ -52,13 +55,51 @@ git -C <formal-core-checkout> status --short --untracked-files=no
 本 Pi 會在重開機時清空 `/tmp`。因此 `/tmp` 中的 product、controller venv 與診斷
 checkout 都必須視為不存在，不得把「檔案消失」誤判成產品 regression。
 
-## 4. 隔離 checkout 與 identity
+## 4. 隔離 Pi checkout、直接修正與單次同步
 
-每次使用全新 Git 外目錄。Working-tree Diagnostic 從 clean base clone 後只套用本次
-`src/`、`scripts/`、`tests/` patch；不得修改 formal checkout。記錄 base SHA 與 patch
-SHA-256，結果標記 `Diagnostic`。
+每次使用全新 Git 外目錄，從 clean Core base clone 建立 Pi 開發 checkout；不得修改
+formal acceptance checkout。開始前記錄完整 base SHA，確認本工作包的 `<task-paths>`
+乾淨。Developer 可在此 checkout 直接修改 `src/`、`scripts/`、`tests/`、dependency、
+config contract與runner，並反覆執行本手冊的 affected portable tests 與 target
+diagnostic，直到全部通過。affected scope 必須先依 M4 test spec、工作包與直接
+regression 記錄；遇到失敗可擴充直接影響範圍，不得縮減。兩端不得同時修改同一工作包。
 
-Exact-candidate Verification 必須改用 clean detached candidate：
+收斂後先以 `git add -N -- <new-task-files>` 讓新增檔案進入 diff（若沒有新增檔案則略過），
+再將本工作包所有路徑明列於 `<task-paths>`，匯出 Git 外 patch 並記錄 digest：
+
+```bash
+git -C <pi-development-repo> diff --binary --full-index --no-ext-diff --no-textconv \
+  --no-renames --no-color --src-prefix=a/ --dst-prefix=b/ --diff-algorithm=myers \
+  -- <task-paths> > <git-external-transfer>/developer.patch
+sha256sum <git-external-transfer>/developer.patch
+git -C <pi-development-repo> status --short -- <task-paths>
+```
+
+`<task-paths>` 必須涵蓋本工作包的全部修改；device-local config、build product、raw log、
+evidence與其他秘密不得放入 patch。回到工作站後，先確認 `HEAD` 等於記錄的 base SHA，
+且 `<task-paths>` 沒有既有修改，再套用及逐 byte 核對：
+
+```bash
+test "$(git -C <workstation-repo> rev-parse HEAD)" = "<40-character-base-sha>"
+test -z "$(git -C <workstation-repo> status --short -- <task-paths>)"
+git -C <workstation-repo> apply --check <git-external-transfer>/developer.patch
+git -C <workstation-repo> apply <git-external-transfer>/developer.patch
+git -C <workstation-repo> add -N -- <new-task-files>  # 若沒有新增檔案則略過
+git -C <workstation-repo> diff --binary --full-index --no-ext-diff --no-textconv \
+  --no-renames --no-color --src-prefix=a/ --dst-prefix=b/ --diff-algorithm=myers \
+  -- <task-paths> > <git-external-transfer>/workstation.patch
+cmp <git-external-transfer>/developer.patch <git-external-transfer>/workstation.patch
+sha256sum <git-external-transfer>/workstation.patch
+```
+
+工作站只再執行一次主要 Python minor 的 affected portable tests。若 base 已前進、patch
+不同、測試失敗或仍須修改 protected input，不得在工作站另長出一套修正；以新 base／
+完整新 patch 回 Pi 重走本節，原 Diagnostic Pass 失效。全部通過後才可依 workflow
+展示 commit 內容並請 USER 核准 provisional candidate。
+
+candidate 建立後不例行執行 Developer exact-candidate verification。只有正式 gate 發現
+packaging／部署 identity 問題，且需要隔離診斷時，才建立 clean detached candidate；
+其結果仍只是 diagnostic：
 
 ```bash
 git clone --no-hardlinks <formal-core-checkout> <new-diagnostic-root>/repo
@@ -67,7 +108,8 @@ test "$(git -C <new-diagnostic-root>/repo rev-parse HEAD)" = "<40-character-cand
 test -z "$(git -C <new-diagnostic-root>/repo status --short -- src tests scripts requirements pyproject.toml)"
 ```
 
-Dirty working-tree 結果不得升級或重新命名為 exact-candidate verification。
+Dirty working-tree 結果不得升級或重新命名為 exact-candidate verification，任何 Developer
+exact-candidate 結果也不得取代 Tester acceptance。
 
 ## 5. Offline executor
 
@@ -89,7 +131,7 @@ sysfs 可能仍顯示 host interface 名稱。
 
 ### 6.1 Native worker
 
-candidate 第一次驗證使用 fresh build。`--build-root`、`--output` 與其 `.json` 在命令
+每一輪新 Pi working-tree base 的第一次驗證使用 fresh build。`--build-root`、`--output` 與其 `.json` 在命令
 開始前都必須不存在；不得預先 `mkdir --build-root`。
 
 ```bash
@@ -100,7 +142,7 @@ candidate 第一次驗證使用 fresh build。`--build-root`、`--output` 與其
   --output <new-diagnostic-root>/input/m4a-whispercpp-worker
 ```
 
-同一 candidate 重跑時可使用持久保存、且 worker 與 build-result checksum 仍吻合的 build
+同一 base 與 patch 重跑時可使用持久保存、且 worker 與 build-result checksum 仍吻合的 build
 artifact；重開機本身不要求重新編譯。Tester 是否重建仍以正式 runbook 為準。
 
 ### 6.2 Product install
@@ -167,7 +209,10 @@ FD / temp cleanup 全 0。TTS 必須實際完成 ALSA playback + drain、control
 - 任何殘留程序、thread、FD 或 temp entry 非 0 時，保存程序樹後停止；不得把 Tester
   當清理工具。
 - 診斷輸出不得包含 transcript、原始 PCM、TTS payload 或秘密。腳本只輸出 bounded metrics。
-- Working-tree Diagnostic 全綠後才可請求 provisional candidate。candidate 建立後必須以其
-  exact SHA 重跑本手冊；exact-candidate verification 全綠後才可交 Tester。
+- Pi checkout 內 affected portable tests 與本手冊 target diagnostics 全綠，且依 §4 單次
+  同步回工作站、patch identity 相同、工作站 affected portable tests 全綠後，才可請求
+  provisional candidate。
+- candidate 建立後不要求 Developer 例行返回 Pi。若 candidate 後任何 protected input
+  改變，必須建立完整新 patch 回 Pi 重走開發收斂與工作站同步，再請求新 candidate。
 - Tester 必須另用 fresh run ID、fresh output 與正式 candidate gate 獨立重跑；Developer
   結果不能複製、改名或合併為正式 Pass。

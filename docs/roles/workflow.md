@@ -1,6 +1,6 @@
 # 開發工作流程與協議 (AI 執行標準)
 
-- **Git 操作與版控原則**：禁止任何 AI 角色直接修改、建立或寫入 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制與異動操作必須一律透過標準 CLI `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。需要實體／人工驗收的階段，得在 Developer fast loop 完成後建立一次 **provisional candidate commit**，作為 portable matrix 的不可變受測 SHA；它尚未 freeze，也不代表 Tester PASS或milestone Accepted。portable gate或candidate review要求修改時，必須重新取得USER同意建立新candidate commit。candidate commit與最終milestone commit都受本確認規則約束。
+- **Git 操作與版控原則**：禁止任何 AI 角色直接修改、建立或寫入 `.git/` 目錄內部的檔案與結構；所有 Git 版本控制與異動操作必須一律透過標準 CLI `git` 命令執行。執行 `git commit` 前，必須先向使用者（USER）確認，獲得同意後方可執行提交。需要實體／人工驗收的階段，得在 Developer convergence loop 完成後建立一次 **provisional candidate commit**，作為 portable matrix 的不可變受測 SHA；它尚未 freeze，也不代表 Tester PASS或milestone Accepted。portable gate或candidate review要求修改protected input時，必須先回Developer convergence loop，再重新取得USER同意建立新candidate commit。candidate commit與最終milestone commit都受本確認規則約束。
 
 - **單一分支與不可變 milestone tags**：Core repo 只維持一條永久開發分支 `core`，所有 Candidate、修正與交付依時間順序直接 append。不再為 milestone 建立 `dev_agent_m*` 或長期 feature branch；舊分支保留為歷史參考，不刪除、不改寫。未送驗 WIP 可在本地整理；Candidate SHA 一旦 push、送驗或用於正式驗證，禁止 amend、rebase、reset 或 force-push，Reject / FAIL / INCONCLUSIVE 必須保留 evidence 並以 append fix 產生新 SHA。
 
@@ -138,14 +138,14 @@ status: "[Open | Revised | Rejected | Resolved]"
 
 [D] 開發：Developer 寫 docs/reviews/dev_progress_M{x}.md 估點拆包 -> 撰寫 src/ 與 tests/ (若遇阻發起 IR_dev)。
 
-[E] 驗收與提交：無實體／人工 gate 的 milestone 沿用「Tester PASS -> Designer 最終 Code/Test Review -> USER 確認 -> commit」。含實體／人工 gate 的 milestone 必須依下列候選流程執行；不得先以 target device 除錯再回補 portable evidence：
+[E] 驗收與提交：無實體／人工 gate 的 milestone 沿用「Tester PASS -> Designer 最終 Code/Test Review -> USER 確認 -> commit」。含實體／人工 gate 的 milestone 必須依下列候選流程執行。Pi 耦合工作先在隔離的 target-device 開發 checkout 收斂，再單次同步回工作站建立 candidate；working-tree diagnostic 與正式 evidence 必須嚴格分離：
 
-1. Developer fast loop：在團隊指定的單一主要 Python minor 執行受影響 unit / integration tests。
-2. Provisional candidate snapshot：Designer核對candidate scope後，展示完整commit message與檔案，取得USER明確確認才建立candidate commit。它只提供G3可測的完整SHA，不是freeze或acceptance。
+1. Developer convergence loop：先依test spec、工作包與直接regression記錄affected scope；失敗可擴充直接影響範圍，不得為取得綠燈而縮減。若受影響行為與target無關，在團隊指定的單一主要Python minor執行affected unit / integration tests。若涉及Pi硬體、原生相依、部署runtime、裝置權限、效能或資源行為，Pi是主要開發working tree；Developer必須直接在隔離checkout修正，反覆執行affected portable tests與target diagnostic至全綠。收斂後以記錄的base SHA、task paths與patch SHA-256，將單一tracked-only patch同步至同一base、相關路徑乾淨的工作站repo；兩端patch bytes / digest必須相同，工作站只再跑一次主要Python minor的affected portable tests。同步後若仍修改protected input，原Pi diagnostic失效並回到本步驟；不得讓兩端形成分叉修正。
+2. Provisional candidate snapshot：Designer核對candidate scope後，展示完整commit message與檔案，取得USER明確確認才建立candidate commit。它只提供步驟3可測的完整SHA，不是freeze或acceptance。
 3. Tester portable sign-off：只在準備或更新frozen candidate時，對外部指定的provisional SHA平行執行正式支援Python minor matrix；portable命令排除`rpi` marker，所有命令有bounded timeout，結果為0 Fail / Blocked / Skip / XFail。一般development push只跑主要版本與affected tests。
-4. Designer candidate review / freeze：聚焦設計對齊與高風險regression protection；Blocking全數解決後，記錄同一provisional SHA為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、candidate / acceptance runner或candidate workflow的異動撤銷freeze並回到步驟3；branch名稱只作診斷資訊。
+4. Designer candidate review / freeze：聚焦設計對齊與高風險regression protection；Blocking全數解決後，記錄同一provisional SHA為frozen candidate。其後`src/`、`tests/`、dependency / lock、config contract、candidate / acceptance runner或candidate workflow的異動撤銷freeze，並由步驟1重新收斂、步驟2建立新candidate、步驟3重跑matrix；branch名稱只作診斷資訊。
 5. Target preflight：Tester 或受委託 operator 驗證外部指定SHA、受保護路徑 clean、部署 runtime、hardware / artifact / config checksum、portable matrix完整及run output未使用。Preflight不產生正式PASS card，也不要求獨立freeze manifest或多層checksum chain。
-6. Target acceptance / debug：正式acceptance以全新且不可重用的`acceptance/<run-id>/`完整執行target suite並保存result與raw log。Debug可按診斷需要執行，不需先驗證正式FAIL bundle，但debug結果不得標記或合併為正式PASS。修正protected input時建立新candidate SHA並回G3；只修正實體接線時可保留同一frozen SHA，但以新run ID重走preflight與完整acceptance。
+6. Target acceptance / debug：正式acceptance以全新且不可重用的`acceptance/<run-id>/`完整執行target suite並保存result與raw log。Developer 在 candidate 前完成的 Pi diagnostic 不得複製、改名或合併為正式PASS；candidate 後也不要求 Developer 例行返回 Pi 驗證。Tester 的 exact-SHA acceptance 若失敗，可另開隔離 checkout 回步驟1進入 Developer Pi convergence loop；修正protected input時依序重走步驟1、2、3。只修正實體接線時可保留同一frozen SHA，但以新run ID重走preflight與完整acceptance。
 7. Tester final reconciliation：核對portable matrix與target result指向同一SHA，正式target result使用同一run ID；人工測項另在既有report / card記錄run ID、Test ID、operator、時間與Pass / Fail，再作milestone判定。
 8. Designer final confirmation：只確認 candidate review 後沒有 candidate-affecting 變更且 evidence 對齊；若有變更即撤銷 freeze，不以第二輪偏好審查改動已通過候選。通過後才標記 Accepted；provisional candidate commit 可成為最終 milestone commit，不要求為 acceptance evidence 再改 product tree。
 
@@ -154,10 +154,10 @@ status: "[Open | Revised | Rejected | Resolved]"
 | Gate | Owner | Entry | Exit | 失敗回退 | Evidence |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Contract / static | Designer + Tester | design / test spec 已簽核 | schema / type / Test ID 檢查全綠 | 回 Designer / Developer | 既有測試輸出 |
-| Developer fast loop | Developer | 工作包可執行 | 受影響測試全綠 | 留在 Developer loop | local log；非 acceptance |
-| Provisional candidate snapshot | Designer；commit需 USER | fast loop完成；candidate scope已核對 | 產生未freeze的完整SHA與clean protected paths | USER未同意則不commit；內容變更須建立新candidate | commit file list + SHA |
-| Portable candidate matrix | Tester | 外部指定provisional SHA | 每個正式 Python minor 0 Fail / Blocked / Skip / XFail，且 timeout 未觸發 | 回Developer；修正後建立新candidate並重跑完整matrix | 每版本result / raw log + matrix index |
-| Candidate review / freeze | Designer | portable matrix完整 | review無Blocking；同一provisional SHA登記為frozen | finding造成protected input變更即建立新candidate、回portable gate | review記錄 + SHA |
+| Developer convergence loop | Developer | 工作包可執行；已判定是否 Pi 耦合 | Pi 耦合：Pi affected portable + target diagnostic 全綠、同 base/task paths/patch digest 單次同步、工作站 affected portable 全綠；非耦合：工作站 affected tests 全綠 | 留在單一 Developer loop；同步後變更 protected input 則 Pi 結論失效 | local log + Pi/workstation patch identity；非 acceptance |
+| Provisional candidate snapshot | Designer；commit需 USER | Developer convergence完成；candidate scope已核對 | 產生未freeze的完整SHA與clean protected paths | USER未同意則不commit；內容變更須建立新candidate | commit file list + SHA |
+| Portable candidate matrix | Tester | 外部指定provisional SHA | 每個正式 Python minor 0 Fail / Blocked / Skip / XFail，且 timeout 未觸發 | 回Developer convergence；修正後依新candidate重跑完整matrix | 每版本result / raw log + matrix index |
+| Candidate review / freeze | Designer | portable matrix完整 | review無Blocking；同一provisional SHA登記為frozen | finding造成protected input變更即回Developer convergence、建立新candidate、重跑portable gate | review記錄 + SHA |
 | Target preflight | Tester / operator | frozen SHA + 新 acceptance run ID | SHA、clean paths、runtime、hardware / artifact / config checksum與portable index吻合 | 不啟動 acceptance；修正 identity 或撤銷 freeze | 單一`preflight.json` |
 | Target acceptance | Tester / operator | preflight PASS | target suite 一次完整結束 | 保存 FAIL bundle；code 修正用新 SHA / 新 run 重啟 | `acceptance/<run-id>/` |
 | Final reconciliation | Tester；Designer confirmation | target run 完整 | matrix與target SHA一致；正式result的run ID一致 | 缺證據維持 Fail / Blocked，不拼接 | milestone sign-off + result / raw log |

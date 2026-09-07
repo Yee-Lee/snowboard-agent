@@ -161,6 +161,13 @@ input_sources:
 `bae36dcb2684a14a129be1e90f3533451d280820`，不得沿用。以下測試只能在
 CR 修正已提交、Tester 指定單一 candidate SHA 後執行。
 
+本節是 formal exact-SHA acceptance，不是 Developer 除錯入口。若仍需修改 M3 的
+target-coupled protected input，先在與本 checkout 分離的 Pi development checkout 直接
+修正，執行 affected portable tests 與 target diagnostic 至全綠，再依
+[`workflow.md`](../roles/workflow.md) 核對 base/task paths/patch digest、單次同步回工作站並
+建立新 candidate。不得在本 formal checkout 修改，也不得把 diagnostic 結果沿用為下列
+card 的 PASS。
+
 ### 5.1 Candidate 與工作樹前置檢查
 
 ```bash

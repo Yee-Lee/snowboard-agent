@@ -83,7 +83,7 @@ Implement 章節的「最低單元測試」仍是 Developer 的元件測試輸�
 
 | 代碼 | 要求 |
 | :--- | :--- |
-| **DEV-PY311** | 歷史 Test ID 與 Developer fast loop 的最低版本代碼；Python 3.11，或經團隊指定的單一主要開發版本，執行 Windows / Linux 純 Python、mock / config 測試。不得把此單版本結果當成正式候選 matrix |
+| **DEV-PY311** | 歷史 Test ID 與 Developer convergence loop 的最低版本代碼；Python 3.11，或經團隊指定的單一主要開發版本。非 Pi 耦合工作在工作站執行 pure-Python / mock / config tests；Pi 耦合工作則在隔離 Pi checkout 以部署 runtime 執行 affected portable tests。不得把此單版本結果當成正式候選 matrix |
 | **PORTABLE-PY311** | 正式候選 portable gate：CPython 3.11，執行該 milestone 規定的 non-RPI suite |
 | **PORTABLE-PY312** | 正式候選 portable gate：CPython 3.12，執行與 3.11 相同的 suite 與 timeout policy |
 | **PORTABLE-PY313** | 正式候選 portable gate：CPython 3.13，執行與 3.11 相同的 suite 與 timeout policy |
@@ -96,8 +96,8 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 ### 2.1.1 Python minor 支援政策
 
 - Core 正式支援 CPython **3.11、3.12、3.13**；package metadata 必須表達等價的有界範圍 `>=3.11,<3.14`。加入 3.14 或移除既有 minor 都是明示的支援政策變更，須先更新本節、dependency / native ABI matrix 與 candidate gate。
-- Developer 日常 fast loop 只需團隊指定的單一主要版本；正式候選則必須在 3.11 / 3.12 / 3.13 執行相同 portable suite。三版本可由 CI、container 或集中驗證環境提供，不要求每台開發機安裝。
-- Raspberry Pi 只執行 milestone 已固定的正式部署 runtime；目前目標為 CPython 3.13。Pi 不重跑三個 minor。部署 runtime 或 native ABI 改變時，才撤銷 candidate freeze 並重跑 portable matrix及 Pi gate。
+- Developer convergence loop 只需團隊指定的單一主要版本；Pi 耦合工作必須在隔離 Pi checkout 以固定部署 runtime 直接修正並跑完 affected portable tests 與 target diagnostic，非耦合工作才以工作站為主要 loop。正式候選必須在 3.11 / 3.12 / 3.13 執行相同 portable suite；三版本可由 CI、container 或集中驗證環境提供，不要求每台開發機安裝。
+- Raspberry Pi 的開發 loop 與正式 gate 都只執行 milestone 已固定的部署 runtime；目前目標為 CPython 3.13，不在 Pi 重跑三個 minor。部署 runtime 或 native ABI 改變時，撤銷 candidate freeze，先回 Developer convergence，再建立新 candidate 並重跑 portable matrix及 Pi gate。
 - pure-Python dependency 與 Pi native dependency / ABI 分開鎖定並分開記錄 checksum；portable matrix 不宣稱硬體相容，Pi gate也不取代 Python 語意相容矩陣。
 
 ### 2.2 共用 fixture

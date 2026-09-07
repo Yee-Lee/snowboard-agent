@@ -98,6 +98,12 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -q -m 'not rpi'
 - current-run Audio / Display 人工 checklist，不接受預填環境變數；
 - delivery bundle、logs、JUnit、checksums、media metadata 與 Tester handoff。
 
+下列 candidate 要求只約束正式驗收，不得用來禁止 Developer 在 candidate 前於隔離的
+Pi 開發 checkout 修正。若日後有 M3 target-coupled 修正，必須先依
+[`workflow.md`](../roles/workflow.md) 的 Developer convergence loop，在 Pi 直接修正並跑完
+affected portable tests與target diagnostic；以相同base/task paths/patch digest單次同步
+回工作站且 affected portable tests 再通過後，才建立 candidate 並進入正式手冊。
+
 舊 SHA `bae36dcb2684a14a129be1e90f3533451d280820` 的 result JSON 已被
 `CR_M3_I` 判定 superseded，不得複製或沿用。必須先建立包含 CR 修正的單一
 candidate commit，再依實體驗收手冊重跑。
