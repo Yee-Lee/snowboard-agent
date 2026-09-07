@@ -1,6 +1,6 @@
 # M4B-MVA-EFFICIENCY：encoding與Conversation readiness受控實驗
 
-狀態：`IN_PROGRESS / PLAN FREEZE COMMIT / DEVELOPMENT NOT STARTED`
+狀態：`IN_PROGRESS / WORKSTATION CONTRACT MILESTONE COMPLETE / PI VALIDATION PENDING`
 
 External gates：`M4B-MVA-EFFICIENCY OPEN`；`M4B-MVA-POC OPEN`
 
@@ -118,8 +118,19 @@ solutions。這個上限防止演變成無限prompt/schema search；功能與con
 
 ## Current next action
 
-目前唯一工作是完成plan-freeze commit/push；implementation尚未開始。完成後才依序執行`EFF-WP00`
-exact API/source inventory及bounded solution feasibility，並可直接使用Pi進行non-formal target
-development/test/debug。具體candidate proposal與benchmark發布仍須User review；fallback進formal
-measurement須先取得Core baseline revision。完成Pi開發後回workstation審查並建立implementation
-commit/push；正式hardware result另以clean pushed exact SHA及frozen packet重跑。
+2026-09-07工作階段收尾時，`EFF-WP00`已完成workstation static/import層：exact aarch64 wheel SHA符合
+profile，frozen 0.16 source與同版x86 import均確認public regex、LLGuidance、REGEX/JSON constraint type；
+同時確認public Python iterator會將cancel/token-limit折成一般iterator結束，因此P的normal-terminal proof
+必須使用本輪新增的exact-wheel raw-terminal POC adapter，不能只靠public iterator exhaustion。
+
+`EFF-WP01`已完成獨立efficiency surface的P與incremental J fail-closed decoder、provisional/final邊界、
+UTF-8/escape/surrogate/overflow/truncation/cancel/late-invalid tests，以及D/H clean-held Conversation的
+single-flight、30秒expiry、identity mismatch、late-open close、no-request close與fresh fallback ownership。
+新增backend已連結J/P constraint、raw terminal及D/H adopt；efficiency tests 26項與既有MVA regression
+67項均在workstation通過。舊MVA surface lock與歷史結果未修改。
+
+Pi仍不可達，故selected aarch64 runtime import/load/grammar/one-output/follow-up/close、真實chunk形態、
+cancel-during-native-open與30秒holding resource皆未驗證，且沒有hardware結果。下次從本commit開始，
+先在Pi POC workspace完成上述engineering proof，再補齊`EFF-WP02` controller/evidence、packet與surface
+freeze。具體fallback candidate proposal與benchmark發布仍須User review；formal comparison revision仍由
+Core Designer凍結，formal evidence只接受後續clean pushed exact SHA。
