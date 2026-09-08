@@ -69,6 +69,10 @@ def consume_raw_stream(
         if not final_seen:
             raise RawStreamError("MISSING_TERMINAL")
         semantic = decoder.finish()
+        if accumulated and first_chunk is None:
+            now = clock_ns()
+            first_chunk = (now - started) / 1_000_000
+            chunk_codepoints = len(accumulated)
     except Exception:
         if on_provisional_text is not None and accumulated:
             on_provisional_text("")

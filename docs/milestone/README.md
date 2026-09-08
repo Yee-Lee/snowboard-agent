@@ -2,7 +2,7 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-09-06
+最後更新：2026-09-08
 
 Pi storage補記：Core已接受Phase 3搬遷；Pi的clean canonical checkout、指定data roots、
 product `8279e79`、artifact identity與private evidence transfer/legacy-run cleanup均有receipt。
@@ -23,7 +23,7 @@ dirty Pi development run不取得正式credit。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / MVA-EFFICIENCY OPEN / PLAN COMMIT FIRST`。
+狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / MVA-EFFICIENCY OPEN / CORE REVISION PENDING`。
 
 原LLM POC M0～M4與Gate 1/2A/2B保持完成且結果immutable。Core於2026-09-05正式交付
 `M4B-MVA-001`產品等價量測，User確認由既有POC團隊進入七步流程Step 5；本機先修正為
@@ -58,7 +58,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 2B | `CLOSED / CORE FINAL WINNER ACK` | P9, P10B | Attempt 006完成20/20；machine P9/P10B FAIL不改寫；Core接受User known-runtime-defect waiver與Gemma winner |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 | M4B-MVA-POC | `OPEN / STEP 5 DELIVERED` | MVA-002 result；no legacy P credit | Designer採用完整profile、完成dependent experiment與affected review後明確解除gate |
-| M4B-MVA-EFFICIENCY | `OPEN / PLAN FREEZE` | J/P、bounded fallback與D/H readiness新量測 | plan commit/push → Pi development → implementation commit/push → clean exact-SHA formal packet |
+| M4B-MVA-EFFICIENCY | `OPEN / CORE REVISION PENDING` | J/S2、conditional H、listen-only Reasoner與prompt探索工程交付 | Core review/revision → qualified prompt → clean exact-SHA formal packet |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
 
@@ -71,7 +71,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / EFFICIENCY PLAN COMMIT` | Step 5 result已於`23fb481…`交付；MVA-002保持immutable；先commit/push規劃，development尚未開始 |
+| M4B-MVA | `IN_PROGRESS / CORE REVISION PENDING` | User已核准efficiency工程交付；V1不可用且尚無合格prompt，formal evidence等待Core revision/freeze |
 
 ## Cumulative P1～P12 rule
 

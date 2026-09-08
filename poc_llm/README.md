@@ -32,8 +32,11 @@ runtime，不能使用workstation lock替代。執行命令與離線／receipt�
 
 最新bounded efficiency工作以
 [`m4b_mva_efficiency.md`](../docs/milestone/m4b_mva_efficiency.md)為執行計畫；目前先做exact
-規劃freeze commit/push，implementation尚未開始。其後才做API/source inventory與fallback
-feasibility；正式candidate須經User review及Core revision，既有MVA packet不得被覆寫或冒充新實驗。
+工程實作、Pi-native驗證及User review已完成，結果由
+[`DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003`](../docs/delivery/DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md)
+送Core revision。J/S2與conditional H為工程建議；listen-only Reasoner可用，但V1不可採用且V2A、
+V2B、V2C皆未成為合格prompt。正式candidate與hardware evidence仍須Core freeze後，以clean exact
+pushed SHA重跑；既有MVA packet不得被覆寫或冒充新實驗。
 
 Gate 0 R1 已加入 minimal M0 executable packet、test request 與 evidence schema；它們
 目前只可作 local/fake validation。Packet 存在不代表 M0 已啟動，也不能用 Audio POC

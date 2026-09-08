@@ -9,7 +9,7 @@
 * [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
 * [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
 * [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
-* [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - Core Designer依DELIVERY-025新增的bounded encoding/readiness實驗；`M4B-MVA-EFFICIENCY` Open，Pi未授權
+* [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - Core Designer依DELIVERY-025新增的bounded encoding/readiness實驗；工程結果已由DELIVERY-003回覆，待Core revision
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -115,6 +115,8 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R4-001.md`](reviews/REVIEW-LLM-M3-M4-GATE2-DEVELOPMENT-READINESS-R4-001.md) - R4 targeted approval；R3-F1/F2已關閉，exact milestone commit/push已授權，Pi仍未授權
 
 ## 4. Delivery (位於 `docs/delivery/`)
+
+* [`DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md`](delivery/DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md) - User核准的J/S2、conditional H、listen-only Reasoner及prompt未定案工程結果；送Core進行surface revision，非formal benchmark
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
 
 * [`DELIVERY-LLM-PI-CURATION-POSTCHECK-001.md`](delivery/DELIVERY-LLM-PI-CURATION-POSTCHECK-001.md) - Phase 1 Pi整理後核對、protected holds與Phase 2 workspace receipt銜接

@@ -33,6 +33,14 @@ class StreamingTests(unittest.TestCase):
         self.assertIsNotNone(j.first_decodable_text_ms)
         self.assertEqual(p.first_chunk_codepoints, 3)
 
+    def test_short_unpunctuated_text_becomes_first_chunk_at_terminal(self):
+        result = consume_raw_stream([
+            RawStreamChunk("S\nshort", False),
+            RawStreamChunk("", True),
+        ], encoding="P")
+        self.assertIsNotNone(result.first_chunk_ms)
+        self.assertEqual(result.first_chunk_codepoints, 5)
+
     def test_missing_or_late_terminal_and_failure_cancel_provisional_sink(self):
         events = []
         with self.assertRaisesRegex(RawStreamError, "MISSING_TERMINAL"):

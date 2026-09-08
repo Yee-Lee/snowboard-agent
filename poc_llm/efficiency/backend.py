@@ -9,8 +9,10 @@ import threading
 import time
 from typing import Any, Callable
 
+from poc_llm.efficiency.contract import EfficiencyContractError
 from poc_llm.efficiency.raw_stream import RawStreamError, send_message_raw
 from poc_llm.efficiency.readiness import ConversationReadinessPool, ReadinessIdentity
+from poc_llm.efficiency.reasoner import ListenReasoner
 from poc_llm.efficiency.streaming import consume_raw_stream, response_format
 from poc_llm.harness.mva_contract import (
     ContractViolation,
@@ -27,6 +29,44 @@ class PreparedConversation:
     open_ms: float
     initial_kv_tokens: int
     held_at_monotonic: float
+
+
+@dataclass(frozen=True)
+class ReasonedGeneration:
+    generation: MvaGeneration
+    action: dict[str, object]
+
+
+class EfficiencyBackendError(MvaBackendError):
+    """Sanitized engineering failure with no raw model or prompt content."""
+
+    def __init__(
+        self,
+        code: str,
+        *,
+        dirty: bool,
+        detail_code: str | None = None,
+        diagnostic_metrics: dict[str, int | float | None] | None = None,
+    ) -> None:
+        super().__init__(code, dirty=dirty)
+        self.detail_code = detail_code
+        self.diagnostic_metrics = diagnostic_metrics or {}
+
+
+def _output_detail_code(error: Exception) -> str:
+    if isinstance(error, RawStreamError):
+        return f"RAW_{error.code}"
+    if isinstance(error, EfficiencyContractError):
+        return {
+            "end=true conflicts with released text": "TEXT_END_CONFLICT",
+            "end=false requires nonblank text": "BLANK_NON_END",
+            "JSON output ended before exact text/end object": "INCOMPLETE_TEXT_END_OBJECT",
+            "JSON has trailing output": "TRAILING_OUTPUT",
+            "invalid UTF-8 output": "INVALID_UTF8",
+        }.get(str(error), "CONTRACT_INVALID")
+    if isinstance(error, ContractViolation):
+        return "SEMANTIC_INVALID"
+    return "GENERATION_EXCEPTION"
 
 
 class EfficiencyLiteRtBackend:
@@ -47,6 +87,7 @@ class EfficiencyLiteRtBackend:
         raw_sender: Callable[..., Any] = send_message_raw,
         clock: Callable[[], float] = time.monotonic,
         clock_ns: Callable[[], int] = time.monotonic_ns,
+        maximum_hold_seconds: float = 31.0,
     ) -> None:
         if encoding not in {"J", "P"}:
             raise ValueError("encoding must be J or P")
@@ -58,6 +99,7 @@ class EfficiencyLiteRtBackend:
         self._system_message = system_message
         self._user_template = user_template
         self._semantic_schema = semantic_schema
+        self._reasoner = ListenReasoner()
         self._profile_digest = profile_digest
         self._child_generation = child_generation
         self._raw_sender = raw_sender
@@ -75,7 +117,11 @@ class EfficiencyLiteRtBackend:
                 max_num_tokens=config["engine_kv_tokens"],
             )
         self._engine = engine
-        self._pool = ConversationReadinessPool(self._close_conversation, hold_seconds=30.0)
+        # The experiment targets 30.000 seconds and records actual elapsed time.
+        # Keep expiry distinct so up to one second of scheduler delay does not
+        # misclassify an otherwise valid target hold as stale adoption.
+        self._pool = ConversationReadinessPool(
+            self._close_conversation, hold_seconds=maximum_hold_seconds)
         self._conversation: Any | None = None
         self._conversation_from_hold = False
         self._session_id: str | None = None
@@ -218,10 +264,12 @@ class EfficiencyLiteRtBackend:
         user_text: str,
         *,
         on_provisional_text: Callable[[str], None] | None = None,
+        _model_user_text: str | None = None,
     ) -> MvaGeneration:
         conversation = self._require_session(session_id, turn_id)
         try:
-            prompt = render_user_turn(self._user_template, user_text)
+            prompt = (render_user_turn(self._user_template, user_text)
+                      if _model_user_text is None else _model_user_text)
             new_user_tokens = len(self._engine.tokenize(user_text))
             current_kv_tokens = conversation.token_count
             rendered = conversation.render_message_to_string(prompt)
@@ -277,6 +325,23 @@ class EfficiencyLiteRtBackend:
         except Exception as error:
             with self._lock:
                 cancelled = self._cancel_called
+            diagnostic_metrics: dict[str, int | float | None] = {
+                "new_user_tokens": new_user_tokens,
+                "rendered_tokens": rendered_tokens,
+                "runtime_prefill_tokens": None,
+                "output_tokens": None,
+                "kv_tokens": None,
+                "terminal_ms": (self._clock_ns() - started_ns) / 1_000_000,
+            }
+            try:
+                failed_benchmark = conversation.get_benchmark_info()
+                diagnostic_metrics.update({
+                    "runtime_prefill_tokens": failed_benchmark.last_prefill_token_count,
+                    "output_tokens": failed_benchmark.last_decode_token_count,
+                    "kv_tokens": conversation.token_count,
+                })
+            except Exception:
+                pass
             self._discard_session()
             if cancelled or (isinstance(error, RawStreamError) and error.code == "CANCELLED"):
                 code = "CANCELLED"
@@ -286,13 +351,42 @@ class EfficiencyLiteRtBackend:
                 code = "INVALID_OUTPUT"
             else:
                 code = "GENERATION_FAILED"
-            raise MvaBackendError(code, dirty=True) from error
+            raise EfficiencyBackendError(
+                code,
+                dirty=True,
+                detail_code=_output_detail_code(error),
+                diagnostic_metrics=diagnostic_metrics,
+            ) from error
         with self._lock:
             if self._conversation is not conversation or self._session_id != session_id:
                 raise MvaBackendError("PROTOCOL_ERROR", dirty=True)
             self._last_turn_id = turn_id
             self._generation_active = False
         return MvaGeneration(semantic=stream.semantic, metrics=metrics)
+
+    def generate_turn(
+        self,
+        session_id: str,
+        turn_id: int,
+        facts: object,
+        turn_input: object,
+        *,
+        on_provisional_text: Callable[[str], None] | None = None,
+    ) -> ReasonedGeneration:
+        """Execute the listen-only Reasoner boundary without exposing the envelope to the model."""
+
+        projected = self._reasoner.project_turn(facts, turn_input)
+        generation = self.generate(
+            session_id,
+            turn_id,
+            projected.user_text,
+            on_provisional_text=on_provisional_text,
+            _model_user_text=projected.user_text,
+        )
+        return ReasonedGeneration(
+            generation=generation,
+            action=self._reasoner.project_generation(generation.semantic),
+        )
 
     def cancel(self) -> None:
         with self._lock:

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import unittest
 
-from poc_llm.efficiency.backend import EfficiencyLiteRtBackend
+from poc_llm.efficiency.backend import EfficiencyBackendError, EfficiencyLiteRtBackend
 from poc_llm.efficiency.raw_stream import RawStreamChunk, RawStreamError
 from poc_llm.harness.mva_contract import SESSION_FACTS
 from poc_llm.harness.mva_litert_backend import MvaBackendError
@@ -106,6 +106,20 @@ class EfficiencyBackendTests(unittest.TestCase):
         p.open_session("p", SESSION_FACTS)
         self.assertEqual(p.generate("p", 1, "問題").semantic, {"text": "回答", "end": False})
 
+    def test_reasoned_turn_unwraps_envelope_and_owns_action_projection(self):
+        subject, engine = backend("J", ['{"text":"回答","end":false}'])
+        subject.open_session("reasoned", SESSION_FACTS)
+        result = subject.generate_turn("reasoned", 1, SESSION_FACTS, {
+            "perceptions": [{"kind": "listen", "status": "ok", "text": "問題"}],
+        })
+        self.assertEqual(result.generation.semantic, {"text": "回答", "end": False})
+        self.assertEqual(result.action, {
+            "action_kind": "speak", "action_payload": {"text": "回答"},
+            "next_perceptions": ["listen"],
+        })
+        self.assertEqual(engine.created[0].messages[0], "問題")
+        self.assertNotIn("action_kind", engine.created[0].messages[0])
+
     def test_hold_adoption_reuses_exact_clean_conversation(self):
         subject, engine = backend("J", ['{"text":"回答","end":false}'])
         prepared = subject.prepare_clean(SESSION_FACTS)
@@ -137,6 +151,16 @@ class EfficiencyBackendTests(unittest.TestCase):
         self.assertTrue(raised.exception.dirty)
         self.assertTrue(engine.created[0].closed)
         self.assertIsNone(subject.session_id)
+
+    def test_invalid_json_semantics_preserve_sanitized_diagnostic(self):
+        subject, _ = backend("J", ['{"text":"回答","end":true}'])
+        subject.open_session("invalid", SESSION_FACTS)
+        with self.assertRaises(EfficiencyBackendError) as raised:
+            subject.generate("invalid", 1, "問題")
+        self.assertEqual(raised.exception.code, "INVALID_OUTPUT")
+        self.assertEqual(raised.exception.detail_code, "TEXT_END_CONFLICT")
+        self.assertEqual(raised.exception.diagnostic_metrics["new_user_tokens"], 2)
+        self.assertEqual(raised.exception.diagnostic_metrics["runtime_prefill_tokens"], 7)
 
     def test_no_request_hold_close_and_new_session_has_fresh_conversation(self):
         subject, engine = backend("J")
