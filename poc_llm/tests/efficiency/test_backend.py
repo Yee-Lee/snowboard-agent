@@ -153,12 +153,12 @@ class EfficiencyBackendTests(unittest.TestCase):
         self.assertIsNone(subject.session_id)
 
     def test_invalid_json_semantics_preserve_sanitized_diagnostic(self):
-        subject, _ = backend("J", ['{"text":"回答","end":true}'])
+        subject, _ = backend("J", ['{"text":"","end":false}'])
         subject.open_session("invalid", SESSION_FACTS)
         with self.assertRaises(EfficiencyBackendError) as raised:
             subject.generate("invalid", 1, "問題")
         self.assertEqual(raised.exception.code, "INVALID_OUTPUT")
-        self.assertEqual(raised.exception.detail_code, "TEXT_END_CONFLICT")
+        self.assertEqual(raised.exception.detail_code, "BLANK_NON_END")
         self.assertEqual(raised.exception.diagnostic_metrics["new_user_tokens"], 2)
         self.assertEqual(raised.exception.diagnostic_metrics["runtime_prefill_tokens"], 7)
 

@@ -34,6 +34,12 @@ it encodes legacy responsibilities. V2A/V2B failed output behavior; V2C repaired
 repeated factual correctness and concise-answer review. No prompt is qualified and the prompt-design
 method remains unresolved. All Pi observations in that delivery are engineering evidence only.
 
+Later the same day, bounded prompt exploration produced User-accepted V2D2. Delivery
+[`DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004`](../delivery/DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004.md)
+supersedes only Delivery 003's “no qualified prompt” disposition: the 66-token prompt is acceptable
+for the current listen-only POC and leaves substantial prefill headroom. Its indirect vision answer is
+a known nonblocking limitation for future capability revision; all observations remain non-formal.
+
 ## Goal and delivery contribution
 
 以固定Gemma 4 E2B、LiteRT-LM 0.16.0、Pi 5 4GB與既有MVA profile，比較兩種model encoding

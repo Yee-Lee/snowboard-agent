@@ -116,6 +116,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 
 ## 4. Delivery (位於 `docs/delivery/`)
 
+* [`DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004.md`](delivery/DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004.md) - User接受的66-token V2D2 prompt baseline、Pi回答/延遲、final-speech end語義及可擴充限制；供Core參考，非formal benchmark
 * [`DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md`](delivery/DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md) - User核准的J/S2、conditional H、listen-only Reasoner及prompt未定案工程結果；送Core進行surface revision，非formal benchmark
 我們要對外正式交付給外部團隊（由 PM 轉交）的文件，命名規範為 `DELIVERY-{流水號}-{to_who}-{title}.md`：
 

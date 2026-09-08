@@ -88,7 +88,6 @@ class JsonSemanticStreamDecoderTests(unittest.TestCase):
             '{"text":"x"}',
             '{"text":"x","end":false,"extra":0}',
             '{"text":"x","text":"y","end":false}',
-            '{"text":"x","end":true}',
             '{"text":"","end":false}',
             '{"text":"x","end":false}junk',
             '{"text":"\\uDC00","end":false}',
@@ -97,6 +96,10 @@ class JsonSemanticStreamDecoderTests(unittest.TestCase):
         for value in cases:
             with self.subTest(value=value), self.assertRaises(EfficiencyContractError):
                 decode_chunks(JsonSemanticStreamDecoder(), [value])
+        released, semantic = decode_chunks(
+            JsonSemanticStreamDecoder(), ['{"text":"再見","end":true}'])
+        self.assertEqual("".join(released), "再見")
+        self.assertEqual(semantic, {"text": "再見", "end": True})
 
     def test_overflow_invalid_utf8_truncation_and_cancel(self):
         with self.assertRaises(EfficiencyContractError):
@@ -115,8 +118,9 @@ class JsonSemanticStreamDecoderTests(unittest.TestCase):
     def test_bad_late_terminal_invalidates_released_text(self):
         subject = JsonSemanticStreamDecoder()
         self.assertEqual("".join(subject.feed('{"text":"provisional","end":')), "provisional")
+        subject.feed("true}")
         with self.assertRaises(EfficiencyContractError):
-            subject.feed("true}")
+            subject.feed("junk")
         with self.assertRaises(EfficiencyContractError):
             subject.finish()
 

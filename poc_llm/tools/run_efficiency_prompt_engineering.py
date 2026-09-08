@@ -23,6 +23,8 @@ CANDIDATES = {
     "V2A": ROOT / "poc_llm/contracts/efficiency/system-prompt-v2a-core.txt",
     "V2B": ROOT / "poc_llm/contracts/efficiency/system-prompt-v2b-core.txt",
     "V2C": ROOT / "poc_llm/contracts/efficiency/system-prompt-v2c-core.txt",
+    "V2D": ROOT / "poc_llm/contracts/efficiency/system-prompt-v2d-core.txt",
+    "V2D2": ROOT / "poc_llm/contracts/efficiency/system-prompt-v2d2-core.txt",
 }
 SETTINGS = "溫暖自然，稍帶幽默。"
 NEGATIVE_MARKERS = ("不能", "無法", "看不到", "沒有")
@@ -34,7 +36,7 @@ SCREEN_CASES = (
     ("explicit_end", "不用了，結束對話。", "end"),
     ("negative_end", "不要結束，再說簡單一點。", "answer"),
 )
-TIMING_PAIR = ("你好？", "請用一句話說明天空為什麼看起來是藍色的？")
+TIMING_PAIR = ("你好", "我應該怎麼加強英語口說能力呢")
 
 
 def _turn(text: str) -> dict[str, object]:
@@ -45,7 +47,7 @@ def _passes(expectation: str, semantic: dict[str, object]) -> bool:
     text = semantic["text"]
     end = semantic["end"]
     if expectation == "end":
-        return end is True and text == ""
+        return end is True
     if end is not False or not isinstance(text, str) or not text.strip():
         return False
     if expectation == "identity":
@@ -104,9 +106,17 @@ def _one(
             if include_public_answer:
                 failed["provisional_public_answer"] = "".join(provisional)
             return failed
-        action_ok = (
-            result.action["action_kind"] == ("rest" if expectation == "end" else "speak")
-        )
+        if expectation == "end":
+            action_ok = (
+                result.action["next_perceptions"] == []
+                and result.action["action_kind"]
+                == ("speak" if result.generation.semantic["text"] else "rest")
+            )
+        else:
+            action_ok = (
+                result.action["action_kind"] == "speak"
+                and result.action["next_perceptions"] == ["listen"]
+            )
         return _metrics(
             result,
             case_id=session,
@@ -172,7 +182,7 @@ def main() -> int:
                 for case_id, text, expectation in SCREEN_CASES
             ]
             confirmation = []
-            if all(item["pass"] for item in screen):
+            if args.candidate in {"V2D", "V2D2"} or all(item["pass"] for item in screen):
                 for repetition in range(1, 4):
                     session = f"timing-{repetition}"
                     backend.open_session(session, SESSION_FACTS)

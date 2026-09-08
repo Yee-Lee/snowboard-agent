@@ -77,8 +77,13 @@ class ListenReasonerTests(unittest.TestCase):
             self.subject.project_generation({"text": "", "end": True}),
             {"action_kind": "rest", "action_payload": {}, "next_perceptions": []},
         )
+        self.assertEqual(
+            self.subject.project_generation({"text": "好的，再見", "end": True}),
+            {"action_kind": "speak", "action_payload": {"text": "好的，再見"},
+             "next_perceptions": []},
+        )
         with self.assertRaises(ReasonerError) as raised:
-            self.subject.project_generation({"text": "不能同時回答", "end": True})
+            self.subject.project_generation({"text": "", "end": False})
         self.assertEqual(raised.exception.code, ReasonerCode.INVALID_OUTPUT)
 
     def test_instances_do_not_share_session_state(self) -> None:

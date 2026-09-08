@@ -19,6 +19,22 @@ P_MAX_TEXT_CODEPOINTS = 4096
 MAX_WIRE_CODEPOINTS = 16384
 
 
+def validate_efficiency_semantic(value: object) -> dict[str, object]:
+    """Allow optional final speech; reject only blank non-final output."""
+
+    if not isinstance(value, dict) or set(value) != {"text", "end"}:
+        raise ContractViolation("semantic output must contain exact text/end keys")
+    output_text = value["text"]
+    end = value["end"]
+    if not isinstance(output_text, str) or not isinstance(end, bool):
+        raise ContractViolation("semantic text/end types are invalid")
+    if len(output_text) > P_MAX_TEXT_CODEPOINTS:
+        raise ContractViolation("semantic text exceeds wire limit")
+    if not end and not output_text.strip():
+        raise ContractViolation("end=false requires nonblank text")
+    return {"text": output_text, "end": end}
+
+
 class EfficiencyContractError(ContractViolation):
     """A stream can no longer produce an eligible successful result."""
 
@@ -336,8 +352,6 @@ class JsonSemanticStreamDecoder:
                 self._fail("invalid JSON boolean")
             if self._literal == self._literal_target:
                 self._end = self._literal == "true"
-                if self._end and self._text_length:
-                    self._fail("end=true conflicts with released text")
                 self._seen.add("end")
                 self._state = "AFTER_VALUE"
             return None
@@ -358,8 +372,6 @@ class JsonSemanticStreamDecoder:
         self._fail("invalid JSON parser state")
 
     def _append_text(self, value: str) -> str:
-        if self._end is True:
-            self._fail("end=true conflicts with released text")
         self._text_length += len(value)
         if self._text_length > self._maximum_text_codepoints:
             self._fail("JSON text exceeds semantic limit")
@@ -378,7 +390,7 @@ class JsonSemanticStreamDecoder:
             if self._state != "DONE" or self._seen != {"text", "end"}:
                 self._fail("JSON output ended before exact text/end object")
             wire_value = json.loads("".join(self._wire))
-            result = validate_semantic(wire_value)
+            result = validate_efficiency_semantic(wire_value)
             if result["text"] != self.released_text or result["end"] is not self._end:
                 self._fail("incremental JSON projection disagrees with terminal object")
         except (json.JSONDecodeError, EfficiencyContractError, ContractViolation) as error:

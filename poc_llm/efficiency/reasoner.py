@@ -10,11 +10,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Mapping, Protocol, Sequence
 
+from poc_llm.efficiency.contract import validate_efficiency_semantic
 from poc_llm.harness.mva_contract import (
     ContractViolation,
     admit_tokens,
     reasoner_projection,
-    validate_semantic,
     validate_session_facts,
 )
 
@@ -150,6 +150,13 @@ class ListenReasoner:
     @staticmethod
     def project_generation(semantic: object) -> dict[str, object]:
         try:
-            return reasoner_projection(validate_semantic(semantic))
+            result = validate_efficiency_semantic(semantic)
+            if result["end"] and result["text"]:
+                return {
+                    "action_kind": "speak",
+                    "action_payload": {"text": result["text"]},
+                    "next_perceptions": [],
+                }
+            return reasoner_projection(result)
         except ContractViolation as error:
             raise ReasonerError(ReasonerCode.INVALID_OUTPUT, str(error)) from error
