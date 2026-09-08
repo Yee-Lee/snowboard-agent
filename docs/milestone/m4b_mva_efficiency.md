@@ -1,10 +1,29 @@
 # M4B-MVA-EFFICIENCY：encoding與Conversation readiness受控實驗
 
-狀態：`IN_PROGRESS / WORKSTATION CONTRACT MILESTONE COMPLETE / PI VALIDATION PENDING`
+狀態：`IN_PROGRESS / USER SCOPE CONVERGED / REASONER-PROMPT PLAN FREEZE`
 
 External gates：`M4B-MVA-EFFICIENCY OPEN`；`M4B-MVA-POC OPEN`
 
 Baseline：`M4B-MVA-002`
+
+## 2026-09-08 User scope convergence
+
+User stopped further experiment expansion. Existing engineering discovery is retained, but `S3`, `S4`,
+additional prewarm variants, broad prompt search and repeated confirmation of already-established
+prefill/cache/input-length observations are no longer active work. The remaining pre-formal work is:
+
+1. a minimum executable Reasoner reference that unwraps the product envelope and supports only the
+   current `listen` path while preserving a future perception-projector boundary;
+2. at most two prompt candidates after `V1`, stopping at the first candidate that passes public
+   structure/end/capability checks and has a useful measured latency/token profile;
+3. one Core revision request combining the original J/P/S2 and D/H answers with a compact supplemental
+   engineering appendix; and
+4. only the affected clean-SHA formal measurements after Core freezes the revised surface.
+
+The current voice-input limit is 20 Unicode codepoints. Trusted personality plus other settings have a
+separate combined 20-codepoint limit. `128` prefill tokens is telemetry/performance classification, not
+admission rejection; `1024` KV capacity remains the hard runtime boundary. The complete bounded plan is
+[`PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001`](../response/PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001.md).
 
 ## Goal and delivery contribution
 

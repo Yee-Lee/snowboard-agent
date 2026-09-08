@@ -60,6 +60,7 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-LLM-POC-M4B-MVA-MEASURE-001.md`](response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md) - M4B-MVA正式收件、Core exact-source核對、產品等價設計修正與授權邊界
 * [`ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](response/ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - byte-identical新Income收件、J/P與D/H實驗安排、sample accounting及Pi/User gate
 * [`ASSESSMENT-LLM-M4B-MVA-EFFICIENCY-SCOPE-EXPANSION-001.md`](response/ASSESSMENT-LLM-M4B-MVA-EFFICIENCY-SCOPE-EXPANSION-001.md) - User擴大P fallback責任、D/H風險、bounded solution funnel與Core revision boundary
+* [`PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001.md`](response/PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001.md) - User收斂後的最小Reasoner listen架構、bounded prompt提案、停止線與Core revision順序
 * [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md`](response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md) - 工作站更換前的Step 5完整continuation record、測試、round-close audit、未完成項目與授權邊界
 * [`HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md`](response/HANDOFF-LLM-M4B-MVA-PI-ENTRY-001.md) - 新工作站WP01 controller/writer/lock驗證與平台差異對照；execution snapshot及Pi連接前handoff
 * [`ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md`](response/ASSESSMENT-LLM-M4B-MVA-PI-ENTRY-001.md) - Pi進場缺陷、MVA-001 INCONCLUSIVE、MVA-002正式machine evidence、User-reviewed latency瓶頸拆解與Core Step 6效率調整要求
