@@ -1,6 +1,6 @@
 # M4B — clean rewrite gates
 
-狀態：**Redesign / Developer and Tester entry closed**。
+狀態：**Foundation coverage approved / Developer entry open for M4B-FOUNDATION-REVISION only**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -12,8 +12,8 @@
 | :--- | :--- | :--- | :--- |
 | `M4B-LEGACY-DESIGN-CLEANUP` | Designer | Closed | 舊M4B Designer authority移出active design；穩定路徑宣告無現行設計 |
 | `M4B-DESIGN-GATE-REASONER-BEHAVIOR` | Designer + USER | Closed | 完整normal/error語意固定action後路由、speech ownership、Conversation replacement與R2/R3/E1邊界 |
-| `M4B-FOUNDATION-ARCH-REVIEW` | Architect | Open | `AR_impl_M4B_III`修訂sequential replacement、post-action route與pre-perception readiness架構契約 |
-| `M4B-FOUNDATION-REVISION` | Designer + Tester + Developer | Blocked | foundation design/coverage核准後遷移event、SM、rest、Conversation lifecycle與affected M1/M2 regression |
+| `M4B-FOUNDATION-ARCH-REVIEW` | Architect | Closed | `AR_impl_M4B_III`修訂sequential replacement、post-action route與pre-perception readiness架構契約；Reviewer PASS及Designer確認 |
+| `M4B-FOUNDATION-REVISION` | Designer + Tester + Developer | Open — implementation | [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md)與[`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md)已核准；只開Developer foundation package |
 | `M4B-DESIGN-COMPLETE` | Designer | Blocked | 從空白結構完成session、prompt/token、capacity、memory、timing、protocol與驗證設計 |
 | `M4B-ARCH-REVIEW` | Architect/Reviewer | Blocked | 只審 replacement design 的必要cross-boundary delta；舊review不得釋放本gate |
 | `M4B-TEST-COVERAGE` | Tester + Designer | Blocked | 新test spec覆蓋核准設計；不沿用舊M4B測試語意 |
@@ -47,6 +47,9 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 - Current entry: [`ch_m4b_llm_production.md`](../implement/ch_m4b_llm_production.md)（redesign
   tombstone；尚無產品設計）。
+- Foundation implementation design:
+  [`m4b_foundation_revision.md`](../implement/m4b_foundation_revision.md)（Designer complete；Tester
+  coverage approved）。
 - Current progress: [`status/design.md`](../status/design.md)。
 - POC inputs:
   [`EFFICIENCY-003`](../outsource/pm_handoff/DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md) and
@@ -56,6 +59,7 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 ## Next action
 
-由Architect處理`AR_impl_M4B_III`。Designer確認architecture authority後，先準備獨立的
-foundation revision design與Tester coverage，再進M4B cognition/product design。現在沒有
-Developer／Tester work package，也不得建立candidate或產品驗收結果。
+Developer依 [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) 與
+[`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md) 實作且只修改foundation inventory；
+完成candidate後由Tester驗證。Foundation revision驗證完成前不進M4B cognition/product design，
+也不得建立產品candidate或產品驗收結果。

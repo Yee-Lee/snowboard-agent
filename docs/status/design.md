@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation architecture confirmed; foundation implementation design pending
-- Developer entry: **Closed**
+- State: Foundation implementation package open
+- Developer entry: **Open for M4B-FOUNDATION-REVISION only**
 
 ## USER-confirmed direction
 
@@ -37,8 +37,15 @@ Status: **CLOSED by Architect revision, Reviewer PASS and Designer confirmation 
 
 [`AR_impl_M4B_III`](../reviews/history/AR_impl_M4B_III.md) confirms the revised `arch.md` contract for
 sequential Conversation replacement, primary action plus post-action routing, pre-perception
-Conversation readiness and the R1/R2/R3/E1 boundary. Foundation implementation design may now begin;
-Developer entry remains closed until that design and Tester coverage are complete.
+Conversation readiness and the R1/R2/R3/E1 boundary. Foundation implementation design is now
+complete; Tester coverage and Designer mapping confirmation are also complete.
+
+Foundation design:
+[`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) completed by Designer on
+2026-09-10. Coverage authority:
+[`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md). Coverage review
+[`TR_spec_M4B_V`](../reviews/history/TR_spec_M4B_V.md) resolved after Designer Round 3 PASS. Only the
+foundation implementation package is open; cognition/product development remains closed.
 
 ## Other redesign inputs to preserve
 
@@ -135,9 +142,7 @@ Developer entry remains closed until that design and Tester coverage are complet
 
 ## Next Designer work
 
-1. Prepare the separately gated foundation-contract implementation design against the confirmed
-   `AR_impl_M4B_III` authority.
-2. Route the completed foundation design to Tester for new coverage; keep Developer entry closed
-   until both are approved.
-3. After the foundation revision verifies, build the remaining replacement M4B design and obtain
+1. Await Developer's `M4B-FOUNDATION-REVISION` candidate and Tester verification; keep cognition/
+   product rewrite closed.
+2. After the foundation revision verifies, build the remaining replacement M4B design and obtain
    its focused review/coverage before opening cognition/product development.
