@@ -180,7 +180,7 @@ GPIO 分流常見規 §5.4。
 **組合決策權**
 
 * 第一 turn：SM 依 wake source 決定（反射式起首，映射表見 §4.4）
-* 後續 turn：reasoner 決定（決策式延續，見 §2.7 `next_perceptions`）
+* 後續 turn：Reasoner 以 `post_action_route` 決定是否延續；`KEEP_NEXT` / `REPLACE_NEXT` 時再以 `next_perceptions` 決定組合（見 §2.7）
 
 `read` perception 的輸入路徑：`read` 是外部訊息的被動消費者，運作機制見 §5.1。其他 perception（ `listen` / `look` ）的輸入是時間點觸發的裝置讀取，語意單純，直接向 `core` 借用資源即可，不需分流機制。
 
@@ -198,20 +198,22 @@ GPIO 分流常見規 §5.4。
 * 接收本 turn 所有 perception 結果（含 `status ∈ {ok, timeout, error}` ）
 * 接收本 turn 起始時的 pending message metadata（僅 count 或 id 清單，不含 payload；由 SM 於 THINK Entry 傳入，見 §4.6 / §5.1）——供 reasoner 在決定 `next_perceptions` 時判斷是否加入 `read`
 * 組 prompt、呼叫 LLM、正規化輸出為 `LLMResponse`
-* 決定本 turn action 類型與內容
-* 決定下一 turn 的 perception 組合（若 session 繼續）
+* 決定本 turn 的 primary action 類型與內容
+* 決定 primary action 後保留 Conversation、替換 Conversation 或結束 session，以及繼續時下一 turn 的 perception 組合
 * 一次 turn 只推論一次、只產出一個 `LLMResponse`
-* 依 P5，LLM engine 部分失敗（timeout、解析錯誤、拒答）時應內部降級產出合理 `LLMResponse`（例：apology speak + 繼續 listen），優先讓 session 延續
+* 依 P5，未破壞 Conversation 的部分失敗應優先內部降級為可用 `LLMResponse`；已送出 model request 的失敗則依是否可證明 request 終止、Conversation 清理與 Engine 可用性選擇 R2 替換或 E1 system-error（§6.6）
 
 **M4 Reasoner 分工（LLM 角色邊界）**
 
-M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 facts。LLM 只輸出：短回答文本或結束意圖。**Reasoner 獨立決定** `action_kind` 與 `next_perceptions`——不新增每 turn 第二次 LLM 推論，不引入通用 task / context manager。M4 典型流程：speak → listen；reasoner 判定結束意圖 → 產 `action_kind=rest`。
+M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 facts。LLM 只輸出：短回答文本或結束意圖。**Reasoner 獨立決定** `action_kind`、`post_action_route` 與需要時的 `next_perceptions`——不新增每 turn 第二次 LLM 推論，不引入通用 task / context manager。M4 典型流程是 `speak + KEEP_NEXT` 後 listen；含有非空最終語音的結束意圖為 `speak + END_SESSION`；無主要使用者內容的結束意圖為 `rest + END_SESSION`。
 
-**P5 分界（pre-inference 與 dirty context）**
+**P5 與 Conversation 失敗分界**
 
-* **Pre-inference rejection**：若推論前 Reasoner 判定 perception 結果 / context 不足以組出合理 prompt（尚未改動 Conversation），可內部降級產出 `LLMResponse(action_kind=speak, payload=apology)` + 繼續 listen，無需呼叫 LLM；此為 P5 降級的合法路徑，對 SM 仍發布正常 `LLMResponse`。
-* **Dirty / lost context**：若 Reasoner 偵測到 context 已損壞或無法恢復（例：session begin 後 Conversation 已有改動但推論發現 context 丟失），Reasoner 應產 `action_kind=rest`（不得 silent reset 後繼續回答）；SM 執行正常 rest 收斂，結束 product session。
-* Cancel 中的 Reasoner：cancel 狀態下 Reasoner 不 publish 正常 `LLMResponse`（遵循 §6.3 被 cancel 者不 publish Facts）。Unprovable cleanup 沿現有 Level 2 / 3 路徑。
+* **Clean pre-inference rejection（R1）**：若 Reasoner 在 rejected input 改動 Conversation 前判定 perception 結果 / context 無法形成合理 prompt，可產出 application-owned retry `LLMResponse(action_kind=speak, post_action_route=KEEP_NEXT)`，無需呼叫 LLM；對 SM 仍是正常 cognition Fact。
+* **Replaceable post-send failure（R2）**：若 model request 已送出，Reasoner 只能在 active request 已有 terminal/join proof、Engine 仍可用，且舊 Conversation 可進入可證明 cleanup 的 barrier 時產出以 `REPLACE_NEXT` 繼續的降級 `LLMResponse`。R2 只有在 SM 後續取得 close / cleanup proof 後才完成；否則轉 E1。不得在不同 history 上靜默重送 rejected input。
+* **USER reset / end（R3）**：僅來自明確使用者結束 / reset 意圖或 interrupt，走 `END_SESSION` 或 `InterruptRequested` 的正常 session 收斂；不由 retry 次數自動升級。
+* **Unsafe / system failure（E1）**：wiring / contract failure、worker crash、protocol desync、backend 不可用，或無法證明 request 終止 / Conversation cleanup，一律離開 R2 進入現有 ERROR 與 Level 1 / 2 / 3 收斂。
+* Cancel 中的 Reasoner 不 publish 正常 `LLMResponse`（遵循 §6.3 被 cancel 者不 publish Facts）。
 
 **Pending message metadata 的邊界**：reasoner 可觀察但不可解讀 pending metadata——metadata 為 payload-free（僅 id 或 count），reasoner 藉此決定 `next_perceptions` 是否含 `read`；實際訊息內容由下一 turn 的 read perception 讀取。具體 metadata 形式（count vs id list、傳入通道）屬 `implement.md` 。
 
@@ -221,7 +223,10 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 
 * `action_kind` ∈ { speak, tool, rest }
 * `action_payload` ：依 `kind` 決定內容（schema 屬 `implement.md`）
-* `next_perceptions` ：下一 turn 的 perception 組合（ rest 時忽略 ）
+* `post_action_route` ∈ { `KEEP_NEXT`, `REPLACE_NEXT`, `END_SESSION` }
+* `next_perceptions` ：下一 turn 的 perception 組合；僅 `KEEP_NEXT` / `REPLACE_NEXT` 需要，`END_SESSION` 時忽略且 canonical Reasoner 應產空 tuple
+
+`rest` 保留為無 primary user-content action 時的相容值，且僅能搭配 `END_SESSION`。`speak / tool` 可搭配三種 route。非空最終 model speech 必須表示為 `speak + END_SESSION`，不得降成 `rest` payload 或產生虛假下一次 perception。
 
 **`next_perceptions` 的邊界**
 
@@ -229,8 +234,8 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 * 只是 kind 清單，不攜帶輸入脈絡；每個 perception module 自知輸入來源
 * SM 於 THINK Exit 的處理順序（見 §4.6）：
     i. 剔除非註冊 kind：含未註冊 kind 者 log warning + 忽略該 kind（不因單一壞 kind 判整個 `Fact` 違約）
-    ii. 非空要求：`action_kind ∈ {speak, tool}` 時，剔除後的 `next_perceptions` 必須為非空清單。若 reasoner 判定 session 應結束，應改產 `action_kind=rest` 而非空清單
-    iii. 空清單即違約：`action_kind ∈ {speak, tool}` 而剔除後為空（reasoner 原本即給空清單，或給的 kind 全未註冊）-> 視為 reasoner 契約違反，SM 走 §3.2「SM 自檢」ERROR 路徑（非 process 崩）
+    ii. `post_action_route ∈ {KEEP_NEXT, REPLACE_NEXT}` 時，剔除後的 `next_perceptions` 必須為非空 tuple；為空即視為 reasoner 契約違反
+    iii. `END_SESSION` 時忽略 `next_perceptions`；`rest` 搭配非 `END_SESSION` 或其他不合法 action / route 組合，均走 §3.2「SM 自檢」ERROR 路徑（非 process 崩）
 * 剔除發生於 THINK Exit 驗證通過後、PERCEPTION Entry 平行啟動前；SM 以剔除後清單啟動 worker
 
 ### 2.8 action/ —— 行動層
@@ -249,16 +254,17 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 
 **Speak 執行語意（delivery mode 與 M4C streaming-speak）**：M4B full-response 模式下，terminal `LLMResponse` 後才啟動 speak worker，不啟用下述 streaming control。M4C 的 THINK Entry 可由 SM 建立一個綁定 `(session_id, turn_id, correlation_id)` 的單次 streaming-speak control，並交給本 turn Reasoner。第一個經 Reasoner 判定可交付的 semantic text 由該 control 啟動唯一 speak worker；SM 在 THINK 期間即把該 worker 納入同一 turn 的 in-flight tracking。後續有序 fragment 只進同一 worker。Fragment 是 operation 內資料，不是 Fact、獨立 action 或新 turn，也不觸發 state transition。若 delivery/playback stage 在 THINK 期間先完成，只形成 SM private completion notice；speak worker 保持 in-flight，不得 return，也不得在 semantic terminal 驗證前發布 `ActionCompleted`。Terminal `LLMResponse` 驗證通過並進 ACTION 後，若 private completion 已記錄，speak worker 才發布唯一 `ActionCompleted` 並 return；若驗證失敗或發生 cancel，worker 依 §6.3 收斂且不發布正常 Fact。
 
-Reasoner terminal `LLMResponse` 仍是一 turn 唯一 cognition Fact。若已啟動 streaming speak，terminal response 必須驗證為同一 speak intent；驗證通過才由 THINK 進 ACTION，並在 ACTION 等待該既有 speak worker 的 terminal。只有 terminal semantic validation 與 speak terminal 都成功，才發布並接受唯一 `ActionCompleted(status=ok)`、再進下一 turn。Invalid/failed terminal、intent 不一致或 interrupt 必須共同取消 generation、queue、TTS 與 playback，結束 dirty session，且不得接受或發布正常成功。確切 port、chunk 與 backpressure 數值屬 implement。
+Reasoner terminal `LLMResponse` 仍是一 turn 唯一 cognition Fact。若已啟動 streaming speak，terminal response 必須驗證為同一 speak intent；驗證通過才由 THINK 進 ACTION，並在 ACTION 等待該既有 speak worker 的 terminal。只有 terminal semantic validation 與 speak terminal 都成功，才發布並接受唯一 primary `ActionCompleted(status=ok)`；後續由 `post_action_route` 決定下一 turn、Conversation 替換或 session end。Invalid/failed terminal、intent 不一致或 interrupt 必須共同取消 generation、queue、TTS 與 playback，進入 E1 或明確 interrupt 收斂，且不得接受或發布正常成功。確切 port、chunk 與 backpressure 數值屬 implement。
 
 > 註：query（查詢式派發，例：雲端查詢／雲端 LLM）為重要但尚未定義的第四類 action，見 §8。
 
-**Rest 的意義與邊界**：Reasoner 判定 session 該結束時產出 `LLMResponse(action_kind=rest)`。`rest` 是可選的使用者可感知收尾，不擁有 session 或資源生命週期。責任分工：
+**Rest 的意義與邊界**：`rest` 是可選的使用者可感知收尾，不擁有 session 或資源生命週期。Reasoner 保留 `rest + END_SESSION` 表示「無 primary user-content action，直接收尾」；`speak / tool + END_SESSION` 則必須先完成 primary action，再進 post-action rest，不得啟動新 perception。責任分工：
 
-* SM：session / turn 狀態轉移的唯一擁有者；收到 `ActionCompleted(kind=rest)` 後結束 session、對剩餘 in-flight 收斂、釋放追蹤欄位、回 `IDLE`
-* action/rest：純執行 UX 收尾，跑完即回報 `ActionCompleted`；不呼叫 SM、不管其他 worker
+* SM：session / turn 狀態轉移的唯一擁有者；在 ACTION 內追蹤 `primary` 與 `post-action-rest` phase，一次只允許一個 phase 擁有 active record。SM 僅接受 kind / correlation 與當前 phase 相符的 `ActionCompleted`；因此最終 speak 與其後 rest 的 terminal Facts 不會被當成同一 operation
+* action/rest：純執行 UX 收尾，跑完即回報屬於 rest phase 的 `ActionCompleted`；不呼叫 SM、不管其他 worker
+* primary action 回報 `status=error` 且 route 為 `END_SESSION` 時，SM 仍進 post-action rest 及 session 收斂，不使用 `default_perceptions`
 
-**統一性優勢**：所有 turn 一律以 `ActionCompleted` 收尾，消除「`LLMResponse` 無 action -> SM 直接回 `IDLE`」的特例分支。
+**統一性優勢**：每個 action phase 以一個可對應 active record 的 `ActionCompleted` 收尾；SM 不因 `LLMResponse` 而直接跳過 action terminal 或 session convergence。
 
 ### 2.9 adaptor/ —— 對外通道
 
@@ -298,14 +304,14 @@ observer = adaptor / log / metrics
 * SM 從不 publish `ErrorOccurred` —— SM 遇 unrecoverable exception 時讓 process 崩、由 systemd 接手
 * ERROR 進入的兩條因果鏈（SM 皆不 publish `ErrorOccurred` ）：
     * 外因：`ErrorOccurred` (non-SM) -> SM 讀到 -> `StateChanged(->ERROR)` ；observer 依時序推得原因
-    * SM 自檢 Worker Fact 契約違反：SM 於 guard / 狀態 Exit 判定送達的 Worker Fact 內容違約（不合 schema 的 `LLMResponse` 、剔除非註冊 kind 後仍為空的 `next_perceptions` ）-> SM 直接 transition 到 ERROR，不先 publish `ErrorOccurred` 。此路徑無前導事件， `StateChanged(->ERROR)` 即為權威信號。兩條路徑於 ERROR Entry 皆走 §6.5 error 收斂，且皆不升級為 process 崩（Level 3 僅保留給 §6.4 收斂失敗與 §3.4 bus 兜底失敗）
+    * SM 自檢 Worker Fact 契約違反：SM 於 guard / 狀態 Exit 判定送達的 Worker Fact 內容違約（不合 schema 的 `LLMResponse`、不合法 action / route 組合、或 `KEEP_NEXT` / `REPLACE_NEXT` 剔除非註冊 kind 後仍為空的 `next_perceptions`）-> SM 直接 transition 到 ERROR，不先 publish `ErrorOccurred`。此路徑無前導事件，`StateChanged(->ERROR)` 即為權威信號。兩條路徑於 ERROR Entry 皆走 §6.5 error 收斂，且皆不升級為 process 崩（Level 3 僅保留給 §6.4 收斂失敗與 §3.4 bus 兜底失敗）
 
 ### 3.3 事件清單
 
 **Worker Facts**
 
 * `PerceptionResult(kind, status, text, extra)` —— `status ∈ {ok, timeout, error}`
-* `LLMResponse(action_kind, action_payload, next_perceptions)` —— `action_kind ∈ {speak, tool, rest}`
+* `LLMResponse(action_kind, action_payload, post_action_route, next_perceptions)` —— `action_kind ∈ {speak, tool, rest}`，route 語意見 §2.7
 * `ActionCompleted(kind, status, result)` —— `status ∈ {ok, error}`
 * `ErrorOccurred(where, error)` —— 無 severity 欄位；SM 對所有 `ErrorOccurred` 統一反應（進 ERROR）
 
@@ -376,7 +382,7 @@ Guard 三步判定：SM dispatch loop 從 inbox 取出事件後，依序執行�
 ### 3.7 追蹤粒度
 
 * 每個 `session` 分配 `session_id`
-* 每個 `turn` 分配 `turn_id` ( `session` 內遞增 )
+* 每個 `turn` 分配 `turn_id` ( `session` 內遞增 )；Conversation replacement 不重置或復用 turn identity
 * SM 下發呼叫與 `worker` 回報事件皆帶 `(kind, session_id, turn_id, correlation_id)`
 * SM 拒絕不屬於當前 `session/turn` 的事件 ( `log` + 忽略 )
 * `Wake` 類事件、`Shutdown`、`Interrupt` 是 `session` 外事件，不需 ID
@@ -395,9 +401,10 @@ Guard 三步判定：SM dispatch loop 從 inbox 取出事件後，依序執行�
 
 Session 期間，系統在同一 session 的多 turn 之間保持對話脈絡（例：承接上一句、保留已知使用者意圖）。架構邊界：
 
-* **Lifetime 契約**：Product session 至多 claim 一個 Conversation。Implement 可在 SM begin 前準備一個未綁定、不含 user/session history 的 clean Conversation；SM begin 必須原子地綁定相容的 prepared object，或按需建立後綁定。綁定後 Conversation 才與該 session 共生，且不得被其他 session 使用。Prepared/claimed object 的 component owner 與初始化 API 屬 implement。
-* **Capacity 原則**：capacity 上限由 config 驅動；超出上限時關閉 session 並回 IDLE，不做 silent reset 或自動截斷。具體 KV limit 值、token 計算策略屬 implement。
-* **Session 結束即清棄**：session 結束時（rest、interrupt、error、shutdown 四路），SM 觸發 session end；Conversation 全部內容在完成 close 流程後清棄。不做跨 session 持久化——此設計確保每次 wake 為乾淨的 context。
+* **Lifetime / cardinality 契約**：Product Session 在任一瞬間至多 claim 一個 active Conversation，但同一 session 可依下述 replacement barrier 先後 claim 多個 Conversation generations，永不並存。Implement 可先準備未綁定、不含 user/session history 的 clean object；WAKE readiness barrier 原子 claim 相容 prepared object，或按需建立後 claim。Claim 後 Conversation 不得供其他 session 使用；component owner 與 API 屬 implement。
+* **Sequential replacement barrier**：SM 先阻擋新的 model admission，再取得 active request terminal/join proof，完成舊 Conversation close 與 cleanup proof，最後才 claim 新的 clean Conversation。Product `session_id` 與 session 內單調遞增的 `turn_id` 不變；Conversation-local history / KV 不保留，rejected input 不得自動 replay。任一步無法提供 termination / cleanup proof，或 Engine 已不可用，即離開 R2、依 E1 進入 ERROR 與 Level 1 / 2 / 3 邊界。
+* **Capacity 原則**：capacity 上限由 config 驅動。Context admission 僅能在 rejected input 尚未改動舊 Conversation 前選擇 R2 replacement；其 application-owned primary speech 要求 USER 重述，barrier 完成後的下一 perception 才接收新輸入，rejected input 不得在不同 history 上靜默重送。具體 KV limit、token 計算與 UX 內容屬 design / implement。
+* **Replacement 不等於 session end**：replacement 不清除 Product Session tracking，也不執行 external-message `flush-to-wake` / `discard`。正常 rest、interrupt、error、shutdown 仍結束 Product Session，依 §4.7 / §6.5 關閉當時 active Conversation 並清棄內容；不做跨 session 持久化。
 * **無產品記憶系統**：不建立任何持久化記憶層；長期 / 跨 session 記憶、摘要、檢索仍為未納入項目（見 §8.3）。
 
 ### 4.2 狀態集合
@@ -408,16 +415,18 @@ Session 期間，系統在同一 session 的多 turn 之間保持對話脈絡（
 | `WAKE` | 已被喚醒，發出反饋、準備啟動 `perception` |
 | `PERCEPTION` | 一或多個 `perception module` 平行執行中 |
 | `THINK` | `Reasoner` 推論中 |
-| `ACTION` | 執行 `action` ( `speak / tool / rest` ) |
+| `ACTION` | 執行 primary action，並依 route 完成 Conversation replacement 或 post-action rest |
 | `ERROR` | 錯誤處理中，短暫停留後回 `IDLE` |
 
 ### 4.3 醒來反饋時序
 
-`IDLE` -> `WAKE` -> 等 `wake_ack_seconds` ( config ) -> `PERCEPTION`。
+`IDLE` -> `WAKE` -> 等待 wake acknowledgement 與 Conversation readiness 兩個條件完成 -> `PERCEPTION`。
 
-進 `WAKE` 時 SM 發 `StateChanged`，`StatusBar` 狀態 `slot` 更新顯示 ( 見 §5.3 ) ; 反饋亦可含 `earcon` 等其他通道。`wake_ack_seconds` 是刻意的 `UX buffer`，讓使用者感知系統已醒來、開始收音才穩定。
+進 `WAKE` 時 SM 發 `StateChanged`，同時啟動 `wake_ack_seconds` 與首個 Conversation 的 start / claim。`WAKE` 是 session-preparation readiness barrier；SM inbox 在準備期仍保持可消費，且僅在兩項條件均完成後才可進 `PERCEPTION`。在此之前不得啟動 listen / ASR，也不得啟動 generation。
 
-**系統狀態顯示邊界**：系統狀態提示必須由 §5.3 三角色經 Arbiter 呈現；對話 state 投影使用 `StateChanged`，startup/shutdown 使用 lifecycle client，sanitized error detail 使用 error observer。`display_spec.md` 決定合法畫面、時機、文案與 Normal/Fullscreen 模式。架構不為顯示新增 SM state。若 M4C 採用 pre-session preparing，Designer 必須先修訂 display spec 並定義其 lifecycle trigger；在該修訂核准前，boot 維持現有 Fullscreen Blank。
+WAKE 期間可並行 application-owned preparation UX（例如顯示或錄製好的提示）；它不是 model-owned speech、perception、turn 或 Conversation content，也不產生 cognition Fact。該 UX 缺席或其 optional capability 不可用不得阻擋 readiness；畫面、文案、錄音與確切觸發時機屬 display / product design。Conversation open 只可與此準備 UX 重疊，不得與 active listen / ASR 重疊。
+
+**系統狀態顯示邊界**：系統狀態提示必須由 §5.3 三角色經 Arbiter 呈現；對話 state 投影使用 `StateChanged`，startup/shutdown 使用 lifecycle client，sanitized error detail 使用 error observer。`display_spec.md` 決定合法畫面、時機、文案與 Normal/Fullscreen 模式。架構不為 preparation UX 新增 SM state；Designer 須在啟用特定顯示前修訂 display spec 與 lifecycle trigger。
 
 ### 4.4 Wake source -> 首 turn perception 映射
 
@@ -453,13 +462,14 @@ SM 內建的 wake source -> perception 組合對應關係：
 | 當前狀態 | 觸發事件 / 條件 | 目的狀態 | 備註 |
 | :--- | :--- | :--- | :--- |
 | IDLE | `ButtonPressed` / `WakeWordDetected` / `ExternalMessageArrived` | WAKE | 記錄 wake source |
-| WAKE | `wake_ack_seconds` timer 到期 | PERCEPTION | — |
+| WAKE | wake acknowledgement 與 Conversation readiness 均完成 | PERCEPTION | 不允許 open 與 listen / ASR 重疊 |
 | PERCEPTION | 所有 perception 完成或 timeout | THINK | — |
 | THINK | `LLMResponse` 產出且通過契約驗證 | ACTION | 驗證項見 §4.6 THINK Exit；若本 turn 有 streaming speak 的 delivery/playback stage 已記錄 private completion，該 notice 只記錄、不提前轉移，待 terminal 驗證通過才進 ACTION |
-| THINK | `LLMResponse` 產出但驗證不通過（schema 不合、payload 不合，或剔除未註冊 kind 後 `next_perceptions` 空） | ERROR | 視為 reasoner bug（P5 降級亦失敗）；走 §3.2「SM 自檢」ERROR 路徑，SM 不 publish `ErrorOccurred`、不升級為 process 崩 |
-| ACTION | `ActionCompleted(kind∈{speak,tool}, status=ok)` | PERCEPTION | 依 reasoner `next_perceptions` |
-| ACTION | `ActionCompleted(kind∈{speak,tool}, status=error)` | PERCEPTION | 依 SM `default_perceptions` (§4.8) |
-| ACTION | `ActionCompleted(kind=rest, status=any)` | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) | 見 §4.6 ACTION Exit；Level 1 正常完成 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 (§6.5) |
+| THINK | `LLMResponse` 產出但驗證不通過（schema / payload 不合、action / route 組合不合法，或 continuing route 的 `next_perceptions` 正規化後為空） | ERROR | 視為 reasoner contract failure；走 E1 / §3.2「SM 自檢」ERROR 路徑，SM 不 publish `ErrorOccurred`、不因違約本身直接升級為 process 崩 |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `KEEP_NEXT` | PERCEPTION | `ok` 依 normalized `next_perceptions`；`error` 可依 §4.8 改用 `default_perceptions` |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `REPLACE_NEXT` | PERCEPTION / ERROR / Level 3 | 先走 sequential replacement barrier；`ok` 依 normalized `next_perceptions`，`error` 可依 §4.8 改用 `default_perceptions`；無法證明 cleanup 時轉 E1 |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `END_SESSION` | ACTION post-action-rest | 不論 primary status 均先進 rest phase，不進 perception、不使用 `default_perceptions` |
+| ACTION rest / post-action-rest | `ActionCompleted(kind=rest, status=any)` | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) | 見 §4.6 ACTION Exit；Level 1 正常完成 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 (§6.5) |
 | ERROR | in-flight 集合空 且 RM recovery barrier 已清除 | IDLE | 見 §6.5 ERROR Exit 條件 |
 
 ### 4.6 影響資源與資料 ownership 的 entry/exit 動作
@@ -471,18 +481,22 @@ SM 內建的 wake source -> perception 組合對應關係：
 * 分配新 `session_id`
 * 記錄本 session 的 wake source（供 §4.4 首 turn 映射）
 * 啟動 `wake_ack_seconds` timer
+* 啟動或 claim 一個 clean Conversation，將 open / claim handle 納入 session in-flight tracking；取得 readiness 前不得啟動 perception 或 generation
+* 可並行啟動 application-owned preparation UX；它不是 WAKE exit 必要條件，也不能代替 Conversation readiness proof
 * 若 wake source 為 `ExternalMessageArrived` → 通知 `external_message` ：訊息屬本 session（§5.1）
 
 **WAKE Exit**
 
-* 停止 `wake_ack_seconds` timer（正常路徑 timer 觸發即進 PERCEPTION；若因 Interrupt / Shutdown / Error 提前離開，需顯式停 timer 避免延遲觸發污染下一 session）
+* 正常路徑只有在 wake acknowledgement 與 Conversation readiness 均完成時才進 PERCEPTION；任一先完成都只記錄 private completion，不單獨觸發轉移
+* 若因 Interrupt / Shutdown / Error 提前離開，顯式停 timer，並依 §6.3 / §6.4 取得 active open 的 terminal/join proof，避免 late completion 污染下一 session
+* Conversation open 失敗依 §6.6 分類：可證明失敗 object 已清理且 Engine 可用才可在 WAKE 依 R2 替換；無法證明或屬 wiring / contract / backend 失敗則進 E1。重複可替換失敗不因次數自動轉 E1
 
 **PERCEPTION Entry**
 
 * 分配新 `turn_id`（session 內遞增，首 turn = 1）
 * 決定本 turn perception 組合：
     * 首 turn：依記錄的 wake source 反射式選擇（§4.4）
-    * 後續 turn：依前一 `LLMResponse.next_perceptions` ；若前一 turn 為 `ActionCompleted(kind∈{speak,tool}, status=error)` ，改用 `default_perceptions`（§4.8）
+    * 後續 turn：前一 route 必須為 `KEEP_NEXT` 或已完成 barrier 的 `REPLACE_NEXT`；primary action `status=ok` 依 normalized `next_perceptions`，`status=error` 可改用 `default_perceptions`（§4.8）
 * 對每個選定的 perception kind 呼叫 worker、加入 in-flight 集合
 * 若組合含 `read` → 通知 `external_message` 啟動 `read` 消費（§5.1）
 
@@ -490,26 +504,34 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * 呼叫 reasoner，加入 in-flight 集合
 * 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供 reasoner 決定 `next_perceptions` 是否含 `read`
-* 若為 session 首 turn（`turn_id == 1`）：SM session begin 觸發取得本 session 的 Conversation——原子綁定相容的 prepared object，或按需建立後綁定；取得完成前不得開始 generate。控制流方法呼叫不阻塞 SM inbox；SM inbox 在任何 component 內部操作期間均保持可消費（late ACK / 遲來 Signal 不因此堵塞）。
+* 進入 THINK 前 Conversation 已由 WAKE 或前一 `REPLACE_NEXT` barrier 取得 readiness；SM 在 generate admission 再次驗證 active Conversation generation 與本 session 相符。控制流呼叫不阻塞 SM inbox
 
 **THINK Exit**
 
 * 驗證 `LLMResponse` 是否合契約，依序：
-    i. `action_kind` ∈ {speak, tool, rest} ；否則違約 → ERROR
+    i. `action_kind` ∈ {speak, tool, rest}；否則違約 → ERROR
     ii. `action_payload` 符合對應 kind 的 schema（§3.3）；否則違約 → ERROR
-    iii. 剔除 `next_perceptions` 中未註冊 kind（log warning + 忽略，見 §2.7）
-    iv. `action_kind` ∈ {speak, tool} 時，剔除後 `next_perceptions` 須非空；為空 → 違約 → ERROR
-* 上述任一違約走 §3.2「SM 自檢」ERROR 路徑：SM 直接 transition 到 ERROR、不 publish `ErrorOccurred`、不升級為 process 崩；ERROR Entry 執行 §6.5 error 收斂。通過驗證者以剔除後的 `next_perceptions` 進 ACTION
+    iii. `post_action_route` ∈ {`KEEP_NEXT`, `REPLACE_NEXT`, `END_SESSION`}，且 `rest` 僅搭配 `END_SESSION`；否則違約 → ERROR
+    iv. 剔除 `next_perceptions` 中未註冊 kind（log warning + 忽略，見 §2.7）
+    v. route 為 `KEEP_NEXT` / `REPLACE_NEXT` 時，剔除後 `next_perceptions` 須非空；為空即違約。`END_SESSION` 時忽略該欄位，canonical 值為空 tuple
+* 上述任一違約走 §3.2「SM 自檢」E1 / ERROR 路徑：SM 直接 transition 到 ERROR、不 publish `ErrorOccurred`、不因違約本身直接升級為 process 崩；ERROR Entry 執行 §6.5 error 收斂。通過驗證者帶 normalized route / perceptions 進 ACTION
 
-**ACTION Entry**
+**ACTION Entry / phase ownership**
 
-* 若本 turn streaming speak 已於 THINK 期間啟動，則沿用該既有 speak worker（已在 in-flight tracking）；否則依 `LLMResponse.action_kind` 啟動對應 action worker，加入 in-flight 集合
+* SM 建立與本 turn / correlation 綁定的 active ACTION phase。若本 turn streaming speak 已於 THINK 期間啟動，primary phase 沿用該既有 worker；否則依 `LLMResponse.action_kind` 啟動 primary worker 並加入 in-flight 集合
+* `rest + END_SESSION` 的 primary phase 本身就是 rest phase。`speak / tool + END_SESSION` 的 primary terminal（`status=ok` 或 `error`）完成後，SM 才啟動唯一 post-action-rest phase；兩個 phase 的 active record 不並存，也只接受與當前 phase 相符的 `ActionCompleted`
 
-**ACTION Exit（`kind=rest`）**
+**ACTION route completion**
 
-* SM end 先登記 end intent 並拒絕新 admission，再依 §6.5 一次收斂本 session 全部 in-flight work（包含 active open/generate 及 streaming speak）；取得 terminal/join proof 後完成 Conversation close，最後才清 session tracking 或接受新 session。Rest、interrupt、error、shutdown 與 late completion 均遵循此順序；具體 component/API 屬 implement。
-* 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source` 記錄、上一輪 `next_perceptions` 記錄等）
-* 通知 `external_message` `flush-to-wake`（§5.1）——buffer 內未消化訊息重新發 `ExternalMessageArrived` ，於 IDLE 自然開新 session
+* `KEEP_NEXT`：primary action terminal 後直接進 PERCEPTION；`status=ok` 使用 normalized `next_perceptions`，`status=error` 可依 §4.8 使用 `default_perceptions`
+* `REPLACE_NEXT`：primary action terminal 後留在 ACTION，阻擋新 model admission，依 §4.1 / §6.5 完成 active request terminal/join（若有）→ 舊 Conversation close / cleanup proof → claim clean Conversation 的 barrier，之後才進 PERCEPTION。`status=error` 可改用 `default_perceptions`；replacement 不清 session tracking、不重設 `turn_id`、不 replay input，也不調用 external-message session-end policy
+* `END_SESSION`：primary 為 speak / tool 時，不論 terminal status 都先完成 post-action rest；primary 為 rest 時則等待該 rest terminal。Rest terminal status 不改變 session-end 決策
+
+**ACTION Exit（rest terminal / session end）**
+
+* SM end 先登記 end intent 並拒絕新 admission，再依 §6.5 一次收斂本 session 全部 in-flight work（包含 active open/generate 及 streaming speak）；取得 terminal/join proof 後完成 active Conversation close，最後才清 session tracking 或接受新 session。Rest、interrupt、error、shutdown 與 late completion 均遵循此順序；具體 component/API 屬 implement
+* 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source`、active Conversation generation、ACTION phase、上一輪 route / `next_perceptions` 等）
+* 通知 `external_message` `flush-to-wake`（§5.1）——buffer 內未消化訊息重新發 `ExternalMessageArrived`，於 IDLE 自然開新 session
 
 **ERROR Entry**
 
@@ -540,10 +562,13 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( 無額外接受事件 ) —— ERROR 為短暫收斂狀態，且 Exit 時將對 `external_message` 發 `discard` 指令，此期間新訊息無留存意義。
 
-### 4.8 `next_perceptions` 與 `default_perceptions`
+### 4.8 `post_action_route`、`next_perceptions` 與 `default_perceptions`
 
-* `next_perceptions` ： reasoner 於 `LLMResponse` 產出 ( 見 §2.7 ) ， SM 用於 PERCEPTION Entry 決定下一 turn 的 perception 組合
-* `default_perceptions` ： SM 內建、 `config-driven` 的預設 perception 組合 ( 預設值 `[listen]` ) 。僅在 `ActionCompleted(kind∈{speak,tool}, status=error)` 時使用，用以取代 reasoner 的 `next_perceptions` ，避免下一 turn 卡在等永遠不到的訊息 ( 例： tool 派發失敗但 reasoner 假定會收到 ACK ) 。此為 SM 唯一依 fact `status` 分歧的決策點
+* `KEEP_NEXT`：保留 active Conversation；primary action 完成後進下一 PERCEPTION
+* `REPLACE_NEXT`：在同 Product Session 內完成 §4.1 sequential replacement barrier，之後進下一 PERCEPTION
+* `END_SESSION`：完成 primary action 與必要的 post-action rest 後結束 session；不啟動 perception，也不使用 `default_perceptions`
+* `next_perceptions`：Reasoner 於 `LLMResponse` 產出（見 §2.7）；僅 `KEEP_NEXT` / `REPLACE_NEXT` 正規化為非空 tuple，供 SM 決定下一 turn 的 perception 組合
+* `default_perceptions`：SM 內建、`config-driven` 的預設 perception 組合（預設值 `[listen]`）。僅供 continuing route（`KEEP_NEXT` / `REPLACE_NEXT`）的 primary `ActionCompleted(kind∈{speak,tool}, status=error)` 取代 Reasoner 的 `next_perceptions`；final action failure 仍走 `END_SESSION`。此為 SM 唯一依 action Fact `status` 分歧的決策點
 
 ---
 
@@ -571,6 +596,7 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 * **IDLE 收到訊息**：SM 開新 session、通知 `external_message` 訊息屬本 session
 * **Session 中、當前 turn 有 read**：SM 啟動 `read` ； `read` 執行時直接向 `external_message` 消費
 * **Session 中、其他情況**：SM 通知 `external_message` 進 `pending` 模式 ( 訊息續存於 buffer )
+* **Session 內 Conversation replacement**：不是 session end；SM 維持現有 buffer / pending 歸屬，不發 `flush-to-wake` 或 `discard`
 * **Session 結束走 rest（正常收斂）**：SM 通知 `external_message` `flush-to-wake` ——buffer 內未消化訊息重新發 `ExternalMessageArrived` Signal，SM 於 IDLE 收到後依第一條規則自然開新 session
 * **Session 走 ERROR / Interrupt / Shutdown（異常收斂）**：SM 通知 `external_message` `discard` 、buffer 清空
 
@@ -675,7 +701,7 @@ Shutdown 順序：由 `ShutdownRequested` Signal 或 `SIGTERM / SIGINT` 觸發�
 
 ### 6.3 In-flight worker 與 handle 生命週期
 
-**In-flight worker**：SM 呼叫 `worker` 方法啟動後、直到 `task handle` 對應的 `asyncio task` 真正結束（`return / cancelled / raised`），該 `worker` 稱為 `in-flight`。SM 為每個 `session` 追蹤其 `in-flight worker` 集合。
+**In-flight worker / lifecycle operation**：SM 呼叫 `worker` 或 Conversation lifecycle 方法啟動後、直到 `task handle` 對應的 `asyncio task` 真正結束（`return / cancelled / raised`），該工作稱為 `in-flight`。SM 為每個 `session` 追蹤其 worker 及 Conversation open / generate / close handles；WAKE readiness 與 replacement cleanup 使用同一 terminal/join 證明規則。Lifecycle operation 可以 private completion notice 回報 SM，但不新增 Worker Fact 或自行觸發 public state transition。
 
 Worker execution container 契約：
 
@@ -727,6 +753,10 @@ Process 重啟為設計上的終極兜底：Level 3 不是意外，而是「合�
 
 ### 6.5 Session 收斂機制（統一）
 
+本節區分「Product Session 終止」與「Session 內 Conversation replacement」。後者不返回 IDLE、不清 session / turn tracking，也不套用 session-end external-message policy。
+
+只有在已阻擋新 model admission、active request 已有 terminal/join proof、舊 Conversation close / cleanup 已有 proof，且 Engine 仍可用時，R2 才可完成並 claim 新 clean Conversation。WAKE 期間的 failed open 亦使用相同 proof boundary。任一 proof 缺失或 Engine 不可用時即改走 E1：進 ERROR，對相關 in-flight work 執行 §6.4 Level 1 / 2 / 3；Level 2 仍無法證明收斂則進 Level 3。重複的可替換失敗不因次數轉成 E1，也不自動觸發 R3。
+
 以下四種情境皆執行 §6.4 三級 `cancel`。Level 2 failure 一律進 Level 3（四條觸發路徑無一例外）；Level 2 成功但破壞 `backend` 的後續處置，以及 `external-message buffer` 政策，才依 `trigger` 而定：
 
 | 觸發 | 收斂上限 | Level 2 失敗後 | Level 2 成功且破壞 backend | External message buffer |
@@ -748,8 +778,19 @@ Process 重啟為設計上的終極兜底：Level 3 不是意外，而是「合�
 
 | 層 | 觸發 | 事件 | 系統狀態 | SM 反應 |
 | --- | --- | --- | --- | --- |
-| Fact 層 | Worker 存活、能翻譯的部分失敗 | `PerceptionResult / ActionCompleted` 帶 `status=error` | 一致 | 續 `turn`（`ActionCompleted(status=error)` 改用 `default_perceptions` ；其他不分歧） |
+| Fact 層 | Worker 存活、能翻譯的部分失敗 | `PerceptionResult / ActionCompleted` 帶 `status=error`，或符合 R1 / R2 proof 的 cognition outcome | 一致 | 依 route 續 turn、替換 Conversation 或結束 session；只有 continuing action error 可改用 `default_perceptions` |
 | Exception 層 | 崩潰 / 強制中斷 / unhandled | `ErrorOccurred`（non-SM 發） | 潛在不一致 | 進 `ERROR` 狀態，對在載集合執行 §6.5 收斂；待集合空、RM recovery barrier 清除後回到 `IDLE` |
+
+**Conversation / cognition 路徑分類**
+
+| 代碼 | 條件 | SM 路徑 |
+| --- | --- | --- |
+| R1 clean retry | rejected input 未改動 Conversation | 接受 application-owned `speak + KEEP_NEXT`，保留 Conversation |
+| R2 replace | post-send request 已 terminal/join，或 failed open 可收斂；舊 / failed Conversation cleanup 可證明且 Engine 可用 | 同 Product Session 內依 §4.1 / §6.5 順序替換，完成 cleanup proof 後才進下一步，不 replay input |
+| R3 USER reset / end | 明確 USER end / reset intent 或 interrupt | `END_SESSION` 或 `InterruptRequested` 正常收斂；不依 retry 次數觸發 |
+| E1 system error | wiring / contract failure、worker crash、protocol desync、backend 不可用或 safe cleanup proof 缺失 | 進 ERROR 並執行 Level 1 / 2 / 3；SM 自檢違約不先 publish `ErrorOccurred` |
+
+R1 / R2 / R3 是可預期的產品路徑，不假造 `ErrorOccurred`。E1 在 Level 2 可證明強制收斂但破壞 backend 時等 RM recovery barrier；收斂 proof 或 recovery 失敗才進 Level 3。
 
 ### 6.7 分層責任
 
@@ -758,7 +799,7 @@ Process 重啟為設計上的終極兜底：Level 3 不是意外，而是「合�
 | HAL ( core ) | 消化 transient error、標記 degraded、拋明確錯誤型別 |
 | Worker ( perception / cognition / action ) | 依 P5 內部降級產出可用 fact；無法產出 fact 才 raise；`CancelledError` 正確 re-raise |
 | Event Bus | 隔離 handler 異常；抓到即兜底 publish `ErrorOccurred`；派送 `ErrorOccurred` 不遞迴、fatal exception 交回頂層 ( §3.4 ) |
-| SM | 進 `ERROR` 時執行 §6.5 收斂；in-flight 集合空且 RM recovery barrier 清除後回 `IDLE`。recovery timer 由 RM 擁有，SM 不自管；recovery 失敗或 timeout 由 RM 觸發 Level 3 |
+| SM | 擁有 WAKE readiness、action route、Conversation replacement 與 session end 時序；進 `ERROR` 時執行 §6.5 收斂。In-flight 集合空且 RM recovery barrier 清除後回 `IDLE`；recovery timer 由 RM 擁有，SM 不自管；recovery 失敗或 timeout 由 RM 觸發 Level 3 |
 | `main.py` | 常規 asyncio cleanup；接收 bus 交回的 fatal exception 並結束 process ( §6.4 Level 3 兜底路徑之一 ) |
 
 ### 6.8 能力降級：Null Object + Capability Map

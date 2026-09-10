@@ -163,7 +163,7 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | :--- | :--- |
 | Candidate / pairing | `CAND-LRT-G4E2B-MOBILE-R1` / `litert-lm-v0.16.0-pi-g2b-r5` |
 | Platform | Raspberry Pi 5 4 GB / Debian 13 aarch64 / CPU / 4 threads |
-| Base Python ABI | target-owned `/usr/bin/python3.13`；CPython `3.13.5`；SOABI `cpython-313-aarch64-linux-gnu`；MULTIARCH `aarch64-linux-gnu`；stdlib `/usr/lib/python3.13`；exact per-run ABI attestation見M4b M4B-MVA design §8 |
+| Base Python ABI | target-owned `/usr/bin/python3.13`；CPython `3.13.5`；SOABI `cpython-313-aarch64-linux-gnu`；MULTIARCH `aarch64-linux-gnu`；stdlib `/usr/lib/python3.13`；exact per-run ABI attestation仍是replacement design必備項目 |
 | Runtime | LiteRT-LM API `0.16.0`; source tag commit `924e79c91542761242244e4f1651851f822e4cbb` |
 | Runtime wheel | `litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl`; SHA-256 `5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00` |
 | Native library SHA-256 | `9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4` |
@@ -175,12 +175,12 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | POC runtime product-config reference SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
 | General prompt / response schema SHA-256 | `aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6` / `4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` |
 | Selected Pi protocol schema SHA-256 | `e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` |
-| POC protocol provenance | `snowboard.llm/1`；Core M4B-MVA wire為`protocol.md` §4的`snowboard.llm/2` draft |
+| POC protocol provenance | `snowboard.llm/1`；舊Core `snowboard.llm/2`設計已退役，replacement wire未定案 |
 
 Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
 startup must authenticate the exact source revision, filename, size and checksum with network and
 runtime download disabled. Target-owned CPython/stdlib是platform ABI dependency，不屬LiteRT-LM tracked
-payload manifest；install、preflight與acceptance仍須對M4b M4B-MVA design §8的exact ABI attestation一致。
+payload manifest；replacement install、preflight與acceptance仍須對新設計的exact ABI attestation一致。
 Extra/missing artifact、version/hash/ABI mismatch、third-party system-site fallback、alternate model或endpoint
 都是Engine construction前的startup failure。
 
@@ -190,40 +190,22 @@ Core deployment只取LLMConfig明確paths。Gate2B narrow marker harness與R1 ge
 speak/tool/rest renderer都是歷史surface；M4B-MVA產品text/end、session lifecycle與profile
 依下節及新設計，不能將原prompt/response digest冒稱M4B-MVA身份。
 
-### 6.3 Core MVA M4B-MVA profile — design frozen, measurements pending
+### 6.3 Core MVA M4B-MVA profile — SUPERSEDED LEGACY SNAPSHOT
 
-USER於2026-09-05確認M4 MVA與session內連續對話。舊fresh-turn/full-envelope/
-mandatory-prewarm profile已由[新設計](implement/ch_m4b_llm_production.md)取代並完成Designer定版；
-原POC winner config/digests與machine evidence仍是immutable provenance。
-前節的generic speak/tool/rest renderer描述只屬R1 adoption history，M4B-MVA改用text/end semantic。
-Runtime/model/target ABI/license維持§6.2，不宣稱新profile已凍結。
+Status：**SUPERSEDED / NOT A PRODUCT PROFILE**。舊Designer候選值已自active baseline移除；不得用於
+implementation、test、capacity或performance acceptance。replacement entry見
+[M4B clean redesign gate](implement/ch_m4b_llm_production.md)。§6.1–§6.2的POC winner identity與
+provenance仍保留為設計輸入，但不自動固定產品prompt、wire、token、sampling或lifecycle。
 
-| Surface | Current disposition |
-| :--- | :--- |
-| Core profile ID | core-m4b-mva-001（proposed；尚未建立production lock） |
-| Model output | compact text/end；Reasoner組canonical response及next_perceptions |
-| Conversation | 每產品session一個，正常turn reuse；end/cancel/dirty state close |
-| Input/output/KV | 32 user-new tokens僅候選；完整prompt/output/capacity待POC，不直接沿用128/128/1024 |
-| Sampling/backend | 原temperature0/top-p1/CPU4 threads為比較起點；exact新profile須另freeze |
-| Readiness | 初次／replacement分開；預熱須有following-request收益 |
-| Performance | 2秒目標／3秒初始上限的meaningful audible response；10秒完整recovery，皆可依USER裁決修訂 |
-| Network | runtime download false、network fallback false、無替代model |
-| Trust | initial full hash與target ABI維持；same-install replacement依design §5不可變部署邊界 |
+Replacement profile須重新產生自己的Core identity與digest，明列從POC繼承及變更的surface；
+不得用原POC config SHA或已退役Core profile名稱冒充產品設定身份。
 
-模型、runtime、prompt/template/schema/token/sampling/lifecycle/config變更須記changed-surface、
-新Core profile digest與有效的POC/Core inheritance。不能用原POC config_sha256覆蓋新設定身份。
-
-### 6.4 Historical defect and new Core resource disposition
+### 6.4 Historical defect and superseded Core resource proposal
 
 Attempt006 P9/P10B仍FAIL：combined slope5.900893 MiB/session、late-minus-early131.578MiB；
 USER以KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION選定winner。
 原4/64 r14結果、formula/vector與waiver保留，不能把新門檻套回舊結果。
 
-M4B-MVA移除fixed8 attempts、post-prewarm48MiB trigger、mandatory三generation，
-以及未經新穩態驗證直接沿用的generation64MiB上限。
-Core新capacity/stability profile由完整cold/allocation/多session軌跡建立，
-主訊號MemAvailable，PSS作owner歸因；未量測前不定2GB等替代門檻。
-仍需4GB同SHA Audio+LLM composition、zero swap/OOM、既有thermal保護、
-zero process/ALSA residue、所有原始samples與正式offline evidence。
-自然20-session soak與受控recovery分開，不能刪warm-up/failed samples取得PASS。
-Case/資源/性能目標未達成時保留結果、提出改善或目標修訂；不自動終止計畫。
+本節舊Core resource proposal不再是active M4B acceptance。replacement design依current
+`status/design.md`重新建立單一Product Session多輪、context replacement、eager Conversation與
+active ASR重疊峰值，以及Audio+LLM節點時間紀錄；不可把舊20-separate-session實驗當成新gate。

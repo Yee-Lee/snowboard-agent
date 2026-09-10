@@ -1,8 +1,8 @@
 # Ch 10. Config schema
 
-> M4B-MVA revision（2026-09-05）：本章generic／已Accepted行為維持；
-> LLM新session/control/semantic/profile契約依[ch_m4b_llm_production.md](ch_m4b_llm_production.md)，
-> Architecture與design已簽核；POC profile與test spec仍待後續gate。不得以舊source已實作視為M4B-MVA Ready。
+> 2026-09-09 M4B clean rewrite：本章generic／已Accepted行為維持；下方既有M4B-MVA-specific
+> delta已被USER決策取代，只作暫時legacy context，不是現行設計、實作或測試權威。
+> Replacement design尚未建立；唯一入口見[ch_m4b_llm_production.md](ch_m4b_llm_production.md)。
 
 
 屬於 implement.md 索引 | 對應 arch.md §7.1 | 狀態：基礎契約定稿（IR-final 2026-08-01）；M4a production extension待Reviewer審查（2026-08-26）

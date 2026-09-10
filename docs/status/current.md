@@ -1,45 +1,64 @@
 # Current handoff
 
-- Updated: 2026-09-07
+- Updated: 2026-09-10
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B MVA design/adoption gate
-- Permanent branch: `core`
+- Current stage: M4B foundation implementation design
+- Next owner: Designer
 - Developer entry: **Closed**
+- Tester entry: **Closed**
 
 ## Current disposition
 
-- M4A is Accepted. Its design, test spec and evidence are read-only unless a regression task names it.
-- M4B DELIVERY-025 was received, but Step 6 adoption remains pending.
-- `M4B-MVA-POC` and `M4B-MVA-EFFICIENCY` are Open. The efficiency request was delivered and its
-  byte-identical receipt recorded.
-- M4C planning exists, but implementation entry has not opened.
+- M4A remains Accepted and read-only unless a regression task explicitly names it.
+- USER directed a clean rewrite of M4B design, production implementation and tests. The prior
+  M4B-MVA-001/002 design and its action-envelope, fresh-Conversation, fake-prewarm and fixed 8/48/768
+  recycle behavior are not current authority or compatibility targets.
+- Designer-owned legacy M4B authority has been moved out of active design. The stable design path is
+  a tombstone and intentionally contains no replacement product design yet.
+- POC EFFICIENCY-003 and PROMPT-V2D2-004 remain valid redesign inputs. They are not themselves the
+  product contract.
+- Generic EventBus, State Manager, Resource Manager, offline/privacy, process isolation and Level
+  1/2/3 convergence remain accepted foundations; the rewrite does not reopen M4A or unrelated
+  milestones.
+
+## Gate status
+
+`M4B-DESIGN-GATE-REASONER-BEHAVIOR` closed by USER and Designer on 2026-09-10. The active blocking
+architecture gate `M4B-FOUNDATION-ARCH-REVIEW` closed on 2026-09-10 after Architect revision,
+Reviewer PASS and Designer confirmation in
+[`AR_impl_M4B_III`](../reviews/history/AR_impl_M4B_III.md). The confirmed authority covers sequential
+Conversation replacement, post-action rest/next-turn routing, pre-perception Conversation readiness
+and the R1/R2/R3/E1 boundary. Developer and Tester entry remain closed until the resulting foundation
+design is ready for coverage handoff.
 
 ## Ordered exits
 
-1. LLM POC returns the authorized efficiency result.
-2. Designer selects one encoding/readiness/profile adoption and updates the affected design delta.
-3. Architect/Reviewer close `AR_impl_M4B_II` and `AR_review_M4B_I`; Developer resolves
-   `IR_dev_M4B_III` only against the selected contract.
-4. Tester revises `TR_spec_M4B_IV` into the new `test_spec_M4B.md`; Designer confirms coverage.
-5. Designer opens Developer entry and records the first active work package in `development.md`.
-
-Until steps 1–4 complete, no M4B product implementation, coupled candidate or target acceptance starts.
+1. Designer prepares the foundation-contract implementation design; Tester supplies its coverage.
+2. Designer opens only the foundation revision package. Developer migrates the affected event,
+   State Manager, rest and Conversation lifecycle contracts; Tester verifies affected M1/M2
+   regression without reopening their historical acceptance.
+3. Designer prepares the remaining replacement M4B design from the confirmed inputs in
+   `docs/status/design.md`; no legacy section is copied as a starting point.
+4. Required focused review and new M4B test specification close.
+5. Designer opens the cognition/product rewrite package. Developer replaces M4B production/tests
+   and removes the temporary legacy inventory at cutover.
+6. Tester verifies the replacement portable and Pi candidate; Designer performs final alignment.
 
 ## Role routing now
 
 | Role | Read now | Action now |
-|---|---|---|
-| Designer | `design.md`, MVA 002 decision, active efficiency request/receipt, active review headers | wait for result; then prepare one adoption delta |
-| Architect / Reviewer | exact active AR document and directly cited `arch.md` sections | review only after activation condition is met |
-| Tester | `TR_spec_M4B_IV` header | deferred; do not draft the new spec yet |
-| Developer | this file and `development.md` | stop at entry gate; do not preload code, R1 spec or old progress |
+| :--- | :--- | :--- |
+| Designer | this file, `status/design.md` and the confirmed `arch.md` sections cited by `AR_impl_M4B_III` | prepare only the foundation-contract implementation design; do not open Developer entry |
+| Architect | this file only | no active architecture action |
+| Reviewer | this file only | deferred until a later focused review is explicitly routed |
+| Tester | this file only | deferred until Designer routes the new foundation design for coverage; do not reuse the legacy M4B test contract |
+| Developer | this file and `status/development.md` | stop; no active work package and no source/test edits |
 
-Historical review, delivery archive, M4A test spec, M4B R1 test spec and prior Developer checkpoints are
-not background reading. Search them only when a current task names an ID, Test ID or SHA.
+Temporary legacy files are not normal background reading. Search them only when the USER or a new
+review requests a specific historical statement, Test ID or SHA.
 
 ## Update rule
 
-Designer 只在 gate Open/Closed、stage、Developer entry 或 next owner 已由其權威 owner/review
-確認改變時更新本檔，直接替換相應列，不追加日誌。其他角色不得直接修改本檔；其完成回覆
-必須指出 disposition 與 next owner，供 Designer 更新。一般交接不新增文件。
+Designer only replaces this file when a gate, stage, entry state or next owner actually changes.
+Progress details remain in the role-owned status file; no duplicate handoff or summary is created.
