@@ -147,5 +147,7 @@ class FakeReasoner:
         correlation_id: int,
         perception_results: tuple[Any, ...],
         pending_message_ids: tuple[str, ...],
+        *,
+        conversation_generation: int,
     ) -> None:
         pass

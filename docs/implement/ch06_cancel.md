@@ -126,9 +126,13 @@ class DefaultSessionConverger:
 2. 驗證 correlation 唯一、timeout 皆為有限正數。
 3. 設 `_active=True`，在 `finally` 清除。
 4. 依輸入順序建立 target map；輸出排序固定依 correlation id。
-5. 對已 done task 呼叫 `task.exception()` 收割：
+5. 對已 done worker task 呼叫 `task.exception()` 收割：
    - cancelled / normal done：視為已收斂；
    - exception：保存 log context，但不重新發布 `ErrorOccurred`；Ch 4 會依既有 public event / task completion 順序判斷是否 fatal。
+
+   Lifecycle `private_result` record 即使 outer task 已 done，只要 request-terminal proof、
+   `cleanup_proven` 尚缺，或已知 `engine_usable=False` 仍未取得 Level 2 termination proof，
+   仍保留為 convergence target，不得在此步略過。
 
 Preflight 不檢查 session / turn；Ch 4 在建立 snapshot 前已完成 ownership guard。
 
@@ -159,7 +163,8 @@ async def _run_abort(target: InFlightRecord) -> _Level1Outcome:
 
 規則：
 
-- `abort()` return 後仍等 outer task done；兩者共用同一 target timeout。
+- active task 的 `abort()` return 後仍等 outer task done；兩者共用同一 target timeout。對
+  done-but-unproven lifecycle record，成功 `abort()` return 本身依 control contract 補成 cleanup proof。
 - 使用 `asyncio.shield(outer_task)`，避免等待者（主控編排協程）timeout 或被外層取消時把 outer task 一併 cancel。Outer task cancel 不是合法 escalation；整個 `asyncio.timeout` 仍會對 shield 在內的等待計時，超時依然升 Level 3。
 - target 自己已 cancelled 且 done 視為 Level 1 success；取消 Ch 6 orchestration task 則 re-raise，交 shutdown/fatal supervision，不吞掉。
 - 一個 target timeout 不取消其他 target 的 `_run_abort()`。
@@ -202,6 +207,10 @@ async def _run_force_abort(
 - 吞掉 exception 後繼續回 IDLE。
 
 `force_abort()` return 與 outer task done 都必須在同一 Level 2 timeout 內成立。如果 worker 已完成 internal termination proof 但 outer coroutine 仍卡住，系統仍無法證明 operation 已收斂，故直接 Level 3。
+Lifecycle target 另須 valid `ForceAbortReport`、outer task done 與 force-abort termination proof
+共同成立才可標記 proven/remove；timeout、exception 或 backend proof 不完整仍為 Level 3。
+已知 `engine_usable=False` 必須升 Level 2，即使 Level 1 cleanup 成功；其 report 必須含至少
+一個 stable destroyed-backend key，否則以 `unusable_backend_unidentified` fail closed。
 
 ## 7. Report 聚合與 trigger 交接
 
@@ -327,13 +336,9 @@ Fake worker 以 `asyncio.Event` 控制 abort、force-abort 與 outer task done�
 - Ch 11：固定 `ConvergenceFatalError` 為 Level 3 root cause；main 記一次 CRITICAL 並結束 process。
 - `docs/protocol.md`：Audio child cooperative/deferred cancel wire已固定；其他domain仍待gate。本章只依賴`force_abort()`return的termination proof。
 
-## 13. M4B-MVA control-operation convergence
+## 13. Conversation lifecycle convergence
 
-M4B-MVA session open/close pending與generate同樣受SM收斂追蹤，不以非THINK為由漏掉cleanup。
-Cancel不論發生於open、generate、close，都須typed terminal、joined worker與
-Conversation清理證據；外部cancel不publish正常Fact。無法證明時沿Level2 PGID
-termination/waitpid，回報同一backend key供RM recovery；shutdown不rebuild。
-Dirty request已清Conversation時結束產品session，不能P5 apology後silent reset續聊；
-pre-inference rejection且context未變仍可P5。詳M4B-MVA §4/§9。
-0.5秒等既有操作值只作舊profile參考；新watchdog與10秒產品recovery目標分欄，
-由凍結profile決定，不以3秒user target直接代替native cleanup deadline。
+Open/close private operations 與 worker operation 同樣受 SM 收斂追蹤。Outer task done 但 proof
+缺失的 lifecycle record 仍須經 Level 1/2；成功 proof 後才 remove。Level 2 destroyed backend 走
+既有 RM recovery barrier，shutdown 不 rebuild。本 foundation 不指定真實 child command、watchdog
+或 timeout 數值。

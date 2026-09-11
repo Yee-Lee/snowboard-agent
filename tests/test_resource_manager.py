@@ -99,9 +99,15 @@ def test_rm_002_producer_is_late_filled_before_arm() -> None:
         calls: list[str] = []
 
         class StateManagerPort:
+            def set_conversation_lifecycle(self, control) -> None:
+                calls.append("conversation-late-fill")
+
             def set_external_message_control(self, control) -> None:
                 assert control is producer
                 calls.append("late-fill")
+
+            def mark_input_producers_armed(self) -> None:
+                calls.append("armed")
 
         class Producer(DummyResource):
             async def start(self) -> None:
@@ -128,7 +134,9 @@ def test_rm_002_producer_is_late_filled_before_arm() -> None:
         ))
 
         await rm.start()
-        assert calls == ["start", "late-fill", "arm"]
+        assert calls == [
+            "conversation-late-fill", "start", "late-fill", "arm", "armed",
+        ]
 
     asyncio.run(run())
 

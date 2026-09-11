@@ -1,12 +1,12 @@
 # Current handoff
 
-- Updated: 2026-09-10
+- Updated: 2026-09-11
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B foundation implementation
-- Next owner: Developer
-- Developer entry: **Open for M4B-FOUNDATION-REVISION only**
-- Tester entry: **Closed until foundation candidate**
+- Current stage: M4B cognition/product design
+- Next owner: Designer
+- Developer entry: **Closed**
+- Tester entry: **Closed**
 
 ## Current disposition
 
@@ -35,30 +35,34 @@ foundation design.
 Designer completed [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) on
 2026-09-10. Tester supplied independent coverage and Designer closed the mapping gate after Round 3
 PASS in [`TR_spec_M4B_V`](../reviews/history/TR_spec_M4B_V.md). The foundation implementation package
-is now open to Developer; cognition/product work remains closed.
+was opened to Developer; cognition/product work remains closed.
+
+After Developer correction, Tester independently reported PASS and Designer resolved both
+Blocking findings in [`CR_M4B_I`](../reviews/history/CR_M4B_I.md) on 2026-09-11. The foundation
+candidate stage is closed: focused **68**, immutable baseline **99 retained / 0 missing**, strict
+baseline **99 passed / 0 skipped**, and full repository **770 passed / 2 pre-existing optional
+audio skips / 29 deselected**. This verified delta is the Foundation completion Candidate; its
+formal SHA is supplied in the USER handoff after commit and push. Cognition/product design is now
+open to Designer, while cognition/product development remains closed.
 
 ## Ordered exits
 
-1. Tester supplies foundation coverage; Designer confirms it against the approved design.
-2. Designer opens only the foundation revision package. Developer migrates the affected event,
-   State Manager, rest and Conversation lifecycle contracts; Tester verifies affected M1/M2
-   regression without reopening their historical acceptance.
-3. Designer prepares the remaining replacement M4B design from the confirmed inputs in
-   `docs/status/design.md`; no legacy section is copied as a starting point.
-4. Required focused review and new M4B test specification close.
-5. Designer opens the cognition/product rewrite package. Developer replaces M4B production/tests
+1. Designer prepares the remaining replacement M4B design from the
+   confirmed inputs in `docs/status/design.md`; no legacy section is copied as a starting point.
+2. Required focused review and new M4B test specification close.
+3. Designer opens the cognition/product rewrite package. Developer replaces M4B production/tests
    and removes the temporary legacy inventory at cutover.
-6. Tester verifies the replacement portable and Pi candidate; Designer performs final alignment.
+4. Tester verifies the replacement portable and Pi candidate; Designer performs final alignment.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file and `status/design.md` | await the foundation candidate; do not start the cognition/product rewrite |
+| Designer | this file and `status/design.md` | prepare the remaining replacement M4B cognition/product design; do not open Developer entry before focused review and coverage close |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | deferred until a later focused review is explicitly routed |
-| Tester | this file only | wait for the foundation candidate; no verification run is open yet |
-| Developer | this file, `status/development.md`, [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md), [`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md) and its node-ID baseline | implement only the foundation inventory and acceptance; do not modify excluded cognition/product scope |
+| Tester | this file only | no active verification action |
+| Developer | this file only | no active implementation action |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

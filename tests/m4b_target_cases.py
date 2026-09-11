@@ -393,6 +393,7 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
             await reasoner.reason(
                 "m4b-semantic", 1, 1,
                 (PerceptionResult(case["perception_kind"], "ok", text),), (),
+                conversation_generation=1,
             )
             assert len(responses) == 1
             response = responses[0]
@@ -575,6 +576,7 @@ def test_m4b_exact_product_gate3_cards(capfd, caplog) -> None:
             await reasoner.reason(
                 "m4b-p5", 1, 1,
                 (PerceptionResult("listen", "ok", "x" * 4097),), (),
+                conversation_generation=1,
             )
             assert len(responses) == 1 and responses[0].action_kind == "speak"
             await adapter.generate(ReasoningInput((), 0, (), ("rest",), ()))

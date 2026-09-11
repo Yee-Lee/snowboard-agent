@@ -92,13 +92,17 @@ class PerceptionResult:
 class LLMResponse:
     action_kind: Literal["speak", "tool", "rest"]
     action_payload: dict[str, Any]            # schema 依 action_kind，見 Ch 9
+    post_action_route: Literal["KEEP_NEXT", "REPLACE_NEXT", "END_SESSION"]
     next_perceptions: tuple[str, ...]         # `action_kind` ∈ {"speak", "tool"} 時必須非空
     session_id: SessionId = ""
     turn_id: TurnId = 0
     correlation_id: CorrelationId = 0
 ```
-• `next_perceptions` 為 `tuple` 而非 `list` —— frozen dataclass 內部不可含 mutable
-• SM 於 THINK Exit 驗證 ( arch.md §4.6 )：`action_kind` 合法、`next_perceptions` 非空條件、`action_payload` schema
+• `post_action_route` 無 default，所有 production/fake/test call site 必須以 keyword 明確提供。
+• continuing route (`KEEP_NEXT` / `REPLACE_NEXT`) 正規化後的 `next_perceptions` 必須非空；
+  `END_SESSION` 則完全忽略此欄。`rest` 只可搭配 `END_SESSION`。
+• SM 於 THINK Exit 依序驗證 action、payload、route、action/route 組合與 continuing perceptions；
+  任一違約直接進 ERROR，不 fabricate `ErrorOccurred`。
 
 `ActionCompleted` ( arch.md §3.3 / §2.8 )
 

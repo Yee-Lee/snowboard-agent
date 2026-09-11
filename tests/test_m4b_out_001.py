@@ -137,7 +137,7 @@ def test_m4b_out_001_tool_schema_is_object_only_and_reasoner_keeps_authority() -
             {"listen", "speak", "tool"}.__contains__,
             ActionPayloadValidator(tools=tools),
         )
-        await reasoner.reason("s", 1, 1, (), ())
+        await reasoner.reason("s", 1, 1, (), (), conversation_generation=1)
         assert errors == [] and len(responses) == 1
         assert responses[0].action_kind == "speak"
         assert handler_calls == 0
@@ -186,7 +186,7 @@ def test_m4b_out_001_fixed_semantic_cases_pass_reasoner_without_dispatch(
             PromptBuilder(tools.schemas()), bus, capabilities.__contains__,
             ActionPayloadValidator(tools=tools),
         )
-        await reasoner.reason("current", 1, 1, (), ())
+        await reasoner.reason("current", 1, 1, (), (), conversation_generation=1)
         assert errors == [] and len(responses) == 1
         assert responses[0].action_kind == kind
         assert responses[0].action_payload == payload
@@ -222,7 +222,7 @@ def test_m4b_out_001_reasoner_rejects_duplicate_unavailable_or_rest_perception(
             MockLLMEngineAdapter((response,)), PromptBuilder(), bus,
             {"listen", "speak"}.__contains__, _validator(),
         )
-        await reasoner.reason("session", 1, 1, (), ())
+        await reasoner.reason("session", 1, 1, (), (), conversation_generation=1)
         assert errors == []
         assert len(responses) == 1
         assert responses[0].action_kind == "speak"

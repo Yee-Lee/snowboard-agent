@@ -348,6 +348,8 @@ class Reasoner:
         correlation_id: int,
         perception_results: tuple[PerceptionResult, ...],
         pending_message_count: int,
+        *,
+        conversation_generation: int,
     ) -> None: ...
 ```
 
@@ -355,10 +357,13 @@ class Reasoner:
 
 - **呼叫者**：SM，於 THINK Entry 呼叫（arch.md §4.6）
 - **識別符**：SM 傳入 `(session_id, turn_id, correlation_id)`；reasoner publish `LLMResponse` 時原樣填回
+- **Conversation identity**：`conversation_generation` 是 keyword-only；SM 只在該 generation
+  已 ready 且 admission 未 blocked 時呼叫，Reasoner/control 可拒絕 generation mismatch。
 - **`perception_results`**：本 turn 所有 perception worker 的 `PerceptionResult`（含 `status` $\in$ `{ok, timeout, error}`），順序由 SM 收集完成順序決定；reasoner 不假設順序有意義
 - **`pending_message_count`**：本 turn 起始時 external_message buffer 內 pending 訊息數（來源見 arch.md §5.1 / §2.7）——只供 reasoner 決定 `next_perceptions` 是否含 `read`；不得傳入 `message_id`、payload或可反查內容
 - **Fact 分支（Ch 1 §1.8）**：成功或可翻譯的 LLM 失敗只 publish 一個 `LLMResponse`；不可翻譯失敗由 reasoner 主動 publish 一個 `ErrorOccurred`，task completion 不重複補發；進入收斂後不 publish 正常終態 Fact
-- **P5 降級**：產出合理LLMResponse而不把可恢復request error直接raise；M4B-MVA依context是否仍完整分流，未改state可apology/listen，dirty timeout/解析失敗須close/rest，外部cancel不publish。
+- **P5 降級**：只有能證明 Conversation 未 mutation 的 application retry 可產
+  `speak + KEEP_NEXT`；unsupported input、wiring failure 或無法證明未 mutation 走 E1。
 - **Exception 處理**：不可翻譯錯誤 publish `ErrorOccurred` 後讓 exception 逸出；`CancelledError` re-raise 不 publish（同 §2.3 / §2.4）
 - **完成條件**：SM 記錄 `LLMResponse` 後仍須等待 `reason()` task done、handle 移除，才可離開 THINK
 
@@ -397,9 +402,9 @@ Reasoner 於決定 `next_perceptions` 與 `action_kind` 時，可透過注入的
 
 ---
 
-### M4B-MVA session participant（Designer frozen）
+### M4B legacy tombstone
 
-SM新增注入ReasonerSessionControl.begin_session(session_id)與end_session(session_id, reason)；
-API、非阻塞completion、四路close與late-ID protection依M4B-MVA §3。reason()仍每turn單一Fact，
-但不再等同stateless inference。未改runtime context的pre-inference錯誤可P5/listen；
-dirty context採close/rest；cancel不publish。public LLMResponse與SM owner不變。
+舊 `ReasonerSessionControl.begin_session/end_session` 已撤銷。現行 foundation 由 required
+`ConversationLifecycleControl.open_conversation/close_conversation` 與 private typed completion
+承接；public `LLMResponse` 已包含 required `post_action_route`。產品 prompt/parser與真實 child wire
+仍待 replacement M4B design。

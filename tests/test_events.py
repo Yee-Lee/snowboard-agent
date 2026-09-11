@@ -89,6 +89,7 @@ class TestFields:
         ev = LLMResponse(
             action_kind="speak",
             action_payload={"text": "hi"},
+            post_action_route="KEEP_NEXT",
             next_perceptions=("listen",),
             session_id="s1",
             turn_id=1,
@@ -149,6 +150,7 @@ class TestContainersAndTuples:
         ev = LLMResponse(
             action_kind="rest",
             action_payload={},
+            post_action_route="END_SESSION",
             next_perceptions=("listen", "look"),
         )
         assert isinstance(ev.next_perceptions, tuple)

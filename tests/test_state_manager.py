@@ -19,6 +19,7 @@ from sbd.core.state_manager.manager import StateManager
 from sbd.core.state_manager.session import SessionContext
 from sbd.core.state_manager.inflight import InFlightRecord
 from sbd.core.state_manager.notices import _TaskCompleted, _WakeAckElapsed
+from sbd.core.state_manager.ports import ConversationCloseProof, ConversationReady
 
 
 async def wait(event: asyncio.Event) -> None:
@@ -35,6 +36,7 @@ class Worker:
         hold_after_fact: bool = False,
         invalid_response: bool = False,
         action_kind: str = "rest",
+        post_action_route: str | None = None,
         next_perceptions: tuple[str, ...] = (),
         publish_fact: bool = True,
         action_payload: dict | None = None,
@@ -42,6 +44,9 @@ class Worker:
         self.bus, self.kind, self.phase = bus, kind, phase
         self.hold_after_fact, self.invalid_response = hold_after_fact, invalid_response
         self.action_kind = action_kind
+        self.post_action_route = post_action_route or (
+            "END_SESSION" if action_kind == "rest" else "KEEP_NEXT"
+        )
         self.next_perceptions = next_perceptions
         self.publish_fact = publish_fact
         self.started, self.fact_sent, self.release = asyncio.Event(), asyncio.Event(), asyncio.Event()
@@ -62,10 +67,18 @@ class Worker:
         if self.hold_after_fact:
             await self.release.wait()
 
-    async def reason(self, session_id: str, turn_id: int, correlation_id: int, results: tuple, pending: tuple) -> None:
+    async def reason(self, session_id: str, turn_id: int, correlation_id: int, results: tuple, pending: tuple, *, conversation_generation: int) -> None:
         self.started.set()
         kind = "bogus" if self.invalid_response else self.action_kind
-        await self.bus.publish(LLMResponse(kind, self.action_payload, self.next_perceptions, session_id=session_id, turn_id=turn_id, correlation_id=correlation_id))  # type: ignore[arg-type]
+        await self.bus.publish(LLMResponse(
+            action_kind=kind,  # type: ignore[arg-type]
+            action_payload=self.action_payload,
+            post_action_route=self.post_action_route,  # type: ignore[arg-type]
+            next_perceptions=self.next_perceptions,
+            session_id=session_id,
+            turn_id=turn_id,
+            correlation_id=correlation_id,
+        ))
         self.fact_sent.set()
         if self.hold_after_fact:
             await self.release.wait()
@@ -104,6 +117,20 @@ class ExternalControl:
     async def discard(self) -> None: self.discarded += 1
 
 
+class ConversationControl:
+    async def open_conversation(self, session_id: str, generation: int):
+        return ConversationReady(session_id, generation)
+
+    async def close_conversation(self, session_id: str, generation: int, reason: str):
+        return ConversationCloseProof(session_id, generation, True, True, True)
+
+    async def abort(self) -> None:
+        return None
+
+    async def force_abort(self) -> ForceAbortReport:
+        return ForceAbortReport()
+
+
 def make_sm(
     *,
     hold_action: bool = False,
@@ -111,6 +138,7 @@ def make_sm(
     hold_reasoner: bool = False,
     invalid_response: bool = False,
     action_kind: str = "rest",
+    post_action_route: str | None = None,
     next_perceptions: tuple[str, ...] = (),
     converger=None,
     action_payload: dict | None = None,
@@ -127,6 +155,7 @@ def make_sm(
         hold_after_fact=hold_reasoner,
         invalid_response=invalid_response,
         action_kind=action_kind,
+        post_action_route=post_action_route,
         next_perceptions=next_perceptions,
         action_payload=action_payload,
     )
@@ -149,6 +178,8 @@ def make_sm(
         action_validator=action_validator,
         recovery=recovery,
     )
+    lifecycle = ConversationControl()
+    sm._test_conversation_control = lifecycle
     return bus, sm, listen, read, reasoner, rest, speak
 
 
@@ -164,6 +195,7 @@ def state_barrier(bus: EventBus, target: str) -> asyncio.Event:
 async def start_perception(bus: EventBus, sm: StateManager, listen: Worker) -> None:
     woke = state_barrier(bus, "WAKE")
     await sm.start()
+    sm.set_conversation_lifecycle(sm._test_conversation_control)
     await bus.publish(ButtonPressed("conversation", 1))
     await wait(woke)
     wake = sm._session
@@ -229,6 +261,7 @@ def test_m1_sm_004_external_wake_maps_to_read_before_worker_starts() -> None:
         external = ExternalControl()
         sm.set_external_message_control(external)
         await sm.start()
+        sm.set_conversation_lifecycle(sm._test_conversation_control)
         woke = state_barrier(bus, "WAKE")
         await bus.publish(ExternalMessageArrived("test", 0.0, "message-1"))
         await wait(woke)
@@ -316,6 +349,7 @@ def test_m1_sm_004_early_error_cancels_timer_and_stale_notice_is_ignored() -> No
     async def run() -> None:
         bus, sm, listen, *_ = make_sm()
         await sm.start()
+        sm.set_conversation_lifecycle(sm._test_conversation_control)
         woke = state_barrier(bus, "WAKE")
         await bus.publish(ButtonPressed("conversation", 1))
         await wait(woke)
@@ -382,7 +416,7 @@ def test_m1_sm_005_speak_normalizes_next_perceptions_and_starts_action() -> None
         assert sm._session.next_perceptions == ("read",)
         action_records = [
             record for record in sm._in_flight.values()
-            if record.phase == "action"
+            if record.phase == "action_primary"
         ]
         assert [record.kind for record in action_records] == ["speak"]
 
@@ -462,7 +496,7 @@ def test_sm_regression_cancellation_whitelist_and_p5_logging(caplog) -> None:
         sm._session = session
         sm._state = "PERCEPTION"
         for fact in (
-            LLMResponse("rest", {}, (), "session", 1, 1),
+            LLMResponse(action_kind="rest", action_payload={}, post_action_route="END_SESSION", next_perceptions=(), session_id="session", turn_id=1, correlation_id=1),
             ActionCompleted("rest", "ok", session_id="session", turn_id=1, correlation_id=1),
         ):
             await sm._handle_item(fact)
@@ -495,9 +529,9 @@ def test_sm_regression_cancellation_whitelist_and_p5_logging(caplog) -> None:
 @pytest.mark.parametrize(
     ("state", "fact"),
     [
-        ("PERCEPTION", LLMResponse("rest", {}, (), "s", 1, 1)),
+        ("PERCEPTION", LLMResponse(action_kind="rest", action_payload={}, post_action_route="END_SESSION", next_perceptions=(), session_id="s", turn_id=1, correlation_id=1)),
         ("THINK", PerceptionResult("listen", "ok", None, session_id="s", turn_id=1, correlation_id=1)),
-        ("ACTION", LLMResponse("rest", {}, (), "s", 1, 1)),
+        ("ACTION", LLMResponse(action_kind="rest", action_payload={}, post_action_route="END_SESSION", next_perceptions=(), session_id="s", turn_id=1, correlation_id=1)),
         ("ERROR", ActionCompleted("rest", "ok", session_id="s", turn_id=1, correlation_id=1)),
     ],
 )

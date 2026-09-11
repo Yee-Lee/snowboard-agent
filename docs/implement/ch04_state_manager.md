@@ -78,9 +78,13 @@ class StateManager:
     # late-fill：由 RM 於對應 producer record started=True 後`arm receiver 前呼叫 ( Ch 5 §3.5 )
     def set_external_message_control(self, control: ExternalMessageControl) -> None: ...
     def set_wake_listener(self, control: WakeListenerControl | None) -> None: ...
+    def set_conversation_lifecycle(self, control: ConversationLifecycleControl) -> None: ...
 ```
 
-external_messages 與 wake_listener 不進 constructor：它們來自晚於 SM 的 producer（ExternalMessageSource / voice_wake InputSource），若放 constructor 會違反 Ch 5 §3.3 scoped resolver「只取已 READY managed instance」。兩者改由上列 one-shot setter late-fill：
+external_messages、wake_listener 與 required Conversation lifecycle control 不進 constructor。
+Conversation control 由已 started 的 required Reasoner 之 `control` property（或 instance 本身）取得，
+在任何 producer arm 前 one-shot late-fill；缺失、None、Protocol 不合、重複或 arm 後填入皆為
+`StateManagerWiringError`，沒有 optional/null bypass。
 
 - one-shot：每個 setter 只允許成功呼叫一次。`set_external_message_control()` 重複呼叫、或傳入 None -> raise `StateManagerWiringError` ( composition bug，fatal )；`set_wake_listener()` 允許以 None 表示「voice-wake 未啟用」，但同樣只可呼叫一次，重複呼叫 raise。
 - producer arm 前 guard：兩個 producer 都在 arm receiver（開始 publish Signal）前由 RM 完成 late-fill（Ch 5 §3.5 B / §4.2 step 7）。SM 進入任何會觸發 external / wake Signal 的路徑前，`_external_messages` 必為 非 None；若 dispatch loop 收到 external / wake Signal 時對應 control 仍為 None，代表 RM arm 順序錯誤，raise `StateManagerWiringError` ( fatal )。`_wake_listener` 為 None 是合法「未啟用」狀態，§2.2 gate 據此略過 suspend / resume。
@@ -223,6 +227,13 @@ class SessionContext:
     action_completed: ActionCompleted | None = None
     next_perceptions: tuple[str, ...] = ()
     buffer_exit_policy: Literal["none", "flush_to_wake", "discard"] = "none"
+    conversation_generation: int = 0
+    conversation_state: Literal["none", "opening", "ready", "closing"] = "none"
+    wake_ack_ready: bool = False
+    model_admission_blocked: bool = True
+    post_action_route: PostActionRoute | None = None
+    normalized_next_perceptions: tuple[str, ...] = ()
+    action_phase: Literal["none", "primary", "post_action_rest"] = "none"
 ```
 
 StateManager instance 持有 :
@@ -263,11 +274,18 @@ class InFlightRecord:
     correlation_id: int
     session_id: str
     turn_id: int
-    phase: Literal["perception", "think", "action"]
+    phase: Literal["perception", "think", "action_primary", "action_rest",
+                   "conversation_open", "conversation_close"]
     kind: str
     worker: AbortableWorker
     task: asyncio.Task[None]
+    completion_mode: Literal["worker_fact", "private_result"] = "worker_fact"
     terminal_fact: PerceptionResult | LLMResponse | ActionCompleted | None = None
+    private_result: object | None = None
+    request_terminal_proven: bool = False
+    cleanup_proven: bool = False
+    engine_usable: bool | None = None
+    force_abort_proven: bool = False
     cancel_requested: bool = False
 ```
 
@@ -277,6 +295,15 @@ class InFlightRecord:
 2. `asyncio.create_task(worker_method(...))`。
 3. 先寫 `_in_flight[correlation_id]`。
 4. `task.add_done_callback(partial(_enqueue_task_completed, correlation_id))`。
+
+Conversation lifecycle record 改用 `completion_mode="private_result"`，kind 固定為
+`conversation.open` / `conversation.close`。Done callback 只 enqueue 一個帶 operation、session、
+generation、correlation 與 task identity 的 private notice；dispatch 確認 task done 與完整 identity
+後才取 typed result。錯誤 identity 是 stale notice，只記 sanitized log 後 drop。
+Lifecycle proof 必須分開保存 request terminal、cleanup 與 Engine usability；不得把
+`cleanup_proven and engine_usable` 摺疊回單一欄位。已知 `engine_usable=False` 的 record 只有在
+Level 2 `force_abort()` 回報 stable destroyed-backend key 且 RM recovery barrier 完成後，才可
+離開 ERROR；空 backend identity 必須 fail closed。
 
 Done callback 只 `put_nowait(_TaskCompleted(...))`。禁止 callback 直接 :
 
@@ -393,7 +420,12 @@ async def _transition(self, new: State) -> None:
 1. 建立 session id，記 wake source；external message 另把 message id 交 `external_messages.assign_to_session()`。
 2. 若 `_wake_listener` is not None，經 §2.2 suspend gate await `_suspend_wake()` 取得 daemon 麥克風釋放證明 ( cooperative `suspend()` ，失敗則 `ensure_released()` )；證明成立才續行。連釋放都證明不了時阻擋本次 listen 路徑並依 §8 fatal ( 單一 mic owner 硬性不變量 )。
 3. transition 到 WAKE。
-4. 建 wake timer；timer 到期只 enqueue `_WakeAckElapsed(session_id)`。
+4. 分別建立 wake timer與 `open_conversation(session_id, generation=1)` task；兩者 callback 都只
+   enqueue private notice，dispatch loop 不 await open task。
+
+只有 wake ACK、matching `ConversationReady`、open record 完整 join/remove 且無 end intent同時成立
+才進 PERCEPTION。任一單獨完成不得啟動 perception/ASR/reasoner。clean rejected open 保留 Product
+Session、generation 加一後 retry；proof 缺失、Engine unusable、exception 或錯誤型別走 E1。
 
 同一 session 後續 `ExternalMessageArrived` :
 
@@ -452,8 +484,8 @@ PERCEPTION join 成立後 :
 
 - `action_kind` 是 speak / tool / rest。
 - `action_validator.validate(kind, payload)` 通過。
-- `next_perceptions` 的處理只適用於 `action_kind ∈ {speak, tool}`：正規化 ( 剔除未註冊 kind + 去重 ) 後須非空、每個 kind 在 sealed `WorkerCatalog` 找得到。SM 不查 capability map；capability 決策只有 reasoner 執行。
-- `action_kind=rest` 完全忽略 `next_perceptions` ( arch.md §2.7 / §4.6 ) ：不做正規化與非空、catalog 檢查，帶任意 `next_perceptions` ( 含未註冊 kind、空、重複 ) 皆合法。
+- `post_action_route` 是 `KEEP_NEXT | REPLACE_NEXT | END_SESSION`；rest 只可 END_SESSION。
+- continuing route 才正規化 perceptions 並要求非空；END_SESSION 完全忽略 perceptions。
 
 duplicate 是正規化、不是違約：每個 perception kind 是單一通道（listen=麥克風、read=訊息、look=相機），同 kind 啟動兩次會違反單一資源擁有者或使 §6.3 join 永遠等不到第二個 Fact，故 duplicate 為零資訊噪音。SM 於 THINK Exit 靜默去重（保留首次出現順序），與「剔除未註冊 kind」同屬 arch.md §2.7 授權 SM 對 reasoner 輸出的正規化——degrade、不升級為 ERROR。去重只移除重複項、必留至少一個，故永不使非空清單變空、不引入失敗模式。
 
@@ -461,8 +493,9 @@ duplicate 是正規化、不是違約：每個 perception kind 是單一通道�
 
 1. `action_kind ∉ {speak, tool, rest}` -> 違約。
 2. `action_validator.validate(kind, payload)` 不通過 -> 違約。
-3. `action_kind=rest` : 跳過以下 step 4 全部 `next_perceptions` 處理，直接進 ACTION ( arch.md §2.7 )。
-4. `action_kind ∈ {speak, tool}` : 正規化 `next_perceptions` —— (a) 剔除未註冊 kind ( log warning 。忽略，不因單一壞 kind 判整個 Fact 違約，見 §2.7 ) ； (b) 去重 ( 保留首次出現順序，log debug )。正規化後須非空且每個 kind 在 catalog 內，為空 -> 違約。SM 以正規化後 ( unique ) 清單推進 ACTION。
+3. `post_action_route` 必須為三個合法值，且 `rest` 只可搭配 `END_SESSION`。
+4. continuing route 正規化 `next_perceptions`：剔除未註冊 kind、依首次順序去重，結果為空即
+   違約；`END_SESSION` 忽略該欄。
 
 SM 對上述違約以內部 `ReasonerContractViolation` 標示判定原因，但後果是直接 transition 到 ERROR ( 不 publish `ErrorOccurred` 、不 fatal 交 main ) ： `stateChanged(->ERROR)` 即為權威信號，ERROR Entry 走 §6.5 error 收斂。進 ERROR 前依 §8 log 違約 context。
 
@@ -472,9 +505,13 @@ SM 對上述違約以內部 `ReasonerContractViolation` 標示判定原因，但
 
 ACTION Entry 依 response kind 啟動一個 action worker。Fact + task done join 後 :
 
-- `speak/tool` + status=ok : 保存 reasoner next perceptions，進下一 PERCEPTION。
-- `speak/tool` + status=error : 改存 config `default_perceptions`，進下一 PERCEPTION。
-- rest : 執行 `converge(trigger="rest")` ；依 §7 收斂後回 IDLE 或進 ERROR recovery。
+- `KEEP_NEXT`：ok 用 normalized perceptions、error 用 defaults，保留 generation 後進下一 turn。
+- `REPLACE_NEXT`：先 block admission，再依序完整 close old generation、generation 加一、open clean
+  Conversation，只有 ready join 後進下一 turn；session/turn identity不重設，無 flush/discard/replay。
+- `speak/tool + END_SESSION`：primary 完整 join/remove 後，在同一 ACTION 以不同 correlation 建唯一
+  `action_rest`；不 publish ACTION→ACTION。final primary error 仍 rest/end。
+- `rest + END_SESSION`：本身即唯一 rest phase。rest 完成後先收斂 workers，再 close ready
+  Conversation，必要時等 recovery，全部 proof 成立才清 session / resume wake / IDLE。
 
 ## 7. Convergence 、 recovery 與 shutdown
 
@@ -652,15 +689,9 @@ Log context 至少含 state、session_id、turn_id、correlation_id、worker kin
 - Ch 10 : 提供 wake ack 、 perception 、 cancel / recovery timeout 與 default perceptions。
 - Ch 11 : main 監督 dispatch task / bus fatal / RM recovery fatal 的方式。
 
-## 11. M4B-MVA session participant delta（Designer frozen）
+## 11. M4B legacy tombstone
 
-首turn THINK Entry登記Reasoner session並完成begin，才啟動該turn reason/generate；
-begin/end控制操作用task/completion notice處理，SM inbox保持能接受Interrupt/Shutdown。
-Pending控制操作加入收斂追蹤，不能只看think task。
-四種exit（rest/interrupt/error/shutdown）先登記end intent並阻止新admission，再收斂active
-open/generate；之後完成end_session/close ACK，才清session fields/resume wake。end control
-不等待包含自己的集合。沒有進THINK時end為no-op；已開始begin則必須一併收斂。
-同session重複end冪等；late old-ID open/result/close不得改新session。
-Close失敗走既有Ch6 Level2與RM barrier；shutdown不rebuild。
-M4B-MVA沒有改LLMResponse三欄、SM action validation與empty rest；實際演算法與
-修改symbols/regression見M4B-MVA §3/§9。本設計已簽核，但尚未實作或驗收。
+舊 `ReasonerSessionControl.begin_session/end_session` 與三欄 `LLMResponse` 已撤銷，不是相容目標。
+現行 foundation contract 是本章 §§2、4、6 所述的 required Conversation lifecycle、四欄
+`LLMResponse`、WAKE readiness、sequential replacement 與 post-action rest；產品 cognition policy
+仍待 replacement M4B design，不得從舊 MVA 段落推回。

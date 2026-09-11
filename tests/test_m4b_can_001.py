@@ -124,7 +124,7 @@ def test_m4b_can_001_level_two_finishes_reasoner_outer_task_without_level_three(
         reasoner = Reasoner(
             adapter, PromptBuilder(), bus, {"listen", "speak"}.__contains__, _validator(),
         )
-        operation = asyncio.create_task(reasoner.reason("s", 1, 1, (), ()))
+        operation = asyncio.create_task(reasoner.reason("s", 1, 1, (), (), conversation_generation=1))
         while not child.frames:
             await asyncio.sleep(0)
         target = SimpleNamespace(

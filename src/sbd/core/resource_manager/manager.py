@@ -121,6 +121,11 @@ class ResourceManager:
             await self._startup_coherence_gate()
             self._catalog.seal(self._required_catalog_kinds())
 
+            if self._state_manager is not None:
+                reasoner = self._catalog.reasoner()
+                control = getattr(reasoner, "control", reasoner)
+                self._state_manager.set_conversation_lifecycle(control)
+
             input_specs = [
                 spec for spec in self._specs
                 if spec.phase == StartPhase.INPUT_PRODUCER
@@ -129,6 +134,8 @@ class ResourceManager:
             for spec in self._topo_sort_phase(input_specs):
                 await self._start_one(spec)
                 await self._late_fill_and_arm(spec)
+            if self._state_manager is not None:
+                self._state_manager.mark_input_producers_armed()
             self._startup_complete = True
 
         except Exception as root_cause:

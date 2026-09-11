@@ -8,6 +8,15 @@ class _TaskCompleted:
     correlation_id: CorrelationId
     task: asyncio.Task[None]
 
+
+@dataclass(frozen=True, slots=True)
+class _ConversationLifecycleCompleted:
+    operation: str
+    session_id: SessionId
+    generation: int
+    correlation_id: CorrelationId
+    task: asyncio.Task[object]
+
 @dataclass(frozen=True, slots=True)
 class _WakeAckElapsed:
     session_id: SessionId

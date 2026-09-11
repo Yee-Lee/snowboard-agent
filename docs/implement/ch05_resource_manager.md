@@ -255,7 +255,12 @@ def _required_catalog_kinds(self) -> set[str]:
 
 ### 3.5 StateManager early-start 依賴與 late-fill
 
-StateManager 於 STATE_MANAGER phase（最早）start。其 Ch 4 §2 constructor 只收四個 early 依賴：`workerCatalog`、`SessionConverger`、`RecoveryControl`、`ActionPayloadValidator`。晚於 SM 的 producer control——`ExternalMessageControl` 與 `WakeListenerControl | None`——不進 constructor，改由 Ch 4 §2 的 one-shot setter `set_external_message_control()` / `set_wake_listener()` late-fill（見下方 B 類）。SM 對這兩者的內部初值為 `None`。這樣拆分後，所有依賴的來源分兩類，兩類都不違反 §3.3 scoped resolver「只取已 READY managed instance」規則：
+StateManager 於 STATE_MANAGER phase（最早）start。其 constructor 只收 early dependencies。
+WORKER phase 完成並 seal catalog 後，RM 必須從 required Reasoner 的 `control` property（或 instance
+本身）取得 runtime-checkable `ConversationLifecycleControl`，呼叫
+`set_conversation_lifecycle()`；此 required late-fill 必須早於任何 INPUT_PRODUCER arm。之後 producer
+controls 才依各自 start → setter → arm 順序填入。任一 Conversation control 缺失或不合約使 startup
+fail closed 並 rollback。
 
 A. 早於 SM 即可建立、且不 publish 事件的 control / registry（constructor 直接注入）
 
@@ -277,6 +282,7 @@ B. 會 publish 事件、lifecycle 晚於 SM 的 producer control（late-fill set
 
 ```python
 class StateManager:
+    def set_conversation_lifecycle(self, control: ConversationLifecycleControl) -> None: ...
     def set_external_message_control(self, control: ExternalMessageControl) -> None: ...
     def set_wake_listener(self, control: WakeListenerControl | None) -> None: ...
 ```

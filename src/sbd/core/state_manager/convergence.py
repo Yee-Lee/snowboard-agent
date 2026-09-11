@@ -155,11 +155,20 @@ class DefaultSessionConverger:
             # Sort targets deterministically by correlation_id
             sorted_records = tuple(sorted(records, key=lambda r: r.correlation_id))
 
-            # Filter records that still need cancellation vs already done
+            # A completed private lifecycle task without cleanup proof remains
+            # a convergence target; outer-task completion is not cleanup proof.
             active_targets: list[Any] = []
             for r in sorted_records:
                 task = getattr(r, "task", None)
-                if task is not None and not task.done():
+                private_unproven = (
+                    getattr(r, "completion_mode", "worker_fact") == "private_result"
+                    and (
+                        not getattr(r, "request_terminal_proven", False)
+                        or not getattr(r, "cleanup_proven", False)
+                        or getattr(r, "engine_usable", None) is False
+                    )
+                )
+                if (task is not None and not task.done()) or private_unproven:
                     active_targets.append(r)
                 else:
                     # Harvest completed task exception if any (for logging context)
@@ -174,6 +183,14 @@ class DefaultSessionConverger:
             l1_outcomes: list[_Level1Outcome] = await asyncio.gather(*l1_tasks)
 
             escalated_targets = [out.target for out in l1_outcomes if out.escalate]
+
+            for outcome in l1_outcomes:
+                if (
+                    getattr(outcome.target, "completion_mode", "worker_fact") == "private_result"
+                    and outcome.reason in {"", "engine_unusable"}
+                ):
+                    outcome.target.request_terminal_proven = True
+                    outcome.target.cleanup_proven = True
 
             if not escalated_targets:
                 return ConvergenceResult()
@@ -195,6 +212,21 @@ class DefaultSessionConverger:
                             f"Invalid destroyed_backend key: {repr(key)}"
                         )
                     destroyed.append(key)
+                if getattr(target, "completion_mode", "worker_fact") == "private_result":
+                    if (
+                        getattr(target, "engine_usable", None) is False
+                        and not report.destroyed_backends
+                    ):
+                        raise ConvergenceFatalError.from_target(
+                            target,
+                            stage="unusable_backend_unidentified",
+                            cause=ConvergenceContractViolation(
+                                "Known-unusable Conversation Engine requires a destroyed backend key"
+                            ),
+                        )
+                    target.request_terminal_proven = True
+                    target.cleanup_proven = True
+                    target.force_abort_proven = True
 
             # Deduplicate and sort lexicographically
             sorted_destroyed = tuple(sorted(set(destroyed)))
@@ -213,7 +245,7 @@ class DefaultSessionConverger:
             async with asyncio.timeout(timeout):
                 if worker is not None and hasattr(worker, "abort"):
                     await worker.abort()
-                if task is not None:
+                if task is not None and not task.done():
                     await asyncio.shield(task)
         except TimeoutError:
             self.logger.warning(
@@ -233,6 +265,11 @@ class DefaultSessionConverger:
             )
             return _Level1Outcome(target, escalate=True, reason="abort_error", error=exc)
 
+        if (
+            getattr(target, "completion_mode", "worker_fact") == "private_result"
+            and getattr(target, "engine_usable", None) is False
+        ):
+            return _Level1Outcome(target, escalate=True, reason="engine_unusable")
         return _Level1Outcome(target, escalate=False)
 
     async def _run_force_abort(self, target: Any) -> tuple[Any, ForceAbortReport]:
@@ -248,7 +285,7 @@ class DefaultSessionConverger:
                 else:
                     report = ForceAbortReport()
 
-                if task is not None:
+                if task is not None and not task.done():
                     await asyncio.shield(task)
         except TimeoutError as exc:
             raise ConvergenceFatalError.from_target(

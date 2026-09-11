@@ -23,7 +23,7 @@ def test_m4b_p5_001_fatal_adapter_error_is_not_translated_to_fallback() -> None:
             bus, {"listen", "speak"}.__contains__, _validator(),
         )
         with pytest.raises(LLMFatalError):
-            await reasoner.reason("s", 1, 1, (), ())
+            await reasoner.reason("s", 1, 1, (), (), conversation_generation=1)
         assert responses == [] and len(errors) == 1
         assert errors[0].error == "reasoner failed"
     asyncio.run(scenario())
@@ -39,7 +39,7 @@ def test_m4b_p5_001_local_contract_error_publishes_error_without_llm_write() -> 
         llm = MockLLMEngineAdapter((_response("rest", {}, []),))
         reasoner = Reasoner(llm, InvalidBuilder(), bus, set().__contains__, _validator())  # type: ignore[arg-type]
         with pytest.raises(ReasoningInputContractError):
-            await reasoner.reason("s", 1, 1, (), ())
+            await reasoner.reason("s", 1, 1, (), (), conversation_generation=1)
         assert llm.inputs == [] and responses == [] and len(errors) == 1
     asyncio.run(scenario())
 
@@ -84,7 +84,7 @@ def test_m4b_p5_001_outer_timeout_keeps_generation_alive_for_typed_abort() -> No
             llm, PromptBuilder(), bus, {"listen", "speak"}.__contains__,
             _validator(), reason_timeout_seconds=0.01,
         )
-        await reasoner.reason("s", 1, 1, (), ())
+        await reasoner.reason("s", 1, 1, (), (), conversation_generation=1)
         assert llm.abort_calls == 1 and llm.cancelled is False
         assert llm.done.is_set() and errors == []
         assert len(responses) == 1

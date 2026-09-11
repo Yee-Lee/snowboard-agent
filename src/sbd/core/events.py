@@ -21,6 +21,7 @@ SessionId: TypeAlias = str
 TurnId: TypeAlias = int
 CorrelationId: TypeAlias = int
 MessageId: TypeAlias = str
+PostActionRoute: TypeAlias = Literal["KEEP_NEXT", "REPLACE_NEXT", "END_SESSION"]
 
 
 def new_session_id() -> SessionId:
@@ -65,6 +66,7 @@ class LLMResponse:
 
     action_kind: Literal["speak", "tool", "rest"]
     action_payload: dict[str, Any]
+    post_action_route: PostActionRoute
     next_perceptions: tuple[str, ...]
     session_id: SessionId = ""
     turn_id: TurnId = 0

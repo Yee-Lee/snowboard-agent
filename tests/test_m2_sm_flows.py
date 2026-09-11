@@ -22,6 +22,7 @@ from sbd.core.state_manager.notices import _WakeAckElapsed
 from sbd.perception.listen import Listen, MockASRAdapter
 from tests.test_state_manager import (
     EarlyConverger,
+    ConversationControl,
     ExternalControl,
     Worker,
     make_sm,
@@ -81,7 +82,7 @@ def test_m2_flow_003_speak_tool_dedupe_and_rest_ignores_next() -> None:
         assert sm._session.next_perceptions == ("read", "listen")
         active = [
             record.kind for record in sm._in_flight.values()
-            if record.phase == "action"
+            if record.phase == "action_primary"
         ]
         assert active == [kind]
         assert errors == []
@@ -186,6 +187,7 @@ def test_m2_flow_005_worker_error_precedes_error_state_and_self_check_does_not()
         bus.subscribe(ErrorOccurred, error)
         bus.subscribe(StateChanged, state)
         await sm.start()
+        sm.set_conversation_lifecycle(ConversationControl())
         await bus.publish(ButtonPressed("conversation", 1))
         await sm._inbox.join()
         assert sm._session is not None

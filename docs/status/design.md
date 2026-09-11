@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation implementation package open
-- Developer entry: **Open for M4B-FOUNDATION-REVISION only**
+- State: Foundation verified / cognition-product design entry open
+- Developer entry: **Closed**
 
 ## USER-confirmed direction
 
@@ -142,7 +142,6 @@ foundation implementation package is open; cognition/product development remains
 
 ## Next Designer work
 
-1. Await Developer's `M4B-FOUNDATION-REVISION` candidate and Tester verification; keep cognition/
-   product rewrite closed.
-2. After the foundation revision verifies, build the remaining replacement M4B design and obtain
-   its focused review/coverage before opening cognition/product development.
+1. Build the remaining replacement M4B cognition/product design from the confirmed redesign inputs;
+   do not reuse the legacy production contract as a starting point.
+2. Obtain focused review and coverage approval before opening cognition/product development.

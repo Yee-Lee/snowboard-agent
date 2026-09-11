@@ -12,6 +12,7 @@ from sbd.core.event_bus import EventBus
 from sbd.core.events import ActionCompleted, LLMResponse, PerceptionResult
 from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
+from sbd.core.state_manager.ports import ConversationCloseProof, ConversationReady
 
 
 class _M1Worker:
@@ -54,15 +55,28 @@ class _M1Worker:
         correlation_id: int,
         perception_results: tuple[Any, ...],
         pending_message_ids: tuple[str, ...],
+        *,
+        conversation_generation: int,
     ) -> None:
         await self._bus.publish(LLMResponse(
-            "rest",
-            {},
-            (),
+            action_kind="rest",
+            action_payload={},
+            post_action_route="END_SESSION",
+            next_perceptions=(),
             session_id=session_id,
             turn_id=turn_id,
             correlation_id=correlation_id,
         ))
+
+    async def open_conversation(
+        self, session_id: str, generation: int
+    ) -> ConversationReady:
+        return ConversationReady(session_id, generation)
+
+    async def close_conversation(
+        self, session_id: str, generation: int, reason: str
+    ) -> ConversationCloseProof:
+        return ConversationCloseProof(session_id, generation, True, True, True)
 
     async def execute(
         self,

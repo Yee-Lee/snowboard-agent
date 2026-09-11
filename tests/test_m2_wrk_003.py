@@ -83,13 +83,14 @@ def test_m2_wrk_003_prompt_is_canonical_opaque_and_turn_stateless() -> None:
             PerceptionResult("listen", "timeout", None),
             PerceptionResult("read", "error", None),
         )
-        await reasoner.reason("s", 1, 7, perceptions, ("opaque-2", "opaque-1"))
+        await reasoner.reason("s", 1, 7, perceptions, ("opaque-2", "opaque-1"), conversation_generation=1)
         await reasoner.reason(
             "s",
             2,
             8,
             (PerceptionResult("read", "ok", "new turn"),),
             (),
+            conversation_generation=1,
         )
 
         first = llm.inputs[0]
@@ -136,7 +137,7 @@ def test_m2_wrk_003_clean_failures_fallback_without_raw_output(caplog) -> None:
             validator,
         )
         for turn in range(1, 4):
-            await reasoner.reason("s", turn, turn, (), ())
+            await reasoner.reason("s", turn, turn, (), (), conversation_generation=1)
 
         assert [item.action_kind for item in responses] == [
             "speak",
@@ -157,8 +158,11 @@ def test_m2_wrk_003_clean_failures_fallback_without_raw_output(caplog) -> None:
             set().__contains__,
             validator,
         )
-        await rest_reasoner.reason("s", 4, 4, (), ())
-        assert rest_responses == [LLMResponse("rest", {}, (), "s", 4, 4)]
+        await rest_reasoner.reason("s", 4, 4, (), (), conversation_generation=1)
+        assert rest_responses == [LLMResponse(
+            action_kind="rest", action_payload={}, post_action_route="END_SESSION",
+            next_perceptions=(), session_id="s", turn_id=4, correlation_id=4,
+        )]
         assert rest_errors == []
 
     asyncio.run(run())
@@ -175,7 +179,7 @@ def test_m2_wrk_003_cancel_and_unexpected_error_are_mutually_exclusive() -> None
             {"listen", "speak"}.__contains__,
             _validator(),
         )
-        task = asyncio.create_task(reasoner.reason("s", 1, 1, (), ()))
+        task = asyncio.create_task(reasoner.reason("s", 1, 1, (), (), conversation_generation=1))
         await blocked.entered.wait()
         await reasoner.abort()
         await task
@@ -190,7 +194,7 @@ def test_m2_wrk_003_cancel_and_unexpected_error_are_mutually_exclusive() -> None
             _validator(),
         )
         with pytest.raises(RuntimeError, match="raw-secret"):
-            await failed.reason("s", 2, 2, (), ())
+            await failed.reason("s", 2, 2, (), (), conversation_generation=1)
         assert responses == []
         assert len(errors) == 1
         assert errors[0].exception_type == "RuntimeError"

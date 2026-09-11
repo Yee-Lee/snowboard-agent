@@ -43,6 +43,8 @@ class Reasoner(WorkerRuntime):
         capability_of: Callable[[str], bool],
         action_validator: ActionPayloadValidator,
         reason_timeout_seconds: float = _REASON_TIMEOUT_SECONDS,
+        *,
+        control: object | None = None,
     ) -> None:
         super().__init__()
         self._llm = llm
@@ -51,6 +53,11 @@ class Reasoner(WorkerRuntime):
         self._capability_of = capability_of
         self._action_validator = action_validator
         self._reason_timeout_seconds = reason_timeout_seconds
+        self._control = control
+
+    @property
+    def control(self) -> object | None:
+        return self._control
 
     async def start(self) -> None:
         await self._llm.start()
@@ -72,6 +79,8 @@ class Reasoner(WorkerRuntime):
         correlation_id: int,
         perception_results: tuple[PerceptionResult, ...],
         pending_message_ids: tuple[str, ...],
+        *,
+        conversation_generation: int,
     ) -> None:
         async def body() -> None:
             unexpected: Exception | None = None
@@ -162,7 +171,13 @@ class Reasoner(WorkerRuntime):
             if requested:
                 raise ValueError("rest cannot request a perception")
             return LLMResponse(
-                "rest", {}, (), session_id, turn_id, correlation_id
+                action_kind="rest",
+                action_payload={},
+                post_action_route="END_SESSION",
+                next_perceptions=(),
+                session_id=session_id,
+                turn_id=turn_id,
+                correlation_id=correlation_id,
             )
         if action_kind not in _ACTION_KINDS or not self._capability_of(action_kind):
             raise ValueError("unavailable action")
@@ -170,12 +185,13 @@ class Reasoner(WorkerRuntime):
             raise ValueError("no available next perception")
         next_perceptions = tuple(requested)
         return LLMResponse(
-            action_kind,
-            payload,
-            next_perceptions,
-            session_id,
-            turn_id,
-            correlation_id,
+            action_kind=action_kind,  # type: ignore[arg-type]
+            action_payload=payload,
+            post_action_route="KEEP_NEXT",
+            next_perceptions=next_perceptions,
+            session_id=session_id,
+            turn_id=turn_id,
+            correlation_id=correlation_id,
         )
 
     def _fallback(
@@ -189,17 +205,24 @@ class Reasoner(WorkerRuntime):
             payload = {"text": _APOLOGY}
             self._action_validator.validate("speak", payload)
             return LLMResponse(
-                "speak",
-                payload,
-                next_perceptions,
-                session_id,
-                turn_id,
-                correlation_id,
+                action_kind="speak",
+                action_payload=payload,
+                post_action_route="KEEP_NEXT",
+                next_perceptions=next_perceptions,
+                session_id=session_id,
+                turn_id=turn_id,
+                correlation_id=correlation_id,
             )
         payload: dict[str, object] = {}
         self._action_validator.validate("rest", payload)
         return LLMResponse(
-            "rest", payload, (), session_id, turn_id, correlation_id
+            action_kind="rest",
+            action_payload=payload,
+            post_action_route="END_SESSION",
+            next_perceptions=(),
+            session_id=session_id,
+            turn_id=turn_id,
+            correlation_id=correlation_id,
         )
 
     def _available(self, kinds: tuple[str, ...]) -> tuple[str, ...]:

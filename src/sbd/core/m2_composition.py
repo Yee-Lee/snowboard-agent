@@ -24,6 +24,8 @@ from sbd.core.display.null import NullDisplay
 from sbd.core.event_bus import EventBus
 from sbd.core.gpio import make_gpio
 from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
+from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.state_manager.ports import ConversationCloseProof, ConversationReady
 from sbd.input_events.external_message import ExternalMessageSource
 from sbd.input_events.mock import MockButtonInputSource, MockWakeWordInputSource
 from sbd.input_events.button import ButtonInputSource
@@ -38,6 +40,26 @@ class _NoopAggregate:
 
     async def stop(self) -> None:
         pass
+
+
+class _DeterministicConversationLifecycle:
+    """Portable M2 lifecycle seam; no model history or backend state."""
+
+    async def open_conversation(
+        self, session_id: str, generation: int
+    ) -> ConversationReady:
+        return ConversationReady(session_id, generation)
+
+    async def close_conversation(
+        self, session_id: str, generation: int, reason: str
+    ) -> ConversationCloseProof:
+        return ConversationCloseProof(session_id, generation, True, True, True)
+
+    async def abort(self) -> None:
+        return None
+
+    async def force_abort(self) -> ForceAbortReport:
+        return ForceAbortReport()
 
 
 class M2Composition:
@@ -79,6 +101,7 @@ class M2Composition:
             raise RuntimeError("M2 composition may only be registered once")
         self._registered = True
         self.tools.seal()
+        conversation_control = _DeterministicConversationLifecycle()
 
         audio_input = make_audio_input(config.core.audio)
         audio_output = make_audio_output(config.core.audio)
@@ -229,6 +252,7 @@ class M2Composition:
                 rm.reasoner_capability_of,
                 self.action_validator,
                 config.cognition.reason_timeout_seconds,
+                control=conversation_control,
             ),
             required=True,
         ))

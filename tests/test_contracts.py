@@ -92,7 +92,7 @@ class TestInFlightWorkerMethods:
 
     def test_reasoner_reason_returns_none(self):
         fake = FakeReasoner()
-        result = asyncio.run(fake.reason("sid", 1, 1, (), ()))
+        result = asyncio.run(fake.reason("sid", 1, 1, (), (), conversation_generation=1))
         assert result is None
 
 

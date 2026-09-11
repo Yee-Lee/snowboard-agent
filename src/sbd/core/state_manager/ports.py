@@ -1,11 +1,52 @@
 """Narrow State Manager control protocols."""
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol, runtime_checkable
+from dataclasses import dataclass
+from typing import Any, Literal, Protocol, TypeAlias, runtime_checkable
 
 from sbd.core.state_manager.convergence import ConvergenceResult
 from sbd.core.state_manager.inflight import InFlightRecord
+from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.resource_manager.models import RecoveryTicket
+
+ConversationGeneration: TypeAlias = int
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationReady:
+    session_id: str
+    generation: int
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationOpenRejected:
+    session_id: str
+    generation: int
+    cleanup_proven: bool
+    engine_usable: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationCloseProof:
+    session_id: str
+    generation: int
+    request_terminal_proven: bool
+    cleanup_proven: bool
+    engine_usable: bool
+
+
+@runtime_checkable
+class ConversationLifecycleControl(Protocol):
+    async def open_conversation(
+        self, session_id: str, generation: int
+    ) -> ConversationReady | ConversationOpenRejected: ...
+
+    async def close_conversation(
+        self, session_id: str, generation: int, reason: str
+    ) -> ConversationCloseProof: ...
+
+    async def abort(self) -> None: ...
+    async def force_abort(self) -> ForceAbortReport: ...
 
 
 @runtime_checkable

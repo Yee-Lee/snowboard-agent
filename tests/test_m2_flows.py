@@ -152,12 +152,12 @@ def test_m2_flow_001_button_two_turn_speak_then_rest() -> None:
             session_ids = {fact.session_id for fact in app.facts}
             assert len(session_ids) == 1
             assert [(fact.turn_id, fact.correlation_id) for fact in app.facts] == [
-                (1, 1),
                 (1, 2),
                 (1, 3),
-                (2, 4),
+                (1, 4),
                 (2, 5),
                 (2, 6),
+                (2, 7),
             ]
             assert app.errors == []
             assert app.sm._in_flight == {} and app.sm._session is None
