@@ -175,7 +175,7 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | POC runtime product-config reference SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
 | General prompt / response schema SHA-256 | `aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6` / `4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` |
 | Selected Pi protocol schema SHA-256 | `e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` |
-| POC protocol provenance | `snowboard.llm/1`；舊Core `snowboard.llm/2`設計已退役，replacement wire未定案 |
+| POC protocol provenance | `snowboard.llm/1`；舊Core `snowboard.llm/2`已退役；replacement design使用待focused review的`snowboard.llm/3` |
 
 Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
 startup must authenticate the exact source revision, filename, size and checksum with network and
@@ -187,18 +187,21 @@ Extra/missing artifact、version/hash/ABI mismatch、third-party system-site fal
 The `c4557...` file locks the POC runtime/token/sampling/deadline/offline profile. Its POC absolute
 `runtime_path/model_path` and `test_profile` are provenance-only and are never deployment inputs.
 Core deployment只取LLMConfig明確paths。Gate2B narrow marker harness與R1 generic
-speak/tool/rest renderer都是歷史surface；M4B-MVA產品text/end、session lifecycle與profile
-依下節及新設計，不能將原prompt/response digest冒稱M4B-MVA身份。
+speak/tool/rest renderer都是歷史surface；replacement產品text/end、session lifecycle與profile
+依下節及新設計，不能將原prompt/response digest冒稱產品身份。
 
-### 6.3 Core MVA M4B-MVA profile — SUPERSEDED LEGACY SNAPSHOT
+### 6.3 M4B replacement product profile
 
-Status：**SUPERSEDED / NOT A PRODUCT PROFILE**。舊Designer候選值已自active baseline移除；不得用於
-implementation、test、capacity或performance acceptance。replacement entry見
-[M4B clean redesign gate](implement/ch_m4b_llm_production.md)。§6.1–§6.2的POC winner identity與
-provenance仍保留為設計輸入，但不自動固定產品prompt、wire、token、sampling或lifecycle。
+Status：**DESIGNER COMPLETE / FOCUSED REVIEW PENDING / NOT PRODUCT ACCEPTED**。現行authority見
+[M4B replacement design](implement/ch_m4b_llm_production.md)；profile ID為
+`core-m4b-cognition-001`，明示採用§6.2 winner identity、V2D2 exact 66-token prompt、
+`temperature=0.0`、`top_p=1.0`、4 threads、128 output reserve、1024 context、無fake prewarm及
+`snowboard.llm/3`。這次Designer採用不回溯改寫POC身份或使POC result變成product PASS。
 
-Replacement profile須重新產生自己的Core identity與digest，明列從POC繼承及變更的surface；
-不得用原POC config SHA或已退役Core profile名稱冒充產品設定身份。
+Target先以不能進正常composition的`measurement` stage取得單一Product Session vertical-slice資料，
+再依design固定公式產生兩個memory byte thresholds與`release` stage digest。只有review、Tester coverage、
+threshold freeze及exact-SHA驗證完成的release profile可成為產品candidate。不得用原POC config SHA、
+已退役Core profile名稱或legacy 8/48/768數值冒充產品設定身份。
 
 ### 6.4 Historical defect and superseded Core resource proposal
 
@@ -207,5 +210,6 @@ USER以KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION選定winner。
 原4/64 r14結果、formula/vector與waiver保留，不能把新門檻套回舊結果。
 
 本節舊Core resource proposal不再是active M4B acceptance。replacement design依current
-`status/design.md`重新建立單一Product Session多輪、context replacement、eager Conversation與
-active ASR重疊峰值，以及Audio+LLM節點時間紀錄；不可把舊20-separate-session實驗當成新gate。
+`status/design.md`重新建立單一Product Session多輪、context replacement、Conversation open與既有
+WAKE `準備中` Display projection的preparation峰值，以及Audio+LLM節點時間紀錄；Conversation open
+不得與active ASR/listen重疊，也不可把舊20-separate-session實驗當成新gate。

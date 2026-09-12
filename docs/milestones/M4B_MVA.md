@@ -1,6 +1,7 @@
 # M4B — clean rewrite gates
 
-狀態：**Foundation coverage approved / Developer entry open for M4B-FOUNDATION-REVISION only**。
+狀態：**Foundation verified / replacement design Reviewer PASS / Tester coverage authoring open /
+Developer entry closed**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -10,13 +11,14 @@
 
 | Gate | Owner | State | Exit |
 | :--- | :--- | :--- | :--- |
-| `M4B-LEGACY-DESIGN-CLEANUP` | Designer | Closed | 舊M4B Designer authority移出active design；穩定路徑宣告無現行設計 |
+| `M4B-LEGACY-DESIGN-CLEANUP` | Designer | Closed | 舊M4B Designer authority移出active design；replacement authoring從空白穩定入口開始 |
 | `M4B-DESIGN-GATE-REASONER-BEHAVIOR` | Designer + USER | Closed | 完整normal/error語意固定action後路由、speech ownership、Conversation replacement與R2/R3/E1邊界 |
 | `M4B-FOUNDATION-ARCH-REVIEW` | Architect | Closed | `AR_impl_M4B_III`修訂sequential replacement、post-action route與pre-perception readiness架構契約；Reviewer PASS及Designer確認 |
-| `M4B-FOUNDATION-REVISION` | Designer + Tester + Developer | Open — implementation | [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md)與[`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md)已核准；只開Developer foundation package |
-| `M4B-DESIGN-COMPLETE` | Designer | Blocked | 從空白結構完成session、prompt/token、capacity、memory、timing、protocol與驗證設計 |
-| `M4B-ARCH-REVIEW` | Architect/Reviewer | Blocked | 只審 replacement design 的必要cross-boundary delta；舊review不得釋放本gate |
-| `M4B-TEST-COVERAGE` | Tester + Designer | Blocked | 新test spec覆蓋核准設計；不沿用舊M4B測試語意 |
+| `M4B-FOUNDATION-REVISION` | Designer + Tester + Developer | Closed — verified 2026-09-11 | Foundation candidate focused 68；immutable baseline 99 retained / 0 missing；strict baseline 99 passed / 0 skipped；full repository 770 passed / 2 pre-existing optional audio skips / 29 deselected |
+| `M4B-DESIGN-COMPLETE` | Designer | Closed — 2026-09-12 | [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md)完成session、prompt/token、capacity、memory、timing、`snowboard.llm/3`與驗證設計 |
+| `M4B-ARCH-REVIEW` | Architect + Designer | Closed — 2026-09-12 | [`AR_impl_M4B_IV`](../reviews/history/AR_impl_M4B_IV.md)確認SM授權planned-recovery時序；Designer對齊§5.3；`arch.md`無修改 |
+| `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
+| `M4B-TEST-COVERAGE` | Tester + Designer | Open — specification | [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md)要求新spec與portable/Pi-human mapping；不沿用舊M4B測試語意 |
 | `M4B-DEVELOPMENT-REWRITE` | Developer | Blocked | 重寫M4B implementation/tests，移除暫存legacy code/test inventory |
 | `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Blocked | portable與Pi exact-SHA結果完成，Designer確認對齊 |
 
@@ -33,6 +35,8 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 - MVA context limit採明示replacement，未來保留compact-context擴充點。
 - V2D2是POC參考而非永久prompt freeze；prompt composition與runtime/context allocation使用
   分離dashboard。
+- Designer在replacement profile中明示採用V2D2 exact bytes作`core-m4b-cognition-001`初始產品prompt；
+  此次採用不建立任意personality設定，未來prompt/capability變更須換profile ID並重走quality/review gate。
 - `prefill <= 128`只適用於單一listen、最多20 Unicode codepoints且最多32 model tokens的
   voice-only profile；其他perception不受此tier限制，但須有exact projector budget並符合Engine
   context admission。
@@ -45,8 +49,8 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 ## Current authority and reference boundary
 
-- Current entry: [`ch_m4b_llm_production.md`](../implement/ch_m4b_llm_production.md)（redesign
-  tombstone；尚無產品設計）。
+- Current product design: [`ch_m4b_llm_production.md`](../implement/ch_m4b_llm_production.md)
+  （Designer complete；Reviewer PASS；Tester coverage authoring open；not Development Ready）。
 - Foundation implementation design:
   [`m4b_foundation_revision.md`](../implement/m4b_foundation_revision.md)（Designer complete；Tester
   coverage approved）。
@@ -59,7 +63,7 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 ## Next action
 
-Developer依 [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) 與
-[`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md) 實作且只修改foundation inventory；
-完成candidate後由Tester驗證。Foundation revision驗證完成前不進M4B cognition/product design，
-也不得建立產品candidate或產品驗收結果。
+`AR_impl_M4B_IV`已Resolved且`arch.md`無修改；[`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md)
+對replacement product authority與direct mappings判定PASS／0 Blocking，Designer已處理三項Advisory。
+Tester依active [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md) 建立新spec並回傳完整mapping；coverage關閉前
+不得開cognition/product Developer entry、建立產品candidate或宣稱M4B PASS。

@@ -4,22 +4,20 @@
 
 ---
 
-## M4 MVA revision（2026-09-05）
+## M4 clean replacement boundary（2026-09-12）
 
-2026-09-06 update supersedes the following historical summary where changed:
-[002 design](implement/m4b_mva_002_decisions.md) and the new POC efficiency gate precede M4B
-implementation. [M4C](milestones/M4C.md) completes streaming voice, basic Display, session reset,
-App lifecycle integration and combined resources. [ALPHA](milestones/ALPHA.md) accepts complete-product
-performance/reliability; 2s/3s and 10s targets are measured progressively, accepted there. Camera/look
-remain M6. Start-mode selection and affected architecture review remain explicit entry decisions.
+USER確認M4以最小可行離線語音架構為目標：M4A提供Accepted Audio，M4B完成最小Reasoner、
+同一Product Session的真實多輪Conversation與Audio+LLM resource/timing facts，M4C再完成整機
+State Manager/Display/streaming-speak composition及audible-onset驗證。實際tool在M5，camera/look在M6。
 
-USER確認M4以最小可行語音架構為目標：M4B完成最小Reasoner與session內連續對話，
-M4整合驗speech-end到meaningful audible onset；ALPHA擴大品質/穩定性，實際tool在M5。
-2秒目標／3秒上限、10秒恢復是可修訂目標，不是整個計畫no-go條件；
-保留原目標、實測、調整理由與新目標，不重標historical result。
-[新M4規劃](milestones/M4.md)、[M4B-MVA設計](implement/ch_m4b_llm_production.md)已完成
-Architecture/Reviewer/Designer定版並完成POC交付；尚待POC結果、Designer採用profile及Tester coverage，
-因此仍未宣告Development Ready。
+舊M4B-MVA-001/002、fresh-Conversation、model action envelope、fake prewarm與固定8/48/768 recycle
+均已退役，不是compatibility target。[M4B replacement design](implement/ch_m4b_llm_production.md)
+從已驗證Foundation重建listen-only V2D2 profile、exact admission、Conversation replacement、
+`snowboard.llm/3`與新memory/profile gate；POC evidence是provenance/input，不自行取得產品PASS。
+
+M4B不設定response-time ceiling，只記錄同一monotonic timeline；M4C/ALPHA依後續整機證據裁定目標。
+穩定分工與順序見[M4 plan](milestones/M4.md)及[M4B gates](milestones/M4B_MVA.md)；當前stage、
+next owner與Developer/Tester entry仍只見[`status/current.md`](status/current.md)。
 
 ## 1. 規劃基準
 

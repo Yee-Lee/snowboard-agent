@@ -2,7 +2,7 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / cognition-product design entry open
+- State: Foundation verified / cognition-product Reviewer PASS / Tester coverage authoring open
 - Developer entry: **Closed**
 
 ## USER-confirmed direction
@@ -44,8 +44,37 @@ Foundation design:
 [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) completed by Designer on
 2026-09-10. Coverage authority:
 [`test_spec_M4B_foundation`](../test_spec/test_spec_M4B_foundation.md). Coverage review
-[`TR_spec_M4B_V`](../reviews/history/TR_spec_M4B_V.md) resolved after Designer Round 3 PASS. Only the
-foundation implementation package is open; cognition/product development remains closed.
+[`TR_spec_M4B_V`](../reviews/history/TR_spec_M4B_V.md) resolved after Designer Round 3 PASS. Foundation
+implementation and independent verification closed on 2026-09-11; cognition/product development remains closed.
+
+## Replacement cognition/product design
+
+Designer completed [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md) on 2026-09-12; focused
+architecture request [`AR_impl_M4B_IV`](../reviews/history/AR_impl_M4B_IV.md) is Resolved. Current decisions are:
+
+- exact Gemma 4 E2B / LiteRT-LM 0.16 product identity with a new `core-m4b-cognition-001` profile;
+- V2D2 exact 66-token prompt as one fixed built-in personality, with no user/YAML prompt customization;
+- listen-only direct-text projection, exact NFKC/whitespace normalization and `20 codepoints / 32 tokens` input
+  boundary;
+- constrained JSON `text/end`, 30 spoken-character product rule and S2 safe semantic extraction;
+- child-side non-mutating MEASURE plus one-use ticket for exact current-KV/render/output-reserve admission;
+- `temperature=0`, `top_p=1`, `128` output reserve and `1024` context; fresh qualifying listen-only prefill
+  remains `<=128` while other future projectors need their own tier;
+- one real Conversation across turns, explicit context/post-send replacement without replay, and a complete
+  application/model speech plus R1/R2/R3/E1 matrix;
+- memory pressure ends the session before planned same-key recycle; new thresholds come from a dedicated
+  measurement-only harness and are frozen into a release profile, never inherited from legacy `8/48/768`;
+- existing Display `WAKE -> 準備中` is the selected nonblocking preparation UX; it adds no state/Fact/model content;
+- new private `snowboard.llm/3` protocol and separate prompt, runtime/context, memory and monotonic timing
+  dashboards.
+
+Architect resolved the single planned-recovery timing ownership question in `AR_impl_M4B_IV`: existing architecture
+already requires SM to authorize planned recovery inside its private post-close convergence phase. Designer aligned
+M4B §5.3; `arch.md` required no change. Admission, request-failure cleanup and listen-only composition remain
+Designer-owned implementation consistency work, not architecture questions. Independent Reviewer returned PASS
+with no Blocking findings in [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md). Designer adopted A1/A2
+and acknowledged A3; `M4B-DESIGN-REVIEW` is Closed. [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md) is active for
+independent Tester specification and mapping; executable tests, candidate evidence and Developer entry remain closed.
 
 ## Other redesign inputs to preserve
 
@@ -56,8 +85,9 @@ foundation implementation package is open; cognition/product development remains
   itself end the Product Session and never overlaps two claimed Conversations.
 - Do not race Conversation open against the initial listen operation. Complete a session-preparation
   readiness barrier before perception starts. The preparation interval may later be hidden with a
-  Display animation or application-owned recorded voice; the exact UX remains to be designed, and
-  model generation still cannot start before Conversation readiness.
+  Display or application-owned recorded voice. The replacement design selects the existing `WAKE -> 準備中`
+  Display state projection, without a new animation/voice/state; model generation still cannot start before
+  Conversation readiness.
 - Reuse one real Conversation across normal turns in one Product Session until an explicit
   replacement or session end.
 - Admission occurs before `send_message` and uses exact normalization/tokenization, rendered
@@ -129,7 +159,7 @@ foundation implementation package is open; cognition/product development remains
 
 ## Cleanup boundary
 
-- Designer now retires the active M4B design and decision overlays. POC handoffs and immutable
+- Designer retired the superseded M4B design and decision overlays. POC handoffs and immutable
   historical evidence remain in place.
 - Current M4B production files, product scripts/locks and M4B-specific tests are legacy inventory,
   not design evidence. The cutover inventory is `src/sbd/cognition/{llm,llm_child_protocol,
@@ -142,6 +172,5 @@ foundation implementation package is open; cognition/product development remains
 
 ## Next Designer work
 
-1. Build the remaining replacement M4B cognition/product design from the confirmed redesign inputs;
-   do not reuse the legacy production contract as a starting point.
-2. Obtain focused review and coverage approval before opening cognition/product development.
+1. Wait for Tester to return `TR_spec_M4B_VI` as `Revised` with the new replacement test spec and mapping.
+2. Confirm coverage mapping before opening cognition/product development.

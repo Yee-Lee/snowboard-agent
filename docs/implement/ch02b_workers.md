@@ -1,9 +1,9 @@
 
 # Ch 2b. worker 契約與 library adapter
 
-> 2026-09-09 M4B clean rewrite：本章generic／已Accepted行為維持；下方既有M4B-MVA-specific
-> delta已被USER決策取代，只作暫時legacy context，不是現行設計、實作或測試權威。
-> Replacement design尚未建立；唯一入口見[ch_m4b_llm_production.md](ch_m4b_llm_production.md)。
+> 2026-09-12 M4B replacement：本章 generic／已 Accepted 行為維持；§3 已改由現行
+> [replacement product design](ch_m4b_llm_production.md) 定義。其 focused review 與 Tester coverage
+> 未完成前，Developer entry 仍關閉。
 
 |本章定義 ASR / Vision / LLM / TTS adapter 與 worker 行為；精確 engine、model、voice、版本、授權與 Pi benchmark gate 見 ../model_spec.md 。
 
@@ -20,7 +20,7 @@
 | ch2b-Q1 | Library adapter 是否共用一個大介面 | 否；ASR、Vision、TTS、LLM 各自定義最小 Protocol |
 | ch2b-Q2 | Timeout 由誰執行 | Worker 自我計時；SM 只把 perception timeout 傳給 worker |
 | ch2b-Q3 | Fact 如何回傳 | 方法回傳 `None`；正常 / P5 路徑 publish 一個 terminal Fact，不可翻譯路徑 publish `ErrorOccurred`，cancel 路徑不 publish 正常 Fact；SM 另等 task done |
-| ch2b-Q4 | LLM conversation 是否跨 turn 保留 | 否；Engine 跨 turn 常駐，每次 `reason()` 建立一次無隱藏歷史的 conversation |
+| ch2b-Q4 | LLM Conversation 是否跨 turn 保留 | 是；同 Product Session 正常 turn 重用一個真實 Conversation，只在 proof-complete replacement 或 session end 關閉 |
 | ch2b-Q5 | Tool 如何註冊並提供給 LLM | Tool 一律註冊於 Snowboard `ToolRegistry`；只把 schema 提供給 LLM，禁止 LiteRT-LM 自動執行 handler |
 | ch2b-Q6 | Worker 內部 thread / child process 如何強制收斂 | AR-Impl-6 已裁定：worker 管理 internal container；Level 2 先 `force_abort()`，必要時 RM rebuild 並等待 recovery barrier |
 | ch2b-Q7 | Read buffer API 是否在本章定義 | 否；本章只定 read worker 行為，buffer 具體 API 留 Ch 7 |
@@ -188,41 +188,38 @@ class VisionAdapter(Protocol):
 
 Vision adapter 不直接取得 Camera；拍攝與分析的資源順序由 Look worker 擁有。
 
-## 3. Cognition — M4B MVA M4B-MVA revision
+## 3. Cognition — M4B replacement
 
-完整API、state、failure、實作骨架與regression在
-[ch_m4b_llm_production.md](ch_m4b_llm_production.md) §2–§9；
-wire在[protocol.md](../protocol.md) §4。本節以M4B-MVA替代原R1 stateless prompt/full-envelope。
+完整 API、state、failure、admission 與 regression 在
+[ch_m4b_llm_production.md](ch_m4b_llm_production.md)；wire 在
+[protocol.md](../protocol.md) §4。下列是 generic worker 章節的窄摘要；衝突時以前者為準。
 
 ### 3.1 PromptBuilder
 
-產品facts在session open傳入：雪板身分、角色、繁中、當前listen/speak能力。
-每turn只project當前listen PerceptionResult，不傳handler、private IDs或整份history。
-Session identity由control envelope攜帶，不render進LLM。
-Runtime Conversation管理session內history/KV；Core無transcript store/摘要/檢索。
-Token限制区分user-new、incremental template、累積KV、output reserve；值待profile。
+M4B 固定 V2D2-based 66-token system prompt與單一 trusted personality，不接受 YAML/user suffix。
+每 turn 只 project 一個 normalized listen text；不傳 Core envelope、handler、private ID 或完整 history。
+Runtime Conversation 管理 session 內 history/KV；Core 無 transcript store、摘要或檢索。
+輸入限 `20` normalized code points / `32` direct-user tokens；exact child MEASURE 分開回報 current KV、
+rendered incremental、runtime prefill 與 `128` output reserve，對 `1024` context 做 pre-send admission。
 
 ### 3.2 LLMEngineAdapter
 
-既有start/stop/abort/force_abort維持，新增open_session(session_id, facts)、
-generate(session_id, turn_id, value)、close_session(session_id, reason)。
-Generate回SemanticGeneration(text/end, metrics)，不回canonical action envelope。
-Dedicated child/PGID保留，同session正常turn reuse，結束close；runtime native只在child。
-CANCEL最多一次，typed outcome+thread join+Conversation cleanup；desync/cleanup failure
-走Level2→RM。Capacity-based planned recovery與fault recovery分開，無fixed8/48。
-READY無產品Conversation；prewarm依measured profile選擇。完整recovery計時不排除hash/load。
-Process termination與same-key RecoveryTicket/barrier/main fatal監督維持。
+Adapter 使用 required OPEN/MEASURE/GENERATE/CLOSE surface。MEASURE 不 mutation，回 one-use ticket；
+GENERATE 回 `SemanticGeneration(text, end, safe_fragments, metrics)`，不回 canonical action envelope。
+Dedicated child/PGID 常駐，正常 turn 重用同一 Conversation；READY 時沒有 Product Session 或
+Conversation。CANCEL 最多一次，native terminal/join 與 Conversation cleanup 分別提供 proof；desync、
+proof 缺失或 Engine unusable 走 E1/Level 2/RM。沒有 fake prewarm、fixed session count或fixed 48/768
+recycle。System-memory capacity outcome只由Adapter原子標記`RECYCLE_PENDING`；session-end close proof後仍須
+由SM在private convergence phase授權，Adapter/composition才可排程planned recovery。
 
 ### 3.3 Reasoner policy and normalization
 
-Model text/end只是語意輸入。Reasoner自行決定：
-有效短回答+speak/listen可用→speak/{text}/(listen,)；
-明確end→rest/{}/()；無可用speech continuation→rest。
-Model不得提供next_perceptions或tool；此責任不是SM推論或child代寫。
-未改state的request rejection可簡短P5/listen；dirty runtime/容量滿則close/rest，不能
-用新Conversation静默承接「對」等依賴舊前文的回答。所有source异常分界依M4B-MVA §4。
-Real semantic quality由人工rubric驗，injected mock只驗policy。
-Generic ToolRegistry/schema留供M5；M4不用real model tool intent作voice-only gate。
+Model `text/end` 只是 semantic input；Reasoner 依 replacement §6 唯一矩陣決定 model/application
+speech、`KEEP_NEXT/REPLACE_NEXT/END_SESSION` 與 `("listen",)`。非空 `end=true` 是 final speak then
+rest；空 `end=true` 才是 direct rest。Input limit保留 Conversation；context limit先說明再 replace；
+post-send semantic failure只有 terminal proof + Engine usable才可 replace。`UNSUPPORTED_INPUT`、wire/
+profile/ticket failure或 cleanup proof 缺失是 E1。Real semantic quality由人工 rubric驗，mock只驗
+policy。Generic ToolRegistry/schema留供 M5；M4B real model不產 tool intent。
 
 ## 4. Action workers
 
@@ -344,4 +341,5 @@ src/sbd/
 - Ch 9：speak / tool / rest payload schema，以及 tool registry 驗證入口。
 - Ch 10：模型、backend、sampling、reason timeout，以及 per-kind abort / force-abort / waitpid timeout。
 - Ch 11：adapter exception 對 log level / `ErrorOccurred.where` 的映射。
-- `docs/protocol.md`：worker child 的 READY、request、result、cancel、shutdown wire schema；Audio v1 與 LLM v1 已固定，wake 待其 gate。
+- `docs/protocol.md`：worker child 的 READY、request、result、cancel、shutdown wire schema；Audio v1
+  已 Accepted，LLM使用 replacement `snowboard.llm/3` Designer draft，wake待其 gate。

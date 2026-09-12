@@ -1,17 +1,21 @@
 # Snowboard child-process protocols
 
-狀態：Audio Protocol v1保持Accepted；目前沒有active M4B LLM protocol。下方§4是已退役的
-`snowboard.llm/2`設計快照，只供追溯，不得作implementation或test契約。
+狀態：Audio Protocol v1保持Accepted；M4B replacement LLM Protocol
+`snowboard.llm/3`為 Designer draft，等待 focused review 與 Tester coverage。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
 ## 1. Common framing
 
 - Parent 以 `start_new_session=True` 啟動每個 top-level child，使 child PID=PGID；ASR supervisor 的 native whisper descendant 不得建立 nested session/group。
-- Control 為單行 UTF-8 JSON，以 `\n` 終止，最大 16 KiB。Object 必須 exact-key；Audio使用`protocol: 1`。replacement LLM framing與version須由新設計重新定義，不繼承legacy §4。
-- `request_id`由parent在單一child lifetime內配置、嚴格遞增且不可重用。Audio為正整數；replacement LLM ID與operation關係尚未定案。Audio operation event帶同一ID；READY/PING/PONG/SHUTDOWN不帶request ID。
+- Control 為單行 UTF-8 JSON，以 `\n` 終止，最大 16 KiB。Object 必須 exact-key；Audio使用
+  `protocol: 1`，LLM 使用 `protocol: 3`。兩者不接受另一版本或 legacy LLM framing。
+- `request_id`由parent在單一child lifetime內配置、嚴格遞增且不可重用，且為正整數。Audio與
+  LLM operation event皆帶 matching ID；CANCEL只引用目前active ID而不另配ID；
+  READY/PING/PONG/SHUTDOWN不帶 request ID。
 - Binary payload 只允許在 schema 明列的 header 後立即出現，parent/child 以 `readexactly(payload_bytes)` 讀取。不得 scan delimiter、部分接受或無界 buffer。
-- 一次只允許一個 active request。第二個 BEGIN/GENERATE 在第一個 terminal 前以 `BUSY` 拒絕，不排隊。
+- 一次只允許一個 active request。Audio第二個 BEGIN/GENERATE 在第一個 terminal 前以 `BUSY`
+  拒絕；LLM任何reentrant operation是protocol E1。兩者皆不排隊。
 - IPC text/PCM 可存在於 pipe 與 private process memory，但不得寫入 log/result/evidence。stderr 只允許 sanitized code/stage/PID，不含 command、prompt、transcript、TTS text、PCM 或私人 path。
 - EOF、invalid JSON/UTF-8、超限、wrong request ID、wrong payload length、unknown event 或 checksum mismatch 使 parent 視為 backend protocol failure；parent 先完成 termination proof，不把它轉成 empty transcript 或 normal action error。
 
@@ -160,18 +164,259 @@ READY 只在 exact runtime/acoustic/Vocos/profile validation 與 engine load 完
 
 `CANCELLED`、`CANCEL_DEFERRED`、`ERROR` 與 `SHUTDOWN_ACK` 的 lifecycle meaning 同 §2.2。允許的 TTS request code 為 `INVALID_TEXT`、`GENERATION_REJECTED`、`INVALID_PCM`；identity、protocol、crash 與 cleanup failure 仍是 backend failure。
 
-## 4. LLM MVA protocol — retired
+## 4. LLM Protocol v3 — `snowboard.llm/3`
 
-目前沒有active M4B LLM wire contract。舊`snowboard.llm/2`草案已隨M4B設計退役；其內容只在
-Git history與M4B暫存archive供指定追查，不留在active protocol以免被誤用。
+### 4.1 Identity and common rules
 
-Replacement protocol必須等[`M4B-DESIGN-GATE-REASONER-BEHAVIOR`](milestones/M4B_MVA.md)
-Closed後，依完整新設計重新定義identity、commands、terminals、cancel、Conversation與error
-semantics。沒有新version/profile freeze前，LLM child不得宣稱符合Core product protocol。
+The dedicated LLM child is spawned with PID=PGID and owns the LiteRT-LM Engine, tokenizer, chat renderer,
+Conversation and all native requests. Core process owns framing, policy and lifecycle. Text fields are private IPC
+data and follow §1 no-log/no-evidence rules.
+
+READY is emitted only after exact ABI/runtime/model/artifact/profile verification, Engine load and tokenizer
+attestation, with no Conversation:
+
+```json
+{
+  "protocol":3,
+  "event":"READY",
+  "protocol_name":"snowboard.llm/3",
+  "pid":3456,
+  "pgid":3456,
+  "candidate_id":"CAND-LRT-G4E2B-MOBILE-R1",
+  "pairing_revision":"litert-lm-v0.16.0-pi-g2b-r5",
+  "profile_id":"core-m4b-cognition-001",
+  "profile_stage":"release",
+  "profile_sha256":"<64 hex>",
+  "runtime_sha256":"5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+  "native_sha256":"9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+  "model_sha256":"181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+  "prompt_sha256":"872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643",
+  "grammar_sha256":"<64 hex>",
+  "prompt_tokens":66,
+  "max_output_tokens":128,
+  "engine_context_tokens":1024,
+  "temperature":0.0,
+  "top_p":1.0,
+  "threads":4,
+  "min_mem_available_generate_bytes":123456789,
+  "min_mem_available_speak_bytes":12345678,
+  "conversation_state":"none",
+  "network":"disabled"
+}
+```
+
+Parent compares every field with the authenticated product lock. It does not accept a matching overall digest as
+a substitute for field checks. Positive memory values above are schema examples, not product defaults; the release
+profile carries the reviewed measured byte values. The dedicated measurement harness instead requires
+`profile_stage="measurement"` and both memory fields null; normal application composition rejects that form.
+Unknown/extra/missing/mismatched fields terminate and waitpid the process group; the child never falls back to
+another model, runtime, profile or endpoint.
+
+### 4.2 Conversation lifecycle
+
+Open one clean Conversation:
+
+```json
+{"protocol":3,"op":"OPEN","request_id":1,"session_id":"<private>","generation":1}
+```
+
+Successful terminal:
+
+```json
+{"protocol":3,"event":"OPENED","request_id":1,"session_id":"<private>","generation":1,"conversation_revision":0}
+```
+
+Clean open rejection is terminal and legal only after the failed object is unusable and cleaned:
+
+```json
+{"protocol":3,"event":"OPEN_REJECTED","request_id":1,"session_id":"<private>","generation":1,"code":"OPEN_REJECTED","cleanup_proven":true,"engine_usable":true}
+```
+
+Any false proof flag maps to E1 rather than R2. OPENED means the Conversation is exclusively claimed, contains
+only the fixed system prompt, accepts MEASURE and has no user/assistant turn.
+
+Close reasons are exactly `replace_context`, `replace_generation_failure`, `session_end`, `interrupt`, `error`,
+`shutdown` or `memory_pressure`:
+
+```json
+{"protocol":3,"op":"CLOSE","request_id":8,"session_id":"<private>","generation":1,"reason":"replace_context"}
+```
+
+The child discards any unconsumed measurement ticket, proves the native request terminal, destroys
+Conversation-local history/KV/references, and returns:
+
+```json
+{"protocol":3,"event":"CLOSED","request_id":8,"session_id":"<private>","generation":1,"request_terminal_proven":true,"cleanup_proven":true,"engine_usable":true}
+```
+
+Only all-three-true is a replacement proof. For session end, false proof remains an E1 convergence target and may
+require Level 2/RM recovery. CLOSED returns the child to Engine READY with no Conversation; allocator PSS need not
+drop immediately.
+
+### 4.3 Non-mutating measurement
+
+With one active clean/usable Conversation, parent requests exact tokenizer/renderer counts:
+
+```json
+{"protocol":3,"op":"MEASURE","request_id":2,"session_id":"<private>","generation":1,"text":"<private normalized listen text>","input_sha256":"<64 hex>","output_reserve_tokens":128}
+```
+
+Terminal response:
+
+```json
+{
+  "protocol":3,
+  "event":"MEASURED",
+  "request_id":2,
+  "session_id":"<private>",
+  "generation":1,
+  "conversation_revision":0,
+  "input_sha256":"<64 hex>",
+  "ticket":"<opaque 128-bit lowercase hex>",
+  "user_tokens":10,
+  "current_kv_tokens":0,
+  "rendered_incremental_tokens":84,
+  "runtime_prefill_tokens":84,
+  "output_reserve_tokens":128,
+  "engine_context_tokens":1024
+}
+```
+
+MEASURE must not append a message, allocate output KV or call generation. Counts are exact non-negative integers
+from the same tokenizer/chat renderer as GENERATE. `conversation_revision` is monotonic within one generation and
+increments exactly once after a successful RESULT. The child holds at most one ticket; CLOSE discards it.
+
+### 4.4 Generation and semantic terminals
+
+Parent may generate only with the latest bound ticket and identical private text/digest:
+
+```json
+{"protocol":3,"op":"GENERATE","request_id":3,"session_id":"<private>","generation":1,"conversation_revision":0,"ticket":"<opaque 128-bit lowercase hex>","text":"<private normalized listen text>","input_sha256":"<64 hex>"}
+```
+
+The ticket is consumed before native send and can never be reused. While generation is active, the child may emit
+ordered semantic fragments:
+
+```json
+{"protocol":3,"event":"SAFE_TEXT","request_id":3,"sequence":0,"text":"<private decoded semantic fragment>","monotonic_ns":123456789}
+```
+
+`sequence` begins at zero without gaps or duplicates. SAFE_TEXT is nonterminal and must follow the S2 prefix rules
+in `implement/ch_m4b_llm_production.md` §4.2.
+
+Successful terminal:
+
+```json
+{
+  "protocol":3,
+  "event":"RESULT",
+  "request_id":3,
+  "session_id":"<private>",
+  "generation":1,
+  "conversation_revision":1,
+  "text":"<private normalized semantic text>",
+  "end":false,
+  "user_tokens":10,
+  "current_kv_tokens":0,
+  "rendered_incremental_tokens":84,
+  "runtime_prefill_tokens":84,
+  "decode_tokens":20,
+  "conversation_kv_tokens":104,
+  "llm_send_monotonic_ns":123400000,
+  "first_safe_text_monotonic_ns":123456789,
+  "terminal_monotonic_ns":123500000
+}
+```
+
+The child sends RESULT only after constrained JSON terminal validation, safe-fragment prefix proof and native
+request join. `first_safe_text_monotonic_ns` is null when no fragment was emitted. Metrics must match the consumed
+ticket and be monotonic/nondecreasing; impossible values are protocol failure.
+
+A post-send failure may use the normal R2 path only after native terminal/join proof and while Engine remains
+usable:
+
+```json
+{"protocol":3,"event":"REQUEST_FAILED","request_id":3,"session_id":"<private>","generation":1,"code":"INVALID_SEMANTIC","request_terminal_proven":true,"engine_usable":true,"terminal_monotonic_ns":123500000}
+```
+
+Allowed codes are `INVALID_SEMANTIC`, `GENERATION_REJECTED` and `GENERATION_TIMEOUT`. This terminal taints the
+Conversation: only CLOSE/CANCEL convergence is legal next. False proof, unknown code, runtime exception, Engine
+loss or any output that cannot reach this terminal is E1 and requires parent cleanup; it is not encoded as a
+normal request error.
+
+### 4.5 Cancel and shutdown
+
+Cooperative cancel names the active OPEN/MEASURE/GENERATE/CLOSE request:
+
+```json
+{"protocol":3,"op":"CANCEL","request_id":3}
+```
+
+If the active native/lifecycle operation cannot yet stop, the child emits nonterminal:
+
+```json
+{"protocol":3,"event":"CANCEL_DEFERRED","request_id":3}
+```
+
+After operation terminal/join:
+
+```json
+{"protocol":3,"event":"CANCELLED","request_id":3,"operation":"GENERATE","request_terminal_proven":true,"operation_cleanup_proven":true,"engine_usable":true,"conversation_state":"tainted"}
+```
+
+CANCEL is accepted at most once per active request. `operation` is exactly `OPEN | MEASURE | GENERATE | CLOSE`.
+All three proof booleans must be true for a cooperative operation stop; false/missing proof is E1 and the record
+remains a convergence target. Resulting state is fixed by operation:
+
+- cancelled OPEN cleans the unclaimed object and returns `conversation_state="none"` / `ENGINE_READY`;
+- cancelled MEASURE invalidates its ticket without mutation and returns
+  `conversation_state="ready"` / `CONVERSATION_READY`;
+- cancelled GENERATE proves the request stopped but leaves Conversation
+  `conversation_state="tainted"` / `TAINTED`, so session convergence must CLOSE it;
+- cancelled CLOSE cannot prove Conversation cleanup and therefore uses
+  `operation_cleanup_proven=false`, `conversation_state="tainted"`; it is E1 and escalates through the existing
+  lifecycle convergence rather than returning to a usable state.
+
+Parent `abort()` remains pending until a valid CANCELLED and outer operation completion. If the control loop or
+native request cannot provide proof before Level 1 timeout, parent terminates/kills and waitpids the whole PGID
+under Level 2; it does not fabricate CANCELLED, CLOSED or RESULT.
+
+SHUTDOWN is legal only with no Conversation and no active request:
+
+```json
+{"protocol":3,"op":"SHUTDOWN"}
+```
+
+```json
+{"protocol":3,"event":"SHUTDOWN_ACK"}
+```
+
+ACK means Engine/runtime resources are closed and no descendant remains; child then exits zero and parent still
+waitpids it. Shutdown with an active Conversation is a parent contract error except after Level 2 destruction.
+
+### 4.6 State machine and failure boundary
+
+| Child state | Legal parent input | Legal output / next state |
+| :--- | :--- | :--- |
+| `STARTING` | none | READY → `ENGINE_READY`; other output/EOF → E1 |
+| `ENGINE_READY` | OPEN, SHUTDOWN | OPEN → `OPENING`; SHUTDOWN_ACK → `STOPPED` |
+| `OPENING` | one matching CANCEL | OPENED → `CONVERSATION_READY`; OPEN_REJECTED / valid CANCELLED → `ENGINE_READY`; CANCEL_DEFERRED stays |
+| `CONVERSATION_READY` | MEASURE, CLOSE | MEASURE → `MEASURING`; CLOSE → `CLOSING` |
+| `MEASURING` | one matching CANCEL | MEASURED → `MEASURED`; valid CANCELLED → `CONVERSATION_READY`; CANCEL_DEFERRED stays |
+| `MEASURED` | GENERATE, CLOSE | GENERATE → `GENERATING`; CLOSE discards ticket → `CLOSING` |
+| `GENERATING` | one CANCEL | SAFE_TEXT stays; RESULT → `CONVERSATION_READY`; REQUEST_FAILED/CANCELLED → `TAINTED`; CANCEL_DEFERRED stays |
+| `TAINTED` | CLOSE | CLOSE → `CLOSING` |
+| `CLOSING` | one matching CANCEL | CLOSED → `ENGINE_READY`; CANCELLED with incomplete Conversation cleanup → E1/parent convergence; CANCEL_DEFERRED stays |
+| `DESTROYED` | none | only RM recovery may spawn and fully validate replacement |
+
+Wrong state/order, BUSY/reentrant operation, request/session/generation/revision mismatch, stale/reused ticket,
+unknown/extra/missing key, overlong line, invalid JSON/UTF-8, EOF, duplicate/late terminal, fragment sequence/prefix
+failure or output after terminal is protocol E1. Parent sanitizes the diagnostic, blocks admission and obtains
+termination/cleanup proof before replacement/recovery.
 
 ## 5. Audio state / terminal rules
 
-本表適用§2/§3 Audio；replacement LLM state machine尚未定案，legacy §4不得引用為現行規則。
+本表只適用 §2/§3 Audio；LLM 使用 §4.6 的獨立狀態機。
 
 | State | Legal input | Legal output / next state |
 | :--- | :--- | :--- |
@@ -189,5 +434,7 @@ Portable protocol tests 覆蓋 fragmented read、coalesced header/payload、wron
 
 Pi evidence 驗 exact real READY fields 與 product lock，但不保存 private `text` 或 PCM；只記 sanitized status、hash、size、latency、PID/exit 與 cleanup count。
 
-LLM replacement test requirements須等`M4B-DESIGN-GATE-REASONER-BEHAVIOR`與完整新設計Closed後
-重建；本節不授權沿用舊session、text/end、capacity或prewarm測試語意。Audio測試要求不變。
+LLM v3 portable tests另須覆蓋完整 state table、OPEN/CLOSE proof、MEASURE non-mutation、exact count
+boundaries、ticket binding/one-use、SAFE_TEXT fragmentation/prefix、RESULT metrics、REQUEST_FAILED/CANCEL
+proof、wrong identity/revision/generation、PGID cleanup及recovery後下一個child成功。不得沿用舊
+session、capacity、prewarm或fixed-recycle測試語意。Audio測試要求不變。
