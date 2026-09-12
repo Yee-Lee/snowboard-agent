@@ -6,15 +6,28 @@ import os
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scripts.candidate_gate import (
     GateFailure,
     M4B_CARD_REQUIRED,
+    M4B_CANONICAL_SUITE,
+    M4B_PORTABLE_IDS,
+    Repository,
     _network_attempt_count,
+    _m4b_foundation_evidence,
+    _m4b_profile_identity,
+    _m4b_source_audit,
+    _m4b_test_id_evidence,
     _validate_m4b_card,
+    m4b_catalog_paths,
+    m4b_collection_audit,
+    portable,
+    prepare_new_output,
     validate_m4b_product_preflight,
 )
 
@@ -66,6 +79,10 @@ def candidate_repo(tmp_path: Path) -> tuple[Path, str]:
         "    child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)'],start_new_session=True)\n"
         "    target.write_text(str(child.pid))\n"
         "    time.sleep(30)\n",
+    )
+    write(
+        root / "tests" / "test_xpass.py",
+        "import pytest\n\n@pytest.mark.xfail\ndef test_unexpected_pass():\n    assert object() is not None\n",
     )
     write(
         root / "tests" / "test_target.py",
@@ -120,11 +137,106 @@ def portable_args(sha: str, run_id: str, output: Path, suite: str = "tests/test_
     )
 
 
+def enable_m4b_candidate(root: Path) -> str:
+    profile = {"profile_id": "core-m4b-cognition-001"}
+    encoded = json.dumps(profile, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"), allow_nan=False).encode()
+    profile["profile_sha256"] = hashlib.sha256(encoded).hexdigest()
+    write(root / "requirements" / "m4b" / "product-profile.json",
+          json.dumps(profile, sort_keys=True))
+    selectors = list(M4B_PORTABLE_IDS.values())
+    write(root / M4B_CANONICAL_SUITE, "\n".join(selectors) + "\n")
+    write(root / "tests" / "test_foundation_stub.py", "VALUE = 1\n")
+    baseline = [f"tests/test_foundation_stub.py::test_{number:03}" for number in range(99)]
+    baseline_path = root / "docs" / "test_spec" / "baselines" / "m4b_foundation_node_ids.txt"
+    write(baseline_path, "\n".join(baseline) + "\n")
+    baseline_evidence = m4b_collection_audit(baseline_path.read_bytes(), baseline)
+    for path in selectors:
+        name = ("test_G02_exact_99_nodes_fixture" if path.endswith("test_m4b_reg_001.py")
+                else "test_contract")
+        if path.endswith("test_m4b_reg_001.py"):
+            write(root / path,
+                  "VALUE = 1\n\n"
+                  f"def {name}(record_property):\n"
+                  f"    evidence = {baseline_evidence!r}\n"
+                  "    for key, value in evidence.items():\n"
+                  "        record_property(key, value)\n"
+                  "    assert VALUE == 1\n")
+        else:
+            write(root / path, f"VALUE = 1\n\ndef {name}():\n    assert VALUE == 1\n")
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "enable m4b fixture"], cwd=root, check=True)
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, text=True,
+                          capture_output=True, check=True).stdout.strip()
+
+
+def write_m4b_matrix_inputs(root: Path, sha: str, run_id: str) -> Path:
+    profile_id, profile_sha256 = _m4b_profile_identity(root)
+    targets = m4b_catalog_paths(root)
+    catalog_sha256 = hashlib.sha256((root / M4B_CANONICAL_SUITE).read_bytes()).hexdigest()
+    nodes = []
+    for path in targets:
+        name = ("test_G02_exact_99_nodes_fixture" if path.endswith("test_m4b_reg_001.py")
+                else "test_contract")
+        nodes.append(f"{path}::{name}")
+    baseline = (root / "docs/test_spec/baselines/m4b_foundation_node_ids.txt").read_bytes()
+    baseline_evidence = m4b_collection_audit(baseline, baseline.decode().splitlines())
+    matrix_root = root / "evidence" / "portable" / run_id
+    for minor in SUPPORTED_MINORS:
+        directory = matrix_root / f"python-{minor}"
+        directory.mkdir(parents=True)
+        collection = directory / "collection-node-ids.txt"
+        collection.write_text("\n".join(nodes) + "\n", encoding="utf-8")
+        suite = ET.Element("testsuite", tests=str(len(nodes)), failures="0", errors="0", skipped="0")
+        for node in nodes:
+            path, name = node.split("::")
+            case = ET.SubElement(suite, "testcase", classname=path.removesuffix(".py").replace("/", "."), name=name)
+            if name.startswith("test_G02_exact_99_nodes"):
+                properties = ET.SubElement(case, "properties")
+                for key, value in baseline_evidence.items():
+                    ET.SubElement(properties, "property", name=key, value=str(value))
+        junit = directory / "junit.xml"
+        ET.ElementTree(suite).write(junit, encoding="utf-8", xml_declaration=True)
+        for relative in ("logs/collection.stdout.log", "logs/collection.stderr.log",
+                         "logs/suite.stdout.log", "logs/suite.stderr.log"):
+            write(directory / relative, "fixture\n")
+        junit_sha256 = hashlib.sha256(junit.read_bytes()).hexdigest()
+        result = {
+            "branch": "candidate/test", "candidate_sha": sha,
+            "case_id": f"PY{minor.replace('.', '')}",
+            "catalog_paths": targets, "catalog_sha256": catalog_sha256,
+            "collection_count": len(nodes), "collection_locator": "collection-node-ids.txt",
+            "collection_sha256": hashlib.sha256(collection.read_bytes()).hexdigest(),
+            "counts": {"passed": len(nodes), "failed": 0, "errors": 0, "skipped": 0,
+                       "xfailed": 0, "xpassed": 0},
+            "end_monotonic_ns": 2, "evidence_sha256": junit_sha256, "exit_code": 0,
+            "junit_locator": "junit.xml", "junit_sha256": junit_sha256,
+            "matrix": "portable", "mode": "portable",
+            "platform": "Linux-fixture", "platform_identity": {"system": "Linux", "machine": "x86_64"},
+            "profile_id": profile_id, "profile_sha256": profile_sha256,
+            "python": {"implementation": "CPython", "version": f"{minor}.9"},
+            "python_minor": minor,
+            "raw_logs": ["logs/collection.stdout.log", "logs/collection.stderr.log",
+                         "logs/suite.stdout.log", "logs/suite.stderr.log"],
+            "run_id": run_id, "schema_version": 1,
+            "source_audit_sha256": _m4b_source_audit(root, targets),
+            "start_monotonic_ns": 1, "status": "Pass", "suite": M4B_CANONICAL_SUITE,
+            "suite_command": [sys.executable, "-m", "pytest", "-v", "-m", "not rpi",
+                              *targets, f"--junitxml={junit}"],
+            "test_id": "M4B-PORTABLE-CATALOG", "test_id_evidence": _m4b_test_id_evidence(nodes),
+            "timeout_seconds": 60, "baseline_evidence": baseline_evidence,
+        }
+        write(directory / "result.json", json.dumps(result))
+        assert _m4b_foundation_evidence(root, junit) == baseline_evidence
+    return matrix_root
+
+
 def version_result(sha: str, run_id: str, minor: str, branch: str = "candidate/test") -> dict[str, object]:
     return {
         "branch": branch,
         "candidate_sha": sha,
-        "counts": {"passed": 1, "failed": 0, "skipped": 0, "xfailed": 0},
+        "counts": {"passed": 1, "failed": 0, "errors": 0, "skipped": 0,
+                   "xfailed": 0, "xpassed": 0},
         "exit_code": 0,
         "python_minor": minor,
         "raw_logs": ["logs/suite.stdout.log", "logs/suite.stderr.log"],
@@ -213,6 +325,58 @@ def test_portable_suite_manifest_expands_only_tracked_test_paths(
     evidence = json.loads((output / "result.json").read_text(encoding="utf-8"))
     assert "tests/test_scope.py" in evidence["suite_command"]
     assert "tests/portable-suite.txt" not in evidence["suite_command"]
+
+
+def test_portable_xpass_is_fail_and_never_writes_pass_result(
+    candidate_repo: tuple[Path, str],
+) -> None:
+    root, sha = candidate_repo
+    output = root / "evidence" / "portable" / "xpass-run" / f"python-{CURRENT_MINOR}"
+    result = command(root, *portable_args(sha, "xpass-run", output, "tests/test_xpass.py"))
+    assert result.returncode != 0
+    assert "xpassed" in result.stderr.lower()
+    evidence = json.loads((output / "result.json").read_text(encoding="utf-8"))
+    assert evidence["status"] == "Fail"
+    assert evidence["counts"]["xpassed"] == 1
+
+
+def test_m4b_portable_rejects_external_absolute_and_arbitrary_suites(
+    candidate_repo: tuple[Path, str], tmp_path: Path,
+) -> None:
+    root, _ = candidate_repo
+    sha = enable_m4b_candidate(root)
+    external = tmp_path / "trivial_probe.py"
+    write(external, "def test_trivial():\n    assert object() is not None\n")
+    for index, suite in enumerate((str(external), "tests", "tests/test_scope.py")):
+        output = root / "evidence" / "portable" / f"bad-suite-{index}" / f"python-{CURRENT_MINOR}"
+        result = command(root, *portable_args(sha, f"bad-suite-{index}", output, suite))
+        assert result.returncode != 0
+        assert M4B_CANONICAL_SUITE in result.stderr
+        assert not (output / "junit.xml").exists()
+
+
+def test_m4b_portable_executes_canonical_suite_and_writes_bound_evidence(
+    candidate_repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _ = candidate_repo
+    sha = enable_m4b_candidate(root)
+    output = root / "evidence" / "portable" / "canonical-run" / f"python-{CURRENT_MINOR}"
+    prepare_new_output(output)
+    monkeypatch.setattr("scripts.candidate_gate.platform.system", lambda: "Linux")
+    monkeypatch.setattr("scripts.candidate_gate.platform.machine", lambda: "x86_64")
+    portable(
+        SimpleNamespace(run_id="canonical-run", suite=M4B_CANONICAL_SUITE,
+                        timeout_seconds=30, python=CURRENT_MINOR),
+        Repository(root=root, candidate_sha=sha, branch="candidate/test"),
+        output,
+    )
+    evidence = json.loads((output / "result.json").read_text(encoding="utf-8"))
+    assert evidence["status"] == "Pass"
+    assert evidence["catalog_paths"] == list(M4B_PORTABLE_IDS.values())
+    assert set(evidence["test_id_evidence"]) == set(M4B_PORTABLE_IDS)
+    assert evidence["baseline_evidence"]["retained_count"] == 99
+    assert evidence["counts"] == {"passed": 13, "failed": 0, "errors": 0,
+                                  "skipped": 0, "xfailed": 0, "xpassed": 0}
 
 
 def test_exact_sha_rejects_before_suite(candidate_repo: tuple[Path, str]) -> None:
@@ -305,6 +469,50 @@ def test_matrix_requires_all_three_versions_and_same_sha(candidate_repo: tuple[P
     mixed_result = build_matrix(root, sha, "matrix-mixed", mixed_root)
     assert mixed_result.returncode != 0
     assert "mixed candidate SHA" in mixed_result.stderr
+
+
+def test_m4b_matrix_requires_linux_canonical_catalog_profile_and_evidence_identity(
+    candidate_repo: tuple[Path, str],
+) -> None:
+    root, _ = candidate_repo
+    sha = enable_m4b_candidate(root)
+    valid_root = write_m4b_matrix_inputs(root, sha, "m4b-valid")
+    valid = build_matrix(root, sha, "m4b-valid", valid_root)
+    assert valid.returncode == 0, valid.stderr
+
+    mutations = (
+        ("platform", lambda row: row["platform_identity"].update(system="Darwin")),
+        ("suite", lambda row: row.update(suite="tests/test_scope.py")),
+        ("catalog", lambda row: row.update(catalog_sha256="0" * 64)),
+        ("profile", lambda row: row.update(profile_sha256="0" * 64)),
+        ("test-id", lambda row: row["test_id_evidence"].pop("M4B-REG-001")),
+        ("junit", lambda row: row.update(evidence_sha256="0" * 64)),
+    )
+    for name, mutate in mutations:
+        run_id = f"m4b-bad-{name}"
+        matrix_root = write_m4b_matrix_inputs(root, sha, run_id)
+        path = matrix_root / "python-3.12" / "result.json"
+        row = json.loads(path.read_text(encoding="utf-8"))
+        mutate(row)
+        path.write_text(json.dumps(row), encoding="utf-8")
+        rejected = build_matrix(root, sha, run_id, matrix_root)
+        assert rejected.returncode != 0, name
+        assert not (matrix_root / "matrix-index.json").exists(), name
+
+
+def test_m4b_matrix_rejects_xpass_even_when_record_claims_pass(
+    candidate_repo: tuple[Path, str],
+) -> None:
+    root, _ = candidate_repo
+    sha = enable_m4b_candidate(root)
+    matrix_root = write_m4b_matrix_inputs(root, sha, "m4b-xpass")
+    path = matrix_root / "python-3.11" / "result.json"
+    row = json.loads(path.read_text(encoding="utf-8"))
+    row["counts"]["xpassed"] = 1
+    path.write_text(json.dumps(row), encoding="utf-8")
+    rejected = build_matrix(root, sha, "m4b-xpass", matrix_root)
+    assert rejected.returncode != 0
+    assert "XPASS" in rejected.stderr
 
 
 def test_branch_name_is_diagnostic_only(candidate_repo: tuple[Path, str]) -> None:

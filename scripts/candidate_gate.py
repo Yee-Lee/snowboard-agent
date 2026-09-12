@@ -14,6 +14,7 @@ import signal
 import shutil
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -24,6 +25,24 @@ from typing import Any
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$")
 PORTABLE_MINORS = ("3.11", "3.12", "3.13")
+M4B_CANONICAL_SUITE = "tests/m4b_portable_suite.txt"
+M4B_PROFILE_PATH = "requirements/m4b/product-profile.json"
+M4B_BASELINE_PATH = "docs/test_spec/baselines/m4b_foundation_node_ids.txt"
+M4B_PORTABLE_IDS = {
+    "M4B-NORM-001": "tests/test_m4b_norm_001.py",
+    "M4B-PROMPT-001": "tests/test_m4b_prompt_001.py",
+    "M4B-SEM-001": "tests/test_m4b_sem_001.py",
+    "M4B-S2-001": "tests/test_m4b_s2_001.py",
+    "M4B-ADM-001": "tests/test_m4b_adm_001.py",
+    "M4B-PREFILL-001": "tests/test_m4b_prefill_001.py",
+    "M4B-OUTCOME-001": "tests/test_m4b_outcome_001.py",
+    "M4B-CONV-001": "tests/test_m4b_conv_001.py",
+    "M4B-MEM-001": "tests/test_m4b_mem_001.py",
+    "M4B-REC-001": "tests/test_m4b_rec_001.py",
+    "M4B-WIRE-001": "tests/test_m4b_wire_001.py",
+    "M4B-PRIV-001": "tests/test_m4b_priv_001.py",
+    "M4B-REG-001": "tests/test_m4b_reg_001.py",
+}
 PROTECTED_PATHS = (
     "src",
     "tests",
@@ -141,12 +160,20 @@ def base_result(repo: Repository, mode: str, run_id: str) -> dict[str, Any]:
             "version": platform.python_version(),
         },
         "run_id": run_id,
+        "schema_version": 1,
+        "start_monotonic_ns": time.monotonic_ns(),
         "started_at_utc": utc_now(),
     }
 
 
+def _pytest_outcome_count(stdout: str, outcome: str) -> int:
+    matches = re.findall(rf"(?<![A-Za-z0-9_])(\d+)\s+{re.escape(outcome)}\b", stdout.lower())
+    return int(matches[-1]) if matches else 0
+
+
 def suite_counts(junit: Path, stdout: str) -> dict[str, int]:
-    counts = {"passed": 0, "failed": 0, "skipped": 0, "xfailed": 0}
+    counts = {"passed": 0, "failed": 0, "errors": 0, "skipped": 0,
+              "xfailed": 0, "xpassed": 0}
     if not junit.is_file():
         raise GateFailure("suite did not produce a JUnit result")
     try:
@@ -154,15 +181,17 @@ def suite_counts(junit: Path, stdout: str) -> dict[str, int]:
         suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
         for suite in suites:
             tests = int(suite.attrib.get("tests", "0"))
-            failures = int(suite.attrib.get("failures", "0")) + int(suite.attrib.get("errors", "0"))
+            failures = int(suite.attrib.get("failures", "0"))
+            errors = int(suite.attrib.get("errors", "0"))
             skipped = int(suite.attrib.get("skipped", "0"))
             counts["failed"] += failures
+            counts["errors"] += errors
             counts["skipped"] += skipped
-            counts["passed"] += tests - failures - skipped
+            counts["passed"] += tests - failures - errors - skipped
     except (ET.ParseError, ValueError) as error:
         raise GateFailure(f"suite produced invalid JUnit: {error}") from error
-    if " xfailed" in stdout.lower() or " xfail" in stdout.lower():
-        counts["xfailed"] = 1
+    counts["xfailed"] = _pytest_outcome_count(stdout, "xfailed")
+    counts["xpassed"] = _pytest_outcome_count(stdout, "xpassed")
     return counts
 
 
@@ -374,7 +403,10 @@ def execute_pytest(
 
 
 def passed(exit_code: int, counts: dict[str, int]) -> bool:
-    return exit_code == 0 and all(counts[name] == 0 for name in ("failed", "skipped", "xfailed"))
+    return exit_code == 0 and all(
+        counts.get(name) == 0
+        for name in ("failed", "errors", "skipped", "xfailed", "xpassed")
+    )
 
 
 M4B_TARGET_IDS = frozenset(f"M4B-PI-{name}-001" for name in
@@ -490,6 +522,160 @@ def m4b_catalog_paths(root: Path) -> list[str]:
                    or not root.joinpath(s.split("::")[0]).is_file() for s in selectors)):
         raise GateFailure("M4B_CATALOG_INCOMPLETE")
     return selectors
+
+
+def _m4b_candidate(root: Path) -> bool:
+    return root.joinpath(M4B_PROFILE_PATH).is_file()
+
+
+def _m4b_profile_identity(root: Path) -> tuple[str, str]:
+    profile = load_json(root / M4B_PROFILE_PATH, "M4B product profile")
+    profile_id = profile.get("profile_id")
+    profile_sha256 = profile.get("profile_sha256")
+    content = {key: value for key, value in profile.items() if key != "profile_sha256"}
+    try:
+        encoded = json.dumps(content, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        raise GateFailure("M4B_PROFILE_IDENTITY_INVALID") from None
+    if (profile_id != "core-m4b-cognition-001"
+            or not isinstance(profile_sha256, str)
+            or hashlib.sha256(encoded).hexdigest() != profile_sha256):
+        raise GateFailure("M4B_PROFILE_IDENTITY_INVALID")
+    return profile_id, profile_sha256
+
+
+def _m4b_canonical_targets(repo: Repository, suite: str) -> tuple[list[str], str]:
+    if suite != M4B_CANONICAL_SUITE or Path(suite).is_absolute():
+        raise GateFailure(f"M4B portable suite must be exactly {M4B_CANONICAL_SUITE}")
+    manifest = repo.root / M4B_CANONICAL_SUITE
+    baseline = repo.root / M4B_BASELINE_PATH
+    tracked = set(run_git(repo.root, "ls-files", "--", M4B_CANONICAL_SUITE,
+                          M4B_PROFILE_PATH, M4B_BASELINE_PATH).splitlines())
+    if tracked != {M4B_CANONICAL_SUITE, M4B_PROFILE_PATH, M4B_BASELINE_PATH}:
+        raise GateFailure("M4B canonical suite/profile/baseline must be tracked candidate inputs")
+    selectors = m4b_catalog_paths(repo.root)
+    selected_paths = {selector.split("::", 1)[0] for selector in selectors}
+    if not set(M4B_PORTABLE_IDS.values()) <= selected_paths:
+        raise GateFailure("M4B_CATALOG_INCOMPLETE")
+    tracked_selectors = set(run_git(repo.root, "ls-files", "--", *sorted(selected_paths)).splitlines())
+    if tracked_selectors != selected_paths:
+        raise GateFailure("M4B catalog contains an untracked test path")
+    return selectors, sha256(manifest, "M4B canonical suite")
+
+
+def _m4b_collect_nodes(
+    repo: Repository, output: Path, targets: list[str], timeout_seconds: float,
+) -> tuple[list[str], list[str]]:
+    stdout_path = output / "logs" / "collection.stdout.log"
+    stderr_path = output / "logs" / "collection.stderr.log"
+    nodes_path = output / "collection-node-ids.txt"
+    argv = [sys.executable, "-m", "pytest", "--collect-only", "-q", "-m", "not rpi", *targets]
+    environment = os.environ.copy()
+    environment["OPENBLAS_NUM_THREADS"] = "1"
+    environment["PYTHONPATH"] = str(repo.root / "src")
+    process = subprocess.Popen(
+        argv, cwd=repo.root, env=environment, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired as error:
+        stdout, stderr = _terminate_timed_out_suite(process)
+        stdout_path.write_text(stdout, encoding="utf-8")
+        stderr_path.write_text(stderr + "\nCOLLECTION TIMEOUT\n", encoding="utf-8")
+        raise GateFailure("M4B canonical collection timed out") from error
+    stdout_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
+    if process.returncode:
+        raise GateFailure("M4B canonical collection failed")
+    nodes = [line.strip() for line in stdout.splitlines()
+             if line.startswith("tests/") and "::" in line]
+    if not nodes or len(nodes) != len(set(nodes)):
+        raise GateFailure("M4B_COLLECTION_INVALID")
+    nodes_path.write_text("\n".join(nodes) + "\n", encoding="utf-8")
+    return nodes, ["logs/collection.stdout.log", "logs/collection.stderr.log"]
+
+
+def _m4b_foundation_evidence(root: Path, junit: Path) -> dict[str, Any]:
+    baseline = root.joinpath(M4B_BASELINE_PATH).read_bytes()
+    baseline_nodes = baseline.decode("utf-8").splitlines()
+    expected = m4b_collection_audit(baseline, baseline_nodes)
+    try:
+        document = ET.parse(junit).getroot()
+    except ET.ParseError:
+        raise GateFailure("M4B_JUNIT_INVALID") from None
+    cases = [case for case in document.findall(".//testcase")
+             if case.get("classname") == "tests.test_m4b_reg_001"
+             and case.get("name", "").startswith("test_G02_exact_99_nodes")]
+    if len(cases) != 1:
+        raise GateFailure("M4B_FOUNDATION_EVIDENCE_MISSING")
+    properties = {item.get("name"): item.get("value")
+                  for item in cases[0].findall("./properties/property")}
+    if any(properties.get(name) != str(value) for name, value in expected.items()):
+        raise GateFailure("M4B_FOUNDATION_EVIDENCE_MISMATCH")
+    return expected
+
+
+def _m4b_test_id_evidence(nodes: list[str]) -> dict[str, dict[str, Any]]:
+    evidence: dict[str, dict[str, Any]] = {}
+    for test_id, path in M4B_PORTABLE_IDS.items():
+        selected = [node for node in nodes if node.startswith(path + "::")]
+        if not selected:
+            raise GateFailure(f"M4B_TEST_ID_EVIDENCE_MISSING:{test_id}")
+        payload = ("\n".join(selected) + "\n").encode("utf-8")
+        evidence[test_id] = {
+            "collected_count": len(selected),
+            "passed_count": len(selected),
+            "node_ids_sha256": hashlib.sha256(payload).hexdigest(),
+            "status": "Pass",
+        }
+    return evidence
+
+
+def _m4b_source_audit(root: Path, targets: list[str]) -> str:
+    baseline = root.joinpath(M4B_BASELINE_PATH).read_text(encoding="utf-8").splitlines()
+    paths = {node.split("::", 1)[0] for node in baseline}
+    paths.update(selector.split("::", 1)[0] for selector in targets
+                 if Path(selector.split("::", 1)[0]).name.startswith("test_m4b"))
+    digest = hashlib.sha256()
+    violations: list[str] = []
+    for relative in sorted(paths):
+        payload = root.joinpath(relative).read_bytes()
+        digest.update(relative.encode("utf-8") + b"\0" + payload)
+        source = payload.decode("utf-8")
+        violations.extend(f"{relative}:{line}:{reason}"
+                          for line, reason in m4b_source_violations(source))
+    if violations:
+        raise GateFailure("M4B_SOURCE_AUDIT_FAILED:" + ",".join(violations[:10]))
+    return digest.hexdigest()
+
+
+def _m4b_portable_precheck(
+    repo: Repository, output: Path, suite: str, timeout_seconds: float,
+) -> dict[str, Any]:
+    profile_id, profile_sha256 = _m4b_profile_identity(repo.root)
+    targets, catalog_sha256 = _m4b_canonical_targets(repo, suite)
+    system = platform.system()
+    machine = platform.machine().lower()
+    if system != "Linux" or machine not in {"x86_64", "aarch64"}:
+        raise GateFailure("M4B formal portable execution requires Linux x86_64/aarch64")
+    source_sha256 = _m4b_source_audit(repo.root, targets)
+    nodes, logs = _m4b_collect_nodes(repo, output, targets, timeout_seconds)
+    collection_path = output / "collection-node-ids.txt"
+    return {
+        "catalog_paths": targets,
+        "catalog_sha256": catalog_sha256,
+        "collection_count": len(nodes),
+        "collection_locator": "collection-node-ids.txt",
+        "collection_sha256": sha256(collection_path, "M4B collection node list"),
+        "collection_nodes": nodes,
+        "platform_identity": {"system": system, "machine": machine},
+        "profile_id": profile_id,
+        "profile_sha256": profile_sha256,
+        "source_audit_sha256": source_sha256,
+        "precheck_logs": logs,
+    }
 
 
 def _draft_contains_absolute(value: object) -> bool:
@@ -883,6 +1069,11 @@ def _finalize_acceptance_cards(output: Path, result: dict[str, Any], *, m4b_evid
 
 def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: str, marker: str) -> None:
     result = base_result(repo, mode, args.run_id)
+    m4b_precheck: dict[str, Any] | None = None
+    if mode == "portable" and _m4b_candidate(repo.root):
+        m4b_precheck = _m4b_portable_precheck(
+            repo, output, args.suite, args.timeout_seconds,
+        )
     exit_code, counts, suite_command, raw_logs, network_attempt_count = execute_pytest(
         repo,
         output,
@@ -897,6 +1088,7 @@ def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: st
         {
             "counts": counts,
             "ended_at_utc": utc_now(),
+            "end_monotonic_ns": time.monotonic_ns(),
             "exit_code": exit_code,
             "raw_logs": raw_logs,
             "status": status,
@@ -907,6 +1099,26 @@ def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: st
     if mode == "portable":
         result["python_minor"] = args.python
         result["suite"] = args.suite
+        if m4b_precheck is not None:
+            nodes = m4b_precheck.pop("collection_nodes")
+            result["raw_logs"] = [*m4b_precheck.pop("precheck_logs"), *raw_logs]
+            junit = output / "junit.xml"
+            junit_counts = m4b_junit_audit(junit.read_bytes(), nodes)
+            if any(junit_counts[name] != counts[name]
+                   for name in ("passed", "failed", "errors", "skipped", "xfailed", "xpassed")):
+                raise GateFailure("M4B_JUNIT_COUNT_MISMATCH")
+            junit_sha256 = sha256(junit, "M4B portable JUnit")
+            result.update(m4b_precheck)
+            result.update({
+                "baseline_evidence": _m4b_foundation_evidence(repo.root, junit),
+                "case_id": f"PY{args.python.replace('.', '')}",
+                "evidence_sha256": junit_sha256,
+                "junit_locator": "junit.xml",
+                "junit_sha256": junit_sha256,
+                "matrix": "portable",
+                "test_id": "M4B-PORTABLE-CATALOG",
+                "test_id_evidence": _m4b_test_id_evidence(nodes),
+            })
     elif mode == "acceptance":
         result["suite"] = args.suite
         if network_attempt_count is not None:
@@ -927,7 +1139,9 @@ def run_suite(args: argparse.Namespace, repo: Repository, output: Path, mode: st
         _finalize_acceptance_cards(output, result)
     write_json(output / "result.json", result)
     if not passed(exit_code, counts):
-        raise GateFailure(f"{mode} suite failed, timed out, was skipped, or was xfailed")
+        raise GateFailure(
+            f"{mode} suite failed, timed out, was skipped, xfailed, or xpassed"
+        )
 
 
 def portable(args: argparse.Namespace, repo: Repository, output: Path) -> None:
@@ -936,7 +1150,98 @@ def portable(args: argparse.Namespace, repo: Repository, output: Path) -> None:
     run_suite(args, repo, output, "portable", "not rpi")
 
 
-def validate_version_result(result: dict[str, Any], minor: str, candidate_sha: str, run_id: str) -> None:
+def _m4b_validate_result_evidence(
+    result: dict[str, Any], minor: str, repo: Repository, result_path: Path,
+) -> None:
+    profile_id, profile_sha256 = _m4b_profile_identity(repo.root)
+    targets, catalog_sha256 = _m4b_canonical_targets(repo, str(result.get("suite", "")))
+    platform_identity = result.get("platform_identity")
+    python_identity = result.get("python")
+    if platform_identity is None or set(platform_identity) != {"system", "machine"}:
+        raise GateFailure(f"Python {minor} portable result has incomplete platform identity")
+    if (platform_identity["system"] != "Linux"
+            or platform_identity["machine"] not in {"x86_64", "aarch64"}):
+        raise GateFailure(f"Python {minor} portable result is not from supported Linux")
+    if (not isinstance(python_identity, dict)
+            or python_identity.get("implementation") != "CPython"
+            or not isinstance(python_identity.get("version"), str)
+            or not re.fullmatch(rf"{re.escape(minor)}\.\d+", python_identity["version"])):
+        raise GateFailure(f"Python {minor} portable result has incomplete Python identity")
+    if (result.get("schema_version") != 1
+            or result.get("test_id") != "M4B-PORTABLE-CATALOG"
+            or result.get("case_id") != f"PY{minor.replace('.', '')}"
+            or result.get("mode") != "portable"
+            or result.get("matrix") != "portable"
+            or result.get("profile_id") != profile_id
+            or result.get("profile_sha256") != profile_sha256
+            or result.get("catalog_sha256") != catalog_sha256
+            or result.get("catalog_paths") != targets):
+        raise GateFailure(f"Python {minor} portable result has mixed suite/catalog/profile identity")
+    start_ns = result.get("start_monotonic_ns")
+    end_ns = result.get("end_monotonic_ns")
+    if (type(start_ns) is not int or type(end_ns) is not int
+            or start_ns < 0 or end_ns < start_ns):
+        raise GateFailure(f"Python {minor} portable result has invalid monotonic identity")
+
+    result_dir = result_path.parent.resolve()
+
+    def evidence_path(field: str) -> Path:
+        relative = result.get(field)
+        if not _relative_locator(relative):
+            raise GateFailure(f"Python {minor} portable result has unsafe {field}")
+        path = (result_dir / str(relative)).resolve()
+        if not path.is_relative_to(result_dir) or not path.is_file() or path.is_symlink():
+            raise GateFailure(f"Python {minor} portable result has missing {field}")
+        return path
+
+    collection = evidence_path("collection_locator")
+    junit = evidence_path("junit_locator")
+    suite_command = result.get("suite_command")
+    if (not isinstance(suite_command, list)
+            or suite_command[1:6] != ["-m", "pytest", "-v", "-m", "not rpi"]
+            or suite_command[6:-1] != targets
+            or len(suite_command) < 8
+            or not isinstance(suite_command[-1], str)
+            or not suite_command[-1].startswith("--junitxml=")
+            or Path(suite_command[-1].split("=", 1)[1]).resolve() != junit):
+        raise GateFailure(f"Python {minor} portable result has non-canonical suite command")
+    if result.get("collection_sha256") != sha256(collection, "M4B collection evidence"):
+        raise GateFailure(f"Python {minor} portable result has mismatched collection digest")
+    if (result.get("junit_sha256") != sha256(junit, "M4B JUnit evidence")
+            or result.get("evidence_sha256") != result.get("junit_sha256")):
+        raise GateFailure(f"Python {minor} portable result has mismatched JUnit digest")
+    nodes = collection.read_text(encoding="utf-8").splitlines()
+    if (not nodes or len(nodes) != len(set(nodes))
+            or result.get("collection_count") != len(nodes)):
+        raise GateFailure(f"Python {minor} portable result has invalid collection identity")
+    expected_test_ids = _m4b_test_id_evidence(nodes)
+    if result.get("test_id_evidence") != expected_test_ids:
+        raise GateFailure(f"Python {minor} portable result has incomplete Test ID evidence")
+    junit_counts = m4b_junit_audit(junit.read_bytes(), nodes)
+    if result.get("counts") != junit_counts:
+        raise GateFailure(f"Python {minor} portable result has mismatched JUnit counts")
+    if result.get("baseline_evidence") != _m4b_foundation_evidence(repo.root, junit):
+        raise GateFailure(f"Python {minor} portable result has mismatched Foundation evidence")
+    if result.get("source_audit_sha256") != _m4b_source_audit(repo.root, targets):
+        raise GateFailure(f"Python {minor} portable result has mismatched source audit")
+    raw_logs = result.get("raw_logs")
+    required_logs = {"logs/collection.stdout.log", "logs/collection.stderr.log",
+                     "logs/suite.stdout.log", "logs/suite.stderr.log"}
+    if (not isinstance(raw_logs, list) or len(raw_logs) != len(set(raw_logs))
+            or not required_logs <= set(raw_logs)):
+        raise GateFailure(f"Python {minor} portable result has no raw log locator")
+    for relative in raw_logs:
+        if not _relative_locator(relative):
+            raise GateFailure(f"Python {minor} portable result has unsafe raw log locator")
+        path = (result_dir / relative).resolve()
+        if not path.is_relative_to(result_dir) or not path.is_file() or path.is_symlink():
+            raise GateFailure(f"Python {minor} portable result has missing raw log evidence")
+
+
+def validate_version_result(
+    result: dict[str, Any], minor: str, candidate_sha: str, run_id: str,
+    *, repo: Repository | None = None, result_path: Path | None = None,
+) -> None:
     if result.get("status") != "Pass" or result.get("exit_code") != 0:
         raise GateFailure(f"Python {minor} portable result is not Pass")
     if result.get("candidate_sha") != candidate_sha or result.get("run_id") != run_id:
@@ -944,16 +1249,21 @@ def validate_version_result(result: dict[str, Any], minor: str, candidate_sha: s
     if result.get("python_minor") != minor:
         raise GateFailure(f"Python {minor} portable result has the wrong minor identity")
     counts = result.get("counts")
-    if not isinstance(counts, dict) or any(counts.get(name) != 0 for name in ("failed", "skipped", "xfailed")):
-        raise GateFailure(f"Python {minor} portable result contains Fail, Skip, or XFail")
+    forbidden = ("failed", "errors", "skipped", "xfailed", "xpassed")
+    if not isinstance(counts, dict) or any(counts.get(name) != 0 for name in forbidden):
+        raise GateFailure(f"Python {minor} portable result contains Fail, Error, Skip, XFail, or XPASS")
     if not isinstance(result.get("timeout_seconds"), (int, float)) or result["timeout_seconds"] <= 0:
         raise GateFailure(f"Python {minor} portable result has no bounded timeout")
     if not isinstance(result.get("raw_logs"), list) or not result["raw_logs"]:
         raise GateFailure(f"Python {minor} portable result has no raw log locator")
+    if repo is not None and _m4b_candidate(repo.root):
+        if result_path is None:
+            raise GateFailure(f"Python {minor} portable result has no evidence location")
+        _m4b_validate_result_evidence(result, minor, repo, result_path)
 
 
-def validate_matrix(index: dict[str, Any], index_path: Path, candidate_sha: str) -> None:
-    if index.get("status") != "Pass" or index.get("candidate_sha") != candidate_sha:
+def validate_matrix(index: dict[str, Any], index_path: Path, repo: Repository) -> None:
+    if index.get("status") != "Pass" or index.get("candidate_sha") != repo.candidate_sha:
         raise GateFailure("portable matrix is not Pass for this candidate SHA")
     results = index.get("results")
     if not isinstance(results, dict) or set(results) != set(PORTABLE_MINORS):
@@ -961,11 +1271,27 @@ def validate_matrix(index: dict[str, Any], index_path: Path, candidate_sha: str)
     run_id = index.get("run_id")
     if not isinstance(run_id, str):
         raise GateFailure("portable matrix run ID is missing")
+    result_sha256 = index.get("result_sha256")
+    if not isinstance(result_sha256, dict) or set(result_sha256) != set(PORTABLE_MINORS):
+        raise GateFailure("portable matrix result digest index is incomplete")
     for minor, relative in results.items():
         if not isinstance(relative, str):
             raise GateFailure(f"Python {minor} portable result locator is invalid")
-        result = load_json(index_path.parent / relative, f"Python {minor} portable result")
-        validate_version_result(result, minor, candidate_sha, run_id)
+        result_path = (index_path.parent / relative).resolve()
+        if (not result_path.is_relative_to(index_path.parent.resolve())
+                or result_sha256.get(minor) != sha256(result_path, f"Python {minor} result")):
+            raise GateFailure(f"Python {minor} portable result digest mismatch")
+        result = load_json(result_path, f"Python {minor} portable result")
+        validate_version_result(result, minor, repo.candidate_sha, run_id,
+                                repo=repo, result_path=result_path)
+    if _m4b_candidate(repo.root):
+        profile_id, profile_sha256 = _m4b_profile_identity(repo.root)
+        _, catalog_sha256 = _m4b_canonical_targets(repo, M4B_CANONICAL_SUITE)
+        if (index.get("schema_version") != 1
+                or index.get("profile_id") != profile_id
+                or index.get("profile_sha256") != profile_sha256
+                or index.get("catalog_sha256") != catalog_sha256):
+            raise GateFailure("portable matrix has mixed catalog/profile identity")
 
 
 def matrix(args: argparse.Namespace, repo: Repository) -> None:
@@ -976,11 +1302,24 @@ def matrix(args: argparse.Namespace, repo: Repository) -> None:
     if output.parent != input_root or output.name != "matrix-index.json":
         raise GateFailure("matrix output must be <input-root>/matrix-index.json")
     results: dict[str, str] = {}
+    result_digests: dict[str, str] = {}
     for minor in PORTABLE_MINORS:
         path = input_root / f"python-{minor}" / "result.json"
         result = load_json(path, f"Python {minor} portable result")
-        validate_version_result(result, minor, repo.candidate_sha, args.run_id)
+        validate_version_result(result, minor, repo.candidate_sha, args.run_id,
+                                repo=repo, result_path=path)
         results[minor] = str(path.relative_to(input_root))
+        result_digests[minor] = sha256(path, f"Python {minor} result")
+    identity: dict[str, Any] = {}
+    if _m4b_candidate(repo.root):
+        profile_id, profile_sha256 = _m4b_profile_identity(repo.root)
+        _, catalog_sha256 = _m4b_canonical_targets(repo, M4B_CANONICAL_SUITE)
+        identity = {
+            "catalog_sha256": catalog_sha256,
+            "profile_id": profile_id,
+            "profile_sha256": profile_sha256,
+            "schema_version": 1,
+        }
     write_json(
         output,
         {
@@ -989,8 +1328,10 @@ def matrix(args: argparse.Namespace, repo: Repository) -> None:
             "command": sys.argv,
             "created_at_utc": utc_now(),
             "results": results,
+            "result_sha256": result_digests,
             "run_id": args.run_id,
             "status": "Pass",
+            **identity,
         },
     )
 
@@ -1045,7 +1386,7 @@ def preflight(args: argparse.Namespace, repo: Repository, output: Path) -> None:
         raise GateFailure("target runtime must be the M4 deployment runtime, CPython 3.13")
     matrix_path = Path(args.portable_index).resolve()
     matrix_index = load_json(matrix_path, "portable matrix index")
-    validate_matrix(matrix_index, matrix_path, repo.candidate_sha)
+    validate_matrix(matrix_index, matrix_path, repo)
     result = base_result(repo, "preflight", args.run_id)
     checksums = {
         "artifact_manifest": checksum_reference(Path(args.artifact_manifest), "artifact manifest"),

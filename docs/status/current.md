@@ -3,10 +3,12 @@
 - Updated: 2026-09-12
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B cognition/product development rewrite
-- Next owner: Developer
-- Developer entry: **Open — complete `CR_M4B_II`, including WP-02/WP-03 ticket disposal**
-- Tester entry: **Closed — pending Developer portable candidate**
+- Current stage: M4B portable candidate verification
+- Next owner: Tester
+- Developer entry: **Closed — `CR_M4B_II` returned Revised at the provisional portable candidate**
+- Tester entry: **Open — independently verify exact candidate SHA `9e005e48fe1582c901fcba3eb152747c92c43890`**
+- Provisional portable candidate: `9e005e48fe1582c901fcba3eb152747c92c43890`
+  (`origin/core`; not frozen, Accepted or target-authorized)
 
 ## Current disposition
 
@@ -63,10 +65,17 @@ hashes, `spoken_length` examples and the sorted/unique 99-node baseline. The res
 [`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md) closes `M4B-TEST-COVERAGE`; it contains no execution or
 acceptance claim.
 
-Developer work package [`CR_M4B_II`](../reviews/CR_M4B_II.md) is active for the replacement cognition/product
-implementation and portable tests. Developer must first replace `status/development.md` with the exact inventory,
-Test IDs, estimates, bounded commands and starting SHA. Pi/human execution, candidate creation, commit and push are
-not authorized by this entry.
+Developer returned work package [`CR_M4B_II`](../reviews/CR_M4B_II.md) **Revised** with WP-01–06 implemented,
+including the authorized exact ticket-disposal path. USER authorized commit and push; the resulting provisional
+portable candidate is exact SHA `9e005e48fe1582c901fcba3eb152747c92c43890` on `origin/core`. Designer independently confirmed that the
+candidate contains the declared work-package scope, the local `origin/core` tracking ref resolves to the same full
+SHA, and the candidate checkout was clean before this Designer-only status update. Developer Pi/Linux runs are
+diagnostics only and are not Tester evidence or acceptance.
+
+Tester portable entry is now Open for independent verification of that exact SHA. Candidate protected inputs are
+immutable for this verification round: any source, test, dependency/lock, config-contract or candidate-runner change
+requires an append-only fix commit and a new candidate. Native PM, product cards and human semantic/audio rows remain
+Pending; this transition neither supplies dual-role target authorization nor claims a native, human or product PASS.
 
 Developer opened Blocking [`IR_dev_M4B_IV`](../reviews/history/IR_dev_M4B_IV.md) after proving that the original MEASURED
 state had no legal token-limit R1 continuation which both kept the Conversation and invalidated its ticket.
@@ -76,13 +85,14 @@ history and KV; disposal mismatch/failure is E1. This is a private protocol/adap
 SM/Event/Fact/response or architecture change. Focused Tester request
 [`TR_spec_M4B_VII`](../reviews/history/TR_spec_M4B_VII.md) is Resolved after Designer confirmed all 9/9 requested
 requirements, retained all 13 portable Test IDs and found no Blocking coverage gap. Both reviews are Resolved;
-WP-02/WP-03 and the rest of `CR_M4B_II` are open to Developer. No implementation or PASS is claimed.
+their authorization is implemented in the Revised `CR_M4B_II` candidate. No Tester, native or product PASS is
+claimed by this handoff.
 
 ## Ordered exits
 
-1. Developer completes `CR_M4B_II`, executes the complete portable/retained regression gates and returns the work
-   package as `Revised`; no candidate or Pi acceptance is claimed.
-2. Tester independently verifies the portable candidate and reports exact results.
+1. **Complete:** Developer returned `CR_M4B_II` Revised and USER authorized provisional candidate
+   `9e005e48fe1582c901fcba3eb152747c92c43890`; no Pi or product acceptance is claimed.
+2. **Active:** Tester independently verifies that exact portable candidate and reports exact results.
 3. Designer resolves implementation findings and performs final portable alignment.
 4. After a separately authorized exact-SHA target gate, Tester executes Pi measurement/release/human evidence;
    Designer freezes reviewed thresholds and performs final product alignment.
@@ -91,11 +101,11 @@ WP-02/WP-03 and the rest of `CR_M4B_II` are open to Developer. No implementation
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file only | wait for `CR_M4B_II`; do not modify Developer work or claim candidate acceptance |
+| Designer | this file only | wait for independent Tester portable results; do not claim candidate acceptance |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file only | no active verification action until Developer returns a portable candidate |
-| Developer | this file, `status/development.md`, `reviews/CR_M4B_II.md` and only its linked authority | implement the complete package including exact ticket disposal; do not commit/push or execute Pi/human acceptance |
+| Tester | this file, `test_spec/test_spec_M4B.md`, `reviews/CR_M4B_II.md` and `roles/candidate-process.md` | independently verify exact SHA `9e005e48fe1582c901fcba3eb152747c92c43890`; keep target/human rows Pending |
+| Developer | this file only | wait for Tester findings; candidate protected inputs are immutable and fixes must be append-only |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

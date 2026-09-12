@@ -2,11 +2,62 @@
 
 - Updated: 2026-09-12
 - Owner: Senior Developer / integration owner
-- Scope: `CR_M4B_II`, replacement cognition/product implementation and portable verification
-- Starting SHA: `54c506713082b1ea95cfa331f08b7124dcfa0316`
-- Status: **Developer implementation complete; Revised for independent Tester verification**
-- Next owner: Tester, after USER-authorized commit/candidate preparation
-- Candidate: none; no commit, push, Pi measurement PASS or human acceptance is claimed
+- Scope: `CR_M4B_II` B1, fail-closed portable runner and matrix evidence
+- Starting SHA: `9e005e48fe1582c901fcba3eb152747c92c43890`
+- Status: **B1 correction complete; Revised for new append-only candidate verification**
+- Next owner: Tester, after USER-authorized append-only commit creates a new exact candidate
+- Candidate: rejected provisional SHA `9e005e48fe1582c901fcba3eb152747c92c43890`;
+  no replacement commit, push, Pi measurement PASS or human acceptance is claimed
+
+## Active B1 correction inventory
+
+- Affected paths: `scripts/candidate_gate.py`, `tests/test_candidate_gate.py`, this Developer
+  status and active `docs/reviews/CR_M4B_II.md` only. Existing Tester-owned
+  `docs/test_spec/test_spec_M4B.md` and Designer-owned `docs/status/current.md` changes are
+  preserved and not edited.
+- Affected symbols: `suite_counts`, `passed`, `portable`, `run_suite`,
+  `validate_version_result`, `validate_matrix`, `matrix`, plus new candidate-owned catalog,
+  collection, JUnit, platform/profile and per-Test-ID evidence validation helpers.
+- Mapped Test ID: `M4B-REG-001` G01/G02/G04/G05/G06; the evidence index additionally proves
+  execution identity for all 13 current portable Test IDs.
+- Estimate: 3 points (runner enforcement, negative regression fixtures, focused verification).
+- Bounded verification commands: `timeout 180 python -m pytest -o addopts='' --strict-markers
+  --timeout=120 -q tests/test_candidate_gate.py`; focused B1 negative tests under the same outer
+  timeout; `timeout 60 python -m compileall -q scripts tests/test_candidate_gate.py`; and
+  `git diff --check`.
+- Explicitly out of scope: D1/D2 Darwin behavior and any committed macOS skip/xfail; USER's
+  diagnostic-only disposition remains unchanged. Linux CPython 3.11/3.12/3.13 formal reruns are
+  independent Tester work after a new candidate exists.
+
+## B1 correction result
+
+- `suite_counts` now records failures and errors separately and parses exact pytest `xfailed` and
+  `xpassed` totals. `passed` and both portable/matrix gates require zero for all five forbidden
+  outcomes; a real XPASS probe now exits nonzero and writes `status=Fail`, `xpassed=1`.
+- M4B portable execution is bound to the exact tracked
+  `tests/m4b_portable_suite.txt`. Absolute, repo-external, directory and arbitrary file selectors
+  are rejected before pytest; generic pre-M4B candidate-gate behavior remains available only to
+  repositories without the M4B product-profile authority.
+- The formal M4B runner independently collects the canonical nodes and audits affected sources,
+  exact 99-node Foundation evidence and the resulting JUnit. Its result binds Linux
+  x86_64/aarch64, exact CPython minor/full version, profile ID/digest, catalog paths/digest,
+  collection count/digest, JUnit digest, monotonic bounds, raw logs and all 13 portable Test IDs.
+- Matrix aggregation reopens every result/JUnit/collection/log locator under its version evidence
+  directory, rejects traversal/symlinks/missing files, recomputes digests and audits, and binds the
+  index to result, profile and catalog digests. Negative coverage rejects mixed platform, suite,
+  catalog, profile, Test-ID, JUnit and XPASS records.
+- Focused Developer verification used outer 180-second process bounds and pytest's 120-second test
+  timeout. CPython 3.11.16, 3.12.14 and 3.13.15 each returned **78 passed / 0 failed / 0 error /
+  0 skipped / 0 xfailed / 0 xpassed** for `tests/test_candidate_gate.py`. A focused
+  `M4B-REG-001` run excluding only USER-disposed Darwin G05 returned **15 passed / 1 deselected**.
+  The synthetic canonical execution test itself produced **13 passed** with all 13 Test-ID rows and
+  exact **99 retained / 0 missing** Foundation evidence.
+- CPython 3.11.16/3.12.14/3.13.15 `python -m compileall -q scripts
+  tests/test_candidate_gate.py`: each exit 0. `git diff --check`: exit 0.
+- These are Developer regression results, not formal candidate evidence. The rejected SHA remains
+  immutable; protected runner/tests changed, so all earlier portable diagnostics and matrix output
+  are invalidated. Tester must independently execute the complete Linux CPython
+  3.11/3.12/3.13 canonical matrix against the new exact candidate. PM/PR/PH remain Pending.
 
 ## Authority and result
 

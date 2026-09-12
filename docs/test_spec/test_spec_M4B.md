@@ -49,6 +49,12 @@ only when its result preserves the Test ID, case ID and assertion-level outcome.
 | `PR` | Pi release | Same target, clean checkout at one exact 40-hex SHA, reviewed release profile | Product watchdogs remain 45/30/2/2/1 s; 30 min scenario timeout |
 | `PH` | Pi human | Same `PR` run and sanitized answer cards | Review completed before run disposition |
 
+USER runtime disposition (2026-09-12): macOS arm64 is diagnostic-only for the current M4B portable
+candidate. Formal portable sign-off requires the Linux CPython 3.11/3.12/3.13 matrix; Darwin-only
+process-group and CPython 3.11 hardware-diagnostic cancellation failures do not reject the candidate.
+Diagnostic exclusions are applied by the execution profile and are not implemented as committed
+`skip`/`xfail` controls in protected tests.
+
 Timeouts prevent hangs; they are not response-time PASS ceilings. A timeout is Fail unless the
 case explicitly tests a watchdog and observes the required bounded cleanup terminal.
 

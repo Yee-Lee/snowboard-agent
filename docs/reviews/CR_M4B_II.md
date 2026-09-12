@@ -190,3 +190,166 @@ current incomplete context and cannot generate a release/human PASS.
 There is no new design/API blocker. The sole blocking protocol gap was resolved by
 `IR_dev_M4B_IV` / `TR_spec_M4B_VII`; implementation uses the authorized explicit discard command
 and acknowledgement, never implicit supersession or a `CLOSE` workaround.
+
+## Tester diagnostic disposition — 2026-09-12
+
+Disposition: **Rejected** for exact provisional candidate
+`9e005e48fe1582c901fcba3eb152747c92c43890` because the candidate gate admits false and incomplete
+portable PASS evidence. Native `PM`/`PR`/`PH`, product cards and human rows remain **Pending** and
+were not executed.
+
+Tester run `tester-m4b-20260912-a1` used a detached clean checkout at the exact candidate SHA on
+macOS 15.5 arm64 and the candidate-owned `scripts/candidate_gate.py portable --suite tests
+--timeout-seconds 480` command. The independent results are:
+
+| Runtime | Passed | Failed | Skipped | XFailed | Deselected | Status |
+| :--- | ---: | ---: | ---: | ---: | ---: | :--- |
+| CPython 3.11.16 | 1546 | 11 | 0 | 0 | 29 | Fail |
+| CPython 3.12.14 | 1547 | 10 | 0 | 0 | 29 | Fail |
+| CPython 3.13.15 | 1547 | 10 | 0 | 0 | 29 | Fail |
+
+The macOS diagnostic matrix command exited 1 with `Python 3.11 portable result is not Pass`; no
+PASS matrix index was produced. Diagnostic evidence is under
+`/private/tmp/m4b-tester-YN5xRw/evidence/portable/tester-m4b-20260912-a1/`; each `python-3.*`
+directory contains `result.json`, `junit.xml` and raw stdout/stderr. Result/JUnit SHA-256 pairs are
+`33669803cbde07f4c4ad8686d6a019e32db838082a7c4665e507d28f6e7bbd8d` /
+`0c73effd4eae119e73492e1f4d523f772035e37608ee96fe659669cfa07232d3` (3.11),
+`6ffe01af1ec01a030503cea26ab3d2778b5204be48507391389fd704e9ff0743` /
+`e6f204c8dc22f9f49661225ae9d5450e49d0f790991364cf6fc9c3ca19810f55` (3.12), and
+`88ec90450e741c00deb6fcb66d28c48862e44954fea0169ef10d8098daa59549` /
+`2bb731b1813e2307e4d6f7c7bb58d1febe38c60f75659b3ac3befe97e5f501f0` (3.13).
+`matrix-failure.json` records the aggregate rejection.
+
+Positive checks do not establish Linux PASS: immutable Foundation comparison is **99 baseline /
+99 retained / 0 missing**, with baseline/collected digest
+`fd5a9eb2d9943e894fc2a4e043146b1a85874f7eafcd88996686188d5477813f` and empty missing digest
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`; `compileall`,
+`git diff --check`, protected-input cleanliness and exact HEAD checks exited 0.
+
+### B1 — Blocking: portable runner and matrix admit false/incomplete PASS evidence
+
+- **Basis:** `test_spec_M4B.md` §2.1 makes any XPASS a Fail, §2.4 requires exact candidate/profile/
+  matrix identity and per-Test-ID evidence, and `M4B-REG-001` requires the complete immutable and
+  affected catalog. `candidate-process.md` requires zero Fail/Skip/XFail on the formal supported
+  matrix. A caller-selected trivial suite cannot substitute for those gates.
+- **Location:** `scripts/candidate_gate.py` `suite_counts()`, `passed()`, `portable()`,
+  `validate_version_result()` and `matrix()`. `m4b_collection_audit()`, `m4b_source_violations()`,
+  `m4b_junit_audit()` and `m4b_catalog_paths()` are test helpers but are not enforced by the portable
+  runner or matrix. `tests/test_candidate_gate.py` constructs minimal version results without suite,
+  platform, evidence digest or Test-ID identity and treats them as valid matrix inputs.
+- **XPASS reproduction:** an external one-node probe marked `pytest.mark.xfail` and containing a
+  passing assertion produced pytest summary `1 xpassed`, but the candidate runner exited 0 and wrote
+  `status="Pass"`, `passed=1`, `failed=0`, `skipped=0`, `xfailed=0`. Evidence is
+  `/private/tmp/m4b-tester-YN5xRw/evidence/xpass-probe/`; result/JUnit SHA-256 are
+  `637cdf6176f2e89ad9ed288d7e166ddc37cb72652af1ae9180367815b15cfc24` and
+  `666a264b6582fa9d10b9bd8152bd38a48c15ede45dd24b538cd4a7c5a200cf99`.
+- **Incomplete-suite reproduction:** the runner accepted the external absolute selector
+  `/private/tmp/m4b-tester-YN5xRw/trivial_probe.py`, containing only `assert 1 == 1`, for each of
+  Python 3.11/3.12/3.13. The matrix command then exited 0 and produced
+  `/private/tmp/m4b-tester-YN5xRw/evidence/trivial-matrix/matrix-index.json` with `status="Pass"`.
+  Its SHA-256 is `4c46f851a2f7bbde2be7c41b8f9432ecd9d29e044afb66ac07dae92e0c7825de`.
+  The accepted records were generated on macOS even though the USER-adjusted formal profile now
+  requires Linux; `validate_version_result()` does not validate platform or canonical suite.
+- **Expected / actual / impact:** only the complete candidate-owned Linux suite, all required Test
+  IDs and zero fail/error/skip/xfail/xpass may yield PASS. Actual code trusts caller-selected test
+  paths and incomplete result JSON, omits XPASS from counts, and creates a PASS matrix from three
+  trivial nodes. The matrix can therefore authorize later preflight without proving the product.
+- **Preferred correction:** bind portable execution and aggregation to the tracked canonical suite;
+  reject absolute/out-of-repo/arbitrary selectors; record and validate exact Linux/platform/Python,
+  suite/catalog digest, collection/JUnit identity, per-Test-ID evidence and zero XPASS. Integrate the
+  existing M4B audit helpers into the formal path rather than relying on tests that can themselves be
+  omitted. Add negative tests for both reproductions without weakening protected tests.
+- **Minimum verification:** both probes must be rejected; an XPASS must make the runner and matrix
+  Fail; incomplete/mixed platform, suite, catalog, identity or evidence records must be rejected;
+  then rerun the immutable baseline and the complete Linux CPython 3.11/3.12/3.13 portable matrix
+  with zero Fail/Error/Skip/XFail/XPASS.
+
+### D1 — Diagnostic: Darwin process-group exit proof fails on macOS
+
+- **Basis at execution time:** `M4B-REG-001/G05` selected the affected M4A process-group cleanup
+  boundary. USER subsequently classified macOS as diagnostic-only for this candidate.
+- **Location:** `src/sbd/adaptor/framed_child.py` `_live_process_group_members()` and
+  `_wait_process_group_exit()`; direct failures are two `test_m4a_asr_001` rows, six
+  `test_m4a_ipc_001` rows, `test_m4a_priv_001`, and aggregate `test_m4b_reg_001::test_G05_*`.
+- **Reproduction:** all three formal minor runs fail the same ten rows. A bounded standalone CPython
+  3.13 run of `test_m4a_ipc_001_ready_identity_idempotent_lifecycle_and_cleanup` also fails with
+  `AudioProtocolError: child process group exit could not be proven`. The same node fails at starting
+  SHA `54c506713082b1ea95cfa331f08b7124dcfa0316`, so this is pre-existing.
+- **Expected / actual / impact:** a clean shutdown must prove root and descendant exit and remove its
+  workdir; on Darwin, absence of `/proc` returns `{pgid}` indefinitely, so TERM/KILL both time out.
+  This explains the macOS diagnostic failure but does not reject the candidate after USER's runtime
+  disposition. No Developer correction is requested for this row.
+
+### D2 — Diagnostic: macOS CPython 3.11 camera cancellation is not propagated
+
+- **Basis at execution time:** the full repository diagnostic suite selected this row. USER
+  subsequently classified macOS as diagnostic-only for this candidate.
+- **Location:** `scripts/hw_diag/hw_diag.py` `_bounded()` / `check_camera()` and
+  `tests/test_pm_025_hw_diag.py::test_pm_025_camera_cancellation_propagates_after_cleanup`.
+- **Reproduction:** the 3.11 formal run and a bounded standalone rerun both fail after about ten
+  seconds with `cancellation must propagate`; 3.12/3.13 pass this row. The same bounded 3.11 node
+  fails at starting SHA `54c506713082b1ea95cfa331f08b7124dcfa0316`, so it is also pre-existing.
+- **Expected / actual / impact:** cancelling during blocked capture must clean the camera and raise
+  `CancelledError`; actual execution returns normally after the operation timeout. This explains
+  the eleventh macOS 3.11 diagnostic failure. No Developer correction is requested for this row.
+
+### USER runtime clarification and remaining gate
+
+USER directed on 2026-09-12 that these macOS results have no acceptance significance and may be
+excluded. They remain visible as diagnostics; no committed skip/xfail or candidate change is requested.
+The required independent result remains Linux CPython 3.11/3.12/3.13 with zero
+Fail/Error/Skip/XFail/XPASS, but B1 must be corrected first because the current runner cannot prove that result.
+This workstation has no Linux/container runner, and the available GitHub CLI has no authenticated host.
+Developer's earlier Pi/Linux diagnostics cannot be relabeled as Tester evidence. Because B1 changes protected
+runner/tests, correction requires an append-only fix commit and a new exact candidate SHA.
+
+## Developer B1 correction disposition — 2026-09-12
+
+Disposition: **Revised**. B1 is corrected in the working tree; no replacement commit, candidate,
+portable PASS, PM, PR or PH claim is made. The rejected SHA
+`9e005e48fe1582c901fcba3eb152747c92c43890` remains immutable.
+
+### Corrected implementation and coverage
+
+- `scripts/candidate_gate.py` now treats failure, error, skip, XFail and XPASS as distinct forbidden
+  outcomes. A real XPASS probe exits nonzero and records `status=Fail`, `xpassed=1`.
+- Formal M4B portable execution accepts only the exact tracked
+  `tests/m4b_portable_suite.txt`; absolute/repo-external paths, `tests`, and arbitrary repository
+  files are rejected before execution. The canonical manifest, product profile, immutable baseline
+  and every selected test path must be candidate-tracked.
+- Each run now binds Linux x86_64/aarch64, CPython minor/full version, exact profile ID/digest,
+  catalog paths/digest, independently collected node IDs/digest, source audit, sanitized JUnit
+  digest, monotonic bounds, raw-log locators, exact Foundation G02 properties and node/digest
+  evidence for all 13 current portable Test IDs.
+- Matrix and later preflight validation reopen the evidence below each version result, reject
+  traversal/symlink/missing locators, recompute collection/JUnit/source/Foundation/Test-ID identity,
+  require zero Fail/Error/Skip/XFail/XPASS and bind the matrix index to all three result digests plus
+  the current profile/catalog identity.
+- `tests/test_candidate_gate.py` adds executable canonical-run coverage and negative cases for the
+  two B1 reproductions plus mixed platform, suite, catalog, profile, Test-ID, JUnit and XPASS matrix
+  records. D1/D2 and Tester-owned macOS diagnostic-only disposition are unchanged.
+
+### Bounded Developer verification
+
+- CPython 3.11.16: `tests/test_candidate_gate.py` — **78 passed**, exit 0, 12.88 s.
+- CPython 3.12.14: `tests/test_candidate_gate.py` — **78 passed**, exit 0, 13.57 s.
+- CPython 3.13.15: `tests/test_candidate_gate.py` — **78 passed**, exit 0, 13.19 s.
+- CPython 3.13.15: `tests/test_m4b_reg_001.py -k 'not G05'` — **15 passed /
+  1 USER-disposed Darwin diagnostic deselected**, exit 0, 17.68 s.
+- Direct current-candidate authority audit: profile
+  `core-m4b-cognition-001` / `be9005b5426173243ab1306dc24fb969f1371ff86615286ac1405714a98b49f1`,
+  31 canonical selectors, catalog SHA-256
+  `bcd92cc2019494f3c854337b761585b79cbddd0f0a7d6b381ff8c35f21c2e001`, source-audit SHA-256
+  `bd68b36c38eb53c58226a9aee8f8527c0fe1bb077f22704622930d688dbb2ccf`, exit 0.
+
+All pytest commands used a 180-second outer process alarm and `--timeout=120`; no correctness sleep
+or acceptance threshold was introduced. Final compile and diff checks are recorded in
+`status/development.md`.
+
+### Required independent re-verification
+
+Because `scripts/candidate_gate.py` and `tests/test_candidate_gate.py` are protected inputs, the
+previous candidate and all prior matrix evidence are invalidated. After an authorized append-only
+commit creates a new exact SHA, Tester must independently run the complete canonical Linux CPython
+3.11/3.12/3.13 matrix and confirm both B1 probes reject. PM/PR/PH remain Pending until that portable
+verification and subsequent Designer target-gate transition are complete.
