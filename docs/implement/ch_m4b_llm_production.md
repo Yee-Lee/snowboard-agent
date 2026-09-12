@@ -1,6 +1,6 @@
 # M4B — replacement LLM / Reasoner product design
 
-狀態：**Designer complete / focused Reviewer PASS / Tester coverage approved /
+狀態：**Designer revised for `IR_dev_M4B_IV` / focused ticket-disposal coverage approved /
 Developer entry open**。
 
 本文件是 M4B cognition/product replacement 的現行 implementation-design authority。它從已核准的
@@ -186,9 +186,28 @@ class AdmissionSnapshot:
     engine_context_tokens: int
 ```
 
-`MEASURE` must not append a message, allocate output KV or start inference. `ticket` binds the child generation,
-Conversation revision, exact normalized input digest and all counts. Any intervening mutation invalidates it.
-`GENERATE` consumes the ticket once; missing/reused/stale/mismatched tickets are E1 protocol failures.
+`MEASURE` must not append a message, allocate output KV or start inference. Here non-mutating means no semantic
+Conversation history/KV/revision change and no native send; the pinned runtime renderer does overwrite its private
+`last_rendered_message` scratch member. `ticket` binds the child generation, Conversation revision, exact normalized
+input digest and all counts. Any intervening semantic mutation invalidates it. `GENERATE` consumes the ticket once;
+missing/reused/stale/mismatched tickets are E1 protocol failures. Before emitting `MEASURED`, the child releases
+Python request/tokenizer temporaries; until GENERATE, DISCARD_TICKET or CLOSE resolves the ticket, the native
+rendered scratch is the only permitted child-side private-text retention. The ticket ledger itself may retain only
+its opaque value, identity, digest, revision and integer counts. The parent supplies exact text again for GENERATE.
+
+`DISCARD_TICKET` is the explicit non-mutating escape from an outstanding measurement. After exact identity match,
+the child calls the existing pinned renderer once with fixed non-private scrub text
+`TICKET_SCRUB_TEXT = "__M4B_TICKET_SCRUB__"`. The returned fixed turn rendering replaces native
+`last_rendered_message`; child verifies Conversation token count is unchanged and clears its ticket binding. It
+does not call native send or invent a runtime clear API. `TICKET_DISCARDED` proves native render scratch
+replacement, permanent ticket invalidation and absence of live child/native references to the rejected text; this
+is object-lifetime cleanup, not forensic zeroization of freed allocator capacity. Reasoner releases its normalized
+text local before issuing DISCARD_TICKET, whose frame is built entirely from the snapshot, and releases the snapshot
+after validating the terminal. Only then may it
+publish R1. The matching terminal returns the same Conversation to ready state without changing generation,
+revision, history or KV. A scrub/count failure, stale/mismatched/duplicate discard, false/missing proof, timeout,
+malformed terminal or EOF is E1. Parent obtains PGID destruction proof and may not publish clean R1.
+`DISCARD_TICKET` is atomic and has no cooperative CANCEL path.
 
 ### 5.2 Token decisions
 
@@ -204,7 +223,10 @@ the child rejects impossible or internally inconsistent metrics before inference
 
 - Codepoint-limit rejection (§3.2) returns `speak + KEEP_NEXT` without MEASURE. A codepoint-valid input uses
   non-mutating MEASURE to obtain exact `user_tokens`; `user_tokens > 32` returns the same input-limit outcome and
-  discards the ticket without GENERATE.
+  must complete matching `DISCARD_TICKET` / `TICKET_DISCARDED` before the parent drops its snapshot and publishes
+  R1; its normalized text local is dropped before the snapshot-only discard call. It never uses GENERATE.
+  After acknowledged disposal, the same Conversation and revision accept the next turn's MEASURE; repeated
+  token-limit rejections follow the same sequence.
 - A failed context equation returns application-owned `speak + REPLACE_NEXT`; rejected input is not sent or
   replayed. Replacement starts a clean Conversation and the user must repeat the input.
 - For a fresh Conversation, a turn containing exactly one listen of at most 20 normalized code points and at
@@ -314,11 +336,24 @@ class ReplaceableGenerationFailure(RuntimeError):
     request_terminal_proven: Literal[True]
     engine_usable: Literal[True]
 
+@dataclass(frozen=True, slots=True)
+class TicketDiscardProof:
+    session_id: str
+    generation: int
+    conversation_revision: int
+    ticket: str
+    input_sha256: str
+    native_render_scrubbed: Literal[True]
+    ticket_invalidated: Literal[True]
+    private_input_erased: Literal[True]
+    conversation_state: Literal["ready"]
+
 class LLMEngineAdapter(Protocol):
     async def start(self) -> None: ...
     async def stop(self) -> None: ...
     async def open_conversation(self, session_id: str, generation: int) -> ConversationReady | ConversationOpenRejected: ...
     async def measure(self, session_id: str, generation: int, text: str) -> AdmissionSnapshot: ...
+    async def discard_ticket(self, snapshot: AdmissionSnapshot) -> TicketDiscardProof: ...
     async def generate(self, snapshot: AdmissionSnapshot, text: str) -> SemanticGeneration: ...
     async def close_conversation(self, session_id: str, generation: int, reason: str) -> ConversationCloseProof: ...
     async def abort(self) -> None: ...
@@ -338,7 +373,9 @@ operation lock and generation state, but have separate outer tasks/SM in-flight 
 - `open_conversation` waits for any planned-recovery ticket, then issues one clean OPEN. READY Engine has no
   Conversation and prepared objects may not carry history or be claimed by another session.
 - `reason()` verifies the SM-provided generation, projects input, measures, samples memory, and performs at most
-  one GENERATE. It publishes exactly one canonical Fact for normal/R1/R2/capacity outcomes.
+  one GENERATE. For measured token-limit R1 it clears normalized text, issues the snapshot-only `discard_ticket`, awaits
+  and validates the proof, clears its snapshot, and only then publishes exactly one canonical Fact. Disposal
+  failure is E1, never R1.
 - `close_conversation` first proves any active request terminal, then closes/destroys Conversation-local history,
   KV and references. Only the typed foundation proof can release the claim.
 - `abort/force_abort` obey Ch 2b/6 terminal and descendant-exit rules. Cancel never publishes a normal Fact.
@@ -354,7 +391,8 @@ rules required here are:
 
 - READY verifies immutable install/product profile and reports Engine ready with no Conversation.
 - OPEN/CLOSE identify `(session_id, generation)`; at most one Conversation is claimed.
-- MEASURE is non-mutating and returns a one-use admission ticket; GENERATE is the only mutating inference command.
+- MEASURE is non-mutating and returns a one-use admission ticket; DISCARD_TICKET invalidates it without changing
+  the Conversation; GENERATE is the only mutating inference command.
 - `SAFE_TEXT` is nonterminal; `RESULT`, `REQUEST_FAILED`, `CANCELLED`, `OPEN_REJECTED` and `CLOSED` have the
   terminal/proof meanings defined there.
 - Invalid framing/identity/order, EOF, duplicate terminal, late output, ticket mismatch or missing cleanup proof
@@ -466,15 +504,16 @@ Tester must independently specify at least:
 1. exact normalization, codepoint/token boundaries `20/21` and `32/33`, envelope exclusion and no mutation;
 2. prompt bytes/counts/hashes, fixed personality, grammar, `text/end` combinations and 30 spoken-character rule;
 3. fragmented/coalesced UTF-8/JSON S2 extraction, escapes, prefix proof, invalid/late/duplicate terminal;
-4. MEASURE non-mutation, exact equation boundaries, ticket one-use/stale/input-digest/generation checks;
+4. MEASURE non-mutation, exact equation boundaries, ticket one-use/stale/input-digest/generation checks, plus
+   acknowledged token-limit discard, same-revision next MEASURE, repeated rejection and discard failure barriers;
 5. fresh listen-only `runtime_prefill <=128` invariant and proof that it is not a multimodal/context ceiling;
 6. every row of §6, including application/model speech ownership, final-speak-then-rest and repeated R2;
 7. same Conversation across normal turns; context rejection before mutation; close-before-open replacement,
    following successful turn, no replay and Product Session/turn continuity;
 8. memory allow/notice/silent decisions with injected new-profile thresholds, sampler failure and planned-recovery
    supervision; assert legacy `8/48/768` keys are rejected;
-9. child READY/open/measure/generate/cancel/close/shutdown state machine, proof flags, PGID cleanup and next-child
-   success after recovery;
+9. child READY/open/measure/discard/generate/cancel/close/shutdown state machine, proof flags, PGID cleanup and
+   next-child success after recovery;
 10. logging/privacy redaction and separate prompt/runtime/memory/timing schemas;
 11. all affected M1/M2/Foundation/M4A regressions retained with no delete/skip/xfail substitution.
 
@@ -523,6 +562,8 @@ Developer replaces these surfaces from this design and the approved test spec; p
 legacy behavior reuse. Temporary legacy code/test/design inventory is removed at cutover only after replacement
 portable and Pi verification; Git remains the historical reference.
 
-This draft does not open Developer entry. Exit requires focused architecture/review PASS, independent Tester
-coverage approval, and Designer mapping confirmation. Real product verification also requires the measured target
-profile with frozen memory thresholds; no legacy candidate or POC observation can substitute for that evidence.
+Developer entry was opened after focused architecture/review PASS and independent Tester coverage approval.
+`IR_dev_M4B_IV` subsequently exposed and this revision closes the token-limit ticket-disposal contract. Focused
+Tester coverage was confirmed and resolved in `TR_spec_M4B_VII`; Developer entry is open for the complete package.
+Real product verification also requires the measured target profile with frozen memory thresholds; no legacy
+candidate or POC observation can substitute for that evidence.

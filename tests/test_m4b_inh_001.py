@@ -1,91 +1,43 @@
-"""M4B-INH-001 — strict POC inheritance generator schema."""
-
-from __future__ import annotations
-
+"""Exact current evidence identity, scope, checksum and completeness regressions."""
 import hashlib
-import json
-
+from copy import deepcopy
 import pytest
-
-from scripts.m4b_inheritance import (
-    AREA_REQUIRED_IDS, FIXED, InheritanceError, ROW_FIELDS, TARGET_CARD_IDS,
-    validate_rows,
-)
+from scripts.m4b_inheritance import InheritanceError, validate_rows, validate_result_record
 
 
-def _rows(candidate: str):
-    manifest = b"manifest"
-    evidence = b"evidence"
-    blobs = {"manifest": manifest, "evidence": evidence}
-    rows = []
-    identities = [
-        (area, test_id)
-        for area in sorted(AREA_REQUIRED_IDS)
-        for test_id in sorted(AREA_REQUIRED_IDS[area])
-    ]
-    for index, (area, test_id) in enumerate(identities):
-        run_id = "acceptance-001"
-        proof_name = f"proof-{index}"
-        blobs[proof_name] = json.dumps({
-            "candidate_sha": candidate, "test_id": test_id, "status": "Pass", "run_id": run_id,
-        }).encode()
-        row = {
-            **FIXED, "area": area,
-            "poc_manifest_locator": "manifest", "poc_manifest_sha256": hashlib.sha256(manifest).hexdigest(),
-            "poc_evidence_locator": "evidence", "poc_evidence_sha256": hashlib.sha256(evidence).hexdigest(),
-            "poc_machine_result": "FAIL" if area in {"P9", "P10B"} else "PASS",
-            "user_waiver": "KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION" if area in {"P9", "P10B"} else None,
-            "classification": "waiver" if area in {"P9", "P10B"} else "delta",
-            "inheritance_reason": f"Core delta {test_id}", "product_sha": candidate,
-            "delta_test_id": test_id, "delta_result": "PASS",
-            "result_proof_kind": (
-                "lock_preflight_reconciliation" if test_id == "M4B-LOCK-001"
-                else "target_card" if test_id in TARGET_CARD_IDS
-                else "portable_reconciliation"
-            ),
-            "result_locator": proof_name,
-            "portable_run_id": None if test_id in TARGET_CARD_IDS or test_id == "M4B-LOCK-001" else run_id,
-            "acceptance_run_id": run_id if test_id in TARGET_CARD_IDS or test_id == "M4B-LOCK-001" else None,
-        }
-        if row["result_proof_kind"] == "portable_reconciliation":
-            proof = json.loads(blobs[proof_name])
-            proof["python_minors"] = ["3.11", "3.12", "3.13"]
-            blobs[proof_name] = json.dumps(proof).encode()
-        assert set(row) == ROW_FIELDS
-        rows.append(row)
-    return rows, blobs.__getitem__
+def record(test_id="M4B-MEM-001"):
+    return dict(schema_version=1, test_id=test_id, case_id="M01", candidate_sha="a" * 40,
+        profile_id="core-m4b-cognition-001", profile_sha256="b" * 64, matrix="PU", platform="darwin",
+        python="3.13.15", start_monotonic_ns=1, end_monotonic_ns=2, status="Pass",
+        evidence_sha256=hashlib.sha256(b"evidence").hexdigest())
 
 
-def test_m4b_inh_001_accepts_complete_immutable_index() -> None:
-    candidate = "a" * 40
-    rows, resolver = _rows(candidate)
-    assert len(validate_rows(rows, candidate, resolver=resolver)) == 17
-
-
-def test_m4b_inh_001_rejects_self_row_mixed_sha_and_rewritten_waiver() -> None:
-    candidate = "a" * 40
-    for mutate in (
-        lambda rows: rows[0].update(delta_test_id="M4B-INH-001"),
-        lambda rows: rows[0].update(product_sha="b" * 40),
-        lambda rows: next(row for row in rows if row["area"] == "P9").update(poc_machine_result="PASS"),
-    ):
-        rows, resolver = _rows(candidate)
-        mutate(rows)
+def test_current_index_binds_checksum_and_exact_candidate():
+    r = record()
+    row = {"record": r, "evidence_locator": f"sha256/{r['evidence_sha256']}"}
+    assert validate_rows([row], "a" * 40, profile_sha256="b" * 64,
+        resolver=lambda _: b"evidence", required_ids={"M4B-MEM-001"}) == [r]
+    for rows, resolver in (([row, row], lambda _: b"evidence"), ([row], lambda _: b"changed"),
+                           ([], lambda _: b"evidence")):
         with pytest.raises(InheritanceError):
-            validate_rows(rows, candidate, resolver=resolver)
+            validate_rows(rows, "a" * 40, profile_sha256="b" * 64,
+                resolver=resolver, required_ids={"M4B-MEM-001"})
 
 
-def test_m4b_inh_001_rejects_missing_area_evidence_duplicate_and_wrong_scope() -> None:
-    candidate = "a" * 40
-    for mutate in (
-        lambda rows: rows.pop(next(
-            index for index, row in enumerate(rows)
-            if row["area"] == "P12" and row["delta_test_id"] == "M4B-PRIV-001"
-        )),
-        lambda rows: rows.append(dict(rows[0])),
-        lambda rows: rows[0].update(result_proof_kind="portable_reconciliation"),
-    ):
-        rows, resolver = _rows(candidate)
-        mutate(rows)
-        with pytest.raises(InheritanceError):
-            validate_rows(rows, candidate, resolver=resolver)
+@pytest.mark.parametrize("changes", [
+    {"test_id": "M4B-HIST-001"}, {"candidate_sha": "c" * 40}, {"profile_sha256": "d" * 64},
+    {"private": "CANARY"}, {"matrix": "PR"}, {"matrix": "PS"},
+    {"python": "3.14.0"}, {"end_monotonic_ns": 0}, {"case_id": "PRIVATE_SESSION"},
+])
+def test_metadata_rejects_retired_identity_wrong_scope_and_private_fields(changes):
+    with pytest.raises(InheritanceError):
+        validate_result_record({**record(), **changes}, candidate_sha="a" * 40,
+                               profile_sha256="b" * 64)
+
+
+def test_target_metadata_cannot_inherit_portable_evidence():
+    r = record("M4B-PI-MEM-001")
+    with pytest.raises(InheritanceError):
+        validate_result_record(r, candidate_sha="a" * 40, profile_sha256="b" * 64)
+    r.update(matrix="PR", platform="pi5-4gb-debian13-aarch64", python="3.13.5")
+    assert validate_result_record(r, candidate_sha="a" * 40, profile_sha256="b" * 64) == r

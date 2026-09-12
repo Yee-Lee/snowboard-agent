@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import hashlib
+import re
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Callable
 
 from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
-from sbd.cognition.llm import LLMEngineAdapter
+from sbd.cognition.llm import (LLMEngineAdapter, AdmissionSnapshot, SemanticGeneration,
+    LLMFatalError, MemoryAdmissionDenied, ReplaceableGenerationFailure)
 from sbd.cognition.llm_child_protocol import (
     ReasoningInputContractError,
     ReasoningInputTooLarge,
+    validate_counts,
 )
-from sbd.cognition.prompt_builder import PromptBuilder
+from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector, UnsupportedInputError
+from sbd.cognition.semantic import validate_semantic
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ErrorOccurred, LLMResponse, PerceptionResult
 from sbd.core.lifecycle import ForceAbortReport
@@ -30,6 +35,11 @@ _ACTION_KINDS = ("speak", "tool")
 _DEFAULT_PERCEPTIONS = ("listen",)
 _REASON_TIMEOUT_SECONDS = 30.0
 _APOLOGY = "抱歉，我現在無法完成回應，請再試一次。"
+_NO_INPUT = "我沒聽清楚，請再說一次。"
+_INPUT_LIMIT = "這句有點長，請縮短後再說一次。"
+_CONTEXT_LIMIT = "對話內容已滿，請再說一次。"
+_MEMORY_NOTICE = "系統需要整理，請稍後再試。"
+_REPLACEABLE = "剛才沒有成功，請再說一次。"
 
 
 class Reasoner(WorkerRuntime):
@@ -38,13 +48,14 @@ class Reasoner(WorkerRuntime):
     def __init__(
         self,
         llm: LLMEngineAdapter,
-        prompt_builder: PromptBuilder,
+        prompt_builder: PromptBuilder | ListenProjector,
         bus: EventBus,
         capability_of: Callable[[str], bool],
         action_validator: ActionPayloadValidator,
         reason_timeout_seconds: float = _REASON_TIMEOUT_SECONDS,
         *,
         control: object | None = None,
+        observer: object | None = None,
     ) -> None:
         super().__init__()
         self._llm = llm
@@ -53,7 +64,9 @@ class Reasoner(WorkerRuntime):
         self._capability_of = capability_of
         self._action_validator = action_validator
         self._reason_timeout_seconds = reason_timeout_seconds
-        self._control = control
+        self._product = isinstance(prompt_builder, ListenProjector)
+        self._control = llm.control if self._product else control
+        self._observer = observer
 
     @property
     def control(self) -> object | None:
@@ -82,6 +95,12 @@ class Reasoner(WorkerRuntime):
         *,
         conversation_generation: int,
     ) -> None:
+        if self._product:
+            operation = self._reason_product(session_id, turn_id, correlation_id,
+                perception_results, pending_message_ids, conversation_generation)
+            del perception_results, pending_message_ids
+            await operation
+            return
         async def body() -> None:
             unexpected: Exception | None = None
             response: LLMResponse | None = None
@@ -138,6 +157,151 @@ class Reasoner(WorkerRuntime):
                 await self._bus.publish(response)
 
         await self._run_call(body)
+
+    async def _reason_product(self, session_id, turn_id, correlation_id,
+                              perceptions, pending_ids, generation) -> None:
+        async def body() -> None:
+            nonlocal perceptions, pending_ids
+            failure: LLMFatalError | None = None
+            response: LLMResponse | None = None
+            try:
+                if self._observer is not None:
+                    self._observer.begin_turn(generation, turn_id)
+                async with asyncio.timeout(self._reason_timeout_seconds):
+                    # The operation task owns the complete transaction and the
+                    # adapter's reentrant lock, including measure and generate.
+                    operation = self._product_turn(
+                        session_id, turn_id, correlation_id, perceptions,
+                        pending_ids, generation)
+                    perceptions, pending_ids = (), ()
+                    response = await self._await_operation(operation)
+            except asyncio.CancelledError:
+                if self._observer is not None:
+                    try:
+                        self._observer.finish("CANCELLED")
+                    except Exception:
+                        pass  # An observation sink cannot replace cancellation.
+                raise
+            except UnsupportedInputError:
+                failure = LLMFatalError("UNSUPPORTED_INPUT")
+            except TimeoutError:
+                try:
+                    await self._llm.abort()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    pass
+                failure = LLMFatalError("REASONER_TIMEOUT")
+            except Exception:
+                failure = LLMFatalError("M4B_REASONER_FAILED")
+            if failure is not None:
+                if self._observer is not None:
+                    try:
+                        self._observer.outcome("E1")
+                        self._observer.finish("FAILED")
+                    except Exception:
+                        pass  # Preserve the original E1 and its supervision event.
+                if self._may_publish():
+                    await self._bus.publish(ErrorOccurred(where="cognition.reasoner",
+                        error=str(failure), exception_type=type(failure).__name__))
+                raise failure from None
+            if response is not None and self._may_publish():
+                await self._bus.publish(response)
+
+        await self._run_call(body)
+
+    async def _product_turn(self, session_id, turn_id, correlation_id,
+                            perceptions, pending_ids, generation) -> LLMResponse:
+        async with self._llm.serialized():
+            if (type(session_id) is not str or not session_id or
+                    type(generation) is not int or generation < 1 or
+                    type(turn_id) is not int or turn_id < 0 or type(pending_ids) is not tuple):
+                raise UnsupportedInputError()
+            if (self._capability_of("listen") is not True or
+                    self._capability_of("speak") is not True):
+                raise UnsupportedInputError()
+            self._llm.assert_conversation(session_id, generation)
+            text = self._prompt_builder.project(perceptions=perceptions,
+                session_id=session_id, turn_id=turn_id,
+                pending_message_count=len(pending_ids),
+                available_perceptions=("listen",), available_actions=("speak",))
+            del perceptions, pending_ids
+            if self._observer is not None:
+                self._observer.input_codepoints(None if text is None else len(text))
+            identity = (session_id, turn_id, correlation_id)
+            if text is None:
+                return self._product_fact(_NO_INPUT, "KEEP_NEXT", identity, outcome="R1")
+            if len(text) > 20:
+                return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
+            snapshot = await self._llm.measure(session_id, generation, text)
+            if not isinstance(snapshot, AdmissionSnapshot):
+                raise LLMFatalError("INVALID_ADMISSION")
+            validate_counts({key:getattr(snapshot,key) for key in (
+                "user_tokens", "current_kv_tokens", "rendered_incremental_tokens",
+                "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens")})
+            if (snapshot.session_id != session_id or type(snapshot.generation) is not int or
+                    snapshot.generation != generation or type(snapshot.ticket) is not str or
+                    re.fullmatch(r"[0-9a-f]{32}", snapshot.ticket) is None or
+                    snapshot.input_sha256 != hashlib.sha256(text.encode()).hexdigest()):
+                raise LLMFatalError("INVALID_ADMISSION")
+            revision = self._llm.conversation_revision
+            if type(revision) is not int or revision < 0:
+                raise LLMFatalError("INVALID_REVISION")
+            if snapshot.user_tokens > 32:
+                from sbd.cognition.llm import TicketDiscardProof
+                del text
+                proof = await self._llm.discard_ticket(snapshot)
+                if (not isinstance(proof, TicketDiscardProof) or
+                        proof.session_id != snapshot.session_id or
+                        type(proof.generation) is not int or proof.generation != snapshot.generation or
+                        type(proof.conversation_revision) is not int or proof.conversation_revision != revision or
+                        proof.ticket != snapshot.ticket or proof.input_sha256 != snapshot.input_sha256 or
+                        proof.native_render_scrubbed is not True or proof.ticket_invalidated is not True or
+                        proof.private_input_erased is not True or proof.conversation_state != "ready" or
+                        self._llm.conversation_revision != revision):
+                    raise LLMFatalError("INVALID_DISCARD_PROOF")
+                self._llm.assert_conversation(session_id, generation)
+                del snapshot, proof
+                return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
+            if revision == 0 and snapshot.runtime_prefill_tokens > 128:
+                raise LLMFatalError("INVALID_FRESH_PREFILL")
+            if (snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens
+                    + snapshot.output_reserve_tokens > snapshot.engine_context_tokens):
+                return self._product_fact(_CONTEXT_LIMIT, "REPLACE_NEXT", identity, outcome="R2")
+            try:
+                result = await self._llm.generate(snapshot, text)
+            except MemoryAdmissionDenied as denied:
+                if type(denied.speak_allowed) is not bool:
+                    raise LLMFatalError("INVALID_MEMORY_OUTCOME") from None
+                return self._product_fact(_MEMORY_NOTICE if denied.speak_allowed else "",
+                                          "END_SESSION", identity,
+                                          outcome="NOTICE" if denied.speak_allowed else "SILENT")
+            except ReplaceableGenerationFailure as failed:
+                if (failed.request_terminal_proven is not True or failed.engine_usable is not True or
+                        failed.code not in {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"}):
+                    raise LLMFatalError("INVALID_TERMINAL_PROOF") from None
+                return self._product_fact(_REPLACEABLE, "REPLACE_NEXT", identity, outcome="R2")
+            if not isinstance(result, SemanticGeneration):
+                raise LLMFatalError("INVALID_SEMANTIC_RESULT")
+            semantic = validate_semantic({"text":result.text,"end":result.end})
+            if (type(result.safe_fragments) is not tuple or
+                    any(type(fragment) is not str or not fragment for fragment in result.safe_fragments) or
+                    not semantic.text.startswith("".join(result.safe_fragments))):
+                raise LLMFatalError("INVALID_SEMANTIC_PREFIX")
+            return self._product_fact(semantic.text,
+                "END_SESSION" if semantic.end else "KEEP_NEXT", identity)
+
+    def _product_fact(self, text: str, route: str, identity: tuple, *, outcome="GENERATE") -> LLMResponse:
+        if self._capability_of("speak") is not True or self._capability_of("listen") is not True:
+            raise LLMFatalError("UNSUPPORTED_INPUT")
+        kind = "speak" if text else "rest"
+        payload = {"text":text} if text else {}
+        self._action_validator.validate(kind, payload)
+        if self._observer is not None:
+            self._observer.outcome(outcome)
+        return LLMResponse(action_kind=kind, action_payload=payload,
+            post_action_route=route, next_perceptions=() if route == "END_SESSION" else ("listen",),
+            session_id=identity[0], turn_id=identity[1], correlation_id=identity[2])
 
     def _normalize(
         self,

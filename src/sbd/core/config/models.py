@@ -96,18 +96,14 @@ class LLMConfig:
     driver: Literal["mock", "litert_lm"] = "mock"
     runtime_python: Path | None = None
     model_path: Path | None = None
-    product_config_path: Path | None = None
+    product_profile_path: Path | None = None
     artifact_lock_path: Path | None = None
     profile_id: str | None = None
     child_ready_timeout_seconds: float = 45.0
-    generation_timeout_seconds: float = 15.0
+    generation_timeout_seconds: float = 30.0
     terminal_grace_seconds: float = 2.0
     child_terminate_timeout_seconds: float = 2.0
     child_kill_wait_timeout_seconds: float = 1.0
-    rebuild_ready_timeout_seconds: float = 10.0
-    recycle_max_inference_attempts: int = 8
-    recycle_owner_pss_delta_mib: int = 48
-    recycle_min_mem_available_mib: int = 768
 
 @dataclass(frozen=True, slots=True)
 class CognitionConfig:

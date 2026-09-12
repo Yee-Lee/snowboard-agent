@@ -1,105 +1,26 @@
-"""M4B-RES-001 — frozen r14 formula regression."""
+"""M4B resource acquisition, signed measurement and independent release freeze."""
 
 from __future__ import annotations
 
 import json
 import hashlib
 from pathlib import Path
+from dataclasses import replace
 
 import pytest
 
 from scripts.m4b_target_metrics import (
     MetricsError,
     kernel_resource_sample,
-    load_gate3_catalog,
     owner_resource_accounting,
     process_group_members,
-    validate_current_semantic_binding,
-    verify_r14_vector,
+    MeasurementHarness, MeasurementPoint, derive_thresholds, validate_authorization, MIB,
+    freeze_release_profile,
 )
+from tests.test_m4b_mem_001 import sample
 
 
 VECTOR = Path(__file__).parent.parent / "requirements/m4b/r14-sanitized-vector.json"
-
-
-def test_m4b_res_001_frozen_vector_reproduces_attempt_006_outputs() -> None:
-    actual = verify_r14_vector(json.loads(VECTOR.read_text(encoding="utf-8")))
-    assert actual == pytest.approx({
-        "combined_pss_slope_mib_per_session": 5.900893,
-        "combined_pss_late_minus_early_median_delta_mib": 131.578,
-        "system_used_slope_mib_per_session": 0.101957,
-        "system_used_late_minus_early_median_delta_mib": 32.750,
-    }, abs=1e-6)
-
-
-def test_m4b_res_001_rejects_missing_sample_instead_of_resegmenting() -> None:
-    value = json.loads(VECTOR.read_text(encoding="utf-8"))
-    value["combined_pss_mib"].pop()
-    with pytest.raises(MetricsError, match="20"):
-        verify_r14_vector(value)
-
-
-def test_m4b_res_001_gate3_catalog_identity_and_three_generic_intents() -> None:
-    catalog = load_gate3_catalog(VECTOR.with_name("gate3-product-catalog.json"))
-    profile = catalog["combined_session_profile"]
-    assert profile["session_count"] == 20
-    assert "{transcript}" in profile["prompt_template"]
-    assert "harness-only" in catalog["provenance"]["inheritance"]
-    assert [case["expected_kind"] for case in catalog["intent_cases"]] == [
-        "speak", "tool", "rest",
-    ]
-    serialized = json.dumps(catalog, sort_keys=True)
-    assert all(field not in serialized for field in {
-        "resource_marker_profile", "current_format", "forbidden_format",
-        "instruction_format",
-    })
-
-
-@pytest.mark.parametrize(("response", "case", "matches"), [
-    (
-        {"action_kind": "speak", "action_payload": {"text": "semantic reply"},
-         "next_perceptions": ["listen"]},
-        {"expected_kind": "speak", "expected_tool_name": None,
-         "expected_next_perceptions": ["listen"]},
-        True,
-    ),
-    (
-        {"action_kind": "rest", "action_payload": {}, "next_perceptions": []},
-        {"expected_kind": "speak", "expected_tool_name": None,
-         "expected_next_perceptions": ["listen"]},
-        False,
-    ),
-    (
-        {"action_kind": "tool", "action_payload": {"name": "prior.tool", "arguments": {}},
-         "next_perceptions": ["listen"]},
-        {"expected_kind": "tool", "expected_tool_name": "current.tool",
-         "expected_next_perceptions": ["listen"]},
-        False,
-    ),
-])
-def test_m4b_res_001_current_semantic_binding_is_marker_free_and_fail_closed(
-    response: dict[str, object], case: dict[str, object], matches: bool,
-) -> None:
-    if matches:
-        validate_current_semantic_binding(response, case)
-    else:
-        with pytest.raises(MetricsError):
-            validate_current_semantic_binding(response, case)
-
-
-def test_m4b_res_001_catalog_rejects_obsolete_marker_profile(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from scripts import m4b_target_metrics
-
-    value = json.loads(VECTOR.with_name("gate3-product-catalog.json").read_text())
-    value["resource_marker_profile"] = value.pop("combined_session_profile")
-    path = tmp_path / "catalog.json"
-    payload = (json.dumps(value, indent=2) + "\n").encode()
-    path.write_bytes(payload)
-    monkeypatch.setattr(m4b_target_metrics, "CATALOG_SHA256", hashlib.sha256(payload).hexdigest())
-    with pytest.raises(MetricsError, match="missing or extra"):
-        m4b_target_metrics.load_gate3_catalog(path)
 
 
 def test_m4b_res_001_kernel_sample_uses_real_swap_oom_thermal_throttle_fields() -> None:
@@ -168,3 +89,106 @@ def test_m4b_res_001_owner_accounting_rejects_pid_overlap(tmp_path: Path) -> Non
     owners = {name: {100} for name in ("core", "vad", "asr", "tts", "llm")}
     with pytest.raises(MetricsError, match="overlap"):
         owner_resource_accounting(owners, proc_root=tmp_path, clock_ticks=100)
+
+
+def authorization():
+    identity = dict(schema_version=1, harness_sha256="a" * 64, candidate_sha="b" * 40,
+        profile_sha256="c" * 64, target_identity="pi5-4gb-debian13-aarch64-cp3135")
+    return identity, {"authorized_tuple": identity, "approvals": [
+        dict(role=role, reviewer=f"reviewer-{role}", approved_at="2026-09-12T12:00:00+08:00",
+             decision="Approved", authorized_tuple=dict(identity)) for role in ("Designer", "Tester")]}
+
+
+def series():
+    labels = ["engine_ready", "conversation_preparation", "conversation_ready", "pre_generate",
+        "post_generate", "sample", "pre_speak", "sample", "audio_completion", "primary_completion",
+        "pre_replacement", "post_replacement", "post_session_close"]
+    available = [1000 * MIB] * len(labels)
+    available[5], available[7] = 1000 * MIB - 10 * MIB - 1, 1000 * MIB - 3 * MIB
+    return [MeasurementPoint(label, 0, replace(sample(stamp=i + 1),
+        mem_total_bytes=2000 * MIB, mem_available_bytes=available[i])) for i, label in enumerate(labels)]
+
+
+def test_measurement_formula_uses_raw_minimum_rounding_and_complete_action_window():
+    assert derive_thresholds(series(), completed=True, cleanup_proven=True) == {
+        "speak_drop_bytes": 3 * MIB, "generate_drop_bytes": 10 * MIB + 1,
+        "min_mem_available_speak_bytes": 515 * MIB,
+        "min_mem_available_generate_bytes": 523 * MIB}
+    for rows in (series()[:-1], [p for p in series() if p.lifecycle_point != "primary_completion"],
+                 [p for p in series() if p.lifecycle_point != "pre_replacement"]):
+        with pytest.raises(MetricsError):
+            derive_thresholds(rows, completed=True, cleanup_proven=True)
+    for complete, cleanup in ((False, True), (True, False)):
+        with pytest.raises(MetricsError):
+            derive_thresholds(series(), completed=complete, cleanup_proven=cleanup)
+
+
+def test_dual_role_authorization_binds_exact_digest_tuple_and_timezone():
+    expected, value = authorization()
+    assert validate_authorization(value, expected) == expected
+    for mutation in (
+        lambda v: v["approvals"].pop(),
+        lambda v: v["approvals"][0].update(decision="Pending"),
+        lambda v: v["approvals"][0]["authorized_tuple"].update(candidate_sha="d" * 40),
+        lambda v: v["approvals"][0].update(approved_at="2026-09-12T12:00:00"),
+    ):
+        expected, value = authorization()
+        mutation(value)
+        with pytest.raises(MetricsError):
+            validate_authorization(value, expected)
+
+
+def test_release_freeze_requires_both_roles_over_raw_derived_values():
+    from sbd.cognition.litert_lm.lock import load_product_profile, validate_product_profile
+    profile = load_product_profile(VECTOR.with_name("product-profile.json"), allow_measurement=True)
+    derived = derive_thresholds(series(), completed=True, cleanup_proven=True)
+    freeze = {"measurement_profile_sha256": profile["profile_sha256"], "evidence_sha256": "d" * 64,
+              **derived}
+    approvals = [dict(role=role, reviewer=role, approved_at="2026-09-12T12:00:00Z",
+        decision="Approved", freeze_tuple=dict(freeze)) for role in ("Designer", "Tester")]
+    result = freeze_release_profile(profile, series(), evidence_sha256="d" * 64,
+        approvals=approvals, completed=True, cleanup_proven=True)
+    assert result["profile_stage"] == "release" and result["profile_sha256"] != profile["profile_sha256"]
+    assert validate_product_profile(result)["min_mem_available_generate_bytes"] == 523 * MIB
+    assert profile["profile_stage"] == "measurement"
+    approvals[0]["freeze_tuple"]["min_mem_available_generate_bytes"] += 1
+    with pytest.raises(MetricsError):
+        freeze_release_profile(profile, series(), evidence_sha256="d" * 64,
+            approvals=approvals, completed=True, cleanup_proven=True)
+
+
+@pytest.mark.asyncio
+async def test_measurement_harness_executes_injected_operations_and_always_cleans_up():
+    expected, auth = authorization()
+    observations = iter(series())
+    ledger = []
+    async def cleanup():
+        ledger.append("cleanup")
+        return True
+    harness = MeasurementHarness(authorization=auth, expected_tuple=expected,
+        sample=lambda: next(observations).sample, cleanup=cleanup)
+    async def scenario(h):
+        for row in series():
+            h.capture(row.lifecycle_point, row.operation_index)
+    result = await harness.run(scenario)
+    assert result["status"] == "Measured" and ledger == ["cleanup"]
+    assert result["derived"]["min_mem_available_generate_bytes"] == 523 * MIB
+    assert result["authorized_tuple"] == expected
+
+
+@pytest.mark.asyncio
+async def test_measurement_safety_floor_prevents_operation_and_derivation():
+    expected, auth = authorization()
+    ledger = []
+    async def cleanup():
+        ledger.append("cleanup")
+        return True
+    async def execute():
+        ledger.append("FORBIDDEN_GENERATE")
+    harness = MeasurementHarness(authorization=auth, expected_tuple=expected,
+        sample=lambda: sample(), cleanup=cleanup)
+    async def scenario(h):
+        await h.operation(before="pre_generate", after="post_generate", index=0, execute=execute)
+    with pytest.raises(MetricsError, match="STOPPED"):
+        await harness.run(scenario)
+    assert ledger == ["cleanup"] and harness.stopped and not harness.completed

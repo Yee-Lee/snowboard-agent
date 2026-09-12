@@ -2,8 +2,9 @@
 
 ## 1. Authority, scope and disposition
 
-This is the current Tester-owned specification for the clean M4B replacement requested by
-[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md). It maps the approved behavior in
+This is the current Tester-owned specification for the clean M4B replacement approved through
+[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md) and amended by the focused
+[`TR_spec_M4B_VII`](../reviews/history/TR_spec_M4B_VII.md) ticket-disposal request. It maps the approved behavior in
 [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md) §§2–11 and
 [`snowboard.llm/3`](../protocol.md) §4. It retains the affected Foundation contract in
 [`m4b_foundation_revision`](../implement/m4b_foundation_revision.md) §§4–8 and its immutable
@@ -11,7 +12,8 @@ This is the current Tester-owned specification for the clean M4B replacement req
 
 Status: **Specification only — no implementation or acceptance result in this document.**
 
-In scope are the listen-only product profile, prompt and semantic grammar, input/admission policy,
+In scope are the listen-only product profile, prompt and semantic grammar, input/admission and explicit
+ticket-disposal policy,
 Conversation lifecycle, memory decisions and SM-authorized planned recovery, private child protocol,
 privacy/observability, and the later exact-SHA Pi/human evidence procedure.
 
@@ -78,18 +80,18 @@ and opaque locator. No card may contain private text, IDs, absolute paths or IPC
 
 | Test ID | Exact authority and risk | Layer / matrix | Evidence locator |
 | :--- | :--- | :--- | :--- |
-| `M4B-NORM-001` | Product §§3.1–3.2, §5.2, §6; unsupported or over-limit input mutates Conversation | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-NORM-001.*` |
+| `M4B-NORM-001` | Product §§3.1–3.2, §§5.1–5.2, §6; unsupported or over-limit input mutates Conversation or publishes R1 before ticket disposal | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-NORM-001.*` |
 | `M4B-PROMPT-001` | Product §§2.1–2.2, §4.1, §9; mutable prompt/profile or permissive grammar changes product identity | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-PROMPT-001.*` |
 | `M4B-SEM-001` | Product §4.1 and §6; invalid `text/end` or spoken length reaches action | `portable unit` (`PU`); 60 s | `portable/M4B-SEM-001.*` |
-| `M4B-S2-001` | Product §4.2; protocol §§4.4, 4.6; unsafe/revised partial text escapes parser | `portable unit`, `portable subprocess` (`PU,PS`); 60/120 s | `portable/M4B-S2-001.*` |
-| `M4B-ADM-001` | Product §§5.1–5.2; protocol §§4.3–4.4; MEASURE mutation or stale ticket admits wrong request | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-ADM-001.*` |
+| `M4B-S2-001` | Product §4.2; protocol §§4.5, 4.7; unsafe/revised partial text escapes parser | `portable unit`, `portable subprocess` (`PU,PS`); 60/120 s | `portable/M4B-S2-001.*` |
+| `M4B-ADM-001` | Product §§5.1–5.2, §7; protocol §§4.3–4.5; MEASURE/disposal mutation, private retention or stale/discarded ticket admits the wrong request | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-ADM-001.*` |
 | `M4B-PREFILL-001` | Product §5.2; fresh listen-only prefill tier confused with multimodal or 1024 context | `portable integration` (`PI`); 90 s | `portable/M4B-PREFILL-001.*` |
-| `M4B-OUTCOME-001` | Product §6 and §7.2; wrong speech owner, route or fallback changes user-visible behavior | `portable integration` (`PI`); 90 s | `portable/M4B-OUTCOME-001.*` |
+| `M4B-OUTCOME-001` | Product §§5.2, 6 and 7.2; wrong speech owner, disposal ordering, route or fallback changes user-visible behavior | `portable integration` (`PI`); 90 s | `portable/M4B-OUTCOME-001.*` |
 | `M4B-CONV-001` | Product §7.2; Foundation §§4–8; history/replacement leaks or session/turn identity resets | `portable integration` (`PI`); 90 s | `portable/M4B-CONV-001.*` |
 | `M4B-MEM-001` | Product §5.3, §§9–10; incorrect threshold order/sample policy sends unsafe work | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-MEM-001.*` |
 | `M4B-REC-001` | Product §5.3; Foundation §7; `AR_impl_M4B_IV`; adapter schedules before SM authorization or recovery failure resumes admission | `portable integration` (`PI`); 90 s | `portable/M4B-REC-001.*` |
-| `M4B-WIRE-001` | Product §§8–9; protocol §4; desync/proof failure leaks child or permits illegal state | `portable subprocess` (`PS`); 120 s | `portable/M4B-WIRE-001.*` |
-| `M4B-PRIV-001` | Product §10; protocol §4.1; private content escapes or dashboard domains are merged | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-PRIV-001.*` |
+| `M4B-WIRE-001` | Product §§5.1, 8–9; protocol §§4.3–4.7; desync/disposal/proof failure leaks child or permits illegal state | `portable subprocess` (`PS`); 120 s | `portable/M4B-WIRE-001.*` |
+| `M4B-PRIV-001` | Product §§5.1, 10; protocol §§4.1, 4.3–4.4; rejected private input survives disposal or escapes observability boundaries | `portable unit`, `portable integration` (`PU,PI`); 60/90 s | `portable/M4B-PRIV-001.*` |
 | `M4B-REG-001` | Product §11.1(11); Foundation `FND-REG-001`; tests are deleted/weakened or unrelated M4A acceptance is substituted | `portable integration` (`PI`); 180 s suite cap | `portable/M4B-REG-001.*` |
 
 ## 4. Portable cases and acceptance criteria
@@ -97,7 +99,8 @@ and opaque locator. No card may contain private text, IDs, absolute paths or IPC
 ### M4B-NORM-001 — Listen projection, normalization and input limits
 
 Fixture: a ledger-backed Conversation fake starts at revision `r`, plus exact deterministic tokenizer
-counts. `MEASURE`, `GENERATE`, state mutation and model-content capture each have separate barriers.
+counts. `MEASURED`, `DISCARDING`, `TICKET_DISCARDED`, `GENERATE`, state mutation, R1 publication and
+model-content capture each have separate barriers.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -107,7 +110,7 @@ counts. `MEASURE`, `GENERATE`, state mutation and model-content capture each hav
 | `N04` | Non-`str` text | E1 before normalization/tokenization; zero model calls |
 | `N05` | Empty or all-whitespace `ok`; `timeout`; `error` carrying hostile `text/extra` | Exact no-input R1 response; timeout/error payload ignored and absent from logs; no MEASURE/GENERATE/mutation |
 | `N06` | Normalized 20 then 21 code points, including spaces and non-BMP symbol | 20 proceeds to token admission; 21 returns exact input-limit R1; no truncation/partial send; Python code-point count used |
-| `N07` | Codepoint-valid fake tokenizer results 32 then 33 direct-user tokens | 32 may proceed; 33 returns exact input-limit R1, discards ticket, zero GENERATE and zero mutation |
+| `N07` | Codepoint-valid fake tokenizer results 32 then 33 direct-user tokens | 32 may proceed; 33 enters `MEASURED → DISCARDING`, clears normalized-text local, obtains an exact all-true `TICKET_DISCARDED`, clears snapshot, and only then publishes exact input-limit R1; same session/generation/revision/history/KV; zero GENERATE/native send/semantic mutation |
 | `N08` | zero/multiple items; `read/look`; pending external input; wrong session/turn; unknown status; listen/speak capability false | Every row is `UNSUPPORTED_INPUT` E1; no model, mutation or normal `LLMResponse` |
 
 ### M4B-PROMPT-001 — Frozen profile, prompt bytes and grammar identity
@@ -161,19 +164,28 @@ Fixture: byte-chunk matrix feeds the real incremental parser. A fragment barrier
 | `X05` | Valid fragments in M4B full-response mode | First-safe time recorded, but zero Speak/TTS dispatch until validated terminal result; M4C streaming behavior not claimed |
 | `X06` | Parser delays fragments at punctuation/24-codepoint boundary or emits none before terminal | Both are legal when terminal/prefix proof succeeds; no fixed fragment count or latency assertion is introduced |
 
-### M4B-ADM-001 — Non-mutating admission and ticket binding
+### M4B-ADM-001 — Non-mutating admission, ticket binding and explicit disposal
 
-Fixture: child Conversation exposes revision/history/KV/output-allocation snapshots and call ledger.
-Each command/terminal is released through a named request barrier.
+Fixture: child Conversation exposes generation/revision/history/KV/token-count/native-scratch/output-allocation
+snapshots, live-object probes and a renderer/native-send call ledger. Parent Reasoner exposes normalized-text,
+snapshot, Fact-publication and outbound-frame barriers. `MEASURED`, `DISCARDING`, scrub return,
+`TICKET_DISCARDED`, R1 publication, CLOSE and GENERATE are released independently.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
-| `A01` | MEASURE on clean Conversation | Same tokenizer/renderer as generation; exact non-negative fields returned; revision/history/KV/output allocation/native-send unchanged |
+| `A01` | MEASURE on clean Conversation with unique private canary | Same tokenizer/renderer as generation; exact non-negative fields returned; generation/revision/history/KV/output allocation/native-send unchanged; before MEASURED, Python request/tokenizer temporaries are gone and ticket ledger retains only opaque ticket, identities, input digest, revision and integer counts; native `last_rendered_message` is the sole permitted child-side private-text retention |
 | `A02` | Equation totals 896+128=1024 then 897+128=1025, including alternate splits of current/incremental | Inclusive 1024 passes token equation; 1025 returns context R2 before mutation/send; reserve/context fixed 128/1024 |
 | `A03` | Negative, boolean, float, overflow/impossible or internally inconsistent metric | Protocol E1 before inference; no coercion |
 | `A04` | matching latest ticket and identical text/digest/revision/generation | GENERATE consumes ticket once before native send; successful RESULT increments revision exactly once |
-| `A05` | missing, reused, superseded, stale-revision, wrong-generation, wrong-session, wrong-input-digest or text-mismatch ticket | E1, zero additional native send and zero mutation |
-| `A06` | CLOSE after unconsumed MEASURE | Ticket discarded; later use rejected |
+| `A05` | missing, reused, explicitly discarded, stale-revision, wrong-generation, wrong-session, wrong-input-digest or text-mismatch ticket used for GENERATE | E1, zero additional native send and zero mutation; discarded ticket remains permanently invalid even after a later successful MEASURE |
+| `A06` | CLOSE from MEASURED with one outstanding ticket | CLOSE destroys ticket and native scratch with Conversation cleanup, returns only the existing all-three true close proof, and later ticket use is rejected; no separate TICKET_DISCARDED is fabricated |
+| `A07` | Codepoint-valid 33-token MEASURE, then exact DISCARD_TICKET | Reasoner releases normalized-text local before constructing the snapshot-only frame; request exact-matches new request ID plus session/generation/revision/ticket/input digest; state is `MEASURED → DISCARDING`; renderer is invoked exactly once with `__M4B_TICKET_SCRUB__`; native scratch becomes the fixed scrub rendering; token count, generation, revision, semantic history and KV are byte/value unchanged; zero runtime clear API, GENERATE or native send |
+| `A08` | Exact TICKET_DISCARDED after scrub barrier | Terminal repeats exact request/session/generation/revision/ticket/digest, has `native_render_scrubbed=true`, `ticket_invalidated=true`, `private_input_erased=true`, `conversation_state="ready"`; ticket metadata is cleared, no live child/native object retains rejected text, Reasoner releases snapshot, state becomes CONVERSATION_READY, then and only then R1 publishes |
+| `A09` | After A08, new short input on same Conversation | New MEASURE and normal GENERATE succeed with unchanged starting generation/revision/history/KV from before rejection; old ticket is still rejected |
+| `A10` | Three 33-token rejection/disposal cycles followed by a short input | Every cycle has a distinct exact ticket/discard request and acknowledged cleanup before its R1; same Conversation/revision throughout rejects; final short turn generates normally; no count-based replacement/escalation |
+| `A11` | Scrub renderer raises, returns invalid rendering, changes token count or leaves canary reference | E1, no TICKET_DISCARDED/R1/GENERATE/native send; bounded PGID destruction proof required |
+| `A12` | Independently mismatch request/session/generation/revision/ticket/digest; stale/duplicate discard; independently false/missing each of the three proofs; extra/malformed/wrong terminal; timeout or EOF, including lost ACK after actual invalidation | Every row is E1, never R1; no terminal substitution or retry; actual child invalidation without an exact observed ACK is insufficient; bounded PGID cleanup and waitpid proof before further admission |
+| `A13` | Compare public SM state, Event/Fact unions and `LLMResponse` schema before/after disposal support | Disposal remains private adapter/protocol control; no public state, Event, Fact or `LLMResponse` field/variant is added or emitted |
 
 ### M4B-PREFILL-001 — Fresh listen-only prefill tier
 
@@ -195,7 +207,7 @@ fakes; SM/action completion barriers assert phase order. Every row validates the
 
 | Case family | Stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
-| `O01` | timeout/error/empty, then codepoint/token-limit rows | exact application-owned `我沒聽清楚，請再說一次。` or `這句有點長，請縮短後再說一次。` respectively, with `speak + KEEP_NEXT + ("listen",)`; generation unchanged; zero model mutation |
+| `O01` | timeout/error/empty, codepoint-limit, then measured token-limit rows | exact application-owned `我沒聽清楚，請再說一次。` or `這句有點長，請縮短後再說一次。` respectively, with `speak + KEEP_NEXT + ("listen",)`; codepoint rejection performs no MEASURE, while token rejection publishes only after exact TICKET_DISCARDED; generation/revision/history/KV unchanged and zero model mutation |
 | `O02` | context equation failure | exact `對話內容已滿，請再說一次。` + `REPLACE_NEXT`; zero rejected-input send/replay |
 | `O03` | memory blocks generation but permits notice | exact `系統需要整理，請稍後再試。` + `END_SESSION`; zero model generation; final primary speech then exactly one rest |
 | `O04` | memory blocks notice | `rest {}` + `END_SESSION`; zero TTS and generation; exactly one rest |
@@ -206,6 +218,7 @@ fakes; SM/action completion barriers assert phase order. Every row validates the
 | `O09` | two and three consecutive proven replaceable failures | identical R2 each time; no count escalation to R3/E1 |
 | `O10` | button interrupt | no normal cognition Fact; R3 convergence |
 | `O11` | unsupported input, mismatch/desync/crash/unusable backend/missing proof/unavailable Speak | no normal response or silent downgrade; E1 and Level 1/2/3 path |
+| `O12` | token-limit discard held at scrub/terminal barrier, then failed or released | While held, zero R1 Fact/action; failure takes E1 with no normal Fact; only exact acknowledged disposal releases one canonical input-limit R1 |
 
 ### M4B-CONV-001 — Conversation continuity and replacement
 
@@ -259,18 +272,22 @@ Parent/child request and process-exit barriers replace sleeps.
 | :--- | :--- | :--- |
 | `W01` | exact READY then each missing/extra/mismatched field | exact READY enters ENGINE_READY with no Conversation; any mismatch terminates/kills and waitpids whole PGID; no fallback |
 | `W02` | OPEN/OPENED and OPEN_REJECTED proof matrix | identity/revision/state exact; clean rejection requires cleanup+usable; false proof is E1 |
-| `W03` | MEASURE/MEASURED and GENERATE/SAFE_TEXT/RESULT | legal state transitions, request/session/generation/revision/ticket/metrics exact; RESULT only after native join/prefix proof |
+| `W03` | MEASURE/MEASURED and GENERATE/SAFE_TEXT/RESULT | legal `CONVERSATION_READY → MEASURING → MEASURED → GENERATING → CONVERSATION_READY` transitions, request/session/generation/revision/ticket/metrics exact; RESULT only after native join/prefix proof |
 | `W04` | each allowed REQUEST_FAILED code and every false/unknown variant | only true terminal proof + usable Engine enters TAINTED/R2; otherwise E1/cleanup |
-| `W05` | CANCEL once during OPEN/MEASURE/GENERATE/CLOSE, with deferred and proof matrices | exact operation/state mapping; second/mismatched cancel rejected; cancelled CLOSE incomplete proof escalates; no fabricated terminal or normal cognition Fact |
-| `W06` | CLOSE each legal reason and proof combination | only all-three true returns ENGINE_READY/none; unconsumed ticket discarded; invalid reason/proof is E1 |
+| `W05` | CANCEL once during OPEN/MEASURE/GENERATE/CLOSE, with deferred and proof matrices | exact allowed operation/state mapping excludes DISCARD_TICKET; second/mismatched cancel rejected; cancelled CLOSE incomplete proof escalates; no fabricated terminal or normal cognition Fact |
+| `W06` | CLOSE each legal reason and proof combination, including from MEASURED | only all-three true returns ENGINE_READY/none; MEASURED close destroys outstanding ticket/native scratch with Conversation cleanup and later use fails; no TICKET_DISCARDED is fabricated; invalid reason/proof is E1 |
 | `W07` | SHUTDOWN from ENGINE_READY versus active Conversation/request | READY-only ACK, child zero exit and waitpid; active shutdown rejected except after Level 2 destruction |
-| `W08` | wrong order, BUSY/reentry, malformed/overlong framing, invalid JSON/UTF-8, EOF, duplicate/late/output-after-terminal | deterministic protocol E1, admission blocked, sanitized diagnostic, bounded PGID cleanup |
+| `W08` | wrong order, BUSY/reentry, malformed/overlong framing, invalid JSON/UTF-8, EOF, duplicate/late/output-after-terminal | deterministic protocol §4.7 E1, admission blocked, sanitized diagnostic, bounded PGID cleanup |
 | `W09` | child ignores TERM and owns nested descendant; then RM recovery | TERM→KILL bounded waits prove owner and descendants gone; successful fully attested new child handles OPEN/MEASURE/GENERATE/CLOSE |
+| `W10` | Exact DISCARD_TICKET/TICKET_DISCARDED exchange after MEASURED | Exact request/session/generation/revision/ticket/digest and all three true proofs; `MEASURED → DISCARDING → CONVERSATION_READY`; fixed scrub renderer called once, token count unchanged, ticket cleared/permanently invalid, no GENERATE/native send/runtime clear |
+| `W11` | Each discard request identity mismatch; stale/duplicate; scrub/render/count failure; false/missing proof; malformed/wrong terminal; timeout/EOF | E1 from MEASURED or DISCARDING, never R1; no success terminal accepted; parent terminates/kills and waitpids PGID before admission/recovery |
+| `W12` | CANCEL or OPEN/MEASURE/DISCARD/GENERATE/CLOSE/SHUTDOWN during DISCARDING; racing interrupt | DISCARDING accepts no command or CANCEL; reentry is E1. Interrupt waits for exact disposal terminal and then converges, or timeout/EOF takes the same bounded E1 PGID-cleanup boundary; no normal R1 races ahead |
 
 ### M4B-PRIV-001 — Redaction and independent dashboards
 
 Fixture: canary transcript/prompt/raw JSON/semantic/fragment/session/path/IPC values injected through
-success and every error path; log/evidence/workdir scanner runs after cleanup.
+success and every error path; live-object probes cover parent locals, child Python temporaries, ticket
+ledger and native render scratch; log/evidence/workdir scanner runs after disposal and cleanup barriers.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -280,6 +297,9 @@ success and every error path; log/evidence/workdir scanner runs after cleanup.
 | `V04` | memory evidence | unique-PID owner/system fields and lifecycle point complete; open delta not added again to combined peak |
 | `V05` | timing with missing/not-applicable first-safe/TTS/audio node | one monotonic domain; explicit null plus stable reason; no wall-clock reconstruction, PASS ceiling or audible-onset claim |
 | `V06` | post-close filesystem/process scan | no transcript, prompt, output, IPC payload, temp workdir or orphaned private content remains |
+| `V07` | 33-token canary through MEASURED and acknowledged disposal | Before MEASURED, child request/tokenizer temporaries are absent and only native scratch may retain canary; before DISCARD_TICKET, Reasoner normalized-text local is absent and frame contains snapshot fields only; before R1, snapshot/ticket binding are gone, native scratch contains only fixed scrub rendering and no live parent/child/native object retains canary |
+| `V08` | Inspect ticket ledger and scrub call | Ledger never retains raw input, rendered content or private IDs beyond protocol-required opaque identity/digest fields; scrub input is exactly public `__M4B_TICKET_SCRUB__`, called once, not logged as private evidence and never sent to model |
+| `V09` | Every disposal failure/timeout/EOF followed by bounded destruction | No R1/public success artifact, rejected canary or stale ticket survives in live objects, sanitized evidence, replacement child or post-cleanup filesystem; forensic zeroization of freed allocator capacity is explicitly not claimed |
 
 ### M4B-REG-001 — Retained coverage and anti-weakening
 
@@ -465,13 +485,13 @@ opaque locator plus SHA-256.
 | 1. normalization/envelope/boundaries/no mutation | `M4B-NORM-001` |
 | 2. prompt/grammar/text-end/spoken length | `M4B-PROMPT-001`, `M4B-SEM-001` |
 | 3. UTF-8/JSON S2 extraction | `M4B-S2-001`, `M4B-WIRE-001` |
-| 4. MEASURE/equation/ticket | `M4B-ADM-001` |
+| 4. MEASURE/equation/ticket/disposal | `M4B-NORM-001`, `M4B-ADM-001`, `M4B-OUTCOME-001` |
 | 5. fresh prefill tier | `M4B-PREFILL-001` |
 | 6. canonical outcome rows | `M4B-OUTCOME-001` |
 | 7. Conversation continuity/replacement | `M4B-CONV-001` |
 | 8. memory and planned recovery | `M4B-MEM-001`, `M4B-REC-001` |
-| 9. complete child protocol and next child | `M4B-WIRE-001` |
-| 10. redaction and separate schemas | `M4B-PRIV-001` |
+| 9. complete child protocol including DISCARDING and next child | `M4B-WIRE-001` |
+| 10. redaction, disposal lifetime and separate schemas | `M4B-PRIV-001` |
 | 11. retained M1/M2/Foundation/M4A regression | `M4B-REG-001` |
 
 | Product §11.2 evidence requirement | Pi/human Test IDs |

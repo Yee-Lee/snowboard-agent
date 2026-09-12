@@ -25,3 +25,10 @@ class _WakeAckElapsed:
 class _RecoveryCompleted:
     generation: int
     waiter: asyncio.Task[None]
+
+
+@dataclass(frozen=True, slots=True)
+class _PlannedRecoveryCompleted:
+    session_id: SessionId
+    generation: int
+    waiter: asyncio.Task[None]

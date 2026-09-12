@@ -1,7 +1,7 @@
 ---
 requestor: Designer
 owner: Developer
-status: Open
+status: Revised
 severity: Blocking
 ---
 
@@ -22,8 +22,9 @@ Developer first reads [`status/current.md`](../status/current.md), `status/devel
 
 Resolved review provenance is [`AR_impl_M4B_IV`](history/AR_impl_M4B_IV.md),
 [`IR_review_M4B_III`](history/IR_review_M4B_III.md) and
-[`TR_spec_M4B_VI`](history/TR_spec_M4B_VI.md). Do not load retired M4B design, test specs or candidate behavior as
-implementation authority.
+[`TR_spec_M4B_VI`](history/TR_spec_M4B_VI.md), plus the focused ticket-disposal correction
+[`IR_dev_M4B_IV`](history/IR_dev_M4B_IV.md) / [`TR_spec_M4B_VII`](history/TR_spec_M4B_VII.md). Do not load retired
+M4B design, test specs or candidate behavior as implementation authority.
 
 Before editing code, replace `status/development.md` with the exact affected paths, symbols, mapped Test IDs,
 estimates and bounded verification commands. Record the 40-character starting SHA. If the work-package authority is
@@ -42,10 +43,12 @@ worktree delta.
 
 ### WP-02 — Child protocol and adapter
 
-- Replace the legacy child wire with `snowboard.llm/3` READY/OPEN/MEASURE/GENERATE/SAFE_TEXT/RESULT/
-  REQUEST_FAILED/CANCEL/CLOSE/SHUTDOWN semantics, exact identities and bounded framing.
-- Implement non-mutating MEASURE, one-use ticket binding, GENERATE-only mutation, state/order rejection and
-  terminal/join/cleanup/Engine-usable proofs. Preserve one Conversation across normal turns.
+- Replace the legacy child wire with `snowboard.llm/3` READY/OPEN/MEASURE/DISCARD_TICKET/GENERATE/SAFE_TEXT/
+  RESULT/REQUEST_FAILED/CANCEL/CLOSE/SHUTDOWN semantics, exact identities and bounded framing.
+- Implement non-mutating MEASURE, exact acknowledged ticket disposal, one-use ticket binding, GENERATE-only
+  mutation, state/order rejection and terminal/join/cleanup/Engine-usable proofs. Preserve one Conversation across
+  normal turns. Resolved `IR_dev_M4B_IV` and `TR_spec_M4B_VII` authorize this exact disposal path; no implicit
+  supersession or CLOSE workaround is allowed.
 - Own the dedicated PID=PGID lifecycle, descendants, TERM/KILL/waitpid proof and fully attested new child after
   recovery. Cover `M4B-ADM-001`, `M4B-PREFILL-001`, `M4B-S2-001`, `M4B-WIRE-001` and `M4B-CONV-001`.
 
@@ -107,3 +110,83 @@ Before returning the work package, update this review to `Revised` with:
 
 Do not commit, push, create a candidate or alter design/test authority without explicit USER authorization. After
 Developer returns `Revised`, Tester independently verifies the portable candidate before Designer final alignment.
+
+## Developer disposition — 2026-09-12
+
+WP-01–06 are implemented and returned **Revised** for independent Tester verification. This is
+not product acceptance: there is no commit, pushed candidate, native PM result or human PASS.
+
+### Changed paths and portable mapping
+
+- WP-01: `src/sbd/cognition/{prompt_builder,semantic,factory}.py`,
+  `src/sbd/cognition/litert_lm/lock.py`, `src/sbd/core/config/{loader,models,validate}.py`,
+  `config.example.yaml`, `requirements/m4b/*`, and
+  `scripts/{m4b_inheritance,m4b_llm_product}.py`. Covers `M4B-NORM-001`, `M4B-PROMPT-001`,
+  `M4B-SEM-001` and config/artifact portions of `M4B-PRIV-001`.
+- WP-02: `src/sbd/cognition/{llm,llm_child_protocol}.py`,
+  `src/sbd/cognition/litert_lm/{adapter,worker,measurement}.py` and
+  `tests/fakes/m4b_llm_child.py`. Covers `M4B-S2-001`, `M4B-ADM-001`,
+  `M4B-PREFILL-001`, `M4B-CONV-001` and `M4B-WIRE-001`, including A01–A13 and W01–W12.
+- WP-03: `src/sbd/cognition/reasoner.py`, `src/sbd/core/state_manager/{manager,notices}.py`.
+  Covers `M4B-NORM-001`, `M4B-SEM-001`, `M4B-OUTCOME-001`, `M4B-CONV-001`,
+  `M4B-MEM-001` and `M4B-PRIV-001`.
+- WP-04: `src/sbd/core/{m2_composition,_m4b_resource_binding}.py` and
+  `src/sbd/action/rest/action.py`. Covers `M4B-REC-001`, resource ownership and stale Rest
+  completion barriers.
+- WP-05: `src/sbd/cognition/{observability.py,litert_lm/resource.py}`,
+  `src/sbd/perception/listen/listener.py`, `src/sbd/action/speak/speaker.py`,
+  `src/sbd/core/audio/alsa/output.py`, and
+  `scripts/{m4b_target_metrics,m4b_measurement}.py`. Covers `M4B-MEM-001`,
+  `M4B-PRIV-001`, target safety and observation schemas.
+- WP-06: `scripts/candidate_gate.py`, `tests/m4b_portable_suite.txt`,
+  `tests/m4b_target_cases.py`, all current `tests/test_m4b_*` replacements/additions and retained
+  shared M1/M2/M4A/Foundation selectors. Covers `M4B-REG-001` and completes all 13 portable IDs.
+
+The exact symbol/path and one-row-per-ID inventory is in
+[`status/development.md`](../status/development.md). Legacy M4B fresh-conversation, action-envelope,
+fake-prewarm, fixed-threshold, forced-session-count and response-ceiling assertions were replaced
+in place. Immutable Foundation and Accepted shared tests were retained; temporary legacy
+documentation was not removed because the Pi cutover gate is not complete.
+
+### Verification evidence
+
+On the authorized Pi 5 4 GB target (Debian 13.2 aarch64, CPython 3.13.5), using strict pytest config,
+xUnit1 JUnit and a 120-second per-test bound:
+
+- final Revised portable catalog: **1005 collected / 1005 passed / 0 failed / 0 error /
+  0 skipped / 0 xfailed / 0 xpassed**, exit 0, 33.20 s;
+- full repository with 29 explicitly hardware-marked rows deselected: **1557 passed / 0 failed /
+  0 error / 0 skipped / 29 deselected**, exit 0, 54.85 s;
+- `python -m compileall -q src scripts tests` and `git diff --check`: exit 0.
+
+Pi evidence remains at `${PI_RUN}/evidence/`; copied Developer diagnostics are under
+`${DEV_RUN}/evidence/pi/`. The final Revised portable JUnit is
+`portable-pi-revised.xml`; its and the full JUnit SHA-256 values are respectively
+`f50763daeab27d58399f6c168f38421ac15d6808dfa0d2b75711988affd8d6fe`
+and `65251bd288c7bdecb6a0190cbe3fc62bbd4c0fd88094e3001485b6c6be83d406`.
+
+Immutable evidence is **99 baseline / 99 retained / 0 missing / 0 skipped**. Baseline and
+collected node-list SHA-256 are both
+`fd5a9eb2d9943e894fc2a4e043146b1a85874f7eafcd88996686188d5477813f`; the empty missing-list
+digest is `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+macOS arm64 diagnostics on CPython 3.11.16, 3.12.14 and 3.13.15 each collected 1005 and produced
+**997 passed / 8 failed / 0 error / 0 skipped**. The failures are seven Accepted M4A Darwin
+process-group nodes plus the `M4B-REG-001/G05` aggregation. The 3.13 full non-hardware suite was
+**1547 passed / 10 failed / 29 deselected**; the two additional failures are the same M4A ASR
+supervisor cleanup boundary. An exact starting-SHA archive control produced **40 passed / 9 failed**
+for the nine direct M4A nodes, proving the same pre-existing defect. It remains visible and is not
+converted into M4B PASS. Current and control JUnit/JSON/stdout are under
+`${DEV_RUN}/evidence/`.
+
+### Pending target/human work and blockers
+
+Native `PM`, product gate cards and human semantic/audio rows remain **Pending**. Missing inputs are
+a clean exact-SHA candidate checkout, locked LiteRT-LM runtime/model files, matching artifact lock,
+private audio-only config, empty mode-`0700` output directory, and Designer+Tester authorization
+bound to the exact candidate/profile/harness/target tuple. The measurement entry rejects the
+current incomplete context and cannot generate a release/human PASS.
+
+There is no new design/API blocker. The sole blocking protocol gap was resolved by
+`IR_dev_M4B_IV` / `TR_spec_M4B_VII`; implementation uses the authorized explicit discard command
+and acknowledgement, never implicit supersession or a `CLOSE` workaround.

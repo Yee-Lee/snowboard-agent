@@ -9,9 +9,12 @@ import re
 import stat
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
-from sbd.cognition.llm_child_protocol import LLMReadyIdentity
+if TYPE_CHECKING:
+    from sbd.cognition.llm_child_protocol import LLMReadyIdentity
+from sbd.cognition.prompt_builder import PROFILE_ID, PROMPT_COUNTS, PROMPT_HASHES, validate_prompt_identity
+from sbd.cognition.semantic import GRAMMAR_BYTES, GRAMMAR_SHA256
 
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -21,7 +24,7 @@ TOP_LEVEL_KEYS = {
     "product_profile", "runtime_closure", "licenses",
 }
 
-EXPECTED_LOCK = {"schema_version": 1, "protocol_version": "snowboard.llm/1"}
+EXPECTED_LOCK = {"schema_version": 2, "protocol_version": "snowboard.llm/3"}
 EXPECTED_POC_REFERENCE = {
     "core_ack_id": "DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001",
     "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
@@ -73,63 +76,58 @@ EXPECTED_MODEL = {
     "spdx": "Apache-2.0",
 }
 EXPECTED_PROFILE = {
-    "config_locator": "poc_llm/config/litert-lm-v0.16.0-pi-g2b-r5.json",
-    "config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
-    "config_schema_locator": "poc_llm/contracts/m1/strict-config-pi-gate2b-product-v2.schema.json",
-    "config_schema_sha256": "ce8fa478a1b167042714cb579bb950cf87f7bdb0f80af73fe3a023e16ad77c34",
-    "prompt_schema_locator": "poc_llm/contracts/m1/prompt-input.schema.json",
-    "prompt_schema_sha256": "aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6",
-    "response_schema_locator": "poc_llm/contracts/m1/response.schema.json",
-    "response_schema_sha256": "4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2",
-    "protocol_schema_locator": "poc_llm/contracts/m1/protocol-frame-pi.schema.json",
-    "protocol_schema_sha256": "e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e",
-    "prewarm_prompt_sha256": "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d",
-    "max_input_tokens": 128,
-    "max_output_tokens": 128,
-    "max_kv_tokens": 1024,
-    "temperature": 0.0,
-    "top_p": 1.0,
-    "threads": 4,
-    "generation_timeout_seconds": 15.0,
-    "terminal_grace_seconds": 2.0,
-    "cancel_timeout_seconds": 0.5,
-    "terminate_timeout_seconds": 2.0,
-    "kill_wait_timeout_seconds": 1.0,
-    "rebuild_ready_timeout_seconds": 10.0,
-    "offline": True,
-    "runtime_download": False,
-    "network_fallback": False,
-    "fallback_model": None,
-}
-EXPECTED_PRODUCT_CONFIG = {
+    "profile_id": PROFILE_ID,
     "candidate_id": EXPECTED_CANDIDATE["candidate_id"],
     "pairing_revision": EXPECTED_CANDIDATE["pairing_revision"],
     "platform": EXPECTED_CANDIDATE["platform"],
-    "protocol_version": EXPECTED_LOCK["protocol_version"],
-    "driver": "litert_lm",
+    "python_implementation": "CPython",
+    "python_version": "3.13.5",
+    "python_soabi": "cpython-313-aarch64-linux-gnu",
+    "python_multiarch": "aarch64-linux-gnu",
+    "runtime_api_version": EXPECTED_RUNTIME["api_version"],
+    "runtime_source_commit": EXPECTED_RUNTIME["source_commit"],
+    "runtime_wheel_filename": EXPECTED_RUNTIME["wheel_filename"],
+    "runtime_wheel_size_bytes": EXPECTED_RUNTIME["wheel_size_bytes"],
     "runtime_sha256": EXPECTED_RUNTIME["wheel_sha256"],
+    "native_relative_path": EXPECTED_RUNTIME["native_relative_path"],
+    "native_size_bytes": EXPECTED_RUNTIME["native_size_bytes"],
+    "native_sha256": EXPECTED_RUNTIME["native_sha256"],
+    "model_source_repository": EXPECTED_MODEL["source_repository"],
+    "model_source_revision": EXPECTED_MODEL["source_revision"],
+    "model_filename": EXPECTED_MODEL["filename"],
+    "model_size_bytes": EXPECTED_MODEL["size_bytes"],
     "model_sha256": EXPECTED_MODEL["sha256"],
-    "test_profile": "gate2b-structured-product-v5-controller-r2",
-    "max_input_tokens": 128,
+    "model_quantization": EXPECTED_MODEL["quantization"],
+    "core_prompt_sha256": PROMPT_HASHES["core"],
+    "personality_prompt_sha256": PROMPT_HASHES["personality"],
+    "prompt_sha256": PROMPT_HASHES["system"],
+    "core_prompt_tokens": PROMPT_COUNTS["core"],
+    "personality_prompt_tokens": PROMPT_COUNTS["personality"],
+    "prompt_tokens": PROMPT_COUNTS["system"],
+    "grammar_locator": "requirements/m4b/semantic.gbnf",
+    "grammar_sha256": GRAMMAR_SHA256,
+    "max_user_tokens": 32,
     "max_output_tokens": 128,
-    "engine_max_num_tokens": 1024,
+    "engine_context_tokens": 1024,
     "temperature": 0.0,
     "top_p": 1.0,
     "threads": 4,
-    "ready_timeout_ms": 45000,
-    "generate_timeout_ms": 15000,
-    "terminal_grace_ms": 2000,
-    "cancel_timeout_ms": 500,
-    "term_timeout_ms": 2000,
-    "kill_timeout_ms": 1000,
-    "rebuild_timeout_ms": 10000,
+    "protocol": 3,
+    "protocol_name": "snowboard.llm/3",
+    "network": "disabled",
     "runtime_download": False,
     "network_fallback": False,
     "fallback_model": None,
+    "system_site_packages": False,
+    "prewarm": "none",
+}
+PROFILE_DYNAMIC_KEYS = {
+    "profile_stage", "profile_sha256", "min_mem_available_generate_bytes",
+    "min_mem_available_speak_bytes", "measurement_evidence_locator",
 }
 EXPECTED_RUNTIME_CLOSURE = {
     "manifest_locator": "requirements/m4b/llm-runtime-rpi-cp313.json",
-    "manifest_sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
+    "manifest_sha256": "5cddddce70854116a36e292a1757d1e644f007a6798a8ce0d7455cb4806cd786",
 }
 EXPECTED_LICENSES = {
     "runtime_source_metadata": "https://github.com/google-ai-edge/LiteRT-LM/tree/924e79c91542761242244e4f1651851f822e4cbb",
@@ -146,11 +144,11 @@ class LLMLockError(ValueError):
 
 
 def _read_regular(path: Path) -> bytes:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0) | os.O_NONBLOCK
     try:
         descriptor = os.open(path, flags)
-    except OSError as error:
-        raise LLMLockError("required file is missing, unreadable, or unsafe") from error
+    except OSError:
+        raise LLMLockError("required file is missing, unreadable, or unsafe") from None
     try:
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
             raise LLMLockError("required path is not a regular file")
@@ -164,11 +162,11 @@ def _read_regular(path: Path) -> bytes:
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0) | os.O_NONBLOCK
     try:
         descriptor = os.open(path, flags)
-    except OSError as error:
-        raise LLMLockError("required file is missing, unreadable, or unsafe") from error
+    except OSError:
+        raise LLMLockError("required file is missing, unreadable, or unsafe") from None
     try:
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
             raise LLMLockError("required path is not a regular file")
@@ -182,7 +180,8 @@ def _sha256(path: Path) -> str:
 def _exact(value: Any, expected: Mapping[str, Any], label: str) -> Mapping[str, Any]:
     if type(value) is not dict or set(value) != set(expected):
         raise LLMLockError(f"{label} has missing or extra fields")
-    if value != dict(expected):
+    if any(type(value[key]) is not type(item) or value[key] != item
+           for key, item in expected.items()):
         raise LLMLockError(f"{label} identity mismatch")
     return value
 
@@ -195,30 +194,59 @@ def _contains_absolute(value: Any) -> bool:
     return isinstance(value, str) and value.startswith("/")
 
 
-def validate_product_config(value: object) -> Mapping[str, Any]:
-    required = set(EXPECTED_PRODUCT_CONFIG) | {"runtime_path", "model_path"}
-    if type(value) is not dict or set(value) != required:
-        raise LLMLockError("product config has missing or extra fields")
-    for key, expected in EXPECTED_PRODUCT_CONFIG.items():
-        if value[key] != expected or type(value[key]) is not type(expected):
-            raise LLMLockError("product config identity mismatch")
-    for key in ("runtime_path", "model_path"):
-        path = value[key]
-        if (
-            type(path) is not str
-            or "\x00" in path
-            or not PurePosixPath(path).is_absolute()
-        ):
-            raise LLMLockError("product config provenance path is invalid")
-    return value
-
-
-def load_product_config(path: Path) -> Mapping[str, Any]:
+def profile_digest(value: Mapping[str, Any]) -> str:
+    content = {key: item for key, item in value.items() if key != "profile_sha256"}
     try:
-        value = json.loads(_read_regular(path))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise LLMLockError("product config is invalid JSON") from error
-    return validate_product_config(value)
+        raw = json.dumps(content, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (ValueError, TypeError, UnicodeError):
+        raise LLMLockError("product profile is invalid") from None
+    return hashlib.sha256(raw).hexdigest()
+
+
+def validate_product_profile(value: object, *, allow_measurement: bool = False) -> Mapping[str, Any]:
+    try:
+        validate_prompt_identity()
+    except ValueError:
+        raise LLMLockError("prompt identity mismatch") from None
+    if type(value) is not dict or set(value) != set(EXPECTED_PROFILE) | PROFILE_DYNAMIC_KEYS:
+        raise LLMLockError("product profile has missing or extra fields")
+    _exact({key: value[key] for key in EXPECTED_PROFILE}, EXPECTED_PROFILE, "product profile")
+    if value["profile_sha256"] != profile_digest(value):
+        raise LLMLockError("product profile checksum mismatch")
+    stage = value["profile_stage"]
+    generate = value["min_mem_available_generate_bytes"]
+    speak = value["min_mem_available_speak_bytes"]
+    locator = value["measurement_evidence_locator"]
+    if stage == "measurement" and allow_measurement:
+        if generate is not None or speak is not None or locator is not None:
+            raise LLMLockError("measurement profile cannot set release thresholds")
+    elif stage == "release":
+        if type(generate) is not int or type(speak) is not int or not 0 < speak <= generate:
+            raise LLMLockError("release profile memory thresholds are invalid")
+        if (type(locator) is not str or not locator or locator.startswith("/") or
+                ".." in PurePosixPath(locator).parts or "\x00" in locator):
+            raise LLMLockError("release profile evidence locator is invalid")
+    else:
+        raise LLMLockError("product profile stage is not permitted")
+    return dict(value)
+
+
+def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise LLMLockError("duplicate JSON field")
+        result[key] = value
+    return result
+
+
+def load_product_profile(path: Path, *, allow_measurement: bool = False) -> Mapping[str, Any]:
+    try:
+        value = json.loads(_read_regular(path), object_pairs_hook=_unique_object)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise LLMLockError("product profile is invalid JSON") from None
+    return validate_product_profile(value, allow_measurement=allow_measurement)
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,21 +268,23 @@ class RuntimeClosure:
         if hashlib.sha256(raw_bytes).hexdigest() != expected_digest:
             raise LLMLockError("runtime closure manifest checksum mismatch")
         try:
-            raw = json.loads(raw_bytes)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise LLMLockError("runtime closure manifest is invalid JSON") from error
+            raw = json.loads(raw_bytes, object_pairs_hook=_unique_object)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise LLMLockError("runtime closure manifest is invalid JSON") from None
         if type(raw) is not dict or set(raw) != {
             "schema_version", "payload_scope", "platform", "python", "distribution",
             "source_wheel", "files",
         }:
             raise LLMLockError("runtime closure manifest has missing or extra fields")
         if (
-            raw["schema_version"] != 1
+            type(raw["schema_version"]) is not int or raw["schema_version"] != 1
             or raw["payload_scope"] != "product-owned-litert-lm"
             or raw["platform"] != "pi-debian13-aarch64"
         ):
             raise LLMLockError("runtime closure platform identity mismatch")
-        if raw["python"] != {"implementation": "CPython", "version": "3.13.5"}:
+        if raw["python"] != {"implementation": "CPython", "version": "3.13.5",
+                             "soabi": "cpython-313-aarch64-linux-gnu",
+                             "multiarch": "aarch64-linux-gnu"}:
             raise LLMLockError("runtime closure Python identity mismatch")
         if raw["distribution"] != {"name": "litert-lm-api", "version": "0.16.0"}:
             raise LLMLockError("runtime closure distribution mismatch")
@@ -318,7 +348,7 @@ class RuntimeClosure:
 class LLMArtifactLock:
     path: Path
     digest: str
-    identity: LLMReadyIdentity
+    identity: LLMReadyIdentity | None
     runtime: Mapping[str, Any]
     model: Mapping[str, Any]
     product_profile: Mapping[str, Any]
@@ -334,8 +364,8 @@ class LLMArtifactLock:
         raw_bytes = _read_regular(path)
         try:
             raw = json.loads(raw_bytes)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise LLMLockError("artifact lock is invalid JSON") from error
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise LLMLockError("artifact lock is invalid JSON") from None
         if type(raw) is not dict or set(raw) != TOP_LEVEL_KEYS:
             raise LLMLockError("artifact lock has missing or extra top-level fields")
         if _contains_absolute(raw):
@@ -357,43 +387,49 @@ class LLMArtifactLock:
                 closure_path,
                 expected_digest=str(closure_value["manifest_sha256"]),
             )
+            if _read_regular(repo_root / str(profile["grammar_locator"])) != GRAMMAR_BYTES:
+                raise LLMLockError("grammar artifact identity mismatch")
             notice_path = repo_root / str(licenses["notice_locator"])
             if _sha256(notice_path) != licenses["notice_sha256"]:
                 raise LLMLockError("third-party notice checksum mismatch")
         return cls(
             path.resolve(),
             hashlib.sha256(raw_bytes).hexdigest(),
-            LLMReadyIdentity(
-                candidate_id=str(candidate["candidate_id"]),
-                pairing_revision=str(candidate["pairing_revision"]),
-                platform=str(candidate["platform"]),
-                runtime_sha256=str(runtime["wheel_sha256"]),
-                model_sha256=str(model["sha256"]),
-                config_sha256=str(profile["config_sha256"]),
-            ),
+            None,
             runtime,
             model,
             profile,
             closure,
         )
 
-    def verify_config_paths(self, config: Any) -> None:
+    def ready_identity(self, profile: Mapping[str, Any]) -> LLMReadyIdentity:
+        from sbd.cognition.llm_child_protocol import LLMReadyIdentity
+        validate_product_profile(dict(profile), allow_measurement=True)
+        names = (
+            "protocol_name", "candidate_id", "pairing_revision", "profile_id",
+            "profile_stage", "profile_sha256", "runtime_sha256", "native_sha256",
+            "model_sha256", "prompt_sha256", "grammar_sha256", "prompt_tokens",
+            "max_output_tokens", "engine_context_tokens", "temperature", "top_p",
+            "threads", "min_mem_available_generate_bytes", "min_mem_available_speak_bytes",
+            "network",
+        )
+        return LLMReadyIdentity({**{name: profile[name] for name in names},
+                                 "conversation_state": "none"})
+
+    def verify_config_paths(self, config: Any, *, allow_measurement: bool = False) -> Mapping[str, Any]:
         if config.model_path.name != self.model["filename"]:
             raise LLMLockError("model filename mismatch")
-        if config.model_path.stat().st_size != self.model["size_bytes"]:
-            raise LLMLockError("model size mismatch")
+        try:
+            if config.model_path.stat().st_size != self.model["size_bytes"]:
+                raise LLMLockError("model size mismatch")
+        except OSError:
+            raise LLMLockError("model file unavailable") from None
         if _sha256(config.model_path) != self.model["sha256"]:
             raise LLMLockError("model checksum mismatch")
-        if _sha256(config.product_config_path) != self.product_profile["config_sha256"]:
-            raise LLMLockError("product config checksum mismatch")
-        load_product_config(config.product_config_path)
+        return load_product_profile(config.product_profile_path, allow_measurement=allow_measurement)
 
 
 __all__ = [
-    "LLMArtifactLock",
-    "LLMLockError",
-    "RuntimeClosure",
-    "RuntimeFile",
-    "load_product_config",
-    "validate_product_config",
+    "LLMArtifactLock", "LLMLockError", "RuntimeClosure", "RuntimeFile",
+    "load_product_profile", "validate_product_profile", "profile_digest",
 ]

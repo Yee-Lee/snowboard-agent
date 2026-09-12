@@ -1,69 +1,29 @@
-"""Parent-side owner for the isolated M4b LiteRT-LM child."""
-
+"""Parent ownership, v3 serialization, and SM-authorized planned recovery."""
 from __future__ import annotations
-
 import asyncio
-import json
-import math
 import os
 import shutil
 import signal
-import tempfile
+import sys
 import time
+import tempfile
+from contextlib import asynccontextmanager
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Protocol
 
-from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
-from sbd.cognition.litert_lm.lock import LLMArtifactLock, LLMLockError
-from sbd.cognition.llm import (
-    LLMGeneration,
-    LLMResourceSample,
-    LLMResourceSampler,
-    ScheduleRecovery,
-    WaitRecovery,
-)
-from sbd.cognition.llm_child_protocol import (
-    MAX_CONTROL_BYTES,
-    PROTOCOL_VERSION,
-    LLMProtocolError,
-    LLMWireCancelled,
-    LLMWireError,
-    LLMWireResult,
-    encode_cancel,
-    encode_frame,
-    encode_generate,
-    parse_ready,
-    parse_terminal,
-    read_frame,
-)
-from sbd.cognition.prompt_builder import ReasoningInput
+from sbd.cognition.litert_lm.lock import LLMArtifactLock
+from sbd.cognition.llm import (AdmissionSnapshot, TicketDiscardProof, GenerationMetrics, SemanticGeneration,
+    LLMFatalError, ReplaceableGenerationFailure, MemoryAdmissionDenied,
+    LLMResourceSampler, ScheduleRecovery, WaitRecovery)
+from sbd.cognition.llm_child_protocol import (MAX_CONTROL_BYTES, PROTOCOL_VERSION,
+    LLMProtocolError, ProtocolLedger, encode_frame, read_frame, parse_ready, require, digest)
 from sbd.core.config.models import LLMConfig
 from sbd.core.lifecycle import ForceAbortReport
 
-
 RESOURCE_KEY = "backend.cognition.reasoner.llm"
-
-
-class LLMFatalError(RuntimeError):
-    """A sanitized non-P5 child ownership or protocol failure."""
-
-
-@dataclass(frozen=True, slots=True)
-class LLMStartupEvidence:
-    engine_load_latency_ms: float
-    prewarm_latency_ms: float
-    ready_latency_ms: float
-    prewarm_prompt_sha256: str
-
-
-@dataclass(frozen=True, slots=True)
-class LLMCancelEvidence:
-    native_cancel_calls: int
-    worker_joined: bool
-
 
 @dataclass(frozen=True, slots=True)
 class LLMTerminationEvidence:
@@ -72,62 +32,33 @@ class LLMTerminationEvidence:
     waitpid_exit_code: int
     orphan_count: int
 
-
-def _load_startup_evidence(path: Path, *, ready_latency_ms: float) -> LLMStartupEvidence:
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise LLMFatalError("child startup evidence is unavailable") from error
-    if type(raw) is not dict or set(raw) != {
-        "schema_version", "engine_load_latency_ms", "prewarm_latency_ms",
-        "prewarm_prompt_sha256",
-    }:
-        raise LLMFatalError("child startup evidence shape is invalid")
-    engine_load = raw["engine_load_latency_ms"]
-    prewarm = raw["prewarm_latency_ms"]
-    expected_prompt = "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d"
-    if (
-        raw["schema_version"] != 1
-        or type(engine_load) not in (int, float)
-        or type(prewarm) not in (int, float)
-        or not math.isfinite(engine_load)
-        or not math.isfinite(prewarm)
-        or engine_load < 0
-        or prewarm < 0
-        or type(ready_latency_ms) not in (int, float)
-        or not math.isfinite(ready_latency_ms)
-        or ready_latency_ms < 0
-        or raw["prewarm_prompt_sha256"] != expected_prompt
-    ):
-        raise LLMFatalError("child startup evidence identity is invalid")
-    return LLMStartupEvidence(
-        float(engine_load), float(prewarm), float(ready_latency_ms), expected_prompt,
-    )
-
+@dataclass(frozen=True, slots=True)
+class LLMCancelEvidence:
+    native_cancel_calls: int
+    worker_joined: bool
 
 class AdapterState(Enum):
     STOPPED = auto()
     AUTHENTICATING = auto()
     STARTING = auto()
-    ENGINE_LOADED = auto()
-    PREWARMING = auto()
-    READY = auto()
+    ENGINE_READY = auto()
+    CONVERSATION_READY = auto()
+    MEASURED = auto()
+    DISCARDING = auto()
     GENERATING = auto()
+    TAINTED = auto()
     RECYCLE_PENDING = auto()
     RECOVERING = auto()
     DESTROYED = auto()
 
-
 class LLMChild(Protocol):
     pid: int
     pgid: int
-
     async def start(self) -> Mapping[str, object]: ...
     async def send(self, frame: Mapping[str, object]) -> None: ...
     async def receive(self) -> Mapping[str, object]: ...
     async def stop(self) -> None: ...
     async def force_terminate(self) -> None: ...
-
 
 def isolated_child_environment(runtime_root: Path, source: Mapping[str, str] | None = None) -> dict[str, str]:
     environment = dict(os.environ if source is None else source)
@@ -149,42 +80,59 @@ def isolated_child_environment(runtime_root: Path, source: Mapping[str, str] | N
 class SubprocessLLMChild:
     """One process group and its bounded stdio/work-directory resources."""
 
-    def __init__(self, cfg: LLMConfig, lock: LLMArtifactLock, generation: int) -> None:
+    def __init__(self, cfg: LLMConfig, lock: LLMArtifactLock, generation: int, *, measurement_grant: Any = None) -> None:
         self._cfg = cfg
         self._lock = lock
         self._generation = generation
+        self._measurement_grant = measurement_grant
         self._process: asyncio.subprocess.Process | None = None
         self._workdir: Path | None = None
         self.pid = 0
         self.pgid = 0
-        self.startup_evidence: LLMStartupEvidence | None = None
         self.termination_evidence: LLMTerminationEvidence | None = None
         self._stop_lock = asyncio.Lock()
+
+    def clock_mapping_token(self) -> tuple[int, ...] | None:
+        """Prove the live child shares this controller's Linux monotonic epoch."""
+        if sys.platform != "linux" or time.get_clock_info("monotonic").implementation != "clock_gettime(CLOCK_MONOTONIC)":
+            return None
+        process = self._process
+        if process is None or process.returncode is not None or process.pid != self.pid:
+            return None
+        try:
+            proc = Path("/proc") / str(self.pid)
+            before = (proc / "stat").read_text().rsplit(")", 1)[1].split()
+            local_ns = Path("/proc/self/ns/time").stat()
+            child_ns = (proc / "ns/time").stat()
+            after = (proc / "stat").read_text().rsplit(")", 1)[1].split()
+            if (before[19] != after[19] or after[0] == "Z"
+                    or int(after[2]) != self.pgid or self.pgid != self.pid
+                    or (local_ns.st_dev, local_ns.st_ino) != (child_ns.st_dev, child_ns.st_ino)):
+                return None
+            return (self.pid, int(after[19]), local_ns.st_dev, local_ns.st_ino)
+        except (OSError, ValueError, IndexError):
+            return None
 
     async def start(self) -> Mapping[str, object]:
         assert self._cfg.runtime_python is not None
         assert self._cfg.model_path is not None
-        assert self._cfg.product_config_path is not None
+        assert self._cfg.product_profile_path is not None
         runtime_root = self._cfg.runtime_python.parent.parent / "lib/python3.13/site-packages"
         worker_path = Path(__file__).with_name("worker.py").resolve()
-        self._workdir = Path(tempfile.mkdtemp(prefix="m4b-llm-"))
-        startup_evidence_path = self._workdir / "startup-evidence.json"
         argv = [
             str(self._cfg.runtime_python), "-I", "-B", str(worker_path),
             "--model", str(self._cfg.model_path),
-            "--product-config", str(self._cfg.product_config_path),
+            "--product-profile", str(self._cfg.product_profile_path),
             "--runtime-root", str(runtime_root),
-            "--candidate-id", self._lock.identity.candidate_id,
-            "--pairing-revision", self._lock.identity.pairing_revision,
-            "--platform", self._lock.identity.platform,
-            "--runtime-sha256", self._lock.identity.runtime_sha256,
-            "--native-sha256", str(self._lock.runtime["native_sha256"]),
-            "--model-sha256", self._lock.identity.model_sha256,
-            "--config-sha256", self._lock.identity.config_sha256,
-            "--startup-evidence", str(startup_evidence_path),
+            "--artifact-lock", str(self._cfg.artifact_lock_path),
         ]
+        if self._measurement_grant is not None:
+            from sbd.cognition.litert_lm.measurement import MeasurementGrant
+            require(type(self._measurement_grant) is MeasurementGrant, "measurement")
+            self._measurement_grant.authorize_profile(self._lock.product_profile)
+            argv.extend(self._measurement_grant.child_arguments())
+        self._workdir = Path(tempfile.mkdtemp(prefix="m4b-llm-"))
         try:
-            started = time.monotonic()
             self._process = await asyncio.create_subprocess_exec(
                 *argv,
                 stdin=asyncio.subprocess.PIPE,
@@ -193,6 +141,7 @@ class SubprocessLLMChild:
                 cwd=self._workdir,
                 env=isolated_child_environment(runtime_root),
                 start_new_session=True,
+                close_fds=True,
                 limit=MAX_CONTROL_BYTES + 1,
             )
             self.pid = self._process.pid
@@ -201,11 +150,6 @@ class SubprocessLLMChild:
             ready = await asyncio.wait_for(
                 read_frame(self._process.stdout), self._cfg.child_ready_timeout_seconds
             )
-            self.startup_evidence = _load_startup_evidence(
-                startup_evidence_path,
-                ready_latency_ms=(time.monotonic() - started) * 1000.0,
-            )
-            startup_evidence_path.unlink()
             return ready
         except BaseException:
             await self.force_terminate()
@@ -218,7 +162,7 @@ class SubprocessLLMChild:
         try:
             await self._process.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as error:
-            raise LLMFatalError("child input closed") from error
+            raise LLMFatalError("child input closed") from None
 
     async def receive(self) -> Mapping[str, object]:
         if self._process is None or self._process.stdout is None:
@@ -232,9 +176,9 @@ class SubprocessLLMChild:
                 await self._cleanup()
                 return
             try:
-                await self.send({"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION})
+                await self.send({"protocol": 3, "op": "SHUTDOWN"})
                 frame = await asyncio.wait_for(self.receive(), self._cfg.child_terminate_timeout_seconds)
-                if frame != {"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION}:
+                if frame != {"protocol": 3, "event": "SHUTDOWN_ACK"}:
                     raise LLMProtocolError(stage="SHUTDOWN", field="$", reason="invalid acknowledgement")
                 await asyncio.wait_for(
                     self._wait_process_group_exit(process, process.pid),
@@ -276,7 +220,7 @@ class SubprocessLLMChild:
                         self._cfg.child_kill_wait_timeout_seconds,
                     )
                 except TimeoutError as error:
-                    raise LLMFatalError("child process-group exit could not be proven") from error
+                    raise LLMFatalError("child process-group exit could not be proven") from None
         if process is not None:
             await process.wait()
             members = self._live_process_group_members(process.pid)
@@ -292,7 +236,11 @@ class SubprocessLLMChild:
     def _live_process_group_members(pgid: int) -> set[int]:
         proc = Path("/proc")
         if not proc.is_dir():
-            return {pgid}
+            try:
+                os.killpg(pgid, 0)
+                return {pgid}
+            except ProcessLookupError:
+                return set()
         members: set[int] = set()
         for entry in proc.iterdir():
             if not entry.name.isdigit():
@@ -333,323 +281,511 @@ class SubprocessLLMChild:
             except FileNotFoundError:
                 pass
             except OSError as error:
-                raise LLMFatalError("child work-directory cleanup failed") from error
+                raise LLMFatalError("child work-directory cleanup failed") from None
             if workdir.exists() or workdir.is_symlink():
                 raise LLMFatalError("child work-directory cleanup failed")
             self._workdir = None
 
 
+
 ChildFactory = Callable[[LLMConfig, LLMArtifactLock, int], LLMChild]
+
+class _ConversationControl:
+    """Dedicated SM facade; native generation is deliberately unavailable here."""
+    def __init__(self, adapter):
+        self._adapter = adapter
+
+    @property
+    def recovery_pending(self):
+        return self._adapter.recovery_pending
+
+    async def open_conversation(self, session_id, generation):
+        return await self._adapter.open_conversation(session_id, generation)
+
+    async def close_conversation(self, session_id, generation, reason):
+        return await self._adapter.close_conversation(session_id, generation, reason)
+
+    async def authorize_recovery(self, session_id, generation, proof):
+        return await self._adapter.authorize_recovery(session_id, generation, proof)
+
+    async def abort(self):
+        return await self._adapter.abort()
+
+    async def force_abort(self):
+        return await self._adapter.force_abort()
 
 
 class LiteRTLMAdapter:
-    def __init__(
-        self,
-        cfg: LLMConfig,
-        *,
-        lock: LLMArtifactLock,
-        schedule_recovery: ScheduleRecovery,
-        wait_recovery: WaitRecovery,
-        resource_sampler: LLMResourceSampler,
-        child_factory: ChildFactory = SubprocessLLMChild,
-    ) -> None:
-        self._cfg = cfg
-        self._lock = lock
-        self._schedule_recovery = schedule_recovery
-        self._wait_recovery = wait_recovery
-        self._sampler = resource_sampler
-        self._child_factory = child_factory
+    def __init__(self, cfg: LLMConfig, *, lock: LLMArtifactLock,
+                 schedule_recovery: ScheduleRecovery, wait_recovery: WaitRecovery,
+                 resource_sampler: LLMResourceSampler,
+                 child_factory: ChildFactory = SubprocessLLMChild,
+                 observer: Any = None, measurement_grant: Any = None) -> None:
+        self._cfg, self._lock = cfg, lock
+        self._schedule_recovery, self._wait_recovery = schedule_recovery, wait_recovery
+        self._sampler, self._child_factory = resource_sampler, child_factory
+        self._observer = observer
+        self._measurement_grant = measurement_grant
+        if measurement_grant is not None:
+            from sbd.cognition.litert_lm.measurement import MeasurementGrant
+            require(type(measurement_grant) is MeasurementGrant, "measurement")
+            measurement_grant.authorize_profile(lock.product_profile)
+        else:
+            require(lock.product_profile["profile_stage"] == "release", "measurement")
+        self._observation_generation = 0
+        self._clock_token: tuple[int, ...] | None = None
+        self._clock_mapped = False
         self._child: LLMChild | None = None
-        self._generation = 0
-        self._request_counter = 0
-        self._attempts = 0
-        self._baseline: LLMResourceSample | None = None
-        self._ticket: Any = None
-        self._active_request_id: str | None = None
-        self._terminal_task: asyncio.Task[Mapping[str, object]] | None = None
-        self._convergence_event: asyncio.Event | None = None
-        self._cancel_sent = False
+        self._issued_tickets: set[str] = set()
+        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._epoch = 0
         self._operation_lock = asyncio.Lock()
+        self._lock_owner: asyncio.Task | None = None
+        self._reader_task: asyncio.Task | None = None
+        self._destruction_task: asyncio.Task | None = None
+        self._responses: asyncio.Queue = asyncio.Queue()
+        self._operation_done = asyncio.Event()
+        self._operation_done.set()
+        self._pending: tuple[str, int] | None = None
+        self._closed_proof: Any = None
+        self._recovery_ticket: Any = None
+        self._authorization: asyncio.Task | None = None
+        self._previous_sample: Any = None
+        self._atomic_interrupt = False
         self.state = AdapterState.STOPPED
-        self.state_trace: list[AdapterState] = [AdapterState.STOPPED]
-        self.startup_evidence: LLMStartupEvidence | None = None
-        self.last_cancel_evidence: LLMCancelEvidence | None = None
         self.last_termination_evidence: LLMTerminationEvidence | None = None
+        self.last_cancel_evidence: LLMCancelEvidence | None = None
+        self.control = _ConversationControl(self)
 
-    def _set_state(self, state: AdapterState) -> None:
-        self.state = state
-        self.state_trace.append(state)
+    @property
+    def operation_lock(self) -> asyncio.Lock:
+        return self._operation_lock
+
+    @asynccontextmanager
+    async def serialized(self):
+        task = asyncio.current_task()
+        if self._lock_owner is task:
+            yield
+            return
+        if self._operation_lock.locked():
+            await self._destroy()
+            raise LLMFatalError("BUSY")
+        async with self._operation_lock:
+            self._lock_owner = task
+            try:
+                yield
+            except LLMFatalError:
+                if self._child is not None:
+                    await self._destroy()
+                raise
+            finally:
+                self._lock_owner = None
+
+    @property
+    def recovery_pending(self) -> bool:
+        return self._pending is not None
+
+    @property
+    def conversation_revision(self) -> int:
+        return self._ledger.revision
+
+    def assert_conversation(self, session_id: str, generation: int) -> None:
+        require(type(session_id) is str and type(generation) is int and generation > 0, "identity")
+        require(self.state not in {AdapterState.DESTROYED, AdapterState.STOPPED}, "state")
+        require(self._ledger.claim == (session_id, generation), "identity")
+        require(self._ledger.state in {"CONVERSATION_READY", "MEASURED"}, "state")
 
     async def start(self) -> None:
-        if self.state is AdapterState.READY:
-            return
-        if self.state is not AdapterState.STOPPED:
-            raise LLMFatalError("start requires STOPPED")
-        await self._start_replacement()
+        async with self.serialized():
+            require(self.state is AdapterState.STOPPED, "state")
+            await self._start_replacement()
 
-    async def _start_replacement(self, *, ready_timeout: float | None = None) -> None:
-        self._set_state(AdapterState.AUTHENTICATING)
-        self._generation += 1
-        closure = self._lock.runtime_closure
-        if closure is not None:
-            runtime_python = self._cfg.runtime_python
-            if runtime_python is None:
-                self._set_state(AdapterState.STOPPED)
-                raise LLMFatalError("LLM product authentication failed")
-            runtime_root = runtime_python.parent.parent / "lib/python3.13/site-packages"
-            try:
-                closure.verify_install(runtime_root)
-                self._lock.verify_config_paths(self._cfg)
-            except (LLMLockError, OSError) as error:
-                self._set_state(AdapterState.STOPPED)
-                raise LLMFatalError("LLM product authentication failed") from error
-        child = self._child_factory(self._cfg, self._lock, self._generation)
-        self._set_state(AdapterState.STARTING)
-        try:
-            startup = child.start()
-            ready = (
-                await startup
-                if ready_timeout is None
-                else await asyncio.wait_for(startup, ready_timeout)
-            )
-            self._set_state(AdapterState.ENGINE_LOADED)
-            self._set_state(AdapterState.PREWARMING)
-            parse_ready(ready, expected_identity=self._lock.identity)
-            baseline = self._sample(child)
-        except asyncio.CancelledError:
-            try:
-                await child.force_terminate()
-            except BaseException as cleanup:
-                self._set_state(AdapterState.STOPPED)
-                raise LLMFatalError("LLM child startup cancellation cleanup failed") from cleanup
-            self._set_state(AdapterState.STOPPED)
-            raise
-        except BaseException as error:
-            cleanup_error: BaseException | None = None
-            try:
-                await child.force_terminate()
-            except BaseException as cleanup:
-                cleanup_error = cleanup
-            finally:
-                self._set_state(AdapterState.STOPPED)
-            raise LLMFatalError("LLM child startup failed") from (cleanup_error or error)
+    async def _start_replacement(self) -> None:
+        self.state = AdapterState.AUTHENTICATING
+        if self._measurement_grant is not None:
+            self._measurement_grant.authorize_profile(self._lock.product_profile)
+        if self._lock.runtime_closure is not None:
+            require(self._cfg.runtime_python is not None)
+            self._lock.runtime_closure.verify_install(
+                self._cfg.runtime_python.parent.parent / "lib/python3.13/site-packages")
+            self._lock.verify_config_paths(self._cfg, allow_measurement=self._measurement_grant is not None)
+        require(self._lock.identity is not None, "identity")
+        self._epoch += 1
+        self._destruction_task = None
+        if self._measurement_grant is None:
+            child = self._child_factory(self._cfg, self._lock, self._epoch)
+        else:
+            child = self._child_factory(self._cfg, self._lock, self._epoch,
+                                        measurement_grant=self._measurement_grant)
         self._child = child
-        self.startup_evidence = getattr(child, "startup_evidence", None)
-        self._baseline = baseline
-        self._attempts = 0
-        self._request_counter = 0
-        self._ticket = None
-        self._set_state(AdapterState.READY)
+        self.state = AdapterState.STARTING
+        try:
+            ready = await asyncio.wait_for(child.start(), self._cfg.child_ready_timeout_seconds)
+            parse_ready(ready, expected_identity=self._lock.identity, pid=child.pid, pgid=child.pgid)
+            self._ledger = ProtocolLedger(self._issued_tickets)
+            self._responses = asyncio.Queue()
+            # Only rebuild reaches epoch > 1, after old PGID destruction and
+            # fully authenticated new READY. Preserve system/non-LLM health
+            # while rebasing the intentionally replaced LLM owner identity.
+            rebase = getattr(self._sampler, "rebase_llm_owner", None)
+            sample = rebase if self._epoch > 1 and callable(rebase) else self._sampler.sample
+            self._previous_sample = sample(child_pid=child.pid, child_pgid=child.pgid)
+            self._previous_sample.validate()
+            if self._measurement_grant is not None:
+                self._measurement_grant.check_sample(self._previous_sample)
+            if self._observer is not None:
+                self._observer.prompt(self._lock.product_profile)
+                self._observer.memory(self._previous_sample, generation=0,
+                                      lifecycle_point="engine_ready")
+            self.state = AdapterState.ENGINE_READY
+            self._reader_task = asyncio.create_task(self._read_responses(), name="llm-wire")
+        except asyncio.CancelledError:
+            await self._destroy()
+            raise
+        except BaseException:
+            await self._destroy()
+            raise LLMFatalError("LLM startup failed") from None
 
-    def _sample(self, child: LLMChild) -> LLMResourceSample:
-        sample = self._sampler.sample(child_pid=child.pid, child_pgid=child.pgid)
-        if (
-            type(sample.owner_pss_bytes) is not int
-            or type(sample.mem_available_bytes) is not int
-            or sample.owner_pss_bytes < 0
-            or sample.mem_available_bytes < 0
-        ):
-            raise LLMFatalError("resource sample is invalid")
-        return sample
+    async def _read_responses(self) -> None:
+        child = self._child
+        assert child is not None
+        try:
+            while True:
+                frame = await child.receive()
+                operation = self._ledger.active
+                generating = operation is not None and operation["op"] == "GENERATE"
+                terminal = self._ledger.event(frame)
+                if generating and terminal:
+                    prove = getattr(child, "clock_mapping_token", None)
+                    after = prove() if callable(prove) else None
+                    self._clock_mapped = self._clock_token is not None and self._clock_token == after
+                self._responses.put_nowait(frame)
+                if terminal and self._ledger.state == "STOPPED":
+                    return
+        except asyncio.CancelledError:
+            raise
+        except BaseException:
+            await self._destroy()
+            self._responses.put_nowait(LLMFatalError("LLM wire failure"))
 
-    async def generate(self, value: ReasoningInput) -> LLMGeneration:
-        if self._ticket is not None:
-            await self._wait_recovery(self._ticket)
-        if self._operation_lock.locked():
-            raise AdapterRejected("BUSY")
-        if self.state is not AdapterState.READY:
-            raise LLMFatalError("generation requires READY")
-        async with self._operation_lock:
-            child = self._child
-            if child is None:
-                raise LLMFatalError("child owner is absent")
-            self._request_counter += 1
-            request_id = f"llm.{self._generation}.{self._request_counter}"
-            frame = encode_generate(request_id, value)
-            self._active_request_id = request_id
-            self._cancel_sent = False
-            self._convergence_event = asyncio.Event()
-            self.state = AdapterState.GENERATING
+    def _frame(self, op: str, session_id: str, generation: int, **extra: object) -> dict[str, object]:
+        return {"protocol": 3, "op": op, "request_id": self._ledger.counter + 1,
+                "session_id": session_id, "generation": generation, **extra}
+
+    async def _request(self, frame: Mapping[str, object]) -> Mapping[str, object]:
+        child = self._child
+        require(child is not None and self.state is not AdapterState.DESTROYED, "state")
+        try:
+            if self._measurement_grant is not None and frame["op"] != "GENERATE":
+                sample = self._sampler.sample(child_pid=child.pid, child_pgid=child.pgid)
+                self._validate_sample(sample)
+                self._measurement_grant.check_sample(sample)
+                self._previous_sample = sample
+            self._ledger.command(frame)
+            self._atomic_interrupt = False
+            self._operation_done.clear()
+            if frame["op"] == "GENERATE":
+                prove = getattr(child, "clock_mapping_token", None)
+                self._clock_token = prove() if callable(prove) else None
+                self._clock_mapped = False
+            await child.send(frame)
+            timeout = (self._cfg.generation_timeout_seconds if frame["op"] == "GENERATE"
+                       else self._cfg.child_ready_timeout_seconds)
+            if frame["op"] == "DISCARD_TICKET":
+                timeout = self._cfg.terminal_grace_seconds
+            async def terminal():
+                while True:
+                    event = await self._responses.get()
+                    if isinstance(event, BaseException):
+                        raise event
+                    if event["event"] not in {"SAFE_TEXT", "CANCEL_DEFERRED"}:
+                        return event
+            expired = False
             try:
-                await child.send(frame)
-            except BaseException as error:
-                await self._destroy(child)
-                raise LLMFatalError("child generation write failed") from error
-            self._attempts += 1
-            self._terminal_task = asyncio.create_task(child.receive())
-            deadline_expired = False
-            try:
-                try:
-                    raw = await asyncio.wait_for(
-                        asyncio.shield(self._terminal_task),
-                        self._cfg.generation_timeout_seconds,
-                    )
-                except TimeoutError:
-                    deadline_expired = True
-                    if not self._cancel_sent:
-                        self._cancel_sent = True
-                        try:
-                            await child.send(encode_cancel(request_id))
-                        except BaseException as error:
-                            await self._destroy(child)
-                            raise LLMFatalError("child cancellation write failed") from error
-                    raw = await asyncio.wait_for(
-                        asyncio.shield(self._terminal_task),
-                        self._cfg.terminal_grace_seconds,
-                    )
-                terminal = parse_terminal(raw, active_request_id=request_id)
-            except TimeoutError as error:
-                await self._destroy(child)
-                raise LLMFatalError("child terminal grace exceeded") from error
-            except LLMProtocolError as error:
-                await self._destroy(child)
-                raise LLMFatalError("child terminal protocol failure") from error
-            finally:
-                self._active_request_id = None
-                self._terminal_task = None
-            if isinstance(terminal, LLMWireResult):
-                self.state = AdapterState.READY
-                generation = LLMGeneration(terminal.response, terminal.metrics)
-                await self._after_terminal(child)
-                if deadline_expired:
-                    raise AdapterTimeout("generation exceeded its deadline")
-                return generation
-            if isinstance(terminal, LLMWireCancelled):
-                self.state = AdapterState.READY
+                event = await asyncio.wait_for(terminal(), timeout)
+            except TimeoutError:
+                expired = True
+                if frame["op"] == "DISCARD_TICKET":
+                    raise LLMFatalError("ticket disposal timed out") from None
+                if self._ledger.active is not None and not self._ledger.cancelled:
+                    cancel = {"protocol": 3, "op": "CANCEL", "request_id": frame["request_id"]}
+                    self._ledger.command(cancel)
+                    await child.send(cancel)
+                event = await asyncio.wait_for(terminal(), self._cfg.terminal_grace_seconds)
+            if event["event"] == "CANCELLED":
                 self.last_cancel_evidence = LLMCancelEvidence(1, True)
-                await self._after_terminal(child)
-                raise AdapterTimeout("generation cancelled")
-            assert isinstance(terminal, LLMWireError)
-            if terminal.state != "READY" or terminal.code == "BUSY":
-                await self._destroy(child)
-                raise LLMFatalError("child reported fatal generation state")
-            self.state = AdapterState.READY
-            await self._after_terminal(child)
-            if terminal.code == "TIMEOUT":
-                raise AdapterTimeout("generation timed out")
-            raise AdapterRejected("generation rejected")
-
-    async def _after_terminal(self, child: LLMChild) -> None:
-        try:
-            current = self._sample(child)
-        except BaseException as error:
-            await self._destroy(child)
-            raise LLMFatalError("terminal resource cleanup could not be proven") from error
-        assert self._baseline is not None
-        recycle = (
-            self._attempts >= self._cfg.recycle_max_inference_attempts
-            or current.owner_pss_bytes - self._baseline.owner_pss_bytes
-            >= self._cfg.recycle_owner_pss_delta_mib * 1024**2
-            or current.mem_available_bytes
-            < self._cfg.recycle_min_mem_available_mib * 1024**2
-        )
-        if recycle:
-            self.state = AdapterState.RECYCLE_PENDING
-            try:
-                self._ticket = self._schedule_recovery((RESOURCE_KEY,))
-            except BaseException as error:
-                await self._destroy(child)
-                raise LLMFatalError("planned recovery could not be scheduled") from error
-        self._mark_converged()
-
-    def _mark_converged(self) -> None:
-        event = self._convergence_event
-        if event is not None:
-            event.set()
-
-    async def _destroy(self, child: LLMChild) -> None:
-        task = self._terminal_task
-        if task is not None and not task.done():
-            task.cancel()
-        try:
-            await child.force_terminate()
+                self._sync_state()
+                if expired and frame["op"] == "GENERATE":
+                    raise ReplaceableGenerationFailure("GENERATION_TIMEOUT")
+                raise asyncio.CancelledError
+            require(self.state is not AdapterState.DESTROYED, "state")
+            self._sync_state()
+            if self._atomic_interrupt:
+                raise asyncio.CancelledError
+            return event
+        except ReplaceableGenerationFailure:
+            raise
+        except asyncio.CancelledError:
+            # A validated cooperative terminal needs no forced destruction.
+            if self._ledger.active is not None:
+                await self._destroy()
+            else:
+                self._sync_state()
+            raise
+        except BaseException:
+            await self._destroy()
+            raise LLMFatalError("LLM operation failed") from None
         finally:
-            if task is not None:
-                await asyncio.gather(task, return_exceptions=True)
-            if self._child is child:
-                self._child = None
-            self.state = AdapterState.DESTROYED
-            self._mark_converged()
+            self._operation_done.set()
+
+    def _sync_state(self) -> None:
+        if self._pending is not None:
+            self.state = AdapterState.RECYCLE_PENDING
+        elif self._ledger.state in AdapterState.__members__:
+            self.state = AdapterState[self._ledger.state]
+
+    def _validate_sample(self, sample: Any) -> None:
+        validate = getattr(self._sampler, "validate_sample", None)
+        if callable(validate):
+            validate(sample, self._previous_sample)
+        else:
+            sample.validate(self._previous_sample)
+
+    async def observe_memory(self, lifecycle_point: str) -> None:
+        """Private lifecycle callback; never substitutes a partial owner sample."""
+        if self._observer is None:
+            return
+        child = self._child
+        require(child is not None, "state")
+        try:
+            sample = self._sampler.sample(child_pid=child.pid, child_pgid=child.pgid)
+            self._validate_sample(sample)
+            if self._measurement_grant is not None:
+                self._measurement_grant.check_sample(sample)
+            self._previous_sample = sample
+            self._observer.memory(sample, generation=self._observation_generation,
+                                  lifecycle_point=lifecycle_point)
+        except BaseException:
+            await self._destroy()
+            raise LLMFatalError("MEMORY_SAMPLE_INVALID") from None
+
+    async def open_conversation(self, session_id: str, generation: int):
+        from sbd.core.state_manager.ports import ConversationReady, ConversationOpenRejected
+        authorization = self._authorization
+        if authorization is not None:
+            await asyncio.shield(authorization)
+        require(self._pending is None, "recovery")
+        async with self.serialized():
+            self._observation_generation = generation
+            await self.observe_memory("conversation_preparation")
+            event = await self._request(self._frame("OPEN", session_id, generation))
+            self._closed_proof = None
+            if event["event"] == "OPEN_REJECTED":
+                return ConversationOpenRejected(session_id, generation, True, True)
+            if self._observer is not None:
+                self._observer.conversation_ready(generation)
+            await self.observe_memory("conversation_ready")
+            return ConversationReady(session_id, generation)
+
+    async def measure(self, session_id: str, generation: int, text: str) -> AdmissionSnapshot:
+        async with self.serialized():
+            self.assert_conversation(session_id, generation)
+            event = await self._request(self._frame("MEASURE", session_id, generation,
+                text=text, input_sha256=digest(text), output_reserve_tokens=128))
+            snapshot = AdmissionSnapshot(**{key: event[key] for key in AdmissionSnapshot.__dataclass_fields__})
+            if self._observer is not None:
+                self._observer.measured(snapshot)
+            return snapshot
+
+    async def generate(self, snapshot: AdmissionSnapshot, text: str) -> SemanticGeneration:
+        from sbd.cognition.litert_lm.resource import memory_decision, MemoryDecision
+        async with self.serialized():
+            self.assert_conversation(snapshot.session_id, snapshot.generation)
+            ticket = self._ledger.ticket
+            require(ticket is not None and all(type(getattr(snapshot, key)) is type(ticket[key]) and getattr(snapshot, key) == ticket[key]
+                    for key in AdmissionSnapshot.__dataclass_fields__), "ticket")
+            require(snapshot.input_sha256 == digest(text), "digest")
+            require(snapshot.user_tokens <= 32, "admission")
+            require(snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens + 128 <= 1024, "admission")
+            if self._ledger.revision == 0 and len(text) <= 20:
+                require(snapshot.runtime_prefill_tokens <= 128, "prefill")
+            child = self._child
+            require(child is not None)
+            try:
+                sample = self._sampler.sample(child_pid=child.pid, child_pgid=child.pgid)
+                self._validate_sample(sample)
+                profile = self._lock.product_profile
+                if self._measurement_grant is not None:
+                    self._measurement_grant.check_sample(sample)
+                    decision = MemoryDecision.GENERATE
+                else:
+                    decision = memory_decision(sample,
+                        min_mem_available_speak_bytes=profile["min_mem_available_speak_bytes"],
+                        min_mem_available_generate_bytes=profile["min_mem_available_generate_bytes"],
+                        previous=None)
+                self._previous_sample = sample
+                if self._observer is not None:
+                    self._observer.memory(sample, generation=snapshot.generation,
+                                          lifecycle_point="pre_generate")
+            except BaseException:
+                await self._destroy()
+                raise LLMFatalError("MEMORY_SAMPLE_INVALID") from None
+            if decision is not MemoryDecision.GENERATE:
+                self.mark_recycle_pending(snapshot.session_id, snapshot.generation)
+                raise MemoryAdmissionDenied(speak_allowed=decision is MemoryDecision.NOTICE)
+            event = await self._request(self._frame("GENERATE", snapshot.session_id,
+                snapshot.generation, conversation_revision=self._ledger.revision,
+                ticket=snapshot.ticket, text=text, input_sha256=snapshot.input_sha256))
+            await self.observe_memory("post_generate")
+            if event["event"] == "REQUEST_FAILED":
+                if self._observer is not None:
+                    self._observer.native_timing(llm_terminal=event["terminal_monotonic_ns"],
+                                                 clock_mapped=self._clock_mapped)
+                raise ReplaceableGenerationFailure(event["code"])
+            result = SemanticGeneration(event["text"], event["end"], tuple(self._ledger.fragments),
+                GenerationMetrics(**{key: event[key] for key in GenerationMetrics.__dataclass_fields__}))
+            self._ledger.fragments.clear()
+            if self._observer is not None:
+                self._observer.generated(result.metrics, clock_mapped=self._clock_mapped)
+            return result
+
+    async def discard_ticket(self, snapshot: AdmissionSnapshot) -> TicketDiscardProof:
+        async with self.serialized():
+            self.assert_conversation(snapshot.session_id, snapshot.generation)
+            ticket = self._ledger.ticket
+            require(ticket is not None and all(type(getattr(snapshot, key)) is type(ticket[key]) and getattr(snapshot, key) == ticket[key]
+                    for key in AdmissionSnapshot.__dataclass_fields__), "ticket")
+            event = await self._request(self._frame("DISCARD_TICKET", snapshot.session_id,
+                snapshot.generation, conversation_revision=self._ledger.revision,
+                ticket=snapshot.ticket, input_sha256=snapshot.input_sha256))
+            return TicketDiscardProof(**{key: event[key] for key in TicketDiscardProof.__dataclass_fields__})
+
+    async def close_conversation(self, session_id: str, generation: int, reason: str):
+        from sbd.core.state_manager.ports import ConversationCloseProof
+        async with self.serialized():
+            if reason == "replacement":
+                reason = "replace_generation_failure" if self._ledger.state == "TAINTED" else "replace_context"
+            reason = {"session_rest": "session_end", "session_interrupt": "interrupt",
+                      "session_error": "error", "session_shutdown": "shutdown"}.get(reason, reason)
+            if self._pending == (session_id, generation) and reason == "session_end":
+                reason = "memory_pressure"
+            await self._request(self._frame("CLOSE", session_id, generation, reason=reason))
+            proof = ConversationCloseProof(session_id, generation, True, True, True)
+            self._closed_proof = proof
+            await self.observe_memory("post_session_close")
+            return proof
+
+    def mark_recycle_pending(self, session_id: str, generation: int) -> None:
+        require(self._ledger.claim == (session_id, generation), "identity")
+        require(self._pending in {None, (session_id, generation)}, "recovery")
+        if self._pending is None:
+            self._authorization = None
+            self._recovery_ticket = None
+        self._pending = (session_id, generation)
+        self.state = AdapterState.RECYCLE_PENDING
+
+    async def authorize_recovery(self, session_id: str, generation: int, proof: object) -> None:
+        require(self._pending == (session_id, generation), "recovery")
+        require(proof == self._closed_proof and proof is not None, "proof")
+        require(self._ledger.claim is None and self._ledger.active is None, "proof")
+        if self._authorization is None:
+            self._authorization = asyncio.create_task(self._authorized_recovery())
+        await asyncio.shield(self._authorization)
+
+    async def _authorized_recovery(self) -> None:
+        try:
+            self._recovery_ticket = self._schedule_recovery((RESOURCE_KEY,))
+            require(getattr(self._recovery_ticket, "keys", None) == (RESOURCE_KEY,), "recovery")
+            await self._wait_recovery(self._recovery_ticket)
+            require(self.state is AdapterState.ENGINE_READY and self._ledger.claim is None, "recovery")
+            self._pending = None
+        except BaseException:
+            await self._destroy()
+            raise LLMFatalError("planned recovery failed") from None
 
     async def abort(self) -> None:
-        child = self._child
-        request_id = self._active_request_id
-        terminal_task = self._terminal_task
-        convergence = self._convergence_event
-        if convergence is None or convergence.is_set():
+        active = self._ledger.active
+        if active is None:
+            await self._operation_done.wait()
             return
-        if (
-            child is not None
-            and request_id is not None
-            and terminal_task is not None
-            and not self._cancel_sent
-        ):
-            self._cancel_sent = True
-            try:
-                await child.send(encode_cancel(request_id))
-            except BaseException as error:
-                await self._destroy(child)
-                raise LLMFatalError("child cancellation write failed") from error
-        await asyncio.shield(convergence.wait())
+        child = self._child
+        require(child is not None)
+        if active["op"] == "DISCARD_TICKET":
+            self._atomic_interrupt = True
+            await asyncio.shield(self._operation_done.wait())
+            return
+        if not self._ledger.cancelled:
+            frame = {"protocol": 3, "op": "CANCEL", "request_id": active["request_id"]}
+            self._ledger.command(frame)
+            await child.send(frame)
+        await asyncio.shield(self._operation_done.wait())
+
+    async def _destroy(self) -> None:
+        self.state = AdapterState.DESTROYED
+        from_reader = asyncio.current_task() is self._reader_task
+        task = self._destruction_task
+        if task is None:
+            task = self._destruction_task = asyncio.create_task(self._destroy_owner())
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            if not from_reader:
+                await asyncio.shield(task)
+            raise
+
+    async def _destroy_owner(self) -> None:
+        self.state = AdapterState.DESTROYED
+        reader = self._reader_task
+        if reader is not None and reader is not asyncio.current_task():
+            reader.cancel()
+            await asyncio.gather(reader, return_exceptions=True)
+        self._reader_task = None
+        child, self._child = self._child, None
+        if child is not None:
+            await child.force_terminate()
+            self.last_termination_evidence = getattr(child, "termination_evidence", None)
+        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._ledger.state = "DESTROYED"
+        while not self._responses.empty():
+            self._responses.get_nowait()
+        self._responses.put_nowait(LLMFatalError("LLM owner destroyed"))
+        self._operation_done.set()
 
     async def force_abort(self) -> ForceAbortReport:
-        child = self._child
-        if child is not None:
-            await self._destroy(child)
-            self.last_termination_evidence = getattr(child, "termination_evidence", None)
-        else:
-            self.state = AdapterState.DESTROYED
-            self._mark_converged()
+        await self._destroy()
+        self._responses.put_nowait(LLMFatalError("LLM owner destroyed"))
         return ForceAbortReport((RESOURCE_KEY,))
 
     async def stop(self) -> None:
         if self.state is AdapterState.STOPPED:
             return
-        if self._active_request_id is not None:
+        authorization = self._authorization
+        if authorization is not None and not authorization.done():
+            authorization.cancel()
+            await asyncio.gather(authorization, return_exceptions=True)
+        if self._ledger.active is not None:
             await self.abort()
+        if self._ledger.claim is not None:
+            await self.close_conversation(*self._ledger.claim, "shutdown")
+        reader = self._reader_task
+        if reader is not None:
+            reader.cancel()
+            await asyncio.gather(reader, return_exceptions=True)
+            self._reader_task = None
         child = self._child
         if child is not None:
             await child.stop()
         self._child = None
+        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._pending = self._closed_proof = self._recovery_ticket = None
+        self._authorization = None
         self.state = AdapterState.STOPPED
 
     async def rebuild(self, bus: object = None, config: object = None) -> None:
+        require(self._ledger.claim is None, "recovery")
+        if self._child is not None:
+            await self.observe_memory("pre_replacement")
+        await self._destroy()
         self.state = AdapterState.RECOVERING
-        old = self._child
-        if old is not None:
-            try:
-                await old.stop()
-            except asyncio.CancelledError:
-                try:
-                    await old.force_terminate()
-                except BaseException as cleanup:
-                    self._child = None
-                    self.state = AdapterState.STOPPED
-                    raise LLMFatalError("old child cancellation cleanup failed") from cleanup
-                self._child = None
-                self.state = AdapterState.STOPPED
-                raise
-            except BaseException:
-                await old.force_terminate()
-        self._child = None
-        # Authentication includes full model/runtime hashes and deliberately
-        # precedes the bounded replacement READY window.  The contract excludes
-        # those pre-spawn hashes from READY timing; only child load and pre-warm
-        # consume rebuild_ready_timeout_seconds.
-        await self._start_replacement(
-            ready_timeout=self._cfg.rebuild_ready_timeout_seconds,
-        )
-
-
-__all__ = [
-    "AdapterState",
-    "LLMChild",
-    "LLMFatalError",
-    "LLMCancelEvidence",
-    "LLMStartupEvidence",
-    "LLMTerminationEvidence",
-    "LiteRTLMAdapter",
-    "SubprocessLLMChild",
-    "isolated_child_environment",
-    "_load_startup_evidence",
-]
+        await self._start_replacement()
+        await self.observe_memory("post_replacement")

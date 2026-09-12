@@ -377,57 +377,119 @@ def passed(exit_code: int, counts: dict[str, int]) -> bool:
     return exit_code == 0 and all(counts[name] == 0 for name in ("failed", "skipped", "xfailed"))
 
 
-M4B_CARD_REQUIRED = {
-    "M4B-RDY-001": {
-        "engine_load_latency_ms", "ready_latency_ms", "prewarm_latency_ms",
-        "prewarm_prompt_sha256", "ready_identity",
-    },
-    "M4B-GEN-001": {
-        "child_pid", "engine_load_count", "conversation_count", "init_ms",
-        "ttft_ms", "prefill_tokens", "decode_tokens", "kv_tokens",
-        "response_digests",
-    },
-    "M4B-OUT-001": {
-        "catalog_case_count", "schema_pass_count", "expected_action_pass_count",
-        "reasoner_validation_pass_count", "current_input_binding_pass_count",
-        "tool_handler_calls",
-    },
-    "M4B-P5-001": {"case", "converged_to"},
-    "M4B-CAN-001": {
-        "case", "native_cancel_calls", "worker_joined", "term_sent", "kill_sent",
-        "waitpid_exit_code", "orphan_count", "recovery_ready",
-    },
-    "M4B-REC-001": {
-        "trigger_reason", "generation_count", "ticket_id",
-        "resource_samples_locator", "prewarm_timings_locator",
-    },
-    "M4B-HIST-001": {
-        "turn_count", "conversation_count", "conversation_close_count",
-        "current_semantic_pass_count", "prior_state_hits", "child_pid_stable",
-    },
-    "M4B-PRIV-001": {"scanned_locators", "paths_digest", "hits"},
-    "M4B-OFF-001": {
-        "network_attempts", "downloader_calls", "session_status",
-        "session_result_sha256",
-    },
-    "M4B-RES-001": {
-        "session_count", "generation_count", "r14_formula_version",
-        "combined_pss_slope_mib_per_session", "system_used_slope_mib_per_session",
-        "combined_pss_late_minus_early_median_delta_mib",
-        "system_used_late_minus_early_median_delta_mib", "max_generation_delta_mib",
-        "max_system_used_mib",
-        "swap_used_zero", "oom_kill_delta", "throttled_zero",
-        "thermal_max_celsius", "resource_samples_locator", "cleanup_locator",
-        "poc_p9_p10b_status", "user_waiver",
-        "schema_pass_count", "reasoner_validation_pass_count",
-        "current_input_binding_pass_count", "nonblank_speak_count",
-        "next_perception_pass_count", "tts_terminal_pass_count",
-    },
-    "M4B-PKG-001": {
-        "install_inventory_sha256", "python_abi_attestation_sha256",
-        "abi_status", "file_count",
-    },
-}
+M4B_TARGET_IDS = frozenset(f"M4B-PI-{name}-001" for name in
+    ("ATT", "SEM", "CONV", "MEM", "WAKE", "TIME", "RES"))
+M4B_CARD_FIELDS = frozenset({"schema_version", "test_id", "case_id", "candidate_sha", "profile_id",
+    "profile_sha256", "matrix", "platform", "python", "start_monotonic_ns", "end_monotonic_ns",
+    "status", "evidence_sha256"})
+M4B_CARD_REQUIRED = {test_id: M4B_CARD_FIELDS for test_id in M4B_TARGET_IDS}
+
+
+def m4b_collection_audit(baseline: bytes, collected: list[str]) -> dict[str, Any]:
+    """Exact immutable Foundation comparison; no set coercion hides duplicates."""
+    try:
+        expected = baseline.decode("utf-8").splitlines()
+    except UnicodeDecodeError:
+        raise GateFailure("M4B_BASELINE_INVALID") from None
+    if (len(expected) != 99 or expected != sorted(set(expected))
+            or any("::" not in node for node in expected)
+            or len(collected) != len(set(collected)) or any("::" not in node for node in collected)):
+        raise GateFailure("M4B_COLLECTION_INVALID")
+    missing = sorted(set(expected) - set(collected))
+    if missing:
+        raise GateFailure("M4B_FOUNDATION_NODES_MISSING")
+    normalized = ("\n".join(sorted(collected)) + "\n").encode("utf-8")
+    return {"baseline_count": 99, "retained_count": 99, "missing_count": 0,
+        "baseline_sha256": hashlib.sha256(baseline).hexdigest(),
+        "collected_sha256": hashlib.sha256(normalized).hexdigest(),
+        "missing_sha256": hashlib.sha256(b"").hexdigest()}
+
+
+def m4b_source_violations(source: str) -> list[tuple[int, str]]:
+    """Resolve pytest aliases and constant-only assertions in affected sources."""
+    import ast
+    tree = ast.parse(source)
+    aliases: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                aliases[alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                aliases[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+    def resolve(node):
+        if isinstance(node, ast.Name):
+            return aliases.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            return f"{resolve(node.value)}.{node.attr}"
+        return ""
+    for _ in range(len(tuple(ast.walk(tree)))):
+        changed = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                name = resolve(node.value)
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and name and aliases.get(target.id) != name:
+                        aliases[target.id] = name
+                        changed = True
+        if not changed:
+            break
+    forbidden = {"pytest.skip", "pytest.xfail", "pytest.importorskip", "pytest.mark.skip",
+                 "pytest.mark.skipif", "pytest.mark.xfail", "pytest.mark.rpi"}
+    violations = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Call, ast.Attribute, ast.Name)):
+            name = resolve(node.func if isinstance(node, ast.Call) else node)
+            if name in forbidden:
+                violations.add((node.lineno, "FORBIDDEN_TEST_CONTROL"))
+        if isinstance(node, ast.Assert) and not any(isinstance(n, (ast.Name, ast.Call, ast.Attribute,
+                ast.Subscript, ast.Await, ast.NamedExpr)) for n in ast.walk(node.test)):
+            violations.add((node.lineno, "CONSTANT_ASSERTION"))
+    return sorted(violations)
+
+
+def m4b_junit_audit(payload: bytes, expected_nodes: list[str]) -> dict[str, int]:
+    try:
+        root = ET.fromstring(payload)
+    except ET.ParseError:
+        raise GateFailure("M4B_JUNIT_INVALID") from None
+    cases = root.findall(".//testcase")
+    expected_identities = {}
+    for node in expected_nodes:
+        parts = node.split("::")
+        classname = parts[0].removesuffix(".py").replace("/", ".")
+        if len(parts) > 2:
+            classname += "." + ".".join(parts[1:-1])
+        identity = (classname, parts[-1])
+        if identity in expected_identities:
+            raise GateFailure("M4B_JUNIT_NODE_MISMATCH")
+        expected_identities[identity] = node
+    actual = []
+    for case in cases:
+        if (case.find("failure") is not None or case.find("error") is not None
+                or case.find("skipped") is not None or "wasxfail" in case.attrib
+                or any("xfail" in str(p.attrib).lower() for p in case.findall("./properties/property"))):
+            raise GateFailure("M4B_JUNIT_NOT_PASS")
+        identity = (case.get("classname", ""), case.get("name", ""))
+        if identity not in expected_identities:
+            raise GateFailure("M4B_JUNIT_NODE_MISMATCH")
+        actual.append(expected_identities[identity])
+    if not actual or len(actual) != len(set(actual)) or set(actual) != set(expected_nodes):
+        raise GateFailure("M4B_JUNIT_NODE_MISMATCH")
+    return {"passed": len(actual), "failed": 0, "errors": 0, "skipped": 0, "xfailed": 0, "xpassed": 0}
+
+
+def m4b_catalog_paths(root: Path) -> list[str]:
+    path = root / "tests/m4b_portable_suite.txt"
+    try:
+        selectors = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        raise GateFailure("M4B_CATALOG_UNAVAILABLE") from None
+    if (not selectors or len(selectors) != len(set(selectors))
+            or any(not s.startswith("tests/") or ".." in PurePosixPath(s.split("::")[0]).parts
+                   or not root.joinpath(s.split("::")[0]).is_file() for s in selectors)):
+        raise GateFailure("M4B_CATALOG_INCOMPLETE")
+    return selectors
 
 
 def _draft_contains_absolute(value: object) -> bool:
@@ -445,172 +507,349 @@ def _relative_locator(value: object) -> bool:
     return not path.is_absolute() and ".." not in path.parts
 
 
-def _validate_m4b_card(draft: dict[str, Any]) -> None:
-    test_id = draft.get("test_id")
-    required = M4B_CARD_REQUIRED.get(test_id)
-    if required is None or not required.issubset(draft):
-        raise GateFailure("M4b acceptance card is missing required evidence fields")
-    obsolete_marker_fields = {
-        "current_format", "forbidden_format", "instruction_format",
-        "current_marker_exactly_once", "current_marker_pass_count",
-        "prior_marker_hits", "forbidden_literal_hits",
-    }
-    if obsolete_marker_fields & set(draft):
-        raise GateFailure("M4b acceptance card contains an obsolete marker field")
-    if _draft_contains_absolute(draft):
-        raise GateFailure("M4b acceptance card contains an absolute private path")
-    zero_fields = {
-        "M4B-OUT-001": ("tool_handler_calls",),
-        "M4B-CAN-001": ("orphan_count",),
-        "M4B-HIST-001": ("prior_state_hits",),
-        "M4B-PRIV-001": ("hits",),
-        "M4B-OFF-001": ("network_attempts", "downloader_calls"),
-        "M4B-RES-001": ("oom_kill_delta",),
-    }
-    if any(draft.get(name) != 0 for name in zero_fields.get(test_id, ())):
-        raise GateFailure("M4b acceptance card contains a nonzero fail-closed metric")
-    for locator in (
-        "resource_samples_locator", "prewarm_timings_locator", "cleanup_locator",
-    ):
-        if locator in draft and not _relative_locator(draft[locator]):
-            raise GateFailure("M4b acceptance card contains an invalid evidence locator")
-    if test_id == "M4B-PKG-001" and set(draft) != {
-        "candidate_sha", "test_id", *required,
-    }:
-        raise GateFailure("M4b package card contains unsanitized evidence fields")
-    if test_id == "M4B-RDY-001":
-        identity = draft["ready_identity"]
-        timings = (
-            draft["engine_load_latency_ms"], draft["ready_latency_ms"],
-            draft["prewarm_latency_ms"],
-        )
-        if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 for value in timings) or identity != {
-            "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
-            "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
-            "platform": "pi-debian13-aarch64",
-            "runtime_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
-            "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
-            "config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
-        } or draft["prewarm_prompt_sha256"] != "4f3bc3e09b3b1693812c749765cfce5899dc11933de06623dbfc82a61a50472d":
-            raise GateFailure("M4b READY card identity mismatch")
-    elif test_id == "M4B-GEN-001":
-        response_digests = draft["response_digests"]
-        if (
-            type(draft["child_pid"]) is not int or draft["child_pid"] <= 0
-            or draft["engine_load_count"] != 3
-            or draft["conversation_count"] != 20
-            or any(type(draft[name]) not in (int, float) or not math.isfinite(draft[name]) or draft[name] < 0 for name in ("init_ms", "ttft_ms"))
-            or type(draft["prefill_tokens"]) is not int or not 1 <= draft["prefill_tokens"] <= 128
-            or type(draft["decode_tokens"]) is not int or not 1 <= draft["decode_tokens"] <= 128
-            or type(draft["kv_tokens"]) is not int or not 1 <= draft["kv_tokens"] <= 1024
-            or type(response_digests) is not list or len(response_digests) != 20
-            or any(not re.fullmatch(r"[0-9a-f]{64}", str(value)) for value in response_digests)
-        ):
-            raise GateFailure("M4b generation card is not fully passing")
-    elif test_id == "M4B-OUT-001":
-        if (
-            type(draft["catalog_case_count"]) is not int
-            or draft["catalog_case_count"] != 23
-            or draft["schema_pass_count"] != draft["catalog_case_count"]
-            or draft["expected_action_pass_count"] != draft["catalog_case_count"]
-            or draft["reasoner_validation_pass_count"] != draft["catalog_case_count"]
-            or draft["current_input_binding_pass_count"] != draft["catalog_case_count"]
-        ):
-            raise GateFailure("M4b output catalog card is not fully passing")
-    elif test_id == "M4B-P5-001":
-        if draft["case"] != "ReasoningInputTooLarge" or draft["converged_to"] != "P5":
-            raise GateFailure("M4b P5 card is not fully passing")
-    elif test_id == "M4B-CAN-001":
-        if (
-            draft["case"] != "cooperative-cancel-and-level2"
-            or draft["native_cancel_calls"] != 1
-            or draft["worker_joined"] is not True
-            or type(draft["term_sent"]) is not bool
-            or type(draft["kill_sent"]) is not bool
-            or type(draft["waitpid_exit_code"]) is not int
-            or draft["recovery_ready"] is not True
-        ):
-            raise GateFailure("M4b cancellation card is not fully passing")
-    elif test_id == "M4B-REC-001":
-        if (
-            draft["trigger_reason"] != "attempt-limit-8-and-16"
-            or draft["generation_count"] != 3
-            or draft["ticket_id"] != 2
-        ):
-            raise GateFailure("M4b recovery card is not fully passing")
-    elif test_id == "M4B-HIST-001":
-        if (
-            draft["turn_count"] != 5
-            or draft["conversation_count"] != 5
-            or draft["conversation_close_count"] != 5
-            or draft["child_pid_stable"] is not True
-            or draft["current_semantic_pass_count"] != 5
-        ):
-            raise GateFailure("M4b history card is not fully passing")
-    elif test_id == "M4B-OFF-001":
-        if draft["session_status"] != "Pass" or not re.fullmatch(
-            r"[0-9a-f]{64}", str(draft["session_result_sha256"]),
-        ):
-            raise GateFailure("M4b offline card identity mismatch")
-    elif test_id == "M4B-RES-001":
-        if (
-            draft["session_count"] != 20
-            or draft["generation_count"] != 3
-            or draft["r14_formula_version"] != "2026-08-29-r14-user-resource-adjustment"
-            or draft["swap_used_zero"] is not True
-            or draft["throttled_zero"] is not True
-            or draft["poc_p9_p10b_status"] != "FAIL"
-            or draft["user_waiver"] != "KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION"
-            or any(draft[name] != 20 for name in (
-                "schema_pass_count", "reasoner_validation_pass_count",
-                "current_input_binding_pass_count", "nonblank_speak_count",
-                "next_perception_pass_count", "tts_terminal_pass_count",
-            ))
-        ):
-            raise GateFailure("M4b resource card fixed identity mismatch")
-        for name, maximum in (
-            ("combined_pss_slope_mib_per_session", 4),
-            ("system_used_slope_mib_per_session", 4),
-            ("combined_pss_late_minus_early_median_delta_mib", 64),
-            ("system_used_late_minus_early_median_delta_mib", 64),
-            ("max_generation_delta_mib", 64),
-            ("max_system_used_mib", 3584),
-            ("thermal_max_celsius", 80),
-        ):
-            value = draft[name]
-            if type(value) not in (int, float) or not math.isfinite(value):
-                raise GateFailure("M4b resource card exceeds a frozen gate")
-            exceeded = value >= maximum if name == "thermal_max_celsius" else value > maximum
-            if exceeded:
-                raise GateFailure("M4b resource card exceeds a frozen gate")
-    elif test_id in {"M4B-PRIV-001", "M4B-PKG-001"}:
-        digest_name = "paths_digest" if test_id == "M4B-PRIV-001" else "install_inventory_sha256"
-        if not re.fullmatch(r"[0-9a-f]{64}", str(draft[digest_name])):
-            raise GateFailure("M4b acceptance card digest is invalid")
-        if test_id == "M4B-PRIV-001":
-            locators = draft["scanned_locators"]
-            if (
-                type(locators) is not list
-                or len(locators) < 5
-                or any(type(value) is not str or not value for value in locators)
-                or hashlib.sha256("\n".join(locators).encode()).hexdigest() != draft["paths_digest"]
-            ):
-                raise GateFailure("M4b privacy card scan identity is invalid")
-        if test_id == "M4B-PKG-001" and (
-            draft["abi_status"] != "Pass"
-            or not re.fullmatch(r"[0-9a-f]{64}", str(draft["python_abi_attestation_sha256"]))
-            or type(draft["file_count"]) is not int
-            or draft["file_count"] <= 0
-        ):
-            raise GateFailure("M4b package ABI evidence is invalid")
+def _validate_m4b_card(draft: dict[str, Any], *, evidence_resolver=None) -> None:
+    """Reconcile private digest-bound proofs without putting their content in cards."""
+    for directory in (Path(__file__).resolve().parents[1], Path(__file__).resolve().parents[1] / "src"):
+        if str(directory) not in sys.path:
+            sys.path.insert(0, str(directory))
+    from scripts.m4b_inheritance import InheritanceError, validate_result_record
+    if draft.get("test_id") not in M4B_TARGET_IDS:
+        raise GateFailure("M4B_RETIRED_OR_UNKNOWN_TARGET_ID")
+    try:
+        validate_result_record(draft, candidate_sha=draft.get("candidate_sha", ""),
+                               profile_sha256=draft.get("profile_sha256", ""))
+    except (InheritanceError, TypeError, ValueError):
+        raise GateFailure("M4B_TARGET_METADATA_INVALID") from None
+    if evidence_resolver is None:
+        raise GateFailure("M4B_PRIVATE_PROOF_INCOMPLETE")
+    try:
+        raw = evidence_resolver(draft["evidence_sha256"])
+        if type(raw) is not bytes or hashlib.sha256(raw).hexdigest() != draft["evidence_sha256"]:
+            raise ValueError
+        proof = json.loads(raw)
+        if (type(proof) is not dict or set(proof) != {
+                "schema_version", "test_id", "candidate_sha", "profile_sha256", "data"}
+                or proof["schema_version"] != 1 or type(proof["schema_version"]) is not int
+                or any(proof[k] != draft[k] for k in ("test_id", "candidate_sha", "profile_sha256"))
+                or draft["status"] != "Pass" or type(proof["data"]) is not dict):
+            raise ValueError
+        _m4b_validate_proof(draft, proof["data"], evidence_resolver)
+    except Exception:
+        raise GateFailure("M4B_PRIVATE_PROOF_INVALID") from None
 
 
-def _finalize_acceptance_cards(output: Path, result: dict[str, Any]) -> None:
+def _m4b_exact(value, fields):
+    if type(value) is not dict or set(value) != set(fields):
+        raise ValueError
+
+
+def _m4b_digest(value):
+    if type(value) is not str or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+        raise ValueError
+
+
+def _m4b_raw_artifact(digest, resolver):
+    _m4b_digest(digest)
+    payload = resolver(digest)
+    if type(payload) is not bytes or not payload or hashlib.sha256(payload).hexdigest() != digest:
+        raise ValueError
+    return payload
+
+
+def _m4b_true(value):
+    if value is not True:
+        raise ValueError
+
+
+def _m4b_int(value, minimum=0):
+    if type(value) is not int or value < minimum:
+        raise ValueError
+
+
+def _m4b_sample(value):
+    from sbd.cognition.litert_lm.resource import ProcessResource, SystemResourceSample
+    _m4b_exact(value, {"monotonic_ns", "processes", "mem_total_bytes", "mem_available_bytes",
+        "swap_used_bytes", "oom_kill", "temperature_c", "throttled_bits"})
+    if type(value["processes"]) is not list:
+        raise ValueError
+    processes = []
+    for row in value["processes"]:
+        _m4b_exact(row, {"pid", "owner", "start_time_ticks", "pss_bytes", "rss_bytes", "cpu_seconds", "threads"})
+        owner = row["owner"]
+        if type(owner) is list:
+            if len(owner) != len(set(owner)):
+                raise ValueError
+            owner = frozenset(owner)
+        processes.append(ProcessResource(**{**row, "owner": owner}))
+    sample = SystemResourceSample(**{**value, "processes": tuple(processes)})
+    sample.validate()
+    return sample
+
+
+def _m4b_validate_proof(record, data, resolver):
+    from sbd.cognition.litert_lm.lock import (LLMArtifactLock, load_product_profile,
+        validate_product_profile, EXPECTED_MODEL, EXPECTED_RUNTIME)
+    from sbd.cognition.observability import timing_row
+    test_id = record["test_id"]
+    if test_id == "M4B-PI-ATT-001":
+        _m4b_exact(data, {"profile", "ready_identity", "artifacts", "target", "capture"})
+        profile = validate_product_profile(data["profile"])
+        if profile["profile_sha256"] != record["profile_sha256"]:
+            raise ValueError
+        lock_path = Path(__file__).resolve().parents[1] / "requirements/m4b/llm-artifacts.json"
+        lock = LLMArtifactLock.load(lock_path)
+        if data["ready_identity"] != lock.ready_identity(profile).fields:
+            raise ValueError
+        lock_data = json.loads(lock_path.read_bytes())
+        expected_artifacts = {name: EXPECTED_RUNTIME[name] for name in
+            ("wheel_filename", "wheel_size_bytes", "wheel_sha256", "native_relative_path", "native_size_bytes", "native_sha256")}
+        expected_artifacts.update(model_filename=EXPECTED_MODEL["filename"], model_size_bytes=EXPECTED_MODEL["size_bytes"],
+            model_sha256=EXPECTED_MODEL["sha256"], lock_sha256=lock.digest,
+            runtime_manifest_sha256=lock_data["runtime_closure"]["manifest_sha256"], runtime_file_count=14,
+            notice_sha256=lock_data["licenses"]["notice_sha256"])
+        _m4b_exact(data["artifacts"], expected_artifacts)
+        if any(type(data["artifacts"][k]) is not type(v) or data["artifacts"][k] != v for k, v in expected_artifacts.items()):
+            raise ValueError
+        target = data["target"]
+        _m4b_exact(target, {"clean_worktree", "candidate_sha", "platform", "python", "soabi", "multiarch",
+                            "pid", "pgid", "prewarm_count", "conversation_count", "kernel_sha256",
+                            "deployment_files_verified", "system_site_packages", "extra_artifact_count", "alternate_endpoint_count"})
+        _m4b_true(target["clean_worktree"])
+        _m4b_true(target["deployment_files_verified"])
+        if target["system_site_packages"] is not False:
+            raise ValueError
+        _m4b_digest(target["kernel_sha256"])
+        if (target["candidate_sha"] != record["candidate_sha"] or target["platform"] != record["platform"]
+                or target["python"] != "3.13.5" or target["soabi"] != "cpython-313-aarch64-linux-gnu"
+                or target["multiarch"] != "aarch64-linux-gnu" or target["pid"] != target["pgid"]):
+            raise ValueError
+        _m4b_int(target["pid"], 1)
+        _m4b_int(target["pgid"], 1)
+        for name in ("prewarm_count", "conversation_count", "extra_artifact_count", "alternate_endpoint_count"):
+            _m4b_int(target[name])
+            if target[name] != 0:
+                raise ValueError
+        _m4b_exact(data["capture"], {"before_native_import", "through_child_exit", "network_attempts",
+                                    "downloader_calls", "telemetry_calls", "dns_calls", "fallback_calls"})
+        for name, value in data["capture"].items():
+            if name in {"before_native_import", "through_child_exit"}:
+                _m4b_true(value)
+            else:
+                _m4b_int(value)
+                if value:
+                    raise ValueError
+    elif test_id == "M4B-PI-SEM-001":
+        _m4b_exact(data, {"cases"})
+        cases = data["cases"]
+        if type(cases) is not list or len(cases) != 9 or {c["case_id"] for c in cases} != {f"H{i:02}" for i in range(1, 10)}:
+            raise ValueError
+        by_id = {}
+        for case in cases:
+            _m4b_exact(case, {"case_id", "answer_sha256", "end", "spoken_length", "structural_pass",
+                "conversation_generation", "turn_index", "farewell_before_rest", "rubric"})
+            _m4b_raw_artifact(case["answer_sha256"], resolver)
+            _m4b_true(case["structural_pass"])
+            _m4b_int(case["spoken_length"], 1)
+            _m4b_int(case["conversation_generation"], 1)
+            _m4b_int(case["turn_index"], 1)
+            if case["spoken_length"] > 30 or type(case["end"]) is not bool or case["end"] != (case["case_id"] == "H05"):
+                raise ValueError
+            if case["case_id"] == "H05":
+                _m4b_true(case["farewell_before_rest"])
+            elif case["farewell_before_rest"] is not None:
+                raise ValueError
+            rubric = case["rubric"]
+            _m4b_exact(rubric, {"reviewer", "correct_relevant", "capability_honest", "end_polarity",
+                "traditional_chinese", "personality_applicable", "personality_present", "concise"})
+            if type(rubric["reviewer"]) is not str or not rubric["reviewer"].strip():
+                raise ValueError
+            for name in ("correct_relevant", "capability_honest", "end_polarity", "traditional_chinese", "concise"):
+                _m4b_true(rubric[name])
+            if type(rubric["personality_applicable"]) is not bool:
+                raise ValueError
+            if case["case_id"] == "H07" or rubric["personality_applicable"]:
+                _m4b_true(rubric["personality_applicable"])
+                _m4b_true(rubric["personality_present"])
+            elif rubric["personality_present"] is not None:
+                raise ValueError
+            by_id[case["case_id"]] = case
+        if (by_id["H08"]["conversation_generation"] != by_id["H09"]["conversation_generation"]
+                or by_id["H09"]["turn_index"] != by_id["H08"]["turn_index"] + 1):
+            raise ValueError
+    elif test_id == "M4B-PI-CONV-001":
+        _m4b_exact(data, {"events", "same_product_session", "rejected_send_count", "rejected_mutation_count",
+            "automatic_replay_count", "old_context_absent", "new_context_works"})
+        for key in ("same_product_session", "old_context_absent", "new_context_works"):
+            _m4b_true(data[key])
+        for key in ("rejected_send_count", "rejected_mutation_count", "automatic_replay_count"):
+            _m4b_int(data[key])
+            if data[key]:
+                raise ValueError
+        events = data["events"]
+        names = ["context_rejected", "primary_terminal", "close_proven", "open_ready", "human_repeat",
+                 "repeat_success", "following_success"]
+        if type(events) is not list or [e["event"] for e in events] != names:
+            raise ValueError
+        previous_ns = -1
+        for index, event in enumerate(events):
+            _m4b_exact(event, {"event", "monotonic_ns", "generation", "turn_index", "proofs"})
+            _m4b_int(event["monotonic_ns"])
+            _m4b_int(event["generation"], 1)
+            _m4b_int(event["turn_index"], 1)
+            if event["monotonic_ns"] < previous_ns:
+                raise ValueError
+            previous_ns = event["monotonic_ns"]
+            if event["generation"] != events[0]["generation"] + (1 if index >= 3 else 0):
+                raise ValueError
+            if event["event"] == "close_proven":
+                _m4b_exact(event["proofs"], {"closed", "history_clear", "kv_released"})
+                for value in event["proofs"].values():
+                    _m4b_true(value)
+            elif event["proofs"] is not None:
+                raise ValueError
+        if not events[0]["turn_index"] < events[4]["turn_index"] == events[5]["turn_index"] < events[6]["turn_index"]:
+            raise ValueError
+    elif test_id == "M4B-PI-MEM-001":
+        from scripts.m4b_target_metrics import (MeasurementPoint, validate_authorization, freeze_release_profile)
+        from sbd.cognition.litert_lm.resource import memory_decision
+        _m4b_exact(data, {"measurement_profile", "authorization", "points", "freeze_approvals", "release_profile",
+            "completed", "cleanup_proven", "measurement_run_sha256", "release_run_sha256", "release_rows",
+            "recovery_ready", "new_turn_success"})
+        measured = validate_product_profile(data["measurement_profile"], allow_measurement=True)
+        expected = {"schema_version": 1, "candidate_sha": record["candidate_sha"],
+            "profile_sha256": measured["profile_sha256"], "target_identity": "pi5-4gb-debian13-aarch64-cp3135",
+            "harness_sha256": hashlib.sha256(Path(__file__).with_name("m4b_target_metrics.py").read_bytes()).hexdigest()}
+        validate_authorization(data["authorization"], expected)
+        for name in ("measurement_run_sha256", "release_run_sha256"):
+            _m4b_raw_artifact(data[name], resolver)
+        if data["measurement_run_sha256"] == data["release_run_sha256"]:
+            raise ValueError
+        measurement_raw = json.loads(_m4b_raw_artifact(data["measurement_run_sha256"], resolver))
+        if measurement_raw != {"points": data["points"], "completed": data["completed"],
+                               "cleanup_proven": data["cleanup_proven"]}:
+            raise ValueError
+        points = []
+        for row in data["points"]:
+            _m4b_exact(row, {"lifecycle_point", "operation_index", "sample"})
+            points.append(MeasurementPoint(row["lifecycle_point"], row["operation_index"], _m4b_sample(row["sample"])))
+        release = freeze_release_profile(measured, points, evidence_sha256=data["measurement_run_sha256"],
+            approvals=data["freeze_approvals"], completed=data["completed"], cleanup_proven=data["cleanup_proven"])
+        if release != data["release_profile"] or release["profile_sha256"] != record["profile_sha256"]:
+            raise ValueError
+        release_raw = json.loads(_m4b_raw_artifact(data["release_run_sha256"], resolver))
+        if release_raw != {"rows": data["release_rows"], "profile_sha256": release["profile_sha256"]}:
+            raise ValueError
+        observed = set()
+        for row in data["release_rows"]:
+            _m4b_exact(row, {"sample", "decision", "generate_calls", "tts_calls", "recycle_pending"})
+            sample = _m4b_sample(row["sample"])
+            decision = memory_decision(sample,
+                min_mem_available_speak_bytes=release["min_mem_available_speak_bytes"],
+                min_mem_available_generate_bytes=release["min_mem_available_generate_bytes"])
+            if row["decision"] != decision.value or row["generate_calls"] != (1 if decision.value == "GENERATE" else 0):
+                raise ValueError
+            _m4b_int(row["generate_calls"])
+            _m4b_int(row["tts_calls"])
+            if decision.value == "SILENT" and row["tts_calls"] != 0:
+                raise ValueError
+            if decision.value == "NOTICE" and row["tts_calls"] != 1:
+                raise ValueError
+            if type(row["recycle_pending"]) is not bool or row["recycle_pending"] != (decision.value != "GENERATE"):
+                raise ValueError
+            observed.add(sample.mem_available_bytes)
+        speak, generate = release["min_mem_available_speak_bytes"], release["min_mem_available_generate_bytes"]
+        if not {speak, speak - 1, generate, generate - 1}.issubset(observed):
+            raise ValueError
+        _m4b_true(data["recovery_ready"])
+        _m4b_true(data["new_turn_success"])
+    elif test_id == "M4B-PI-WAKE-001":
+        _m4b_exact(data, {"cases"})
+        cases = data["cases"]
+        if type(cases) is not list or {r["case"] for r in cases} != {"open_first", "ack_first", "slow_open", "interrupt_open"} or len(cases) != 4:
+            raise ValueError
+        for row in cases:
+            _m4b_exact(row, {"case", "wake_ack_ns", "open_ready_ns", "open_join_ns", "activity",
+                "display_blocked", "display_fact_count", "display_turn_count", "cleanup_proven"})
+            if row["display_blocked"] is not False or row["display_fact_count"] != 0 or row["display_turn_count"] != 0:
+                raise ValueError
+            _m4b_int(row["display_fact_count"])
+            _m4b_int(row["display_turn_count"])
+            if row["case"] == "interrupt_open":
+                if row["activity"] != [] or row["open_ready_ns"] is not None or row["open_join_ns"] is not None:
+                    raise ValueError
+                _m4b_true(row["cleanup_proven"])
+                continue
+            for name in ("wake_ack_ns", "open_ready_ns", "open_join_ns"):
+                _m4b_int(row[name])
+            if row["open_join_ns"] < row["open_ready_ns"]:
+                raise ValueError
+            if row["case"] == "open_first" and row["open_ready_ns"] > row["wake_ack_ns"]:
+                raise ValueError
+            if row["case"] in {"ack_first", "slow_open"} and row["wake_ack_ns"] > row["open_ready_ns"]:
+                raise ValueError
+            if {e["kind"] for e in row["activity"]} != {"audio_pull", "listen", "asr", "perception", "reasoner"}:
+                raise ValueError
+            for event in row["activity"]:
+                _m4b_exact(event, {"kind", "monotonic_ns"})
+                _m4b_int(event["monotonic_ns"])
+                if event["monotonic_ns"] < max(row["wake_ack_ns"], row["open_join_ns"]):
+                    raise ValueError
+    elif test_id == "M4B-PI-TIME-001":
+        _m4b_exact(data, {"rows", "clock_mapping_sha256", "mapping_verified"})
+        _m4b_raw_artifact(data["clock_mapping_sha256"], resolver)
+        _m4b_true(data["mapping_verified"])
+        if type(data["rows"]) is not list or not data["rows"]:
+            raise ValueError
+        for row in data["rows"]:
+            _m4b_exact(row, {"clock_domain", "events", "null_reasons"})
+            timing_row(**row)
+    elif test_id == "M4B-PI-RES-001":
+        _m4b_exact(data, {"runs", "cleanup", "scan"})
+        if type(data["runs"]) is not list or {r["stage"] for r in data["runs"]} != {"measurement", "release"} or len(data["runs"]) != 2:
+            raise ValueError
+        for run in data["runs"]:
+            counters = {"network_attempts", "swap_growth_bytes", "oom_delta", "kernel_faults", "throttled_bits",
+                        "temperature_stop_violations", "orphans", "duplicate_pids", "owner_leaks"}
+            _m4b_exact(run, counters | {"stage", "run_sha256"})
+            _m4b_raw_artifact(run["run_sha256"], resolver)
+            for name in counters:
+                _m4b_int(run[name])
+                if run[name]:
+                    raise ValueError
+        if data["runs"][0]["run_sha256"] == data["runs"][1]["run_sha256"]:
+            raise ValueError
+        cleanup = data["cleanup"]
+        if type(cleanup) is not list or {r["kind"] for r in cleanup} != {"normal_close", "planned_recovery", "forced_pgid", "shutdown"} or len(cleanup) != 4:
+            raise ValueError
+        for row in cleanup:
+            _m4b_exact(row, {"kind", "start_ns", "exit_ns", "deadline_ns", "remaining_owners", "remaining_descendants", "recovery_success"})
+            for name in ("start_ns", "exit_ns", "deadline_ns", "remaining_owners", "remaining_descendants"):
+                _m4b_int(row[name])
+            if not row["start_ns"] <= row["exit_ns"] <= row["deadline_ns"] or row["remaining_owners"] or row["remaining_descendants"]:
+                raise ValueError
+            if row["kind"] in {"planned_recovery", "forced_pgid"}:
+                _m4b_true(row["recovery_success"])
+        scan = data["scan"]
+        _m4b_exact(scan, {"domains", "post_session_close", "post_shutdown", "reversible_encodings", "hits", "manifest_sha256"})
+        if type(scan["domains"]) is not list or set(scan["domains"]) != {"logs", "public_evidence", "temp_workdirs", "process_arguments", "process_environment", "persisted_files"}:
+            raise ValueError
+        for name in ("post_session_close", "post_shutdown", "reversible_encodings"):
+            _m4b_true(scan[name])
+        _m4b_int(scan["hits"])
+        if scan["hits"]:
+            raise ValueError
+        _m4b_raw_artifact(scan["manifest_sha256"], resolver)
+    else:
+        raise ValueError
+
+
+def _finalize_acceptance_cards(output: Path, result: dict[str, Any], *, m4b_evidence_resolver=None) -> None:
     card_root = output / "cards"
     if not card_root.is_dir() or card_root.is_symlink():
         raise GateFailure("acceptance card output is absent or unsafe")
     reserved = set(result) - {"candidate_sha"}
     m4b_ids: set[str] = set()
+    m4b_profiles: set[str] = set()
     for path in sorted(card_root.iterdir()):
         if not path.is_file() or path.is_symlink() or path.suffix != ".json":
             raise GateFailure("acceptance card output contains an unsafe entry")
@@ -622,22 +861,23 @@ def _finalize_acceptance_cards(output: Path, result: dict[str, Any]) -> None:
             or draft.get("candidate_sha") != result["candidate_sha"]
         ):
             raise GateFailure("test-specific acceptance card identity mismatch")
-        if set(draft) & reserved:
-            raise GateFailure("test-specific acceptance card overrides runner fields")
         if test_id.startswith("M4B-"):
             if test_id in m4b_ids:
                 raise GateFailure("duplicate M4b acceptance card")
-            _validate_m4b_card(draft)
+            _validate_m4b_card(draft, evidence_resolver=m4b_evidence_resolver)
             m4b_ids.add(test_id)
+            m4b_profiles.add(draft["profile_sha256"])
+            # Current M4B cards already have their complete public schema. Do not
+            # merge runner paths or private diagnostics into them.
+            continue
+        if set(draft) & reserved:
+            raise GateFailure("test-specific acceptance card overrides runner fields")
         finalized = dict(result)
         finalized.update(draft)
         write_json(path, finalized)
-    expected_m4b = {
-        "M4B-RDY-001", "M4B-GEN-001", "M4B-OUT-001", "M4B-P5-001",
-        "M4B-CAN-001", "M4B-REC-001", "M4B-HIST-001", "M4B-PRIV-001",
-        "M4B-OFF-001", "M4B-RES-001", "M4B-PKG-001",
-    }
-    if m4b_ids and m4b_ids != expected_m4b:
+    expected_m4b = M4B_TARGET_IDS
+    if (m4b_ids or "m4b_python_abi_attestation_sha256" in result) and (
+            m4b_ids != expected_m4b or len(m4b_profiles) != 1):
         raise GateFailure("M4b acceptance card set is missing or contains unknown IDs")
 
 
@@ -763,42 +1003,41 @@ def validate_m4b_product_preflight(
     value: dict[str, Any], candidate_sha: str,
 ) -> tuple[str, str]:
     required = {
-        "status", "candidate_sha", "candidate_id", "pairing_revision",
+        "status", "operation", "candidate_sha", "candidate_id", "pairing_revision",
         "artifact_lock_sha256", "runtime_manifest_sha256", "runtime_file_count",
         "install_file_count", "install_inventory_sha256", "model_sha256",
-        "product_config_sha256", "platform", "python",
-        "python_abi_attestation_sha256",
+        "profile_id", "profile_sha256", "profile_stage", "network_isolated",
+        "platform", "python", "python_abi_attestation_sha256",
     }
-    fixed = {
-        "status": "Pass",
-        "candidate_sha": candidate_sha,
-        "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
-        "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
-        "platform": "pi-debian13-aarch64",
-        "python": "CPython 3.13.5",
-        "artifact_lock_sha256": "92e78d0c85de5419a02d28a74db03fe28fa27197d34ef49cb44abfb2bb0aac99",
-        "runtime_manifest_sha256": "6c11b8357021fb3bd7abaddeb8fdfdabc1b0fa85cd22bd49fcd7d9cd7d0871d2",
-        "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
-        "product_config_sha256": "c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e",
-        "runtime_file_count": 14,
-    }
-    if (
-        type(value) is not dict
-        or set(value) != required
-        or _draft_contains_absolute(value)
-        or any(value.get(key) != expected for key, expected in fixed.items())
-    ):
-        raise GateFailure("M4b product preflight identity mismatch")
-    abi = value.get("python_abi_attestation_sha256")
-    inventory = value.get("install_inventory_sha256")
-    if (
-        not re.fullmatch(r"[0-9a-f]{64}", str(abi))
-        or not re.fullmatch(r"[0-9a-f]{64}", str(inventory))
-        or type(value.get("install_file_count")) is not int
-        or value["install_file_count"] <= 0
-    ):
-        raise GateFailure("M4b product preflight ABI evidence is invalid")
-    return str(abi), str(inventory)
+    # This file comes from the candidate checkout, never a caller-selected lock.
+    lock_path = Path(__file__).resolve().parents[1] / "requirements/m4b/llm-artifacts.json"
+    try:
+        raw = lock_path.read_bytes()
+        lock = json.loads(raw)
+        fixed = {
+            "status": "PreflightReady", "operation": "preflight",
+            "candidate_sha": candidate_sha,
+            "candidate_id": "CAND-LRT-G4E2B-MOBILE-R1",
+            "pairing_revision": "litert-lm-v0.16.0-pi-g2b-r5",
+            "platform": "pi-debian13-aarch64", "python": "CPython 3.13.5",
+            "artifact_lock_sha256": hashlib.sha256(raw).hexdigest(),
+            "runtime_manifest_sha256": lock["runtime_closure"]["manifest_sha256"],
+            "model_sha256": lock["model"]["sha256"], "runtime_file_count": 14,
+            "profile_id": "core-m4b-cognition-001", "profile_stage": "release",
+            "network_isolated": True,
+        }
+    except (OSError, KeyError, TypeError, ValueError):
+        raise GateFailure("M4B_PREFLIGHT_AUTHORITY_UNAVAILABLE") from None
+    if (type(value) is not dict or set(value) != required
+            or not SHA_RE.fullmatch(candidate_sha) or _draft_contains_absolute(value)
+            or any(type(value.get(k)) is not type(v) or value[k] != v for k, v in fixed.items())):
+        raise GateFailure("M4B_PREFLIGHT_IDENTITY_INVALID")
+    for name in ("profile_sha256", "python_abi_attestation_sha256", "install_inventory_sha256"):
+        if type(value[name]) is not str or re.fullmatch(r"[0-9a-f]{64}", value[name]) is None:
+            raise GateFailure("M4B_PREFLIGHT_DIGEST_INVALID")
+    if type(value["install_file_count"]) is not int or value["install_file_count"] <= 0:
+        raise GateFailure("M4B_PREFLIGHT_INVENTORY_INVALID")
+    return value["python_abi_attestation_sha256"], value["install_inventory_sha256"]
 
 
 def preflight(args: argparse.Namespace, repo: Repository, output: Path) -> None:

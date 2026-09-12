@@ -1,3 +1,15 @@
+tests/test_m4b_norm_001.py
+tests/test_m4b_prompt_001.py
+tests/test_m4b_sem_001.py
+tests/test_m4b_s2_001.py
+tests/test_m4b_adm_001.py
+tests/test_m4b_prefill_001.py
+tests/test_m4b_outcome_001.py
+tests/test_m4b_conv_001.py
+tests/test_m4b_mem_001.py
+tests/test_m4b_measurement_harness.py
+tests/test_m4b_wire_001.py
+tests/test_m4b_reg_001.py
 tests/test_m4b_cfg_001.py
 tests/test_m4b_lock_001.py
 tests/test_m4b_ipc_001.py

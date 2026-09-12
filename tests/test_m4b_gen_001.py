@@ -1,292 +1,179 @@
-"""M4B-GEN-001 — persistent parent, single-flight and fresh request identity."""
-
-from __future__ import annotations
-
+"""M4B generation: real adapter/worker logic, private one-use admission."""
 import asyncio
-import threading
-from pathlib import Path
-
+from dataclasses import replace
 import pytest
+from sbd.cognition.llm import LLMFatalError, ReplaceableGenerationFailure
+from sbd.cognition.litert_lm.adapter import AdapterState
+from tests.fakes.m4b_llm_child import adapter_fixture
 
-from sbd.adaptor.errors import AdapterRejected
-from sbd.cognition.litert_lm.adapter import (
-    AdapterState, LLMFatalError, LiteRTLMAdapter,
-)
-from sbd.cognition.litert_lm.lock import LLMArtifactLock
-from sbd.cognition.litert_lm.worker import LiteRTRuntime, WorkerInputTooLarge
-from sbd.cognition.llm import LLMResourceSample
-from sbd.cognition.llm_child_protocol import PROTOCOL_VERSION
-from sbd.cognition.prompt_builder import ReasoningInput
-from sbd.core.config.models import LLMConfig
-from sbd.core.resource_manager.models import RecoveryTicket
-
-
-ROOT = Path(__file__).parent.parent
-
-
-def _input() -> ReasoningInput:
-    return ReasoningInput((), 0, (), ("rest",), ())
-
-
-def _result(request_id: str) -> dict[str, object]:
-    return {
-        "type": "RESULT", "protocol_version": PROTOCOL_VERSION,
-        "request_id": request_id,
-        "response": {"action_kind": "rest", "action_payload": {}, "next_perceptions": []},
-        "metrics": {
-            "init_ms": 0.0, "ttft_ms": 1.0, "prefill_tokens": 1,
-            "prefill_tokens_per_second": 1.0, "decode_tokens": 1,
-            "decode_tokens_per_second": 1.0, "kv_tokens": 1,
-        },
-        "state": "READY",
-    }
+@pytest.mark.asyncio
+async def test_generation_consumes_ticket_and_reuses_conversation():
+    adapter, children, tickets, sampler = adapter_fixture()
+    await adapter.start()
+    await adapter.control.open_conversation("session", 1)
+    child = children[0]
+    history = child.runtime.history
+    for index, text in enumerate(("你好", "再次")):
+        snapshot = await adapter.measure("session", 1, text)
+        assert snapshot.input_sha256 and snapshot.user_tokens == 2
+        assert child.runtime.sends == index
+        result = await adapter.generate(snapshot, text)
+        assert result.text == "你好" and result.end is False
+        assert adapter.conversation_revision == index + 1
+        assert child.runtime.history is history
+    assert child.runtime.history == ["你好", "再次"]
+    assert sampler.calls == 3 and not tickets
+    await adapter.control.close_conversation("session", 1, "session_end")
+    assert child.runtime.history is None
+    await adapter.stop()
 
 
-class Child:
-    def __init__(self, lock: LLMArtifactLock, generation: int) -> None:
-        self.pid = 100 + generation
-        self.pgid = self.pid
-        self.lock = lock
-        self.frames: list[dict[str, object]] = []
-        self.terminals: asyncio.Queue[dict[str, object]] = asyncio.Queue()
-        self.stopped = 0
-        self.terminated = 0
-
-    async def start(self):
-        identity = self.lock.identity
-        return {"type": "READY", "protocol_version": PROTOCOL_VERSION, "state": "READY", "identity": {
-            "candidate_id": identity.candidate_id, "pairing_revision": identity.pairing_revision,
-            "platform": identity.platform, "runtime_sha256": identity.runtime_sha256,
-            "model_sha256": identity.model_sha256, "config_sha256": identity.config_sha256,
-        }}
-
-    async def send(self, frame):
-        self.frames.append(dict(frame))
-        if frame["type"] == "GENERATE":
-            await self.terminals.put(_result(frame["request_id"]))
-
-    async def receive(self): return await self.terminals.get()
-    async def stop(self): self.stopped += 1
-    async def force_terminate(self): self.terminated += 1
-
-
-class Sampler:
-    def __init__(self) -> None: self.calls = 0
-    def sample(self, *, child_pid: int, child_pgid: int):
-        self.calls += 1
-        return LLMResourceSample(100, 2 * 1024**3)
+@pytest.mark.asyncio
+async def test_actual_adapter_callbacks_emit_private_free_runtime_and_lifecycle_observations():
+    from sbd.cognition.observability import CognitionObserver
+    from itertools import count
+    rows = []
+    observer = CognitionObserver(sink=rows.append, clock=count(100).__next__)
+    adapter, children, _, sampler = adapter_fixture()
+    adapter._observer = observer
+    await adapter.start()
+    await adapter.open_conversation("private-session", 1)
+    observer.mark("asr_final")
+    observer.begin_turn(1, 1, 2)
+    snapshot = await adapter.measure("private-session", 1, "私密")
+    before_generate = sampler.calls
+    result = await adapter.generate(snapshot, "私密")
+    assert sampler.calls == before_generate + 2  # one pre-admission, one post-terminal
+    observer.outcome("GENERATE")
+    observer.finish()
+    await adapter.close_conversation("private-session", 1, "session_end")
+    await adapter.stop()
+    memory = [row["values"] for row in rows if row["dashboard"] == "memory"]
+    assert [row["lifecycle_point"] for row in memory] == ["engine_ready",
+        "conversation_preparation", "conversation_ready", "pre_generate", "post_generate",
+        "post_session_close"]
+    assert len([row for row in rows if row["dashboard"] == "prompt"]) == 1
+    runtime = next(row["values"] for row in rows if row["dashboard"] == "runtime")
+    assert runtime["decode_tokens"] == result.metrics.decode_tokens
+    assert runtime["runtime_prefill_tokens"] == snapshot.runtime_prefill_tokens
+    assert runtime["admission_result"] == "GENERATE"
+    assert "私密" not in repr(rows) and "private-session" not in repr(rows)
+    assert children[0].runtime.sends == 1
 
 
-def _adapter(*, recycle: int = 8):
-    lock = LLMArtifactLock.load(ROOT / "requirements/m4b/llm-artifacts.json")
-    children: list[Child] = []
-    tickets: list[RecoveryTicket] = []
-    def factory(cfg, product, generation):
-        child = Child(product, generation)
-        children.append(child)
-        return child
-    def schedule(keys):
-        ticket = RecoveryTicket(len(tickets) + 1, keys)  # type: ignore[arg-type]
-        tickets.append(ticket)
-        return ticket
-    async def wait(ticket): return None
-    cfg = LLMConfig(recycle_max_inference_attempts=recycle)
-    adapter = LiteRTLMAdapter(
-        cfg, lock=lock, schedule_recovery=schedule, wait_recovery=wait,
-        resource_sampler=Sampler(), child_factory=factory,
-    )
-    return adapter, children, tickets
-
-
-def test_m4b_gen_001_persistent_child_and_monotonic_requests() -> None:
-    async def scenario() -> None:
-        adapter, children, _ = _adapter()
-        await adapter.start()
-        assert adapter.state_trace == [
-            AdapterState.STOPPED, AdapterState.AUTHENTICATING,
-            AdapterState.STARTING, AdapterState.ENGINE_LOADED,
-            AdapterState.PREWARMING, AdapterState.READY,
-        ]
-        await adapter.generate(_input())
-        await adapter.generate(_input())
-        assert len(children) == 1
-        assert [frame["request_id"] for frame in children[0].frames] == ["llm.1.1", "llm.1.2"]
-        assert adapter.state is AdapterState.READY
-    asyncio.run(scenario())
-
-
-def test_m4b_gen_001_startup_identity_failure_cleans_and_same_owner_retries(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    original = Child.start
-    calls = 0
-    async def first_bad(self):
-        nonlocal calls
-        calls += 1
-        frame = await original(self)
-        if calls == 1:
-            frame["identity"]["candidate_id"] = "wrong"
-        return frame
-    monkeypatch.setattr(Child, "start", first_bad)
-
-    async def scenario() -> None:
-        adapter, children, _ = _adapter()
-        with pytest.raises(LLMFatalError, match="startup"):
-            await adapter.start()
-        assert children[0].terminated == 1 and adapter.state is AdapterState.STOPPED
-        await adapter.start()
-        assert len(children) == 2 and adapter.state is AdapterState.READY
-    asyncio.run(scenario())
-
-
-def test_m4b_gen_001_initial_sample_failure_cleans_before_ready() -> None:
-    class InvalidSampler:
-        def sample(self, **kwargs): return LLMResourceSample(True, 1)  # type: ignore[arg-type]
-
-    async def scenario() -> None:
-        adapter, children, _ = _adapter()
-        adapter._sampler = InvalidSampler()
-        with pytest.raises(LLMFatalError, match="startup"):
-            await adapter.start()
-        assert children[0].terminated == 1
-        assert adapter.state is AdapterState.STOPPED
-        assert AdapterState.READY not in adapter.state_trace
-    asyncio.run(scenario())
-
-
-def test_m4b_gen_001_concurrent_generation_returns_busy_without_harming_first() -> None:
-    async def scenario() -> None:
-        adapter, children, _ = _adapter()
-        await adapter.start()
-        original = children[0].send
-        entered = asyncio.Event()
-        release = asyncio.Event()
-        async def blocked(frame):
-            entered.set()
-            await release.wait()
-            await original(frame)
-        children[0].send = blocked  # type: ignore[method-assign]
-        first = asyncio.create_task(adapter.generate(_input()))
-        await entered.wait()
-        with pytest.raises(AdapterRejected, match="BUSY"):
-            await adapter.generate(_input())
-        release.set()
-        await first
-        assert adapter.state is AdapterState.READY
-        assert len(children[0].frames) == 1
-        await adapter.generate(_input())
-    asyncio.run(scenario())
-
-
-def test_m4b_gen_001_eighth_attempt_schedules_same_owner_recycle() -> None:
-    async def scenario() -> None:
-        adapter, children, tickets = _adapter()
-        await adapter.start()
-        for _ in range(8):
-            await adapter.generate(_input())
-        assert len(tickets) == 1
-        assert tickets[0].keys == ("backend.cognition.reasoner.llm",)
-        assert adapter.state is AdapterState.RECYCLE_PENDING
-        await adapter.rebuild()
-        assert children[0].stopped == 1 and len(children) == 2
-        assert adapter.state is AdapterState.READY
-        await adapter.generate(_input())
-        assert children[1].frames[0]["request_id"] == "llm.2.1"
-    asyncio.run(scenario())
-
-
-@pytest.mark.parametrize(
-    ("delta", "mem_available", "triggered"),
-    [
-        (48 * 1024**2 - 1, 768 * 1024**2, False),
-        (48 * 1024**2, 768 * 1024**2, True),
-        (0, 768 * 1024**2 - 1, True),
-    ],
-)
-def test_m4b_gen_001_recycle_uses_exact_raw_byte_thresholds(
-    delta: int, mem_available: int, triggered: bool,
-) -> None:
-    class SequenceSampler:
-        def __init__(self): self.calls = 0
-        def sample(self, **kwargs):
-            self.calls += 1
-            return (
-                LLMResourceSample(100, 2 * 1024**3)
-                if self.calls == 1
-                else LLMResourceSample(100 + delta, mem_available)
-            )
-
-    async def scenario() -> None:
-        adapter, _, tickets = _adapter()
-        adapter._sampler = SequenceSampler()
-        await adapter.start()
-        await adapter.generate(_input())
-        assert bool(tickets) is triggered
-        assert (adapter.state is AdapterState.RECYCLE_PENDING) is triggered
-    asyncio.run(scenario())
-
-
-@pytest.mark.parametrize(("token_count", "accepted"), [(128, True), (129, False)])
-def test_m4b_gen_001_uses_rendered_chat_template_token_boundary_before_inference(
-    token_count: int, accepted: bool,
-) -> None:
-    class Info:
-        init_time_in_second = 0.0
-        time_to_first_token_in_second = 0.001
-        last_prefill_token_count = 128
-        last_prefill_tokens_per_second = 1.0
-        last_decode_token_count = 1
-        last_decode_tokens_per_second = 1.0
-
-    class Conversation:
-        token_count = 129
-        sent = 0
-        closed = 0
-
-        def render_message_to_string(self, prompt):
-            assert prompt.startswith("Return exactly one JSON object")
-            return "rendered-with-model-chat-template"
-
-        def send_message(self, *args, **kwargs):
-            self.sent += 1
-            return {"action_kind": "rest", "action_payload": {}, "next_perceptions": []}
-
-        def get_benchmark_info(self):
-            return Info()
-
-        def close(self):
-            self.closed += 1
-
-    conversation = Conversation()
-
-    class Engine:
-        def create_conversation(self, **kwargs):
-            return conversation
-
-        def tokenize(self, rendered):
-            assert rendered == "rendered-with-model-chat-template"
-            return list(range(token_count))
-
-    runtime = LiteRTRuntime.__new__(LiteRTRuntime)
-    runtime._engine = Engine()
-    runtime._response_format = type(
-        "Format", (), {"json": staticmethod(lambda schema: schema)},
-    )
-    runtime._constraint = object()
-    runtime._cancelled_error = type("Cancelled", (RuntimeError,), {})
-    runtime._active = None
-    runtime._pending_cancel = False
-    runtime._cancel_requested = False
-    runtime._lock = threading.Lock()
-    value = {
-        "perceptions": [], "pending_message_count": 0,
-        "capabilities": {"perceptions": [], "actions": ["rest"], "tools": []},
-    }
-    if accepted:
-        response, _ = runtime.generate(value)
-        assert response["action_kind"] == "rest" and conversation.sent == 1
+@pytest.mark.asyncio
+@pytest.mark.parametrize("proof", ["missing", "stable", "changed"])
+async def test_native_timing_requires_stable_process_and_clock_namespace_proof(proof):
+    from sbd.cognition.observability import CognitionObserver
+    rows = []
+    observer = CognitionObserver(sink=rows.append)
+    adapter, children, _, _ = adapter_fixture()
+    adapter._observer = observer
+    await adapter.start()
+    await adapter.open_conversation("s", 1)
+    if proof != "missing":
+        values = iter([(101, 77, 1, 2), (101, 77 if proof == "stable" else 78, 1, 2)])
+        children[0].clock_mapping_token = lambda: next(values)
+    observer.begin_turn(1, 1, 2)
+    snapshot = await adapter.measure("s", 1, "你好")
+    result = await adapter.generate(snapshot, "你好")
+    observer.outcome("GENERATE")
+    observer.finish()
+    events = next(row["values"]["events"] for row in rows if row["dashboard"] == "timing")
+    if proof == "stable":
+        assert events["llm_send"]["monotonic_ns"] == result.metrics.llm_send_monotonic_ns
+        assert events["llm_terminal"]["monotonic_ns"] == result.metrics.terminal_monotonic_ns
     else:
-        with pytest.raises(WorkerInputTooLarge, match="token limit"):
-            runtime.generate(value)
-        assert conversation.sent == 0
-    assert conversation.closed == 1 and runtime._active is None
+        assert events["llm_send"] == events["llm_terminal"] == {
+            "monotonic_ns": None, "null_reason": "NOT_OBSERVED"}
+    assert events["first_safe_text"] == {"monotonic_ns": None, "null_reason": "NOT_OBSERVED"}
+    await adapter.stop()
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field,value", [
+    ("ticket", "0" * 32), ("session_id", "wrong"), ("generation", 2),
+    ("input_sha256", "f" * 64), ("user_tokens", 3),
+])
+async def test_modified_snapshot_never_sends(field, value):
+    adapter, children, _, _ = adapter_fixture()
+    await adapter.start()
+    await adapter.open_conversation("session", 1)
+    snapshot = await adapter.measure("session", 1, "你好")
+    with pytest.raises(LLMFatalError):
+        await adapter.generate(replace(snapshot, **{field: value}), "你好")
+    assert children[0].runtime.sends == 0
+    await adapter.force_abort()
+
+@pytest.mark.asyncio
+async def test_clean_semantic_failure_is_tainted_replaceable():
+    adapter, children, _, _ = adapter_fixture()
+    await adapter.start()
+    await adapter.open_conversation("session", 1)
+    children[0].runtime.output = '{"text":"","end":false}'
+    snapshot = await adapter.measure("session", 1, "你好")
+    with pytest.raises(ReplaceableGenerationFailure) as raised:
+        await adapter.generate(snapshot, "你好")
+    assert raised.value.code == "INVALID_SEMANTIC"
+    assert adapter.state is AdapterState.TAINTED
+    assert adapter.conversation_revision == 0
+    await adapter.close_conversation("session", 1, "replacement")
+    assert children[0].commands[-1]["reason"] == "replace_generation_failure"
+    await adapter.open_conversation("session", 2)
+    assert children[0].runtime.history == []
+    await adapter.stop()
+
+@pytest.mark.asyncio
+async def test_shared_serialized_transaction_is_reentrant():
+    adapter, children, _, _ = adapter_fixture()
+    await adapter.start()
+    async with adapter.serialized():
+        await adapter.open_conversation("session", 1)
+        snapshot = await adapter.measure("session", 1, "你好")
+        await adapter.generate(snapshot, "你好")
+    assert children[0].runtime.sends == 1
+    await adapter.stop()
+
+
+@pytest.mark.asyncio
+async def test_each_capacity_session_requires_one_new_authorized_recovery():
+    from sbd.cognition.llm import MemoryAdmissionDenied
+    adapter, children, tickets, sampler = adapter_fixture()
+    await adapter.start()
+    for generation in (1, 2):
+        await adapter.open_conversation("s", generation)
+        snapshot = await adapter.measure("s", generation, "你好")
+        sampler.available = 150
+        with pytest.raises(MemoryAdmissionDenied) as raised:
+            await adapter.generate(snapshot, "你好")
+        assert raised.value.speak_allowed and len(tickets) == generation - 1
+        proof = await adapter.close_conversation("s", generation, "session_rest")
+        assert len(tickets) == generation - 1
+        sampler.available = 1000
+        await adapter.authorize_recovery("s", generation, proof)
+        assert len(tickets) == generation and not adapter.recovery_pending
+    assert len(children) == 3
+    await adapter.stop()
+
+
+@pytest.mark.asyncio
+async def test_shutdown_joins_held_recovery_and_unblocks_waiter():
+    from sbd.cognition.llm import MemoryAdmissionDenied
+    adapter, children, _, sampler = adapter_fixture()
+    await adapter.start()
+    await adapter.open_conversation("s", 1)
+    snapshot = await adapter.measure("s", 1, "你好")
+    sampler.available = 150
+    with pytest.raises(MemoryAdmissionDenied):
+        await adapter.generate(snapshot, "你好")
+    proof = await adapter.close_conversation("s", 1, "session_end")
+    entered, release = asyncio.Event(), asyncio.Event()
+    async def wait(ticket):
+        entered.set()
+        await release.wait()
+    adapter._wait_recovery = wait
+    waiter = asyncio.create_task(adapter.authorize_recovery("s", 1, proof))
+    await entered.wait()
+    await adapter.stop()
+    with pytest.raises(LLMFatalError, match="planned recovery"):
+        await waiter
+    assert adapter.state is AdapterState.STOPPED and children[0].terminated == 1

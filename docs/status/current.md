@@ -5,8 +5,8 @@
 - Current milestone: M4
 - Current stage: M4B cognition/product development rewrite
 - Next owner: Developer
-- Developer entry: **Open — `CR_M4B_II`**
-- Tester entry: **Closed — pending Developer candidate**
+- Developer entry: **Open — complete `CR_M4B_II`, including WP-02/WP-03 ticket disposal**
+- Tester entry: **Closed — pending Developer portable candidate**
 
 ## Current disposition
 
@@ -68,9 +68,19 @@ implementation and portable tests. Developer must first replace `status/developm
 Test IDs, estimates, bounded commands and starting SHA. Pi/human execution, candidate creation, commit and push are
 not authorized by this entry.
 
+Developer opened Blocking [`IR_dev_M4B_IV`](../reviews/history/IR_dev_M4B_IV.md) after proving that the original MEASURED
+state had no legal token-limit R1 continuation which both kept the Conversation and invalidated its ticket.
+Designer confirmed the gap, rejected delayed next-MEASURE supersession, and revised product/protocol authority to
+require exact `DISCARD_TICKET` / `TICKET_DISCARDED` proof before R1. The operation preserves generation, revision,
+history and KV; disposal mismatch/failure is E1. This is a private protocol/adapter correction with no public
+SM/Event/Fact/response or architecture change. Focused Tester request
+[`TR_spec_M4B_VII`](../reviews/history/TR_spec_M4B_VII.md) is Resolved after Designer confirmed all 9/9 requested
+requirements, retained all 13 portable Test IDs and found no Blocking coverage gap. Both reviews are Resolved;
+WP-02/WP-03 and the rest of `CR_M4B_II` are open to Developer. No implementation or PASS is claimed.
+
 ## Ordered exits
 
-1. Developer implements `CR_M4B_II`, executes the complete portable/retained regression gates and returns the work
+1. Developer completes `CR_M4B_II`, executes the complete portable/retained regression gates and returns the work
    package as `Revised`; no candidate or Pi acceptance is claimed.
 2. Tester independently verifies the portable candidate and reports exact results.
 3. Designer resolves implementation findings and performs final portable alignment.
@@ -85,7 +95,7 @@ not authorized by this entry.
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
 | Tester | this file only | no active verification action until Developer returns a portable candidate |
-| Developer | this file, `status/development.md`, `reviews/CR_M4B_II.md` and only its linked authority | replace cognition/product implementation and portable tests; update development status before editing; do not commit/push or execute Pi/human acceptance |
+| Developer | this file, `status/development.md`, `reviews/CR_M4B_II.md` and only its linked authority | implement the complete package including exact ticket disposal; do not commit/push or execute Pi/human acceptance |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.rest import Rest
 from sbd.action.speak import Speak, make_tts_adapter
@@ -10,15 +12,20 @@ from sbd.cognition.llm import (
     LLMGeneration,
     LLMGenerationMetrics,
     MockLLMEngineAdapter,
+    LLMResourceSampler,
 )
-from sbd.cognition.factory import make_llm_adapter
-from sbd.cognition.prompt_builder import PromptBuilder
+from sbd.cognition.factory import make_llm_adapter, _validate_shape as validate_llm_config_shape
+from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector
 from sbd.cognition.reasoner import Reasoner
+from sbd.cognition.observability import CognitionObserver
 from sbd.core.audio import make_audio_input, make_audio_output
 from sbd.core.audio.null import NullAudioInput, NullAudioOutput
 from sbd.core.camera import make_camera
 from sbd.core.camera.null import NullCamera
+from sbd.core._m4b_resource_binding import _M4BResourceBinding, _pi_temperature, _pi_throttled
+from sbd.cognition.litert_lm.resource import ProcLLMResourceSampler
 from sbd.core.config.models import AppConfig
+from sbd.core.config.validate import validate_config, ConfigValueError
 from sbd.core.display import make_display
 from sbd.core.display.null import NullDisplay
 from sbd.core.event_bus import EventBus
@@ -71,6 +78,7 @@ class M2Composition:
         tools: ToolRegistry | None = None,
         action_validator: ActionPayloadValidator | None = None,
         llm_outcomes: tuple[LLMGeneration | Exception, ...] | None = None,
+        llm_resource_sampler: LLMResourceSampler | None = None,
     ) -> None:
         self.tools = tools or ToolRegistry()
         self.action_validator = action_validator or ActionPayloadValidator(
@@ -90,6 +98,7 @@ class M2Composition:
         self.wake_word: MockWakeWordInputSource | None = None
         self.external_message: ExternalMessageSource | None = None
         self._registered = False
+        self._llm_resource_sampler = llm_resource_sampler
 
     def __call__(
         self,
@@ -99,10 +108,13 @@ class M2Composition:
     ) -> None:
         if self._registered:
             raise RuntimeError("M2 composition may only be registered once")
-        self._registered = True
-        self.tools.seal()
-        conversation_control = _DeterministicConversationLifecycle()
-
+        real = config.cognition.llm.driver == "litert_lm"
+        if real:
+            validate_config(config)
+        else:
+            validate_llm_config_shape(config.cognition.llm)
+        if not real and self._llm_resource_sampler is not None:
+            raise ConfigValueError("mock M4B composition does not accept a resource sampler")
         audio_input = make_audio_input(config.core.audio)
         audio_output = make_audio_output(config.core.audio)
         display = make_display(config.core.display)
@@ -110,18 +122,59 @@ class M2Composition:
         gpio = make_gpio(config.core.gpio)
         asr = make_asr_adapter(config.perception.listen.adapter)
         vision = MockVisionAdapter()
-        if config.cognition.llm.driver == "mock":
-            llm = MockLLMEngineAdapter(self.llm_outcomes)
-        else:
-            from sbd.cognition.litert_lm.resource import ProcLLMResourceSampler
-
-            llm = make_llm_adapter(
-                config.cognition.llm,
-                schedule_recovery=rm.begin_recovery,
-                wait_recovery=rm.wait_recovery,
-                resource_sampler=ProcLLMResourceSampler(),
-            )
         tts = make_tts_adapter(config.action.tts)
+        if real:
+            observer = CognitionObserver()
+            binding = None
+            sampler = self._llm_resource_sampler
+            if sampler is None:
+                binding = _M4BResourceBinding(
+                    asr=asr, tts=tts,
+                    native_asr=config.perception.listen.adapter.driver == "whispercpp",
+                    native_tts=config.action.tts.driver == "sherpa_matcha",
+                )
+                sampler = ProcLLMResourceSampler(ownership_registry=binding,
+                    temperature=_pi_temperature, throttled=_pi_throttled)
+            llm = make_llm_adapter(config.cognition.llm,
+                schedule_recovery=rm.begin_recovery, wait_recovery=rm.wait_recovery,
+                resource_sampler=sampler)
+            if binding is not None:
+                binding.bind_llm(llm)
+            llm._observer = observer
+            conversation_control = llm.control
+            if config.core.audio.driver == "alsa":
+                audio_output._observe = observer.mark
+        else:
+            observer = None
+            llm = MockLLMEngineAdapter(self.llm_outcomes)
+            conversation_control = _DeterministicConversationLifecycle()
+        self._registered = True
+        self.tools.seal()
+        self._cognition_observer = observer
+
+        async def before_speak() -> None:
+            await llm.observe_memory("pre_speak")
+
+        async def speech_complete(status: str) -> None:
+            if status == "cancelled":
+                observer.finish("CANCELLED")
+                return
+            await llm.observe_memory("audio_completion")
+            await llm.observe_memory("primary_completion")
+            observer.finish("NOT_OBSERVED" if status == "ok" else "FAILED")
+
+        async def rest_complete(status: str) -> None:
+            # A follow-up rest after speech must not emit a second timing row.
+            if observer._values is not None:
+                try:
+                    await llm.observe_memory("primary_completion")
+                    observer.finish("NOT_APPLICABLE" if status == "ok" else "FAILED")
+                except asyncio.CancelledError:
+                    try:
+                        observer.finish("CANCELLED")
+                    except Exception:
+                        pass
+                    raise
         external = ExternalMessageSource(
             bus=bus,
             max_items=config.external_message.buffer_max,
@@ -189,6 +242,8 @@ class M2Composition:
         ))
         rm.register(ResourceSpec(
             key="backend.cognition.reasoner.llm", phase=StartPhase.BACKEND,
+            dependencies=(("backend.perception.listen.asr", "backend.action.speak.tts")
+                          if real else ()),
             factory=lambda resolver: llm,
             recoverable=config.cognition.llm.driver == "litert_lm",
             recovery_hook=(llm if config.cognition.llm.driver == "litert_lm" else None),
@@ -213,6 +268,7 @@ class M2Composition:
                     audio_input=resolver.require("core.audio.input"),
                     asr=resolver.require("backend.perception.listen.asr"),
                     bus=bus,
+                    observe=observer.mark if observer is not None else None,
                 ),
                 required=config.perception.listen.required,
                 capability_kind="listen", capability_dependencies=("audio",),
@@ -247,12 +303,13 @@ class M2Composition:
             dependencies=("backend.cognition.reasoner.llm",),
             factory=lambda resolver: Reasoner(
                 resolver.require("backend.cognition.reasoner.llm"),
-                PromptBuilder(self.tools.schemas()),
+                ListenProjector() if real else PromptBuilder(self.tools.schemas()),
                 bus,
                 rm.reasoner_capability_of,
                 self.action_validator,
                 config.cognition.reason_timeout_seconds,
                 control=conversation_control,
+                observer=observer,
             ),
             required=True,
         ))
@@ -267,6 +324,9 @@ class M2Composition:
                     tts=resolver.require("backend.action.speak.tts"),
                     audio_output=resolver.require("core.audio.output"),
                     bus=bus,
+                    observe=observer.mark if observer is not None else None,
+                    before_start=before_speak if observer is not None else None,
+                    on_completion=speech_complete if observer is not None else None,
                 ),
                 required=config.action.speak.required,
                 capability_kind="speak", capability_dependencies=("audio",),
@@ -280,7 +340,8 @@ class M2Composition:
             ))
         rm.register(ResourceSpec(
             key="worker.action.rest", phase=StartPhase.WORKER,
-            factory=lambda resolver: Rest(bus=bus), required=True,
+            factory=lambda resolver: Rest(bus=bus,
+                on_completion=rest_complete if observer is not None else None), required=True,
         ))
 
         if config.input_sources.button.policy.enabled:

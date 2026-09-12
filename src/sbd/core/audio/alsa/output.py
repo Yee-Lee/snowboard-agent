@@ -19,8 +19,11 @@ _STREAM_FRAME_BYTES = 2  # 16 kHz / mono / S16_LE
 class AlsaAudioOutput:
     def __init__(
         self, config: AudioConfig, *, adapter_factory: Callable[[], StreamFormatAdapter] | None = None,
+        observe: Callable[[str], None] | None = None,
     ) -> None:
         self._config = config
+        self._observe = observe
+        self._first_write_observed = False
         stream = config.output.stream_format
         native = config.output.native_format or stream
         if (native.sample_rate, native.channels, native.sample_format) != (48_000, 2, "s32_le"):
@@ -64,6 +67,7 @@ class AlsaAudioOutput:
         if not self._started:
             raise RuntimeError("ALSA audio output is not started")
         adapter = self._adapter
+        self._first_write_observed = False
         self._reset_adapter()
         try:
             async for chunk in pcm:
@@ -152,6 +156,9 @@ class AlsaAudioOutput:
             consumed = written * _NATIVE_FRAME_BYTES
             if consumed > len(remaining):
                 raise OSError("ALSA write returned an invalid frame count")
+            if not self._first_write_observed and self._observe is not None:
+                self._first_write_observed = True
+                self._observe("audio_first_write")
             remaining = remaining[consumed:]
 
     def _reopen_after_underrun(self) -> None:

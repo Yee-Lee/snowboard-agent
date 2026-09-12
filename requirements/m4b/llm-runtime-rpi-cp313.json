@@ -2,7 +2,7 @@
   "schema_version": 1,
   "payload_scope": "product-owned-litert-lm",
   "platform": "pi-debian13-aarch64",
-  "python": {"implementation": "CPython", "version": "3.13.5"},
+  "python": {"implementation": "CPython", "version": "3.13.5", "soabi": "cpython-313-aarch64-linux-gnu", "multiarch": "aarch64-linux-gnu"},
   "distribution": {"name": "litert-lm-api", "version": "0.16.0"},
   "source_wheel": {
     "filename": "litert_lm_api-0.16.0-py3-none-manylinux_2_27_aarch64.whl",

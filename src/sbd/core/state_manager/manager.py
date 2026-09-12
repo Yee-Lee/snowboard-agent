@@ -16,7 +16,7 @@ from sbd.core.events import (
 )
 from sbd.core.resource_manager.catalog import WorkerCatalog
 from sbd.core.state_manager.convergence import (
-    CancelTimeoutPolicy, ConvergenceResult, DefaultSessionConverger,
+    CancelTimeoutPolicy, ConvergenceFatalError, ConvergenceResult, DefaultSessionConverger,
 )
 from sbd.core.state_manager.exceptions import (
     ReasonerContractViolation, StateManagerInvariantViolation,
@@ -26,7 +26,7 @@ from sbd.core.state_manager.exceptions import (
 from sbd.core.state_manager.inflight import InFlightRecord
 from sbd.core.state_manager.guards import is_allowed_in_state
 from sbd.core.state_manager.notices import (
-    _ConversationLifecycleCompleted, _RecoveryCompleted, _TaskCompleted,
+    _ConversationLifecycleCompleted, _PlannedRecoveryCompleted, _RecoveryCompleted, _TaskCompleted,
     _WakeAckElapsed,
 )
 from sbd.core.state_manager.ports import (
@@ -46,6 +46,8 @@ class _PendingConvergence:
     buffer_exit_policy: Literal["flush_to_wake", "discard"]
     recovery_generation: int | None = None
     phase: Literal["workers", "conversation_close", "recovery", "complete"] = "workers"
+    close_proof: ConversationCloseProof | None = None
+    planned_recovery_started: bool = False
 
 
 class StateManager:
@@ -201,6 +203,9 @@ class StateManager:
                 item = await self._inbox.get()
                 try:
                     await self._handle_item(item)
+                    # A handled perception Fact must not remain in this idle
+                    # dispatch coroutine after ownership transfers to cognition.
+                    del item
                     await self._try_progress()
                 finally:
                     self._inbox.task_done()
@@ -208,6 +213,32 @@ class StateManager:
             self._stopped_event.set()
 
     async def _handle_item(self, item: Any) -> None:
+        if isinstance(item, _PlannedRecoveryCompleted):
+            pending, session = self._pending, self._session
+            if (
+                pending is None or session is None
+                or not pending.planned_recovery_started
+                or item.waiter is not self._recovery_waiter
+                or (item.session_id, item.generation)
+                != (session.session_id, session.conversation_generation)
+                or not item.waiter.done()
+            ):
+                logger.debug("Dropping stale planned recovery completion")
+                return
+            self._recovery_waiter = None
+            if item.waiter.cancelled():
+                if pending.trigger == "shutdown":
+                    return
+                error = RuntimeError("PLANNED_RECOVERY_CANCELLED")
+            else:
+                error = item.waiter.exception()
+            if error is not None:
+                # Native exception text is private; the Level 3 cause is a stable code.
+                raise ConvergenceFatalError(
+                    correlation_id=0, kind="conversation", phase="recovery",
+                    stage="planned_recovery", cause=RuntimeError("PLANNED_RECOVERY_FAILED"),
+                ) from None
+            return
         if isinstance(item, _ConversationLifecycleCompleted):
             await self._handle_lifecycle_completed(item)
             return
@@ -434,6 +465,7 @@ class StateManager:
                 self._in_flight.pop(record.correlation_id, None)
                 session.conversation_state = "none"
                 if self._pending is not None:
+                    self._pending.close_proof = result
                     self._pending.phase = "recovery"
                 elif session.post_action_route == "REPLACE_NEXT":
                     session.conversation_generation += 1
@@ -698,6 +730,11 @@ class StateManager:
                 session_id, turn_id, cid, results, pending,
                 conversation_generation=generation,
             ))
+        if getattr(worker, "_product", False) is True:
+            # The real listen-only product owns these inputs from this point.
+            # Retaining a second SM reference would defeat acknowledged ticket
+            # disposal before R1. Generic mock projection keeps its old lifetime.
+            self._session.perception_results.clear()
 
     async def _enter_action(self) -> None:
         if self._session is None or self._session.llm_response is None:
@@ -887,7 +924,11 @@ class StateManager:
 
     async def _finish_convergence_if_ready(self) -> None:
         pending = self._pending
-        if pending is None or self._in_flight or pending.recovery_generation is not None:
+        if (
+            pending is None or self._in_flight
+            or pending.recovery_generation is not None
+            or (pending.planned_recovery_started and self._recovery_waiter is not None)
+        ):
             return
         if (
             self._session is not None
@@ -898,6 +939,33 @@ class StateManager:
             self._start_conversation_close(f"session_{pending.trigger}")
             return
         if pending.phase == "conversation_close":
+            return
+        control = self._conversation_control
+        if (
+            pending.phase == "recovery"
+            and pending.trigger != "shutdown"
+            and not pending.planned_recovery_started
+            and getattr(control, "recovery_pending", False)
+        ):
+            session, proof = self._session, pending.close_proof
+            authorize = getattr(control, "authorize_recovery", None)
+            if (
+                session is None or proof is None or not callable(authorize)
+                or (proof.session_id, proof.generation)
+                != (session.session_id, session.conversation_generation)
+                or not (proof.request_terminal_proven and proof.cleanup_proven and proof.engine_usable)
+            ):
+                raise ConvergenceFatalError(
+                    correlation_id=0, kind="conversation", phase="recovery",
+                    stage="planned_recovery", cause=RuntimeError("PLANNED_RECOVERY_PROOF"),
+                )
+            pending.planned_recovery_started = True
+            waiter = asyncio.create_task(authorize(session.session_id, proof.generation, proof))
+            self._recovery_waiter = waiter
+            waiter.add_done_callback(
+                lambda done, sid=session.session_id, generation=proof.generation:
+                self._inbox.put_nowait(_PlannedRecoveryCompleted(sid, generation, done))
+            )
             return
         pending.phase = "complete"
         if pending.trigger == "shutdown":

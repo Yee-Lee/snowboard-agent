@@ -156,6 +156,8 @@ def _overlay_dict(
     if field_type is Path:
         if isinstance(overlay, str):
             value = Path(overlay)
+            if path.startswith("root.cognition.llm.") and not value.is_absolute():
+                raise ConfigValueError(f"{path} must be an absolute file path")
             if path_base is not None and not value.is_absolute():
                 return (path_base / value).resolve()
             return value

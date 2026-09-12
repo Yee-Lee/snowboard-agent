@@ -9,12 +9,14 @@ from pathlib import Path
 import pytest
 
 from sbd.cognition.litert_lm.lock import (
-    EXPECTED_PRODUCT_CONFIG,
+    EXPECTED_PROFILE,
     LLMArtifactLock,
     LLMLockError,
     RuntimeClosure,
     RuntimeFile,
-    validate_product_config,
+    validate_product_profile,
+    load_product_profile,
+    profile_digest,
 )
 
 
@@ -33,7 +35,7 @@ def _mutated(tmp_path: Path, mutate) -> Path:
 
 def test_m4b_lock_001_tracked_lock_and_closure_are_exact() -> None:
     lock = LLMArtifactLock.load(LOCK, repo_root=ROOT)
-    assert lock.identity.candidate_id == "CAND-LRT-G4E2B-MOBILE-R1"
+    assert lock.product_profile["candidate_id"] == "CAND-LRT-G4E2B-MOBILE-R1"
     assert lock.runtime_closure is not None
     assert len(lock.runtime_closure.files) == 14
     assert lock.runtime_closure.digest == hashlib.sha256(MANIFEST.read_bytes()).hexdigest()
@@ -118,43 +120,108 @@ def test_m4b_lock_001_manifest_cannot_add_interpreter_to_product_payload(tmp_pat
         )
 
 
-def _product_config() -> dict[str, object]:
-    return {
-        **EXPECTED_PRODUCT_CONFIG,
-        "runtime_path": "/tmp/llm-poc-provenance/runtime",
-        "model_path": "/tmp/llm-poc-provenance/model",
-    }
+def _release_profile():
+    from tests.test_m4b_cfg_001 import release_profile
+    return release_profile()
 
 
-def test_m4b_lock_001_product_config_cross_checks_every_frozen_field_without_opening_poc_paths() -> None:
-    value = _product_config()
-    assert validate_product_config(value) == value
-    for key, original in EXPECTED_PRODUCT_CONFIG.items():
-        changed = _product_config()
-        if original is None:
-            changed[key] = "fallback"
-        elif type(original) is bool:
-            changed[key] = not original
-        elif type(original) in (int, float):
-            changed[key] = original + 1
-        else:
-            changed[key] = str(original) + "-drift"
-        with pytest.raises(LLMLockError, match="identity"):
-            validate_product_config(changed)
+@pytest.mark.parametrize("key", list(EXPECTED_PROFILE), ids=lambda key: "P03-field-" + key)
+def test_every_profile_field_is_authenticated_even_with_new_digest(key):
+    value = _release_profile()
+    original = value[key]
+    value[key] = not original if type(original) is bool else "drift"
+    value["profile_sha256"] = profile_digest(value)
+    with pytest.raises(LLMLockError, match="identity"):
+        validate_product_profile(value)
 
 
-@pytest.mark.parametrize("path", ["relative", "", "bad\x00path"])
-def test_m4b_lock_001_product_config_rejects_non_absolute_provenance_path(path: str) -> None:
-    value = _product_config()
-    value["runtime_path"] = path
-    with pytest.raises(LLMLockError, match="provenance"):
-        validate_product_config(value)
+@pytest.mark.parametrize("key", list(EXPECTED_PROFILE), ids=lambda key: "P04-missing-" + key)
+def test_missing_profile_field(key):
+    value = _release_profile()
+    del value[key]
+    value["profile_sha256"] = profile_digest(value)
+    with pytest.raises(LLMLockError, match="missing or extra"):
+        validate_product_profile(value)
 
 
-def test_m4b_lock_001_product_config_rejects_missing_or_extra_field() -> None:
-    for value in (
-        {key: item for key, item in _product_config().items() if key != "threads"},
-        {**_product_config(), "unexpected": True},
-    ):
-        with pytest.raises(LLMLockError, match="missing or extra"):
-            validate_product_config(value)
+@pytest.mark.parametrize("key", ["endpoint", "prewarm_prompt", "system_site", "extra_artifact"], ids=lambda key: "P04-extra-" + key)
+def test_extra_profile_field(key):
+    value = _release_profile()
+    value[key] = "untrusted"
+    value["profile_sha256"] = profile_digest(value)
+    with pytest.raises(LLMLockError, match="missing or extra"):
+        validate_product_profile(value)
+
+
+@pytest.mark.parametrize("speak,generate", [(None,None),(0,1),(2,1),(True,2),(1,float("inf"))], ids=["M03-null","M03-zero","M03-reversed","M03-bool","M03-infinite"])
+def test_invalid_release_memory(speak,generate):
+    value = _release_profile()
+    value.update(min_mem_available_speak_bytes=speak,min_mem_available_generate_bytes=generate)
+    with pytest.raises(LLMLockError):
+        value["profile_sha256"] = profile_digest(value)
+        validate_product_profile(value)
+
+
+def test_measurement_is_explicit_only_M03():
+    path = ROOT / "requirements/m4b/product-profile.json"
+    with pytest.raises(LLMLockError, match="stage"):
+        load_product_profile(path)
+    value = load_product_profile(path, allow_measurement=True)
+    assert value["min_mem_available_generate_bytes"] is None
+    assert value["min_mem_available_speak_bytes"] is None
+
+
+def test_equal_thresholds_are_valid_M01():
+    value = _release_profile()
+    value["min_mem_available_generate_bytes"] = value["min_mem_available_speak_bytes"]
+    value["profile_sha256"] = profile_digest(value)
+    assert validate_product_profile(value) == value
+
+
+def test_duplicate_json_fields_are_rejected_P04(tmp_path):
+    path = tmp_path / "duplicate.json"
+    path.write_text('{"profile_id":"x","profile_id":"x"}')
+    with pytest.raises(LLMLockError, match="duplicate"):
+        load_product_profile(path)
+
+
+def test_bad_digest_is_rejected_P03():
+    value = _release_profile()
+    value["profile_sha256"] = "0" * 64
+    with pytest.raises(LLMLockError, match="checksum"):
+        validate_product_profile(value)
+
+
+def test_bool_cannot_attest_numeric_profile_P03():
+    for key in ("threads","prompt_tokens","protocol","temperature"):
+        value = _release_profile()
+        value[key] = True
+        value["profile_sha256"] = profile_digest(value)
+        with pytest.raises(LLMLockError):
+            validate_product_profile(value)
+
+
+@pytest.mark.parametrize("contents", [None,b"\xffPRIVATE-LOCK-CANARY",b'{"PRIVATE-LOCK-CANARY": invalid}'], ids=["V01-missing-file","V01-invalid-utf8","V01-invalid-json"])
+def test_lock_errors_hide_private_path_and_document_in_traceback(tmp_path,contents):
+    import traceback
+    path = tmp_path / "PRIVATE-LOCK-CANARY.json"
+    if contents is not None:
+        path.write_bytes(contents)
+    try:
+        LLMArtifactLock.load(path)
+    except LLMLockError as error:
+        diagnostic = "".join(traceback.format_exception(error))
+        assert str(path) not in diagnostic
+        assert "PRIVATE-LOCK-CANARY" not in diagnostic
+        assert error.__suppress_context__ is True
+        assert error.__cause__ is None
+    else:
+        pytest.fail("invalid artifact accepted")
+
+
+def test_fifo_is_rejected_without_blocking_P08(tmp_path):
+    import os
+    path = tmp_path / "not-a-file"
+    os.mkfifo(path)
+    with pytest.raises(LLMLockError,match="regular"):
+        load_product_profile(path)

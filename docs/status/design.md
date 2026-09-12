@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / cognition-product Reviewer PASS / Tester coverage approved
-- Developer entry: **Open — `CR_M4B_II`**
+- State: Foundation verified / cognition-product ticket-disposal revision and focused coverage resolved
+- Developer entry: **Open — complete `CR_M4B_II`**
 
 ## USER-confirmed direction
 
@@ -78,6 +78,16 @@ and acknowledged A3; `M4B-DESIGN-REVIEW` is Closed. Tester produced the replacem
 [`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md). `M4B-TEST-COVERAGE` is Closed and
 [`CR_M4B_II`](../reviews/CR_M4B_II.md) opens the Developer replacement package. Candidate/Pi acceptance remains
 closed.
+
+Developer subsequently opened Blocking [`IR_dev_M4B_IV`](../reviews/history/IR_dev_M4B_IV.md): measured token-limit R1
+had no legal wire transition that both kept the Conversation and invalidated its ticket. Designer confirmed the
+gap and selected explicit `DISCARD_TICKET` / `TICKET_DISCARDED`, rejecting next-MEASURE supersession because it
+left the old ticket usable between rejection and the next turn. Product and protocol authority now define exact
+identity/proof, unchanged Conversation state, private-buffer release and E1 failure convergence. No architecture
+or public SM/Event/Fact/response change is involved. Focused Tester request
+[`TR_spec_M4B_VII`](../reviews/history/TR_spec_M4B_VII.md) is Resolved after Designer confirmed all 9/9 requirements,
+the unchanged 13 portable Test IDs and no Blocking mapping gap. The complete Developer path is open; implementation
+and execution evidence remain Pending.
 
 ## Other redesign inputs to preserve
 

@@ -1,56 +1,43 @@
-"""Isolated M4b LiteRT-LM worker; selected runtime imports occur only here."""
+"""Isolated v3 child. No model content is logged, persisted, or sent outside IPC.
 
+Runtime source authority: google-ai-edge/LiteRT-LM commit
+924e79c91542761242244e4f1651851f822e4cbb, python/litert_lm/{engine,conversation}.py;
+runtime/conversation/conversation.cc:235-255,515-550 and prompt_utils.cc:83-181.
+The C renderer retains last_rendered_message (c/conversation.cc:603-623);
+approved DISCARD_TICKET replaces it using the fixed public scrub rendering.
+"""
 from __future__ import annotations
-
 import argparse
-import json
 import hashlib
 import importlib.metadata
-import math
+import json
 import os
+import platform
 import queue
 import select
 import stat
 import sys
+import sysconfig
 import threading
 import time
-from collections.abc import Mapping
+import secrets
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
-# The child uses the isolated CPython runtime but executes the exact candidate
-# worker file selected by the controller.  Add only that candidate's package
-# root; no environment-provided PYTHONPATH or system-site path is accepted.
 _CANDIDATE_PACKAGE_ROOT = Path(__file__).resolve().parents[3]
 if str(_CANDIDATE_PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(_CANDIDATE_PACKAGE_ROOT))
 
 from sbd.cognition.llm_child_protocol import (
-    MAX_CONTROL_BYTES,
-    PROTOCOL_VERSION,
-    encode_frame,
-    parse_cancel,
-    parse_generate,
-)
-
-
-PROMPT_PREFIX = (
-    "Return exactly one JSON object with action_kind, action_payload, and "
-    "next_perceptions. Do not add markdown or commentary. Input: "
-)
-
+    MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
+from sbd.cognition.semantic import validate_semantic, SemanticError
+from sbd.cognition.prompt_builder import SYSTEM_PROMPT
 
 class WorkerCancelled(RuntimeError):
     pass
 
-
-class WorkerInputTooLarge(ValueError):
-    pass
-
-
 class WorkerCancelFailed(RuntimeError):
     pass
-
 
 def _verify_native_library(path: Path, expected_sha256: str) -> None:
     if path.is_symlink() or path.parent.is_symlink():
@@ -60,7 +47,7 @@ def _verify_native_library(path: Path, expected_sha256: str) -> None:
     try:
         descriptor = os.open(path, flags)
     except OSError as error:
-        raise RuntimeError("native runtime identity mismatch") from error
+        raise RuntimeError("native runtime identity mismatch") from None
     try:
         metadata = os.fstat(descriptor)
         if not stat.S_ISREG(metadata.st_mode):
@@ -72,96 +59,8 @@ def _verify_native_library(path: Path, expected_sha256: str) -> None:
     if digest.hexdigest() != expected_sha256:
         raise RuntimeError("native runtime identity mismatch")
 
-
-def _render_prompt(value: Mapping[str, object]) -> str:
-    return PROMPT_PREFIX + json.dumps(
-        value, ensure_ascii=True, sort_keys=True, separators=(",", ":")
-    )
-
-
-def _next_perceptions_schema(available: list[str], *, nonempty: bool) -> dict[str, object]:
-    schema: dict[str, object] = {
-        "type": "array",
-        "items": {"type": "string", "enum": available},
-        "uniqueItems": True,
-        "maxItems": len(available),
-    }
-    schema["minItems"] = 1 if nonempty else 0
-    return schema
-
-
-def _branch(kind: str, payload: Mapping[str, object], perceptions: dict[str, object]) -> dict[str, object]:
-    return {
-        "type": "object",
-        "properties": {
-            "action_kind": {"const": kind},
-            "action_payload": payload,
-            "next_perceptions": perceptions,
-        },
-        "required": ["action_kind", "action_payload", "next_perceptions"],
-        "additionalProperties": False,
-    }
-
-
-def _build_response_schema(value: Mapping[str, object]) -> dict[str, object]:
-    capabilities = value["capabilities"]
-    if type(capabilities) is not dict:
-        raise ValueError("invalid capabilities")
-    actions = capabilities["actions"]
-    perceptions = capabilities["perceptions"]
-    tools = capabilities["tools"]
-    if type(actions) is not list or type(perceptions) is not list or type(tools) is not list:
-        raise ValueError("invalid capabilities")
-    branches: list[dict[str, object]] = []
-    nonempty = _next_perceptions_schema(perceptions, nonempty=True)
-    if "speak" in actions:
-        branches.append(_branch("speak", {
-            "type": "object",
-            "properties": {"text": {"type": "string", "minLength": 1, "pattern": r".*\S.*"}},
-            "required": ["text"],
-            "additionalProperties": False,
-        }, nonempty))
-    if "tool" in actions:
-        for tool in sorted(tools, key=lambda item: item["name"]):
-            branches.append(_branch("tool", {
-                "type": "object",
-                "properties": {
-                    "name": {"const": tool["name"]},
-                    "arguments": {"type": "object"},
-                },
-                "required": ["name", "arguments"],
-                "additionalProperties": False,
-            }, nonempty))
-    if "rest" in actions:
-        branches.append(_branch("rest", {
-            "type": "object", "properties": {}, "required": [], "additionalProperties": False,
-        }, _next_perceptions_schema([], nonempty=False)))
-    if not branches:
-        raise ValueError("no constrained response branch")
-    return {"oneOf": branches}
-
-
-def _litert_constraint_schema(value: object) -> object:
-    """Project the exact product schema onto LiteRT-LM 0.16.0's surface.
-
-    LLGuidance in the selected runtime rejects ``uniqueItems`` before
-    inference.  The worker still validates uniqueness against the exact
-    product contract after decoding, so this projection only removes the
-    unsupported native keyword; it does not relax delivered responses.
-    """
-    if type(value) is dict:
-        return {
-            key: _litert_constraint_schema(item)
-            for key, item in value.items()
-            if key != "uniqueItems"
-        }
-    if type(value) is list:
-        return [_litert_constraint_schema(item) for item in value]
-    return value
-
-
 class LiteRTRuntime:
-    """Narrow wrapper around one persistent Engine and fresh Conversations."""
+    """Pinned 0.16.0 CPU Engine; only this child imports native dependencies."""
 
     def __init__(self, *, model: str, runtime_root: str, native_sha256: str) -> None:
         # Authenticate the native bytes before importing a module that may load them.
@@ -183,6 +82,7 @@ class LiteRTRuntime:
             ConstrainedDecodingConfig,
             Engine,
             ResponseFormat,
+            SamplerConfig,
         )
         from litert_lm._ffi import LiteRtLmConstraintProviderType  # type: ignore[import-not-found]
 
@@ -207,6 +107,7 @@ class LiteRTRuntime:
             raise RuntimeError("runtime import escaped verified closure")
 
         self._response_format = ResponseFormat
+        self._sampler_config = SamplerConfig(temperature=0.0, top_p=1.0)
         self._cancelled_error = getattr(litert_lm, "Cancelled", WorkerCancelled)
         self._constraint = ConstrainedDecodingConfig(
             enable=True,
@@ -218,399 +119,365 @@ class LiteRTRuntime:
             max_num_tokens=1024,
             enable_benchmark=True,
         )
+        from sbd.cognition.prompt_builder import attest_prompt
+        attest_prompt(self._engine.tokenize)
+        self._conversation: Any = None
         self._active: Any = None
         self._pending_cancel = False
         self._cancel_requested = False
         self._lock = threading.Lock()
 
-    def _activate(self, conversation: Any) -> bool:
-        with self._lock:
-            self._active = conversation
-            pending_cancel = self._pending_cancel
-            self._pending_cancel = False
-            if pending_cancel:
-                self._cancel_requested = True
-        if pending_cancel:
-            try:
-                conversation.cancel_process()
-            except BaseException as error:
-                raise WorkerCancelFailed("native cancellation failed") from error
-        return pending_cancel
 
-    def _deactivate(self) -> None:
+    def open_conversation(self) -> None:
+        require(self._conversation is None)
+        self._conversation = self._engine.create_conversation(
+            system_message=SYSTEM_PROMPT, automatic_tool_calling=False,
+            constrained_decoding_config=self._constraint,
+            sampler_config=self._sampler_config, max_output_tokens=128,
+            filter_channel_content_from_kv_cache=False)
+
+    def measure(self, text: str) -> dict[str, int]:
+        conversation = self._conversation
+        require(conversation is not None)
+        before = conversation.token_count
+        # Pinned native RenderMessageIntoString uses the same GetSingleTurnText
+        # path as SendMessage. The product never uses has_pending_message:
+        # RenderSingleTurnTemplateCommon returns false appending state and
+        # never appends history. No inference/session input allocation occurs.
+        rendered = conversation.render_message_to_string(text)
+        require(type(rendered) is str and bool(rendered))
+        user = len(self._engine.tokenize(text))
+        incremental = len(self._engine.tokenize(rendered))
+        require(conversation.token_count == before, "measurement")
+        return {"user_tokens": user, "current_kv_tokens": before,
+                "rendered_incremental_tokens": incremental,
+                "runtime_prefill_tokens": incremental,
+                "output_reserve_tokens": 128, "engine_context_tokens": 1024}
+
+    def generate(self, text: str) -> tuple[str, int, int, int]:
+        conversation = self._conversation
+        require(conversation is not None)
+        # Equivalent regular-language constraint for the checked-in GBNF;
+        # semantic normalization/length validation remains mandatory afterwards.
+        pattern = r'\{"text":"(?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*","end":(?:true|false)\}'
         with self._lock:
-            self._active = None
+            if self._pending_cancel:
+                self._pending_cancel = False
+                raise WorkerCancelled()
+            self._active = conversation
+        try:
+            try:
+                raw = conversation.send_message(text, max_output_tokens=128,
+                    response_format=self._response_format.regex(pattern))
+            except self._cancelled_error:
+                raise WorkerCancelled() from None
+            require(type(raw) is dict and set(raw) == {"role", "content"})
+            require(raw["role"] == "assistant" and type(raw["content"]) is list and len(raw["content"]) == 1)
+            block = raw["content"][0]
+            require(type(block) is dict and set(block) == {"type", "text"} and block["type"] == "text")
+            info = conversation.get_benchmark_info()
+            return (block["text"], info.last_decode_token_count, conversation.token_count,
+                    info.last_prefill_token_count)
+        finally:
+            with self._lock:
+                self._active = None
+
+    def scrub_ticket(self) -> None:
+        conversation = self._conversation
+        require(conversation is not None, "scrub")
+        before = conversation.token_count
+        require(type(before) is int and before >= 0, "scrub")
+        rendered = conversation.render_message_to_string(TICKET_SCRUB_TEXT)
+        require(type(rendered) is str and TICKET_SCRUB_TEXT in rendered, "scrub")
+        require(bool(rendered.encode("utf-8")), "scrub")
+        after = conversation.token_count
+        require(type(after) is int and before == after, "scrub")
+
+    def cancel(self) -> None:
+        with self._lock:
+            self._pending_cancel = True
+            active = self._active
+        if active is not None:
+            active.cancel_process()
 
     def clear_pending_cancel(self) -> None:
         with self._lock:
             self._pending_cancel = False
-            self._cancel_requested = False
 
-    def generate(self, value: Mapping[str, object]) -> tuple[dict[str, object], dict[str, object]]:
-        schema = _build_response_schema(value)
-        constraint_schema = _litert_constraint_schema(schema)
-        prompt = _render_prompt(value)
-        conversation = self._engine.create_conversation(
-            automatic_tool_calling=False,
-            constrained_decoding_config=self._constraint,
-            max_output_tokens=128,
-        )
-        try:
-            if self._activate(conversation):
-                raise WorkerCancelled("generation cancelled before inference")
-            rendered = conversation.render_message_to_string(prompt)
-            rendered_token_count = len(self._engine.tokenize(rendered))
-            if rendered_token_count > 128:
-                raise WorkerInputTooLarge("rendered input exceeds token limit")
-            with self._lock:
-                cancel_requested = self._cancel_requested
-            if cancel_requested:
-                raise WorkerCancelled("generation cancelled before inference")
-            try:
-                raw = conversation.send_message(
-                    prompt,
-                    max_output_tokens=128,
-                    response_format=self._response_format.json(constraint_schema),
-                )
-            except self._cancelled_error as error:
-                raise WorkerCancelled("native inference cancelled") from error
-            except RuntimeError as error:
-                # API 0.16.0 may surface the native typed cancellation through
-                # its exact C-API marker instead of exporting the subclass.
-                if str(error) == "CANCELLED":
-                    raise WorkerCancelled("native inference cancelled") from error
-                raise
-            response = _product_response(raw)
-            _validate_product_response(response, value)
-            info = conversation.get_benchmark_info()
-            metrics = {
-                "init_ms": float(info.init_time_in_second) * 1000.0,
-                "ttft_ms": float(info.time_to_first_token_in_second) * 1000.0,
-                "prefill_tokens": int(info.last_prefill_token_count),
-                "prefill_tokens_per_second": float(info.last_prefill_tokens_per_second),
-                "decode_tokens": int(info.last_decode_token_count),
-                "decode_tokens_per_second": float(info.last_decode_tokens_per_second),
-                "kv_tokens": int(conversation.token_count),
-            }
-            return response, metrics
-        finally:
-            self._deactivate()
-            conversation.close()
-
-    def cancel(self) -> None:
-        with self._lock:
-            active = self._active
-            self._cancel_requested = True
-            if active is None:
-                self._pending_cancel = True
-                return
-        active.cancel_process()
+    def close_conversation(self) -> None:
+        conversation, self._conversation = self._conversation, None
+        require(conversation is not None)
+        conversation.close()
 
     def close(self) -> None:
+        require(self._conversation is None)
         self._engine.close()
 
 
-def _product_response(raw: object) -> dict[str, object]:
-    if type(raw) is dict and set(raw) == {"action_kind", "action_payload", "next_perceptions"}:
-        return raw
-    if type(raw) is dict and set(raw) == {"role", "content"}:
-        content = raw["content"]
-        if type(content) is list and len(content) == 1 and type(content[0]) is dict and set(content[0]) == {"type", "text"} and content[0]["type"] == "text":
-            try:
-                decoded = json.loads(content[0]["text"])
-            except (TypeError, json.JSONDecodeError) as error:
-                raise ValueError("runtime response is not product JSON") from error
-            if type(decoded) is dict and set(decoded) == {"action_kind", "action_payload", "next_perceptions"}:
-                return decoded
-    raise ValueError("runtime response envelope is invalid")
+class WorkerSession:
+    """Runtime-independent execution shared by native child and portable fake."""
+    def __init__(self, runtime: Any) -> None:
+        self.runtime = runtime
+        self.ledger = ProtocolLedger()
+
+    def execute(self, frame: Mapping[str, object]) -> list[dict[str, object]]:
+        # Caller has already accepted the command into the ledger.
+        base = {key: frame[key] for key in ("protocol", "request_id", "session_id", "generation")}
+        op = frame["op"]
+        if op == "OPEN":
+            self.runtime.open_conversation()
+            return [{**base, "event": "OPENED", "conversation_revision": 0}]
+        if op == "MEASURE":
+            counts = self.runtime.measure(frame["text"])
+            validate_counts(counts)
+            return [{**base, "event": "MEASURED", **counts,
+                "conversation_revision": self.ledger.revision,
+                "input_sha256": frame["input_sha256"], "ticket": secrets.token_hex(16)}]
+        if op == "CLOSE":
+            self.runtime.close_conversation()
+            return [{**base, "event": "CLOSED", "request_terminal_proven": True,
+                "cleanup_proven": True, "engine_usable": True}]
+        if op == "DISCARD_TICKET":
+            self.runtime.scrub_ticket()
+            self.ledger.ticket = None
+            return [{**base, "event": "TICKET_DISCARDED",
+                **{key: frame[key] for key in ("conversation_revision", "ticket", "input_sha256")},
+                "native_render_scrubbed": True, "ticket_invalidated": True,
+                "private_input_erased": True, "conversation_state": "ready"}]
+        require(op == "GENERATE")
+        counts = self.ledger.consumed
+        require(counts is not None)
+        require(counts["user_tokens"] <= 32)
+        require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
+        send = time.monotonic_ns()
+        raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
+        require(type(actual_prefill) is int and actual_prefill == counts["runtime_prefill_tokens"], "runtime_prefill")
+        # Native synchronous SendMessage calls session WaitUntilDone; the
+        # control loop additionally joins this worker thread before any terminal.
+        try:
+            semantic = validate_semantic(raw)
+        except SemanticError:
+            return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
+                "request_terminal_proven": True, "engine_usable": True,
+                "terminal_monotonic_ns": time.monotonic_ns()}]
+        return [{**base, "event": "RESULT", "conversation_revision": self.ledger.revision + 1,
+            "text": semantic.text, "end": semantic.end,
+            **{key: counts[key] for key in ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")},
+            "decode_tokens": decode, "conversation_kv_tokens": kv,
+            "llm_send_monotonic_ns": send, "first_safe_text_monotonic_ns": None,
+            "terminal_monotonic_ns": time.monotonic_ns()}]
 
 
-def _validate_product_response(
-    response: Mapping[str, object], value: Mapping[str, object],
-) -> None:
-    if set(response) != {"action_kind", "action_payload", "next_perceptions"}:
-        raise ValueError("runtime response schema mismatch")
-    capabilities = value["capabilities"]
-    if type(capabilities) is not dict:
-        raise ValueError("runtime response capability mismatch")
-    actions = capabilities["actions"]
-    perceptions = capabilities["perceptions"]
-    tools = capabilities["tools"]
-    kind = response["action_kind"]
-    payload = response["action_payload"]
-    requested = response["next_perceptions"]
-    if (
-        type(kind) is not str
-        or type(payload) is not dict
-        or type(requested) is not list
-        or any(type(item) is not str for item in requested)
-        or len(requested) != len(set(requested))
-        or any(item not in perceptions for item in requested)
-    ):
-        raise ValueError("runtime response value mismatch")
-    if kind == "speak":
-        if (
-            kind not in actions
-            or set(payload) != {"text"}
-            or type(payload["text"]) is not str
-            or not payload["text"].strip()
-            or not requested
-        ):
-            raise ValueError("runtime speak response mismatch")
-        return
-    if kind == "tool":
-        matched = next((
-            tool for tool in tools
-            if type(tool) is dict and tool.get("name") == payload.get("name")
-        ), None)
-        if (
-            kind not in actions
-            or set(payload) != {"name", "arguments"}
-            or matched is None
-            or type(payload["arguments"]) is not dict
-            or not requested
-        ):
-            raise ValueError("runtime tool response mismatch")
-        return
-    if kind != "rest" or kind not in actions or payload or requested:
-        raise ValueError("runtime rest response mismatch")
-
-
-def _write(value: Mapping[str, object]) -> None:
-    sys.stdout.buffer.write(encode_frame(value))
+def _write(frame: Mapping[str, object]) -> None:
+    sys.stdout.buffer.write(encode_frame(frame))
     sys.stdout.buffer.flush()
 
 
-def _exit_after_shutdown_ack() -> None:
-    """Exit without re-entering the selected runtime's native teardown."""
-    os._exit(0)
+class _ControlInput:
+    """Explicit bounded buffering, so coalesced CANCEL is visible to select."""
+    def __init__(self, fd: int) -> None:
+        self.fd = fd
+        self.buffer = bytearray()
+
+    def ready(self, timeout: float) -> bool:
+        return bool(self.buffer) or bool(select.select([self.fd], [], [], timeout)[0])
+
+    def read(self) -> dict[str, object]:
+        while b"\n" not in self.buffer:
+            require(len(self.buffer) <= MAX_CONTROL_BYTES, "frame")
+            block = os.read(self.fd, MAX_CONTROL_BYTES + 1 - len(self.buffer))
+            require(bool(block), "frame")
+            self.buffer.extend(block)
+        index = self.buffer.index(b"\n") + 1
+        raw = bytes(self.buffer[:index])
+        del self.buffer[:index]
+        return decode_frame(raw)
 
 
-def _read_line() -> dict[str, object]:
-    raw = sys.stdin.buffer.readline(MAX_CONTROL_BYTES + 1)
-    if not raw or len(raw) > MAX_CONTROL_BYTES or not raw.endswith(b"\n"):
-        raise ValueError("invalid bounded control frame")
-    value = json.loads(raw.decode("utf-8"))
-    if type(value) is not dict:
-        raise ValueError("control frame is not an object")
-    return value
+def verify_platform_abi(profile: Mapping[str, object]) -> None:
+    observed = (platform.python_implementation(), platform.python_version(),
+                sysconfig.get_config_var("SOABI"), sysconfig.get_config_var("MULTIARCH"))
+    expected = tuple(profile[key] for key in ("python_implementation", "python_version",
+                                              "python_soabi", "python_multiarch"))
+    require(observed == expected, "abi")
+    require(sys.platform == "linux" and platform.machine() == "aarch64", "abi")
+    require(sys.flags.isolated == 1 and sys.flags.no_user_site == 1, "abi")
+    require(Path(sysconfig.get_path("stdlib")).resolve() == Path("/usr/lib/python3.13"), "abi")
 
 
-def _advance_request_identity(
-    request_id: str,
-    generation: int | None,
-    counter: int,
-) -> tuple[int, int]:
-    _, generation_text, counter_text = request_id.split(".")
-    observed_generation = int(generation_text)
-    observed_counter = int(counter_text)
-    if (
-        observed_generation < 1
-        or observed_counter != counter + 1
-        or (generation is not None and observed_generation != generation)
-    ):
-        raise ValueError("request identity sequence mismatch")
-    return observed_generation, observed_counter
+def _network_filter_program() -> tuple[tuple[int, int, int, int], ...]:
+    # Linux arm64 uses asm-generic syscall numbers. Check arch before numbers.
+    # Deny socket/socketpair and io_uring creation; pidfd_getfd/ptrace cannot
+    # import a socket from another owner. All inherited FDs are stdio pipes.
+    # https://docs.kernel.org/userspace-api/seccomp_filter.html
+    # Numeric ABI checked against torvalds/linux v6.12 include/uapi:
+    # asm-generic/unistd.h:329,522-525,759,785; linux/audit.h:388-391;
+    # linux/elf-em.h:46; linux/seccomp.h:38-46,62-67;
+    # linux/bpf_common.h; linux/filter.h:24-33; linux/prctl.h:68,175.
+    program = [(0x20, 0, 0, 4), (0x15, 1, 0, 0xC00000B7),
+               (0x06, 0, 0, 0x80000000), (0x20, 0, 0, 0)]
+    for number in (198, 199, 425, 438, 117):
+        program.extend(((0x15, 0, 1, number), (0x06, 0, 0, 0x00050001)))
+    program.append((0x06, 0, 0, 0x7FFF0000))
+    return tuple(program)
 
 
-def _terminal_from_outcome(
-    request_id: str,
-    kind: str,
-    payload: object,
-    *,
-    cancel_sent: bool,
-) -> dict[str, object]:
-    if kind == "cancel_failed":
-        return {
-            "type": "ERROR", "protocol_version": PROTOCOL_VERSION,
-            "request_id": request_id, "code": "CANCEL_FAILED", "state": "FATAL",
-        }
-    if cancel_sent:
-        return {
-            "type": "CANCELLED", "protocol_version": PROTOCOL_VERSION,
-            "request_id": request_id, "state": "READY",
-        }
-    if kind == "result":
-        response, metrics = payload  # type: ignore[misc]
-        return {
-            "type": "RESULT", "protocol_version": PROTOCOL_VERSION,
-            "request_id": request_id, "response": response,
-            "metrics": metrics, "state": "READY",
-        }
-    code = "INVALID_REQUEST" if kind == "invalid_request" else "GENERATION_FAILED"
-    return {
-        "type": "ERROR", "protocol_version": PROTOCOL_VERSION,
-        "request_id": request_id, "code": code, "state": "READY",
-    }
+def install_network_denial() -> None:
+    """Unprivileged kernel filter installed before native import, or no READY."""
+    require(sys.platform == "linux" and platform.machine() == "aarch64", "network")
+    require(len(threading.enumerate()) == 1, "network")
+    require(all(stat.S_ISFIFO(os.fstat(fd).st_mode) for fd in (0, 1)), "network")
+    require(os.readlink("/proc/self/fd/2") == "/dev/null", "network")
+    # close_fds at spawn plus this audit rules out inherited or pre-filter
+    # sockets/rings. The scandir descriptor itself has closed before fstat.
+    for name in os.listdir("/proc/self/fd"):
+        fd = int(name)
+        if fd <= 2:
+            continue
+        try:
+            os.fstat(fd)
+        except OSError as error:
+            import errno
+            require(error.errno == errno.EBADF, "network")
+        else:
+            require(False, "network")
+    import ctypes
+    class Filter(ctypes.Structure):
+        _fields_ = [("code", ctypes.c_ushort), ("jt", ctypes.c_ubyte),
+                    ("jf", ctypes.c_ubyte), ("k", ctypes.c_uint32)]
+    class Program(ctypes.Structure):
+        _fields_ = [("len", ctypes.c_ushort), ("filter", ctypes.POINTER(Filter))]
+    instructions = _network_filter_program()
+    filters = (Filter * len(instructions))(*(Filter(*row) for row in instructions))
+    program = Program(len(instructions), filters)
+    libc = ctypes.CDLL(None, use_errno=True)
+    prctl = libc.prctl
+    prctl.argtypes = [ctypes.c_int, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong]
+    prctl.restype = ctypes.c_int
+    require(prctl(38, 1, 0, 0, 0) == 0, "network")  # PR_SET_NO_NEW_PRIVS
+    require(prctl(22, 2, ctypes.addressof(program), 0, 0) == 0, "network")
 
 
-def _prewarm(runtime: LiteRTRuntime) -> None:
-    value = {
-        "perceptions": [{"kind": "listen", "status": "ok", "text": "Say ready."}],
-        "pending_message_count": 0,
-        "capabilities": {"perceptions": ["listen"], "actions": ["speak"], "tools": []},
-    }
-    response, metrics = runtime.generate(value)
-    _validate_product_response(response, value)
-    if not response or int(metrics["decode_tokens"]) <= 0:
-        raise RuntimeError("prewarm failed")
-
-
-def _write_startup_evidence(
-    path: Path, *, engine_load_latency_ms: float, prewarm_latency_ms: float,
-) -> None:
-    value = {
-        "schema_version": 1,
-        "engine_load_latency_ms": engine_load_latency_ms,
-        "prewarm_latency_ms": prewarm_latency_ms,
-        "prewarm_prompt_sha256": hashlib.sha256(_render_prompt({
-            "perceptions": [{"kind": "listen", "status": "ok", "text": "Say ready."}],
-            "pending_message_count": 0,
-            "capabilities": {"perceptions": ["listen"], "actions": ["speak"], "tools": []},
-        }).encode()).hexdigest(),
-    }
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
-    descriptor = os.open(path, flags, 0o600)
-    try:
-        payload = (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
-        written = 0
-        while written < len(payload):
-            written += os.write(descriptor, payload[written:])
-    finally:
-        os.close(descriptor)
-
-
-def run(args: argparse.Namespace) -> int:
-    engine_started = time.monotonic()
-    runtime = LiteRTRuntime(
-        model=args.model,
-        runtime_root=args.runtime_root,
-        native_sha256=args.native_sha256,
-    )
-    engine_load_latency_ms = (time.monotonic() - engine_started) * 1000.0
-    try:
-        prewarm_started = time.monotonic()
-        _prewarm(runtime)
-        prewarm_latency_ms = (time.monotonic() - prewarm_started) * 1000.0
-        _write_startup_evidence(
-            Path(args.startup_evidence),
-            engine_load_latency_ms=engine_load_latency_ms,
-            prewarm_latency_ms=prewarm_latency_ms,
-        )
-        _write({
-            "type": "READY", "protocol_version": PROTOCOL_VERSION, "state": "READY",
-            "identity": {
-                "candidate_id": args.candidate_id,
-                "pairing_revision": args.pairing_revision,
-                "platform": args.platform,
-                "runtime_sha256": args.runtime_sha256,
-                "model_sha256": args.model_sha256,
-                "config_sha256": args.config_sha256,
-            },
-        })
-        outcomes: queue.Queue[tuple[str, object]] = queue.Queue(maxsize=1)
-        active_id: str | None = None
-        worker: threading.Thread | None = None
-        cancel_sent = False
-        request_generation: int | None = None
-        request_counter = 0
+def run(runtime: Any, ready: Mapping[str, object]) -> int:
+    session = WorkerSession(runtime)
+    control = _ControlInput(sys.stdin.fileno())
+    _write(ready)
+    while True:
+        frame = control.read()
+        session.ledger.command(frame)
+        if frame["op"] == "SHUTDOWN":
+            runtime.close()
+            ack = {"protocol": 3, "event": "SHUTDOWN_ACK"}
+            session.ledger.event(ack)
+            _write(ack)
+            return 0
+        result_queue: queue.Queue = queue.Queue()
+        runtime.clear_pending_cancel()
+        def execute() -> None:
+            try:
+                outcome = session.execute(frame)
+            except WorkerCancelled:
+                outcome = WorkerCancelled()
+            except BaseException:
+                outcome = None
+            # The native method stack has returned. Erase the shared request
+            # payload before the thread can join and MEASURED can be emitted.
+            frame.pop("text", None)
+            result_queue.put(outcome)
+        thread = threading.Thread(target=execute, name="llm-native", daemon=False)
+        thread.start()
         while True:
-            if worker is not None and not worker.is_alive():
-                worker.join()
-                kind, payload = outcomes.get_nowait()
-                assert active_id is not None
-                _write(_terminal_from_outcome(
-                    active_id, kind, payload, cancel_sent=cancel_sent,
-                ))
-                if kind == "cancel_failed":
-                    return 2
-                runtime.clear_pending_cancel()
-                active_id = None
-                worker = None
-                cancel_sent = False
-            readable, _, _ = select.select([sys.stdin.buffer], [], [], 0.05)
-            if not readable:
-                continue
-            frame = _read_line()
-            frame_type = frame.get("type")
-            if frame_type == "GENERATE":
-                if worker is not None:
-                    request_id = str(frame.get("request_id", "llm.0.0"))
-                    _write({"type": "ERROR", "protocol_version": PROTOCOL_VERSION, "request_id": request_id, "code": "BUSY", "state": "GENERATING"})
-                    continue
-                request_id, value = parse_generate(frame)
-                request_generation, request_counter = _advance_request_identity(
-                    request_id, request_generation, request_counter,
-                )
-                active_id = request_id
-
-                def infer() -> None:
-                    try:
-                        outcomes.put(("result", runtime.generate(value)))
-                    except WorkerInputTooLarge:
-                        outcomes.put(("invalid_request", None))
-                    except WorkerCancelled:
-                        outcomes.put(("cancelled", None))
-                    except WorkerCancelFailed:
-                        outcomes.put(("cancel_failed", None))
-                    except BaseException as error:
-                        outcomes.put(("error", type(error).__name__))
-
-                worker = threading.Thread(target=infer, name="m4b-inference", daemon=False)
-                worker.start()
-            elif frame_type == "CANCEL":
-                request_id = parse_cancel(frame)
-                if worker is None or request_id != active_id:
-                    raise ValueError("cancel identity mismatch")
-                if not cancel_sent:
-                    cancel_sent = True
-                    try:
-                        runtime.cancel()
-                    except BaseException:
-                        _write({
-                            "type": "ERROR", "protocol_version": PROTOCOL_VERSION,
-                            "request_id": request_id, "code": "CANCEL_FAILED", "state": "FATAL",
-                        })
-                        return 2
-            elif frame == {"type": "PING", "protocol_version": PROTOCOL_VERSION} and worker is None:
-                _write({"type": "PONG", "protocol_version": PROTOCOL_VERSION, "state": "READY"})
-            elif frame == {"type": "SHUTDOWN", "protocol_version": PROTOCOL_VERSION} and worker is None:
-                _write({"type": "SHUTDOWN_ACK", "protocol_version": PROTOCOL_VERSION})
-                _exit_after_shutdown_ack()
-                return 0
-            else:
-                raise ValueError("invalid control operation")
-    finally:
-        runtime.close()
-
-
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-    for name in (
-        "model", "product-config", "runtime-root", "candidate-id",
-        "pairing-revision", "platform", "runtime-sha256", "model-sha256",
-        "config-sha256", "native-sha256",
-        "startup-evidence",
-    ):
-        parser.add_argument(f"--{name}", required=True)
-    return parser
+            alive = thread.is_alive()
+            if control.ready(0.01 if alive else 0):
+                cancel = control.read()
+                require(cancel.get("op") == "CANCEL")
+                session.ledger.command(cancel)
+                runtime.cancel()
+                deferred = {"protocol": 3, "event": "CANCEL_DEFERRED", "request_id": frame["request_id"]}
+                session.ledger.event(deferred)
+                _write(deferred)
+            elif not alive:
+                break
+        thread.join()
+        events = result_queue.get_nowait()
+        if session.ledger.cancelled:
+            op = frame["op"]
+            if op == "OPEN":
+                runtime.close_conversation()
+            if op == "MEASURE" and events is not None:
+                # The joined renderer may have completed before cancellation.
+                # No outstanding ticket remains after CANCELLED, so its native
+                # input scratch must be scrubbed before claiming cleanup.
+                try:
+                    runtime.scrub_ticket()
+                except BaseException:
+                    events = None
+            cancelled = {"protocol": 3, "event": "CANCELLED",
+                "request_id": frame["request_id"], "operation": op,
+                "request_terminal_proven": events is not None,
+                "operation_cleanup_proven": op != "CLOSE" and events is not None,
+                "engine_usable": events is not None,
+                "conversation_state": ("tainted" if events is None else
+                    {"OPEN": "none", "MEASURE": "ready", "GENERATE": "tainted", "CLOSE": "tainted"}[op])}
+            # Invalid/missing proof is emitted for parent convergence, never
+            # accepted locally as a usable transition.
+            _write(cancelled)
+            if events is None or op == "CLOSE":
+                return 2
+            session.ledger.event(cancelled)
+        else:
+            require(type(events) is list, "runtime")
+            for event in events:
+                session.ledger.event(event)
+                _write(event)
+        # Erase references to the completed private request and model response.
+        frame = {}
+        events = None
 
 
 def main() -> int:
-    try:
-        return run(_parser().parse_args())
-    except BaseException:
-        return 2
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--product-profile", required=True)
+    parser.add_argument("--runtime-root", required=True)
+    parser.add_argument("--artifact-lock", required=True)
+    parser.add_argument("--measurement-authorization")
+    parser.add_argument("--measurement-expected")
+    args = parser.parse_args()
+    from sbd.cognition.litert_lm.lock import LLMArtifactLock, load_product_profile
+    from sbd.core.config.models import LLMConfig
+    root = Path(__file__).resolve().parents[4]
+    lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
+    require(bool(args.measurement_authorization) == bool(args.measurement_expected), "measurement")
+    grant = None
+    if args.measurement_authorization:
+        from sbd.cognition.litert_lm.measurement import MeasurementGrant
+        profile = load_product_profile(Path(args.product_profile), allow_measurement=True)
+        grant = MeasurementGrant.load(Path(args.measurement_authorization),
+            expected_tuple=json.loads(args.measurement_expected), profile=profile)
+    else:
+        profile = load_product_profile(Path(args.product_profile))
+    verify_platform_abi(profile)
+    require(lock.runtime_closure is not None, "runtime")
+    lock.runtime_closure.verify_install(Path(args.runtime_root))
+    # Reauthenticate paths in the child before native import/Engine creation.
+    cfg = LLMConfig(driver="litert_lm", runtime_python=Path(sys.executable),
+        model_path=Path(args.model), artifact_lock_path=Path(args.artifact_lock),
+        product_profile_path=Path(args.product_profile))
+    lock.verify_config_paths(cfg, allow_measurement=grant is not None)
+    install_network_denial()
+    runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
+                            native_sha256=lock.runtime["native_sha256"])
+    ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,
+             "pid": os.getpid(), "pgid": os.getpgrp()}
+    require(os.getpid() == os.getpgrp(), "pid")
+    return run(runtime, ready)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
-
-
-__all__ = [
-    "PROMPT_PREFIX", "_build_response_schema", "_render_prompt",
-    "_advance_request_identity", "_terminal_from_outcome",
-    "_validate_product_response", "_verify_native_library",
-    "_write_startup_evidence",
-    "LiteRTRuntime", "WorkerCancelFailed", "WorkerInputTooLarge",
-]
+    try:
+        status = main()
+    except BaseException:
+        status = 2
+    # Parent is responsible for descendant/exit proof, including startup failure.
+    os._exit(status)

@@ -27,6 +27,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from sbd.cognition.litert_lm.lock import (  # noqa: E402
     EXPECTED_RUNTIME,
+    EXPECTED_CANDIDATE,
     LLMArtifactLock,
     LLMLockError,
     RuntimeClosure,
@@ -172,7 +173,7 @@ def _digest(path: Path) -> str:
     try:
         descriptor = os.open(path, flags)
     except OSError as error:
-        raise ProductFailure("controlled input is missing, unreadable, or unsafe") from error
+        raise ProductFailure("controlled input is missing, unreadable, or unsafe") from None
     try:
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
             raise ProductFailure("controlled input is not a regular file")
@@ -188,7 +189,7 @@ def _read_regular_bytes(path: Path) -> bytes:
     try:
         descriptor = os.open(path, flags)
     except OSError as error:
-        raise ProductFailure("controlled input is missing, unreadable, or unsafe") from error
+        raise ProductFailure("controlled input is missing, unreadable, or unsafe") from None
     try:
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
             raise ProductFailure("controlled input is not a regular file")
@@ -247,7 +248,7 @@ def capture_python_abi(
     try:
         metadata = os.lstat(base_python)
     except OSError as error:
-        raise ProductFailure("base interpreter is missing or unsafe") from error
+        raise ProductFailure("base interpreter is missing or unsafe") from None
     if not stat.S_ISREG(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode) or metadata.st_uid != 0:
         raise ProductFailure("base interpreter is missing or unsafe")
     probe_code = (
@@ -279,7 +280,7 @@ def capture_python_abi(
             raise ProductFailure("target Python ABI probe failed")
         values = json.loads(probe.stdout)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError) as error:
-        raise ProductFailure("target Python ABI probe failed") from error
+        raise ProductFailure("target Python ABI probe failed") from None
     probe_keys = set(EXPECTED_PYTHON_ABI) | {"sys_version", "glibc_version"}
     if type(values) is not dict or set(values) != probe_keys:
         raise ProductFailure("target Python ABI probe failed")
@@ -294,7 +295,7 @@ def capture_python_abi(
                 env=_clean_environment(),
             )
         except OSError as error:
-            raise ProductFailure("target Python package probe failed") from error
+            raise ProductFailure("target Python package probe failed") from None
         fields = result.stdout.rstrip("\n").split("\t") if result.returncode == 0 else []
         if len(fields) != 2:
             raise ProductFailure("target Python package probe failed")
@@ -313,7 +314,7 @@ def _verify_file(path: Path, *, size: int, sha256: str, label: str) -> None:
     try:
         actual_size = path.stat(follow_symlinks=False).st_size
     except OSError as error:
-        raise ProductFailure(f"{label} is missing or unsafe") from error
+        raise ProductFailure(f"{label} is missing or unsafe") from None
     if path.is_symlink() or not path.is_file() or actual_size != size or _digest(path) != sha256:
         raise ProductFailure(f"{label} identity mismatch")
 
@@ -323,7 +324,7 @@ def _load_install_inventory(path: Path) -> InstallInventory:
         raw_bytes = _read_regular_bytes(path)
         inventory = json.loads(raw_bytes)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ProductFailure("installed product inventory is invalid") from error
+        raise ProductFailure("installed product inventory is invalid") from None
     if (
         type(inventory) is not dict
         or set(inventory) != {
@@ -376,7 +377,7 @@ def _load(lock_path: Path, manifest_path: Path, notice_path: Path) -> tuple[LLMA
         )
         expected_notice = raw["licenses"]["notice_sha256"]
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError, LLMLockError) as error:
-        raise ProductFailure("product lock or runtime manifest is invalid") from error
+        raise ProductFailure("product lock or runtime manifest is invalid") from None
     if _digest(notice_path) != expected_notice:
         raise ProductFailure("third-party notice identity mismatch")
     return lock, closure
@@ -407,7 +408,7 @@ def _extract_wheel(wheel: Path, destination: Path, closure: RuntimeClosure) -> N
             except FileNotFoundError:
                 destination.mkdir(parents=True, mode=0o700)
             except OSError as error:
-                raise ProductFailure("runtime wheel destination is unsafe") from error
+                raise ProductFailure("runtime wheel destination is unsafe") from None
             else:
                 if (
                     not stat.S_ISDIR(destination_metadata.st_mode)
@@ -419,18 +420,18 @@ def _extract_wheel(wheel: Path, destination: Path, closure: RuntimeClosure) -> N
                         raise ProductFailure("runtime wheel destination is not empty")
                     destination.chmod(0o700)
                 except OSError as error:
-                    raise ProductFailure("runtime wheel destination is unsafe") from error
+                    raise ProductFailure("runtime wheel destination is unsafe") from None
             for name in sorted(files):
                 target = destination.joinpath(*PurePosixPath(name).parts)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(files[name]) as source, target.open("xb") as sink:
                     shutil.copyfileobj(source, sink, length=1024 * 1024)
     except (OSError, zipfile.BadZipFile) as error:
-        raise ProductFailure("runtime wheel extraction failed") from error
+        raise ProductFailure("runtime wheel extraction failed") from None
     try:
         closure.verify_install(destination)
     except LLMLockError as error:
-        raise ProductFailure("extracted runtime identity mismatch") from error
+        raise ProductFailure("extracted runtime identity mismatch") from None
 
 
 def _verify_venv(
@@ -450,7 +451,7 @@ def _verify_venv(
     try:
         metadata = os.lstat(runtime_python)
     except OSError as error:
-        raise ProductFailure("runtime interpreter is missing or unsafe") from error
+        raise ProductFailure("runtime interpreter is missing or unsafe") from None
     if not stat.S_ISREG(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
         raise ProductFailure("runtime interpreter is missing or unsafe")
     pyvenv = install_root / "pyvenv.cfg"
@@ -460,7 +461,7 @@ def _verify_venv(
             raise ProductFailure("isolated runtime configuration is invalid")
         lines = pyvenv.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeDecodeError) as error:
-        raise ProductFailure("isolated runtime configuration is invalid") from error
+        raise ProductFailure("isolated runtime configuration is invalid") from None
     config: dict[str, str] = {}
     for line in lines:
         if not line.strip():
@@ -506,7 +507,7 @@ def _verify_venv(
         )
         identity = json.loads(probe.stdout)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError) as error:
-        raise ProductFailure("runtime interpreter isolation probe failed") from error
+        raise ProductFailure("runtime interpreter isolation probe failed") from None
     expected_keys = {
         "implementation", "version", "prefix", "base_prefix", "enable_user_site",
         "paths", "stdlib", "platstdlib", "venv_platstdlib", "json_path", "extension_path",
@@ -617,13 +618,13 @@ def install(
         except FileNotFoundError:
             pass
         except OSError as cleanup:
-            raise ProductFailure("install staging cleanup failed") from cleanup
+            raise ProductFailure("install staging cleanup failed") from None
         if staging.exists() or staging.is_symlink():
-            raise ProductFailure("install staging cleanup failed") from error
+            raise ProductFailure("install staging cleanup failed") from None
         raise
     return {
         "status": "Pass",
-        "candidate_id": lock.identity.candidate_id,
+        "candidate_id": EXPECTED_CANDIDATE["candidate_id"],
         "runtime_manifest_sha256": closure.digest,
         "runtime_file_count": len(closure.files),
         "install_file_count": len(rows) + 1,
@@ -653,7 +654,7 @@ def preflight(
     notice_path: Path,
     install_root: Path,
     model_path: Path,
-    product_config_path: Path,
+    product_profile_path: Path,
     runtime_python: Path,
     candidate_sha: str,
     repo_root: Path,
@@ -665,12 +666,12 @@ def preflight(
     lock, closure = _load(lock_path, manifest_path, notice_path)
     try:
         closure.verify_install(install_root / "lib/python3.13/site-packages")
-        lock.verify_config_paths(type("Paths", (), {
+        profile = lock.verify_config_paths(type("Paths", (), {
             "model_path": model_path,
-            "product_config_path": product_config_path,
+            "product_profile_path": product_profile_path,
         })())
     except (LLMLockError, OSError) as error:
-        raise ProductFailure("installed product identity mismatch") from error
+        raise ProductFailure("installed product identity mismatch") from None
     tracked = {
         "llm-artifacts.json": _digest(lock_path),
         "llm-runtime-rpi-cp313.json": _digest(manifest_path),
@@ -713,7 +714,7 @@ def preflight(
         model = Path("/proc/device-tree/model").read_text(encoding="ascii").rstrip("\x00")
         os_release = Path("/etc/os-release").read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as error:
-        raise ProductFailure("target platform identity is unavailable") from error
+        raise ProductFailure("target platform identity is unavailable") from None
     if machine != "aarch64" or "Raspberry Pi 5" not in model or 'VERSION_ID="13"' not in os_release:
         raise ProductFailure("target platform identity mismatch")
     try:
@@ -726,24 +727,40 @@ def preflight(
             capture_output=True, text=True, check=True,
         ).stdout.strip()
     except (OSError, subprocess.SubprocessError) as error:
-        raise ProductFailure("candidate repository identity is unavailable") from error
+        raise ProductFailure("candidate repository identity is unavailable") from None
     if head != candidate_sha or dirty:
         raise ProductFailure("candidate SHA or protected-path state mismatch")
     try:
-        ProcLLMResourceSampler().sample(child_pid=os.getpid(), child_pgid=os.getpgrp())
-    except (OSError, RuntimeError, ValueError) as error:
-        raise ProductFailure("target resource sampler capability is unavailable") from error
+        from scripts.m4b_target_metrics import kernel_resource_sample, network_isolated
+        health = kernel_resource_sample(
+            Path("/proc/meminfo").read_text(encoding="ascii"),
+            Path("/proc/vmstat").read_text(encoding="ascii"),
+            Path("/sys/class/thermal/thermal_zone0/temp").read_text(encoding="ascii"),
+            runner(["/usr/bin/vcgencmd", "get_throttled"], capture_output=True,
+                   text=True, check=True, timeout=5).stdout,
+        )
+        isolated = network_isolated(Path("/proc/net/dev").read_text(encoding="ascii"),
+                                    Path("/proc/net/route").read_text(encoding="ascii"))
+        if not isolated or health["throttled_bits"] or health["thermal_celsius"] >= 80:
+            raise ProductFailure("target offline or resource capability is unavailable")
+        ProcLLMResourceSampler._kib(Path("/proc/self/smaps_rollup"), "Pss")
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
+        raise ProductFailure("target resource sampler capability is unavailable") from None
     return {
-        "status": "Pass",
-        "candidate_id": lock.identity.candidate_id,
-        "pairing_revision": lock.identity.pairing_revision,
+        "status": "PreflightReady",
+        "operation": "preflight",
+        "candidate_id": profile["candidate_id"],
+        "pairing_revision": profile["pairing_revision"],
         "artifact_lock_sha256": lock.digest,
         "runtime_manifest_sha256": closure.digest,
         "runtime_file_count": len(closure.files),
         "install_file_count": len(expected_inventory) + 1,
         "install_inventory_sha256": inventory.inventory_sha256,
         "model_sha256": lock.model["sha256"],
-        "product_config_sha256": lock.product_profile["config_sha256"],
+        "profile_id": profile["profile_id"],
+        "profile_sha256": profile["profile_sha256"],
+        "profile_stage": profile["profile_stage"],
+        "network_isolated": True,
         "candidate_sha": candidate_sha,
         "platform": "pi-debian13-aarch64",
         "python": "CPython 3.13.5",
@@ -765,7 +782,7 @@ def _parser() -> argparse.ArgumentParser:
     preflight_parser = sub.add_parser("preflight", parents=[common])
     preflight_parser.add_argument("--install-root", type=Path, required=True)
     preflight_parser.add_argument("--model", type=Path, required=True)
-    preflight_parser.add_argument("--product-config", type=Path, required=True)
+    preflight_parser.add_argument("--product-profile", type=Path, required=True)
     preflight_parser.add_argument("--runtime-python", type=Path, required=True)
     preflight_parser.add_argument("--candidate-sha", required=True)
     preflight_parser.add_argument("--repo", type=Path, required=True)
@@ -791,7 +808,7 @@ def main(argv: list[str] | None = None) -> int:
                 notice_path=args.notices,
                 install_root=args.install_root,
                 model_path=args.model,
-                product_config_path=args.product_config,
+                product_profile_path=args.product_profile,
                 runtime_python=args.runtime_python,
                 candidate_sha=args.candidate_sha,
                 repo_root=args.repo,

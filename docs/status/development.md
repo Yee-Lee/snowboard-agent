@@ -1,69 +1,155 @@
 # Current development status
 
-- Owner: Developer
-- Scope: `M4B-FOUNDATION-REVISION` only
-- Entry: **Developer correction complete / ready for Tester verification**
-- Completed work package: `CR-M4B-001` and `CR-M4B-002`
-- Next owner: **Tester** for independent candidate verification
+- Updated: 2026-09-12
+- Owner: Senior Developer / integration owner
+- Scope: `CR_M4B_II`, replacement cognition/product implementation and portable verification
+- Starting SHA: `54c506713082b1ea95cfa331f08b7124dcfa0316`
+- Status: **Developer implementation complete; Revised for independent Tester verification**
+- Next owner: Tester, after USER-authorized commit/candidate preparation
+- Candidate: none; no commit, push, Pi measurement PASS or human acceptance is claimed
 
-## Correction result
+## Authority and result
 
-- `InFlightRecord` now stores request-terminal proof, cleanup proof, Engine usability and Level 2
-  force-abort proof independently. Known-unusable Engines always enter Level 2; an empty destroyed
-  backend identity fails closed, while a valid stable key is passed unchanged to RM recovery.
-- `StateManager._lifecycle_e1()` now advances an existing `conversation_close` convergence to the
-  recovery phase, waits for recovery before IDLE, preserves shutdown precedence, and never starts a
-  new generation after invalid replacement proof.
-- Deterministic cases now cover incomplete and unusable open/close results, exact recovery keys,
-  recovery barriers, Level 1/2/3, full continuing/ending action matrices, invalid THINK facts, WAKE
-  failure/interruption, stale identity, R1 boundaries, wiring and admission/generation behavior.
-- The AST guard now resolves direct imports, import aliases, qualified module attributes and
-  transitive simple assignment aliases. Signature failure is tested without a real positional
-  constructor call.
+Developer entry was opened after Designer resolved `IR_dev_M4B_IV` and Tester resolved
+`TR_spec_M4B_VII`. The implementation uses only the authorized explicit
+`DISCARD_TICKET` / `TICKET_DISCARDED` transition. It does not supersede tickets implicitly and
+does not use `CLOSE` to preserve a Conversation after R1.
 
-## Implemented result
+WP-01 through WP-06 are implemented and integrated. The Linux/aarch64 target portable catalog,
+immutable baseline, affected shared paths, full non-hardware repository regression, compilation
+and diff checks pass. The measurement-only target entry is implemented but remains fail-closed:
+native PM and human rows require a clean exact-SHA candidate, target artifacts and independent
+Designer/Tester authorization.
 
-- Added required four-field `LLMResponse`, keyword-only Reasoner generation seam, Conversation
-  lifecycle port/private notices, WAKE readiness join, sequential replacement, post-action rest,
-  session-end close and done-but-unproven convergence handling.
-- Resource Manager now late-fills required lifecycle control after worker/catalog readiness and
-  before producer arm; M1/M2 use deterministic lifecycle controls.
-- Added `tests/test_m4b_foundation.py` with 68 barrier-driven cases and the AST structural
-  anti-weakening guard. All affected construction/signature call sites were migrated without
-  deleting, renaming, skipping or xfail-marking baseline nodes.
-- Synchronized `ch01_events.md`, `ch02_contracts.md`, `ch04_state_manager.md`,
-  `ch05_resource_manager.md` and `ch06_cancel.md`; legacy M4B-MVA session-control text is tombstoned.
+## Implemented path and symbol inventory
 
-Excluded cognition/product implementation, M4B scripts, requirements, prompt/parser policy and real
-target behavior were not adopted or redesigned. Their test call sites received compile-only schema /
-generation migration where required.
+### WP-01 — profile, prompt and config
 
-## Test IDs
+- `src/sbd/cognition/{prompt_builder,semantic,factory}.py`: frozen V2D2 prompt identity,
+  listen-only projection, normalization/semantic parser and real adapter construction.
+- `src/sbd/cognition/litert_lm/lock.py`, `src/sbd/core/config/{loader,models,validate}.py`,
+  `config.example.yaml`: exact profile/runtime/artifact attestation and rejection of legacy keys.
+- `requirements/m4b/{llm-artifacts.json,llm-runtime-rpi-cp313.json,product-profile.json,semantic.gbnf}`:
+  locked runtime/artifact schemas and null-threshold measurement profile.
+- `scripts/{m4b_inheritance,m4b_llm_product}.py`: deterministic inheritance and release-only
+  product validation.
 
-`FND-EVT-001`, `FND-EVT-002`, `FND-WAKE-001`, `FND-WAKE-002`, `FND-ACT-001`,
-`FND-ACT-002`, `FND-ACT-003`, `FND-REP-001`, `FND-REP-002`, `FND-LIFE-001`,
-`FND-LIFE-002`, `FND-LIFE-003`, `FND-PHASE-001`, `FND-R1-001`, `FND-CONV-001`,
-`FND-CONV-002`, `FND-SM-001`, `FND-RM-001`, `FND-REG-001`.
+### WP-02 — child protocol and adapter
 
-## Verification evidence
+- `src/sbd/cognition/llm.py`, `src/sbd/cognition/llm_child_protocol.py`,
+  `src/sbd/cognition/litert_lm/{adapter,worker,measurement}.py`: typed v3 lifecycle,
+  non-mutating MEASURE, exact discard acknowledgement, permanent one-use ticket identities,
+  GENERATE-only mutation, cancellation scrub, close/shutdown proof and bounded PGID cleanup.
+- `tests/fakes/m4b_llm_child.py`: real subprocess/barrier fault fixture for framing, disposal,
+  cancellation, recovery and descendant cleanup.
 
-```bash
-timeout 60s env PYTHONPATH=src pytest -o addopts='' -q tests/test_m4b_foundation.py
-PYTHONPATH=src pytest -o addopts='' --collect-only -q tests/milestones/test_m1_foundation.py tests/milestones/test_m2_mock_pipeline.py tests/test_events.py tests/test_state_manager.py tests/test_m2_sm_flows.py tests/test_m2_flows.py tests/test_m2_wrk_003.py
-PYTHONPATH=src pytest -x --strict-markers --junit-xml=/tmp/m4b_foundation_regression_result.xml tests/milestones/test_m1_foundation.py tests/milestones/test_m2_mock_pipeline.py tests/test_events.py tests/test_state_manager.py tests/test_m2_sm_flows.py tests/test_m2_flows.py tests/test_m2_wrk_003.py
-timeout 120s env PYTHONPATH=src pytest -o addopts='' -q tests/ -x
-python3 -m compileall -q src tests
-git diff --check
-```
+### WP-03 — Reasoner product policy
 
-- Focused foundation: **68 passed in 4.72 s**; outer 60-second limit passed.
-- Baseline runtime/JUnit: **99 passed**, `failures=0`, `errors=0`, `skipped=0`.
-- Anti-deletion: immutable baseline **99**, post-migration baseline nodes **99**, missing **0**.
-- Full repository: **770 passed, 2 skipped, 29 deselected** in 74.77 s; both skips are pre-existing
-  M3 audio tests whose optional `samplerate` dependency is absent in this environment.
-- `python3 -m compileall -q src tests` and `git diff --check`: PASS.
+- `src/sbd/cognition/reasoner.py`, `src/sbd/core/state_manager/notices.py`: exact admission and
+  outcome matrix, speech ownership, KEEP/REPLACE/END routing, one generation/Fact maximum,
+  repeated R2 behavior and fixed public notices.
+- `src/sbd/core/state_manager/manager.py`: private-input lifetime control and post-close recovery
+  authorization without a public state/Event/Fact change.
 
-The specified `--timeout=60` pytest option is not available in the current system Python. The dev
-extra now declares `pytest-timeout>=2.3`; the focused gate was equivalently bounded by the shell
-`timeout 60s`. No implementation blocker remains. Cognition/product rewrite remains closed and is
-not claimed by this foundation result.
+### WP-04 — planned recovery and composition
+
+- `src/sbd/core/{m2_composition,_m4b_resource_binding}.py`: real Audio/ASR/TTS/LLM composition,
+  owner registry, READY/replacement resource proof and same-key RM barrier.
+- `src/sbd/action/rest/action.py`: private completion callback at the actual Rest worker boundary;
+  stale Facts cannot complete a new observation and callback failure emits no fake success.
+
+### WP-05 — observability, privacy and tooling
+
+- `src/sbd/cognition/observability.py`, `src/sbd/cognition/litert_lm/resource.py`: allowlisted
+  prompt/runtime/memory/timing rows, explicit null reasons, unique-PID PSS attribution and target
+  health sampling. Native timing is used only after Linux clock/time-namespace proof.
+- `src/sbd/perception/listen/listener.py`, `src/sbd/action/speak/speaker.py`,
+  `src/sbd/core/audio/alsa/output.py`: actual ASR-final, PCM-ready and first-positive-write hooks.
+- `scripts/{m4b_target_metrics,m4b_measurement}.py`: bounded measurement series, cleanup watchdog,
+  private `0700`/`0600` outputs, exact dual-review grant and fail-closed native session. It cannot
+  produce release or human PASS cards.
+
+### WP-06 — verification and cutover guards
+
+- `scripts/candidate_gate.py`, `tests/m4b_portable_suite.txt`, `tests/m4b_target_cases.py`:
+  replacement catalog, evidence validation and explicit target-input binding.
+- `tests/test_m4b_{adm,can,cfg,conv,gen,hist,inh,ipc,lock,measurement_harness,mem,norm,off,out,
+  outcome,p5,pkg,prefill,priv,prompt,rdy,rec,reg,res,s2,sem,wire}_001.py`: approved replacement
+  coverage. Existing shared M1/M2/M4A/Foundation files remain in the retained selector.
+
+## Portable Test ID mapping
+
+| Test ID | Principal implementation / tests |
+| :--- | :--- |
+| `M4B-NORM-001` | projector/reasoner; `test_m4b_norm_001.py` |
+| `M4B-PROMPT-001` | prompt/profile/lock; `test_m4b_prompt_001.py` |
+| `M4B-SEM-001` | semantic parser/reasoner; `test_m4b_sem_001.py` |
+| `M4B-S2-001` | incremental safe text and terminal parser; `test_m4b_s2_001.py` |
+| `M4B-ADM-001` | MEASURE/discard/grant/privacy; `test_m4b_adm_001.py` |
+| `M4B-PREFILL-001` | fresh prefill/context tier; `test_m4b_prefill_001.py` |
+| `M4B-OUTCOME-001` | policy/speech/route matrix; `test_m4b_outcome_001.py` |
+| `M4B-CONV-001` | Conversation/revision/replacement; `test_m4b_conv_001.py` |
+| `M4B-MEM-001` | resource decisions/series; `test_m4b_mem_001.py` |
+| `M4B-REC-001` | SM-authorized same-key recovery; `test_m4b_rec_001.py` |
+| `M4B-WIRE-001` | v3 wire/order/proofs/PGID; `test_m4b_wire_001.py` |
+| `M4B-PRIV-001` | retention/observability/output scans; `test_m4b_priv_001.py` |
+| `M4B-REG-001` | immutable/affected/catalog guards; `test_m4b_reg_001.py` |
+
+## Final Developer verification
+
+All commands used `PYTHONPATH=src:.`, strict markers/config, `pytest-timeout`, per-test timeout
+`120 s`, outer bounded runners and JUnit xUnit1. Evidence is diagnostic and not candidate evidence.
+
+### Raspberry Pi 5 / Linux aarch64 / CPython 3.13.5
+
+Target: authorized Raspberry Pi 5 Model B Rev 1.1, 4 GiB, Debian 13.2, kernel
+`6.12.47+rpt-rpi-2712`; observed before final runs: `38.4 C`, `throttled=0x0`.
+
+- Final Revised portable catalog: **1005 collected, 1005 passed, 0 failed/error/skipped**,
+  33.20 s. JUnit: `${PI_RUN}/evidence/portable-pi-revised.xml`, with Developer copy at
+  `${DEV_RUN}/evidence/pi/portable-pi-revised.xml`, SHA-256
+  `f50763daeab27d58399f6c168f38421ac15d6808dfa0d2b75711988affd8d6fe`.
+- Full repository excluding 29 explicitly `rpi`-marked hardware rows: **1557 passed,
+  0 failed/error/skipped, 29 deselected**, 54.85 s. JUnit:
+  `${PI_RUN}/evidence/full-non-rpi.xml`, SHA-256
+  `65251bd288c7bdecb6a0190cbe3fc62bbd4c0fd88094e3001485b6c6be83d406`.
+- `python -m compileall -q src scripts tests`: exit 0.
+- `git diff --check`: exit 0.
+
+### Immutable Foundation evidence
+
+- Baseline count: **99**; retained: **99**; missing: **0**; skipped: **0**.
+- Baseline and collected list SHA-256:
+  `fd5a9eb2d9943e894fc2a4e043146b1a85874f7eafcd88996686188d5477813f`.
+- Missing-list SHA-256:
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- The portable JUnit `G02` testcase carries the same six inventory properties.
+
+### macOS arm64 diagnostics
+
+- CPython 3.11.16, 3.12.14 and 3.13.15 each: **1005 collected, 997 passed,
+  8 failed, 0 error/skipped**. All eight are the same Accepted M4A Darwin process-group nodes
+  (seven direct nodes plus `M4B-REG-001/G05` aggregation); no M4B production node failed.
+- CPython 3.13.15 full non-hardware suite: **1547 passed, 10 failed, 29 deselected**.
+  The two additional failures are the same M4A ASR supervisor cleanup boundary.
+- Exact starting-SHA archive control over the three direct M4A files: **40 passed, 9 failed** with
+  the same nine direct nodes. Evidence:
+  `${DEV_RUN}/evidence/starting-sha-m4a-darwin.xml`.
+- Current diagnostics:
+  `${DEV_RUN}/evidence/mac{311,312,313}-final.{xml,json,stdout}` and
+  `${DEV_RUN}/evidence/mac-full-final.xml`.
+
+This is reported as a pre-existing Darwin M4A platform defect, not hidden by skip/xfail and not
+converted into M4B PASS. The required Linux Python 3.13 subprocess cell is green on the Pi.
+
+## Pending target and human rows
+
+`PM`, product acceptance and human semantic/audio rows remain **Pending**, with no PASS claim.
+The Pi currently has no approved clean candidate checkout, locked LiteRT-LM model/runtime,
+private audio-only config, artifact lock matching those files, empty `0700` output directory or
+Designer+Tester authorization JSON bound to the exact candidate/profile/harness/target tuple.
+The Developer harness correctly rejects that incomplete context.
+
+The next legal sequence is USER-approved commit/candidate preparation, independent Tester portable
+verification, dual-role PM authorization, then native measurement/human execution. Temporary legacy
+documentation remains until the product §12 portable-and-Pi cutover gate is actually satisfied.

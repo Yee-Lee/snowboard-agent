@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 import zipfile
+import traceback
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -29,6 +30,29 @@ from scripts.m4b_llm_product import (
     verify_python_abi,
 )
 from sbd.cognition.litert_lm.lock import RuntimeClosure, RuntimeFile
+
+
+def test_native_target_scenarios_require_explicit_measurement_inputs(monkeypatch):
+    from tests.m4b_target_cases import require_native_scenario_binding
+    monkeypatch.delenv("M4B_MEASUREMENT_ARGS", raising=False)
+    with pytest.raises(ProductFailure, match="M4B_MEASUREMENT_INPUTS_MISSING"):
+        require_native_scenario_binding()
+
+
+def test_preflight_cli_rejects_retired_product_config():
+    with pytest.raises(SystemExit):
+        product._parser().parse_args(["preflight", "--product-config", "/private/canary"])
+
+
+def test_preflight_io_failure_traceback_suppresses_private_path(tmp_path):
+    secret = "PRIVATE_PATH_CANARY"
+    try:
+        product._read_regular_bytes(tmp_path / secret)
+    except ProductFailure as error:
+        rendered = "".join(traceback.format_exception(error))
+        assert secret not in rendered and str(tmp_path) not in rendered
+    else:
+        pytest.fail("missing controlled input was accepted")
 
 
 def _abi(**changes: object) -> PythonABIAttestation:
@@ -378,7 +402,7 @@ def test_m4b_pkg_001_venv_allows_stdlib_and_product_site(tmp_path: Path) -> None
 @pytest.mark.parametrize("escaped", [
     "/usr/lib/python3/dist-packages",
     "/usr/local/lib/python3.13/site-packages",
-    "/home/operator/.local/lib/python3.13/site-packages",
+    "/opt/operator/.local/lib/python3.13/site-packages",
 ])
 def test_m4b_pkg_001_venv_rejects_third_party_site_escape(
     tmp_path: Path, escaped: str,

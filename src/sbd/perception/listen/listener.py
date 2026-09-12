@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 
 from sbd.adaptor.errors import AdapterError
 from sbd.core.audio.base import AudioInput
@@ -15,11 +15,13 @@ from sbd.perception.listen.asr import ASRAdapter
 
 
 class Listen(WorkerRuntime):
-    def __init__(self, *, audio_input: AudioInput, asr: ASRAdapter, bus: EventBus) -> None:
+    def __init__(self, *, audio_input: AudioInput, asr: ASRAdapter, bus: EventBus,
+                 observe: Callable[[str], None] | None = None) -> None:
         super().__init__()
         self._audio_input = audio_input
         self._asr = asr
         self._bus = bus
+        self._observe = observe
         self._frames: AsyncIterator[bytes] | None = None
 
     async def start(self) -> None:
@@ -45,6 +47,8 @@ class Listen(WorkerRuntime):
                     value = await self._await_operation(
                         self._asr.transcribe(self._frames)
                     )
+                if self._observe is not None:
+                    self._observe("asr_final")
                 if value.text.strip():
                     extra = {}
                     if value.confidence is not None:

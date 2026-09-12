@@ -53,7 +53,6 @@ def validate_config(config: 'AppConfig'):
     check_timeout(config.cognition.llm.terminal_grace_seconds, "cognition.llm.terminal_grace_seconds")
     check_timeout(config.cognition.llm.child_terminate_timeout_seconds, "cognition.llm.child_terminate_timeout_seconds")
     check_timeout(config.cognition.llm.child_kill_wait_timeout_seconds, "cognition.llm.child_kill_wait_timeout_seconds")
-    check_timeout(config.cognition.llm.rebuild_ready_timeout_seconds, "cognition.llm.rebuild_ready_timeout_seconds")
     for name, value in (
         ("perception.listen.adapter.child_ready_timeout_seconds", config.perception.listen.adapter.child_ready_timeout_seconds),
         ("perception.listen.adapter.child_terminate_timeout_seconds", config.perception.listen.adapter.child_terminate_timeout_seconds),
@@ -283,7 +282,7 @@ def _validate_m4b_llm(config) -> None:
     real_fields = (
         llm.runtime_python,
         llm.model_path,
-        llm.product_config_path,
+        llm.product_profile_path,
         llm.artifact_lock_path,
         llm.profile_id,
     )
@@ -292,33 +291,34 @@ def _validate_m4b_llm(config) -> None:
             raise ConfigValueError(f"{path} mock cannot contain real-only fields")
     elif llm.driver == "litert_lm":
         for field in (
-            "runtime_python", "model_path", "product_config_path",
+            "runtime_python", "model_path", "product_profile_path",
             "artifact_lock_path",
         ):
             _required_absolute_path(getattr(llm, field), f"{path}.{field}")
-        if llm.profile_id != "litert-lm-v0.16.0-pi-g2b-r5":
+        if llm.profile_id != "core-m4b-cognition-001":
             raise ConfigValueError(
-                f"{path}.profile_id must be 'litert-lm-v0.16.0-pi-g2b-r5'"
+                f"{path}.profile_id must be 'core-m4b-cognition-001'"
             )
+        if (config.perception.read.enabled or config.perception.look.enabled or
+                config.action.tool.enabled or config.input_sources.external_message.policy.enabled):
+            raise ConfigValueError("real M4B requires listen-only capabilities")
+        from sbd.cognition.litert_lm.lock import LLMLockError, load_product_profile
+        try:
+            load_product_profile(llm.product_profile_path)
+        except LLMLockError:
+            raise ConfigValueError("cognition.llm.product_profile_path invalid profile") from None
     else:
         raise ConfigValueError(f"{path}.driver is unsupported: {llm.driver}")
 
-    exact = {
-        "child_ready_timeout_seconds": 45.0,
-        "generation_timeout_seconds": 15.0,
-        "terminal_grace_seconds": 2.0,
-        "child_terminate_timeout_seconds": 2.0,
-        "child_kill_wait_timeout_seconds": 1.0,
-        "rebuild_ready_timeout_seconds": 10.0,
-        "recycle_max_inference_attempts": 8,
-        "recycle_owner_pss_delta_mib": 48,
-        "recycle_min_mem_available_mib": 768,
-    }
-    for field, expected in exact.items():
+    import math
+    for field in (
+        "child_ready_timeout_seconds", "generation_timeout_seconds",
+        "terminal_grace_seconds", "child_terminate_timeout_seconds",
+        "child_kill_wait_timeout_seconds",
+    ):
         actual = getattr(llm, field)
-        expected_type = int if isinstance(expected, int) else float
-        if type(actual) is not expected_type or actual != expected:
-            raise ConfigValueError(f"{path}.{field} must be {expected!r}")
+        if type(actual) not in (int, float) or not math.isfinite(actual) or actual <= 0:
+            raise ConfigValueError(f"{path}.{field} must be finite and positive")
 
     abort_timeout = config.cancel.abort_timeout_seconds.by_kind.get(
         "cognition.reasoner"
@@ -327,12 +327,8 @@ def _validate_m4b_llm(config) -> None:
         raise ConfigValueError(
             "cancel.abort_timeout_seconds.by_kind.cognition.reasoner must be 0.5"
         )
-    minimum_recovery = (
-        llm.rebuild_ready_timeout_seconds
-        + llm.child_terminate_timeout_seconds
-        + llm.child_kill_wait_timeout_seconds
-    )
-    if config.resource.recovery_timeout_seconds <= minimum_recovery:
+    minimum_recovery = llm.child_terminate_timeout_seconds + llm.child_kill_wait_timeout_seconds
+    if llm.driver == "litert_lm" and config.resource.recovery_timeout_seconds <= minimum_recovery:
         raise ConfigValueError(
             "resource.recovery_timeout_seconds cannot cover LLM rebuild and cleanup"
         )

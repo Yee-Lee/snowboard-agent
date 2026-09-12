@@ -1,7 +1,7 @@
 # Snowboard child-process protocols
 
 狀態：Audio Protocol v1保持Accepted；M4B replacement LLM Protocol
-`snowboard.llm/3`為 Designer draft，等待 focused review 與 Tester coverage。
+`snowboard.llm/3`已完成原 focused review，並依 `IR_dev_M4B_IV` 修訂 ticket disposal；focused Tester coverage已確認。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
@@ -282,11 +282,46 @@ Terminal response:
 }
 ```
 
-MEASURE must not append a message, allocate output KV or call generation. Counts are exact non-negative integers
-from the same tokenizer/chat renderer as GENERATE. `conversation_revision` is monotonic within one generation and
-increments exactly once after a successful RESULT. The child holds at most one ticket; CLOSE discards it.
+MEASURE must not append a semantic message, allocate output KV or call generation. Counts are exact non-negative
+integers from the same tokenizer/chat renderer as GENERATE. `conversation_revision` is monotonic within one
+generation and increments exactly once after a successful RESULT. Non-mutation here means unchanged semantic
+history/KV/revision and no native send: the pinned renderer necessarily replaces its private
+`last_rendered_message` scratch. Before MEASURED the child releases Python request/tokenizer temporaries; while the
+ticket is outstanding, that native rendered scratch is the only permitted child-side private-text retention. The
+ticket ledger contains only opaque value, identity, digest, revision and integer counts. Parent supplies text again
+for GENERATE. CLOSE destroys the Conversation and any outstanding ticket/scratch.
 
-### 4.4 Generation and semantic terminals
+### 4.4 Explicit ticket disposal
+
+When product admission rejects a measured input while keeping the Conversation, parent must dispose of the exact
+outstanding ticket:
+
+```json
+{"protocol":3,"op":"DISCARD_TICKET","request_id":3,"session_id":"<private>","generation":1,"conversation_revision":0,"ticket":"<opaque 128-bit lowercase hex>","input_sha256":"<64 hex>"}
+```
+
+The child exact-matches all binding fields, records current Conversation token count, and invokes the already
+pinned native renderer once with fixed non-private scrub text `"__M4B_TICKET_SCRUB__"`. The returned fixed turn
+rendering replaces native `last_rendered_message` and token count must remain unchanged. The child then clears
+ticket binding metadata and emits the terminal:
+
+```json
+{"protocol":3,"event":"TICKET_DISCARDED","request_id":3,"session_id":"<private>","generation":1,"conversation_revision":0,"ticket":"<opaque 128-bit lowercase hex>","input_sha256":"<64 hex>","native_render_scrubbed":true,"ticket_invalidated":true,"private_input_erased":true,"conversation_state":"ready"}
+```
+
+Only an exact terminal with all three proof booleans true returns the unchanged Conversation to
+`CONVERSATION_READY`. Generation, revision, history and KV remain unchanged. The old ticket can never authorize
+later GENERATE. `private_input_erased` proves no live child/native object reference retains the rejected text; it
+does not claim forensic zeroization of freed allocator capacity. Reasoner releases its normalized-text local before
+issuing snapshot-only DISCARD_TICKET and its snapshot after validating the terminal, both before returning R1.
+Scrub/render failure, token-count change,
+stale/mismatched/duplicate discard, wrong identity, false/missing proof or another terminal is E1.
+DISCARD_TICKET is a bounded atomic metadata operation and does not accept CANCEL. If its terminal times out, is
+malformed, or is lost to EOF, parent cannot claim disposal or return a clean product outcome: it terminates/kills
+and waitpids the PGID through the existing E1 boundary. If invalidation occurred but its acknowledgement was lost,
+that destruction remains the only safe convergence.
+
+### 4.5 Generation and semantic terminals
 
 Parent may generate only with the latest bound ticket and identical private text/digest:
 
@@ -344,7 +379,7 @@ Conversation: only CLOSE/CANCEL convergence is legal next. False proof, unknown 
 loss or any output that cannot reach this terminal is E1 and requires parent cleanup; it is not encoded as a
 normal request error.
 
-### 4.5 Cancel and shutdown
+### 4.6 Cancel and shutdown
 
 Cooperative cancel names the active OPEN/MEASURE/GENERATE/CLOSE request:
 
@@ -364,7 +399,8 @@ After operation terminal/join:
 {"protocol":3,"event":"CANCELLED","request_id":3,"operation":"GENERATE","request_terminal_proven":true,"operation_cleanup_proven":true,"engine_usable":true,"conversation_state":"tainted"}
 ```
 
-CANCEL is accepted at most once per active request. `operation` is exactly `OPEN | MEASURE | GENERATE | CLOSE`.
+CANCEL is accepted at most once per active request. `operation` is exactly `OPEN | MEASURE | GENERATE | CLOSE`;
+DISCARD_TICKET is deliberately absent because §4.4 makes it atomic and uncancellable.
 All three proof booleans must be true for a cooperative operation stop; false/missing proof is E1 and the record
 remains a convergence target. Resulting state is fixed by operation:
 
@@ -394,7 +430,7 @@ SHUTDOWN is legal only with no Conversation and no active request:
 ACK means Engine/runtime resources are closed and no descendant remains; child then exits zero and parent still
 waitpids it. Shutdown with an active Conversation is a parent contract error except after Level 2 destruction.
 
-### 4.6 State machine and failure boundary
+### 4.7 State machine and failure boundary
 
 | Child state | Legal parent input | Legal output / next state |
 | :--- | :--- | :--- |
@@ -403,7 +439,8 @@ waitpids it. Shutdown with an active Conversation is a parent contract error exc
 | `OPENING` | one matching CANCEL | OPENED → `CONVERSATION_READY`; OPEN_REJECTED / valid CANCELLED → `ENGINE_READY`; CANCEL_DEFERRED stays |
 | `CONVERSATION_READY` | MEASURE, CLOSE | MEASURE → `MEASURING`; CLOSE → `CLOSING` |
 | `MEASURING` | one matching CANCEL | MEASURED → `MEASURED`; valid CANCELLED → `CONVERSATION_READY`; CANCEL_DEFERRED stays |
-| `MEASURED` | GENERATE, CLOSE | GENERATE → `GENERATING`; CLOSE discards ticket → `CLOSING` |
+| `MEASURED` | DISCARD_TICKET, GENERATE, CLOSE | DISCARD_TICKET → `DISCARDING`; GENERATE → `GENERATING`; CLOSE discards ticket → `CLOSING` |
+| `DISCARDING` | none | exact TICKET_DISCARDED → `CONVERSATION_READY`; timeout/EOF/other output → E1 |
 | `GENERATING` | one CANCEL | SAFE_TEXT stays; RESULT → `CONVERSATION_READY`; REQUEST_FAILED/CANCELLED → `TAINTED`; CANCEL_DEFERRED stays |
 | `TAINTED` | CLOSE | CLOSE → `CLOSING` |
 | `CLOSING` | one matching CANCEL | CLOSED → `ENGINE_READY`; CANCELLED with incomplete Conversation cleanup → E1/parent convergence; CANCEL_DEFERRED stays |
@@ -416,7 +453,7 @@ termination/cleanup proof before replacement/recovery.
 
 ## 5. Audio state / terminal rules
 
-本表只適用 §2/§3 Audio；LLM 使用 §4.6 的獨立狀態機。
+本表只適用 §2/§3 Audio；LLM 使用 §4.7 的獨立狀態機。
 
 | State | Legal input | Legal output / next state |
 | :--- | :--- | :--- |
@@ -435,6 +472,6 @@ Portable protocol tests 覆蓋 fragmented read、coalesced header/payload、wron
 Pi evidence 驗 exact real READY fields 與 product lock，但不保存 private `text` 或 PCM；只記 sanitized status、hash、size、latency、PID/exit 與 cleanup count。
 
 LLM v3 portable tests另須覆蓋完整 state table、OPEN/CLOSE proof、MEASURE non-mutation、exact count
-boundaries、ticket binding/one-use、SAFE_TEXT fragmentation/prefix、RESULT metrics、REQUEST_FAILED/CANCEL
+boundaries、ticket binding/one-use/disposal、SAFE_TEXT fragmentation/prefix、RESULT metrics、REQUEST_FAILED/CANCEL
 proof、wrong identity/revision/generation、PGID cleanup及recovery後下一個child成功。不得沿用舊
 session、capacity、prewarm或fixed-recycle測試語意。Audio測試要求不變。

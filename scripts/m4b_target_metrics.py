@@ -1,194 +1,32 @@
-"""Frozen M4b r14 resource formulas and portable privacy/offline helpers."""
+"""M4B measurement authorization, privacy helpers and integer-byte threshold derivation."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import re
-import statistics
+import asyncio
+import base64
+from dataclasses import dataclass
+from datetime import datetime
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Mapping
-
-
-R14_VERSION = "2026-08-29-r14-user-resource-adjustment"
-CATALOG_SHA256 = "9539cc4d4e0a0a83db55b5a557978ccab7d2011ee5af2c401eb67221c4d2ce6a"
 
 
 class MetricsError(ValueError):
     pass
 
 
-def load_gate3_catalog(path: Path) -> dict[str, object]:
-    try:
-        raw_bytes = path.read_bytes()
-        value = json.loads(raw_bytes)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise MetricsError("Gate 3 catalog is unavailable or invalid") from error
-    if hashlib.sha256(raw_bytes).hexdigest() != CATALOG_SHA256:
-        raise MetricsError("Gate 3 catalog checksum mismatch")
-    if type(value) is not dict or set(value) != {
-        "schema_version", "catalog_id", "provenance", "combined_session_profile",
-        "intent_cases",
-    }:
-        raise MetricsError("Gate 3 catalog has missing or extra fields")
-    if value["schema_version"] != 1 or value["catalog_id"] != "M4B-CORE-GATE3-PRODUCT-001":
-        raise MetricsError("Gate 3 catalog identity mismatch")
-    if value["provenance"] != {
-        "execution_sha": "0c75536e6ee99b502c59438989ca852194648946",
-        "source_locator": "poc_llm/fixtures/gate2/gate2a-public-catalog-002.json",
-        "source_sha256": "b4a2bb2c4a9596c668b0ef19379fc546bd861771368ba0823f338b0b060b525b",
-        "inheritance": "Gate 2B marker evidence is historical and harness-only; Core inherits no marker constraint.",
-    }:
-        raise MetricsError("Gate 3 catalog provenance mismatch")
-    profile = value["combined_session_profile"]
-    if type(profile) is not dict or set(profile) != {
-        "session_count", "perception_kind", "prompt_template", "actions",
-        "expected_kind", "expected_tool_name", "expected_next_perceptions",
-    } or profile["session_count"] != 20 or "{transcript}" not in profile["prompt_template"]:
-        raise MetricsError("Gate 3 combined session profile mismatch")
-    _validate_semantic_case(
-        profile, expected_kind="speak", require_identity=False,
-        extra_fields={"session_count", "prompt_template"},
-    )
-    cases = value["intent_cases"]
-    if type(cases) is not list or len(cases) != 3:
-        raise MetricsError("Gate 3 intent catalog mismatch")
-    expected = ("speak", "tool", "rest")
-    for item, kind in zip(cases, expected, strict=True):
-        if (
-            type(item) is not dict
-            or re.fullmatch(r"CORE-OUT-[A-Z]+-001", str(item.get("id"))) is None
-        ):
-            raise MetricsError("Gate 3 intent case mismatch")
-        _validate_semantic_case(item, expected_kind=kind)
-    return value
-
-
-def _validate_semantic_case(
-    item: object,
-    *,
-    expected_kind: str | None = None,
-    require_identity: bool = True,
-    extra_fields: set[str] | None = None,
-) -> None:
-    required = {
-        "perception_kind", "actions", "expected_kind", "expected_tool_name",
-        "expected_next_perceptions",
-    }
-    if require_identity:
-        required.update({"id", "text", "tools"})
-    if type(item) is not dict or set(item) != required | (extra_fields or set()):
-        raise MetricsError("Gate 3 semantic case fields mismatch")
-    kind = item["expected_kind"]
-    tool_name = item["expected_tool_name"]
-    next_perceptions = item["expected_next_perceptions"]
-    if (
-        kind not in {"speak", "tool", "rest"}
-        or (expected_kind is not None and kind != expected_kind)
-        or type(item["perception_kind"]) is not str
-        or not item["perception_kind"]
-        or type(item["actions"]) is not list
-        or kind not in item["actions"]
-        or type(next_perceptions) is not list
-        or len(next_perceptions) != len(set(next_perceptions))
-        or any(value not in {"listen", "read", "look"} for value in next_perceptions)
-        or (kind == "rest") != (next_perceptions == [])
-        or (kind == "tool") != (type(tool_name) is str and bool(tool_name))
-    ):
-        raise MetricsError("Gate 3 semantic case mismatch")
-    if require_identity:
-        if (
-            type(item["text"]) is not str or not item["text"].strip()
-            or type(item["tools"]) is not list
-            or (kind == "tool") != bool(item["tools"])
-        ):
-            raise MetricsError("Gate 3 semantic case input mismatch")
-        if kind == "tool" and (
-            len(item["tools"]) != 1
-            or type(item["tools"][0]) is not dict
-            or item["tools"][0].get("name") != tool_name
-        ):
-            raise MetricsError("Gate 3 semantic tool mismatch")
-
-
-def validate_current_semantic_binding(
-    response: object,
-    case: Mapping[str, object],
-) -> None:
-    """Fail closed unless a constrained result exactly matches the current case."""
-    if type(response) is not dict or set(response) != {
-        "action_kind", "action_payload", "next_perceptions",
-    }:
-        raise MetricsError("Gate 3 response schema mismatch")
-    kind = response["action_kind"]
-    payload = response["action_payload"]
-    requested = response["next_perceptions"]
-    if kind != case["expected_kind"] or requested != case["expected_next_perceptions"]:
-        raise MetricsError("Gate 3 current semantic binding mismatch")
-    if kind == "speak":
-        valid_payload = (
-            type(payload) is dict and set(payload) == {"text"}
-            and type(payload["text"]) is str and bool(payload["text"].strip())
-        )
-    elif kind == "tool":
-        valid_payload = (
-            type(payload) is dict and set(payload) == {"name", "arguments"}
-            and payload["name"] == case["expected_tool_name"]
-            and type(payload["arguments"]) is dict
-        )
-    else:
-        valid_payload = payload == {} and requested == []
-    if not valid_payload:
-        raise MetricsError("Gate 3 current action payload mismatch")
-
-
-def r14_slope(values: Iterable[float]) -> float:
-    samples = tuple(values)
-    if len(samples) != 20 or any(type(value) not in (int, float) for value in samples):
-        raise MetricsError("r14 requires exactly 20 numeric samples")
-    xs = tuple(range(1, 21))
-    x_mean = statistics.fmean(xs)
-    y_mean = statistics.fmean(samples)
-    denominator = sum((x - x_mean) ** 2 for x in xs)
-    return sum((x - x_mean) * (y - y_mean) for x, y in zip(xs, samples, strict=True)) / denominator
-
-
-def r14_late_early_delta(values: Iterable[float]) -> float:
-    samples = tuple(values)
-    if len(samples) != 20:
-        raise MetricsError("r14 requires exactly 20 samples")
-    return statistics.median(samples[-5:]) - statistics.median(samples[:5])
-
-
-def verify_r14_vector(value: object) -> dict[str, float]:
-    if type(value) is not dict or set(value) != {
-        "r14_formula_version", "combined_pss_mib", "system_used_mib", "expected", "tolerance",
-    }:
-        raise MetricsError("r14 vector has missing or extra fields")
-    if value["r14_formula_version"] != R14_VERSION:
-        raise MetricsError("r14 formula version mismatch")
-    actual = {
-        "combined_pss_slope_mib_per_session": r14_slope(value["combined_pss_mib"]),
-        "combined_pss_late_minus_early_median_delta_mib": r14_late_early_delta(value["combined_pss_mib"]),
-        "system_used_slope_mib_per_session": r14_slope(value["system_used_mib"]),
-        "system_used_late_minus_early_median_delta_mib": r14_late_early_delta(value["system_used_mib"]),
-    }
-    expected = value["expected"]
-    tolerance = value["tolerance"]
-    if type(expected) is not dict or set(expected) != set(actual) or type(tolerance) is not float or tolerance <= 0:
-        raise MetricsError("r14 expected result is invalid")
-    if any(abs(actual[name] - expected[name]) > tolerance for name in actual):
-        raise MetricsError("r14 formula output drift")
-    return actual
-
-
 def privacy_hits(blobs: Iterable[tuple[str, bytes]], sentinels: Iterable[str | bytes]) -> list[str]:
-    values = tuple(value for value in sentinels if value)
+    values = []
+    for value in sentinels:
+        raw = value if isinstance(value, bytes) else value.encode("utf-8")
+        if raw:
+            values.extend((raw, base64.b64encode(raw), raw.hex().encode("ascii")))
     hits: list[str] = []
     for locator, blob in blobs:
-        text = blob.decode("utf-8", errors="ignore")
-        if any(value in blob if isinstance(value, bytes) else value in text for value in values):
+        if any(value in blob for value in values):
             hits.append(locator)
     return hits
 
@@ -220,7 +58,7 @@ def kernel_resource_sample(
             try:
                 memory[fields[0]] = int(fields[1])
             except ValueError as error:
-                raise MetricsError("meminfo contains a non-integer value") from error
+                raise MetricsError("meminfo contains a non-integer value") from None
     required = {"MemTotal", "MemAvailable", "SwapTotal", "SwapFree"}
     if not required.issubset(memory):
         raise MetricsError("meminfo lacks a required field")
@@ -233,13 +71,13 @@ def kernel_resource_sample(
             try:
                 counters[fields[0]] = int(fields[1])
             except ValueError as error:
-                raise MetricsError("vmstat contains a non-integer value") from error
+                raise MetricsError("vmstat contains a non-integer value") from None
     if "oom_kill" not in counters or counters["oom_kill"] < 0:
         raise MetricsError("vmstat lacks oom_kill")
     try:
         temperature = int(thermal_millicelsius.strip()) / 1000.0
     except ValueError as error:
-        raise MetricsError("thermal sample is invalid") from error
+        raise MetricsError("thermal sample is invalid") from None
     match = re.fullmatch(r"throttled=0x([0-9a-fA-F]+)", throttled.strip())
     if match is None or not (0 <= temperature < 200):
         raise MetricsError("thermal or throttled sample is invalid")
@@ -299,7 +137,7 @@ def owner_resource_accounting(
                 cpu_ticks_total += int(stat_tail[11]) + int(stat_tail[12])
                 threads += int(stat_tail[17])
             except (OSError, ValueError, IndexError) as error:
-                raise MetricsError("owner process sample is unavailable") from error
+                raise MetricsError("owner process sample is unavailable") from None
             fields: dict[str, int] = {}
             for line in rollup.splitlines():
                 parts = line.split()
@@ -322,9 +160,264 @@ def owner_resource_accounting(
     return result
 
 
-__all__ = [
-    "CATALOG_SHA256", "MetricsError", "R14_VERSION", "load_gate3_catalog",
-    "kernel_resource_sample", "network_isolated", "owner_resource_accounting",
-    "privacy_hits", "process_group_members", "r14_late_early_delta", "r14_slope",
-    "validate_current_semantic_binding", "verify_r14_vector",
-]
+MIB = 1024 ** 2
+MEASUREMENT_SAFETY_FLOOR_BYTES = 512 * MIB
+PORTABLE_IDS = frozenset(f"M4B-{name}-001" for name in
+    ("NORM", "PROMPT", "SEM", "S2", "ADM", "PREFILL", "OUTCOME", "CONV", "MEM",
+     "REC", "WIRE", "PRIV", "REG"))
+TARGET_IDS = frozenset(f"M4B-PI-{name}-001" for name in
+    ("ATT", "SEM", "CONV", "MEM", "WAKE", "TIME", "RES"))
+AUTH_FIELDS = frozenset({"schema_version", "harness_sha256", "candidate_sha",
+                         "profile_sha256", "target_identity"})
+
+
+def _digest_value(value: object, length: int = 64) -> bool:
+    return type(value) is str and re.fullmatch(r"[0-9a-f]{%d}" % length, value) is not None
+
+
+def validate_authorization(value: object, expected: Mapping[str, object]) -> dict[str, object]:
+    """Dual-role evidence sign-off, not an invented cryptographic signature."""
+    from sbd.cognition.litert_lm.measurement import validate_authorization as validate_grant
+    try:
+        return validate_grant(value, expected)
+    except Exception:
+        raise MetricsError("M4B_AUTHORIZATION_INVALID") from None
+
+
+@dataclass(frozen=True, slots=True)
+class MeasurementPoint:
+    lifecycle_point: str
+    operation_index: int
+    sample: object
+
+
+def derive_thresholds(points: Iterable[MeasurementPoint], *, completed: bool,
+                      cleanup_proven: bool) -> dict[str, int]:
+    """Derive only from a complete single-session series including action minima."""
+    from sbd.cognition.litert_lm.resource import SystemResourceSample
+    rows = tuple(points)
+    required = {"engine_ready", "conversation_preparation", "conversation_ready", "pre_generate",
+        "post_generate", "primary_completion", "pre_speak", "audio_completion",
+        "pre_replacement", "post_replacement", "post_session_close"}
+    if completed is not True or cleanup_proven is not True or not rows:
+        raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+    previous = None
+    try:
+        for row in rows:
+            if (not isinstance(row, MeasurementPoint) or not isinstance(row.sample, SystemResourceSample)
+                    or type(row.operation_index) is not int or row.operation_index < 0
+                    or row.lifecycle_point not in required | {"sample"}):
+                raise ValueError
+            row.sample.validate(previous)
+            previous = row.sample
+    except Exception:
+        raise MetricsError("M4B_MEASUREMENT_INVALID") from None
+    labels = [row.lifecycle_point for row in rows]
+    if (not required.issubset(labels) or labels[0] != "engine_ready"
+            or labels[-1] != "post_session_close" or labels.count("engine_ready") != 1
+            or labels.count("post_session_close") != 1
+            or not labels.index("engine_ready") < labels.index("conversation_preparation")
+                < labels.index("conversation_ready") < labels.index("pre_generate")
+            or any(rows[i].operation_index > rows[i + 1].operation_index for i in range(len(rows) - 1))):
+        raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+    replacement_pending = None
+    for row in rows:
+        if row.lifecycle_point == "pre_replacement":
+            if replacement_pending is not None:
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+            replacement_pending = row.operation_index
+        elif row.lifecycle_point == "post_replacement":
+            if replacement_pending != row.operation_index:
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+            replacement_pending = None
+    if replacement_pending is not None:
+        raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+    # One operation index is one turn's generation/action window. A generation
+    # includes any following speech through Audio and primary completion; a
+    # context-rejection notice can have an action without GENERATE. Counting all
+    # primary completions as generations confuses these two legal paths.
+    operations = {}
+    for index, row in enumerate(rows):
+        if row.lifecycle_point in {"pre_generate", "post_generate", "pre_speak",
+                                  "audio_completion", "primary_completion"}:
+            points = operations.setdefault(row.operation_index, {})
+            if row.lifecycle_point in points:
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+            points[row.lifecycle_point] = index
+    for points in operations.values():
+        primary = points.get("primary_completion")
+        if primary is None:
+            raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+        if "pre_generate" in points or "post_generate" in points:
+            if not ("pre_generate" in points and "post_generate" in points
+                    and points["pre_generate"] < points["post_generate"] < primary):
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+        if "pre_speak" in points or "audio_completion" in points:
+            if not ("pre_speak" in points and "audio_completion" in points
+                    and points["pre_speak"] < points["audio_completion"] <= primary
+                    and points.get("post_generate", -1) < points["pre_speak"]):
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+    drops = {}
+    for operation, end in (("speak", "audio_completion"), ("generate", "primary_completion")):
+        intervals = []
+        for index, row in enumerate(rows):
+            if row.lifecycle_point != f"pre_{operation}":
+                continue
+            stop = next((i for i in range(index + 1, len(rows))
+                if rows[i].lifecycle_point == end and rows[i].operation_index == row.operation_index), None)
+            if stop is None or any(p.lifecycle_point == f"pre_{operation}"
+                                   for p in rows[index + 1:stop]):
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+            if operation == "generate" and not any(p.lifecycle_point == "post_generate"
+                    and p.operation_index == row.operation_index for p in rows[index + 1:stop + 1]):
+                raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+            intervals.append(row.sample.mem_available_bytes
+                - min(p.sample.mem_available_bytes for p in rows[index:stop + 1]))
+        if not intervals:
+            raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+        if operation == "speak" and labels.count("pre_speak") != labels.count("audio_completion"):
+            raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
+        drops[operation] = max(intervals)
+    ceil_mib = lambda value: ((value + MIB - 1) // MIB) * MIB
+    speak = ceil_mib(MEASUREMENT_SAFETY_FLOOR_BYTES + drops["speak"])
+    generate = max(speak, ceil_mib(MEASUREMENT_SAFETY_FLOOR_BYTES + drops["generate"]))
+    return {"speak_drop_bytes": drops["speak"], "generate_drop_bytes": drops["generate"],
+        "min_mem_available_speak_bytes": speak, "min_mem_available_generate_bytes": generate}
+
+
+def freeze_release_profile(measurement_profile: Mapping[str, object],
+                           points: Iterable[MeasurementPoint], *, evidence_sha256: str,
+                           approvals: object, completed: bool, cleanup_proven: bool) -> dict[str, object]:
+    """Construct a new release profile only after both roles approved exact raw-derived values."""
+    from sbd.cognition.litert_lm.lock import profile_digest, validate_product_profile
+    measured = validate_product_profile(dict(measurement_profile), allow_measurement=True)
+    if measured["profile_stage"] != "measurement" or not _digest_value(evidence_sha256):
+        raise MetricsError("M4B_FREEZE_INVALID")
+    derived = derive_thresholds(points, completed=completed, cleanup_proven=cleanup_proven)
+    expected = {"measurement_profile_sha256": measured["profile_sha256"],
+                "evidence_sha256": evidence_sha256, **derived}
+    if type(approvals) is not list or len(approvals) != 2:
+        raise MetricsError("M4B_FREEZE_INVALID")
+    roles = set()
+    for approval in approvals:
+        if (type(approval) is not dict or set(approval) != {
+                "role", "reviewer", "approved_at", "decision", "freeze_tuple"}
+                or approval["role"] not in {"Designer", "Tester"} or approval["role"] in roles
+                or approval["decision"] != "Approved" or approval["freeze_tuple"] != expected
+                or type(approval["reviewer"]) is not str or not approval["reviewer"].strip()):
+            raise MetricsError("M4B_FREEZE_INVALID")
+        try:
+            if datetime.fromisoformat(approval["approved_at"].replace("Z", "+00:00")).utcoffset() is None:
+                raise ValueError
+        except (AttributeError, TypeError, ValueError):
+            raise MetricsError("M4B_FREEZE_INVALID") from None
+        roles.add(approval["role"])
+    release = {**measured, "profile_stage": "release",
+        "min_mem_available_speak_bytes": derived["min_mem_available_speak_bytes"],
+        "min_mem_available_generate_bytes": derived["min_mem_available_generate_bytes"],
+        "measurement_evidence_locator": f"sha256/{evidence_sha256}"}
+    release["profile_sha256"] = profile_digest(release)
+    return dict(validate_product_profile(release))
+
+
+class MeasurementHarness:
+    """Laboratory operation wrapper with live sampling and unconditional cleanup.
+
+    Target composition supplies actual operations, lifecycle emissions and health
+    sampling. This wrapper never creates target PASS cards or production thresholds.
+    """
+
+    def __init__(self, *, authorization, expected_tuple, sample, cleanup,
+                 interval_seconds: float = 0.05, cleanup_timeout_seconds: float = 10.0) -> None:
+        import math
+        self.authorized_tuple = validate_authorization(authorization, expected_tuple)
+        if (type(interval_seconds) not in (float, int) or not math.isfinite(interval_seconds)
+                or interval_seconds <= 0 or interval_seconds > 1):
+            raise MetricsError("M4B_MEASUREMENT_INVALID")
+        if (not callable(sample) or not callable(cleanup)
+                or type(cleanup_timeout_seconds) not in (float, int)
+                or not math.isfinite(cleanup_timeout_seconds) or cleanup_timeout_seconds <= 0):
+            raise MetricsError("M4B_MEASUREMENT_INVALID")
+        self._sample, self._cleanup, self._interval = sample, cleanup, interval_seconds
+        self._cleanup_timeout = cleanup_timeout_seconds
+        self.points: list[MeasurementPoint] = []
+        self.completed = False
+        self.cleanup_proven = False
+        self.stopped = False
+        self._active = False
+
+    def capture(self, lifecycle_point: str, operation_index: int, *, before_operation=False) -> None:
+        if self.stopped or self.completed:
+            raise MetricsError("M4B_MEASUREMENT_STOPPED")
+        try:
+            observed = self._sample()
+        except Exception:
+            self.stopped = True
+            raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
+        self.record_sample(observed, lifecycle_point, operation_index,
+                           before_operation=before_operation)
+
+    def record_sample(self, sample, lifecycle_point: str, operation_index: int, *,
+                      before_operation=False) -> None:
+        """Record an actual adapter lifecycle sample without taking a second sample."""
+        from sbd.cognition.observability import LIFECYCLE_POINTS
+        if (self.stopped or self.completed or lifecycle_point not in LIFECYCLE_POINTS | {"sample"}
+                or type(operation_index) is not int or operation_index < 0):
+            raise MetricsError("M4B_MEASUREMENT_STOPPED")
+        try:
+            sample.validate(self.points[-1].sample if self.points else None)
+            if before_operation and sample.mem_available_bytes < MEASUREMENT_SAFETY_FLOOR_BYTES:
+                raise ValueError
+            self.points.append(MeasurementPoint(lifecycle_point, operation_index, sample))
+        except Exception:
+            self.stopped = True
+            raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
+
+    async def operation(self, *, before: str, after: str, index: int, execute):
+        if not self._active:
+            raise MetricsError("M4B_MEASUREMENT_NOT_ACTIVE")
+        self.capture(before, index, before_operation=True)
+        task = asyncio.create_task(execute())
+        try:
+            while not task.done():
+                await asyncio.wait({task}, timeout=self._interval)
+                if not task.done():
+                    self.capture("sample", index)
+            result = task.result()
+            self.capture(after, index)
+            return result
+        except BaseException:
+            self.stopped = True
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            raise
+
+    async def run(self, scenario) -> dict[str, object]:
+        if self._active or self.completed or self.stopped:
+            raise MetricsError("M4B_MEASUREMENT_ALREADY_USED")
+        self._active = True
+        try:
+            await asyncio.wait_for(scenario(self), timeout=3600)
+        except Exception:
+            self.stopped = True
+            # Native scenario/driver exceptions may contain private text or
+            # paths. They are never a public harness diagnostic or result.
+            raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
+        except BaseException:
+            self.stopped = True
+            raise
+        finally:
+            self._active = False
+            try:
+                self.cleanup_proven = await asyncio.wait_for(
+                    self._cleanup(), timeout=self._cleanup_timeout) is True
+            except BaseException:
+                self.stopped = True
+            if not self.cleanup_proven:
+                self.stopped = True
+        if self.stopped:
+            raise MetricsError("M4B_MEASUREMENT_STOPPED")
+        values = derive_thresholds(self.points, completed=True, cleanup_proven=self.cleanup_proven)
+        self.completed = True
+        return {"authorized_tuple": dict(self.authorized_tuple), "status": "Measured",
+                "derived": values, "sample_count": len(self.points)}

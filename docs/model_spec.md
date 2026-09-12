@@ -175,7 +175,7 @@ machine-readable Core locks and exact-SHA acceptance evidence remain Core-owned.
 | POC runtime product-config reference SHA-256 | `c4557b018733ce8a2f4aa46b375cc7dafb31fbd8c363271deb1156c651e5171e` |
 | General prompt / response schema SHA-256 | `aca834bb448f88dfb403c74c427b5462922ccf23f4f26c1944c47d5731522de6` / `4be45ee60f603d7349ff5fb29b667d6e59970dd0be3ce9176c03e923e0a6fca2` |
 | Selected Pi protocol schema SHA-256 | `e1af3bc5f83f1456d393d30acd9bcf9b9a8a7f91cbdcbe7aa0136a17c275301e` |
-| POC protocol provenance | `snowboard.llm/1`；舊Core `snowboard.llm/2`已退役；replacement design使用待focused review的`snowboard.llm/3` |
+| POC protocol provenance | `snowboard.llm/1`；舊Core `snowboard.llm/2`已退役；replacement design使用已完成focused review與ticket-disposal coverage的`snowboard.llm/3` |
 
 Model, wheel, native library, prompt/output and credential remain outside Git. Core acquisition and
 startup must authenticate the exact source revision, filename, size and checksum with network and
@@ -192,7 +192,7 @@ speak/tool/rest renderer都是歷史surface；replacement產品text/end、sessio
 
 ### 6.3 M4B replacement product profile
 
-Status：**DESIGNER COMPLETE / FOCUSED REVIEW PENDING / NOT PRODUCT ACCEPTED**。現行authority見
+Status：**DESIGNER REVISED / FOCUSED TICKET-DISPOSAL COVERAGE APPROVED / NOT PRODUCT ACCEPTED**。現行authority見
 [M4B replacement design](implement/ch_m4b_llm_production.md)；profile ID為
 `core-m4b-cognition-001`，明示採用§6.2 winner identity、V2D2 exact 66-token prompt、
 `temperature=0.0`、`top_p=1.0`、4 threads、128 output reserve、1024 context、無fake prewarm及
