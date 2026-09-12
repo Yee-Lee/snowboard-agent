@@ -3,10 +3,10 @@
 - Updated: 2026-09-12
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B cognition/product test-spec authoring
-- Next owner: Tester
-- Developer entry: **Closed**
-- Tester entry: **Open — specification only**
+- Current stage: M4B cognition/product development rewrite
+- Next owner: Developer
+- Developer entry: **Open — `CR_M4B_II`**
+- Tester entry: **Closed — pending Developer candidate**
 
 ## Current disposition
 
@@ -57,29 +57,35 @@ Independent Reviewer returned PASS with no Blocking findings in
 timeout and YAML indentation, adopted A2 by pinning two `spoken_length` examples in the coverage request, and
 acknowledged A3 without a contract change. `M4B-DESIGN-REVIEW` is Closed.
 
-Replacement coverage request [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md) is now active. Tester may create only
-the new `docs/test_spec/test_spec_M4B.md` and update that review; production code, executable tests, Pi/candidate
-execution and acceptance claims remain closed. Cognition/product Developer entry remains closed until Tester returns
-the spec/mapping and Designer resolves the coverage gate.
+Tester returned the new [`test_spec_M4B`](../test_spec/test_spec_M4B.md) and complete mapping. Designer independently
+confirmed all 11/11 portable groups, 7/7 Pi/human evidence groups, 13 portable IDs, seven Pi/human IDs, exact prompt
+hashes, `spoken_length` examples and the sorted/unique 99-node baseline. The resolved
+[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md) closes `M4B-TEST-COVERAGE`; it contains no execution or
+acceptance claim.
+
+Developer work package [`CR_M4B_II`](../reviews/CR_M4B_II.md) is active for the replacement cognition/product
+implementation and portable tests. Developer must first replace `status/development.md` with the exact inventory,
+Test IDs, estimates, bounded commands and starting SHA. Pi/human execution, candidate creation, commit and push are
+not authorized by this entry.
 
 ## Ordered exits
 
-1. Tester creates the replacement M4B test specification and returns `TR_spec_M4B_VI` as `Revised` with complete
-   portable and Pi/human evidence mapping.
-2. Designer confirms the replacement coverage mapping, resolves the review and closes the coverage gate.
-3. Designer opens the cognition/product rewrite package. Developer replaces M4B production/tests
-   and removes the temporary legacy inventory at cutover.
-4. Tester verifies the replacement portable and Pi candidate; Designer performs final alignment.
+1. Developer implements `CR_M4B_II`, executes the complete portable/retained regression gates and returns the work
+   package as `Revised`; no candidate or Pi acceptance is claimed.
+2. Tester independently verifies the portable candidate and reports exact results.
+3. Designer resolves implementation findings and performs final portable alignment.
+4. After a separately authorized exact-SHA target gate, Tester executes Pi measurement/release/human evidence;
+   Designer freezes reviewed thresholds and performs final product alignment.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file only | wait for `TR_spec_M4B_VI`; do not open Developer entry |
+| Designer | this file only | wait for `CR_M4B_II`; do not modify Developer work or claim candidate acceptance |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file, `reviews/TR_spec_M4B_VI.md` and only its linked authority sections | create `test_spec/test_spec_M4B.md`, update the review to `Revised`; do not implement tests or execute a candidate |
-| Developer | this file only | no active implementation action |
+| Tester | this file only | no active verification action until Developer returns a portable candidate |
+| Developer | this file, `status/development.md`, `reviews/CR_M4B_II.md` and only its linked authority | replace cognition/product implementation and portable tests; update development status before editing; do not commit/push or execute Pi/human acceptance |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

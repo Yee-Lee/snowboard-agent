@@ -1,7 +1,7 @@
 # M4B — replacement LLM / Reasoner product design
 
-狀態：**Designer complete / focused Reviewer PASS / Tester coverage open /
-Developer entry closed**。
+狀態：**Designer complete / focused Reviewer PASS / Tester coverage approved /
+Developer entry open**。
 
 本文件是 M4B cognition/product replacement 的現行 implementation-design authority。它從已核准的
 [`m4b_foundation_revision`](m4b_foundation_revision.md) 與 `arch.md` 的 Conversation、route、

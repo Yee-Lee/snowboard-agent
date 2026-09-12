@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / cognition-product Reviewer PASS / Tester coverage authoring open
-- Developer entry: **Closed**
+- State: Foundation verified / cognition-product Reviewer PASS / Tester coverage approved
+- Developer entry: **Open — `CR_M4B_II`**
 
 ## USER-confirmed direction
 
@@ -73,8 +73,11 @@ already requires SM to authorize planned recovery inside its private post-close 
 M4B §5.3; `arch.md` required no change. Admission, request-failure cleanup and listen-only composition remain
 Designer-owned implementation consistency work, not architecture questions. Independent Reviewer returned PASS
 with no Blocking findings in [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md). Designer adopted A1/A2
-and acknowledged A3; `M4B-DESIGN-REVIEW` is Closed. [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md) is active for
-independent Tester specification and mapping; executable tests, candidate evidence and Developer entry remain closed.
+and acknowledged A3; `M4B-DESIGN-REVIEW` is Closed. Tester produced the replacement
+[`test_spec_M4B`](../test_spec/test_spec_M4B.md); Designer independently confirmed the full mapping and resolved
+[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md). `M4B-TEST-COVERAGE` is Closed and
+[`CR_M4B_II`](../reviews/CR_M4B_II.md) opens the Developer replacement package. Candidate/Pi acceptance remains
+closed.
 
 ## Other redesign inputs to preserve
 
@@ -172,5 +175,5 @@ independent Tester specification and mapping; executable tests, candidate eviden
 
 ## Next Designer work
 
-1. Wait for Tester to return `TR_spec_M4B_VI` as `Revised` with the new replacement test spec and mapping.
-2. Confirm coverage mapping before opening cognition/product development.
+1. Wait for Developer to return `CR_M4B_II` as `Revised` with implementation, portable tests and exact evidence.
+2. Route the portable candidate to independent Tester verification before final alignment.

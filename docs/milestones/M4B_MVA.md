@@ -1,7 +1,7 @@
 # M4B — clean rewrite gates
 
-狀態：**Foundation verified / replacement design Reviewer PASS / Tester coverage authoring open /
-Developer entry closed**。
+狀態：**Foundation verified / replacement design Reviewer PASS / Tester coverage approved /
+Developer rewrite open**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -18,8 +18,8 @@ Developer entry closed**。
 | `M4B-DESIGN-COMPLETE` | Designer | Closed — 2026-09-12 | [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md)完成session、prompt/token、capacity、memory、timing、`snowboard.llm/3`與驗證設計 |
 | `M4B-ARCH-REVIEW` | Architect + Designer | Closed — 2026-09-12 | [`AR_impl_M4B_IV`](../reviews/history/AR_impl_M4B_IV.md)確認SM授權planned-recovery時序；Designer對齊§5.3；`arch.md`無修改 |
 | `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
-| `M4B-TEST-COVERAGE` | Tester + Designer | Open — specification | [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md)要求新spec與portable/Pi-human mapping；不沿用舊M4B測試語意 |
-| `M4B-DEVELOPMENT-REWRITE` | Developer | Blocked | 重寫M4B implementation/tests，移除暫存legacy code/test inventory |
+| `M4B-TEST-COVERAGE` | Tester + Designer | Closed — 2026-09-12 | [`test_spec_M4B`](../test_spec/test_spec_M4B.md)完成11/11 portable與7/7 Pi-human mapping；[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)由Designer確認Resolved |
+| `M4B-DEVELOPMENT-REWRITE` | Developer | Open | 依[`CR_M4B_II`](../reviews/CR_M4B_II.md)重寫M4B implementation/portable tests；不得宣稱candidate/Pi acceptance |
 | `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Blocked | portable與Pi exact-SHA結果完成，Designer確認對齊 |
 
 Gate必須依表列順序解除。Foundation architecture、design與coverage未Closed前，只能準備
@@ -50,7 +50,7 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 ## Current authority and reference boundary
 
 - Current product design: [`ch_m4b_llm_production.md`](../implement/ch_m4b_llm_production.md)
-  （Designer complete；Reviewer PASS；Tester coverage authoring open；not Development Ready）。
+  （Designer complete；Reviewer PASS；Tester coverage approved；Developer rewrite open）。
 - Foundation implementation design:
   [`m4b_foundation_revision.md`](../implement/m4b_foundation_revision.md)（Designer complete；Tester
   coverage approved）。
@@ -65,5 +65,6 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 `AR_impl_M4B_IV`已Resolved且`arch.md`無修改；[`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md)
 對replacement product authority與direct mappings判定PASS／0 Blocking，Designer已處理三項Advisory。
-Tester依active [`TR_spec_M4B_VI`](../reviews/TR_spec_M4B_VI.md) 建立新spec並回傳完整mapping；coverage關閉前
-不得開cognition/product Developer entry、建立產品candidate或宣稱M4B PASS。
+Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。Developer
+現在依[`CR_M4B_II`](../reviews/CR_M4B_II.md)實作replacement與portable tests；完成獨立驗證前不得建立
+產品candidate、執行Pi/human acceptance或宣稱M4B PASS。
