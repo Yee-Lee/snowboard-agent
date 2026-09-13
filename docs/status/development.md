@@ -1,13 +1,44 @@
 # Current development status
 
-- Updated: 2026-09-12
+- Updated: 2026-09-13
 - Owner: Senior Developer / integration owner
-- Scope: `CR_M4B_II` B1, fail-closed portable runner and matrix evidence
-- Starting SHA: `9e005e48fe1582c901fcba3eb152747c92c43890`
-- Status: **B1 correction complete; Revised for new append-only candidate verification**
+- Scope: `CR_M4B_II` B2, deterministic canonical collection under repository pytest addopts
+- Starting SHA: `1eefd97dd9866f804d07be6aacddb6948d05b6e1`
+- Status: **B2 correction complete; Revised for new append-only candidate verification**
 - Next owner: Tester, after USER-authorized append-only commit creates a new exact candidate
-- Candidate: rejected provisional SHA `9e005e48fe1582c901fcba3eb152747c92c43890`;
+- Candidate: rejected provisional SHA `1eefd97dd9866f804d07be6aacddb6948d05b6e1`;
   no replacement commit, push, Pi measurement PASS or human acceptance is claimed
+
+## Active B2 correction inventory — 2026-09-13
+
+- Affected paths: `scripts/candidate_gate.py`, `tests/test_candidate_gate.py`, this Developer
+  status and active `docs/reviews/CR_M4B_II.md` only. Tester/Designer-owned files remain unchanged.
+- Affected symbol: `_m4b_collect_nodes`; exact regression fixture exercises a repository whose
+  `pyproject.toml` sets pytest `addopts = "-q"`.
+- Mapped Test ID: `M4B-REG-001` G02/G04/G05 collection and evidence identity.
+- Estimate: 1 point. Minimal correction makes collection verbosity independent of repository
+  addopts while retaining canonical selectors, marker filter, timeout and duplicate/missing-node
+  rejection.
+- Bounded verification: focused B2 regression, complete `tests/test_candidate_gate.py`, Python
+  compilation and `git diff --check`, each with an outer timeout.
+
+## B2 correction result
+
+- `_m4b_collect_nodes` now invokes pytest with `-o addopts=` before its own single `-q`.
+  Repository `addopts` therefore cannot silently combine with runner verbosity, while the runner
+  still owns the exact canonical selectors, `not rpi` marker filter and collection timeout.
+- `candidate_repo` now places `addopts='-q'` in `pyproject.toml`; the executable canonical-run
+  regression asserts that the result contains exactly 13 node IDs in `path::node` form. Without
+  the correction, pytest 9.1.1 applies effective `-qq`, emits per-file counts and the runner raises
+  `M4B_COLLECTION_INVALID` before execution.
+- CPython 3.13.15 / pytest 9.1.1 focused canonical regression: **1 passed**, exit 0, 0.75 s.
+- CPython 3.13.15 / pytest 9.1.1 complete `tests/test_candidate_gate.py`: **78 passed /
+  0 failed / 0 error / 0 skipped / 0 xfailed / 0 xpassed**, exit 0, 13.21 s.
+- `python -m compileall -q scripts/candidate_gate.py tests/test_candidate_gate.py`: exit 0.
+- These are Developer regressions only. Because the candidate runner and test fixture are protected
+  inputs, SHA `1eefd97dd9866f804d07be6aacddb6948d05b6e1` and its partial Pi run remain rejected.
+  A new append-only candidate and complete independent Linux matrix are required; PM/PR/PH remain
+  Pending.
 
 ## Active B1 correction inventory
 

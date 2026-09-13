@@ -353,3 +353,37 @@ previous candidate and all prior matrix evidence are invalidated. After an autho
 commit creates a new exact SHA, Tester must independently run the complete canonical Linux CPython
 3.11/3.12/3.13 matrix and confirm both B1 probes reject. PM/PR/PH remain Pending until that portable
 verification and subsequent Designer target-gate transition are complete.
+
+## Tester Pi collection finding B2 — 2026-09-13
+
+Disposition at exact candidate `1eefd97dd9866f804d07be6aacddb6948d05b6e1`: **Rejected**.
+Tester executed the formal candidate-owned portable runner on Pi with pytest 9.1.1. The project
+already supplies `addopts = "-ra -q"`; `_m4b_collect_nodes` added another `-q`, so the effective
+`-qq` collection output contained per-file counts instead of `path::node` identities. The run
+failed closed with `M4B_COLLECTION_INVALID` before the portable suite executed. Tester confirmed
+that adding `-o addopts=` restores node-ID output. No product-runtime, PM, PR or PH result was
+produced.
+
+## Developer B2 correction disposition — 2026-09-13
+
+Disposition: **Revised**. `_m4b_collect_nodes` now clears repository `addopts` for its collection
+subprocess and then applies exactly one runner-owned `-q`. Canonical selectors, `not rpi`, process
+timeout, duplicate detection and missing-node rejection are unchanged.
+
+`tests/test_candidate_gate.py` now constructs its candidate fixture with pytest
+`addopts='-q'` in `pyproject.toml`. The executable M4B canonical-run regression verifies that the
+collection evidence contains exactly 13 unique `tests/...::...` node IDs and that the bound result
+passes all 13 Test-ID and 99-node Foundation evidence checks. This test would reproduce B2 as
+`M4B_COLLECTION_INVALID` without the runner override.
+
+Bounded Developer results using CPython 3.13.15 and pytest 9.1.1:
+
+- focused canonical collection regression: **1 passed**, exit 0, 0.75 s;
+- complete `tests/test_candidate_gate.py`: **78 passed**, exit 0, 13.21 s;
+- `python -m compileall -q scripts/candidate_gate.py tests/test_candidate_gate.py`: exit 0;
+- `git diff --check`: exit 0.
+
+No commit or push was made. Because both changed files are protected candidate inputs, exact SHA
+`1eefd97dd9866f804d07be6aacddb6948d05b6e1` remains immutable and rejected. After an authorized
+append-only commit creates a new exact candidate, Tester must rerun the complete formal Linux
+CPython 3.11/3.12/3.13 canonical matrix from fresh evidence roots. PM/PR/PH remain Pending.

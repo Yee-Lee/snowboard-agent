@@ -58,8 +58,11 @@ def candidate_repo(tmp_path: Path) -> tuple[Path, str]:
     root = tmp_path / "candidate"
     root.mkdir()
     write(root / ".gitignore", "__pycache__/\n*.py[cod]\n")
-    write(root / "pyproject.toml", "[project]\nname='gate-fixture'\nversion='0.0.0'\n")
-    write(root / "pytest.ini", "[pytest]\nmarkers =\n    rpi: target-only test\n")
+    write(
+        root / "pyproject.toml",
+        "[project]\nname='gate-fixture'\nversion='0.0.0'\n\n"
+        "[tool.pytest.ini_options]\naddopts='-q'\nmarkers=['rpi: target-only test']\n",
+    )
     write(root / "src" / "fixture.py", "VALUE = 1\n")
     write(
         root / "tests" / "test_scope.py",
@@ -371,12 +374,16 @@ def test_m4b_portable_executes_canonical_suite_and_writes_bound_evidence(
         output,
     )
     evidence = json.loads((output / "result.json").read_text(encoding="utf-8"))
+    assert "addopts='-q'" in (root / "pyproject.toml").read_text(encoding="utf-8")
     assert evidence["status"] == "Pass"
     assert evidence["catalog_paths"] == list(M4B_PORTABLE_IDS.values())
     assert set(evidence["test_id_evidence"]) == set(M4B_PORTABLE_IDS)
     assert evidence["baseline_evidence"]["retained_count"] == 99
     assert evidence["counts"] == {"passed": 13, "failed": 0, "errors": 0,
                                   "skipped": 0, "xfailed": 0, "xpassed": 0}
+    collected = (output / "collection-node-ids.txt").read_text(encoding="utf-8").splitlines()
+    assert len(collected) == 13
+    assert all(node.startswith("tests/") and "::" in node for node in collected)
 
 
 def test_exact_sha_rejects_before_suite(candidate_repo: tuple[Path, str]) -> None:

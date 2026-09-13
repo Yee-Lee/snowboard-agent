@@ -570,7 +570,8 @@ def _m4b_collect_nodes(
     stdout_path = output / "logs" / "collection.stdout.log"
     stderr_path = output / "logs" / "collection.stderr.log"
     nodes_path = output / "collection-node-ids.txt"
-    argv = [sys.executable, "-m", "pytest", "--collect-only", "-q", "-m", "not rpi", *targets]
+    argv = [sys.executable, "-m", "pytest", "-o", "addopts=", "--collect-only", "-q",
+            "-m", "not rpi", *targets]
     environment = os.environ.copy()
     environment["OPENBLAS_NUM_THREADS"] = "1"
     environment["PYTHONPATH"] = str(repo.root / "src")
