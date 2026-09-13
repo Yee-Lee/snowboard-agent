@@ -1,5 +1,77 @@
 # Current development status
 
+## USER-directed PM/PR/PH runner correction — 2026-09-13
+
+- USER superseded debugging with two bounded voice scripts: exactly one or two microphone
+  windows, 10 seconds each, no automatic filling or PM/PR/PH verdict. Stop background replay.
+  Scope: measurement runner optional diagnostic_windows, harness optional no-profile collection,
+  two shell launchers and focused Pi regression. Estimate 1 point. Retain default production
+  timeouts and report actual failures; do not claim unresolved native latency fixed.
+
+- Active native failure correction: USER run user-pm-22clsQ stopped during first generation
+  at resource.validate_sample, with the rejected sample absent from diagnostics. Prior 199
+  regressions are insufficient native evidence. Affected resource.py, measurement recorder,
+  resource regressions and temporary Pi replay driver. Preserve rejected sample + previous
+  sample + validation reason; investigate coherent proc snapshots and native cleanup proof.
+  Estimate 2 points; verify focused Pi 3.13.5 tests and actual model/audio replay through
+  context rejection/replacement before returning the human launch command. No commit.
+
+- Latest USER override: at most five human microphone windows; real model-generated automatic
+  context filling is explicitly permitted. Label automatic inputs separately; preserve the real
+  1024-token context, real admission rejection and replacement. Affected runner and harness tests;
+  verify on Pi Python 3.13.5 before handing back the same launch command.
+- Current correction: remove suggested/fixed questions and ASR equality/repeat gates.
+  All five microphone windows accept free input; automatic filling starts after two windows
+  even with ASR timeouts. Preserve silence/typos for agent review, without a sixth window.
+  Affected paths: scripts/m4b_measurement.py, tests/test_m4b_measurement_harness.py and
+  deployed run-user-pm.sh; same focused Pi command below. Estimate: 1 point.
+- Five-window implementation verified: two microphone turns, explicit automatic text turns
+  through Reasoner/worker admission and native generation in deployed runtime, real context
+  rejection, replacement, then three free-input microphone windows.
+  Automatic rows carry input_source=automatic_fill and audio_turn=null; microphone rows retain
+  their independent PCM numbering. No context/token limit is changed.
+- Pi focused regression (runner/offline/admission/resource/candidate consumer): **199 passed**,
+  12.95 s on CPython 3.13.5. Includes the USER-reported five-window transcript/timeout sequence,
+  free wording after replacement and five empty windows without asking for a sixth.
+  Boundary fixture uses a deterministic runtime and is not native PM
+  evidence. Workstation/Pi runner and test hashes match; launcher shell syntax and executable
+  permission verified. Runner SHA-256:
+  `b4b71be5cc51395af05564b7603be506931e3c3cf8b90b1b3715a06eb2b628e5`.
+  Real user PM is still pending and no PR/PH acceptance is claimed.
+
+- USER explicitly requested implementation despite the stale closed entry in current.md.
+- Active scope: measurement orchestration, diagnostic persistence, artifact verification timing,
+  replacement evidence, free input, and truthful PM/PR/PH completion reporting.
+- Affected paths: scripts/m4b_measurement.py, cognition/litert_lm/worker.py,
+  tests/test_m4b_measurement_harness.py, tests/test_m4b_off_001.py, this status.
+- Test IDs: M4B-PI-MEM-001, M4B-PI-CONV-001, M4B-PI-TIME-001, M4B-PI-RES-001.
+- Estimate: 5 points; verify focused runner/worker regressions on Pi CPython 3.13.5,
+  then native and user-driven verification on the final content digest. No commit before Pi Verify.
+- PM, PR and PH are pending. Existing fake-worker tests do not establish native recovery or PH.
+- PM runner revision: user-selected 10-second capture windows; empty ASR retries without
+  Reasoner input; explicit transcript/response display; first-frame READY; no literal or semantic
+  repeat assertion, zero-KV observation after replacement; interruption bundles; post-cleanup artifact
+  verification; PM handoff inventory with read-back hashes and rederived release thresholds.
+- Pi CPython 3.13.5 focused runner/offline/admission/resource regressions: 117 passed.
+  Actual deployed model/runtime artifact verification also succeeded without starting audio.
+  Native user PM remains to be executed; no PR/PH completion or M4B closure is claimed.
+- USER removed automatic PR/PH execution from scope. PM exports are checked with
+  `scripts/m4b_measurement.py --validate-pm <private-output>`; PR/PH remain separate execution/review.
+- Consumer alignment scope: scripts/candidate_gate.py and tests/test_candidate_gate.py,
+  M4B-PI-MEM-001. Replace obsolete approval-dependent input with the PM runner's
+  automatic attestation and exact saved series format; retain all release/recovery checks.
+- Latest USER direction: agent reviews PM evidence; automatic reporting is advisory and must
+  not force a new recording after a completed capture. Postprocessing exceptions now preserve
+  raw/partial outputs with NeedsReview and capture_complete, without claiming PR/PH Pass.
+- Final focused Pi CPython 3.13.5 command: `PYTHONPATH=src:. timeout 180
+  ${PI_HOME}/m4b-dev.fLl6tj/venv/bin/python -m pytest -o addopts= -q
+  tests/test_m4b_measurement_harness.py tests/test_m4b_off_001.py tests/test_m4b_adm_001.py
+  tests/test_m4b_res_001.py tests/test_candidate_gate.py`: **196 passed**, 12.97 s.
+- Launch remains `${PI_HOME}/m4b-target-20260913-sLrXyC/run-user-pm.sh` on snowboard-rpi5.
+  Completion marker is PM_CAPTURE_COMPLETE, meaning collection finished for agent review,
+  not PM/PR/PH acceptance. PR input export and the existing consumer use the same saved series
+  bytes and automatic attestation; release recovery checks remain required in PR.
+
 - Updated: 2026-09-13
 - Owner: Senior Developer / integration owner
 - Scope: `CR_M4B_II` B2, deterministic canonical collection under repository pytest addopts

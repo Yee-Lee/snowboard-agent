@@ -8,6 +8,7 @@ approved DISCARD_TICKET replaces it using the fixed public scrub rendering.
 """
 from __future__ import annotations
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
 import json
@@ -20,8 +21,10 @@ import sys
 import sysconfig
 import threading
 import time
+import traceback
 import secrets
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Mapping
 
 _CANDIDATE_PACKAGE_ROOT = Path(__file__).resolve().parents[3]
@@ -32,6 +35,25 @@ from sbd.cognition.llm_child_protocol import (
     MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
 from sbd.cognition.semantic import validate_semantic, SemanticError
 from sbd.cognition.prompt_builder import SYSTEM_PROMPT
+
+_DIAGNOSTIC_DIRECTORY: Path | None = None
+
+
+def _diagnostic_mark(stage: str, **values: object) -> None:
+    directory = _DIAGNOSTIC_DIRECTORY
+    if directory is None:
+        return
+    row = {"wall_time": datetime.now(timezone.utc).isoformat(),
+           "monotonic_ns": time.monotonic_ns(), "pid": os.getpid(),
+           "stage": stage, **values}
+    raw = (json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    descriptor = os.open(directory / f"llm-child-{os.getpid()}-events.jsonl",
+        os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+    try:
+        os.write(descriptor, raw)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 class WorkerCancelled(RuntimeError):
     pass
@@ -148,10 +170,13 @@ class LiteRTRuntime:
         require(type(rendered) is str and bool(rendered))
         user = len(self._engine.tokenize(text))
         incremental = len(self._engine.tokenize(rendered))
+        # LiteRT counts the conversation's start token in the first native
+        # prefill even though it is not present in the rendered message text.
+        runtime_prefill = incremental + (1 if before == 0 else 0)
         require(conversation.token_count == before, "measurement")
         return {"user_tokens": user, "current_kv_tokens": before,
                 "rendered_incremental_tokens": incremental,
-                "runtime_prefill_tokens": incremental,
+                "runtime_prefill_tokens": runtime_prefill,
                 "output_reserve_tokens": 128, "engine_context_tokens": 1024}
 
     def generate(self, text: str) -> tuple[str, int, int, int]:
@@ -171,11 +196,29 @@ class LiteRTRuntime:
                     response_format=self._response_format.regex(pattern))
             except self._cancelled_error:
                 raise WorkerCancelled() from None
+            _diagnostic_mark("native_generate_returned",
+                raw_type=type(raw).__name__,
+                raw_keys=(sorted(raw) if isinstance(raw, dict) else None),
+                role=(raw.get("role") if isinstance(raw, dict) else None),
+                content_type=(type(raw.get("content")).__name__
+                              if isinstance(raw, dict) else None),
+                content_count=(len(raw.get("content"))
+                               if isinstance(raw, dict) and isinstance(raw.get("content"), list)
+                               else None))
             require(type(raw) is dict and set(raw) == {"role", "content"})
             require(raw["role"] == "assistant" and type(raw["content"]) is list and len(raw["content"]) == 1)
             block = raw["content"][0]
+            _diagnostic_mark("native_generate_block",
+                block_type=type(block).__name__,
+                block_keys=(sorted(block) if isinstance(block, dict) else None),
+                block_kind=(block.get("type") if isinstance(block, dict) else None))
             require(type(block) is dict and set(block) == {"type", "text"} and block["type"] == "text")
+            _diagnostic_mark("native_output", raw_json=block["text"])
             info = conversation.get_benchmark_info()
+            _diagnostic_mark("native_generate_metrics",
+                decode_tokens=info.last_decode_token_count,
+                conversation_tokens=conversation.token_count,
+                actual_prefill_tokens=info.last_prefill_token_count)
             return (block["text"], info.last_decode_token_count, conversation.token_count,
                     info.last_prefill_token_count)
         finally:
@@ -251,6 +294,9 @@ class WorkerSession:
         require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
         send = time.monotonic_ns()
         raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
+        _diagnostic_mark("native_prefill_check", request_id=frame.get("request_id"),
+            expected_prefill_tokens=counts["runtime_prefill_tokens"],
+            actual_prefill_tokens=actual_prefill)
         require(type(actual_prefill) is int and actual_prefill == counts["runtime_prefill_tokens"], "runtime_prefill")
         # Native synchronous SendMessage calls session WaitUntilDone; the
         # control loop additionally joins this worker thread before any terminal.
@@ -378,7 +424,11 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
                 outcome = session.execute(frame)
             except WorkerCancelled:
                 outcome = WorkerCancelled()
-            except BaseException:
+            except BaseException as error:
+                _diagnostic_mark("native_operation_failed",
+                    operation=frame.get("op"), request_id=frame.get("request_id"),
+                    exception_type=type(error).__name__, exception=str(error),
+                    traceback="".join(traceback.format_exception(error)))
                 outcome = None
             # The native method stack has returned. Erase the shared request
             # payload before the thread can join and MEASURED can be emitted.
@@ -436,48 +486,107 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
 
 
 def main() -> int:
+    global _DIAGNOSTIC_DIRECTORY
+    _DIAGNOSTIC_DIRECTORY = None
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     parser.add_argument("--product-profile", required=True)
     parser.add_argument("--runtime-root", required=True)
     parser.add_argument("--artifact-lock", required=True)
     parser.add_argument("--measurement-authorization")
+    parser.add_argument("--measurement-user-diagnostic", action="store_true")
+    parser.add_argument("--measurement-complete-pm", action="store_true")
+    parser.add_argument("--measurement-diagnostic-directory")
     parser.add_argument("--measurement-expected")
     args = parser.parse_args()
+    require(bool(args.measurement_diagnostic_directory) == args.measurement_user_diagnostic,
+            "measurement")
+    require(not args.measurement_complete_pm or args.measurement_user_diagnostic,
+            "measurement")
+    if args.measurement_user_diagnostic:
+        directory = Path(args.measurement_diagnostic_directory).resolve(strict=True)
+        require(directory.is_dir() and not stat.S_IMODE(directory.stat().st_mode) & 0o077,
+                "measurement")
+        _DIAGNOSTIC_DIRECTORY = directory
+        _diagnostic_mark("child_starting", python=sys.version.split()[0])
     from sbd.cognition.litert_lm.lock import LLMArtifactLock, load_product_profile
-    from sbd.core.config.models import LLMConfig
     root = Path(__file__).resolve().parents[4]
     lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
-    require(bool(args.measurement_authorization) == bool(args.measurement_expected), "measurement")
+    _diagnostic_mark("artifact_lock_verified")
+    measurement_mode = bool(args.measurement_authorization) or args.measurement_user_diagnostic
+    require(measurement_mode == bool(args.measurement_expected), "measurement")
+    require(not (args.measurement_authorization and args.measurement_user_diagnostic), "measurement")
     grant = None
-    if args.measurement_authorization:
+    if measurement_mode:
         from sbd.cognition.litert_lm.measurement import MeasurementGrant
         profile = load_product_profile(Path(args.product_profile), allow_measurement=True)
-        grant = MeasurementGrant.load(Path(args.measurement_authorization),
-            expected_tuple=json.loads(args.measurement_expected), profile=profile)
+        expected = json.loads(args.measurement_expected)
+        if args.measurement_user_diagnostic:
+            grant = MeasurementGrant.user_diagnostic(expected_tuple=expected, profile=profile,
+                diagnostic_directory=_DIAGNOSTIC_DIRECTORY,
+                complete_pm=args.measurement_complete_pm)
+        else:
+            grant = MeasurementGrant.load(Path(args.measurement_authorization),
+                expected_tuple=expected, profile=profile)
     else:
         profile = load_product_profile(Path(args.product_profile))
     verify_platform_abi(profile)
+    _diagnostic_mark("platform_abi_verified")
     require(lock.runtime_closure is not None, "runtime")
-    lock.runtime_closure.verify_install(Path(args.runtime_root))
-    # Reauthenticate paths in the child before native import/Engine creation.
-    cfg = LLMConfig(driver="litert_lm", runtime_python=Path(sys.executable),
-        model_path=Path(args.model), artifact_lock_path=Path(args.artifact_lock),
-        product_profile_path=Path(args.product_profile))
-    lock.verify_config_paths(cfg, allow_measurement=grant is not None)
+    if args.measurement_user_diagnostic:
+        # This explicitly non-formal path is for rapid user-driven Pi debugging.
+        # The launcher already binds exact paths and the native loader will fail
+        # closed on unusable bytes; avoid rescanning the multi-gigabyte model.
+        model_path = Path(args.model)
+        require(Path(args.runtime_root).is_dir() and model_path.is_file()
+                and not model_path.is_symlink(), "runtime")
+        _diagnostic_mark("diagnostic_artifact_hash_skipped")
+        if args.measurement_complete_pm:
+            _diagnostic_mark("artifact_verification_deferred_until_cleanup")
+    else:
+        lock.runtime_closure.verify_install(Path(args.runtime_root))
+        _diagnostic_mark("runtime_closure_verified")
+        # Reauthenticate paths in the child before native import/Engine creation.
+        # Importing sbd.core.config executes its YAML-backed application loader. The
+        # isolated native runtime intentionally contains only the locked LiteRT-LM
+        # closure, so the worker uses the two path fields this verifier requires.
+        cfg = SimpleNamespace(model_path=Path(args.model),
+                              product_profile_path=Path(args.product_profile))
+        lock.verify_config_paths(cfg, allow_measurement=grant is not None)
+        _diagnostic_mark("model_profile_verified")
     install_network_denial()
+    _diagnostic_mark("network_denial_installed")
+    if _DIAGNOSTIC_DIRECTORY is not None:
+        # Keep native C/C++ errors in the authorized private diagnostic bundle.
+        # The inherited-descriptor audit and network filter have already run.
+        descriptor = os.open(_DIAGNOSTIC_DIRECTORY / f"llm-child-{os.getpid()}-stderr.log",
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        try:
+            os.dup2(descriptor, 2)
+        finally:
+            os.close(descriptor)
+    native_started = time.monotonic_ns()
+    _diagnostic_mark("native_runtime_starting")
     runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
                             native_sha256=lock.runtime["native_sha256"])
+    _diagnostic_mark("native_runtime_ready",
+                     startup_duration_ns=time.monotonic_ns() - native_started)
     ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,
              "pid": os.getpid(), "pgid": os.getpgrp()}
     require(os.getpid() == os.getpgrp(), "pid")
+    _diagnostic_mark("ready_emitting")
     return run(runtime, ready)
 
 
 if __name__ == "__main__":
     try:
         status = main()
-    except BaseException:
+    except BaseException as error:
+        try:
+            _diagnostic_mark("child_failed", exception_type=type(error).__name__,
+                exception=str(error), traceback="".join(traceback.format_exception(error)))
+        except BaseException:
+            pass
         status = 2
     # Parent is responsible for descendant/exit proof, including startup failure.
     os._exit(status)

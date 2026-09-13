@@ -13,8 +13,9 @@ OWNERS = frozenset({"core", "vad", "asr", "tts", "llm"})
 
 
 class ResourceSampleError(RuntimeError):
-    def __init__(self) -> None:
+    def __init__(self, reason: str = "unspecified") -> None:
         super().__init__("M4B_RESOURCE_INVALID")
+        self.reason = reason
 
 
 def _integer(value: object, minimum: int = 0) -> bool:
@@ -68,9 +69,11 @@ class SystemResourceSample:
                 or not math.isfinite(self.temperature_c) or not 0 <= self.temperature_c < 80
                 or self.throttled_bits != 0 or type(self.processes) is not tuple
                 or not self.processes):
-            raise ResourceSampleError()
+            raise ResourceSampleError("system_fields_or_thermal_health")
         pids: set[int] = set()
         for row in self.processes:
+            if isinstance(row, ProcessResource) and _integer(row.pss_bytes) and _integer(row.rss_bytes) and row.pss_bytes > row.rss_bytes:
+                raise ResourceSampleError(f"pss_exceeds_rss_pid_{row.pid}")
             if (not isinstance(row, ProcessResource) or not _integer(row.pid, 1)
                     or row.pid in pids or type(row.owners) is not frozenset
                     or not row.owners or not row.owners.issubset(OWNERS)
@@ -79,29 +82,29 @@ class SystemResourceSample:
                     or row.pss_bytes > row.rss_bytes or not _integer(row.threads, 1)
                     or type(row.cpu_seconds) not in (float, int)
                     or not math.isfinite(row.cpu_seconds) or row.cpu_seconds < 0):
-                raise ResourceSampleError()
+                raise ResourceSampleError(f"process_fields_pid_{getattr(row, 'pid', 'invalid')}")
             pids.add(row.pid)
         if (frozenset().union(*(row.owners for row in self.processes)) != OWNERS
                 or self.combined_pss_bytes > self.mem_total_bytes):
-            raise ResourceSampleError()
+            raise ResourceSampleError("owner_coverage_or_total_pss")
         if previous is None:
             if self.oom_kill:
-                raise ResourceSampleError()
+                raise ResourceSampleError("initial_oom_counter")
         else:
             if not isinstance(previous, SystemResourceSample):
-                raise ResourceSampleError()
+                raise ResourceSampleError("previous_sample_type")
             previous.validate()
             if (self.monotonic_ns <= previous.monotonic_ns
                     or self.mem_total_bytes != previous.mem_total_bytes
                     or self.swap_used_bytes > previous.swap_used_bytes
                     or self.oom_kill != previous.oom_kill):
-                raise ResourceSampleError()
+                raise ResourceSampleError("clock_memory_swap_or_oom_changed")
             old = {p.pid: p for p in previous.processes}
             if pids != set(old):
-                raise ResourceSampleError()
+                raise ResourceSampleError("process_set_changed")
             if any(p.pid in old and (p.start_time_ticks != old[p.pid].start_time_ticks
                    or p.owner != old[p.pid].owner) for p in self.processes):
-                raise ResourceSampleError()
+                raise ResourceSampleError("process_identity_changed")
 
 
 class MemoryDecision(str, Enum):
@@ -158,7 +161,11 @@ class ProcLLMResourceSampler:
 
     @classmethod
     def _kib(cls, path: Path, field: str) -> int:
-        matches = [line.split() for line in cls._read(path).splitlines()
+        return cls._parse_kib(cls._read(path), field)
+
+    @staticmethod
+    def _parse_kib(contents: str, field: str) -> int:
+        matches = [line.split() for line in contents.splitlines()
                    if line.split() and line.split()[0] == f"{field}:"]
         if len(matches) != 1 or len(matches[0]) != 3 or matches[0][2] != "kB":
             raise ResourceSampleError()
@@ -170,6 +177,8 @@ class ProcLLMResourceSampler:
     def sample(self, *, child_pid: int, child_pgid: int) -> SystemResourceSample:
         try:
             return self._sample(child_pid, child_pgid)
+        except ResourceSampleError:
+            raise
         except Exception:
             raise ResourceSampleError() from None
 
@@ -177,6 +186,8 @@ class ProcLLMResourceSampler:
         """Private READY-after-authorized-rebuild hook; retain the system health baseline."""
         try:
             return self._sample(child_pid, child_pgid, authorized_replacement=True)
+        except ResourceSampleError:
+            raise
         except Exception:
             raise ResourceSampleError() from None
 
@@ -200,8 +211,11 @@ class ProcLLMResourceSampler:
                 if old_fixed != new_fixed:
                     raise ResourceSampleError()
             sample.validate(adjusted)
-        except Exception:
-            raise ResourceSampleError() from None
+        except Exception as error:
+            failure = ResourceSampleError(getattr(error, "reason", type(error).__name__))
+            failure.sample = sample
+            failure.previous = previous
+            raise failure from None
 
     def _sample(self, child_pid: int, child_pgid: int, *, authorized_replacement=False) -> SystemResourceSample:
         if (self._registry is None or self._temperature is None or self._throttled is None
@@ -224,8 +238,11 @@ class ProcLLMResourceSampler:
                 before = self._read(directory / "stat").rsplit(")", 1)[1].split()
                 if before[0] == "Z" or ("llm" in roles and int(before[2]) != child_pgid):
                     raise ResourceSampleError()
-                pss = self._kib(directory / "smaps_rollup", "Pss")
-                rss = self._kib(directory / "smaps_rollup", "Rss")
+                # Both fields must come from one kernel snapshot. Separate reads
+                # can straddle native memory release and produce Pss > Rss.
+                rollup = self._read(directory / "smaps_rollup")
+                pss = self._parse_kib(rollup, "Pss")
+                rss = self._parse_kib(rollup, "Rss")
                 after = self._read(directory / "stat").rsplit(")", 1)[1].split()
                 if before[19] != after[19] or before[2] != after[2]:
                     raise ResourceSampleError()

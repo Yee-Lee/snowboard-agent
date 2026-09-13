@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / cognition-product portable-aligned / exact-tuple target authorization pending
-- Developer entry: **Closed — exact candidate `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` portable-aligned**
+- State: Foundation verified / USER-directed measurement-authorization removal designed
+- Developer entry: **Closed — opens after focused Tester coverage delta**
 
 ## USER-confirmed direction
 
@@ -194,7 +194,8 @@ Fail/Error/Skip/XFail/XPASS. Matrix SHA-256 is
 confirmed the B1/B2 corrections are limited to the formal portable gate and found no product-design
 deviation or new high-risk regression. Protected inputs are portable-frozen at that SHA.
 
-Next, Tester and Designer independently validate the exact candidate/profile/measurement-harness/target
-tuple and required target artifacts, private audio-only config and evidence roots before recording dual
-approval. PM must not start before that approval. PR and PH remain Pending until PM completes and both
-roles reproduce and freeze the measured thresholds into a reviewed release profile.
+USER explicitly removed the M4B role-signature workflow. The measurement harness must accept no Designer/Tester
+authorization file, reviewer identity or approval timestamp. Controller and child still fail closed on the exact
+candidate/profile/harness/target tuple, and the complete raw series deterministically produces the release profile;
+a separate clean release rerun remains mandatory. Tester now owns only the focused coverage delta. Developer then
+implements the removal once and produces a replacement candidate before direct PM, PR and PH execution.

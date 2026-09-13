@@ -89,6 +89,19 @@ def test_A01_native_wrapper_uses_exact_runtime_renderer_and_tokenizer():
     assert conversation.token_count == 90
 
 
+def test_A01_fresh_native_prefill_includes_litert_start_token():
+    from types import SimpleNamespace
+    from sbd.cognition.litert_lm.worker import LiteRTRuntime
+    conversation = SimpleNamespace(token_count=0,
+        render_message_to_string=lambda _text: "rendered-by-native")
+    runtime = LiteRTRuntime.__new__(LiteRTRuntime)
+    runtime._conversation = conversation
+    runtime._engine = SimpleNamespace(tokenize=lambda text: [1] * (2 if text == "你好" else 84))
+    counts = runtime.measure("你好")
+    assert counts["rendered_incremental_tokens"] == 84
+    assert counts["runtime_prefill_tokens"] == 85
+
+
 def test_A03_native_observed_prefill_cannot_be_replaced_by_prediction():
     from sbd.cognition.litert_lm.worker import WorkerSession
     from sbd.cognition.llm_child_protocol import digest

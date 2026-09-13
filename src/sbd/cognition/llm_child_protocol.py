@@ -116,7 +116,11 @@ def validate_counts(value: Mapping[str, object]) -> None:
     require(value["output_reserve_tokens"] == 128 and value["engine_context_tokens"] == 1024, "counts")
     require(value["current_kv_tokens"] <= 1024, "counts")
     require(value["user_tokens"] <= value["rendered_incremental_tokens"], "counts")
-    require(value["runtime_prefill_tokens"] == value["rendered_incremental_tokens"], "counts")
+    delta = value["runtime_prefill_tokens"] - value["rendered_incremental_tokens"]
+    # The pinned LiteRT runtime reports the fresh conversation's start token
+    # in native prefill, while render_message_to_string contains message bytes
+    # only. Later turns have already retained that token in KV.
+    require(delta == 0 or (value["current_kv_tokens"] == 0 and delta == 1), "counts")
 
 
 class ProtocolLedger:

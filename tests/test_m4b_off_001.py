@@ -74,7 +74,7 @@ def _measurement_authorization(tmp_path, monkeypatch):
     path = tmp_path / "approval.json"
     path.write_text(json.dumps(document))
     calls = []
-    monkeypatch.setattr(measurement, "_verify_context", lambda value: calls.append(dict(value)))
+    monkeypatch.setattr(measurement, "_verify_context", lambda value, **_kwargs: calls.append(dict(value)))
     return profile, expected, document, path, calls
 
 
@@ -93,6 +93,30 @@ def test_measurement_grant_rechecks_exact_dual_approval_and_profile_before_child
     with pytest.raises(MeasurementAuthorizationError):
         grant.authorize_profile(profile)
     assert len(calls) == 2
+
+
+def test_user_diagnostic_grant_crosses_isolated_child_without_approval_file(tmp_path, monkeypatch):
+    from sbd.cognition.litert_lm.measurement import MeasurementGrant
+    profile, expected, _document, _path, _calls = _measurement_authorization(tmp_path, monkeypatch)
+    contexts = []
+
+    def verify(value, *, allow_dirty=False):
+        contexts.append((dict(value), allow_dirty))
+
+    monkeypatch.setattr("sbd.cognition.litert_lm.measurement._verify_context", verify)
+    grant = MeasurementGrant.user_diagnostic(expected_tuple=expected, profile=profile,
+                                               diagnostic_directory=tmp_path)
+    assert grant.is_user_diagnostic() is True
+    assert contexts == [(expected, True)]
+    assert grant.child_arguments() == [
+        "--measurement-user-diagnostic",
+        "--measurement-diagnostic-directory",
+        str(tmp_path),
+        "--measurement-expected",
+        json.dumps(expected, sort_keys=True, separators=(",", ":")),
+    ]
+    grant.authorize_profile(profile)
+    assert contexts == [(expected, True), (expected, True)]
 
 
 @pytest.mark.parametrize("field,value", [("candidate_sha", "0" * 40),
@@ -246,8 +270,9 @@ def test_grant_context_authenticates_checkout_harness_and_exact_target(tmp_path,
             measurement._verify_context(expected)
 
 
-@pytest.mark.parametrize("authorization", ["valid", "revoked", "absent"])
+@pytest.mark.parametrize("authorization", ["valid", "diagnostic", "complete_pm", "revoked", "absent"])
 def test_native_child_reauthenticates_measurement_before_native_import(tmp_path, monkeypatch, authorization):
+    import builtins
     from types import SimpleNamespace
     from sbd.cognition.litert_lm import worker, lock as lock_module
     from sbd.cognition.llm import LLMFatalError
@@ -255,6 +280,8 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
     profile, expected, document, path, contexts = _measurement_authorization(tmp_path, monkeypatch)
     profile_path = tmp_path / "profile.json"
     profile_path.write_text(json.dumps(profile))
+    model_path = tmp_path / "model"
+    model_path.write_bytes(b"model")
     stages = []
     real_lock = product_lock()
     fake_lock = SimpleNamespace(
@@ -267,18 +294,39 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
     monkeypatch.setattr(worker, "LiteRTRuntime", lambda **kwargs: stages.append("native") or object())
     monkeypatch.setattr(worker, "run", lambda runtime, ready: stages.append(ready["profile_stage"]) or 0)
     monkeypatch.setattr(worker.os, "getpgrp", lambda: worker.os.getpid())
-    argv = ["worker", "--model", str(tmp_path / "model"), "--product-profile", str(profile_path),
+    original_import = builtins.__import__
+    def isolated_import(name, *args, **kwargs):
+        if name == "sbd.core.config.models":
+            raise AssertionError("isolated worker imported YAML-backed AppConfig package")
+        return original_import(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, "__import__", isolated_import)
+    argv = ["worker", "--model", str(model_path), "--product-profile", str(profile_path),
             "--runtime-root", str(tmp_path), "--artifact-lock", str(tmp_path / "lock")]
-    if authorization != "absent":
+    if authorization in {"valid", "revoked"}:
         argv.extend(["--measurement-authorization", str(path), "--measurement-expected", json.dumps(expected)])
+    elif authorization in {"diagnostic", "complete_pm"}:
+        argv.extend(["--measurement-user-diagnostic", "--measurement-diagnostic-directory",
+                     str(tmp_path), "--measurement-expected", json.dumps(expected)])
+        if authorization == "complete_pm":
+            argv.append("--measurement-complete-pm")
     if authorization == "revoked":
         document["approvals"][0]["decision"] = "Rejected"
         path.write_text(json.dumps(document))
     monkeypatch.setattr(worker.sys, "argv", argv)
-    if authorization == "valid":
+    if authorization in {"valid", "diagnostic", "complete_pm"}:
         assert worker.main() == 0
         assert contexts == [expected]
-        assert stages == ["abi", "install", ("paths", {"allow_measurement": True}), "network", "native", "measurement"]
+        expected_stages = (["abi", "network", "native", "measurement"]
+                           if authorization in {"diagnostic", "complete_pm"} else
+                           ["abi", "install", ("paths", {"allow_measurement": True}),
+                            "network", "native", "measurement"])
+        assert stages == expected_stages
+        if authorization == "diagnostic":
+            logs = list(tmp_path.glob("llm-child-*-events.jsonl"))
+            assert len(logs) == 1
+            child_events = [json.loads(line) for line in logs[0].read_text().splitlines()]
+            assert child_events[0]["stage"] == "child_starting"
+            assert child_events[-1]["stage"] == "ready_emitting"
     else:
         with pytest.raises((LLMFatalError, lock_module.LLMLockError)):
             worker.main()

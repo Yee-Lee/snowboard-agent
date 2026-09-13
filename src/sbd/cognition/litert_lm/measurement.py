@@ -82,13 +82,15 @@ def _read_authorization(path: Path) -> object:
             os.close(descriptor)
 
 
-def _verify_context(expected: Mapping[str, object]) -> None:
+def _verify_context(expected: Mapping[str, object], *, allow_dirty: bool = False) -> None:
     try:
         def git(*args):
             result = subprocess.run(["git", "-C", str(_ROOT), *args], stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=True)
             return result.stdout.decode("ascii").strip()
-        if git("rev-parse", "HEAD") != expected["candidate_sha"] or git("status", "--porcelain", "--untracked-files=all"):
+        if git("rev-parse", "HEAD") != expected["candidate_sha"]:
+            raise ValueError
+        if not allow_dirty and git("status", "--porcelain", "--untracked-files=all"):
             raise ValueError
         harness = _ROOT / "scripts/m4b_measurement.py"
         if harness.is_symlink() or hashlib.sha256(harness.read_bytes()).hexdigest() != expected["harness_sha256"]:
@@ -110,7 +112,8 @@ def _verify_context(expected: Mapping[str, object]) -> None:
 
 
 class MeasurementGrant:
-    __slots__ = ("_path", "_expected", "_seal")
+    __slots__ = ("_path", "_expected", "_seal", "_diagnostic", "_diagnostic_directory",
+                 "_complete_pm")
 
     def __init__(self, *args, **kwargs):
         raise MeasurementAuthorizationError()
@@ -121,6 +124,32 @@ class MeasurementGrant:
         grant._path = Path(authorization_path).absolute()
         grant._expected = MappingProxyType(dict(expected_tuple))
         grant._seal = _SEAL
+        grant._diagnostic = False
+        grant._diagnostic_directory = None
+        grant._complete_pm = False
+        grant.authorize_profile(profile)
+        return grant
+
+    @classmethod
+    def user_diagnostic(cls, *, expected_tuple: Mapping[str, object], profile: Mapping[str, object],
+                        diagnostic_directory: Path, complete_pm: bool = False):
+        """Explicit pre-commit Pi convergence; never formal evidence or a release grant."""
+        grant = object.__new__(cls)
+        grant._path = None
+        grant._expected = MappingProxyType(dict(expected_tuple))
+        grant._seal = _SEAL
+        grant._diagnostic = True
+        if type(complete_pm) is not bool:
+            raise MeasurementAuthorizationError()
+        grant._complete_pm = complete_pm
+        try:
+            directory = Path(diagnostic_directory).resolve(strict=True)
+            if (not directory.is_dir() or directory.is_relative_to(_ROOT)
+                    or stat.S_IMODE(directory.stat().st_mode) & 0o077):
+                raise ValueError
+        except Exception:
+            raise MeasurementAuthorizationError() from None
+        grant._diagnostic_directory = directory
         grant.authorize_profile(profile)
         return grant
 
@@ -131,14 +160,29 @@ class MeasurementGrant:
             validated = validate_product_profile(dict(profile), allow_measurement=True)
             if validated["profile_stage"] != "measurement" or validated["profile_sha256"] != self._expected["profile_sha256"]:
                 raise ValueError
-            validate_authorization(_read_authorization(self._path), self._expected)
-            _verify_context(self._expected)
+            if self._diagnostic:
+                _verify_context(self._expected, allow_dirty=True)
+            else:
+                validate_authorization(_read_authorization(self._path), self._expected)
+                _verify_context(self._expected)
         except Exception:
             raise MeasurementAuthorizationError() from None
 
     def child_arguments(self) -> list[str]:
+        if self._diagnostic:
+            arguments = ["--measurement-user-diagnostic", "--measurement-diagnostic-directory",
+                    str(self._diagnostic_directory), "--measurement-expected",
+                    json.dumps(dict(self._expected), sort_keys=True, separators=(",", ":"))]
+            if self._complete_pm:
+                arguments.append("--measurement-complete-pm")
+            return arguments
         return ["--measurement-authorization", str(self._path),
                 "--measurement-expected", json.dumps(dict(self._expected), sort_keys=True, separators=(",", ":"))]
+
+    def is_user_diagnostic(self) -> bool:
+        if self._seal is not _SEAL:
+            raise MeasurementAuthorizationError()
+        return self._diagnostic
 
     def check_sample(self, sample: object) -> None:
         try:

@@ -4,28 +4,28 @@
 
 ## 不可變規則
 
-- Pi 耦合工作先在隔離 target checkout 收斂；正式 acceptance 不是開發或除錯迴圈。
-- Provisional candidate 只是可測的完整 SHA，不代表 freeze、Tester PASS 或 Accepted。
-- Candidate SHA 一經 push、送驗或正式驗證即不可改寫；修正 protected input 必須 append
-  新 commit、建立新 candidate，並重跑受影響 gate。
+- 所有開發先在隔離 Pi checkout 收斂；Pi 是 commit 前 Verify 的必要環境，不是 commit 後才進入的 gate。
+- Verify 綁定待提交內容的 tracked-only patch/content digest，不要求先建立 provisional commit 或 SHA。
+- Candidate SHA 只在 Pi Verify 完整通過、工作站 bytes 核對相同且 USER 核准後建立。建立後不可
+  改寫；若仍需修正，保留既有 evidence，以 append fix 產生新 SHA。
 - Protected input 包含 `src/`、`tests/`、dependency/lock、config contract、candidate/acceptance
   runner 與 candidate workflow；其中任一變更都使既有 diagnostic、matrix 與 freeze 失效。
-- Developer diagnostic 與正式 evidence 分離，不得複製、改名或拼接為 PASS。
+- 開發中的失敗 run 與最後 Verify evidence 分離，不得複製、改名或拼接為 PASS。
+- 不要求角色互簽、身份證明、文件核准或 authorization JSON；不預設參與者會偽造或變造。
+  防止測錯版本只使用自動內容、設定、artifact 與 target identity 核對。
 
 ## 最小流程
 
-1. **Developer convergence**：先記 affected scope。Pi 耦合工作在 Pi 反覆跑 affected portable
-   tests 與 target diagnostics；收斂後以相同 base、task paths、tracked-only patch SHA-256
-   單次同步到乾淨工作站，確認 patch bytes 相同並跑一次主要 Python minor portable tests。
-2. **Provisional candidate**：Designer 核對 scope；依 `git.md` 取得 USER 同意後建立完整 SHA。
-3. **Portable sign-off**：Tester 對指定 SHA 跑正式支援 Python matrix，命令有 timeout，結果須
-   0 Fail／Blocked／Skip／XFail。
-4. **Candidate review/freeze**：Designer 只查設計對齊與高風險 regression。protected input 變更
-   會撤銷 freeze，回到步驟 1。
-5. **Target preflight/acceptance**：Tester 或 operator 驗 SHA、clean paths、runtime、hardware、
-   artifact/config checksum；以全新 `acceptance/<run-id>/` 完整執行並保存 result 與 raw log。
-6. **Reconciliation/acceptance**：Tester 核對 portable 與 target 指向同一 SHA/run；Designer 只確認
-   freeze 後無 candidate-affecting 變更，再標記 Accepted。
+1. **Design**：Designer 固定實際產品行為與 Pi acceptance boundary，不建立簽核流程。
+2. **Test Spec**：Tester 建立直接可執行的 Test IDs、命令與判定；不要求共同簽核。
+3. **Developer convergence**：Developer 在 Pi checkout 實作／同步待提交內容，反覆執行 affected
+   tests 與 target diagnostics；每次內容變更都更新 content digest。
+4. **Verify**：以全新 `verification/<run-id>/` 對最後 content digest 完整執行所有適用 portable
+   matrix、整合、runtime、硬體與人工測試。結果必須 0 Fail／Blocked／Skip／XFail，並保存 raw log。
+5. **Byte reconciliation**：把已驗證內容同步回工作站，核對 base、tracked-only patch/content digest、
+   task paths、config 與 artifact digest 完全相同；差異一律回步驟 3 並重跑 Pi Verify。
+6. **Commit**：只有步驟 4、5 通過後，才依 `git.md` 向 USER 提出一次 commit proposal。Commit 後
+   只核對 commit tree 對應已驗證內容，不再把 Pi 測試當成候選是否可用的首次驗證。
 
-每個正式命令至少記錄 run ID、40-character SHA、命令、平台、Python、起訖時間、exit code、
-status 與 raw-log path。接線修正可保留 SHA，但須用新 run ID 重走 preflight 與完整 acceptance。
+每個 Verify 命令至少記錄 run ID、base SHA、content digest、命令、平台、Python、起訖時間、
+exit code、status 與 raw-log path。任何接線或內容修正都使用新 run ID 與新 digest 重走完整 Verify。

@@ -243,8 +243,10 @@ contains two independently frozen byte thresholds derived from the new vertical 
 - `min_mem_available_generate_bytes`: minimum for model generation plus the 128-token reserve.
 - `min_mem_available_speak_bytes`: minimum for the fixed application notice through TTS/playback.
 
-No source/YAML default is legal for either threshold. A dedicated target measurement harness may use a signed
-`profile_stage="measurement"` profile in which they are null; application composition rejects that stage. The
+No source/YAML default is legal for either threshold. A dedicated target measurement harness may use a
+`profile_stage="measurement"` profile in which they are null; application composition rejects that stage. Before
+native import, the controller and child automatically attest the exact candidate, harness, profile and target
+identity. This technical attestation requires no role approval, reviewer identity or authorization file. The
 harness enforces `measurement_safety_floor_bytes = 512 * 1024**2` before every new operation and stops on any
 swap increase, OOM/kernel fault, throttling, temperature `>=80 C`, identity/sampler loss or cleanup failure. This
 is a laboratory stop condition, not a product admission threshold or PASS claim.
@@ -262,10 +264,11 @@ min_mem_available_generate_bytes = max(
 ```
 
 `ceil_mib` rounds upward to a whole multiple of `1024**2` bytes. Missing lifecycle samples or a stopped/failed
-run cannot derive a value. Designer and Tester review the raw-to-derived calculation, freeze both byte values plus
-their evidence locator into `profile_stage="release"`, and generate the release profile digest. Only that release
-profile is legal for the product candidate. The old `48 MiB owner delta` and `768 MiB MemAvailable` values are
-rejected legacy keys.
+run cannot derive a value. The harness deterministically freezes both byte values plus their evidence locator into
+`profile_stage="release"` and generates the release profile digest; no role signature or manual approval record is
+an input. A separate clean release run must reproduce the profile identity and exercise both thresholds before the
+result can Pass. Only that release profile is legal for the product candidate. The old `48 MiB owner delta` and
+`768 MiB MemAvailable` values are rejected legacy keys.
 
 Decision order:
 
@@ -531,9 +534,10 @@ The clean-checkout exact-SHA target run must:
   presence and `spoken_length <=30`; structural JSON success alone cannot PASS;
 - use one Product Session for genuine turns until context admission rejects, complete replacement, ask the user
   to repeat, and prove the following turn succeeds on the new generation;
-- first run the signed measurement-only harness to sample Engine-ready, Conversation-ready/preparation, pre/post
-  each generation, pre/post replacement and post-session-close points; review/freeze the two new memory thresholds
-  with the §5.3 formula, then rerun the candidate through normal release-profile composition;
+- first run the automatically attested measurement-only harness to sample Engine-ready,
+  Conversation-ready/preparation, pre/post each generation, pre/post replacement and post-session-close points;
+  deterministically freeze the two new memory thresholds with the §5.3 formula, then rerun the candidate through
+  normal release-profile composition;
 - overlap Conversation open only with existing WAKE `準備中` display projection, never active ASR/listen;
 - record the §10 monotonic Audio+LLM timeline and raw observations without adding a response-time target;
 - prove no network, swap growth, OOM/kernel fault, thermal throttling, orphan/owner leak or private-content

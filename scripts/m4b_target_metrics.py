@@ -320,6 +320,24 @@ def freeze_release_profile(measurement_profile: Mapping[str, object],
     return dict(validate_product_profile(release))
 
 
+def freeze_release_profile_automatic(measurement_profile: Mapping[str, object],
+                                     points: Iterable[MeasurementPoint], *,
+                                     evidence_sha256: str, completed: bool,
+                                     cleanup_proven: bool) -> dict[str, object]:
+    """Freeze measured thresholds without a role signature or approval file."""
+    from sbd.cognition.litert_lm.lock import profile_digest, validate_product_profile
+    measured = validate_product_profile(dict(measurement_profile), allow_measurement=True)
+    if measured["profile_stage"] != "measurement" or not _digest_value(evidence_sha256):
+        raise MetricsError("M4B_FREEZE_INVALID")
+    derived = derive_thresholds(points, completed=completed, cleanup_proven=cleanup_proven)
+    release = {**measured, "profile_stage": "release",
+        "min_mem_available_speak_bytes": derived["min_mem_available_speak_bytes"],
+        "min_mem_available_generate_bytes": derived["min_mem_available_generate_bytes"],
+        "measurement_evidence_locator": f"sha256/{evidence_sha256}"}
+    release["profile_sha256"] = profile_digest(release)
+    return dict(validate_product_profile(release))
+
+
 class MeasurementHarness:
     """Laboratory operation wrapper with live sampling and unconditional cleanup.
 
@@ -328,9 +346,19 @@ class MeasurementHarness:
     """
 
     def __init__(self, *, authorization, expected_tuple, sample, cleanup,
+                 user_authorized_diagnostic: bool = False,
+                 point_sink=None, error_sink=None,
                  interval_seconds: float = 0.05, cleanup_timeout_seconds: float = 10.0) -> None:
         import math
-        self.authorized_tuple = validate_authorization(authorization, expected_tuple)
+        if type(user_authorized_diagnostic) is not bool:
+            raise MetricsError("M4B_MEASUREMENT_INVALID")
+        self.user_authorized_diagnostic = user_authorized_diagnostic
+        self.authorized_tuple = (dict(expected_tuple) if user_authorized_diagnostic
+                                 else validate_authorization(authorization, expected_tuple))
+        if ((point_sink is not None and not callable(point_sink))
+                or (error_sink is not None and not callable(error_sink))):
+            raise MetricsError("M4B_MEASUREMENT_INVALID")
+        self._point_sink, self._error_sink = point_sink, error_sink
         if (type(interval_seconds) not in (float, int) or not math.isfinite(interval_seconds)
                 or interval_seconds <= 0 or interval_seconds > 1):
             raise MetricsError("M4B_MEASUREMENT_INVALID")
@@ -351,8 +379,10 @@ class MeasurementHarness:
             raise MetricsError("M4B_MEASUREMENT_STOPPED")
         try:
             observed = self._sample()
-        except Exception:
+        except Exception as error:
             self.stopped = True
+            if self._error_sink is not None:
+                self._error_sink("resource_sample_failed", error)
             raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
         self.record_sample(observed, lifecycle_point, operation_index,
                            before_operation=before_operation)
@@ -368,9 +398,14 @@ class MeasurementHarness:
             sample.validate(self.points[-1].sample if self.points else None)
             if before_operation and sample.mem_available_bytes < MEASUREMENT_SAFETY_FLOOR_BYTES:
                 raise ValueError
-            self.points.append(MeasurementPoint(lifecycle_point, operation_index, sample))
-        except Exception:
+            point = MeasurementPoint(lifecycle_point, operation_index, sample)
+            self.points.append(point)
+            if self._point_sink is not None:
+                self._point_sink(point)
+        except Exception as error:
             self.stopped = True
+            if self._error_sink is not None:
+                self._error_sink("resource_validation_failed", error)
             raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
 
     async def operation(self, *, before: str, after: str, index: int, execute):
@@ -392,14 +427,18 @@ class MeasurementHarness:
             await asyncio.gather(task, return_exceptions=True)
             raise
 
-    async def run(self, scenario) -> dict[str, object]:
+    async def run(self, scenario, *, derive_profile=True) -> dict[str, object]:
+        if not derive_profile and not self.user_authorized_diagnostic:
+            raise MetricsError("M4B_MEASUREMENT_INPUT_INVALID")
         if self._active or self.completed or self.stopped:
             raise MetricsError("M4B_MEASUREMENT_ALREADY_USED")
         self._active = True
         try:
             await asyncio.wait_for(scenario(self), timeout=3600)
-        except Exception:
+        except Exception as error:
             self.stopped = True
+            if self._error_sink is not None:
+                self._error_sink("scenario_failed", error)
             # Native scenario/driver exceptions may contain private text or
             # paths. They are never a public harness diagnostic or result.
             raise MetricsError("M4B_MEASUREMENT_STOPPED") from None
@@ -411,13 +450,20 @@ class MeasurementHarness:
             try:
                 self.cleanup_proven = await asyncio.wait_for(
                     self._cleanup(), timeout=self._cleanup_timeout) is True
-            except BaseException:
+            except BaseException as error:
                 self.stopped = True
+                if self._error_sink is not None:
+                    self._error_sink("cleanup_failed", error)
             if not self.cleanup_proven:
                 self.stopped = True
         if self.stopped:
             raise MetricsError("M4B_MEASUREMENT_STOPPED")
-        values = derive_thresholds(self.points, completed=True, cleanup_proven=self.cleanup_proven)
+        values = (derive_thresholds(self.points, completed=True, cleanup_proven=self.cleanup_proven)
+                  if derive_profile else None)
         self.completed = True
-        return {"authorized_tuple": dict(self.authorized_tuple), "status": "Measured",
-                "derived": values, "sample_count": len(self.points)}
+        result = {"authorized_tuple": dict(self.authorized_tuple),
+                  "status": "Measured" if derive_profile else "DiagnosticComplete",
+                  "derived": values, "sample_count": len(self.points)}
+        if self.user_authorized_diagnostic:
+            result["evidence_mode"] = "developer_diagnostic"
+        return result

@@ -897,30 +897,31 @@ def _m4b_validate_proof(record, data, resolver):
         if not events[0]["turn_index"] < events[4]["turn_index"] == events[5]["turn_index"] < events[6]["turn_index"]:
             raise ValueError
     elif test_id == "M4B-PI-MEM-001":
-        from scripts.m4b_target_metrics import (MeasurementPoint, validate_authorization, freeze_release_profile)
+        from scripts.m4b_target_metrics import (MeasurementPoint, freeze_release_profile_automatic)
         from sbd.cognition.litert_lm.resource import memory_decision
-        _m4b_exact(data, {"measurement_profile", "authorization", "points", "freeze_approvals", "release_profile",
+        _m4b_exact(data, {"measurement_profile", "measurement_attestation", "points", "release_profile",
             "completed", "cleanup_proven", "measurement_run_sha256", "release_run_sha256", "release_rows",
             "recovery_ready", "new_turn_success"})
         measured = validate_product_profile(data["measurement_profile"], allow_measurement=True)
         expected = {"schema_version": 1, "candidate_sha": record["candidate_sha"],
             "profile_sha256": measured["profile_sha256"], "target_identity": "pi5-4gb-debian13-aarch64-cp3135",
-            "harness_sha256": hashlib.sha256(Path(__file__).with_name("m4b_target_metrics.py").read_bytes()).hexdigest()}
-        validate_authorization(data["authorization"], expected)
+            "harness_sha256": hashlib.sha256(Path(__file__).with_name("m4b_measurement.py").read_bytes()).hexdigest()}
+        _m4b_exact(data["measurement_attestation"], set(expected))
+        if data["measurement_attestation"] != expected:
+            raise ValueError
         for name in ("measurement_run_sha256", "release_run_sha256"):
             _m4b_raw_artifact(data[name], resolver)
         if data["measurement_run_sha256"] == data["release_run_sha256"]:
             raise ValueError
         measurement_raw = json.loads(_m4b_raw_artifact(data["measurement_run_sha256"], resolver))
-        if measurement_raw != {"points": data["points"], "completed": data["completed"],
-                               "cleanup_proven": data["cleanup_proven"]}:
+        if measurement_raw != data["points"]:
             raise ValueError
         points = []
         for row in data["points"]:
             _m4b_exact(row, {"lifecycle_point", "operation_index", "sample"})
             points.append(MeasurementPoint(row["lifecycle_point"], row["operation_index"], _m4b_sample(row["sample"])))
-        release = freeze_release_profile(measured, points, evidence_sha256=data["measurement_run_sha256"],
-            approvals=data["freeze_approvals"], completed=data["completed"], cleanup_proven=data["cleanup_proven"])
+        release = freeze_release_profile_automatic(measured, points, evidence_sha256=data["measurement_run_sha256"],
+            completed=data["completed"], cleanup_proven=data["cleanup_proven"])
         if release != data["release_profile"] or release["profile_sha256"] != record["profile_sha256"]:
             raise ValueError
         release_raw = json.loads(_m4b_raw_artifact(data["release_run_sha256"], resolver))

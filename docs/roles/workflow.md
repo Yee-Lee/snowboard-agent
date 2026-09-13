@@ -59,7 +59,14 @@
 
 ## Pipeline
 
-Architecture → design → milestone/test planning → development → verification/acceptance。
-每一任務只執行所處階段；遇到上游矛盾，依 `review-process.md` 回到權威 owner，
-不得由下游角色私自改契約。沒有實體／人工 gate 時，Tester PASS 後由 Designer 做
-最終對齊確認；有此類 gate 時改走 `candidate-process.md`。
+唯一執行順序是：
+
+1. **Design**：Designer 固定可觀察行為、邊界與 milestone。
+2. **Test Spec**：Tester 把設計映射成可執行 Test ID、步驟與判定條件。
+3. **Developer**：Developer 實作並修正，直到待提交內容在 Pi 收斂。
+4. **Verify**：對待提交的相同 bytes 在 Pi 完成所有適用測試；通過後才可準備一次 commit。
+
+不得在這四階段之間增加角色互簽、文件核准、身份檢查、authorization JSON 或重複 freeze。
+不預設參與者會偽造、變造或冒用文件／身份。需要防止測錯內容時，以自動 content digest、
+config/artifact digest 與 target facts 核對處理。遇到上游契約矛盾才回到實際 owner 修正，
+不得把一般交接包裝成新的 approval gate。

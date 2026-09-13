@@ -1,7 +1,7 @@
 # M4B — clean rewrite gates
 
 狀態：**Foundation verified / replacement design Reviewer PASS / portable candidate aligned /
-exact-tuple target authorization pending**。
+measurement-authorization removal delta open**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -20,7 +20,8 @@ exact-tuple target authorization pending**。
 | `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
 | `M4B-TEST-COVERAGE` | Tester + Designer | Closed — 2026-09-12 | [`test_spec_M4B`](../test_spec/test_spec_M4B.md)完成11/11 portable與7/7 Pi-human mapping；[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)由Designer確認Resolved |
 | `M4B-DEVELOPMENT-REWRITE` | Developer | Closed — portable aligned 2026-09-13 | [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)於 exact SHA `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` Resolved；Linux aarch64 3.11/3.12/3.13各1005 PASS且零 forbidden outcome |
-| `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Open — target authorization pending | portable protected inputs已freeze；先雙角色核准exact measurement tuple，再依序執行PM、freeze release profile、PR與PH；目前無Pi產品PASS |
+| `M4B-MEASUREMENT-AUTHORIZATION-REMOVAL` | Tester + Developer | Open — USER-directed delta | 移除PM前雙角色authorization檔與threshold freeze人工簽核；保留自動exact tuple／target attestation、safety floor、private evidence及獨立release rerun |
+| `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Pending — replacement candidate required | 新candidate完成portable驗證後直接依序執行PM、自動freeze release profile、PR與PH；目前無Pi產品PASS |
 
 Gate必須依表列順序解除。Foundation architecture、design與coverage未Closed前，只能準備
 review，不開Developer entry；foundation revision驗證完成後才進M4B cognition/product設計與開發。
@@ -68,5 +69,7 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。
 [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)已在 exact SHA
 `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`完成獨立 portable PASS 與 Designer alignment。
-下一步只開 exact-tuple target authorization；雙角色批准前不得執行PM，PM與release-profile freeze
-完成前不得執行PR/PH，且此狀態不宣稱M4B Accepted。
+USER已明確取消角色簽核與authorization JSON。下一步由Tester只修改受影響coverage，再由Developer
+一次移除authorization輸入與雙角色freeze approval，保留自動exact tuple／target驗證。新candidate
+通過portable gate後可直接執行PM；PM與自動release-profile freeze完成前不得執行PR/PH，且此狀態
+不宣稱M4B Accepted。

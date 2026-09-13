@@ -1,12 +1,13 @@
 """MEM/tooling regressions for real action windows and bounded lab cleanup."""
 import asyncio
 from dataclasses import replace
+import json
 import traceback
 
 import pytest
 
 from scripts.m4b_target_metrics import (MeasurementHarness, MeasurementPoint,
-    MetricsError, MIB, derive_thresholds)
+    MetricsError, MIB, derive_thresholds, freeze_release_profile_automatic)
 from tests.test_m4b_mem_001 import sample
 from tests.test_m4b_res_001 import authorization
 
@@ -40,6 +41,18 @@ def test_generate_window_includes_actual_audio_peak():
     result = derive_thresholds(observations(), completed=True, cleanup_proven=True)
     assert result["generate_drop_bytes"] == result["speak_drop_bytes"] == 100 * MIB
     assert result["min_mem_available_generate_bytes"] == 612 * MIB
+
+
+def test_release_freeze_is_automatic_under_current_authority():
+    from pathlib import Path
+    from sbd.cognition.litert_lm.lock import load_product_profile, validate_product_profile
+    profile = load_product_profile(Path("requirements/m4b/product-profile.json"),
+                                   allow_measurement=True)
+    release = freeze_release_profile_automatic(profile, observations(),
+        evidence_sha256="d" * 64, completed=True, cleanup_proven=True)
+    assert release["profile_stage"] == "release"
+    assert release["measurement_evidence_locator"] == "sha256/" + "d" * 64
+    assert validate_product_profile(release) == release
 
 
 def test_early_primary_completion_cannot_hide_audio_peak():
@@ -247,7 +260,97 @@ async def test_native_session_cleanup_honors_outer_watchdog_cancellation():
 def test_cli_missing_inputs_is_blocked_not_a_fake_native_pass(capsys):
     from scripts.m4b_measurement import main
     assert main([]) == 2
-    assert capsys.readouterr().out == '{"status":"Blocked","code":"M4B_MEASUREMENT_NOT_COMPLETE"}\n'
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "Blocked", "code": "M4B_MEASUREMENT_NOT_COMPLETE",
+        "stage": "input_validation",
+    }
+
+
+def test_user_diagnostic_harness_is_explicitly_not_formal_evidence():
+    expected, _auth = authorization()
+    harness = MeasurementHarness(authorization=None, expected_tuple=expected,
+        user_authorized_diagnostic=True, sample=sample, cleanup=lambda: None)
+    assert harness.authorized_tuple == expected
+    assert harness.user_authorized_diagnostic is True
+
+
+@pytest.mark.parametrize("failure_type", [RuntimeError, KeyboardInterrupt])
+def test_user_diagnostic_startup_failure_is_fully_persisted(tmp_path, monkeypatch, capsys, failure_type):
+    from scripts import m4b_measurement
+
+    output = tmp_path / "private"
+    output.mkdir(mode=0o700)
+    existing = tmp_path / "input"
+    existing.write_text("fixture")
+    monkeypatch.setattr(m4b_measurement, "build_native",
+        lambda args, recorder=None: (_ for _ in ()).throw(failure_type("startup detail")))
+    args = []
+    for name in ("audio-config", "runtime-python", "model", "product-profile", "artifact-lock"):
+        args.extend((f"--{name}", str(existing)))
+    args.extend(("--private-output", str(output), "--candidate-sha", "a" * 40,
+                 "--user-authorized-diagnostic"))
+    assert m4b_measurement.main(args) == 2
+    assert json.loads(capsys.readouterr().out.splitlines()[-1])["stage"] == "input_validation"
+    failure = json.loads((output / "failure.json").read_text())
+    assert failure["exception_type"] == failure_type.__name__
+    assert failure["interrupted"] is (failure_type is KeyboardInterrupt)
+    assert failure["exception"] == "startup detail"
+    events = [json.loads(line) for line in (output / "diagnostic-events.jsonl").read_text().splitlines()]
+    assert [row["stage"] for row in events] == [
+        "run_created", "STARTING", "diagnostic_inputs", "run_failed",
+    ]
+    assert f"{failure_type.__name__}: startup detail" in events[-1]["traceback"]
+    assert (output / "partial-series.json").is_file()
+    assert (output / "partial-observations.json").is_file()
+    assert (output / "partial-turns.json").is_file()
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_audio_emits_ready_then_persists_exact_pcm(tmp_path, capsys):
+    from scripts.m4b_measurement import _DiagnosticAudioInput, _DiagnosticRecorder
+
+    class Frames:
+        def __init__(self):
+            self.values = iter((b"\x01\x02" * 320, b"\x03\x04" * 320))
+        def __aiter__(self):
+            return self
+        async def __anext__(self):
+            try:
+                return next(self.values)
+            except StopIteration:
+                raise StopAsyncIteration
+        async def aclose(self):
+            return None
+
+    class Input:
+        _executor = None
+        async def start(self):
+            return None
+        async def stop(self):
+            return None
+        def frames(self):
+            return Frames()
+
+    root = tmp_path / "private"
+    root.mkdir(mode=0o700)
+    recorder = _DiagnosticRecorder(root)
+    audio = _DiagnosticAudioInput(Input(), recorder)
+    stream = audio.frames()
+    assert capsys.readouterr().out == ""  # No false READY before first real frame.
+    assert await anext(stream) == b"\x01\x02" * 320
+    assert await anext(stream) == b"\x03\x04" * 320
+    await stream.aclose()
+    recorder.close()
+    announced = capsys.readouterr().out.splitlines()
+    assert json.loads(announced[0]) == {
+        "status": "Running", "stage": "READY", "turn": 1,
+        "audio_format": "s16le-16000-mono",
+    }
+    assert announced[1] == "========== READY：請現在說話（第 1 輪） =========="
+    assert (root / "input-turn-0001.pcm").read_bytes() == b"\x01\x02" * 320 + b"\x03\x04" * 320
+    events = [json.loads(line) for line in (root / "diagnostic-events.jsonl").read_text().splitlines()]
+    assert [row["stage"] for row in events] == ["run_created", "READY", "audio_input_closed"]
+    assert events[-1]["pcm_bytes"] == 1280
 
 
 def test_target_binding_requires_real_argument_list(monkeypatch):
@@ -270,3 +373,173 @@ def test_private_output_is_exclusive_and_rejects_public_directory(tmp_path):
     root.chmod(0o755)
     with pytest.raises(MetricsError, match="PRIVATE_OUTPUT_INVALID"):
         _write_private(root, "other.json", {})
+
+
+@pytest.mark.asyncio
+async def test_complete_pm_accepts_free_input_and_prints_actual_input_output(tmp_path, capsys):
+    from collections import deque
+    from scripts.m4b_measurement import _DiagnosticRecorder
+    from sbd.perception.listen.asr import ASRResult
+    session, children, calls = _live_worker_session()
+    recorder = _DiagnosticRecorder(tmp_path)
+    session._recorder = recorder
+    session._complete_pm = True
+    session._c.sampler._sample = session._c.sampler.sample
+    # Ten generations reach 900 KV. Free questions and ASR typos must reach
+    # Reasoner, including different wording after replacement; meaning is reviewed.
+    session._c.asr._outcomes = deque(ASRResult(text) for text in
+        ["你是誰?", "台灣最高的三四省樓。", ""] + ["你好"] * 8 +
+        ["你是誰？", "錯的問題", "你是誰", "下一題"])
+    try:
+        result = await session.run()
+    finally:
+        recorder.close()
+    assert result["repeat_verified"] is None
+    assert result["new_conversation_answered"] is True
+    assert result["post_replacement_generated_turns"] == 2
+    assert result["pr_complete"] is result["ph_complete"] is False
+    import hashlib
+    digest = lambda value: hashlib.sha256(value.encode()).hexdigest()
+    generated = [frame["input_sha256"] for frame in children[0].commands if frame["op"] == "GENERATE"]
+    assert digest("錯的問題") in generated
+    assert digest("台灣最高的三四省樓。") in generated
+    assert generated[-2:] == [digest("錯的問題"), digest("你是誰")]
+    terminal = capsys.readouterr().out
+    assert '[第 1 輪｜ASR ok] "你是誰?"' in terminal
+    assert '[第 1 輪｜回覆 KEEP_NEXT] "你好"' in terminal
+    events = [json.loads(line) for line in (tmp_path / "diagnostic-events.jsonl").read_text().splitlines()]
+    assert not any(row["stage"] == "input_retry" for row in events)
+    assert "請說：" not in terminal
+    assert any(row["stage"] == "waiting_for_input" for row in events)
+    assert any(row["stage"] == "context_rejection_proof" for row in events)
+    # The export/import contract is exercised using this explicitly synthetic
+    # runtime session; these fixture artifacts are never native acceptance.
+    from dataclasses import asdict
+    from pathlib import Path
+    from scripts.m4b_measurement import _write_private, _seal_pm_bundle, validate_pm_bundle
+    from sbd.cognition.litert_lm.lock import load_product_profile
+    profile = load_product_profile(Path("requirements/m4b/product-profile.json"), allow_measurement=True)
+    _write_private(tmp_path, "series.json", [asdict(p) for p in session.harness.points])
+    series_digest = hashlib.sha256((tmp_path / "series.json").read_bytes()).hexdigest()
+    release = freeze_release_profile_automatic(profile, session.harness.points,
+        evidence_sha256=series_digest, completed=True, cleanup_proven=True)
+    result.update(pm_complete=True, measurement_series_sha256=series_digest,
+                  release_profile_sha256=release["profile_sha256"])
+    for name, value in (("measurement.json", result), ("measurement-profile.json", profile),
+            ("release-profile.json", release), ("artifact-verification.json", {"verified": True}),
+            ("content-verification.json", {"verified": True}),
+            ("observations.json", session._c.observer.rows), ("turns.json", session._diagnostic_turns)):
+        _write_private(tmp_path, name, value)
+    for turn in session._diagnostic_turns:
+        (tmp_path / f"input-turn-{turn['turn']:04d}.pcm").write_bytes(b"fixture PCM")
+    assert _seal_pm_bundle(tmp_path)["status"] == "PM_INPUT_VALID"
+    (tmp_path / "input-turn-0001.pcm").unlink()
+    with pytest.raises(MetricsError, match="PM_BUNDLE_INVALID"):
+        validate_pm_bundle(tmp_path)
+
+
+def test_changed_artifact_cannot_freeze_measurement(monkeypatch):
+    from scripts import m4b_measurement
+    monkeypatch.setattr(m4b_measurement, "_artifact_snapshot", lambda args: {"model": "changed"})
+    with pytest.raises(MetricsError, match="ARTIFACT_CHANGED_DURING_RUN"):
+        m4b_measurement._verify_measured_artifacts(None, {"model": "original"})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("valid", [True, False, "reported"])
+async def test_auto_fill_uses_real_worker_path_and_never_requests_sixth_human_window(tmp_path, valid):
+    from collections import deque
+    from scripts.m4b_measurement import _DiagnosticRecorder
+    from sbd.perception.listen.asr import ASRResult
+    session, children, _ = _live_worker_session()
+    recorder = _DiagnosticRecorder(tmp_path)
+    session._recorder = recorder
+    session._complete_pm = session._auto_fill = True
+    session._c.sampler._sample = session._c.sampler.sample
+    words = (["你是誰?", "台灣最高的三四省樓。", "自由問句", "下一題", "最後一題"]
+             if valid else [""] * 5)
+    if valid == "reported":
+        words = ["你是誰?", "", "", "台灣最高的三四審文。", "台灣最高的三四省樓。"]
+    session._c.asr._outcomes = deque(ASRResult(word) for word in words + ["不可收第六輪"])
+    try:
+        if valid:
+            result = await session.run()
+            assert result["human_capture_windows"] == 5
+            assert result["automatic_fill_turns"] == (10 if valid == "reported" else 9)
+            assert result["post_replacement_generated_turns"] == (2 if valid == "reported" else 3)
+            assert result["repeat_verified"] is None
+            assert result["new_conversation_answered"] is True
+            assert children[0].runtime.opens == 2
+            assert children[0].runtime.sends == (12 if valid == "reported" else 13)
+            automatic = [r for r in session._diagnostic_turns if r["input_source"] == "automatic_fill"]
+            assert len(automatic) == result["automatic_fill_turns"]
+            assert all(r["audio_turn"] is None for r in automatic)
+            assert automatic[-1]["response"]["post_action_route"] == "REPLACE_NEXT"
+        else:
+            result = await session.run()
+            assert session.human_turns == 5
+            assert result["new_conversation_answered"] is False
+            assert result["post_replacement_generated_turns"] == 0
+            assert result["cleanup_proven"] is True
+            assert session.generated_turns == session.automatic_turns - 1
+        assert [value.text for value in session._c.asr._outcomes] == ["不可收第六輪"]
+    finally:
+        recorder.close()
+
+
+def test_completed_capture_survives_postprocess_error(tmp_path, monkeypatch, capsys):
+    from types import SimpleNamespace
+    from scripts import m4b_measurement as module
+    output = tmp_path / "private"
+    output.mkdir(mode=0o700)
+    profile = tmp_path / "profile.json"
+    profile.write_text("{}")
+    async def run():
+        return {"status": "Measured"}
+    session = SimpleNamespace(run=run, harness=SimpleNamespace(points=[], completed=True, cleanup_proven=True),
+        _c=SimpleNamespace(observer=SimpleNamespace(rows=[])), _diagnostic_turns=[],
+        _diagnostic_stage="session_closing", replacement_completed=True,
+        _repeat_verified=True, post_replacement_generated_turns=2)
+    monkeypatch.setattr(module, "build_native", lambda *args, **kwargs: session)
+    monkeypatch.setattr(module, "_artifact_snapshot", lambda args: {})
+    monkeypatch.setattr(module, "_content_snapshot", lambda args: {})
+    def fail(*args):
+        raise RuntimeError("postprocess failure")
+    monkeypatch.setattr(module, "_verify_measured_artifacts", fail)
+    argv = []
+    for name in ("audio-config", "runtime-python", "model", "product-profile", "artifact-lock"):
+        argv.extend(("--" + name, str(profile)))
+    argv.extend(("--private-output", str(output), "--candidate-sha", "a" * 40,
+                 "--user-authorized-diagnostic", "--complete-pm"))
+    assert module.main(argv) == 0
+    report = json.loads((output / "review-needed.json").read_text())
+    assert report["capture_complete"] is True and report["status"] == "NeedsReview"
+    assert not (output / "failure.json").exists()
+    assert (output / "series.json").exists() and (output / "partial-turns.json").exists()
+    assert "M4B_POSTPROCESS_REVIEW_REQUIRED" in capsys.readouterr().out
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("windows", [1, 2])
+@pytest.mark.parametrize("text", ["自由問句", ""])
+async def test_bounded_voice_windows_do_not_require_pm_profile(tmp_path, windows, text):
+    from collections import deque
+    from scripts.m4b_measurement import _DiagnosticRecorder
+    from sbd.perception.listen.asr import ASRResult
+    session, children, _ = _live_worker_session()
+    recorder = _DiagnosticRecorder(tmp_path)
+    session._recorder = recorder
+    session._diagnostic_windows = session._max_turns = windows
+    session.harness.user_authorized_diagnostic = True
+    session._c.sampler._sample = session._c.sampler.sample
+    session._c.asr._outcomes = deque(ASRResult(word) for word in [text] * windows + ["unused"])
+    try:
+        result = await session.run()
+    finally:
+        recorder.close()
+    assert result["status"] == "DiagnosticComplete"
+    assert result["human_capture_windows"] == windows
+    assert result["automatic_fill_turns"] == 0
+    assert result["derived"] is None
+    assert result["cleanup_proven"] is True
+    assert [v.text for v in session._c.asr._outcomes] == ["unused"]

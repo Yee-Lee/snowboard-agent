@@ -799,23 +799,17 @@ def _target_proof(kind):
             rejected_mutation_count=0, automatic_replay_count=0, old_context_absent=True, new_context_works=True)
     elif kind == "MEM":
         measured = load_product_profile(REPOSITORY / "requirements/m4b/product-profile.json", allow_measurement=True)
-        identity, auth = authorization()
+        identity, _ = authorization()
         identity.update(candidate_sha="a" * 40, profile_sha256=measured["profile_sha256"],
-            harness_sha256=hashlib.sha256((REPOSITORY / "scripts/m4b_target_metrics.py").read_bytes()).hexdigest())
-        for approval in auth["approvals"]:
-            approval["authorized_tuple"] = dict(identity)
-        derived = derive_thresholds(series(), completed=True, cleanup_proven=True)
-        freeze = dict(measurement_profile_sha256=measured["profile_sha256"], evidence_sha256="d" * 64, **derived)
-        approvals = [dict(role=role, reviewer="synthetic-reviewer", approved_at="2026-09-12T12:00:00Z",
-            decision="Approved", freeze_tuple=dict(freeze)) for role in ("Designer", "Tester")]
+            harness_sha256=hashlib.sha256((REPOSITORY / "scripts/m4b_measurement.py").read_bytes()).hexdigest())
         rows = []
         for available, decision in ((523 * 1024**2, "GENERATE"), (523 * 1024**2 - 1, "NOTICE"),
                                    (515 * 1024**2, "NOTICE"), (515 * 1024**2 - 1, "SILENT")):
             observation = asdict(replace(sample(), mem_total_bytes=2000 * 1024**2, mem_available_bytes=available))
             rows.append(dict(sample=observation, decision=decision, generate_calls=int(decision == "GENERATE"),
                 tts_calls=int(decision != "SILENT"), recycle_pending=decision != "GENERATE"))
-        data = dict(measurement_profile=dict(measured), authorization=auth,
-            points=[asdict(p) for p in series()], freeze_approvals=approvals, release_profile=profile,
+        data = dict(measurement_profile=dict(measured), measurement_attestation=identity,
+            points=[asdict(p) for p in series()], release_profile=profile,
             completed=True, cleanup_proven=True, measurement_run_sha256="d" * 64, release_run_sha256="e" * 64,
             release_rows=rows, recovery_ready=True, new_turn_success=True)
     elif kind == "WAKE":
@@ -851,11 +845,8 @@ def _target_proof(kind):
     data = resolve_synthetic_digests(data)
     if kind == "MEM":
         from sbd.cognition.litert_lm.lock import profile_digest
-        raw = json.dumps({"points": data["points"], "completed": data["completed"],
-                          "cleanup_proven": data["cleanup_proven"]}, sort_keys=True).encode()
+        raw = json.dumps(data["points"], sort_keys=True).encode()
         data["measurement_run_sha256"] = hashlib.sha256(raw).hexdigest()
-        for approval in data["freeze_approvals"]:
-            approval["freeze_tuple"]["evidence_sha256"] = data["measurement_run_sha256"]
         profile["measurement_evidence_locator"] = "sha256/" + data["measurement_run_sha256"]
         profile["profile_sha256"] = profile_digest(profile)
         data["release_profile"] = profile
@@ -874,7 +865,7 @@ def _validate_fixture(record, proof):
              for letter in "def"}
     if record["test_id"] == "M4B-PI-MEM-001":
         data = proof["data"]
-        for value in ({"points": data["points"], "completed": data["completed"], "cleanup_proven": data["cleanup_proven"]},
+        for value in (data["points"],
                       {"rows": data["release_rows"], "profile_sha256": data["release_profile"]["profile_sha256"]}):
             raw = json.dumps(value, sort_keys=True).encode()
             blobs[hashlib.sha256(raw).hexdigest()] = raw
@@ -901,7 +892,7 @@ def test_m4b_private_proof_reconciliation_executes_current_structural_rules(kind
     ("CONV", lambda d: d["events"][2]["proofs"].update(kv_released=False)),
     ("CONV", lambda d: d.update(automatic_replay_count=1)),
     ("MEM", lambda d: d["release_rows"][1].update(generate_calls=1)),
-    ("MEM", lambda d: d["freeze_approvals"].pop()),
+    ("MEM", lambda d: d["measurement_attestation"].update(candidate_sha="f" * 40)),
     ("WAKE", lambda d: d["cases"][0]["activity"][0].update(monotonic_ns=1)),
     ("WAKE", lambda d: d["cases"][3].update(cleanup_proven=False)),
     ("TIME", lambda d: d["rows"][0]["events"].update(audio_first_write=0)),

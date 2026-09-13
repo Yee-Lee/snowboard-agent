@@ -3,10 +3,10 @@
 - Updated: 2026-09-13
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B exact-tuple target authorization
-- Next owner: Tester + Designer
-- Developer entry: **Closed — replacement implementation is portable-aligned**
-- Tester target entry: **Pending — independently validate and co-approve the exact measurement tuple before execution**
+- Current stage: M4B measurement-authorization removal coverage delta
+- Next owner: Tester
+- Developer entry: **Closed — opens after the focused Tester coverage delta**
+- Tester target entry: **Open — remove role-approval fixtures and retain automatic exact-tuple safety coverage**
 - Portable-frozen candidate: `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`
   (`origin/core`; portable PASS, not Accepted or target-authorized)
 
@@ -101,20 +101,20 @@ the next gate. PM, PR, PH, native-model, product-card and human evidence remain 
 
 1. **Complete:** Developer rewrite, append-only B1/B2 fixes, exact candidate
    `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`, independent portable PASS and Designer alignment.
-2. **Active:** Tester and Designer independently validate and approve the exact candidate/profile/harness/target
-   measurement tuple after required target artifacts, private config and evidence roots are available.
-3. **Pending:** Tester executes PM only after dual approval; Designer and Tester then derive/freeze thresholds into
-   a release profile before separate PR and PH execution. No target execution is authorized by this handoff.
+2. **Active:** Tester updates only the affected coverage so measurement entry and threshold freeze require no
+   role approval artifact while exact candidate/profile/harness/target attestation remains fail-closed.
+3. **Pending:** Developer implements that delta once, produces a replacement candidate, and Tester executes PM
+   directly after portable verification; PR and PH follow the deterministic profile freeze.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file and `roles/candidate-process.md` | independently validate the complete measurement tuple and co-approve only when all target inputs exist |
+| Designer | this file only | USER-directed design delta complete; do not fabricate Tester approval |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file, `test_spec/test_spec_M4B.md` and `roles/candidate-process.md` | independently validate/co-approve the exact measurement tuple; do not execute PM before dual approval; keep PR/PH Pending |
-| Developer | this file only | no active action; protected inputs at `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` are frozen and any fix is append-only |
+| Tester | this file and `test_spec/test_spec_M4B.md` §5.4 | remove authorization/freeze-approval cases; preserve automatic tuple, target, safety, privacy and rerun checks |
+| Developer | this file only | wait for the focused Tester delta; then remove the obsolete workflow in one append-only candidate |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

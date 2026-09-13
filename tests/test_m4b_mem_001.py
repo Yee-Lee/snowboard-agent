@@ -83,6 +83,41 @@ def test_proc_sampler_never_invents_missing_ownership_or_thermal_sources(tmp_pat
         ProcLLMResourceSampler(tmp_path).sample(child_pid=1, child_pgid=1)
 
 
+def test_proc_sampler_reads_pss_and_rss_from_one_snapshot(tmp_path, monkeypatch):
+    owners = {"core": [1], "vad": [2], "asr": [2], "tts": [3], "llm": [4]}
+    for pid in range(1, 5):
+        _proc(tmp_path, pid, group=77 if pid == 4 else pid)
+    (tmp_path / "meminfo").write_text("MemTotal: 2048 kB\nMemAvailable: 1024 kB\nSwapTotal: 0 kB\nSwapFree: 0 kB\n")
+    (tmp_path / "vmstat").write_text("oom_kill 0\n")
+    sampler = ProcLLMResourceSampler(tmp_path, ownership_registry=lambda: owners,
+        temperature=lambda: 50., throttled=lambda: 0, clock_ticks=100)
+    read = sampler._read
+    reads = []
+    def changing_snapshot(path):
+        if path == tmp_path / "4/smaps_rollup":
+            reads.append(path)
+            return "Pss: 100 kB\nRss: 110 kB\n" if len(reads) == 1 else "Pss: 10 kB\nRss: 20 kB\n"
+        return read(path)
+    monkeypatch.setattr(sampler, "_read", changing_snapshot)
+    result = sampler.sample(child_pid=4, child_pgid=77)
+    assert len(reads) == 1
+    llm = next(p for p in result.processes if "llm" in p.owners)
+    assert (llm.pss_bytes, llm.rss_bytes) == (102400, 112640)
+
+
+def test_invalid_sample_preserves_values_and_reason_for_private_diagnostics():
+    sampler = ProcLLMResourceSampler()
+    before = sample()
+    invalid = replace(sample(stamp=2), processes=(
+        replace(before.processes[0], pss_bytes=200, rss_bytes=100), *before.processes[1:]))
+    with pytest.raises(ResourceSampleError) as caught:
+        sampler.validate_sample(invalid, before)
+    assert caught.value.sample is invalid
+    assert caught.value.previous is before
+    assert caught.value.reason.startswith("pss_exceeds_rss_pid_")
+    assert str(caught.value) == "M4B_RESOURCE_INVALID"
+
+
 @pytest.mark.parametrize("corruption", [None, "swap", "time", "core"])
 def test_M02_audio_rebase_preserves_health_and_non_audio_identity(corruption):
     previous = sample()
