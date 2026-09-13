@@ -3,12 +3,14 @@
 - Updated: 2026-09-13
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B measurement-authorization removal coverage delta
-- Next owner: Tester
-- Developer entry: **Closed — opens after the focused Tester coverage delta**
-- Tester target entry: **Open — remove role-approval fixtures and retain automatic exact-tuple safety coverage**
-- Portable-frozen candidate: `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`
-  (`origin/core`; portable PASS, not Accepted or target-authorized)
+- Current stage: M4B single-PV implementation
+- Next owner: Developer
+- Developer entry: **Open — implement the resolved single-PV mapping; prioritize human-dependent #2, then complete the six automated Test IDs**
+- Tester target entry: **Closed — `TR_spec_M4B_VIII` B1–B5 resolved; execution remains Pending until Developer returns same-bytes Pi verification**
+- Last independently portable-verified candidate: `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`
+  (historical portable PASS baseline; superseded by later protected-input changes)
+- Current integration checkpoint: `4e0a99ce6a71a983bb9ef602c56cb4b5b41dae58`
+  (`origin/core`; WIP only, not a verified candidate or PM/PR/PH PASS)
 
 ## Current disposition
 
@@ -97,24 +99,43 @@ B1/B2 negative paths fail closed. Designer found no design deviation or new high
 resolved [`CR_M4B_II`](../reviews/history/CR_M4B_II.md), and froze protected inputs at this SHA for
 the next gate. PM, PR, PH, native-model, product-card and human evidence remain Pending.
 
+USER superseded the role-approval clauses in `test_spec_M4B.md` §5.4; approval files, reviewer identities,
+timestamps and dual-role freeze records are not implementation requirements. Developer review
+[`IR_dev_M4B_V`](../reviews/history/IR_dev_M4B_V.md) then recorded the newer USER decision that PM, PR and PH must be one
+Pi product-verification stage rather than sequential gates. Designer accepted B1 and revised product §§5.3/11.2:
+one `PV` stage aggregates independently executable Test IDs with visible automated, human and measurement
+sub-results plus deterministic threshold estimates. There is no second release run or separate human stage. The
+estimates do not silently mutate release authority; adopting them is a later focused normal-pipeline delta.
+Tester mapping request [`TR_spec_M4B_VIII`](../reviews/history/TR_spec_M4B_VIII.md) is Resolved. Designer confirmed
+B1–B5: only the three semantic cases require USER participation; every other Test ID is automated; SEM, WAKE and
+RES cases have independent commands and single-case reruns; no Test ID imports another's state or evidence. This
+closes only Test Spec mapping and makes no product-execution or `PV PASS` claim.
+
+Every previously executed PM, PR or PH run is obsolete. Its complete or partial outputs, cards, profiles,
+thresholds, transcripts, statuses and digests are not active evidence and cannot seed, satisfy or influence `PV`.
+The new run uses a new run ID and newly empty private/public evidence roots; historical records remain history only.
+
 ## Ordered exits
 
 1. **Complete:** Developer rewrite, append-only B1/B2 fixes, exact candidate
    `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`, independent portable PASS and Designer alignment.
-2. **Active:** Tester updates only the affected coverage so measurement entry and threshold freeze require no
-   role approval artifact while exact candidate/profile/harness/target attestation remains fail-closed.
-3. **Pending:** Developer implements that delta once, produces a replacement candidate, and Tester executes PM
-   directly after portable verification; PR and PH follow the deterministic profile freeze.
+2. **Complete:** Designer accepted `IR_dev_M4B_V` B1 and replaced the three-stage PM/PR/PH contract with one `PV`
+   stage plus a later focused threshold-adoption delta.
+3. **Complete:** Tester mapped all seven independent Test IDs and case-level SEM/WAKE/RES reruns;
+   `TR_spec_M4B_VIII` B1–B5 are Resolved with no execution or `PV PASS` claim.
+4. **Active:** Developer implements that exact mapped cleanup and the shared PV harness required by Tester's exact
+   commands, prioritizing #2 before the six automated IDs. M4B adds no one-click product launcher. Developer must
+   complete applicable tests on Pi against the same pending bytes before any commit or handoff to Verify.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file only | USER-directed design delta complete; do not fabricate Tester approval |
+| Designer | this file only | single-PV authority and Test Spec mapping resolved; await Developer return |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file and `test_spec/test_spec_M4B.md` §5.4 | remove authorization/freeze-approval cases; preserve automatic tuple, target, safety, privacy and rerun checks |
-| Developer | this file only | wait for the focused Tester delta; then remove the obsolete workflow in one append-only candidate |
+| Tester | this file only | no active mapping action; execution remains Pending after Developer implementation |
+| Developer | this file, `reviews/history/IR_dev_M4B_V.md`, `implement/ch_m4b_llm_production.md` §§5.3/11.2, `test_spec/test_spec_M4B.md` §§2.1–2.2/5–7 | implement resolved `PV` delta; prioritize #2, preserve independent commands/case reruns, and complete same-bytes Pi verification before commit |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

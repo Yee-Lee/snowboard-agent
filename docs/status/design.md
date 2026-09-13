@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / USER-directed measurement-authorization removal designed
-- Developer entry: **Closed — opens after focused Tester coverage delta**
+- State: Foundation verified / single-PV authority and Test Spec mapping resolved / Developer implementation open
+- Developer entry: **Open — implement the resolved `PV` mapping and verify the same bytes on Pi**
 
 ## USER-confirmed direction
 
@@ -194,8 +194,27 @@ Fail/Error/Skip/XFail/XPASS. Matrix SHA-256 is
 confirmed the B1/B2 corrections are limited to the formal portable gate and found no product-design
 deviation or new high-risk regression. Protected inputs are portable-frozen at that SHA.
 
-USER explicitly removed the M4B role-signature workflow. The measurement harness must accept no Designer/Tester
-authorization file, reviewer identity or approval timestamp. Controller and child still fail closed on the exact
-candidate/profile/harness/target tuple, and the complete raw series deterministically produces the release profile;
-a separate clean release rerun remains mandatory. Tester now owns only the focused coverage delta. Developer then
-implements the removal once and produces a replacement candidate before direct PM, PR and PH execution.
+USER explicitly removed the M4B role-signature workflow. The measurement harness accepts no Designer/Tester
+authorization file, reviewer identity or approval timestamp, while controller and child still fail closed on the
+exact content/profile/harness/target tuple. [`IR_dev_M4B_V`](../reviews/history/IR_dev_M4B_V.md) then supplied the newer USER decision that PM, PR and PH
+are one canonical `PV` stage, not three aliases or sequential gates. Designer accepted B1 and revised product
+§§5.3/11.2: independently executable Test IDs produce visible automated, human and measurement sub-results plus
+the deterministic threshold estimates under one aggregate `PV` disposition; there is no release rerun or separate
+human stage. The estimates do
+not mutate profile authority. A later threshold-adoption design/config delta follows the normal pipeline with only
+directly affected verification and no default replay of the accepted corpus. The focused seven-ID mapping is now
+Resolved in [`TR_spec_M4B_VIII`](../reviews/history/TR_spec_M4B_VIII.md); this is a real acceptance-contract change,
+not a role-approval gate.
+
+All earlier PM/PR/PH runs and their partial or complete outputs are obsolete for acceptance. No prior card,
+profile, threshold, transcript, status or digest may enter the new `PV`; it begins under a new run ID with newly
+empty private/public active evidence roots.
+
+Only `M4B-PI-SEM-001` requires USER participation: three independent spoken cases with human-only semantic
+judgment. It is the first implementation and Pi-verification priority. The other six Test IDs are independently
+executable automated acceptance and must not reuse the semantic cases' state or evidence.
+
+Tester corrected all five findings after the first revision was returned. Designer confirmed exactly three
+human-only semantic cases, six automated Test IDs, independent Test-ID state/evidence, separate commands and
+single-case reruns for SEM/WAKE/RES, the actual production WAKE path, eight RES cases and current traceability.
+B1–B5 are Resolved and Developer entry is open. No product execution or `PV` PASS occurred.

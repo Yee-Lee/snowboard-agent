@@ -1,7 +1,6 @@
 # M4B — replacement LLM / Reasoner product design
 
-狀態：**Designer revised for `IR_dev_M4B_IV` / focused ticket-disposal coverage approved /
-Developer entry open**。
+狀態：**Designer complete / single-PV Test Spec mapping resolved / Developer implementation open**。
 
 本文件是 M4B cognition/product replacement 的現行 implementation-design authority。它從已核准的
 [`m4b_foundation_revision`](m4b_foundation_revision.md) 與 `arch.md` 的 Conversation、route、
@@ -237,8 +236,8 @@ the child rejects impossible or internally inconsistent metrics before inference
 ### 5.3 System-memory decision
 
 Immediately before `GENERATE`, the adapter takes one unique-PID memory sample covering Core/controller, ASR,
-TTS and LLM owners plus `MemTotal`, `MemAvailable`, swap, temperature and throttling. The exact target profile
-contains two independently frozen byte thresholds derived from the new vertical slice:
+TTS and LLM owners plus `MemTotal`, `MemAvailable`, swap, temperature and throttling. The eventual release profile
+contains two byte thresholds derived from the new vertical slice and adopted through a later design/config delta:
 
 - `min_mem_available_generate_bytes`: minimum for model generation plus the 128-token reserve.
 - `min_mem_available_speak_bytes`: minimum for the fixed application notice through TTS/playback.
@@ -264,10 +263,14 @@ min_mem_available_generate_bytes = max(
 ```
 
 `ceil_mib` rounds upward to a whole multiple of `1024**2` bytes. Missing lifecycle samples or a stopped/failed
-run cannot derive a value. The harness deterministically freezes both byte values plus their evidence locator into
-`profile_stage="release"` and generates the release profile digest; no role signature or manual approval record is
-an input. A separate clean release run must reproduce the profile identity and exercise both thresholds before the
-result can Pass. Only that release profile is legal for the product candidate. The old `48 MiB owner delta` and
+run cannot derive a value. The single Pi product-verification stage (`PV`) reports both deterministic estimates,
+their evidence locator and exact digests as outputs; no role signature or manual approval record is an input. It
+does not mutate the current profile, create release authority or trigger a second native scenario. Designer may
+later adopt the estimates in a release-profile revision. Tester then maps the newly introduced threshold behavior,
+Developer implements the profile/config delta, and Verify exercises only the directly affected behavior on the
+final same bytes through the normal `Design → Test Spec → Developer → Verify` flow. That later delta is not `PR`
+and does not repeat the accepted semantic/human/context corpus by default. Only a subsequently adopted release
+profile with positive thresholds is legal for normal product composition. The old `48 MiB owner delta` and
 `768 MiB MemAvailable` values are rejected legacy keys.
 
 Decision order:
@@ -523,25 +526,142 @@ Tester must independently specify at least:
 Tests use explicit barriers/events, not wall-clock sleeps. Portable semantic tests use deterministic fakes; they
 do not claim real-model quality.
 
-### 11.2 Pi product evidence
+### 11.2 Single Pi product verification (`PV`)
 
-The clean-checkout exact-SHA target run must:
+One `PV` stage over one tracked-content digest produces one aggregate disposition, but its seven Test IDs are
+independently executable sub-runs rather than one chained scenario. Every Test ID has its own command, fresh setup,
+sub-run ID and evidence partition, and repeats automatic attestation of the common content/target/artifact tuple.
+No Test ID consumes another Test ID's transcript, model state, resource series, threshold, card or completion flag.
+A failed or incomplete Test ID is rerun alone under a new attempt ID; completed siblings remain usable only while
+the protected content and common attested tuple are unchanged. Partial attempts are retained as diagnostics but
+never merged into the active result. The stage contains these seven explicit test groups:
 
-- attest exact model/runtime/ABI/profile/prompt/grammar identity and offline/no-fallback operation;
-- run the public V2D2 cases for identity, factual answer, cannot-see, cannot-tool, positive end, negative end,
-  concise length/personality, plus a genuine follow-up that depends on prior-turn context;
-- human-review answer correctness, capability honesty, explicit-end polarity, Traditional Chinese, personality
-  presence and `spoken_length <=30`; structural JSON success alone cannot PASS;
-- use one Product Session for genuine turns until context admission rejects, complete replacement, ask the user
-  to repeat, and prove the following turn succeeds on the new generation;
-- first run the automatically attested measurement-only harness to sample Engine-ready,
-  Conversation-ready/preparation, pre/post each generation, pre/post replacement and post-session-close points;
-  deterministically freeze the two new memory thresholds with the §5.3 formula, then rerun the candidate through
-  normal release-profile composition;
-- overlap Conversation open only with existing WAKE `準備中` display projection, never active ASR/listen;
-- record the §10 monotonic Audio+LLM timeline and raw observations without adding a response-time target;
-- prove no network, swap growth, OOM/kernel fault, thermal throttling, orphan/owner leak or private-content
-  persistence.
+M4B does not deliver a user-facing one-click product launcher; that belongs to M4C whole-product integration.
+Tester specifies one exact executable verification command per Test ID/case. Those commands may share one PV
+harness/library, but they are acceptance tooling rather than a parallel product entrypoint or shell-launcher family.
+Each command resolves the locked target deployment, performs automatic attestation, creates the fresh
+sub-run/evidence partition, executes one bounded case, performs cleanup and reports the evidence locator. It must
+not require authorization files or select diagnostic/PM/PR/PH modes. Each `M4B-PI-SEM-001` command opens one
+microphone window, completes one answer and exits after cleanup with `NeedsHumanReview`; it never assigns the
+semantic verdict.
+
+1. **`M4B-PI-ATT-001` — content, target and artifact identity**
+   - Create a new run ID and newly empty private/public evidence roots. Reject any prior PM/PR/PH result, partial
+     series, card, frozen profile, threshold, transcript, status or digest as an input to `PV`.
+   - Bind the tracked-content digest, harness digest, evidence root and measurement-profile digest before native
+     import; require the same tuple in the controller, child and final manifest.
+   - Record and verify Raspberry Pi model, OS/kernel, CPU/RAM, target CPython 3.13.5, ABI, SOABI and MULTIARCH.
+   - Verify model, runtime closure, wheel/native files, artifact lock, deployment paths and license/notices by exact
+     filename, size and digest; reject extra, missing, system-site or alternate-endpoint inputs.
+   - Verify profile ID/stage, exact prompt bytes/counts/hashes, grammar, tokenizer, sampling, thread count,
+     direct/reserve/context limits, protocol version and offline flags field by field rather than by digest alone.
+   - READY must repeat the bound identity, prove `pid == pgid`, zero Conversation and no generation prewarm.
+     Any mismatch, dirty/unbound input or fallback is Fail before product behavior is credited.
+
+2. **`M4B-PI-SEM-001` — real-model semantics and human rubric**
+   - Use exactly three independent spoken cases, each with a fresh Conversation, case ID and separate evidence:
+     `S01-IDENTITY` = `你是誰？`; `S02-ENGLISH` = `想要英文進步應該怎麼做？`;
+     `S03-SEVEN-DAYS` = `為什麼一個星期有七天？`.
+   - The human checks only the answer for that case: the first identifies the assistant as 雪板; the second gives
+     relevant, practical English-learning advice; the third gives a coherent explanation of the seven-day week.
+     A failure or recording problem reruns only that case and never the other two.
+   - There is no automatic semantic judge, heuristic scorer or model-as-judge. The runner only preserves the
+     spoken input, ASR transcript, constrained JSON, answer, run identity and evidence needed for human review;
+     the human result is the semantic sub-result.
+   - Raw transcript, JSON and answer remain private. Public evidence contains case ID, digests and the recorded
+     human result without exposing private content or reviewer-identity approval metadata.
+
+3. **`M4B-PI-CONV-001` — genuine context admission and replacement**
+   - Start a fresh, independent Product Session with no input or evidence from the three semantic cases. The script
+     submits `請簡短介紹台灣。` through the real Reasoner/worker/model path and requires one structurally successful
+     answer; it makes no semantic judgment.
+   - The script then sends `請再補充一點。` as clearly labelled new explicit turns through the same real path until
+     exact MEASURE rejects the context equation. Preserve revision, generation and token metrics for every turn.
+   - Prove rejection occurs before mutation or send, the fixed application notice completes, and matching
+     three-part close proof is present before the next OPEN.
+   - Preserve the same Product Session, monotonic non-reused turn IDs, one generation increment and zero overlap
+     between old and new Conversations. Production must never replay the rejected request automatically.
+   - After new-Conversation readiness, the script issues a new explicit input event carrying the rejected test
+     text; this is a new stimulus, not production replay. It and one following explicit normal test turn must reach
+     successful generation. No answer-semantic judgment or human speech is required. Private evidence proves old
+     context absence, while public evidence exposes only counters, digests and booleans.
+
+4. **`M4B-PI-MEM-001` — complete resource series and threshold estimates**
+   - This is a fresh, fully automated sub-run with no microphone input, human judgment or evidence from another
+     Test ID. It may share sampler code but not state, series or disposition with another test.
+   - Use the automatically attested measurement profile with both thresholds null; normal AppConfig composition
+     must reject that profile, and no role authorization/signature artifact is accepted.
+   - Capture unique-PID ownership plus `MemTotal`, `MemAvailable`, swap, temperature and throttling at Engine-ready,
+     Conversation-ready/preparation, before/after every generation, through action/Audio completion, before/after
+     replacement and after session close.
+   - Before every operation enforce the 512 MiB safety floor and stop on swap growth, OOM/kernel fault, throttling,
+     temperature `>= 80 C`, duplicate/missing PID, sampler/identity loss or cleanup failure.
+   - Only a complete valid series may produce `speak_drop_bytes`, `generate_drop_bytes`,
+     `min_mem_available_speak_bytes` and `min_mem_available_generate_bytes` using the exact §5.3 integer formula.
+     Record inputs, results and digests; the estimates do not mutate a profile and do not trigger another run.
+
+5. **`M4B-PI-WAKE-001` — preparation/listen exclusion**
+   - This is a fully automated Pi sub-run with no human trigger or judgment. The script drives controlled GPIO/voice
+     wake stimuli through the actual production wake/readiness path and correlates Display, microphone, ASR and
+     OPEN traces with explicit wake-ack and Conversation-ready barriers; a pure mock-only path cannot Pass.
+   - Conversation preparation may overlap only the existing WAKE `準備中` projection. Before both barriers,
+     require zero audio-frame pull, active listen/ASR, perception worker and Reasoner admission.
+   - Execute four separately rerunnable cases with fresh setup and evidence: `W01-OPEN-FIRST`, `W02-ACK-FIRST`,
+     `W03-SLOW-OPEN` and `W04-INTERRUPT-OPEN`. Display remains nonblocking and adds no Fact, state, turn or model
+     content. The script assigns Pass/Fail from trace assertions; no button press, wake-word speech or visual
+     inspection is required from the USER.
+
+6. **`M4B-PI-TIME-001` — one-clock Audio/LLM timeline**
+   - This is a fresh, fully automated sub-run with no human speech, judgment or evidence from another Test ID. A
+     fixed audio fixture traverses the actual Audio input, ASR, Reasoner, real model, TTS and Audio output path;
+     pure timestamp fakes cannot Pass.
+   - For that turn record `Conversation ready → ASR final → LLM send → first safe text → LLM terminal → TTS PCM
+     ready → Audio first positive write` in one proven monotonic clock domain.
+   - Verify nondecreasing nodes and cross-process clock mapping. Missing or inapplicable nodes must be explicit null
+     with a stable reason; no timestamp may be silently omitted.
+   - Report observations only. There is no response-time Pass ceiling, and first write is not claimed as audible
+     onset.
+
+7. **`M4B-PI-RES-001` — offline, safety, cleanup and privacy**
+   - Split into eight independently executable automated cases; each has fresh setup, case ID, evidence partition
+     and outcome, and a failure reruns only that case:
+     - `R01-OFFLINE`: zero non-loopback network, downloader, telemetry, DNS and fallback attempt from before native
+       import through exit.
+     - `R02-HEALTH`: zero swap growth, OOM/kernel fault, throttling and temperature-stop violation.
+     - `R03-PID`: complete unique-PID ownership with no duplicate, missing owner or owner leak.
+     - `R04-NORMAL-CLOSE`: bounded owner/descendant exit after normal Conversation/session close.
+     - `R05-RECOVERY`: correct planned-recovery order, bounded old-child exit, matching new READY and a usable
+       following child/turn.
+     - `R06-FORCED-CLEANUP`: forced PGID cleanup boundedly reaps every descendant.
+     - `R07-SHUTDOWN`: final shutdown leaves no owner, child, waiter, task or resource handle.
+     - `R08-PRIVACY`: zero private-canary/reversible-encoding hits across logs, public evidence, temporary paths,
+       process arguments, environment and persisted files. Raw evidence remains access-controlled and public
+       evidence uses opaque locators plus SHA-256 only.
+
+The seven Pi evidence Test IDs remain independently visible at assertion level and share only the top-level `PV`
+content/target identity and aggregate disposition; their commands, state and evidence partitions remain separate.
+`PM`, `PR` and `PH` are not aliases or sequential M4B gates. The threshold estimates
+are evidence outputs rather than release-profile authority; their later adoption follows the focused ordinary
+pipeline described in §5.3 without a default replay of the accepted real Audio/model/context/human corpus.
+Any required assertion that is Fail, Blocked, missing or Incomplete fails the combined `PV`; test-function counts
+or success in another group cannot substitute for the missing per-Test-ID result.
+
+The Developer implementation delta for this merge removes the obsolete three-stage selection surface:
+
+- separate-PM bundle validation/export and any PM-to-PR purpose marker;
+- `pm_complete`, `pr_complete` and `ph_complete` result flags or equivalent three-stage completion state;
+- separate release-rerun and PH launch/validation paths;
+- temporary `run-pi-one-turn.sh`, `run-pi-two-turns.sh` and `run-pi-voice.sh` diagnostic launchers;
+- any ability to import an earlier PM/PR/PH profile, threshold, partial series, card, transcript, status or digest
+  into the new `PV` entry.
+
+It does not replace the removed temporary launchers with another M4B one-click shell entry. Reusable execution
+logic belongs in the shared PV harness invoked by Tester-owned exact per-Test-ID commands; M4C remains the sole
+owner of the eventual one-click product startup.
+
+The merge retains and routes shared automatic attestation, measurement, resource sampling, Conversation
+replacement, human-rubric, privacy and cleanup mechanisms through one entry. Historical records may remain as
+history, but active Pi target/evidence roots must contain none of their outputs when a new `PV` begins.
 
 The old 20-separate-session drift experiment, fake first-turn prewarm and fixed recycle-count test are prohibited.
 
@@ -566,8 +686,8 @@ Developer replaces these surfaces from this design and the approved test spec; p
 legacy behavior reuse. Temporary legacy code/test/design inventory is removed at cutover only after replacement
 portable and Pi verification; Git remains the historical reference.
 
-Developer entry was opened after focused architecture/review PASS and independent Tester coverage approval.
-`IR_dev_M4B_IV` subsequently exposed and this revision closes the token-limit ticket-disposal contract. Focused
-Tester coverage was confirmed and resolved in `TR_spec_M4B_VII`; Developer entry is open for the complete package.
-Real product verification also requires the measured target profile with frozen memory thresholds; no legacy
-candidate or POC observation can substitute for that evidence.
+Developer entry is open after focused architecture/review PASS, the resolved ticket-disposal coverage in
+`TR_spec_M4B_VII`, the single-PV authority revision and the resolved mapping in `TR_spec_M4B_VIII`. Developer now
+implements the shared PV harness, independent commands/case reruns and obsolete-stage cleanup. Real product
+verification uses the automatically attested measurement profile and produces threshold estimates as evidence;
+it does not require a pre-frozen release profile or accept legacy candidate/POC observations as substitutes.

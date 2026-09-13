@@ -27,16 +27,31 @@ they never establish real-model quality, target memory, or target timing.
 ### 2.1 Result vocabulary
 
 - **Pass**: every required assertion and forbidden-call assertion passes, all required evidence is
-  present and candidate/profile identities agree.
+  present and the automatically attested tracked-content/harness/profile/target/evidence identities agree.
 - **Fail**: an assertion fails, a forbidden call/artifact occurs, a baseline node is missing, a test
-  is skipped/xfail/xpass, or human semantic review fails any required rubric dimension.
-- **Incomplete**: a required measurement, evidence field, dual-role sign-off, identity, raw series, human
+  is skipped/xfail/xpass, or USER judgment fails a required `M4B-PI-SEM-001` case.
+- **Incomplete**: a required measurement, evidence field, identity, raw series, human
   review, or explicit null reason is missing or invalid. Incomplete never converts to Pass.
-- **Blocked**: the exact candidate, target, artifact, credential-free offline setup, or authorized
+- **Blocked**: the bound tracked content, target, artifact, credential-free offline setup, or access-controlled
   evidence location is unavailable before execution begins.
 
 Test/function counts are not an acceptance criterion. A table-driven function may cover many rows
 only when its result preserves the Test ID, case ID and assertion-level outcome.
+
+`PV` has one final disposition over seven independently executable Pi Test IDs. Every required automated, human
+and measurement result must Pass. Any Fail, missing or Incomplete designated result prevents `PV` Pass; a
+pre-execution Blocked attempt supplies no `PV` credit. Each Test ID has a fresh setup, unique sub-run ID, private
+and public evidence partition and independent outcome. No transcript, state, event, series, card or completion
+flag from one Test ID is an input to another. Only the protected tracked-content/harness/profile/target/artifact
+tuple and the aggregate `PV` identity are shared.
+
+Every product-executing command is the smallest rerun unit and owns a new sub-run/attempt identity plus empty
+private/public partitions. A failed single-command Test ID reruns alone; within `M4B-PI-SEM-001`,
+`M4B-PI-WAKE-001` and `M4B-PI-RES-001`, only the failed independently commanded case reruns. Per-Test-ID case
+aggregation launches no product behavior. Superseded attempts remain visible but cannot satisfy the designated
+result, and the protected tuple remains byte-identical. A stopped, failed, Blocked or Incomplete
+`M4B-PI-MEM-001` sub-run publishes no threshold estimate; another Test ID's result neither supplies nor invalidates
+an independently complete measurement result.
 
 ### 2.2 Execution matrix
 
@@ -45,9 +60,18 @@ only when its result preserves the Test ID, case ID and assertion-level outcome.
 | `PU` | portable unit | Declared Python range `>=3.11,<3.14`; Linux x86_64/aarch64 and macOS arm64; pure Python; no native/model/network | 60 s per Test ID |
 | `PI` | portable integration | Same Python/platform range; deterministic adapter/tokenizer/sampler/action fakes | 90 s per Test ID |
 | `PS` | portable subprocess | Linux x86_64/aarch64 on Python 3.13; fake child in a real POSIX process group | 120 s per Test ID |
-| `PM` | Pi measurement | Raspberry Pi 5 4 GB, Debian 13 aarch64, target CPython 3.13.5, dual-approved measurement profile | 60 min harness safety timeout |
-| `PR` | Pi release | Same target, clean checkout at one exact 40-hex SHA, reviewed release profile | Product watchdogs remain 45/30/2/2/1 s; 30 min scenario timeout |
-| `PH` | Pi human | Same `PR` run and sanitized answer cards | Review completed before run disposition |
+| `PV` | Pi product verification | Raspberry Pi 5 4 GB, Debian 13 aarch64, target CPython 3.13.5; one new aggregate run ID and newly empty private/public roots; automatically attested tracked-content, harness, null-threshold measurement-profile, target and artifact tuple; seven fresh independent sub-runs; USER participation only in the three `M4B-PI-SEM-001` cases | 60 min per Test-ID sub-run; product watchdogs remain 45/30/2/2/1 s; every command has a bounded harness timeout |
+
+`PV` initialization creates the aggregate identity and empty root pair but launches no test. Each Test ID then runs
+from its own exact command in §5, may execute in any order, creates a new `sub_run_id` and fresh Product Session
+where applicable, and writes only its own private/public partition. Automated Test IDs are #1 and #3–#7;
+`M4B-PI-SEM-001` is the only USER-participating Test ID. No Test ID waits for, imports or validates another ID's
+evidence. A failed item reruns by itself; unaffected designated results remain valid only while the protected tuple
+is unchanged. Finalization reads the seven designated result cards solely to aggregate the one `PV` disposition.
+
+Initialization and every sub-run reject pre-existing output in their target partition and any earlier PM/PR/PH
+profile, threshold, partial series, card, transcript, status or digest. No role approval, reviewer identity,
+signature or freeze file is an execution input.
 
 USER runtime disposition (2026-09-12): macOS arm64 is diagnostic-only for the current M4B portable
 candidate. Formal portable sign-off requires the Linux CPython 3.11/3.12/3.13 matrix; Darwin-only
@@ -350,139 +374,245 @@ Additional cases:
 
 ## 5. Pi structural and human evidence plan
 
-These Test IDs are defined now and remain Pending until a clean-checkout exact-SHA candidate and the
-Tester execution gate exist. Portable fake results cannot satisfy them.
+These Test IDs are defined now and remain Pending until the automatically bound tracked content, authenticated
+target, implemented harness and Tester execution gate exist. Portable fake results cannot satisfy them. Initialize
+one aggregate `PV` identity without launching a test:
+
+```text
+python3.13 scripts/run-m4b-pv.py init --pv-run-id <NEW_PV_RUN_ID> --public-root <NEW_EMPTY_PUBLIC_ROOT> --private-root <NEW_EMPTY_PRIVATE_ROOT> --binding-manifest <BINDING_JSON>
+```
+
+`init` fails unless both roots are newly empty and the binding manifest automatically attests the tracked content,
+harness, measurement profile, target and artifacts. The seven Test IDs then run independently in any order. Each
+exact command below requires a new sub-run ID, fresh setup and new empty per-ID partitions. Angle-bracket values are
+execution inputs, not optional flags. No wrapper or retired launcher may replace these commands.
 
 | Test ID | Authority and risk | Layer / timeout | Evidence locator |
 | :--- | :--- | :--- | :--- |
-| `M4B-PI-ATT-001` | Product §§2, 8–9, 11.2; wrong artifact/runtime/profile or fallback | `Pi measurement` (`PR`); 30 min | `cards/M4B-PI-ATT-001.json` |
-| `M4B-PI-SEM-001` | Product §§2.2, 4, 6, 11.2; structural JSON passes but assistant meaning fails | `Pi measurement`, `Pi human` (`PR,PH`); per-turn watchdog + human review | `cards/` and `human/M4B-PI-SEM-001.json` |
-| `M4B-PI-CONV-001` | Product §§5–7, 11.2; real context/replacement/identity behavior diverges | `Pi measurement`, `Pi human` (`PR,PH`); 30 min | `cards/M4B-PI-CONV-001.json` |
-| `M4B-PI-MEM-001` | Product §5.3, §§10–11; unsafe or unauditable threshold derivation | `Pi measurement` (`PM` then separate `PR`); 60+30 min | `cards/M4B-PI-MEM-001.json` |
-| `M4B-PI-WAKE-001` | Product §9.2, §11.2; Conversation preparation overlaps active ASR/listen | `Pi measurement` (`PR`); 30 min | `cards/M4B-PI-WAKE-001.json` |
-| `M4B-PI-TIME-001` | Product §10.2, §11.2; mixed clocks/null omission creates false latency claim | `Pi measurement` (`PR`); 30 min | `cards/M4B-PI-TIME-001.json` |
-| `M4B-PI-RES-001` | Product §§5.3, 7–11; network/resource/private-content leak | `Pi measurement` (`PM,PR`); 60+30 min | `cards/M4B-PI-RES-001.json` |
+| `M4B-PI-ATT-001` | Product §§2, 8–9, 11.2; stale input or wrong content/artifact/runtime/profile/target/root/fallback | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-ATT-001/<sub_run_id>/` |
+| `M4B-PI-SEM-001` | Product §§2.2, 4, 6, 11.2; real answer meaning is unacceptable to USER | three USER-participating fresh-Conversation cases; 60 min Test-ID cap | `<public_root>/<pv_run_id>/M4B-PI-SEM-001/<sub_run_id>/` |
+| `M4B-PI-CONV-001` | Product §§5–7, 11.2; automated context/replacement/identity behavior diverges | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-CONV-001/<sub_run_id>/` |
+| `M4B-PI-MEM-001` | Product §5.3, §§10–11; independent series is incomplete/unsafe or estimate is unauditable | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-MEM-001/<sub_run_id>/` |
+| `M4B-PI-WAKE-001` | Product §9.2, §11.2; scripted preparation overlaps active ASR/listen | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-WAKE-001/<sub_run_id>/` |
+| `M4B-PI-TIME-001` | Product §10.2, §11.2; fresh fixed-audio timeline has mixed clocks or omitted nulls | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-TIME-001/<sub_run_id>/` |
+| `M4B-PI-RES-001` | Product §§5.3, 7–11; independent network/resource/cleanup/privacy case fails | automated `PV` sub-run; 60 min | `<public_root>/<pv_run_id>/M4B-PI-RES-001/<sub_run_id>/` |
 
-The Pi fixture is the authenticated target, Audio path, real LLM child and fixed public utterance
-corpus at one candidate SHA. Required synchronization is explicit per ID: attestation then READY
-before `M4B-PI-ATT-001`; ASR-final, model terminal and action/rest completion before semantic review;
-request-join, close-proof, new READY and human-repeat barriers for `M4B-PI-CONV-001`; signed-snapshot
-completion and freeze approval before release rerun for `M4B-PI-MEM-001`; wake-ack plus OPEN-join for
-`M4B-PI-WAKE-001`; mapped monotonic event capture for `M4B-PI-TIME-001`; and PGID exit, sampler and
-post-close scan completion for `M4B-PI-RES-001`. Bounded waits replace sleeps at every barrier.
+Every command starts its own Engine/child and Product Session where applicable and tears them down before emitting
+its result. It reads only the protected binding manifest and its own case fixtures. Controller, child, result card
+and private manifest repeat the aggregate `pv_run_id`, unique `sub_run_id`, exact protected tuple and own partition
+identity. No Test ID consumes another ID's transcript, turn, state, event, resource series, card or completion flag.
+Bounded named barriers replace correctness sleeps and poll-until-lucky loops.
 
-### 5.1 Exact-SHA preflight and attestation — M4B-PI-ATT-001
+### 5.1 Run bootstrap and automatic attestation — M4B-PI-ATT-001
 
-1. Record clean worktree, exact 40-hex candidate SHA, target OS/kernel/CPU/RAM, target-owned CPython
-   `3.13.5`, SOABI and MULTIARCH. Any dirty tree or identity mismatch is Blocked/Fail.
-2. Authenticate exact candidate/pairing, wheel/native/model filename/size/SHA, license/notices,
-   runtime package closure, four absolute deployment files and release profile digest before child
-   spawn. System-site third-party, extra/missing artifact and alternate endpoint are Fail.
-3. Verify profile field-by-field: `core-m4b-cognition-001`, 57/9/66 prompt counts and three prompt
-   hashes, grammar digest, sampling 0/1, threads 4, direct/reserve/context 32/128/1024, protocol 3,
-   positive reviewed thresholds, release stage and offline flags. A digest-only match is insufficient.
-4. Run in network-isolated mode with syscall/network-attempt capture from before native import through
-   child exit. Require zero non-loopback attempt, downloader, telemetry, DNS or fallback call.
-5. READY must attest the same fields, `pid==pgid`, no Conversation and no prewarm. The sanitized card
-   records identities/digests and counts only; raw paths stay private.
+Exact command:
 
-### 5.2 Public semantic corpus and human rubric — M4B-PI-SEM-001
+```text
+python3.13 scripts/run-m4b-pv.py run --test-id M4B-PI-ATT-001 --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> --public-partition <NEW_EMPTY_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+```
 
-Run the following public utterances through real listen→Reasoner→action behavior. Store raw transcript,
-JSON and answer privately; the public card uses case ID, hashes, `end`, `spoken_length`, structural
-status and rubric booleans only.
-
-| Case | Public utterance | Required semantic result |
+| Case | Stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
-| `H01 identity` | `你是誰？` | Identifies as 雪板; Traditional Chinese; no false capability |
-| `H02 factual` | `一公斤等於幾公克？` | Correctly answers 1000 grams |
-| `H03 cannot-see` | `你看得到我手上拿什麼嗎？` | Explicitly and honestly says it cannot see; does not guess |
-| `H04 cannot-tool` | `幫我查現在的天氣。` | Does not claim a lookup/tool/current result; remains helpful within listen/speak boundary |
-| `H05 positive-end` | `跟我道別，然後結束對話。` | `end=true`; non-empty farewell is spoken fully before rest |
-| `H06 negative-end` | `請解釋「結束」這個詞。` | `end=false`; mention of the word alone does not end session |
-| `H07 concise/personality` | `我第一次學滑雪，有點緊張。` | Warm/natural with a detectable light-humor cue, relevant and `spoken_length<=30` |
-| `H08 context-1` | `台灣最高的山是什麼？` | Correctly answers 玉山, `end=false` |
-| `H09 context-2` | `它大約多高？` in the same Conversation | Correctly resolves `它` to 玉山 and gives approximately 3,952 m; this case cannot be run fresh |
+| `A01-NEW-ROOTS` | Start the ATT command against its new partitions and aggregate initialization record | aggregate roots were empty at initialization; ATT partitions are empty before this sub-run writes; earlier result, partial series, card, profile, threshold, transcript, status or digest is neither selected nor referenced |
+| `A02-BOUND-TUPLE` | Attest before native import, then compare this sub-run's controller, child READY, result card and manifest | one tracked-content, harness, measurement-profile, target, artifact and partition tuple agrees field-for-field and by digest; untracked, dirty-but-unbound or otherwise unaccounted input is Fail |
+| `A03 target-runtime` | Inspect the authenticated target and target-owned interpreter | Raspberry Pi model, Debian/OS/kernel, CPU/RAM, CPython `3.13.5`, ABI, SOABI and MULTIARCH exactly match; identity loss or mismatch is Fail |
+| `A04 artifacts` | Inventory model, runtime closure, wheel/native/artifact lock, deployment files and notices | exact filenames, sizes and digests agree; deployment paths and licenses/notices are present; missing, extra, system-site, alternate-endpoint or fallback input is Fail |
+| `A05 profile-ready` | Compare the profile field-by-field and receive READY | profile ID and `profile_stage="measurement"`; both thresholds null; 57/9/66 prompt counts and three prompt hashes; exact prompt, grammar, tokenizer, sampling 0/1, threads 4, direct/reserve/context 32/128/1024, protocol 3 and offline fields agree; READY repeats the tuple with `pid == pgid`, no Conversation and no prewarm |
+| `A06 obsolete-stage-negative` | Scan tracked content and exercise runner/schema negative inputs for the removed selection surface | no separate-PM bundle validator/export, `pm_complete`/`pr_complete`/`ph_complete` or equivalent flags, PM-to-PR purpose marker, release-rerun path, PH launch/validation path or temporary `run-pi-one-turn.sh`, `run-pi-two-turns.sh`, `run-pi-voice.sh` launcher can select, seed or validate `PV`; retained attestation/sampling/replacement/privacy/human/cleanup mechanisms remain reachable only through the canonical entry |
 
-Human reviewer records for every case: correctness/relevance, capability honesty, end polarity,
-Traditional Chinese, personality applicability/presence, and concise-length compliance. Every
-applicable dimension must Pass. Structural schema, grammar and length checks are automated but do
-not replace human semantic Pass. Missing raw answer, rubric or reviewer identity is Incomplete.
+Run this independent sub-run with syscall/network-attempt capture from before native import through its child exit.
+ATT records only its own bound identity, preflight facts and assertion results. Public cards contain identities,
+digests and counts only; raw paths and environment data remain private. No ATT output gates another Test ID.
+
+### 5.2 Three independent USER semantic cases — M4B-PI-SEM-001
+
+Create one `M4B-PI-SEM-001` sub-run ID, then execute exactly these three case commands. Each command starts a
+fresh Engine/child and fresh Conversation in new empty case-attempt partitions, records one real
+listen→Reasoner→action answer and closes before the next case:
+
+```text
+python3.13 scripts/run-m4b-pv.py run-semantic-case --test-id M4B-PI-SEM-001 --case-id S01-IDENTITY --utterance '你是誰？' --pv-run-id <PV_RUN_ID> --sub-run-id <SEM_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --fresh-conversation
+python3.13 scripts/run-m4b-pv.py run-semantic-case --test-id M4B-PI-SEM-001 --case-id S02-ENGLISH --utterance '想要英文進步應該怎麼做？' --pv-run-id <PV_RUN_ID> --sub-run-id <SEM_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --fresh-conversation
+python3.13 scripts/run-m4b-pv.py run-semantic-case --test-id M4B-PI-SEM-001 --case-id S03-SEVEN-DAYS --utterance '為什麼一個星期有七天？' --pv-run-id <PV_RUN_ID> --sub-run-id <SEM_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --fresh-conversation
+```
+
+Only these three cases require USER speech and judgment. Store the audio, transcript, constrained JSON and answer
+privately. Public evidence contains the case ID, attempt ID, capture digests and USER `Pass`/`Fail` verdict only.
+Answer meaning is human-only: no structural status, automatic semantic assertion, keyword/personality heuristic,
+rubric dimension automation or model-as-judge may accept or reject the answer. Automation may verify only that the
+bound recording and evidence write completed. Recording failure or USER Fail reruns only that case, explicitly and
+with a new case-attempt ID; it never reuses its failed Conversation and never causes another Test ID to run.
 
 ### 5.3 Genuine multi-turn and replacement — M4B-PI-CONV-001
 
-Use one Product Session. Begin with `H08/H09`, continue genuine short questions until exact MEASURE
-reports context-equation rejection, and preserve all per-turn revision/token metrics. Require:
+Exact fully automated command:
 
-- rejection before mutation/send with the exact application context notice;
-- primary action completion, then matching close all-three proof before a new OPEN;
-- same Product Session, monotonic non-reused turn IDs, generation increment exactly once, no overlap;
-- no automatic replay; the human explicitly repeats the rejected request;
-- repeated request succeeds on the new clean generation, and one following normal turn also succeeds;
-- private proof that old context is absent and new-turn context works; public evidence exposes only
-  generation/turn counters, digests and booleans.
+```text
+python3.13 scripts/run-m4b-pv.py run --test-id M4B-PI-CONV-001 --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> --public-partition <NEW_EMPTY_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+```
 
-### 5.4 Measurement, calculation and release rerun — M4B-PI-MEM-001
+This command creates its own Product Session and uses no semantic-case state, evidence, USER speech or human
+judgment.
 
-1. Authenticate a measurement-only profile with `profile_stage="measurement"`, both thresholds null
-   and exact product identity. Before execution, create `measurement-authorization.json` binding
-   `schema_version`, harness SHA-256, candidate SHA, profile SHA-256 and target identity. Tester and
-   Designer each record reviewer identity, approval timestamp and `decision="Approved"` over that
-   exact digest tuple. In this specification, **signed** means this dual-role evidence sign-off; it
-   does not invent a product cryptographic-signature feature. Missing/mismatched approval is Blocked.
-   The completed run manifest adds raw output-file digests without rewriting the authorized tuple.
-   Normal AppConfig/product composition must reject this profile.
-2. In one Product Session capture the complete unique-PID raw series at Engine-ready,
-   Conversation-ready/preparation, pre/post every generation, minimum through primary action/audio
-   completion, pre/post replacement and post-session-close. Enforce the 512 MiB safety floor before
-   every operation and stop on swap increase, OOM/kernel fault, throttling, temperature `>=80 C`,
-   sampler/identity loss or cleanup failure. A stopped/failed/incomplete series derives no threshold.
-3. Recompute from raw integer bytes:
+| Case | Stimulus | Required assertions and forbidden effects |
+| :--- | :--- | :--- |
+| `C01-FIRST` | Script submits `請簡短介紹台灣。` | one structurally successful real-model generation completes; record revision, generation, turn and token metrics; do not score answer meaning |
+| `C02-FILL-nnnn` | Script submits labelled `請再補充一點。` turns with monotonically increasing four-digit labels | each admitted turn is structurally successful without semantic scoring; preserve every revision/generation/token metric until exact MEASURE rejects one labelled request |
+| `C03-REJECT` | Observe the first exact context-equation rejection | rejection occurs before mutation/send; the complete fixed application context notice is the only primary response; the rejected label and text are recorded; no automatic replay occurs |
+| `C04-REPLACE` | Complete the notice and replace the Conversation | action completes before matching three-part close proof; no OPEN precedes proof; Product Session and monotonic non-reused turn IDs persist; generations never overlap and increment exactly once |
+| `C05-RESUBMIT` | Script explicitly resubmits the exact rejected labelled `請再補充一點。` text after new READY | request succeeds structurally on the clean generation; private evidence proves old-context absence; no semantic scoring |
+| `C06-FOLLOWING` | Script submits `請簡短說明台灣的地理位置。` | one following normal turn succeeds structurally in the replacement Conversation; no USER input or judgment |
 
-   ```text
-   speak_drop_bytes = max(pre_speak MemAvailable - minimum through Audio completion)
-   generate_drop_bytes = max(pre_generate MemAvailable - minimum through primary action completion)
-   min_speak = ceil_mib(512 MiB + speak_drop_bytes)
-   min_generate = max(min_speak, ceil_mib(512 MiB + generate_drop_bytes))
-   ```
+### 5.4 Complete measurement series and estimates — M4B-PI-MEM-001
 
-   `ceil_mib(x) = ((x + 1024**2 - 1) // 1024**2) * 1024**2`. Tester and Designer independently
-   reproduce both integers, sign the freeze review, insert values plus the private evidence locator
-   digest into a new release profile, and verify its digest.
-4. Start a separate clean normal product run using only that release profile. Exercise allow,
-   notice/end and silent-rest/end decisions around both thresholds, including planned recovery and a
-   successful new child/turn. Measurement-stage observations cannot Pass this release rerun.
+Exact fully automated command:
+
+```text
+python3.13 scripts/run-m4b-pv.py run --test-id M4B-PI-MEM-001 --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> --public-partition <NEW_EMPTY_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+```
+
+This sub-run creates its own Engine, Product Session, Conversation, sampler and raw series. Its scripted lifecycle
+uses `請簡短介紹台灣。`, labelled `請再補充一點。` turns through exact context rejection and replacement, the
+explicit rejected-text resubmission, one structurally successful following turn and final close. It neither reads
+`M4B-PI-CONV-001` evidence nor waits for a semantic/human result.
+
+| Case | Stimulus | Required assertions and forbidden effects |
+| :--- | :--- | :--- |
+| `M01-PROFILE` | Load the automatically attested profile through this harness and separately attempt normal AppConfig composition | profile identity agrees, `profile_stage="measurement"` and both thresholds are null; normal AppConfig rejects it; no role authorization, reviewer identity, signature, approval or freeze artifact is accepted |
+| `M02-LIFECYCLE` | Execute the complete independent scripted lifecycle above | Engine, Conversation, every generation/action/Audio boundary, replacement, following turn and final close all complete under this sub-run ID; no other Test ID's event or status is referenced |
+| `M03-SERIES` | Sample every lifecycle boundary | complete unique-PID, `MemTotal`, `MemAvailable`, swap, temperature and throttling values exist at Engine-ready, Conversation-ready/preparation, before/after every generation, through every action/Audio completion, before/after replacement and after session close; duplicate/missing PID or sampler/identity loss is Fail |
+| `M04-STOPS` | Evaluate the safety predicate before every new operation | enforce the 512 MiB floor and stop on swap growth, OOM/kernel fault, throttling, temperature `>=80 C`, sampler/identity loss or cleanup failure; no operation begins after a stop condition |
+| `M05-ESTIMATES` | Recompute from this sub-run's unchanged integer series | only a complete valid MEM sub-run derives both drops and estimates; a stopped, failed, Blocked or Incomplete attempt emits explicit nulls with a stable reason; record exact inputs, outputs and digests without mutating a profile or launching another run |
+
+For `M05-ESTIMATES`, recompute exactly:
+
+```text
+speak_drop_bytes = max(pre_speak MemAvailable - minimum through Audio completion)
+generate_drop_bytes = max(pre_generate MemAvailable - minimum through primary action completion)
+min_speak = ceil_mib(512 MiB + speak_drop_bytes)
+min_generate = max(min_speak, ceil_mib(512 MiB + generate_drop_bytes))
+```
+
+`ceil_mib(x) = ((x + 1024**2 - 1) // 1024**2) * 1024**2`. Preserve the complete raw private series and
+sanitized inputs, results and digests. The pair is `PV` evidence output only; it creates no release-profile
+authority and exercises no threshold decision rows in this run.
 
 ### 5.5 WAKE preparation exclusion — M4B-PI-WAKE-001
 
-Use GPIO/voice wake cases with synchronized Display, microphone, ASR and OPEN traces. Conversation
-preparation may overlap only the existing WAKE `準備中` projection. Require zero audio-frame pull,
-active listen/ASR, perception worker or Reasoner admission before both wake acknowledgement and
-matching Conversation readiness/join barriers. Display is nonblocking and adds no Fact, state, turn
-or model content. Repeat with OPEN first, acknowledgement first, slow OPEN and interrupt during OPEN.
+Execute the four cases separately. Each command owns a new case sub-run ID, attempt ID and empty evidence
+partitions:
+
+```text
+python3.13 scripts/run-m4b-pv.py run-wake-case --test-id M4B-PI-WAKE-001 --case-id W01-OPEN-FIRST --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --production-wake-path
+python3.13 scripts/run-m4b-pv.py run-wake-case --test-id M4B-PI-WAKE-001 --case-id W02-ACK-FIRST --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --production-wake-path
+python3.13 scripts/run-m4b-pv.py run-wake-case --test-id M4B-PI-WAKE-001 --case-id W03-SLOW-OPEN --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --production-wake-path
+python3.13 scripts/run-m4b-pv.py run-wake-case --test-id M4B-PI-WAKE-001 --case-id W04-INTERRUPT-OPEN --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup --production-wake-path
+```
+
+The commands drive the actual production GPIO/voice wake ingress and production Display, microphone, ASR, OPEN
+and Conversation-readiness path. The harness may control ordering at the real ingress/barriers, but direct state
+mutation, bypassed production wiring or a pure mock-only path is Fail and cannot produce a designated case card.
+USER speech, button action and judgment are forbidden inputs.
+
+| Case | Wake/order stimulus | Required assertions and forbidden effects |
+| :--- | :--- | :--- |
+| `W01-OPEN-FIRST` | Scripted GPIO wake; OPEN becomes ready before wake acknowledgement | both barriers correlate to the same wake; no active listen path begins until both complete |
+| `W02-ACK-FIRST` | Scripted voice wake; acknowledgement arrives before OPEN | both barriers correlate to the same wake; no active listen path begins until both complete |
+| `W03-SLOW-OPEN` | Scripted GPIO wake with bounded delayed OPEN | preparation may overlap only WAKE `準備中`; no premature active listen path occurs |
+| `W04-INTERRUPT-OPEN` | Scripted voice wake interrupted while OPEN is pending | pending preparation closes without audio pull, active listen/ASR, perception worker or Reasoner admission |
+
+For every row, before both wake acknowledgement and matching Conversation-ready/join barriers require zero
+audio-frame pull, active listen/ASR, perception worker or Reasoner admission. Display is nonblocking and adds no
+product Fact, state, turn or model content. Each case emits its own outcome and can be rerun alone with new case
+identities and partitions. Combine designated case cards without product execution:
+
+```text
+python3.13 scripts/run-m4b-pv.py aggregate-cases --test-id M4B-PI-WAKE-001 --pv-run-id <PV_RUN_ID> --public-partition <WAKE_AGGREGATE_PUBLIC_PARTITION> --private-partition <WAKE_AGGREGATE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON>
+```
 
 ### 5.6 One-clock timeline — M4B-PI-TIME-001
 
-For each valid public turn record in one proven monotonic clock domain:
+Exact fully automated command:
+
+```text
+python3.13 scripts/run-m4b-pv.py run --test-id M4B-PI-TIME-001 --audio-fixture tests/fixtures/m4b/pv/short-taiwan.wav --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> --public-partition <NEW_EMPTY_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+```
+
+`T01-FIXED-AUDIO` uses only the bound fixed-audio fixture containing `請簡短介紹台灣。` and runs a fresh real
+Audio→ASR→model→TTS→Audio path. Record the fixture filename, size and digest, require one structurally successful
+turn without semantic scoring, and accept no USER speech or evidence from another Test ID. `T02-CLOCK-MAP` proves
+controller/child monotonic mapping with bounded capture and no wall-clock substitution. `T03-NODE-ORDER` records:
 
 ```text
 Conversation ready -> ASR final -> LLM send -> first safe text ->
-LLM terminal -> TTS PCM ready -> Audio first write
+LLM terminal -> TTS PCM ready -> Audio first positive write
 ```
 
 Validate nondecreasing applicable nodes and cross-process clock mapping. Every missing/not-applicable
-node is explicit null with a stable reason. Report raw observations only: no latency threshold, no
-PASS based on duration and no claim that Audio first write is audible onset.
+node is explicit null with a stable reason under `T04-NULL-REASON`. Report raw observations only: no latency
+threshold, no PASS based on duration and no claim that Audio first positive write is audible onset. This Test ID
+uses only its own fresh fixed-audio events and terminates its own child after capture.
 
 ### 5.7 Resource, cleanup and privacy — M4B-PI-RES-001
 
-Across both measurement and release runs, require zero network attempt, swap growth, OOM/kernel fault,
-thermal throttle, temperature stop violation, orphan, duplicate PID accounting or owner leak. On
-normal close, planned recovery, forced PGID cleanup and shutdown, prove bounded owner/descendant exit
-and post-recovery success. After session close and final shutdown, scan logs, public evidence, temp
-workdirs, process arguments/environment and persisted files for private-content canaries and reversible
-encodings; require zero hits. Raw private evidence remains access-controlled and is referenced only by
-opaque locator plus SHA-256.
+Execute the eight cases separately. Each command owns a new case sub-run ID, attempt ID, sampler/canaries where
+applicable and empty evidence partitions:
+
+```text
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R01-OFFLINE --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R02-HEALTH --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R03-PID --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R04-NORMAL-CLOSE --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R05-RECOVERY --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R06-FORCED-CLEANUP --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R07-SHUTDOWN --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+python3.13 scripts/run-m4b-pv.py run-resource-case --test-id M4B-PI-RES-001 --case-id R08-PRIVACY --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_CASE_SUB_RUN_ID> --case-attempt-id <NEW_CASE_ATTEMPT_ID> --public-partition <NEW_EMPTY_CASE_PUBLIC_PARTITION> --private-partition <NEW_EMPTY_CASE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON> --fresh-setup
+```
+
+Every command creates and tears down a fresh Engine/child/Product Session as applicable and uses no event, series,
+card or completion flag from another RES case or Test ID.
+
+| Case | Fresh scripted scope | Required assertions and forbidden effects |
+| :--- | :--- | :--- |
+| `R01-OFFLINE` | Capture attempts before native import through one structural turn and exit | zero non-loopback network, downloader, telemetry, DNS, alternate-endpoint or fallback attempt |
+| `R02-HEALTH` | Run one complete generation/action/Audio/close lifecycle with resource sampling | zero swap growth, OOM/kernel fault, throttle or temperature-stop violation; operation stops at `>=80 C` or the 512 MiB laboratory floor |
+| `R03-PID` | Sample all controller/ASR/TTS/LLM owners through one lifecycle | every live owner appears exactly once by unique PID; duplicate/missing PID, identity loss, owner leak or sampler loss is Fail |
+| `R04-NORMAL-CLOSE` | Complete one normal Conversation and Product Session close | matching three-part proof precedes bounded owner/descendant cleanup; zero orphan remains |
+| `R05-RECOVERY` | Script one planned-recovery authorization and rebuild | primary action/rest and matching close proof precede SM authorization; recovery order is correct; new READY and one following structural turn succeed |
+| `R06-FORCED-CLEANUP` | Force the bound child PGID into its cleanup path | bounded forced-PGID owner/descendant exit and owner convergence occur; no rebuild or following-turn assertion belongs to this case |
+| `R07-SHUTDOWN` | Invoke final product shutdown with live sampler and child | bounded owner/descendant and sampler exit; no owner leak or process retains the case partitions |
+| `R08-PRIVACY` | Inject private canaries, complete a structural turn/close/shutdown, then scan | logs, public evidence, temporary paths, argv/environment and persisted files contain zero raw canary or reversible-encoding hit; raw evidence remains access-controlled and public locators are opaque and digested |
+
+Each case emits its own outcome and public/private card pair. Failure reruns only that case with new case identities
+and empty partitions; all other designated RES case cards remain unaffected while protected bytes are unchanged.
+Public evidence contains only that case's assertion outcomes, counts, digests and opaque locators. Combine the
+eight designated case cards without product execution:
+
+```text
+python3.13 scripts/run-m4b-pv.py aggregate-cases --test-id M4B-PI-RES-001 --pv-run-id <PV_RUN_ID> --public-partition <RES_AGGREGATE_PUBLIC_PARTITION> --private-partition <RES_AGGREGATE_PRIVATE_PARTITION> --binding-manifest <BINDING_JSON>
+```
+
+### 5.8 One disposition and later threshold adoption
+
+After seven designated results exist, aggregate without launching product behavior:
+
+```text
+python3.13 scripts/run-m4b-pv.py finalize --pv-run-id <PV_RUN_ID> --public-root <PUBLIC_ROOT> --private-root <PRIVATE_ROOT> --binding-manifest <BINDING_JSON>
+```
+
+The final manifest exposes each Test ID, case and assertion independently, plus `automated_status` for #1/#3–#7,
+`human_status` for #2 and `measurement_status` for #4. It reports `pv_status=Pass` only when all seven designated
+Test-ID results Pass against the identical protected tuple. Aggregate counts, another Test ID or a superseded
+attempt cannot fill a missing result. Failure leaves unrelated designated evidence intact; only the failed
+single-command Test ID or failed SEM/WAKE/RES case reruns, with a fresh setup/attempt identity and no
+protected-byte change. A valid MEM result
+retains its independently derived estimates even while another Test ID awaits correction; an invalid MEM attempt
+has null estimates and cannot be designated.
+
+Successful estimates remain evidence outputs. Later adoption is a new focused
+`Design → Test Spec → Developer → Verify` delta, is not named `PR`, does not treat this `PV` as release-profile
+authority and does not repeat the accepted semantic/human/context corpus by default. Its coverage is limited to
+behavior directly affected by the adopted threshold values, followed by same-bytes Pi verification.
 
 ## 6. Requirement traceability
 
@@ -503,14 +633,19 @@ opaque locator plus SHA-256.
 | Product §11.2 evidence requirement | Pi/human Test IDs |
 | :--- | :--- |
 | artifact/runtime/ABI/profile/prompt/grammar, offline/no fallback | `M4B-PI-ATT-001`, `M4B-PI-RES-001` |
-| V2D2 public semantics and human rubric | `M4B-PI-SEM-001` |
-| genuine multi-turn through replacement and following success | `M4B-PI-CONV-001` |
-| signed measurement, formula/freeze, separate release rerun | `M4B-PI-MEM-001`, `M4B-PI-RES-001` |
-| WAKE preparation but no active ASR/listen overlap | `M4B-PI-WAKE-001` |
-| one-clock Audio+LLM timeline, null reasons, no ceiling | `M4B-PI-TIME-001` |
-| network/swap/OOM/kernel/thermal/orphan/owner/private-content | `M4B-PI-RES-001` |
+| three independent fresh-Conversation USER cases with human-only semantic verdicts | `M4B-PI-SEM-001` |
+| fresh fully automated multi-turn context rejection, replacement, resubmission and following success | `M4B-PI-CONV-001` |
+| automatic attestation, independent complete measurement series and deterministic estimate evidence; no release rerun | `M4B-PI-ATT-001`, `M4B-PI-MEM-001` |
+| four fresh scripted WAKE orderings with no USER trigger and no active ASR/listen overlap | `M4B-PI-WAKE-001` |
+| fresh fixed-audio real Audio/ASR/model/TTS/Audio timeline, null reasons and no ceiling | `M4B-PI-TIME-001` |
+| eight fresh automated offline/health/PID/cleanup/recovery/shutdown/privacy cases | `M4B-PI-RES-001` |
 
 ## 7. Blocking findings
 
-None at specification authoring. All cases and evidence remain Pending until Developer entry, an
-implemented replacement, an exact candidate SHA and the applicable Tester execution gate exist.
+`TR_spec_M4B_VIII` remains Revised pending Designer confirmation. This correction retains accepted B2/B3/B5 and
+addresses the remaining B1/B4 mapping: WAKE W01–W04 and RES R01–R08 now have independent product-executing
+commands, fresh setup, sub-run/attempt identity, empty evidence partitions, individual outcomes and single-case
+reruns; WAKE requires the real production wake/readiness path, and R06 ends at forced-PGID descendant cleanup.
+This is a Test Spec revision only. All cases and evidence remain Pending until Developer entry, an implemented
+harness, bound tracked content and the applicable Tester execution gate exist; no product test ran and no `PV`
+PASS is claimed.

@@ -1,7 +1,6 @@
 # M4B — clean rewrite gates
 
-狀態：**Foundation verified / replacement design Reviewer PASS / portable candidate aligned /
-measurement-authorization removal delta open**。
+狀態：**Foundation verified / single-PV authority and Test Spec mapping resolved / Developer implementation open**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -20,8 +19,10 @@ measurement-authorization removal delta open**。
 | `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
 | `M4B-TEST-COVERAGE` | Tester + Designer | Closed — 2026-09-12 | [`test_spec_M4B`](../test_spec/test_spec_M4B.md)完成11/11 portable與7/7 Pi-human mapping；[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)由Designer確認Resolved |
 | `M4B-DEVELOPMENT-REWRITE` | Developer | Closed — portable aligned 2026-09-13 | [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)於 exact SHA `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` Resolved；Linux aarch64 3.11/3.12/3.13各1005 PASS且零 forbidden outcome |
-| `M4B-MEASUREMENT-AUTHORIZATION-REMOVAL` | Tester + Developer | Open — USER-directed delta | 移除PM前雙角色authorization檔與threshold freeze人工簽核；保留自動exact tuple／target attestation、safety floor、private evidence及獨立release rerun |
-| `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Pending — replacement candidate required | 新candidate完成portable驗證後直接依序執行PM、自動freeze release profile、PR與PH；目前無Pi產品PASS |
+| `M4B-SINGLE-PV-DESIGN` | Designer | Closed — `IR_dev_M4B_V` Resolved | PM/PR/PH合併為一個`PV` stage與一個aggregate disposition；七個Test IDs各自獨立執行，只共享自動attestation identity，不做release rerun |
+| `M4B-SINGLE-PV-COVERAGE` | Tester + Designer | Closed — `TR_spec_M4B_VIII` B1–B5 Resolved | 唯一人工#2、六個全自動Test IDs、SEM/WAKE/RES case-level獨立命令與單案rerun、current traceability/disposition均已映射；無產品執行或PV PASS |
+| `M4B-PRODUCT-VERIFICATION` | Developer → Verify | Active — implementation open | Developer交付共用PV harness供Tester的精確命令使用，不建立M4B一鍵產品launcher；#2優先，其餘自動化，並在commit前以相同bytes完成Pi驗證；目前無Pi產品PASS |
+| `M4B-THRESHOLD-ADOPTION` | Design → Test Spec → Developer → Verify | Pending — after valid `PV` estimates | 另案採用threshold estimates並只驗直接受影響行為；不得稱為PR或預設重跑已接受的產品／人工 corpus |
 
 Gate必須依表列順序解除。Foundation architecture、design與coverage未Closed前，只能準備
 review，不開Developer entry；foundation revision驗證完成後才進M4B cognition/product設計與開發。
@@ -69,7 +70,10 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。
 [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)已在 exact SHA
 `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`完成獨立 portable PASS 與 Designer alignment。
-USER已明確取消角色簽核與authorization JSON。下一步由Tester只修改受影響coverage，再由Developer
-一次移除authorization輸入與雙角色freeze approval，保留自動exact tuple／target驗證。新candidate
-通過portable gate後可直接執行PM；PM與自動release-profile freeze完成前不得執行PR/PH，且此狀態
-不宣稱M4B Accepted。
+USER已明確取消角色簽核與authorization JSON；舊§5.4 approval文字不具gate效力。`IR_dev_M4B_V`
+帶入更新的USER決策後，Designer接受B1並修訂產品§§5.3/11.2：PM、PR、PH不再是三個stage，改由
+一個`PV` aggregate disposition彙整彼此獨立的Test IDs，且不做第二次release run。Tester完成
+`TR_spec_M4B_VIII` B1–B5修正，Designer複審Resolved；Developer現在實作exact mapping並在Pi驗證。
+有效estimates的採用屬後續focused normal pipeline；目前不宣稱PV PASS或M4B Accepted。
+所有先前PM/PR/PH run及其partial/complete outputs一律作廢，不得作為新`PV`的輸入或證據；新run
+必須使用新run ID與空的private/public active evidence roots。
