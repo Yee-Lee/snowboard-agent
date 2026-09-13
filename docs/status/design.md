@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4B clean rewrite
-- State: Foundation verified / cognition-product ticket-disposal revision and focused coverage resolved
-- Developer entry: **Open — complete `CR_M4B_II`**
+- State: Foundation verified / cognition-product portable-aligned / exact-tuple target authorization pending
+- Developer entry: **Closed — exact candidate `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` portable-aligned**
 
 ## USER-confirmed direction
 
@@ -76,8 +76,8 @@ with no Blocking findings in [`IR_review_M4B_III`](../reviews/history/IR_review_
 and acknowledged A3; `M4B-DESIGN-REVIEW` is Closed. Tester produced the replacement
 [`test_spec_M4B`](../test_spec/test_spec_M4B.md); Designer independently confirmed the full mapping and resolved
 [`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md). `M4B-TEST-COVERAGE` is Closed and
-[`CR_M4B_II`](../reviews/CR_M4B_II.md) opens the Developer replacement package. Candidate/Pi acceptance remains
-closed.
+[`CR_M4B_II`](../reviews/history/CR_M4B_II.md) opened and now resolves the Developer replacement package.
+Pi/product acceptance remains open work.
 
 Developer subsequently opened Blocking [`IR_dev_M4B_IV`](../reviews/history/IR_dev_M4B_IV.md): measured token-limit R1
 had no legal wire transition that both kept the Conversation and invalidated its ticket. Designer confirmed the
@@ -185,5 +185,16 @@ and execution evidence remain Pending.
 
 ## Next Designer work
 
-1. Wait for Developer to return `CR_M4B_II` as `Revised` with implementation, portable tests and exact evidence.
-2. Route the portable candidate to independent Tester verification before final alignment.
+Tester independently passed the canonical Linux aarch64 CPython 3.11.16/3.12.14/3.13.15 matrix at
+exact candidate `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`: **1005 passed** per minor and zero
+Fail/Error/Skip/XFail/XPASS. Matrix SHA-256 is
+`2438944bc0ad64f48ae577ca3cd7c2e9ff1c0008174ab8d398459c8293c5fbdb`; profile
+`be9005b5426173243ab1306dc24fb969f1371ff86615286ac1405714a98b49f1` and catalog
+`bcd92cc2019494f3c854337b761585b79cbddd0f0a7d6b381ff8c35f21c2e001` match authority. Designer
+confirmed the B1/B2 corrections are limited to the formal portable gate and found no product-design
+deviation or new high-risk regression. Protected inputs are portable-frozen at that SHA.
+
+Next, Tester and Designer independently validate the exact candidate/profile/measurement-harness/target
+tuple and required target artifacts, private audio-only config and evidence roots before recording dual
+approval. PM must not start before that approval. PR and PH remain Pending until PM completes and both
+roles reproduce and freeze the measured thresholds into a reviewed release profile.

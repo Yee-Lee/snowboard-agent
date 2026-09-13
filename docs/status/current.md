@@ -1,14 +1,14 @@
 # Current handoff
 
-- Updated: 2026-09-12
+- Updated: 2026-09-13
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B portable candidate verification
-- Next owner: Tester
-- Developer entry: **Closed — `CR_M4B_II` returned Revised at the provisional portable candidate**
-- Tester entry: **Open — independently verify exact candidate SHA `9e005e48fe1582c901fcba3eb152747c92c43890`**
-- Provisional portable candidate: `9e005e48fe1582c901fcba3eb152747c92c43890`
-  (`origin/core`; not frozen, Accepted or target-authorized)
+- Current stage: M4B exact-tuple target authorization
+- Next owner: Tester + Designer
+- Developer entry: **Closed — replacement implementation is portable-aligned**
+- Tester target entry: **Pending — independently validate and co-approve the exact measurement tuple before execution**
+- Portable-frozen candidate: `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`
+  (`origin/core`; portable PASS, not Accepted or target-authorized)
 
 ## Current disposition
 
@@ -65,7 +65,7 @@ hashes, `spoken_length` examples and the sorted/unique 99-node baseline. The res
 [`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md) closes `M4B-TEST-COVERAGE`; it contains no execution or
 acceptance claim.
 
-Developer returned work package [`CR_M4B_II`](../reviews/CR_M4B_II.md) **Revised** with WP-01–06 implemented,
+Developer returned work package [`CR_M4B_II`](../reviews/history/CR_M4B_II.md) **Revised** with WP-01–06 implemented,
 including the authorized exact ticket-disposal path. USER authorized commit and push; the resulting provisional
 portable candidate is exact SHA `9e005e48fe1582c901fcba3eb152747c92c43890` on `origin/core`. Designer independently confirmed that the
 candidate contains the declared work-package scope, the local `origin/core` tracking ref resolves to the same full
@@ -88,24 +88,33 @@ requirements, retained all 13 portable Test IDs and found no Blocking coverage g
 their authorization is implemented in the Revised `CR_M4B_II` candidate. No Tester, native or product PASS is
 claimed by this handoff.
 
+Tester independently verified exact candidate `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` on Pi/Linux
+aarch64 with CPython 3.11.16, 3.12.14 and 3.13.15: each canonical run passed **1005** with zero
+Fail/Error/Skip/XFail/XPASS. Matrix SHA-256 is
+`2438944bc0ad64f48ae577ca3cd7c2e9ff1c0008174ab8d398459c8293c5fbdb`; profile and catalog
+digests match approved authority. Exact-SHA runner regression passed 78/78 on every minor and the
+B1/B2 negative paths fail closed. Designer found no design deviation or new high-risk regression,
+resolved [`CR_M4B_II`](../reviews/history/CR_M4B_II.md), and froze protected inputs at this SHA for
+the next gate. PM, PR, PH, native-model, product-card and human evidence remain Pending.
+
 ## Ordered exits
 
-1. **Complete:** Developer returned `CR_M4B_II` Revised and USER authorized provisional candidate
-   `9e005e48fe1582c901fcba3eb152747c92c43890`; no Pi or product acceptance is claimed.
-2. **Active:** Tester independently verifies that exact portable candidate and reports exact results.
-3. Designer resolves implementation findings and performs final portable alignment.
-4. After a separately authorized exact-SHA target gate, Tester executes Pi measurement/release/human evidence;
-   Designer freezes reviewed thresholds and performs final product alignment.
+1. **Complete:** Developer rewrite, append-only B1/B2 fixes, exact candidate
+   `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`, independent portable PASS and Designer alignment.
+2. **Active:** Tester and Designer independently validate and approve the exact candidate/profile/harness/target
+   measurement tuple after required target artifacts, private config and evidence roots are available.
+3. **Pending:** Tester executes PM only after dual approval; Designer and Tester then derive/freeze thresholds into
+   a release profile before separate PR and PH execution. No target execution is authorized by this handoff.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file only | wait for independent Tester portable results; do not claim candidate acceptance |
+| Designer | this file and `roles/candidate-process.md` | independently validate the complete measurement tuple and co-approve only when all target inputs exist |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file, `test_spec/test_spec_M4B.md`, `reviews/CR_M4B_II.md` and `roles/candidate-process.md` | independently verify exact SHA `9e005e48fe1582c901fcba3eb152747c92c43890`; keep target/human rows Pending |
-| Developer | this file only | wait for Tester findings; candidate protected inputs are immutable and fixes must be append-only |
+| Tester | this file, `test_spec/test_spec_M4B.md` and `roles/candidate-process.md` | independently validate/co-approve the exact measurement tuple; do not execute PM before dual approval; keep PR/PH Pending |
+| Developer | this file only | no active action; protected inputs at `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` are frozen and any fix is append-only |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

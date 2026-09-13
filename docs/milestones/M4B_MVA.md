@@ -1,7 +1,7 @@
 # M4B — clean rewrite gates
 
-狀態：**Foundation verified / replacement design Reviewer PASS / Tester coverage approved /
-Developer rewrite open**。
+狀態：**Foundation verified / replacement design Reviewer PASS / portable candidate aligned /
+exact-tuple target authorization pending**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -19,8 +19,8 @@ Developer rewrite open**。
 | `M4B-ARCH-REVIEW` | Architect + Designer | Closed — 2026-09-12 | [`AR_impl_M4B_IV`](../reviews/history/AR_impl_M4B_IV.md)確認SM授權planned-recovery時序；Designer對齊§5.3；`arch.md`無修改 |
 | `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
 | `M4B-TEST-COVERAGE` | Tester + Designer | Closed — 2026-09-12 | [`test_spec_M4B`](../test_spec/test_spec_M4B.md)完成11/11 portable與7/7 Pi-human mapping；[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)由Designer確認Resolved |
-| `M4B-DEVELOPMENT-REWRITE` | Developer | Open | 依[`CR_M4B_II`](../reviews/CR_M4B_II.md)重寫M4B implementation/portable tests；不得宣稱candidate/Pi acceptance |
-| `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Blocked | portable與Pi exact-SHA結果完成，Designer確認對齊 |
+| `M4B-DEVELOPMENT-REWRITE` | Developer | Closed — portable aligned 2026-09-13 | [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)於 exact SHA `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` Resolved；Linux aarch64 3.11/3.12/3.13各1005 PASS且零 forbidden outcome |
+| `M4B-PRODUCT-VERIFICATION` | Tester + Designer | Open — target authorization pending | portable protected inputs已freeze；先雙角色核准exact measurement tuple，再依序執行PM、freeze release profile、PR與PH；目前無Pi產品PASS |
 
 Gate必須依表列順序解除。Foundation architecture、design與coverage未Closed前，只能準備
 review，不開Developer entry；foundation revision驗證完成後才進M4B cognition/product設計與開發。
@@ -65,6 +65,8 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 `AR_impl_M4B_IV`已Resolved且`arch.md`無修改；[`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md)
 對replacement product authority與direct mappings判定PASS／0 Blocking，Designer已處理三項Advisory。
-Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。Developer
-現在依[`CR_M4B_II`](../reviews/CR_M4B_II.md)實作replacement與portable tests；完成獨立驗證前不得建立
-產品candidate、執行Pi/human acceptance或宣稱M4B PASS。
+Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。
+[`CR_M4B_II`](../reviews/history/CR_M4B_II.md)已在 exact SHA
+`9ffd6e17ad5504d53c7c18799ca4718f69988f7e`完成獨立 portable PASS 與 Designer alignment。
+下一步只開 exact-tuple target authorization；雙角色批准前不得執行PM，PM與release-profile freeze
+完成前不得執行PR/PH，且此狀態不宣稱M4B Accepted。

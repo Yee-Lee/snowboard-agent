@@ -1,7 +1,7 @@
 ---
 requestor: Designer
 owner: Developer
-status: Revised
+status: Resolved
 severity: Blocking
 ---
 
@@ -10,7 +10,7 @@ severity: Blocking
 - Date: 2026-09-12
 - Gate: `M4B-DEVELOPMENT-REWRITE`
 - Activation: **Active after this work package and its linked authority are present in the Developer checkout**
-- Candidate status: none; this is implementation work, not product acceptance
+- Candidate status: portable-aligned at `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`; not target-authorized or Accepted
 
 ## Authority and entry
 
@@ -387,3 +387,50 @@ No commit or push was made. Because both changed files are protected candidate i
 `1eefd97dd9866f804d07be6aacddb6948d05b6e1` remains immutable and rejected. After an authorized
 append-only commit creates a new exact candidate, Tester must rerun the complete formal Linux
 CPython 3.11/3.12/3.13 canonical matrix from fresh evidence roots. PM/PR/PH remain Pending.
+
+## Tester final portable disposition — 2026-09-13
+
+Disposition for exact candidate `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`: **PASS**. Tester
+verified a detached clean Pi/Linux aarch64 checkout after confirming `origin/core` resolved to the
+same SHA. The candidate-owned canonical runner produced the following independently bound results:
+
+| Runtime | Passed | Failed | Errors | Skipped | XFailed | XPassed | Status |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |
+| CPython 3.11.16 | 1005 | 0 | 0 | 0 | 0 | 0 | Pass |
+| CPython 3.12.14 | 1005 | 0 | 0 | 0 | 0 | 0 | Pass |
+| CPython 3.13.15 | 1005 | 0 | 0 | 0 | 0 | 0 | Pass |
+
+The matrix index is Pass and has SHA-256
+`2438944bc0ad64f48ae577ca3cd7c2e9ff1c0008174ab8d398459c8293c5fbdb`. It binds profile
+`be9005b5426173243ab1306dc24fb969f1371ff86615286ac1405714a98b49f1` and catalog
+`bcd92cc2019494f3c854337b761585b79cbddd0f0a7d6b381ff8c35f21c2e001`. Per-runtime result/JUnit
+SHA-256 pairs are `b4f5995cff1a2ae91552da908bad79395c8be0f739de7bec7b57040c846b106b` /
+`18934470590750efdac71ab84452e0eae92a57d414f0094f039b7774171d8451` (3.11),
+`445cd41ae2ce54b250e0032b93cc75047a475cbe01883e953ef76b6dd8d69b81` /
+`e5825462fe69f19d70adf24d8b37a51559335170842c98988a5a4fca92001527` (3.12), and
+`8b28b9334f5cb66efffc5a9af8c8db3cb536b2c555edd9301df0c20b34a415db` /
+`7cda894b33c651736250666dfacfaf0022e9314eed3ebb9d40863b324e8e31c6` (3.13).
+
+Exact-SHA runner regression independently passed **78/78** on every minor. Each JUnit contains the
+real-XPASS rejection, noncanonical-suite rejection and forged-XPASS matrix rejection rows; their
+JUnit SHA-256 values are `cdd8f8792d890add81bbb3458e283864d902609a21d6570113f691d73d635da4`,
+`23bcec1ee5411673142eb4a822cb914835a4d3b1dc22a55c49911bf83bde289f` and
+`7b76593c46e034d9d6c41e687ed7cf120abb095327c3dff2b931f843bc843bd1`. A direct exact-candidate
+noncanonical selector probe also exited 1 before execution. Evidence directories were mode `0700`;
+raw logs remain private and only digests are recorded here.
+
+B1 and B2 are resolved for portable verification. This PASS does not execute or authorize PM, PR,
+PH, native model, product-card or human rows. Next owner is Designer for final portable alignment
+and the separately reviewed exact-tuple target authorization gate.
+
+## Designer resolution — 2026-09-13
+
+Status: **Resolved for the implementation and portable gate**. Designer confirmed the exact candidate,
+profile and catalog identities match approved authority; all three required Linux minors have zero
+forbidden outcome; the exact-SHA 78-row runner regressions and direct noncanonical selector probe close
+B1/B2; and the append-only corrections introduce no product-design deviation or new high-risk regression.
+Protected inputs are portable-frozen at `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`.
+
+This resolution closes `M4B-DEVELOPMENT-REWRITE` only. PM, PR, PH, native-model, product-card and human
+evidence remain Pending. The next independent point is dual-role validation and approval of the exact
+candidate/profile/measurement-harness/target tuple; no target execution or M4B acceptance is claimed.
