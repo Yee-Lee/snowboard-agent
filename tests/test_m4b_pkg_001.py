@@ -33,10 +33,10 @@ from sbd.cognition.litert_lm.lock import RuntimeClosure, RuntimeFile
 
 
 def test_native_target_scenarios_require_explicit_measurement_inputs(monkeypatch):
-    from tests.m4b_target_cases import require_native_scenario_binding
-    monkeypatch.delenv("M4B_MEASUREMENT_ARGS", raising=False)
-    with pytest.raises(ProductFailure, match="M4B_MEASUREMENT_INPUTS_MISSING"):
-        require_native_scenario_binding()
+    from tests.m4b_target_cases import require_pv_binding
+    monkeypatch.delenv("M4B_PV_ARGS", raising=False)
+    with pytest.raises(ProductFailure, match="M4B_PV_INPUTS_MISSING"):
+        require_pv_binding()
 
 
 def test_preflight_cli_rejects_retired_product_config():

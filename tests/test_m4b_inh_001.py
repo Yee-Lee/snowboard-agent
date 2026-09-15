@@ -39,5 +39,3 @@ def test_target_metadata_cannot_inherit_portable_evidence():
     r = record("M4B-PI-MEM-001")
     with pytest.raises(InheritanceError):
         validate_result_record(r, candidate_sha="a" * 40, profile_sha256="b" * 64)
-    r.update(matrix="PR", platform="pi5-4gb-debian13-aarch64", python="3.13.5")
-    assert validate_result_record(r, candidate_sha="a" * 40, profile_sha256="b" * 64) == r

@@ -14,16 +14,15 @@ import pytest
 
 from scripts.candidate_gate import (
     GateFailure,
-    M4B_CARD_REQUIRED,
     M4B_CANONICAL_SUITE,
     M4B_PORTABLE_IDS,
     Repository,
     _network_attempt_count,
     _m4b_foundation_evidence,
+    _finalize_acceptance_cards,
     _m4b_profile_identity,
     _m4b_source_audit,
     _m4b_test_id_evidence,
-    _validate_m4b_card,
     m4b_catalog_paths,
     m4b_collection_audit,
     portable,
@@ -671,45 +670,6 @@ def test_m4a_network_trace_counts_only_destination_bearing_inet_attempts(
         _network_attempt_count(tmp_path / "absent.log")
 
 
-def test_m4b_acceptance_cards_require_every_test_spec_evidence_field() -> None:
-    assert set(M4B_CARD_REQUIRED) == {f"M4B-PI-{name}-001" for name in
-                                    ("ATT", "SEM", "CONV", "MEM", "WAKE", "TIME", "RES")}
-    for test_id, fields in M4B_CARD_REQUIRED.items():
-        with pytest.raises(GateFailure, match="METADATA_INVALID"):
-            _validate_m4b_card({"candidate_sha": "a" * 40, "test_id": test_id})
-        assert {"profile_sha256", "evidence_sha256", "case_id"}.issubset(fields)
-
-
-@pytest.mark.parametrize("test_id", [
-    "M4B-RDY-001", "M4B-GEN-001", "M4B-OUT-001", "M4B-P5-001",
-    "M4B-CAN-001", "M4B-REC-001", "M4B-HIST-001", "M4B-PRIV-001",
-    "M4B-OFF-001", "M4B-RES-001", "M4B-PKG-001",
-])
-def test_m4b_retired_card_ids_cannot_satisfy_current_acceptance(test_id):
-    with pytest.raises(GateFailure, match="RETIRED_OR_UNKNOWN"):
-        _validate_m4b_card({"test_id": test_id, "candidate_sha": "a" * 40, "status": "Pass"})
-
-
-def _current_m4b_record():
-    return dict(schema_version=1, test_id="M4B-PI-MEM-001", case_id="M01",
-        candidate_sha="a" * 40, profile_id="core-m4b-cognition-001", profile_sha256="b" * 64,
-        matrix="PR", platform="pi5-4gb-debian13-aarch64", python="3.13.5",
-        start_monotonic_ns=1, end_monotonic_ns=2, status="Pass", evidence_sha256="c" * 64)
-
-
-def test_m4b_well_formed_metadata_does_not_fabricate_native_acceptance():
-    with pytest.raises(GateFailure, match="PRIVATE_PROOF_INCOMPLETE"):
-        _validate_m4b_card(_current_m4b_record())
-
-
-@pytest.mark.parametrize("changes", [
-    {"private_path": "/tmp/canary"}, {"text": "private"}, {"matrix": "PU"},
-    {"python": "3.13.15"}, {"profile_sha256": "invalid"}, {"prewarm_latency_ms": 1},
-    {"r14_formula_version": "retired"}, {"status": "Waived"}, {"end_monotonic_ns": 0},
-])
-def test_m4b_card_rejects_private_extra_fields_and_wrong_scope(changes):
-    with pytest.raises(GateFailure, match="METADATA_INVALID"):
-        _validate_m4b_card({**_current_m4b_record(), **changes})
 
 
 def _m4b_product_preflight():
@@ -748,160 +708,12 @@ def test_m4b_runner_preflight_rejects_retired_or_mismatched_identity(changes):
         validate_m4b_product_preflight({**_m4b_product_preflight(), **changes}, "a" * 40)
 
 
-def _release_profile():
-    from sbd.cognition.litert_lm.lock import load_product_profile, profile_digest
-    result = dict(load_product_profile(REPOSITORY / "requirements/m4b/product-profile.json", allow_measurement=True))
-    result.update(profile_stage="release", min_mem_available_speak_bytes=515 * 1024**2,
-        min_mem_available_generate_bytes=523 * 1024**2,
-        measurement_evidence_locator="sha256/" + hashlib.sha256(b"synthetic-raw-d").hexdigest())
-    result["profile_sha256"] = profile_digest(result)
-    return result
-
-
-def _target_proof(kind):
-    from dataclasses import asdict, replace
-    from sbd.cognition.litert_lm.lock import LLMArtifactLock, EXPECTED_RUNTIME, EXPECTED_MODEL, load_product_profile
-    from scripts.m4b_target_metrics import derive_thresholds
-    from tests.test_m4b_res_001 import series, authorization
-    from tests.test_m4b_mem_001 import sample
-    from sbd.cognition.observability import TIMING_NODES
-    profile = _release_profile()
-    if kind == "ATT":
-        lock = LLMArtifactLock.load(REPOSITORY / "requirements/m4b/llm-artifacts.json")
-        lock_data = json.loads((REPOSITORY / "requirements/m4b/llm-artifacts.json").read_bytes())
-        artifacts = {name: EXPECTED_RUNTIME[name] for name in
-            ("wheel_filename", "wheel_size_bytes", "wheel_sha256", "native_relative_path", "native_size_bytes", "native_sha256")}
-        artifacts.update(model_filename=EXPECTED_MODEL["filename"], model_size_bytes=EXPECTED_MODEL["size_bytes"],
-            model_sha256=EXPECTED_MODEL["sha256"], lock_sha256=lock.digest,
-            runtime_manifest_sha256=lock_data["runtime_closure"]["manifest_sha256"], runtime_file_count=14,
-            notice_sha256=lock_data["licenses"]["notice_sha256"])
-        data = dict(profile=profile, ready_identity=dict(lock.ready_identity(profile).fields),
-            artifacts=artifacts,
-            target=dict(clean_worktree=True, candidate_sha="a" * 40, platform="pi5-4gb-debian13-aarch64",
-                python="3.13.5", soabi="cpython-313-aarch64-linux-gnu", multiarch="aarch64-linux-gnu",
-                pid=4, pgid=4, prewarm_count=0, conversation_count=0, kernel_sha256="e" * 64,
-                deployment_files_verified=True, system_site_packages=False, extra_artifact_count=0, alternate_endpoint_count=0),
-            capture=dict(before_native_import=True, through_child_exit=True, network_attempts=0,
-                downloader_calls=0, telemetry_calls=0, dns_calls=0, fallback_calls=0))
-    elif kind == "SEM":
-        cases = [dict(case_id=f"H{i:02}", answer_sha256="e" * 64, end=i == 5, spoken_length=10,
-            structural_pass=True, conversation_generation=1, turn_index=i, farewell_before_rest=True if i == 5 else None,
-            rubric=dict(reviewer="synthetic-reviewer", correct_relevant=True, capability_honest=True,
-                end_polarity=True, traditional_chinese=True, concise=True,
-                personality_applicable=i == 7, personality_present=True if i == 7 else None)) for i in range(1, 10)]
-        data = dict(cases=cases)
-    elif kind == "CONV":
-        names = ["context_rejected", "primary_terminal", "close_proven", "open_ready", "human_repeat", "repeat_success", "following_success"]
-        data = dict(events=[dict(event=name, monotonic_ns=i, generation=1 if i < 3 else 2,
-            turn_index=1 if i < 4 else 2 if i < 6 else 3,
-            proofs=dict(closed=True, history_clear=True, kv_released=True) if i == 2 else None)
-            for i, name in enumerate(names)], same_product_session=True, rejected_send_count=0,
-            rejected_mutation_count=0, automatic_replay_count=0, old_context_absent=True, new_context_works=True)
-    elif kind == "MEM":
-        measured = load_product_profile(REPOSITORY / "requirements/m4b/product-profile.json", allow_measurement=True)
-        identity, _ = authorization()
-        identity.update(candidate_sha="a" * 40, profile_sha256=measured["profile_sha256"],
-            harness_sha256=hashlib.sha256((REPOSITORY / "scripts/m4b_measurement.py").read_bytes()).hexdigest())
-        rows = []
-        for available, decision in ((523 * 1024**2, "GENERATE"), (523 * 1024**2 - 1, "NOTICE"),
-                                   (515 * 1024**2, "NOTICE"), (515 * 1024**2 - 1, "SILENT")):
-            observation = asdict(replace(sample(), mem_total_bytes=2000 * 1024**2, mem_available_bytes=available))
-            rows.append(dict(sample=observation, decision=decision, generate_calls=int(decision == "GENERATE"),
-                tts_calls=int(decision != "SILENT"), recycle_pending=decision != "GENERATE"))
-        data = dict(measurement_profile=dict(measured), measurement_attestation=identity,
-            points=[asdict(p) for p in series()], release_profile=profile,
-            completed=True, cleanup_proven=True, measurement_run_sha256="d" * 64, release_run_sha256="e" * 64,
-            release_rows=rows, recovery_ready=True, new_turn_success=True)
-    elif kind == "WAKE":
-        data = dict(cases=[])
-        for name in ("open_first", "ack_first", "slow_open", "interrupt_open"):
-            interrupted = name == "interrupt_open"
-            data["cases"].append(dict(case=name, wake_ack_ns=2 if name == "open_first" else 1,
-                open_ready_ns=None if interrupted else 1 if name == "open_first" else 2,
-                open_join_ns=None if interrupted else 3,
-                activity=[] if interrupted else [dict(kind=k, monotonic_ns=4) for k in
-                    ("audio_pull", "listen", "asr", "perception", "reasoner")],
-                display_blocked=False, display_fact_count=0, display_turn_count=0, cleanup_proven=True))
-    elif kind == "TIME":
-        data = dict(rows=[dict(clock_domain="controller_monotonic", events=dict(zip(TIMING_NODES, range(7))), null_reasons={})],
-                    clock_mapping_sha256="d" * 64, mapping_verified=True)
-    else:
-        data = dict(runs=[dict(stage=stage, run_sha256=digest * 64, network_attempts=0, swap_growth_bytes=0,
-            oom_delta=0, kernel_faults=0, throttled_bits=0, temperature_stop_violations=0, orphans=0,
-            duplicate_pids=0, owner_leaks=0) for stage, digest in (("measurement", "d"), ("release", "e"))],
-            cleanup=[dict(kind=k, start_ns=1, exit_ns=2, deadline_ns=3, remaining_owners=0,
-                remaining_descendants=0, recovery_success=True) for k in
-                ("normal_close", "planned_recovery", "forced_pgid", "shutdown")],
-            scan=dict(domains=["logs", "public_evidence", "temp_workdirs", "process_arguments", "process_environment", "persisted_files"],
-                post_session_close=True, post_shutdown=True, reversible_encodings=True, hits=0, manifest_sha256="f" * 64))
-    def resolve_synthetic_digests(value):
-        if isinstance(value, dict):
-            return {k: resolve_synthetic_digests(v) for k, v in value.items()}
-        if isinstance(value, (list, tuple)):
-            return [resolve_synthetic_digests(v) for v in value]
-        if isinstance(value, str) and value in {letter * 64 for letter in "def"}:
-            return hashlib.sha256(f"synthetic-raw-{value[0]}".encode()).hexdigest()
-        return value
-    data = resolve_synthetic_digests(data)
-    if kind == "MEM":
-        from sbd.cognition.litert_lm.lock import profile_digest
-        raw = json.dumps(data["points"], sort_keys=True).encode()
-        data["measurement_run_sha256"] = hashlib.sha256(raw).hexdigest()
-        profile["measurement_evidence_locator"] = "sha256/" + data["measurement_run_sha256"]
-        profile["profile_sha256"] = profile_digest(profile)
-        data["release_profile"] = profile
-        raw = json.dumps({"rows": data["release_rows"], "profile_sha256": profile["profile_sha256"]}, sort_keys=True).encode()
-        data["release_run_sha256"] = hashlib.sha256(raw).hexdigest()
-    record = {**_current_m4b_record(), "test_id": f"M4B-PI-{kind}-001", "profile_sha256": profile["profile_sha256"]}
-    proof = dict(schema_version=1, test_id=record["test_id"], candidate_sha=record["candidate_sha"],
-                 profile_sha256=record["profile_sha256"], data=data)
-    return record, proof
-
-
-def _validate_fixture(record, proof):
-    payload = json.dumps(proof).encode()
-    record = {**record, "evidence_sha256": hashlib.sha256(payload).hexdigest()}
-    blobs = {hashlib.sha256(f"synthetic-raw-{letter}".encode()).hexdigest(): f"synthetic-raw-{letter}".encode()
-             for letter in "def"}
-    if record["test_id"] == "M4B-PI-MEM-001":
-        data = proof["data"]
-        for value in (data["points"],
-                      {"rows": data["release_rows"], "profile_sha256": data["release_profile"]["profile_sha256"]}):
-            raw = json.dumps(value, sort_keys=True).encode()
-            blobs[hashlib.sha256(raw).hexdigest()] = raw
-    blobs[record["evidence_sha256"]] = payload
-    _validate_m4b_card(record, evidence_resolver=blobs.__getitem__)
-
-
-@pytest.mark.parametrize("kind", ["ATT", "SEM", "CONV", "MEM", "WAKE", "TIME", "RES"])
-def test_m4b_private_proof_reconciliation_executes_current_structural_rules(kind):
-    record, proof = _target_proof(kind)
-    _validate_fixture(record, proof)
-    with pytest.raises(GateFailure, match="PRIVATE_PROOF_INVALID"):
-        _validate_m4b_card(record, evidence_resolver=lambda _: b"corrupt")
-    proof["candidate_sha"] = "f" * 40
-    with pytest.raises(GateFailure, match="PRIVATE_PROOF_INVALID"):
-        _validate_fixture(record, proof)
-
-
-@pytest.mark.parametrize("kind,mutate", [
-    ("ATT", lambda d: d["capture"].update(network_attempts=1)),
-    ("ATT", lambda d: d["target"].update(prewarm_count=1)),
-    ("SEM", lambda d: d["cases"][8].update(conversation_generation=2)),
-    ("SEM", lambda d: d["cases"][6]["rubric"].update(personality_present=False)),
-    ("CONV", lambda d: d["events"][2]["proofs"].update(kv_released=False)),
-    ("CONV", lambda d: d.update(automatic_replay_count=1)),
-    ("MEM", lambda d: d["release_rows"][1].update(generate_calls=1)),
-    ("MEM", lambda d: d["measurement_attestation"].update(candidate_sha="f" * 40)),
-    ("WAKE", lambda d: d["cases"][0]["activity"][0].update(monotonic_ns=1)),
-    ("WAKE", lambda d: d["cases"][3].update(cleanup_proven=False)),
-    ("TIME", lambda d: d["rows"][0]["events"].update(audio_first_write=0)),
-    ("TIME", lambda d: d.update(mapping_verified=False)),
-    ("RES", lambda d: d["scan"].update(hits=1)),
-    ("RES", lambda d: d["cleanup"][2].update(exit_ns=4)),
-])
-def test_m4b_private_proof_rejects_false_pass_values(kind, mutate):
-    record, proof = _target_proof(kind)
-    mutate(proof["data"])
-    with pytest.raises(GateFailure, match="PRIVATE_PROOF_INVALID"):
-        _validate_fixture(record, proof)
+def test_candidate_gate_cannot_consume_single_pv_cards(tmp_path):
+    cards = tmp_path / "cards"
+    cards.mkdir()
+    (cards / "M4B-PI-ATT-001.json").write_text(json.dumps({
+        "test_id": "M4B-PI-ATT-001", "candidate_sha": "a" * 40,
+        "status": "Pass",
+    }))
+    with pytest.raises(GateFailure, match="run-m4b-pv.py"):
+        _finalize_acceptance_cards(tmp_path, {"candidate_sha": "a" * 40})

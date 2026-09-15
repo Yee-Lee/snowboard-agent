@@ -96,9 +96,8 @@ class SystemResourceSample:
             previous.validate()
             if (self.monotonic_ns <= previous.monotonic_ns
                     or self.mem_total_bytes != previous.mem_total_bytes
-                    or self.swap_used_bytes > previous.swap_used_bytes
                     or self.oom_kill != previous.oom_kill):
-                raise ResourceSampleError("clock_memory_swap_or_oom_changed")
+                raise ResourceSampleError("clock_memory_or_oom_changed")
             old = {p.pid: p for p in previous.processes}
             if pids != set(old):
                 raise ResourceSampleError("process_set_changed")

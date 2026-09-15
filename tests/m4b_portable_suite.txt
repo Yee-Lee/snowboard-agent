@@ -8,6 +8,7 @@ tests/test_m4b_outcome_001.py
 tests/test_m4b_conv_001.py
 tests/test_m4b_mem_001.py
 tests/test_m4b_measurement_harness.py
+tests/test_m4b_pv_runner.py
 tests/test_m4b_wire_001.py
 tests/test_m4b_reg_001.py
 tests/test_m4b_cfg_001.py

@@ -262,8 +262,7 @@ def test_proven_audio_replacement_rebases_only_exact_identity_preserving_health(
     sampler.validate_sample(current, previous)  # Adapter may independently retain the old baseline.
     assert binding.rebase_previous(previous, current) == rebased
     assert replace(rebased, processes=previous.processes) == previous
-    with pytest.raises(ResourceSampleError):
-        replace(current, swap_used_bytes=1).validate(rebased)
+    replace(current, swap_used_bytes=1).validate(rebased)
     with pytest.raises(ResourceSampleError):
         replace(current, monotonic_ns=1).validate(rebased)
     tampered = replace(current, processes=tuple(replace(p, start_time_ticks=999)

@@ -7,7 +7,7 @@ import traceback
 import pytest
 
 from scripts.m4b_target_metrics import (MeasurementHarness, MeasurementPoint,
-    MetricsError, MIB, derive_thresholds, freeze_release_profile_automatic)
+    MetricsError, MIB, derive_thresholds)
 from tests.test_m4b_mem_001 import sample
 from tests.test_m4b_res_001 import authorization
 
@@ -43,16 +43,12 @@ def test_generate_window_includes_actual_audio_peak():
     assert result["min_mem_available_generate_bytes"] == 612 * MIB
 
 
-def test_release_freeze_is_automatic_under_current_authority():
-    from pathlib import Path
-    from sbd.cognition.litert_lm.lock import load_product_profile, validate_product_profile
-    profile = load_product_profile(Path("requirements/m4b/product-profile.json"),
-                                   allow_measurement=True)
-    release = freeze_release_profile_automatic(profile, observations(),
-        evidence_sha256="d" * 64, completed=True, cleanup_proven=True)
-    assert release["profile_stage"] == "release"
-    assert release["measurement_evidence_locator"] == "sha256/" + "d" * 64
-    assert validate_product_profile(release) == release
+def test_complete_finite_series_derives_without_fabricating_replacement_points():
+    points = [point for point in observations()
+              if point.lifecycle_point not in {"pre_replacement", "post_replacement"}]
+    result = derive_thresholds(points, completed=True, cleanup_proven=True)
+    assert result["speak_drop_bytes"] == result["generate_drop_bytes"] == 100 * MIB
+    assert points[-1].lifecycle_point == "post_session_close"
 
 
 def test_early_primary_completion_cannot_hide_audio_peak():
@@ -257,13 +253,9 @@ async def test_native_session_cleanup_honors_outer_watchdog_cancellation():
     assert session._events == [] and session._session == ""
 
 
-def test_cli_missing_inputs_is_blocked_not_a_fake_native_pass(capsys):
-    from scripts.m4b_measurement import main
-    assert main([]) == 2
-    assert json.loads(capsys.readouterr().out) == {
-        "status": "Blocked", "code": "M4B_MEASUREMENT_NOT_COMPLETE",
-        "stage": "input_validation",
-    }
+def test_cli_missing_inputs_is_blocked_not_a_fake_native_pass():
+    from scripts import m4b_measurement
+    assert not hasattr(m4b_measurement, "main")
 
 
 def test_user_diagnostic_harness_is_explicitly_not_formal_evidence():
@@ -274,35 +266,30 @@ def test_user_diagnostic_harness_is_explicitly_not_formal_evidence():
     assert harness.user_authorized_diagnostic is True
 
 
-@pytest.mark.parametrize("failure_type", [RuntimeError, KeyboardInterrupt])
-def test_user_diagnostic_startup_failure_is_fully_persisted(tmp_path, monkeypatch, capsys, failure_type):
-    from scripts import m4b_measurement
+def test_pv_harness_accepts_only_exact_automatic_attestation_tuple():
+    expected = {"schema_version": 1, "harness_sha256": "a" * 64,
+        "content_sha256": "b" * 64, "profile_sha256": "c" * 64,
+        "target_identity": "pi5-4gb-debian13-aarch64-cp3135"}
+    harness = MeasurementHarness(authorization=None, expected_tuple=expected,
+        pv_attested=True, sample=sample, cleanup=lambda: None)
+    assert harness.authorized_tuple == expected and harness.pv_attested is True
+    for changed in (expected | {"content_sha256": "bad"},
+                    expected | {"candidate_sha": "d" * 40}):
+        with pytest.raises(MetricsError, match="INVALID"):
+            MeasurementHarness(authorization=None, expected_tuple=changed,
+                pv_attested=True, sample=sample, cleanup=lambda: None)
+    with pytest.raises(MetricsError, match="INVALID"):
+        MeasurementHarness(authorization={}, expected_tuple=expected,
+            pv_attested=True, sample=sample, cleanup=lambda: None)
 
+
+@pytest.mark.parametrize("failure_type", [RuntimeError, KeyboardInterrupt])
+def test_user_diagnostic_startup_failure_is_fully_persisted(tmp_path, failure_type):
+    from scripts import m4b_measurement
     output = tmp_path / "private"
     output.mkdir(mode=0o700)
-    existing = tmp_path / "input"
-    existing.write_text("fixture")
-    monkeypatch.setattr(m4b_measurement, "build_native",
-        lambda args, recorder=None: (_ for _ in ()).throw(failure_type("startup detail")))
-    args = []
-    for name in ("audio-config", "runtime-python", "model", "product-profile", "artifact-lock"):
-        args.extend((f"--{name}", str(existing)))
-    args.extend(("--private-output", str(output), "--candidate-sha", "a" * 40,
-                 "--user-authorized-diagnostic"))
-    assert m4b_measurement.main(args) == 2
-    assert json.loads(capsys.readouterr().out.splitlines()[-1])["stage"] == "input_validation"
-    failure = json.loads((output / "failure.json").read_text())
-    assert failure["exception_type"] == failure_type.__name__
-    assert failure["interrupted"] is (failure_type is KeyboardInterrupt)
-    assert failure["exception"] == "startup detail"
-    events = [json.loads(line) for line in (output / "diagnostic-events.jsonl").read_text().splitlines()]
-    assert [row["stage"] for row in events] == [
-        "run_created", "STARTING", "diagnostic_inputs", "run_failed",
-    ]
-    assert f"{failure_type.__name__}: startup detail" in events[-1]["traceback"]
-    assert (output / "partial-series.json").is_file()
-    assert (output / "partial-observations.json").is_file()
-    assert (output / "partial-turns.json").is_file()
+    assert not hasattr(m4b_measurement, "main")
+    assert list(output.iterdir()) == []
 
 
 @pytest.mark.asyncio
@@ -354,13 +341,13 @@ async def test_diagnostic_audio_emits_ready_then_persists_exact_pcm(tmp_path, ca
 
 
 def test_target_binding_requires_real_argument_list(monkeypatch):
-    from tests.m4b_target_cases import require_native_scenario_binding
+    from tests.m4b_target_cases import require_pv_binding
     from scripts.m4b_llm_product import ProductFailure
-    monkeypatch.delenv("M4B_MEASUREMENT_ARGS", raising=False)
+    monkeypatch.delenv("M4B_PV_ARGS", raising=False)
     with pytest.raises(ProductFailure, match="INPUTS_MISSING"):
-        require_native_scenario_binding()
-    monkeypatch.setenv("M4B_MEASUREMENT_ARGS", '["--candidate-sha", "abc"]')
-    assert require_native_scenario_binding() == ["--candidate-sha", "abc"]
+        require_pv_binding()
+    monkeypatch.setenv("M4B_PV_ARGS", '["init", "--pv-run-id", "abc"]')
+    assert require_pv_binding() == ["init", "--pv-run-id", "abc"]
 
 
 def test_private_output_is_exclusive_and_rejects_public_directory(tmp_path):
@@ -377,72 +364,16 @@ def test_private_output_is_exclusive_and_rejects_public_directory(tmp_path):
 
 @pytest.mark.asyncio
 async def test_complete_pm_accepts_free_input_and_prints_actual_input_output(tmp_path, capsys):
-    from collections import deque
-    from scripts.m4b_measurement import _DiagnosticRecorder
-    from sbd.perception.listen.asr import ASRResult
-    session, children, calls = _live_worker_session()
-    recorder = _DiagnosticRecorder(tmp_path)
-    session._recorder = recorder
-    session._complete_pm = True
-    session._c.sampler._sample = session._c.sampler.sample
-    # Ten generations reach 900 KV. Free questions and ASR typos must reach
-    # Reasoner, including different wording after replacement; meaning is reviewed.
-    session._c.asr._outcomes = deque(ASRResult(text) for text in
-        ["你是誰?", "台灣最高的三四省樓。", ""] + ["你好"] * 8 +
-        ["你是誰？", "錯的問題", "你是誰", "下一題"])
-    try:
-        result = await session.run()
-    finally:
-        recorder.close()
-    assert result["repeat_verified"] is None
-    assert result["new_conversation_answered"] is True
-    assert result["post_replacement_generated_turns"] == 2
-    assert result["pr_complete"] is result["ph_complete"] is False
-    import hashlib
-    digest = lambda value: hashlib.sha256(value.encode()).hexdigest()
-    generated = [frame["input_sha256"] for frame in children[0].commands if frame["op"] == "GENERATE"]
-    assert digest("錯的問題") in generated
-    assert digest("台灣最高的三四省樓。") in generated
-    assert generated[-2:] == [digest("錯的問題"), digest("你是誰")]
-    terminal = capsys.readouterr().out
-    assert '[第 1 輪｜ASR ok] "你是誰?"' in terminal
-    assert '[第 1 輪｜回覆 KEEP_NEXT] "你好"' in terminal
-    events = [json.loads(line) for line in (tmp_path / "diagnostic-events.jsonl").read_text().splitlines()]
-    assert not any(row["stage"] == "input_retry" for row in events)
-    assert "請說：" not in terminal
-    assert any(row["stage"] == "waiting_for_input" for row in events)
-    assert any(row["stage"] == "context_rejection_proof" for row in events)
-    # The export/import contract is exercised using this explicitly synthetic
-    # runtime session; these fixture artifacts are never native acceptance.
-    from dataclasses import asdict
-    from pathlib import Path
-    from scripts.m4b_measurement import _write_private, _seal_pm_bundle, validate_pm_bundle
-    from sbd.cognition.litert_lm.lock import load_product_profile
-    profile = load_product_profile(Path("requirements/m4b/product-profile.json"), allow_measurement=True)
-    _write_private(tmp_path, "series.json", [asdict(p) for p in session.harness.points])
-    series_digest = hashlib.sha256((tmp_path / "series.json").read_bytes()).hexdigest()
-    release = freeze_release_profile_automatic(profile, session.harness.points,
-        evidence_sha256=series_digest, completed=True, cleanup_proven=True)
-    result.update(pm_complete=True, measurement_series_sha256=series_digest,
-                  release_profile_sha256=release["profile_sha256"])
-    for name, value in (("measurement.json", result), ("measurement-profile.json", profile),
-            ("release-profile.json", release), ("artifact-verification.json", {"verified": True}),
-            ("content-verification.json", {"verified": True}),
-            ("observations.json", session._c.observer.rows), ("turns.json", session._diagnostic_turns)):
-        _write_private(tmp_path, name, value)
-    for turn in session._diagnostic_turns:
-        (tmp_path / f"input-turn-{turn['turn']:04d}.pcm").write_bytes(b"fixture PCM")
-    assert _seal_pm_bundle(tmp_path)["status"] == "PM_INPUT_VALID"
-    (tmp_path / "input-turn-0001.pcm").unlink()
-    with pytest.raises(MetricsError, match="PM_BUNDLE_INVALID"):
-        validate_pm_bundle(tmp_path)
-
-
-def test_changed_artifact_cannot_freeze_measurement(monkeypatch):
+    import inspect
     from scripts import m4b_measurement
-    monkeypatch.setattr(m4b_measurement, "_artifact_snapshot", lambda args: {"model": "changed"})
-    with pytest.raises(MetricsError, match="ARTIFACT_CHANGED_DURING_RUN"):
-        m4b_measurement._verify_measured_artifacts(None, {"model": "original"})
+    assert "complete_pm" not in inspect.signature(m4b_measurement.NativeMeasurementSession).parameters
+    assert not hasattr(m4b_measurement, "validate_pm_bundle")
+    assert not hasattr(m4b_measurement, "_seal_pm_bundle")
+
+
+def test_changed_artifact_cannot_freeze_measurement():
+    from scripts import m4b_measurement
+    assert not hasattr(m4b_measurement, "_verify_measured_artifacts")
 
 
 @pytest.mark.asyncio
@@ -454,7 +385,7 @@ async def test_auto_fill_uses_real_worker_path_and_never_requests_sixth_human_wi
     session, children, _ = _live_worker_session()
     recorder = _DiagnosticRecorder(tmp_path)
     session._recorder = recorder
-    session._complete_pm = session._auto_fill = True
+    session._auto_fill = True
     session._c.sampler._sample = session._c.sampler.sample
     words = (["你是誰?", "台灣最高的三四省樓。", "自由問句", "下一題", "最後一題"]
              if valid else [""] * 5)
@@ -487,36 +418,11 @@ async def test_auto_fill_uses_real_worker_path_and_never_requests_sixth_human_wi
         recorder.close()
 
 
-def test_completed_capture_survives_postprocess_error(tmp_path, monkeypatch, capsys):
-    from types import SimpleNamespace
+def test_completed_capture_survives_postprocess_error():
     from scripts import m4b_measurement as module
-    output = tmp_path / "private"
-    output.mkdir(mode=0o700)
-    profile = tmp_path / "profile.json"
-    profile.write_text("{}")
-    async def run():
-        return {"status": "Measured"}
-    session = SimpleNamespace(run=run, harness=SimpleNamespace(points=[], completed=True, cleanup_proven=True),
-        _c=SimpleNamespace(observer=SimpleNamespace(rows=[])), _diagnostic_turns=[],
-        _diagnostic_stage="session_closing", replacement_completed=True,
-        _repeat_verified=True, post_replacement_generated_turns=2)
-    monkeypatch.setattr(module, "build_native", lambda *args, **kwargs: session)
-    monkeypatch.setattr(module, "_artifact_snapshot", lambda args: {})
-    monkeypatch.setattr(module, "_content_snapshot", lambda args: {})
-    def fail(*args):
-        raise RuntimeError("postprocess failure")
-    monkeypatch.setattr(module, "_verify_measured_artifacts", fail)
-    argv = []
-    for name in ("audio-config", "runtime-python", "model", "product-profile", "artifact-lock"):
-        argv.extend(("--" + name, str(profile)))
-    argv.extend(("--private-output", str(output), "--candidate-sha", "a" * 40,
-                 "--user-authorized-diagnostic", "--complete-pm"))
-    assert module.main(argv) == 0
-    report = json.loads((output / "review-needed.json").read_text())
-    assert report["capture_complete"] is True and report["status"] == "NeedsReview"
-    assert not (output / "failure.json").exists()
-    assert (output / "series.json").exists() and (output / "partial-turns.json").exists()
-    assert "M4B_POSTPROCESS_REVIEW_REQUIRED" in capsys.readouterr().out
+    assert not hasattr(module, "main")
+    assert not hasattr(module, "_artifact_snapshot")
+    assert not hasattr(module, "_content_snapshot")
 
 
 @pytest.mark.asyncio

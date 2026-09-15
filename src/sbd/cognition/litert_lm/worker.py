@@ -33,7 +33,10 @@ if str(_CANDIDATE_PACKAGE_ROOT) not in sys.path:
 
 from sbd.cognition.llm_child_protocol import (
     MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
-from sbd.cognition.semantic import validate_semantic, SemanticError
+from sbd.cognition.semantic import (
+    RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
+    validate_semantic, SemanticError,
+)
 from sbd.cognition.prompt_builder import SYSTEM_PROMPT
 
 _DIAGNOSTIC_DIRECTORY: Path | None = None
@@ -182,9 +185,9 @@ class LiteRTRuntime:
     def generate(self, text: str) -> tuple[str, int, int, int]:
         conversation = self._conversation
         require(conversation is not None)
-        # Equivalent regular-language constraint for the checked-in GBNF;
-        # semantic normalization/length validation remains mandatory afterwards.
-        pattern = r'\{"text":"(?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*","end":(?:true|false)\}'
+        # Keep the POC-proven JSON-Schema constraint. LiteRT-LM's regex response
+        # format changes greedy token selection and can terminate after a lone
+        # punctuation mark even with the same model, prompt, and sampler.
         with self._lock:
             if self._pending_cancel:
                 self._pending_cancel = False
@@ -192,8 +195,12 @@ class LiteRTRuntime:
             self._active = conversation
         try:
             try:
+                response_format = self._response_format.json(load_response_schema())
+                _diagnostic_mark("response_format_selected", kind="json",
+                                 response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
+                                 response_schema_sha256=RESPONSE_SCHEMA_SHA256)
                 raw = conversation.send_message(text, max_output_tokens=128,
-                    response_format=self._response_format.regex(pattern))
+                    response_format=response_format)
             except self._cancelled_error:
                 raise WorkerCancelled() from None
             _diagnostic_mark("native_generate_returned",
@@ -494,15 +501,23 @@ def main() -> int:
     parser.add_argument("--runtime-root", required=True)
     parser.add_argument("--artifact-lock", required=True)
     parser.add_argument("--measurement-authorization")
+    parser.add_argument("--measurement-pv", action="store_true")
+    parser.add_argument("--measurement-private-directory")
     parser.add_argument("--measurement-user-diagnostic", action="store_true")
-    parser.add_argument("--measurement-complete-pm", action="store_true")
     parser.add_argument("--measurement-diagnostic-directory")
     parser.add_argument("--measurement-expected")
     args = parser.parse_args()
     require(bool(args.measurement_diagnostic_directory) == args.measurement_user_diagnostic,
             "measurement")
-    require(not args.measurement_complete_pm or args.measurement_user_diagnostic,
-            "measurement")
+    require(bool(args.measurement_private_directory)
+            == args.measurement_pv, "measurement")
+    require(sum(bool(value) for value in (args.measurement_authorization,
+        args.measurement_user_diagnostic, args.measurement_pv)) <= 1, "measurement")
+    if args.measurement_pv:
+        directory = Path(args.measurement_private_directory).resolve(strict=True)
+        require(directory.is_dir() and not stat.S_IMODE(directory.stat().st_mode) & 0o077,
+                "measurement")
+        _DIAGNOSTIC_DIRECTORY = directory
     if args.measurement_user_diagnostic:
         directory = Path(args.measurement_diagnostic_directory).resolve(strict=True)
         require(directory.is_dir() and not stat.S_IMODE(directory.stat().st_mode) & 0o077,
@@ -513,18 +528,24 @@ def main() -> int:
     root = Path(__file__).resolve().parents[4]
     lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
     _diagnostic_mark("artifact_lock_verified")
-    measurement_mode = bool(args.measurement_authorization) or args.measurement_user_diagnostic
+    load_response_schema(repo_root=root)
+    _diagnostic_mark("response_schema_verified",
+                     response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
+                     response_schema_sha256=RESPONSE_SCHEMA_SHA256)
+    measurement_mode = (bool(args.measurement_authorization) or args.measurement_user_diagnostic
+                        or args.measurement_pv)
     require(measurement_mode == bool(args.measurement_expected), "measurement")
-    require(not (args.measurement_authorization and args.measurement_user_diagnostic), "measurement")
     grant = None
     if measurement_mode:
         from sbd.cognition.litert_lm.measurement import MeasurementGrant
         profile = load_product_profile(Path(args.product_profile), allow_measurement=True)
         expected = json.loads(args.measurement_expected)
-        if args.measurement_user_diagnostic:
+        if args.measurement_pv:
+            grant = MeasurementGrant.pv(expected_tuple=expected, profile=profile,
+                private_directory=_DIAGNOSTIC_DIRECTORY)
+        elif args.measurement_user_diagnostic:
             grant = MeasurementGrant.user_diagnostic(expected_tuple=expected, profile=profile,
-                diagnostic_directory=_DIAGNOSTIC_DIRECTORY,
-                complete_pm=args.measurement_complete_pm)
+                diagnostic_directory=_DIAGNOSTIC_DIRECTORY)
         else:
             grant = MeasurementGrant.load(Path(args.measurement_authorization),
                 expected_tuple=expected, profile=profile)
@@ -532,7 +553,6 @@ def main() -> int:
         profile = load_product_profile(Path(args.product_profile))
     verify_platform_abi(profile)
     _diagnostic_mark("platform_abi_verified")
-    require(lock.runtime_closure is not None, "runtime")
     if args.measurement_user_diagnostic:
         # This explicitly non-formal path is for rapid user-driven Pi debugging.
         # The launcher already binds exact paths and the native loader will fail
@@ -541,9 +561,8 @@ def main() -> int:
         require(Path(args.runtime_root).is_dir() and model_path.is_file()
                 and not model_path.is_symlink(), "runtime")
         _diagnostic_mark("diagnostic_artifact_hash_skipped")
-        if args.measurement_complete_pm:
-            _diagnostic_mark("artifact_verification_deferred_until_cleanup")
     else:
+        require(lock.runtime_closure is not None, "runtime")
         lock.runtime_closure.verify_install(Path(args.runtime_root))
         _diagnostic_mark("runtime_closure_verified")
         # Reauthenticate paths in the child before native import/Engine creation.

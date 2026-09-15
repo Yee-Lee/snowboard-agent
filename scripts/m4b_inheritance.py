@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from scripts.m4b_target_metrics import PORTABLE_IDS, TARGET_IDS
+from scripts.m4b_target_metrics import PORTABLE_IDS
 
 
 class InheritanceError(RuntimeError):
@@ -23,7 +23,7 @@ def validate_result_record(value: object, *, candidate_sha: str, profile_sha256:
     """Validate metadata only; callers must inspect and authenticate the actual evidence."""
     if (type(value) is not dict or set(value) != RESULT_FIELDS
             or value["schema_version"] != 1 or type(value["schema_version"]) is not int
-            or value["test_id"] not in PORTABLE_IDS | TARGET_IDS
+            or value["test_id"] not in PORTABLE_IDS
             or value["candidate_sha"] != candidate_sha or value["profile_sha256"] != profile_sha256
             or value["profile_id"] != "core-m4b-cognition-001"
             or re.fullmatch(r"[0-9a-f]{40}", candidate_sha) is None
@@ -37,13 +37,7 @@ def validate_result_record(value: object, *, candidate_sha: str, profile_sha256:
             or type(value["evidence_sha256"]) is not str
             or re.fullmatch(r"[0-9a-f]{64}", value["evidence_sha256"]) is None):
         raise InheritanceError()
-    target = value["test_id"] in TARGET_IDS
-    if target:
-        if (value["matrix"] not in {"PM", "PR", "PH"}
-                or value["platform"] != "pi5-4gb-debian13-aarch64"
-                or value["python"] != "3.13.5"):
-            raise InheritanceError()
-    elif (value["matrix"] not in {"PU", "PI", "PS"}
+    if (value["matrix"] not in {"PU", "PI", "PS"}
             or value["platform"] not in {"linux", "darwin", "win32"}
             or type(value["python"]) is not str
             or re.fullmatch(r"3\.(11|12|13)\.[0-9]+", value["python"]) is None
@@ -54,8 +48,8 @@ def validate_result_record(value: object, *, candidate_sha: str, profile_sha256:
 
 
 def validate_rows(rows: object, candidate_sha: str, *, profile_sha256: str, resolver,
-                  required_ids=PORTABLE_IDS | TARGET_IDS) -> list[dict]:
-    if type(rows) is not list or not rows or not set(required_ids).issubset(PORTABLE_IDS | TARGET_IDS):
+                  required_ids=PORTABLE_IDS) -> list[dict]:
+    if type(rows) is not list or not rows or not set(required_ids).issubset(PORTABLE_IDS):
         raise InheritanceError()
     result, identities = [], set()
     for row in rows:

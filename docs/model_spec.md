@@ -192,11 +192,15 @@ speak/tool/rest renderer都是歷史surface；replacement產品text/end、sessio
 
 ### 6.3 M4B replacement product profile
 
-Status：**DESIGNER REVISED / FOCUSED TICKET-DISPOSAL COVERAGE APPROVED / NOT PRODUCT ACCEPTED**。現行authority見
+Status：**DESIGNER CORRECTED TO BYTE-FOR-BYTE POC CONSTRAINED-JSON `J` / TESTER REMAPPING OPEN / NOT PRODUCT ACCEPTED**。現行authority見
 [M4B replacement design](implement/ch_m4b_llm_production.md)；profile ID為
 `core-m4b-cognition-001`，明示採用§6.2 winner identity、V2D2 exact 66-token prompt、
 `temperature=0.0`、`top_p=1.0`、4 threads、128 output reserve、1024 context、無fake prewarm及
-`snowboard.llm/3`。這次Designer採用不回溯改寫POC身份或使POC result變成product PASS。
+`snowboard.llm/3`。Model output使用POC交付的LiteRT-LM `ResponseFormat.json` constrained-JSON
+`text/end` path；本profile不使用regex/GBNF response constraint。Product response-schema必須是
+M4B design §4.1的exact 352-byte POC artifact，locator與SHA-256均由profile/lock/READY綁定；
+`text/end`關係由Python fail-closed validation負責，不以未驗證的native conditional schema取代。
+這次Designer採用不回溯改寫POC身份或使POC result變成product PASS。
 
 Target先以不能進正常composition的`measurement` stage取得單一Product Session vertical-slice資料，
 再依design固定公式產生兩個memory byte thresholds與`release` stage digest。只有review、Tester coverage、

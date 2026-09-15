@@ -270,7 +270,7 @@ def test_grant_context_authenticates_checkout_harness_and_exact_target(tmp_path,
             measurement._verify_context(expected)
 
 
-@pytest.mark.parametrize("authorization", ["valid", "diagnostic", "complete_pm", "revoked", "absent"])
+@pytest.mark.parametrize("authorization", ["valid", "diagnostic", "retired_stage", "revoked", "absent"])
 def test_native_child_reauthenticates_measurement_before_native_import(tmp_path, monkeypatch, authorization):
     import builtins
     from types import SimpleNamespace
@@ -304,20 +304,20 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
             "--runtime-root", str(tmp_path), "--artifact-lock", str(tmp_path / "lock")]
     if authorization in {"valid", "revoked"}:
         argv.extend(["--measurement-authorization", str(path), "--measurement-expected", json.dumps(expected)])
-    elif authorization in {"diagnostic", "complete_pm"}:
+    elif authorization == "diagnostic":
         argv.extend(["--measurement-user-diagnostic", "--measurement-diagnostic-directory",
                      str(tmp_path), "--measurement-expected", json.dumps(expected)])
-        if authorization == "complete_pm":
-            argv.append("--measurement-complete-pm")
+    elif authorization == "retired_stage":
+        argv.append("--measurement-complete-pm")
     if authorization == "revoked":
         document["approvals"][0]["decision"] = "Rejected"
         path.write_text(json.dumps(document))
     monkeypatch.setattr(worker.sys, "argv", argv)
-    if authorization in {"valid", "diagnostic", "complete_pm"}:
+    if authorization in {"valid", "diagnostic"}:
         assert worker.main() == 0
         assert contexts == [expected]
         expected_stages = (["abi", "network", "native", "measurement"]
-                           if authorization in {"diagnostic", "complete_pm"} else
+                           if authorization == "diagnostic" else
                            ["abi", "install", ("paths", {"allow_measurement": True}),
                             "network", "native", "measurement"])
         assert stages == expected_stages
@@ -327,6 +327,10 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
             child_events = [json.loads(line) for line in logs[0].read_text().splitlines()]
             assert child_events[0]["stage"] == "child_starting"
             assert child_events[-1]["stage"] == "ready_emitting"
+    elif authorization == "retired_stage":
+        with pytest.raises(SystemExit):
+            worker.main()
+        assert contexts == [] and stages == []
     else:
         with pytest.raises((LLMFatalError, lock_module.LLMLockError)):
             worker.main()

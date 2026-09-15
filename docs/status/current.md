@@ -1,16 +1,36 @@
 # Current handoff
 
-- Updated: 2026-09-13
+- Updated: 2026-09-15
 - Writer: Designer only
 - Current milestone: M4
-- Current stage: M4B single-PV implementation
-- Next owner: Developer
-- Developer entry: **Open — implement the resolved single-PV mapping; prioritize human-dependent #2, then complete the six automated Test IDs**
-- Tester target entry: **Closed — `TR_spec_M4B_VIII` B1–B5 resolved; execution remains Pending until Developer returns same-bytes Pi verification**
+- Current stage: M4B Pi `PV` Verify **Pass**; milestone commit remains unprepared
+- Next owner: USER for milestone/commit disposition
+- Developer entry: **Closed for product changes; any new protected bytes require a new Pi verification**
+- Tester mapping: **Resolved by USER-authorized Test Spec corrections, including #1 ATT/#7 R01 evidence separation**
 - Last independently portable-verified candidate: `9ffd6e17ad5504d53c7c18799ca4718f69988f7e`
   (historical portable PASS baseline; superseded by later protected-input changes)
-- Current integration checkpoint: `4e0a99ce6a71a983bb9ef602c56cb4b5b41dae58`
-  (`origin/core`; WIP only, not a verified candidate or PM/PR/PH PASS)
+- Last Git integration checkpoint: `688b2232b4bbd69f57ac712b1d82aba036179df0`
+  (`origin/core`; historical specification-gate commit, not this uncommitted Pi-verified `PV` result)
+
+## M4B Verify disposition — 2026-09-15
+
+- Designer independently read the Pi public `PV-M4B-FINITE-03` final manifest: all seven Test IDs have
+  `script_status=Pass/status=Pass/reason_codes=[]`, six applicable Developer reviews Pass and all three
+  selected #2 USER verdicts Pass. The bound content/harness/profile tuple is
+  `f6b9cfe2dcadeac675deb4811b2711e9c0c6a28d73e4985fc9ae321fb08c7545` /
+  `cb79a96c06cdf427142fd9171523ce545e2b35951c59117d9d1dc8cf95988b33` /
+  `8d957a4600fc172fd7dd7b285098710af0b753d7d1b697a21bd31611637b3f90`.
+  Local protected-content and runner SHA match the Pi checkout and final manifest. On that same Pi checkout,
+  the directly affected context/outcome/measurement/PV-runner tests passed 155/155 (exit 0).
+- #1 ATT's duplicate syscall-capture sentence was an orphan Test Spec mapping and is removed: ATT proves its
+  own offline flags/denial installation, while #7 R01 independently proves zero addressed external network
+  attempts with its actual trace. Designer independently computed R08's Pi-local normalized native-answer SHA
+  `f4d0c1207e1619f0e4c8864debb428420f36ff8b984607a510e99a133e6c79d6`, matching capture answer.
+  No private text or canary was printed/exported.
+- This is **M4B `PV` Verify Pass** within the present authority, not a claim of physical wake/display hardware
+  Pass, native context replacement, nested-descendant killing in R06 or full product shutdown in R07. #4
+  558/699 MiB estimates remain measurement outputs, not adopted release thresholds. No commit or push occurred;
+  a milestone commit requires exact pending-byte reconciliation and explicit USER approval under the Git policy.
 
 ## Current disposition
 
@@ -22,6 +42,12 @@
   clean replacement cognition/product authority; it does not restore legacy compatibility.
 - POC EFFICIENCY-003 and PROMPT-V2D2-004 remain valid redesign inputs. They are not themselves the
   product contract.
+- USER removed the zero-swap-growth safety verdict: the POC `swap=0` environment cannot establish a useful
+  active-zram growth test. Designer revised Product §5.3 and §11.2 to record swap deltas without treating growth
+  alone as E1, laboratory stop or `R02-HEALTH` failure. The 512 MiB floor, OOM/kernel fault, throttling,
+  temperature, sampler/identity and cleanup stops remain. USER explicitly authorized correction of the focused
+  Test Spec `M02`/`M04-STOPS`/`R02-HEALTH` rows, now aligned with Product; prior `CONV-POC-01/02` remain
+  Incomplete and are not `PV` credit.
 - Generic EventBus, State Manager, Resource Manager, offline/privacy, process isolation and Level
   1/2/3 convergence remain accepted foundations; the rewrite does not reopen M4A or unrelated
   milestones.
@@ -74,7 +100,7 @@ candidate contains the declared work-package scope, the local `origin/core` trac
 SHA, and the candidate checkout was clean before this Designer-only status update. Developer Pi/Linux runs are
 diagnostics only and are not Tester evidence or acceptance.
 
-Tester portable entry is now Open for independent verification of that exact SHA. Candidate protected inputs are
+At that stage, Tester portable entry opened for independent verification of that exact SHA. Candidate protected inputs are
 immutable for this verification round: any source, test, dependency/lock, config-contract or candidate-runner change
 requires an append-only fix commit and a new candidate. Native PM, product cards and human semantic/audio rows remain
 Pending; this transition neither supplies dual-role target authorization nor claims a native, human or product PASS.
@@ -106,10 +132,30 @@ Pi product-verification stage rather than sequential gates. Designer accepted B1
 one `PV` stage aggregates independently executable Test IDs with visible automated, human and measurement
 sub-results plus deterministic threshold estimates. There is no second release run or separate human stage. The
 estimates do not silently mutate release authority; adopting them is a later focused normal-pipeline delta.
-Tester mapping request [`TR_spec_M4B_VIII`](../reviews/history/TR_spec_M4B_VIII.md) is Resolved. Designer confirmed
-B1–B5: only the three semantic cases require USER participation; every other Test ID is automated; SEM, WAKE and
-RES cases have independent commands and single-case reruns; no Test ID imports another's state or evidence. This
-closes only Test Spec mapping and makes no product-execution or `PV PASS` claim.
+Tester mapping request [`TR_spec_M4B_VIII`](../reviews/history/TR_spec_M4B_VIII.md) was Resolved under the
+then-current script-only authority. Designer confirmed three human-only semantic cases, six script-driven Test
+IDs, independent Test-ID state/evidence, separate commands and single-case reruns for SEM/WAKE/RES. The later USER
+requirement for Developer review of #1/#3–#7 supersedes only that mapping's result disposition; it does not reopen
+the independent commands or case structure and makes no product-execution or `PV PASS` claim.
+
+USER confirmed that replacing the POC JSON constraint with regex prevents the real LLM from answering normally.
+Designer corrected product §§4.1/4.2/6/9/11 to the POC-delivered constrained-JSON `J` path:
+`ResponseFormat.json(response_schema)`, raw-JSON decoding or direct already-decoded mapping validation, and exact
+`text/end` semantics.
+The product no longer fixes output member order or insignificant whitespace and no longer carries a GBNF/native-
+regex identity. The prior `char+` response to the regex shortest path and its non-empty-for-both-end semantic
+change are superseded; `end=true` again permits empty text. Prompt/model/sampling/profile ID and unrelated
+lifecycle behavior are unchanged. Existing regex/GBNF/`char+` implementation, Test Spec rows and protected tuples
+cannot satisfy the corrected authority.
+
+A subsequent Designer provenance audit found that the first JSON correction was still not the POC implementation:
+it invented a minified `oneOf/const/minLength` schema with digest `642a94...`. POC commit
+`4f34226728bafba445aa736e5e8ba24c0e2a69cd` instead loaded the exact 352-byte
+`semantic-output-v1.schema.json` artifact, digest
+`796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9`, and passed the decoded mapping to
+`ResponseFormat.json`. LiteRT-LM v0.16 rejected conditional keywords in the native schema, so `text/end`
+relationships remained Python fail-closed validation. Designer §4.1, Ch 10, model spec and READY protocol now bind
+that exact artifact locator and digest. The former Designer schema and all dependent evidence are superseded.
 
 Every previously executed PM, PR or PH run is obsolete. Its complete or partial outputs, cards, profiles,
 thresholds, transcripts, statuses and digests are not active evidence and cannot seed, satisfy or influence `PV`.
@@ -123,19 +169,79 @@ The new run uses a new run ID and newly empty private/public evidence roots; his
    stage plus a later focused threshold-adoption delta.
 3. **Complete:** Tester mapped all seven independent Test IDs and case-level SEM/WAKE/RES reruns;
    `TR_spec_M4B_VIII` B1–B5 are Resolved with no execution or `PV PASS` claim.
-4. **Active:** Developer implements that exact mapped cleanup and the shared PV harness required by Tester's exact
-   commands, prioritizing #2 before the six automated IDs. M4B adds no one-click product launcher. Developer must
-   complete applicable tests on Pi against the same pending bytes before any commit or handoff to Verify.
+4. **Superseded:** The regex/GBNF `char+` correction and `TR_spec_M4B_IX` mapping do not govern the corrected
+   constrained-JSON path.
+5. **Complete:** Designer restored POC constrained-JSON `J`, legal JSON lexical equivalence and POC `text/end`
+   semantics; regex/GBNF are excluded from the current product profile.
+6. **Complete:** Designer corrected `PV` authority: scripts evaluate all seven Test IDs; USER judges #2 answer
+   meaning; Developer inspects every number/output for #1/#3/#5–#7, while #4 keeps complete raw evidence,
+   automatic every-point audit and focused boundaries/extrema/anomaly/formula review.
+7. **Complete for the review requirement only:** Tester defined the exact Developer-review command/record schema, generated complete inspection
+   catalog and evidence binding, `NeedsDeveloperReview` transition, one per-Test-ID WAKE/RES review, stale-review
+   invalidation and G07–G10 finalizer truth table; Designer confirmed alignment.
+8. **Complete:** Tester revised P03/P09/A05 profile-ready and dependent identity rows to the exact 352-byte POC
+   artifact, locator/digest and native/Python validation boundary. Designer independently confirmed the portable
+   negative seam, raw/decoded terminal, S2/outcome, seven Pi Test IDs and the preserved review catalog/state/
+   finalizer mapping; this is coverage only, not implementation or product PASS.
+9. **Complete for authority/mapping only:** USER removed the tautological zero-swap-growth safety verdict.
+   Designer corrected Product §5.3/§11.2, and USER-authorized Test Spec `M02`/Pi MEM `M04-STOPS`/Pi RES
+   `R02-HEALTH` now omit that verdict while retaining telemetry, the 512 MiB floor and other health stops.
+   Existing native JSON/schema and Developer-review mappings remain valid; no `PV` credit is supplied.
+10. **Active:** Developer's affected resource/measurement/PV predicates now remove swap-growth-only stops;
+    `R02-OOM` replaces the stale swap-specific Pass assertion and actual setup `SwapTotal` is captured.
+    Focused workstation tests passed 133/133 and Developer reports focused Pi tests 167/167, but fresh same-bytes
+    full `PV` evidence is still Pending. The latest #3 sub-run reached eight real model generations and stopped
+    on valid `end=true` before context rejection; it remains Incomplete. The earlier classification as a
+    model fault is withdrawn. Valid `end=true` is a normal model-owned
+    terminal; the unproven requirement to continue long fills until 1024-token rejection was the upstream
+    Test Spec/Product contract problem. Product §11.2 and USER-authorized Test Spec §5.3/§5.4 now require a
+    finite native first/continue/normal-close lifecycle for independent #3/#4, and retain deterministic
+    context/replacement checks in portable `M4B-CONV-001` on identical Pi bytes with controlled admission
+    snapshots. Controlled model-`end=true` routing stays in portable `M4B-OUTCOME-001` `O06`/`O07`, not
+    an untried native explicit-end Pass condition. Controlled evidence is not native natural-context credit.
+    Old #3/#4 attempts remain Incomplete. First finite Pi diagnostic `PV-M4B-FINITE-01/CONV-01` #3 has script
+    and Developer Pass after 410 fields/146 rows, two real `end=false` JSON turns with same child/generation,
+    revision 0→1→2, second KV 112 and matching close/cleanup. Independent `MEM-01` #4 has 253 valid samples,
+    finite estimates and script Pass, but Developer correctly withheld Pass because setup `SwapTotal` was missing
+    from its private series. Current runner now captures exact setup `SwapTotal`/swappiness and start/end swap-used;
+    protected bytes changed, so these diagnostics are not final same-digest credit. Fresh Pi #3/#4 and #4 review
+    are pending. Corrected finite Pi diagnostic `PV-M4B-FINITE-02` #3 again has script plus Developer Pass;
+    independent #4 has 270 complete samples, setup `SwapTotal=2,147,467,264` bytes/swappiness 60, finite
+    estimates and script Pass, but recording review failed because its 3,635,477-byte inspection catalog exceeded
+    the former 1 MiB read limit. Developer separated a 16 MiB catalog-only limit from 1 MiB binding/manifest;
+    protected bytes changed, so `FINITE-02` is non-final. Designer found this 16 MiB limit still below a legal
+    near-watchdog two-turn projection (~3,000 samples/~38.5 MiB catalog). Product/Test Spec now permit a
+    compact #4 catalog after automatic every-point audit but do not require it: the existing full catalog and
+    `derive_thresholds()` every-point validation are valid for the current 241-point `FINITE-03` series if its
+    evidence/inputs/digests pass review. Do not modify the protected runner or repeat #4 measurement solely to
+    change review format. Recorded
+    `PV-M4B-ALIGNED-01` #1/#5/#6 have script and Developer
+    Pass. #5 WAKE aggregate/review covered 1,612 fields and 573 rows across four Pi case captures and five
+    public cards; the transient tool-capacity rejection was retried successfully on the same command. USER
+    clarified #5 is controlled-wake **core product wiring** barrier evidence, not physical voice-wake sensor
+    or physical Display hardware evidence. Product §11.2/Test Spec §5.5 now map MockGPIO for W01/W03,
+    MockWakeWordInputSource for W02/W04 and optional MockDisplay as stimulus/observation endpoints while real
+    ButtonInputSource, StateManager, Conversation control, AlsaAudioInput, WhisperCppASR,
+    DisplayArbiter/StatusBar and both barriers remain mandatory. Test Spec now accepts the existing structured
+    `production_path`/`display`/trace as W00 core-wiring description and clarifies W04's correct empty barriers;
+    no protected runner rename/rerun is required solely for this wording. `FINITE-03` W02 original card was
+    designated after the mapping correction; W03/W04 inspection/designation and #5 aggregation/review remain
+    pending. Designer independently recomputed the current protected-content digest and runner SHA as
+    `f6b9cfe2dcadeac675deb4811b2711e9c0c6a28d73e4985fc9ae321fb08c7545` and
+    `cb79a96c06cdf427142fd9171523ce545e2b35951c59117d9d1dc8cf95988b33`, matching Developer's
+    `FINITE-03` tuple. Old #5 Pass must not be described as physical wake/display hardware Pass. These
+    results predate the new protected runner/metrics bytes and are development evidence only, not final
+    same-content-digest `PV` credit; all seven IDs still require the normal same-bytes final Pi verification.
 
 ## Role routing now
 
 | Role | Read now | Action now |
 | :--- | :--- | :--- |
-| Designer | this file only | single-PV authority and Test Spec mapping resolved; await Developer return |
+| Designer | this file and focused Product/Test Spec sections | M4B `PV` Verify Pass recorded; no active design correction |
 | Architect | this file only | no active architecture action |
 | Reviewer | this file only | no active review action |
-| Tester | this file only | no active mapping action; execution remains Pending after Developer implementation |
-| Developer | this file, `reviews/history/IR_dev_M4B_V.md`, `implement/ch_m4b_llm_production.md` §§5.3/11.2, `test_spec/test_spec_M4B.md` §§2.1–2.2/5–7 | implement resolved `PV` delta; prioritize #2, preserve independent commands/case reruns, and complete same-bytes Pi verification before commit |
+| Tester | this file only | #1 ATT/#7 R01 and controlled-wake mappings synchronized; no additional gate |
+| Developer | this file only | no active product change; any changed pending bytes return to Pi verification before commit |
 
 Temporary legacy files are not normal background reading. Search them only when the USER or a new
 review requests a specific historical statement, Test ID or SHA.

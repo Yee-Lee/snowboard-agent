@@ -1,13 +1,6 @@
-"""User-driven Pi measurement with private incremental evidence.
-
-PM records real context rejection, replacement and subsequent conversation turns.
-Utterance meaning and repeat equivalence are reviewed by an agent, not string gates.
-Artifact verification finishes after worker cleanup, before
-profile derivation is published. A measurement profile never proves PR or PH.
-"""
+"""Reusable private capture, lifecycle, measurement, and cleanup support for PV."""
 from __future__ import annotations
 
-import argparse
 import asyncio
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -16,7 +9,6 @@ import json
 import os
 from pathlib import Path
 import stat
-import subprocess
 import sys
 import time
 import traceback
@@ -187,7 +179,6 @@ class NativeMeasurementSession:
 
     def __init__(self, components: _Components, *, authorization, expected_tuple,
                  user_authorized_diagnostic: bool = False,
-                 complete_pm: bool = False,
                  auto_fill: bool = False, diagnostic_windows: int | None = None,
                  max_turns: int = 128, listen_timeout_seconds: float = 30,
                  startup_health=None, cleanup_proof=None, recorder: _DiagnosticRecorder | None = None):
@@ -197,17 +188,14 @@ class NativeMeasurementSession:
         self._max_turns = max_turns
         self._listen_timeout = listen_timeout_seconds
         self._recorder = recorder
-        if type(complete_pm) is not bool or (complete_pm and recorder is None):
-            raise MetricsError("M4B_MEASUREMENT_INPUT_INVALID")
-        self._complete_pm = complete_pm
         if diagnostic_windows is not None and (diagnostic_windows not in (1, 2)
-                or complete_pm or recorder is None):
+                or recorder is None):
             raise MetricsError("M4B_MEASUREMENT_INPUT_INVALID")
         self._diagnostic_windows = diagnostic_windows
         if diagnostic_windows is not None:
             self._max_turns = diagnostic_windows
         self._auto_fill = auto_fill
-        if auto_fill and not complete_pm:
+        if type(auto_fill) is not bool:
             raise MetricsError("M4B_MEASUREMENT_INPUT_INVALID")
         self.human_turns = 0
         self.automatic_turns = 0
@@ -357,12 +345,6 @@ class NativeMeasurementSession:
                         break
                     self.human_turns += 1
                 label = f"自動填充 {self.automatic_turns + 1}" if automatic else f"第 {self.human_turns} 輪"
-                if self._complete_pm and not automatic:
-                    instruction = "請自由問一個簡短問題；不要要求結束對話。"
-                    if self.replacement_completed:
-                        instruction = "新對話已建立，請自由問一個簡短問題。"
-                    self._recorder.record("input_instruction", turn=turn, text=instruction)
-                    print(f"========== PM 第 {self.human_turns} 輪：{instruction} 等 READY 再說。 ==========", flush=True)
                 if automatic:
                     questions = ("一公斤有幾公克？", "雪是什麼顏色？", "滑雪前要熱身嗎？", "你是誰？")
                     text = questions[self.automatic_turns % len(questions)]
@@ -387,7 +369,7 @@ class NativeMeasurementSession:
                 if self._recorder is not None:
                     print(f"[{label}｜{'文字輸入' if automatic else 'ASR'} {perception.status}] "
                           + json.dumps(perception.text, ensure_ascii=False), flush=True)
-                if (self._complete_pm or self._diagnostic_windows) and perception.status == "timeout":
+                if self._diagnostic_windows and perception.status == "timeout":
                     self._mark("waiting_for_input", turn=turn, reason="NO_TRANSCRIPT")
                     print("本輪沒有辨識文字，已保留錄音供 agent 審查。", flush=True)
                     with c.observer._lock:
@@ -432,7 +414,7 @@ class NativeMeasurementSession:
                     break
                 if c.observer.generated_this_turn:
                     self.generated_turns += 1
-                    if self._complete_pm:
+                    if self._auto_fill:
                         runtime_row = next((row for row in reversed(c.observer.rows)
                             if row.get("dashboard") == "runtime"
                             and row.get("values", {}).get("terminal_conversation_kv_tokens")
@@ -443,7 +425,8 @@ class NativeMeasurementSession:
                                 conversation_kv_tokens=kv_tokens,
                                 context_admission_limit_tokens=896,
                                 progress_percent=min(100, kv_tokens * 100 // 896))
-                    if self._recorder is not None and not self._complete_pm and self.generated_turns >= 3:
+                    if (self._recorder is not None and not self._auto_fill
+                            and self.generated_turns >= 3):
                         break
                     if self.replacement_completed:
                         if (not self._repeat_verified and
@@ -475,9 +458,9 @@ class NativeMeasurementSession:
                     if self._diagnostic_windows:
                         break
                     raise MetricsError("M4B_MEASUREMENT_SESSION_ENDED_EARLY")
-            if (self._recorder is None or self._complete_pm) and not self.repeat_succeeded and not self._auto_fill:
+            if self._recorder is None and not self.repeat_succeeded and not self._auto_fill:
                 raise MetricsError("M4B_MEASUREMENT_REPEAT_NOT_PROVEN")
-            if (self._recorder is not None and not self._complete_pm
+            if (self._recorder is not None and not self._auto_fill
                     and not self._diagnostic_windows and self.generated_turns < 3):
                 raise MetricsError("M4B_DIAGNOSTIC_TURNS_NOT_COMPLETE")
             # CLOSE's own callback is the final row; do not append a synthetic
@@ -546,10 +529,9 @@ class NativeMeasurementSession:
             repeat_verified=None, semantic_review="agent_required",
             post_replacement_generated_turns=self.post_replacement_generated_turns,
             successful_turns=self.generated_turns,
-            cleanup_proven=self.harness.cleanup_proven,
-            pr_complete=False, ph_complete=False)
-        if self._recorder is not None and not self._complete_pm:
-            result.update(status="DiagnosticComplete", formal_pm_complete=False,
+            cleanup_proven=self.harness.cleanup_proven)
+        if self._recorder is not None and not self._auto_fill:
+            result.update(status="DiagnosticComplete",
                           successful_turns=self.generated_turns,
                           replacement_completed=self.replacement_completed)
         return result
@@ -576,7 +558,6 @@ def _startup_health(previous=None):
     health = kernel_resource_sample(Path("/proc/meminfo").read_text(), Path("/proc/vmstat").read_text(),
         str(round(_pi_temperature() * 1000)), f"throttled=0x{_pi_throttled():x}")
     if (health["mem_available_mib"] * 1024**2 < MEASUREMENT_SAFETY_FLOOR_BYTES
-            or (previous is not None and health["swap_used_mib"] > previous["swap_used_mib"])
             or health["oom_kill"] != 0
             or health["thermal_celsius"] >= 80 or health["throttled_bits"] != 0):
         raise MetricsError("M4B_MEASUREMENT_STARTUP_UNSAFE")
@@ -622,7 +603,7 @@ def build_native(args, recorder: _DiagnosticRecorder | None = None):
         if recorder is None:
             raise MetricsError("M4B_MEASUREMENT_DIAGNOSTIC_MISSING")
         grant = MeasurementGrant.user_diagnostic(expected_tuple=expected, profile=profile,
-            diagnostic_directory=recorder.root, complete_pm=args.complete_pm)
+            diagnostic_directory=recorder.root)
     else:
         grant = MeasurementGrant.load(args.authorization, expected_tuple=expected, profile=profile)
     cfg = LLMConfig(driver="litert_lm", runtime_python=args.runtime_python,
@@ -663,11 +644,10 @@ def build_native(args, recorder: _DiagnosticRecorder | None = None):
     authorization = None if args.user_authorized_diagnostic else json.loads(args.authorization.read_text())
     return NativeMeasurementSession(components, authorization=authorization, expected_tuple=expected,
         user_authorized_diagnostic=args.user_authorized_diagnostic,
-        complete_pm=args.complete_pm,
-        auto_fill=args.complete_pm,
+        auto_fill=False,
         diagnostic_windows=getattr(args, "diagnostic_windows", None),
-        max_turns=args.max_turns, listen_timeout_seconds=(10.0 if args.complete_pm
-            or getattr(args, "diagnostic_windows", None)
+        max_turns=args.max_turns, listen_timeout_seconds=(10.0
+            if getattr(args, "diagnostic_windows", None)
             else config.perception.timeout_seconds.listen),
         startup_health=_startup_health, recorder=recorder)
 
@@ -684,264 +664,3 @@ def _write_private(directory: Path, name: str, value):
                       default=lambda item: sorted(item) if isinstance(item, frozenset) else None)
     except BaseException:
         raise MetricsError("M4B_MEASUREMENT_OUTPUT_FAILED") from None
-
-
-def _artifact_snapshot(args):
-    """Cheap metadata fence around the measured run and subsequent full hash."""
-    from sbd.cognition.litert_lm.lock import LLMArtifactLock
-    lock = LLMArtifactLock.load(args.artifact_lock, repo_root=ROOT)
-    runtime_root = args.runtime_python.parent.parent / "lib/python3.13/site-packages"
-    paths = [args.model, args.product_profile, args.artifact_lock, args.runtime_python,
-             lock.runtime_closure.path]
-    paths.extend(runtime_root.rglob("*"))
-    result = {}
-    for path in sorted(set(paths)):
-        info = path.stat()
-        result[str(path)] = [info.st_dev, info.st_ino, info.st_size,
-                             info.st_mtime_ns, info.st_ctime_ns]
-    return result
-
-
-def _content_snapshot(args):
-    names = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", "--",
-        "src", "scripts", "tests", "requirements", "pyproject.toml", "uv.lock"],
-        check=True, stdout=subprocess.PIPE, timeout=15).stdout.decode().split("\0")
-    values = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-              for name in names if name}
-    values["audio_config"] = hashlib.sha256(args.audio_config.read_bytes()).hexdigest()
-    return values
-
-
-def _verify_measured_artifacts(args, before):
-    from types import SimpleNamespace
-    from sbd.cognition.litert_lm.lock import LLMArtifactLock
-    if _artifact_snapshot(args) != before:
-        raise MetricsError("M4B_ARTIFACT_CHANGED_DURING_RUN")
-    lock = LLMArtifactLock.load(args.artifact_lock, repo_root=ROOT)
-    lock.runtime_closure.verify_install(
-        args.runtime_python.parent.parent / "lib/python3.13/site-packages")
-    lock.verify_config_paths(SimpleNamespace(model_path=args.model,
-        product_profile_path=args.product_profile), allow_measurement=True)
-    if _artifact_snapshot(args) != before:
-        raise MetricsError("M4B_ARTIFACT_CHANGED_DURING_VERIFICATION")
-    return {"verified": True, "artifact_lock_sha256": lock.digest,
-            "metadata": before, "verification_phase": "after_cleanup_before_freeze"}
-
-
-class _Parser(argparse.ArgumentParser):
-    def error(self, message):
-        raise MetricsError("M4B_MEASUREMENT_INPUTS_MISSING")
-
-
-def validate_pm_bundle(root: Path):
-    """Read-only PR/PH input check. Recompute thresholds from the saved bytes."""
-    from scripts.m4b_target_metrics import MeasurementPoint, freeze_release_profile_automatic
-    from sbd.cognition.litert_lm.resource import ProcessResource, SystemResourceSample
-    try:
-        index = json.loads((root / "pm-handoff.json").read_text())
-        if (root / "failure.json").exists():
-            raise ValueError("run failed")
-        required = {"measurement.json", "series.json", "observations.json", "turns.json",
-                    "measurement-profile.json", "release-profile.json", "artifact-verification.json",
-                    "diagnostic-events.jsonl", "content-verification.json", "pr-measurement-input.json"}
-        if index["schema_version"] != 1 or not required.issubset(index["files"]):
-            raise ValueError("missing evidence")
-        for name, digest in index["files"].items():
-            path = root / name
-            if (Path(name).name != name or path.is_symlink() or not path.is_file()
-                    or hashlib.sha256(path.read_bytes()).hexdigest() != digest):
-                raise ValueError("evidence digest mismatch")
-        read = lambda name: json.loads((root / name).read_text())
-        result = read("measurement.json")
-        if (result.get("pm_complete") is not True or result.get("cleanup_proven") is not True
-                or result.get("replacement_completed") is not True or result.get("new_conversation_answered") is not True
-                or result.get("post_replacement_generated_turns", 0) < 2
-                or read("artifact-verification.json").get("verified") is not True
-                or read("content-verification.json").get("verified") is not True):
-            raise ValueError("measurement is incomplete")
-        points = []
-        for row in read("series.json"):
-            sample = dict(row["sample"])
-            sample["processes"] = tuple(ProcessResource(**{**p, "owner":
-                frozenset(p["owner"]) if isinstance(p["owner"], list) else p["owner"]})
-                for p in sample["processes"])
-            points.append(MeasurementPoint(row["lifecycle_point"], row["operation_index"],
-                                           SystemResourceSample(**sample)))
-        release = freeze_release_profile_automatic(read("measurement-profile.json"), points,
-            evidence_sha256=index["files"]["series.json"], completed=True, cleanup_proven=True)
-        if (release != read("release-profile.json")
-                or result["release_profile_sha256"] != release["profile_sha256"]
-                or result["measurement_series_sha256"] != index["files"]["series.json"]):
-            raise ValueError("derived profile mismatch")
-        if read("pr-measurement-input.json") != _pr_measurement_input(root):
-            raise ValueError("PR measurement input mismatch")
-        turns = read("turns.json")
-        if not turns:
-            raise ValueError("missing turns")
-        for turn in turns:
-            if turn.get("input_source") == "automatic_fill":
-                if turn.get("audio_turn") is not None:
-                    raise ValueError("automatic input claimed microphone evidence")
-                continue
-            name = f"input-turn-{turn.get('audio_turn', turn['turn']):04d}.pcm"
-            if name not in index["files"]:
-                raise ValueError("missing audio")
-        return {"status": "PM_INPUT_VALID", "pm_complete": True,
-                "release_profile_sha256": release["profile_sha256"],
-                "pr_complete": False, "ph_complete": False}
-    except (OSError, ValueError, KeyError, TypeError) as error:
-        raise MetricsError("M4B_PM_BUNDLE_INVALID") from error
-
-
-def _pr_measurement_input(root):
-    read = lambda name: json.loads((root / name).read_text())
-    result = read("measurement.json")
-    return {"measurement_profile": read("measurement-profile.json"),
-        "measurement_attestation": result["authorized_tuple"],
-        "points": read("series.json"), "release_profile": read("release-profile.json"),
-        "completed": result["pm_complete"], "cleanup_proven": result["cleanup_proven"],
-        "measurement_run_sha256": result["measurement_series_sha256"]}
-
-
-def _seal_pm_bundle(root):
-    _write_private(root, "pr-measurement-input.json", _pr_measurement_input(root))
-    files = {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-             for path in sorted(root.iterdir()) if path.is_file() and not path.is_symlink()}
-    _write_private(root, "pm-handoff.json", {"schema_version": 1, "files": files,
-        "purpose": "PM evidence for separate PR execution and PH review",
-        "pr_complete": False, "ph_complete": False})
-    return validate_pm_bundle(root)
-
-
-def main(argv=None):
-    values = sys.argv[1:] if argv is None else argv
-    if len(values) == 2 and values[0] == "--validate-pm":
-        try:
-            print(json.dumps(validate_pm_bundle(Path(values[1])), sort_keys=True))
-            return 0
-        except MetricsError:
-            print('{"status":"Blocked","code":"M4B_PM_BUNDLE_INVALID"}')
-            return 2
-    parser = _Parser(description=__doc__)
-    for field in ("audio-config", "runtime-python", "model", "product-profile", "artifact-lock",
-                  "private-output"):
-        parser.add_argument("--" + field, type=Path, required=True)
-    parser.add_argument("--authorization", type=Path)
-    parser.add_argument("--user-authorized-diagnostic", action="store_true")
-    parser.add_argument("--complete-pm", action="store_true")
-    parser.add_argument("--candidate-sha", required=True)
-    parser.add_argument("--max-turns", type=int, default=128)
-    parser.add_argument("--diagnostic-windows", type=int, choices=(1, 2))
-    args = root = session = recorder = None
-    try:
-        args = parser.parse_args(argv)
-        if bool(args.authorization) == args.user_authorized_diagnostic:
-            raise MetricsError("M4B_MEASUREMENT_INPUTS_MISSING")
-        if args.complete_pm and not args.user_authorized_diagnostic:
-            raise MetricsError("M4B_MEASUREMENT_INPUTS_MISSING")
-        # Refuse output collisions before acquiring hardware/model resources.
-        root = args.private_output.resolve(strict=True)
-        if (not root.is_dir() or root.is_relative_to(ROOT) or stat.S_IMODE(root.stat().st_mode) & 0o077
-                or any((root / name).exists() for name in (
-                    "measurement.json", "series.json", "observations.json"))):
-            raise MetricsError("M4B_MEASUREMENT_PRIVATE_OUTPUT_INVALID")
-        if args.user_authorized_diagnostic and any(root.iterdir()):
-            raise MetricsError("M4B_MEASUREMENT_PRIVATE_OUTPUT_INVALID")
-        if args.user_authorized_diagnostic:
-            recorder = _DiagnosticRecorder(root)
-            recorder.announce("STARTING", candidate_sha=args.candidate_sha,
-                harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                python=sys.version.split()[0], pid=os.getpid())
-            patch = subprocess.run(["git", "-C", str(ROOT), "diff", "--binary", "--no-ext-diff"],
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                timeout=30, check=True).stdout
-            status = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain",
-                                     "--untracked-files=all"],
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                timeout=30, check=True).stdout.decode("utf-8").splitlines()
-            recorder.record("diagnostic_inputs", audio_config=str(args.audio_config),
-                runtime_python=str(args.runtime_python), model=str(args.model),
-                product_profile=str(args.product_profile), artifact_lock=str(args.artifact_lock),
-                private_output=str(root), max_turns=args.max_turns,
-                complete_pm=args.complete_pm,
-                git_patch_sha256=hashlib.sha256(patch).hexdigest(), git_patch_bytes=len(patch),
-                git_status=status)
-        artifact_snapshot = _artifact_snapshot(args) if args.complete_pm else None
-        content_snapshot = _content_snapshot(args) if args.complete_pm else None
-        session = build_native(args, recorder=recorder)
-        result = asyncio.run(session.run())
-        series = [asdict(point) for point in session.harness.points]
-        _write_private(root, "series.json", series)
-        _write_private(root, "observations.json", session._c.observer.rows)
-        if args.complete_pm:
-            _write_private(root, "turns.json", session._diagnostic_turns)
-            _write_private(root, "measurement-profile.json", json.loads(args.product_profile.read_text()))
-            recorder.announce("VERIFYING_ARTIFACTS", message="語音測量已結束，正在核對模型；不需說話。")
-            attestation = _verify_measured_artifacts(args, artifact_snapshot)
-            _write_private(root, "artifact-verification.json", attestation)
-            if _content_snapshot(args) != content_snapshot:
-                raise MetricsError("M4B_CONTENT_CHANGED_DURING_RUN")
-            _write_private(root, "content-verification.json", {
-                "candidate_sha": args.candidate_sha, "files": content_snapshot,
-                "verified": True})
-            from scripts.m4b_target_metrics import freeze_release_profile_automatic
-            evidence_sha256 = hashlib.sha256((root / "series.json").read_bytes()).hexdigest()
-            measurement_profile = json.loads(args.product_profile.read_text())
-            release_profile = freeze_release_profile_automatic(measurement_profile,
-                session.harness.points, evidence_sha256=evidence_sha256,
-                completed=session.harness.completed,
-                cleanup_proven=session.harness.cleanup_proven)
-            _write_private(root, "release-profile.json", release_profile)
-            result.update(pm_complete=session.repeat_succeeded, measurement_series_sha256=evidence_sha256,
-                          release_profile_sha256=release_profile["profile_sha256"])
-        _write_private(root, "measurement.json", result)
-        if recorder is not None:
-            recorder.announce("MEASUREMENT_SAVED", sample_count=len(session.harness.points))
-        if args.complete_pm:
-            recorder.close()
-            _seal_pm_bundle(root)
-            print("========== PM_CAPTURE_COMPLETE：資料已保存，請交 agent 審查並進行 PR／PH ==========", flush=True)
-        elif recorder is not None:
-            recorder.announce("COMPLETE", sample_count=len(session.harness.points))
-        print(json.dumps(result, sort_keys=True))
-        return 0
-    except (Exception, KeyboardInterrupt, asyncio.CancelledError) as error:
-        stage = "input_validation" if session is None else session._diagnostic_stage
-        captured = bool(session and session.harness.completed and session.harness.cleanup_proven)
-        review_only = captured and not isinstance(error, (KeyboardInterrupt, asyncio.CancelledError))
-        if recorder is not None and root is not None:
-            if not recorder._stream.closed:
-                recorder.error("run_failed", error)
-            failure = {"status": "NeedsReview" if review_only else "Blocked", "stage": stage,
-                "exception_type": type(error).__name__, "exception": str(error),
-                "cleanup_proven": bool(session and session.harness.cleanup_proven),
-                "sample_count": 0 if session is None else len(session.harness.points)}
-            failure.update(interrupted=isinstance(error, (KeyboardInterrupt, asyncio.CancelledError)),
-                replacement_completed=bool(session and session.replacement_completed),
-                new_conversation_answered=bool(session and session._repeat_verified),
-                repeat_verified=None, semantic_review="agent_required",
-                post_replacement_generated_turns=0 if session is None else session.post_replacement_generated_turns,
-                capture_complete=captured, pm_complete=False, pr_complete=False, ph_complete=False)
-            for name, value in (("review-needed.json" if review_only else "failure.json", failure),
-                    ("partial-series.json", [] if session is None else
-                     [asdict(point) for point in session.harness.points]),
-                    ("partial-observations.json", [] if session is None else session._c.observer.rows),
-                    ("partial-turns.json", [] if session is None else session._diagnostic_turns)):
-                try:
-                    _write_private(root, name, value)
-                except Exception as output_error:
-                    if not recorder._stream.closed:
-                        recorder.error("diagnostic_output_failed", output_error)
-        if review_only:
-            print("========== PM_CAPTURE_COMPLETE：測量已收集；後處理需 agent 檢查，請保留 OUTPUT_DIR，不需先重錄。 ==========", flush=True)
-        print(json.dumps({"status": "NeedsReview" if review_only else "Blocked",
-                          "code": "M4B_POSTPROCESS_REVIEW_REQUIRED" if review_only else "M4B_MEASUREMENT_NOT_COMPLETE",
-                          "stage": stage}, sort_keys=True), flush=True)
-        return 0 if review_only else 2
-    finally:
-        if recorder is not None:
-            recorder.close()
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

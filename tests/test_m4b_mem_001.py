@@ -26,18 +26,27 @@ def test_memory_decision_exact_boundaries(available, speak, generate, expected, 
 
 
 @pytest.mark.parametrize("changes", [
-    {"mem_available_bytes": 2001}, {"swap_used_bytes": 1}, {"oom_kill": 1},
+    {"mem_available_bytes": 2001}, {"oom_kill": 1},
     {"throttled_bits": 1}, {"temperature_c": float("nan")}, {"temperature_c": 80},
     {"temperature_c": -1}, {"mem_total_bytes": 1},
     {"processes": sample().processes + sample().processes[:1]},
     {"processes": sample().processes[:-1]},
     {"processes": (replace(sample().processes[0], start_time_ticks=101), *sample().processes[1:])},
     {"processes": (replace(sample().processes[0], pid=999), *sample().processes[1:])},
-], ids=[f"M02-{i}" for i in range(12)])
+], ids=[f"M02-{i}" for i in range(11)])
 def test_unhealthy_or_inconsistent_samples_fail_before_decision(changes):
     with pytest.raises(ResourceSampleError, match="^M4B_RESOURCE_INVALID$"):
         memory_decision(replace(sample(stamp=2), **changes), previous=sample(),
             min_mem_available_speak_bytes=500, min_mem_available_generate_bytes=1000)
+
+
+@pytest.mark.parametrize("swap_used_bytes", [0, 1, 18 * 1024**2])
+def test_M02_swap_growth_is_measured_not_a_health_stop(swap_used_bytes):
+    current = replace(sample(stamp=2), swap_used_bytes=swap_used_bytes)
+    assert memory_decision(current, previous=sample(),
+        min_mem_available_speak_bytes=500,
+        min_mem_available_generate_bytes=1000) is MemoryDecision.GENERATE
+    assert current.swap_used_bytes == swap_used_bytes
 
 
 @pytest.mark.parametrize("speak,generate", [(None, None), (0, 1), (2, 1), (True, 1), (1, float("inf"))],
@@ -118,7 +127,7 @@ def test_invalid_sample_preserves_values_and_reason_for_private_diagnostics():
     assert str(caught.value) == "M4B_RESOURCE_INVALID"
 
 
-@pytest.mark.parametrize("corruption", [None, "swap", "time", "core"])
+@pytest.mark.parametrize("corruption", [None, "time", "core"])
 def test_M02_audio_rebase_preserves_health_and_non_audio_identity(corruption):
     previous = sample()
     audio = replace(previous.processes[2], pid=33, start_time_ticks=200)
@@ -127,8 +136,6 @@ def test_M02_audio_rebase_preserves_health_and_non_audio_identity(corruption):
     class Registry:
         def rebase_previous(self, old, new):
             adjusted = replace(old, processes=new.processes)
-            if corruption == "swap":
-                return replace(adjusted, swap_used_bytes=1)
             if corruption == "time":
                 return replace(adjusted, monotonic_ns=0)
             if corruption == "core":
@@ -142,5 +149,4 @@ def test_M02_audio_rebase_preserves_health_and_non_audio_identity(corruption):
     else:
         sampler.validate_sample(current, previous)
         sampler.validate_sample(current, previous)
-        with pytest.raises(ResourceSampleError):
-            sampler.validate_sample(replace(current, swap_used_bytes=1), previous)
+        sampler.validate_sample(replace(current, swap_used_bytes=1), previous)

@@ -191,7 +191,8 @@ attestation, with no Conversation:
   "native_sha256":"9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
   "model_sha256":"181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
   "prompt_sha256":"872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643",
-  "grammar_sha256":"<64 hex>",
+  "response_schema_locator":"requirements/m4b/semantic-output-v1.schema.json",
+  "response_schema_sha256":"796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9",
   "prompt_tokens":66,
   "max_output_tokens":128,
   "engine_context_tokens":1024,
@@ -363,8 +364,10 @@ Successful terminal:
 }
 ```
 
-The child sends RESULT only after constrained JSON terminal validation, safe-fragment prefix proof and native
-request join. `first_safe_text_monotonic_ns` is null when no fragment was emitted. Metrics must match the consumed
+The child sends RESULT only after constrained JSON terminal validation by a duplicate-aware JSON decoder when raw
+JSON is exposed, or direct exact response-schema validation when LiteRT-LM returns an already-decoded mapping,
+plus safe-fragment prefix proof and native request join. `first_safe_text_monotonic_ns` is null when no fragment
+was emitted. Metrics must match the consumed
 ticket and be monotonic/nondecreasing; impossible values are protocol failure.
 
 A post-send failure may use the normal R2 path only after native terminal/join proof and while Engine remains

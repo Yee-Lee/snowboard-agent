@@ -166,7 +166,7 @@ def test_memory_denial_has_no_generation(allow,text,kind):
     asyncio.run(scenario())
 
 
-@pytest.mark.parametrize("text,end,kind,route",[("嗨🙂！",False,"speak","KEEP_NEXT"),("再見",True,"speak","END_SESSION"),("",True,"rest","END_SESSION")],ids=["O05","O06","O07"])
+@pytest.mark.parametrize("text,end,kind,route",[("嗨🙂！",False,"speak","KEEP_NEXT"),("再見",True,"speak","END_SESSION")],ids=["O05","O06"])
 def test_model_owns_semantics_only(text,end,kind,route):
     async def scenario():
         base=ProductLLM()
@@ -179,6 +179,57 @@ def test_model_owns_semantics_only(text,end,kind,route):
         assert len(base.native_sends)==1 and base.conversation_revision==1
         assert reasoner.control is base.control
         assert len(set(base.task_ledger))==1
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("wire", [
+    '{"text":"","end":false}', '{"text":" \\t\\n","end":false}',
+], ids=["O07-empty-false", "O07-normalizes-empty-false"])
+def test_empty_continuation_uses_existing_r2_without_retry(wire):
+    from tests.fakes.m4b_llm_child import adapter_fixture
+
+    async def scenario():
+        adapter, children, _, _ = adapter_fixture()
+        await adapter.start()
+        children[0].runtime.output = wire
+        await adapter.open_conversation("session", 1)
+        _, responses, errors = await run(adapter)
+        assert errors == [] and len(responses) == 1
+        response = responses[0]
+        assert (response.action_kind, response.action_payload,
+                response.post_action_route, response.next_perceptions) == (
+                    "speak", {"text":"剛才沒有成功，請再說一次。"},
+                    "REPLACE_NEXT", ("listen",))
+        assert children[0].runtime.sends == 1
+        assert adapter.conversation_revision == 0
+        await adapter.close_conversation("session", 1, "replacement")
+        await adapter.stop()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("wire", [
+    '{"text":"","end":true}', '{"end":true,"text":" \\t\\n"}',
+], ids=["O07-empty-end", "O07-normalizes-empty-end-reordered"])
+def test_empty_model_end_rests_and_ends_session(wire):
+    from tests.fakes.m4b_llm_child import adapter_fixture
+
+    async def scenario():
+        adapter, children, _, _ = adapter_fixture()
+        await adapter.start()
+        children[0].runtime.output = wire
+        await adapter.open_conversation("session", 1)
+        _, responses, errors = await run(adapter)
+        assert errors == [] and len(responses) == 1
+        response = responses[0]
+        assert (response.action_kind, response.action_payload,
+                response.post_action_route, response.next_perceptions) == (
+                    "rest", {}, "END_SESSION", ())
+        assert children[0].runtime.sends == 1
+        assert adapter.conversation_revision == 1
+        await adapter.close_conversation("session", 1, "session_end")
+        await adapter.stop()
+
     asyncio.run(scenario())
 
 

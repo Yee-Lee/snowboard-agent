@@ -1,4 +1,4 @@
-"""M4B measurement authorization, privacy helpers and integer-byte threshold derivation."""
+"""M4B resource/privacy helpers and integer-byte threshold derivation."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import re
 import asyncio
 import base64
 from dataclasses import dataclass
-from datetime import datetime
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Mapping
@@ -23,7 +22,11 @@ def privacy_hits(blobs: Iterable[tuple[str, bytes]], sentinels: Iterable[str | b
     for value in sentinels:
         raw = value if isinstance(value, bytes) else value.encode("utf-8")
         if raw:
-            values.extend((raw, base64.b64encode(raw), raw.hex().encode("ascii")))
+            encoded = base64.b64encode(raw)
+            urlsafe = base64.urlsafe_b64encode(raw)
+            values.extend((raw, encoded, encoded.rstrip(b"="), urlsafe,
+                           urlsafe.rstrip(b"="), raw.hex().encode("ascii"),
+                           raw.hex().upper().encode("ascii")))
     hits: list[str] = []
     for locator, blob in blobs:
         if any(value in blob for value in values):
@@ -85,6 +88,7 @@ def kernel_resource_sample(
         "mem_total_mib": memory["MemTotal"] / 1024,
         "mem_available_mib": memory["MemAvailable"] / 1024,
         "system_used_mib": (memory["MemTotal"] - memory["MemAvailable"]) / 1024,
+        "swap_total_mib": memory["SwapTotal"] / 1024,
         "swap_used_mib": (memory["SwapTotal"] - memory["SwapFree"]) / 1024,
         "oom_kill": counters["oom_kill"],
         "thermal_celsius": temperature,
@@ -198,7 +202,8 @@ def derive_thresholds(points: Iterable[MeasurementPoint], *, completed: bool,
     rows = tuple(points)
     required = {"engine_ready", "conversation_preparation", "conversation_ready", "pre_generate",
         "post_generate", "primary_completion", "pre_speak", "audio_completion",
-        "pre_replacement", "post_replacement", "post_session_close"}
+        "post_session_close"}
+    optional = {"pre_replacement", "post_replacement"}
     if completed is not True or cleanup_proven is not True or not rows:
         raise MetricsError("M4B_MEASUREMENT_INCOMPLETE")
     previous = None
@@ -206,7 +211,7 @@ def derive_thresholds(points: Iterable[MeasurementPoint], *, completed: bool,
         for row in rows:
             if (not isinstance(row, MeasurementPoint) or not isinstance(row.sample, SystemResourceSample)
                     or type(row.operation_index) is not int or row.operation_index < 0
-                    or row.lifecycle_point not in required | {"sample"}):
+                    or row.lifecycle_point not in required | optional | {"sample"}):
                 raise ValueError
             row.sample.validate(previous)
             previous = row.sample
@@ -285,57 +290,6 @@ def derive_thresholds(points: Iterable[MeasurementPoint], *, completed: bool,
         "min_mem_available_speak_bytes": speak, "min_mem_available_generate_bytes": generate}
 
 
-def freeze_release_profile(measurement_profile: Mapping[str, object],
-                           points: Iterable[MeasurementPoint], *, evidence_sha256: str,
-                           approvals: object, completed: bool, cleanup_proven: bool) -> dict[str, object]:
-    """Construct a new release profile only after both roles approved exact raw-derived values."""
-    from sbd.cognition.litert_lm.lock import profile_digest, validate_product_profile
-    measured = validate_product_profile(dict(measurement_profile), allow_measurement=True)
-    if measured["profile_stage"] != "measurement" or not _digest_value(evidence_sha256):
-        raise MetricsError("M4B_FREEZE_INVALID")
-    derived = derive_thresholds(points, completed=completed, cleanup_proven=cleanup_proven)
-    expected = {"measurement_profile_sha256": measured["profile_sha256"],
-                "evidence_sha256": evidence_sha256, **derived}
-    if type(approvals) is not list or len(approvals) != 2:
-        raise MetricsError("M4B_FREEZE_INVALID")
-    roles = set()
-    for approval in approvals:
-        if (type(approval) is not dict or set(approval) != {
-                "role", "reviewer", "approved_at", "decision", "freeze_tuple"}
-                or approval["role"] not in {"Designer", "Tester"} or approval["role"] in roles
-                or approval["decision"] != "Approved" or approval["freeze_tuple"] != expected
-                or type(approval["reviewer"]) is not str or not approval["reviewer"].strip()):
-            raise MetricsError("M4B_FREEZE_INVALID")
-        try:
-            if datetime.fromisoformat(approval["approved_at"].replace("Z", "+00:00")).utcoffset() is None:
-                raise ValueError
-        except (AttributeError, TypeError, ValueError):
-            raise MetricsError("M4B_FREEZE_INVALID") from None
-        roles.add(approval["role"])
-    release = {**measured, "profile_stage": "release",
-        "min_mem_available_speak_bytes": derived["min_mem_available_speak_bytes"],
-        "min_mem_available_generate_bytes": derived["min_mem_available_generate_bytes"],
-        "measurement_evidence_locator": f"sha256/{evidence_sha256}"}
-    release["profile_sha256"] = profile_digest(release)
-    return dict(validate_product_profile(release))
-
-
-def freeze_release_profile_automatic(measurement_profile: Mapping[str, object],
-                                     points: Iterable[MeasurementPoint], *,
-                                     evidence_sha256: str, completed: bool,
-                                     cleanup_proven: bool) -> dict[str, object]:
-    """Freeze measured thresholds without a role signature or approval file."""
-    from sbd.cognition.litert_lm.lock import profile_digest, validate_product_profile
-    measured = validate_product_profile(dict(measurement_profile), allow_measurement=True)
-    if measured["profile_stage"] != "measurement" or not _digest_value(evidence_sha256):
-        raise MetricsError("M4B_FREEZE_INVALID")
-    derived = derive_thresholds(points, completed=completed, cleanup_proven=cleanup_proven)
-    release = {**measured, "profile_stage": "release",
-        "min_mem_available_speak_bytes": derived["min_mem_available_speak_bytes"],
-        "min_mem_available_generate_bytes": derived["min_mem_available_generate_bytes"],
-        "measurement_evidence_locator": f"sha256/{evidence_sha256}"}
-    release["profile_sha256"] = profile_digest(release)
-    return dict(validate_product_profile(release))
 
 
 class MeasurementHarness:
@@ -346,15 +300,29 @@ class MeasurementHarness:
     """
 
     def __init__(self, *, authorization, expected_tuple, sample, cleanup,
-                 user_authorized_diagnostic: bool = False,
+                 user_authorized_diagnostic: bool = False, pv_attested: bool = False,
                  point_sink=None, error_sink=None,
                  interval_seconds: float = 0.05, cleanup_timeout_seconds: float = 10.0) -> None:
         import math
-        if type(user_authorized_diagnostic) is not bool:
+        if (type(user_authorized_diagnostic) is not bool or type(pv_attested) is not bool
+                or (user_authorized_diagnostic and pv_attested)):
             raise MetricsError("M4B_MEASUREMENT_INVALID")
         self.user_authorized_diagnostic = user_authorized_diagnostic
-        self.authorized_tuple = (dict(expected_tuple) if user_authorized_diagnostic
-                                 else validate_authorization(authorization, expected_tuple))
+        if pv_attested:
+            from sbd.cognition.litert_lm.measurement import PV_FIELDS
+            if (authorization is not None or type(expected_tuple) is not dict
+                    or set(expected_tuple) != PV_FIELDS
+                    or expected_tuple.get("schema_version") != 1
+                    or expected_tuple.get("target_identity")
+                       != "pi5-4gb-debian13-aarch64-cp3135"
+                    or any(not _digest_value(expected_tuple.get(name)) for name in (
+                        "harness_sha256", "content_sha256", "profile_sha256"))):
+                raise MetricsError("M4B_MEASUREMENT_INVALID")
+            self.authorized_tuple = dict(expected_tuple)
+        else:
+            self.authorized_tuple = (dict(expected_tuple) if user_authorized_diagnostic
+                                     else validate_authorization(authorization, expected_tuple))
+        self.pv_attested = pv_attested
         if ((point_sink is not None and not callable(point_sink))
                 or (error_sink is not None and not callable(error_sink))):
             raise MetricsError("M4B_MEASUREMENT_INVALID")
@@ -428,7 +396,7 @@ class MeasurementHarness:
             raise
 
     async def run(self, scenario, *, derive_profile=True) -> dict[str, object]:
-        if not derive_profile and not self.user_authorized_diagnostic:
+        if not derive_profile and not (self.user_authorized_diagnostic or self.pv_attested):
             raise MetricsError("M4B_MEASUREMENT_INPUT_INVALID")
         if self._active or self.completed or self.stopped:
             raise MetricsError("M4B_MEASUREMENT_ALREADY_USED")

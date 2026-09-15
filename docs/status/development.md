@@ -1,6 +1,199 @@
 # Current development status
 
-## USER-directed PM/PR/PH runner correction — 2026-09-13
+## Completed seven-ID Pi PV and Designer verification handoff — 2026-09-15
+
+- Developer ran the final same-tuple `PV-M4B-FINITE-03` on Raspberry Pi 5
+  (`pi5-4gb-debian13-aarch64-cp3135`), then read the entire public final
+  manifest. Protected content/harness/profile digests are
+  `f6b9cfe2dcadeac675deb4811b2711e9c0c6a28d73e4985fc9ae321fb08c7545`,
+  `cb79a96c06cdf427142fd9171523ce545e2b35951c59117d9d1dc8cf95988b33`,
+  and `8d957a4600fc172fd7dd7b285098710af0b753d7d1b697a21bd31611637b3f90`.
+  Public evidence: Pi-local `m4b-pv-finite03-public/pv-final.json`; private
+  bound evidence: Pi-local `m4b-pv-finite03-private/pv-final-manifest.json`.
+- Finalizer returned `pv_status=Pass`, with seven script `Pass`, six applicable
+  Developer review `Pass`, and #2 S01/S02/S03 USER `Pass`; all seven selected
+  Test IDs have empty `reason_codes`. Review counts (fields/rows) are #1
+  `368/114`, #3 `410/146`, #4 `22,607/5,448`, #5 `1,612/573`, #6 `359/123`,
+  and #7 `60,388/16,005`. #2 selected S01 `SEM-S01-F03-A03`, S02
+  `SEM-S02-F03-A01`, and S03 `SEM-S03-F03-A01`, preserving earlier S01 attempts.
+- #4 observed 241 finite two-turn samples, normal close, MemAvailable
+  `2,786,115,584–3,300,950,016` bytes, temperature `49.6–56.2 C`, and no
+  OOM/throttle event. Its Speak/Generate estimates are `585,105,408`/`732,954,624`
+  bytes (558/699 MiB); swap used grew `85,360,640→87,457,792` bytes and was
+  recorded only, not graded. Native context exhaustion/replacement was not
+  observed by #4, so these are finite-session estimates, not replacement proof.
+- Tester revised current Test Spec §5.1 after the Pi finalizer: #1 ATT verifies
+  its own bound identity, offline flags and child `network_denial_installed`,
+  without claiming zero network attempts or requiring duplicate syscall capture.
+  The separate #7 `R01-OFFLINE` case owns pre-native-through-exit syscall tracing
+  and zero-external-attempt evidence (160 captured trace files). Product §11.2
+  maps #1 to identity and #7 R01 to actual network attempts; no Product, runner,
+  model or profile byte changed for this clarification. The prior #1 wording
+  discrepancy is resolved under the current mapping, subject to Designer Verify
+  of the Tester-owned revision; neither Test ID borrows the other's card/result.
+  Remaining review caveats: #5 uses controlled stimulus/display
+  endpoints, not physical wake/display proof; #7 R05 close proof is the approved
+  indirect fail-closed product-gate evidence, R06 had no initial descendant, and
+  R07 proves owner lifecycle rather than full product shutdown.
+- Next owner: Designer for `Verify` of this completed Pi runner result and the
+  listed caveats. No commit or push was made; workstation same-byte reconciliation
+  and USER-approved milestone commit remain separate requirements. Detailed
+  experiments, raw values, partitions, blockers and review locators are in the
+  existing root `update_m4b_pv.md`; no new handoff document was created.
+
+## Active POC-schema and PV correction — 2026-09-15
+
+- Current Designer/Product/Test Spec narrow correction: #3/#4 now use separate genuine
+  two-turn Product Sessions (`C01-FIRST`, `C02-CONTINUE`) and normal application-owned
+  close (`C03-CLOSE`); controlled portable `M4B-CONV-001` `C02`–`C05` retain
+  deterministic rejection/replacement coverage without claiming native context
+  exhaustion. Affected paths: `scripts/run-m4b-pv.py`,
+  `scripts/m4b_target_metrics.py`, `tests/test_m4b_pv_runner.py`,
+  `tests/test_m4b_measurement_harness.py`, this status; Test IDs #3/#4 plus
+  directly affected portable CONV/OUTCOME/MEM cases. Estimate: 3 points.
+  Verify affected portable tests, fresh independent native #3/#4 and complete
+  raw-evidence Developer review on the same pending Pi bytes; no commit yet.
+- First finite Pi diagnostic `PV-M4B-FINITE-01/CONV-01` passed #3 script and
+  Developer inspection (410 fields/146 rows): real native JSON `end=false`
+  twice, same child PID/PGID 7604 and generation 1, revision 0→1→2,
+  second-turn KV 112, matching three-part normal close and cleanup. Independent
+  `MEM-01` produced 253 valid samples and script Pass with finite estimates
+  Speak 579,862,528 / Generate 705,691,648 bytes. Developer inspection found
+  the required setup `SwapTotal` absent from its private series despite the
+  captured swap-used trajectory; no #4 Developer Pass was recorded. The narrow
+  runner correction now records exact setup SwapTotal bytes and swappiness,
+  so this diagnostic tuple cannot be final same-byte credit. Fresh Pi #3/#4
+  and complete review are pending.
+- Corrected finite diagnostic `PV-M4B-FINITE-02` #3 again passed Pi script and
+  Developer review (410 fields/146 rows). #4 independently passed script with
+  270 complete samples, exact setup SwapTotal 2,147,467,264 bytes and
+  swappiness 60, and finite Speak/Generate estimates 612,368,384 /
+  710,934,528 bytes; every sample/owner, lifecycle boundary, native output,
+  controller trace and integer formula was independently checked. Recording
+  #4 Developer review exposed a runner capacity defect: its 3,635,477-byte
+  complete inspection catalog exceeded `_read_json`'s 1 MiB default and
+  misleadingly returned `M4B_PV_BINDING_INVALID`. The narrow correction keeps
+  binding JSON at 1 MiB and permits only inspection catalogs up to 16 MiB,
+  with a directly affected regression. `FINITE-02` remains diagnostic, not
+  final same-byte credit; fresh Pi validation and review are pending.
+- USER removed the active-zram zero-growth stop. Developer removed only swap-growth
+  rejection in `SystemResourceSample.validate`, measurement startup and PV resource
+  health; swap deltas remain measured. OOM/kernel fault, 512 MiB laboratory floor,
+  thermal, throttling, PID/identity, sampler and cleanup stops remain. Directly
+  affected workstation and Pi focused suites each passed 167/167. Current Product
+  §5.3 and focused Test Spec M02/M04/R02 now map this exact change.
+- `PV-M4B-CURRENT-01` #1 ATT script Pass and Developer Pass after complete inspection
+  of 368 fields and 114 rows, but its protected tuple predates the swap fix and
+  cannot be credited to the later `PV-M4B-SWAPFIX-01` tuple. Its #3 `CONV-02`
+  returned Incomplete on the old swap predicate: baseline/post swap
+  34,717,696→37,863,424 bytes, MemAvailable 2,942,484,480→2,893,807,616 bytes,
+  temperature 49.6→53.45 C, OOM 0→0, throttle 0→0, stable owner PID identities;
+  native output was normal non-empty `end=false`. A prior `CONV-01` stopped before
+  inference because the pytest venv lacked pyalsaaudio; subsequent Product runs
+  use the configured controller Python and keep both failed attempts.
+- With normal `/dev/zram0` enabled and swappiness 60, swap-fixed #3
+  `PV-M4B-SWAPFIX-01/CONV-01` proceeded through eight real native generations
+  without swap E1, then returned Incomplete at `M4B_PV_FILL_TURN_FAILED`.
+  `C01-FIRST` and `C02-FILL-0001` through `0006` were non-empty `end=false` /
+  `KEEP_NEXT`; `C02-FILL-0007` was non-empty `end=true` / `END_SESSION` at
+  `current_kv_tokens=376`, incremental 17, reserve 128 of Engine 1024. No context
+  admission rejection or replacement had occurred. Raw trace and child output
+  are in Pi-local `m4b-pv-swapfix01-private/conv-01/`; public Incomplete card
+  is in Pi-local `m4b-pv-swapfix01-public/conv-01/result.json`. This is a
+  separate scenario/product-end decision for Designer/Tester; Developer will not
+  override real `END_SESSION`, replay generations or credit #3 as Pass.
+- Latest aligned tuple `PV-M4B-ALIGNED-01` has #1 ATT script + Developer Pass
+  (all 368 fields/114 rows reviewed) and #6 TIME script + Developer Pass
+  (all 359 fields/123 rows reviewed). #6 used the fixed 103,724-byte WAV:
+  ASR `請簡短介紹台灣。`, native non-empty `end=false` Taiwan response,
+  prefill 86/decode 26, Product Speak/KEEP_NEXT, TTS/Audio action OK and close
+  cleanup true. Ordered controller-monotonic timeline has exact null reason
+  `NOT_APPLICABLE` for first-safe text; no latency ceiling was invented.
+- On the same aligned tuple, #4 `MEM-01` is Incomplete: eight Product generations
+  were structurally successful until the deterministic `C02-FILL-0007`
+  native `end=true`/`END_SESSION` at KV 376 + incremental 17 + reserve 128 of 1024,
+  before context rejection/replacement. Private `mem-series.json` preserves 835
+  points (Engine-ready through eight primary completions), MemAvailable range
+  2,817,671,168–3,276,996,608 bytes, swap used range
+  69,320,704–79,806,464 bytes, temperature 47.4–57.85 C, OOM 0, throttle 0,
+  one stable owner-PID set, cleanup true. `completed=false`,
+  `estimates_reason=SUB_RUN_INCOMPLETE`; all four public estimate fields are null.
+  The same early model end blocks both #3 replacement evidence and #4 complete
+  threshold estimates; no rerun/prompt-only bypass or fabricated estimate.
+- Aligned #5 WAKE designated cases `W01-A01` through `W04-A01` each have Pi
+  script Pass and inspected raw capture: W01 OPEN-first, W02 ACK-first and W03
+  slow-OPEN all kept Listen/ASR/frame pull later than both Conversation join and
+  wake acknowledgement; W03 recorded a bounded OPEN delay of 200,137,836 ns.
+  W04 interrupted OPEN with `activity=[]`, no wake/Conversation join barrier,
+  no Perception/admission and cleanup true despite a stale native READY.
+  Display remained state-slot-only with no Session content. Its Pi Test-ID
+  aggregate script Pass and Developer Pass followed full inspection of 1,612
+  fields/573 rows across the four captures and five public cards. An earlier
+  transient aggregate-call reviewer-capacity rejection was retried on the same
+  command and did not represent a runner failure.
+- USER explicitly directed Developer to start despite the stale closed entry in
+  `docs/status/current.md`. Tester has remapped the exact 352-byte POC schema in the
+  current `test_spec_M4B.md`; no earlier regex or invented-schema tuple is evidence.
+- Affected paths: `requirements/m4b/semantic-output-v1.schema.json`, product profile
+  and artifact lock, `src/sbd/cognition/semantic.py`, LiteRT worker/lock and READY
+  protocol, `scripts/run-m4b-pv.py`, directly affected portable/PV-runner tests and
+  this Developer status. Affected Test IDs: `M4B-PROMPT-001`, `M4B-SEM-001`,
+  `M4B-S2-001`, `M4B-WIRE-001`, `M4B-OUTCOME-001`, `M4B-REG-001` G07–G10 and
+  Pi #1–#7. Estimate: 6 points for schema/identity, runner disposition/catalog,
+  #3 lifecycle correction and same-bytes Pi convergence.
+- Planned checks: focused portable and PV-runner regressions on the workstation and
+  Pi CPython 3.13.5; direct native POC-schema generation; fresh independent Pi
+  #1–#7 runs, complete printed evidence/Developer review for #1/#3–#7 and USER
+  semantic verdicts for #2. No matrix per USER direction; no commit before Pi Verify.
+- Designer `to_developer.md` findings 1–5 are accepted as directly affected work:
+  exact catalog/evidence binding, result-state reduction, private-only commentary,
+  canonical PV-runner collection and raw/decoded 4096-codepoint terminal boundary.
+  The exact schema file/profile/lock/READY path is now implemented; Pi focused
+  227/227 passed before the boundary addition. The boundary is implemented and
+  its new focused test passes 30/30 on the workstation.
+- Native POC-schema #3 diagnostics `CONV-POC-01/02` are Incomplete before the first
+  successful Product turn: each child selected JSON and produced the same normal
+  non-empty `end=false` Taiwan text, but the post-generation resource sample saw
+  zram growth (0→18 MiB, then 12→14 MiB) and correctly raised E1 under current
+  Product §5.3. Cleanup was proven. Temporarily setting swappiness=1 did not stop
+  growth; Pi was restored to 60. These diagnostic attempts are not PV credit.
+
+## Active single-PV implementation — 2026-09-13
+
+- Entry: Open by `docs/status/current.md`; focused `TR_spec_M4B_IX` is Resolved and current
+  `test_spec_M4B.md` maps the non-empty model-text correction. USER excludes human Test ID #2
+  from this development completion and directed automated #1/#3/#4/#5/#6/#7 to completion.
+- Active Test IDs are #1 `M4B-PI-ATT-001`, #3 `M4B-PI-CONV-001`, #4
+  `M4B-PI-MEM-001`, #5 `M4B-PI-WAKE-001`, #6 `M4B-PI-TIME-001` and #7
+  `M4B-PI-RES-001`; #2 `M4B-PI-SEM-001` remains implemented but intentionally unexecuted.
+- Implemented the mapped non-empty response contract: GBNF and native regex use `char+`, both
+  `end=false` and `end=true` require normalized non-empty text, and empty output retains the existing
+  R2 cleanup/replacement route. Grammar SHA-256 is
+  `fe97dc391364d875b9955cdfb283bd160b7845eae1e63734075da806973207b3`; profile SHA-256 is
+  `988077ebe480a6dbf7f0453603fe328675d13baa278f2ce27b9e541fccbcccb7`.
+- Corrected #3 C06 completion to accept either structurally valid following-turn route instead of
+  adding an unsupported `end=false` requirement. The canonical PV runner applies the USER-selected
+  25% S16_LE playback gain only to runner-created Audio output; production Audio output and shared
+  Audio configuration remain unchanged.
+- Focused PROMPT/SEM/S2/OUTCOME/GEN/PV-runner regressions passed **225/225** on the workstation and
+  **225/225** on Pi CPython 3.13.5. No matrix was run as directed by USER.
+- Final native Pi tuple `PV-M4B-AUTO-02` is bound to protected-content digest
+  `1c4ea3c2daf2e87893806a4f2fa7a8f9ceeb19822918f7f1852452c0e8f750f7` and harness digest
+  `c6a4f3facdeb85b6fd08485ea5b6113a578347ea5ead1fd0a4b490fe275be9a8`.
+  Workstation and Pi recomputation match the binding exactly.
+- Final native results: #1 ATT Pass, #3 CONV Pass, #4 MEM Pass, #5 WAKE W01–W04 plus aggregate
+  Pass, #6 TIME Pass, and #7 RES R01–R08 plus aggregate Pass. Public cards are under
+  Pi-local `m4b-pv-auto02-public`; access-controlled captures and binding are under
+  Pi-local `m4b-pv-auto02-private`. Pi zram was restored with zero used bytes and
+  `vm.swappiness=60` after execution.
+- All prior PM/PR/PH/replay outputs remain rejected. Every sub-run/case uses a new identity and
+  empty access-controlled partitions. No automatic semantic verdict, legacy threshold/profile,
+  role approval artifact or cross-Test-ID evidence is accepted.
+- Developer completion is **6/6 USER-scoped automated Test IDs Pass**. #2 remains for USER execution;
+  therefore the seven-ID finalizer was intentionally not run and no overall `PV PASS` is claimed.
+  No protected file may change without invalidating this tuple and requiring applicable Pi reruns.
+
+## Superseded pre-PV PM/PR/PH runner correction — 2026-09-13
 
 - USER superseded debugging with two bounded voice scripts: exactly one or two microphone
   windows, 10 seconds each, no automatic filling or PM/PR/PH verdict. Stop background replay.

@@ -25,7 +25,7 @@ def test_one_byte_partitions_X03():
     assert "".join(fragments) == terminal.text
 
 
-@pytest.mark.parametrize("wire", [b'{"text":"a","end":false}x', b'{"text":"a","end":0}', b'{"text":"\xff","end":true}', b'{"text":"a","end":false}\n', b'{"text":"\xe4', b'{"text":"a","end":true,"x":0}'], ids=lambda x:"X04-"+str(len(x)))
+@pytest.mark.parametrize("wire", [b'{"text":"a","end":false}x', b'{"text":"a","end":0}', b'{"text":"\xff","end":true}', b'{"text":"\xe4', b'{"text":"a","end":true,"x":0}'], ids=lambda x:"X04-"+str(len(x)))
 def test_invalid_terminal(wire):
     parser = IncrementalSemanticParser()
     with pytest.raises(SemanticError):
@@ -51,6 +51,43 @@ def test_conservative_normalization_X06():
     assert parser.feed(b'\\u0301') == ()
     assert parser.feed(b'","end":false}') == ("é",)
     assert parser.finish().text == "é"
-    empty = IncrementalSemanticParser()
-    assert empty.feed(b'{"text":"","end":true}') == ()
-    assert empty.finish().end is True
+
+
+def test_json_schema_multiline_wire_X06():
+    wire = b' {\n "text" : "hello",\n "end" : false\n}\n'
+    parser = IncrementalSemanticParser()
+    fragments = []
+    for byte in wire:
+        fragments.extend(parser.feed(bytes([byte])))
+    assert "".join(fragments) == "hello"
+    assert parser.finish() == SemanticOutput("hello", False)
+
+
+def test_end_before_text_incremental_X06():
+    wire = b'{"end":false,"text":"hello"}'
+    parser = IncrementalSemanticParser()
+    fragments = []
+    for byte in wire:
+        fragments.extend(parser.feed(bytes([byte])))
+    assert fragments == ["hello"]
+    assert parser.finish() == SemanticOutput("hello", False)
+
+
+@pytest.mark.parametrize("wire", [
+    b'{"text":"","end":false}', b'{"text":" \\t\\n","end":false}',
+], ids=["X07-empty-false", "X07-normalizes-empty-false"])
+def test_empty_terminal_never_emits_safe_text_or_result_X07(wire):
+    parser = IncrementalSemanticParser()
+    assert parser.feed(wire) == ()
+    with pytest.raises(SemanticError, match="^INVALID_SEMANTIC$"):
+        parser.finish()
+    assert parser._buffer == parser._prefix == ""
+
+
+@pytest.mark.parametrize("wire", [
+    b'{"text":"","end":true}', b'{"end":true,"text":" \\t\\n"}',
+], ids=["X08-empty-end", "X08-normalizes-empty-end-reordered"])
+def test_empty_end_terminal_is_valid_and_emits_no_safe_text_X08(wire):
+    parser = IncrementalSemanticParser()
+    assert parser.feed(wire) == ()
+    assert parser.finish() == SemanticOutput("", True)

@@ -105,11 +105,14 @@ async def test_modified_snapshot_never_sends(field, value):
     await adapter.force_abort()
 
 @pytest.mark.asyncio
-async def test_clean_semantic_failure_is_tainted_replaceable():
+@pytest.mark.parametrize("wire", [
+    '{"text":"","end":false}', '{"text":" \\t\\n","end":false}',
+], ids=["empty-false", "normalizes-empty-false"])
+async def test_clean_semantic_failure_is_tainted_replaceable(wire):
     adapter, children, _, _ = adapter_fixture()
     await adapter.start()
     await adapter.open_conversation("session", 1)
-    children[0].runtime.output = '{"text":"","end":false}'
+    children[0].runtime.output = wire
     snapshot = await adapter.measure("session", 1, "你好")
     with pytest.raises(ReplaceableGenerationFailure) as raised:
         await adapter.generate(snapshot, "你好")
@@ -120,6 +123,24 @@ async def test_clean_semantic_failure_is_tainted_replaceable():
     assert children[0].commands[-1]["reason"] == "replace_generation_failure"
     await adapter.open_conversation("session", 2)
     assert children[0].runtime.history == []
+    await adapter.stop()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("wire", [
+    '{"text":"","end":true}', '{"end":true,"text":" \\t\\n"}',
+], ids=["empty-end", "normalizes-empty-end-reordered"])
+async def test_empty_end_is_a_successful_terminal_result(wire):
+    adapter, children, _, _ = adapter_fixture()
+    await adapter.start()
+    await adapter.open_conversation("session", 1)
+    children[0].runtime.output = wire
+    snapshot = await adapter.measure("session", 1, "再見")
+    result = await adapter.generate(snapshot, "再見")
+    assert result.text == "" and result.end is True
+    assert adapter.state is AdapterState.CONVERSATION_READY
+    assert adapter.conversation_revision == 1
+    await adapter.close_conversation("session", 1, "session_end")
     await adapter.stop()
 
 @pytest.mark.asyncio

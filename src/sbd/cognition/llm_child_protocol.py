@@ -17,7 +17,7 @@ CLOSE_REASONS = {"replace_context", "replace_generation_failure", "session_end",
 FAILURE_CODES = {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"}
 COUNTS = {"user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens"}
 METRICS = set(GenerationMetrics.__dataclass_fields__)
-READY_FIELDS = {"protocol_name", "pid", "pgid", "candidate_id", "pairing_revision", "profile_id", "profile_stage", "profile_sha256", "runtime_sha256", "native_sha256", "model_sha256", "prompt_sha256", "grammar_sha256", "prompt_tokens", "max_output_tokens", "engine_context_tokens", "temperature", "top_p", "threads", "min_mem_available_generate_bytes", "min_mem_available_speak_bytes", "conversation_state", "network"}
+READY_FIELDS = {"protocol_name", "pid", "pgid", "candidate_id", "pairing_revision", "profile_id", "profile_stage", "profile_sha256", "runtime_sha256", "native_sha256", "model_sha256", "prompt_sha256", "response_schema_locator", "response_schema_sha256", "prompt_tokens", "max_output_tokens", "engine_context_tokens", "temperature", "top_p", "threads", "min_mem_available_generate_bytes", "min_mem_available_speak_bytes", "conversation_state", "network"}
 COMMON = {"protocol", "request_id", "session_id", "generation"}
 
 

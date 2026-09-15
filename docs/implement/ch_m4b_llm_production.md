@@ -1,6 +1,7 @@
 # M4B — replacement LLM / Reasoner product design
 
-狀態：**Designer complete / single-PV Test Spec mapping resolved / Developer implementation open**。
+狀態：**Designer corrected to the byte-for-byte POC constrained-JSON `J` schema and revised `PV` human
+review / Tester mapping resolved / Developer correction open**。
 
 本文件是 M4B cognition/product replacement 的現行 implementation-design authority。它從已核准的
 [`m4b_foundation_revision`](m4b_foundation_revision.md) 與 `arch.md` 的 Conversation、route、
@@ -90,6 +91,17 @@ belong to the prompt dashboard; they must not be added to every later-turn incre
 M4B exposes no config field that can append or replace these bytes. A future personality/capability revision
 requires a new profile ID, prompt hashes, semantic evaluation and review.
 
+The prompt asks for `end=true` only on an explicit USER end request, but constrained JSON does not guarantee
+that the model will keep returning `end=false` through an arbitrarily long scripted Conversation. Every valid
+model `end=true` follows the canonical `END_SESSION` route; Reasoner must not rewrite it, replay the turn or
+infer a context-capacity result from the interrupted history. An early end is recorded as the observed model
+decision, not automatically a Core/schema fault or proof that native context rejection occurred. Prompt bytes
+stay POC-exact unless a separately evidenced focused revision is chosen.
+
+The output constraint uses the POC-delivered constrained-JSON `J` path. It does not use the separately explored
+regex/prefix `P` path. This correction changes no prompt byte, tokenizer count, model, sampling value or profile
+ID; it replaces the unsupported GBNF/native-regex identity with the exact response-schema identity in §4.1.
+
 ## 3. Perception projection and normalization
 
 ### 3.1 Supported envelope
@@ -130,19 +142,62 @@ Their `text/extra` data is ignored and never logged.
 
 ### 4.1 Constrained JSON
 
-The grammar permits exactly one UTF-8 JSON object with keys in this order and no extras:
+The selected LiteRT-LM 0.16 product path is `ResponseFormat.json(response_schema)`, matching the POC-delivered
+constrained-JSON `J` direction. Regex/GBNF constrained decoding and the separately explored prefix encoding `P`
+are not authorized for `core-m4b-cognition-001`; a future change requires its own real-model evidence and normal
+design pipeline.
+
+The exact product response-schema artifact is
+`requirements/m4b/semantic-output-v1.schema.json`. It is the byte-for-byte 352-byte UTF-8 file from POC commit
+`4f34226728bafba445aa736e5e8ba24c0e2a69cd`, including its final LF and without BOM. Its SHA-256 is
+`796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9`:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:m4b-mva:semantic-output:v1",
+  "title": "M4B-MVA compact semantic output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "end"],
+  "properties": {
+    "text": {"type": "string", "maxLength": 4096},
+    "end": {"type": "boolean"}
+  }
+}
+```
+
+Startup reads that exact artifact, verifies its bytes and digest before JSON decoding, and passes the resulting
+mapping directly to `ResponseFormat.json`. The authenticated product profile, artifact lock and READY identity
+bind both the exact logical locator above and the digest; an embedded replacement object or a matching digest
+constant without verification of the deployed file is not equivalent.
+
+The native constrained-decoding schema deliberately contains only the POC-proven object, exact members, primitive
+types and `text.maxLength`. It must not add `oneOf`, `if/then/else`, `const`, `minLength`, `pattern` or another
+semantic relationship. The POC removed conditional keywords because LiteRT-LM v0.16 LLGuidance rejected them and
+retained the `text/end` relationship as fail-closed Python validation; its Pi rehearsal structurally audited 1,847
+schema-conforming samples. Product normalization, non-empty `end=false`, `end=true` behavior and the 30-spoken-
+character rule therefore remain terminal semantic checks below, not native grammar changes.
+
+The model result is one UTF-8 JSON object with exactly the members `text` and `end`, for example:
 
 ```json
 {"text":"<JSON string>","end":false}
 ```
 
 - `text` is a JSON string; `end` is a JSON boolean.
-- Whitespace outside strings is grammar-fixed to none.
-- Duplicate/unknown/missing keys, non-string text, non-boolean end, trailing bytes and invalid UTF-8/escape are
-  invalid terminal output.
+- JSON member order and insignificant whitespace are lexical variations, not product semantics; every legal
+  ordering/spacing must decode to the same semantic value.
+- When LiteRT-LM returns a text envelope, terminal validation uses a standards-conforming JSON decoder with
+  duplicate-member detection, followed by exact-member/type/schema validation. When the documented runtime path
+  returns an already-decoded mapping, validate that mapping directly; do not re-serialize it and invent claims
+  about lexical bytes no longer exposed by the API. Regex matching must not replace either path.
+- Duplicate members in exposed raw JSON, unknown/missing members, non-string text, non-boolean end, multiple
+  top-level values, trailing non-whitespace bytes and invalid UTF-8/escape are invalid terminal output.
 - After JSON decoding, text uses NFKC and whitespace collapsing from §3.2. NUL, surrogate or disallowed control
   remains invalid.
-- `end=false` requires non-empty text. `end=true` permits empty or non-empty text.
+- `end=false` requires non-empty normalized text. `end=true` permits empty or non-empty normalized text, preserving
+  the POC `text/end` semantics: non-empty final text is spoken before rest, while empty text ends by `rest`.
 
 For the 30-character product rule, `spoken_length` is the number of normalized non-whitespace code points whose
 Unicode general category does not begin with `P`. Symbols, emoji, letters and numbers count. Text with
@@ -151,8 +206,12 @@ including punctuation.
 
 ### 4.2 S2 incremental extraction
 
-The child feeds decoded model bytes to an incremental parser. It may emit `SAFE_TEXT` only after bytes are
-unambiguously decoded inside the `text` JSON string. JSON syntax, escapes, partial UTF-8 and `end` are withheld.
+When the JSON response path exposes model-output chunks, the child feeds those bytes to an incremental JSON parser.
+It may emit `SAFE_TEXT` only after semantic text is unambiguously decoded from the complete `text` string. The
+parser must accept either member order and legal insignificant whitespace; it may wait when `end` precedes `text`.
+JSON syntax, escapes, partial UTF-8 and `end` are withheld. If the runtime exposes only an already-decoded terminal
+mapping, emitting no pre-terminal fragment is legal; the product must not switch to regex/prefix encoding merely
+to obtain fragments.
 
 Each fragment must be non-empty and ordered. Concatenated fragments must remain an exact prefix of terminal
 normalized `text`; terminal validation must prove this relation. The parser may delay at punctuation or a
@@ -246,9 +305,13 @@ No source/YAML default is legal for either threshold. A dedicated target measure
 `profile_stage="measurement"` profile in which they are null; application composition rejects that stage. Before
 native import, the controller and child automatically attest the exact candidate, harness, profile and target
 identity. This technical attestation requires no role approval, reviewer identity or authorization file. The
-harness enforces `measurement_safety_floor_bytes = 512 * 1024**2` before every new operation and stops on any
-swap increase, OOM/kernel fault, throttling, temperature `>=80 C`, identity/sampler loss or cleanup failure. This
-is a laboratory stop condition, not a product admission threshold or PASS claim.
+harness enforces `measurement_safety_floor_bytes = 512 * 1024**2` before every new operation and stops on
+OOM/kernel fault, throttling, temperature `>=80 C`, identity/sampler loss or cleanup failure. It records
+the actual `SwapTotal` at setup and swap-used lifecycle deltas, but swap growth alone is neither a stop nor a
+PASS/FAIL predicate. The POC Gate 2A/2B `swap=0` environment (the P9 production-profile surrogate required
+`SwapTotal=0`) could not test growth with active zram; the later efficiency experiment's swap-increase stop was
+an experiment safeguard, not a proven product rule. Do not disable target swap to manufacture a zero-growth
+result. The 512 MiB floor is a laboratory stop condition, not a product admission threshold or PASS claim.
 
 From the complete single-session raw series, derive values deterministically:
 
@@ -275,7 +338,7 @@ profile with positive thresholds is legal for normal product composition. The ol
 
 Decision order:
 
-1. Sampler failure, swap growth, kernel OOM, thermal throttling or an internally inconsistent ownership sample is
+1. Sampler failure, kernel OOM, thermal throttling or an internally inconsistent ownership sample is
    E1 and does not send.
 2. `MemAvailable < min_mem_available_speak_bytes`: return `rest + END_SESSION`, mark planned LLM recycle, and
    do not start TTS or generation.
@@ -304,7 +367,8 @@ never generated by a second inference.
 | memory blocks notice | none | `rest {} + END_SESSION + ()` | capacity end; cleanup then planned recycle |
 | model `text!="", end=false` | sent | `speak {"text": text} + KEEP_NEXT + ("listen",)` | normal; keep Conversation |
 | model `text!="", end=true` | sent | `speak {"text": text} + END_SESSION + ()` | R3 model-recognized explicit USER end; final speech then rest |
-| model `text=="", end=true` | sent | `rest {} + END_SESSION + ()` | R3 model-recognized explicit USER end |
+| model `text==""` after normalization, `end=true` | sent | `rest {} + END_SESSION + ()` | R3 model-recognized explicit USER end |
+| model `text==""` after normalization, `end=false` | sent/tainted | `speak {"text":"剛才沒有成功，請再說一次。"} + REPLACE_NEXT + ("listen",)` | invalid semantic R2; cleanup barrier, no retry/replay |
 | post-send invalid semantic / clean generation failure with request terminal proof and Engine usable | sent/tainted | `speak {"text":"剛才沒有成功，請再說一次。"} + REPLACE_NEXT + ("listen",)` | R2; cleanup barrier, no replay |
 | repeated replaceable failure | as above | same R2 outcome | never auto-escalates to R3/E1 by count |
 | explicit button interrupt | any | no normal cognition Fact | R3 interrupt convergence |
@@ -426,7 +490,7 @@ class LLMConfig:
     child_kill_wait_timeout_seconds: float = 1.0
 ```
 
-Sampling, prompt, grammar, token/context limits, profile stage, memory thresholds, offline flags and artifact hashes are not YAML
+Sampling, prompt, response schema, token/context limits, profile stage, memory thresholds, offline flags and artifact hashes are not YAML
 knobs. They live in the canonical product profile/artifact lock and are cross-checked field by field plus digest.
 `product_config_path`, `recycle_max_inference_attempts`, `recycle_owner_pss_delta_mib` and
 `recycle_min_mem_available_mib` are rejected unknown legacy keys.
@@ -446,8 +510,9 @@ is selected. `UNSUPPORTED_INPUT` remains a defensive E1 if wiring violates the s
 ### 9.2 Startup order and readiness
 
 1. Parse strict config and authenticate ABI, model/runtime artifacts, licenses and canonical product profile.
-2. Validate profile fields and digests, including release stage, exact prompt counts, grammar, sampling,
-   context/output values, memory thresholds, wire version and network-disabled flags.
+2. Validate profile fields and digests, including release stage, exact prompt counts, response-schema logical
+   locator and deployed-file bytes/digest, sampling, context/output values, memory thresholds, wire version and
+   network-disabled flags.
 3. Spawn the dedicated child as a new process group in an offline environment.
 4. Child imports runtime, loads Engine, verifies exact tokenizer/prompt counts, and sends READY.
 5. Parent verifies every READY field. Mismatch terminates/waitpids the group and fails startup.
@@ -508,8 +573,12 @@ ceilings; Audio first write is not audible onset.
 Tester must independently specify at least:
 
 1. exact normalization, codepoint/token boundaries `20/21` and `32/33`, envelope exclusion and no mutation;
-2. prompt bytes/counts/hashes, fixed personality, grammar, `text/end` combinations and 30 spoken-character rule;
-3. fragmented/coalesced UTF-8/JSON S2 extraction, escapes, prefix proof, invalid/late/duplicate terminal;
+2. prompt bytes/counts/hashes, fixed personality, exact constrained-JSON response-schema/profile identity, every
+   legal member-order/insignificant-whitespace variation, duplicate/extra/missing/type rejection, all four
+   empty/non-empty `text` × `end` combinations and the 30 spoken-character rule;
+3. fragmented/coalesced UTF-8/JSON S2 extraction across both member orders and legal whitespace, escapes, prefix
+   proof, invalid/late/duplicate terminal, and an explicit guard that the product path never calls regex/GBNF
+   response formatting;
 4. MEASURE non-mutation, exact equation boundaries, ticket one-use/stale/input-digest/generation checks, plus
    acknowledged token-limit discard, same-revision next MEASURE, repeated rejection and discard failure barriers;
 5. fresh listen-only `runtime_prefill <=128` invariant and proof that it is not a multimodal/context ceiling;
@@ -534,7 +603,24 @@ sub-run ID and evidence partition, and repeats automatic attestation of the comm
 No Test ID consumes another Test ID's transcript, model state, resource series, threshold, card or completion flag.
 A failed or incomplete Test ID is rerun alone under a new attempt ID; completed siblings remain usable only while
 the protected content and common attested tuple are unchanged. Partial attempts are retained as diagnostics but
-never merged into the active result. The stage contains these seven explicit test groups:
+never merged into the active result. Scripts execute and evaluate all seven Test IDs, but a script result is not by
+itself the final product judgment. For `M4B-PI-SEM-001`, the USER judges the meaning of each captured answer after
+the script proves the native/schema path and structural result. For `M4B-PI-ATT-001` and
+`M4B-PI-CONV/MEM/WAKE/TIME/RES-001`, Developer records a per-Test-ID reasonableness result against the
+underlying private evidence and product assertions. For #4, the sampler and script must validate **every** raw
+point automatically and recompute estimates from the unchanged complete series; Developer inspects lifecycle
+boundaries, extrema, stop/anomaly records, inputs, outputs and digests, not every routine point by hand. A
+script `Pass` or unbound aggregate summary alone cannot substitute for the applicable inspection. This is an
+explicit product evidence requirement, not a role signature, authorization file or additional approval gate. The stage
+contains these seven explicit test groups:
+
+After successful script evaluation, #2 remains `NeedsHumanReview` until its USER verdict is recorded, and
+#1/#3–#7 remain `NeedsDeveloperReview` until the complete Developer inspection is recorded. A Developer review
+records a per-Test-ID `Pass` or `Fail` and a private evidence locator covering the complete inspected values and
+outputs; it must not contain reviewer identity/signature/authorization metadata. A review `Fail` leaves that Test
+ID unsatisfied and identifies the exact case or sub-run that must be corrected or rerun. Aggregate `PV Pass`
+requires all script assertions plus all three USER case verdicts and all six Developer reviews to Pass on the same
+protected tuple.
 
 M4B does not deliver a user-facing one-click product launcher; that belongs to M4C whole-product integration.
 Tester specifies one exact executable verification command per Test ID/case. Those commands may share one PV
@@ -553,10 +639,13 @@ semantic verdict.
    - Record and verify Raspberry Pi model, OS/kernel, CPU/RAM, target CPython 3.13.5, ABI, SOABI and MULTIARCH.
    - Verify model, runtime closure, wheel/native files, artifact lock, deployment paths and license/notices by exact
      filename, size and digest; reject extra, missing, system-site or alternate-endpoint inputs.
-   - Verify profile ID/stage, exact prompt bytes/counts/hashes, grammar, tokenizer, sampling, thread count,
+   - Verify profile ID/stage, exact prompt bytes/counts/hashes, response-schema bytes/hash, tokenizer, sampling,
+     thread count,
      direct/reserve/context limits, protocol version and offline flags field by field rather than by digest alone.
    - READY must repeat the bound identity, prove `pid == pgid`, zero Conversation and no generation prewarm.
      Any mismatch, dirty/unbound input or fallback is Fail before product behavior is credited.
+   - Developer reviews every attested field, digest, count, platform value and negative-path output against the
+     underlying evidence. The script's assertion summary alone cannot satisfy this Test ID.
 
 2. **`M4B-PI-SEM-001` — real-model semantics and human rubric**
    - Use exactly three independent spoken cases, each with a fresh Conversation, case ID and separate evidence:
@@ -571,48 +660,73 @@ semantic verdict.
    - Raw transcript, JSON and answer remain private. Public evidence contains case ID, digests and the recorded
      human result without exposing private content or reviewer-identity approval metadata.
 
-3. **`M4B-PI-CONV-001` — genuine context admission and replacement**
-   - Start a fresh, independent Product Session with no input or evidence from the three semantic cases. The script
-     submits `請簡短介紹台灣。` through the real Reasoner/worker/model path and requires one structurally successful
-     answer; it makes no semantic judgment.
-   - The script then sends `請再補充一點。` as clearly labelled new explicit turns through the same real path until
-     exact MEASURE rejects the context equation. Preserve revision, generation and token metrics for every turn.
-   - Prove rejection occurs before mutation or send, the fixed application notice completes, and matching
-     three-part close proof is present before the next OPEN.
-   - Preserve the same Product Session, monotonic non-reused turn IDs, one generation increment and zero overlap
-     between old and new Conversations. Production must never replay the rejected request automatically.
-   - After new-Conversation readiness, the script issues a new explicit input event carrying the rejected test
-     text; this is a new stimulus, not production replay. It and one following explicit normal test turn must reach
-     successful generation. No answer-semantic judgment or human speech is required. Private evidence proves old
-     context absence, while public evidence exposes only counters, digests and booleans.
+3. **`M4B-PI-CONV-001` — genuine model Conversation reuse and normal close**
+   - Start a fresh, independent Product Session with no input or evidence from the three semantic cases. Submit
+     `請簡短介紹台灣。` and then one labelled explicit `0001 請再補充一點。` through the real Reasoner/worker/model
+     path. Both admitted turns must produce schema-valid, normalized non-empty `end=false` answers and
+     `KEEP_NEXT`, with the same child/Conversation/generation, increasing revision and genuine KV/history reuse.
+     This finite two-turn requirement matches the POC-supported reuse scope; it makes no answer-meaning judgment.
+   - After the two real turns, request normal application-owned Session close, matching three-part Conversation
+     close proof and bounded owner/descendant cleanup. Preserve input/output, turn/generation/revision, token
+     and action rows; Developer inspects every value/output, not just the script card. If the model ends before
+     the required continuing turn, retain a non-Pass attempt with exact private facts; do not override its
+     boolean, retry the same history or fabricate continuation. This native acceptance does not assume the
+     model will recognize an untried explicit-end prompt. Product model `end=true` routing remains covered by
+     portable outcome cases `O06`/`O07` on the same final Pi bytes, labelled controlled rather than native
+     real-model end-intent proof.
+   - The deterministic 1024-token context equation, pre-send rejection, application notice, sequential
+     replacement, rejected-text resubmission and following-success behavior remain product requirements. They
+     are exercised by portable `M4B-CONV-001` `C02`–`C05` on the same final bytes on Pi with controlled
+     admission snapshots. That controlled evidence is not labelled a native model that naturally filled
+     context; `M4B-PI-CONV-001` no longer demands such a model-dependent event for Pass. If native context
+     rejection happens in another retained diagnostic, report it as observed evidence, not a substitute for
+     the required finite native and deterministic controlled checks.
 
 4. **`M4B-PI-MEM-001` — complete resource series and threshold estimates**
-   - This is a fresh, fully automated sub-run with no microphone input, human judgment or evidence from another
-     Test ID. It may share sampler code but not state, series or disposition with another test.
+   - This is a fresh scripted sub-run with no microphone input or evidence from another Test ID. It may share
+     sampler code but not state, series or disposition with another test. Preserve every timestamped raw sample;
+     the script checks every point's schema, owner identity, health, monotonic order and lifecycle coverage and
+     derives estimates from that complete series. Developer inspects boundary and extrema locators, every stop or
+     anomaly, formula inputs/outputs and evidence digests for reasonableness. Routine points need not be manually
+     transcribed into a field-by-field catalog or individually read by Developer.
    - Use the automatically attested measurement profile with both thresholds null; normal AppConfig composition
      must reject that profile, and no role authorization/signature artifact is accepted.
+   - Execute the finite public `請簡短介紹台灣。` → `0001 請再補充一點。` lifecycle under this
+     sub-run's own Engine, Product Session and Conversation. Both turns must continue with `end=false`, then
+     normal application-owned close and cleanup complete. Do not require a third model end-intent decision.
+     It does not require the real model to remain in Conversation until context exhaustion.
    - Capture unique-PID ownership plus `MemTotal`, `MemAvailable`, swap, temperature and throttling at Engine-ready,
      Conversation-ready/preparation, before/after every generation, through action/Audio completion, before/after
-     replacement and after session close.
-   - Before every operation enforce the 512 MiB safety floor and stop on swap growth, OOM/kernel fault, throttling,
+     the second-turn action and after session close. An unexecuted replacement is not an invented sample row.
+   - Before every operation enforce the 512 MiB safety floor and stop on OOM/kernel fault, throttling,
      temperature `>= 80 C`, duplicate/missing PID, sampler/identity loss or cleanup failure.
+     Record the swap trajectory and target swap configuration without treating zero growth as a health verdict.
    - Only a complete valid series may produce `speak_drop_bytes`, `generate_drop_bytes`,
      `min_mem_available_speak_bytes` and `min_mem_available_generate_bytes` using the exact §5.3 integer formula.
-     Record inputs, results and digests; the estimates do not mutate a profile and do not trigger another run.
+     A premature model end, missing planned boundary or unsafe stop leaves all estimates null with a stable reason.
+     Record inputs, results, scope and digests; the estimates describe the observed finite lifecycle only, do
+     not authorize an unmeasured longer/replacement peak, mutate a profile or trigger another run.
 
-5. **`M4B-PI-WAKE-001` — preparation/listen exclusion**
-   - This is a fully automated Pi sub-run with no human trigger or judgment. The script drives controlled GPIO/voice
-     wake stimuli through the actual production wake/readiness path and correlates Display, microphone, ASR and
-     OPEN traces with explicit wake-ack and Conversation-ready barriers; a pure mock-only path cannot Pass.
+5. **`M4B-PI-WAKE-001` — controlled-wake core-wiring barrier exclusion**
+   - This is a scripted Pi sub-run with no USER trigger or answer-semantic judgment. `MockGPIO` injects W01/W03
+     into real `ButtonInputSource`; `MockWakeWordInputSource` injects W02/W04. A `MockDisplay` device is allowed
+     as the observation endpoint. These mocks supply stimuli/observations only; actual `StateManager`, Conversation
+     control, `AlsaAudioInput`, `WhisperCppASR`, `DisplayArbiter` and `StatusBar` core wiring must run. The trace
+     correlates wake acknowledgement and Conversation-ready/join barriers: W01–W03 must complete both before
+     active listening, while W04 must interrupt pending OPEN without inventing completed barriers or starting
+     the active path. Directly changing SM state, bypassing either barrier, or replacing the core wiring with a
+     pure mock-only path cannot Pass. This Test ID does **not**
+     provide physical voice-wake sensor or physical Display hardware Pass evidence.
    - Conversation preparation may overlap only the existing WAKE `準備中` projection. Before both barriers,
      require zero audio-frame pull, active listen/ASR, perception worker and Reasoner admission.
    - Execute four separately rerunnable cases with fresh setup and evidence: `W01-OPEN-FIRST`, `W02-ACK-FIRST`,
      `W03-SLOW-OPEN` and `W04-INTERRUPT-OPEN`. Display remains nonblocking and adds no Fact, state, turn or model
-     content. The script assigns Pass/Fail from trace assertions; no button press, wake-word speech or visual
-     inspection is required from the USER.
+     content. The script evaluates the trace assertions; no button press, wake-word speech or visual inspection is
+     required from the USER. Developer must inspect every ordering timestamp, barrier state, activity row and
+     cleanup output before accepting the Test ID.
 
 6. **`M4B-PI-TIME-001` — one-clock Audio/LLM timeline**
-   - This is a fresh, fully automated sub-run with no human speech, judgment or evidence from another Test ID. A
+   - This is a fresh scripted sub-run with no USER speech, answer-semantic judgment or evidence from another Test ID. A
      fixed audio fixture traverses the actual Audio input, ASR, Reasoner, real model, TTS and Audio output path;
      pure timestamp fakes cannot Pass.
    - For that turn record `Conversation ready → ASR final → LLM send → first safe text → LLM terminal → TTS PCM
@@ -620,26 +734,38 @@ semantic verdict.
    - Verify nondecreasing nodes and cross-process clock mapping. Missing or inapplicable nodes must be explicit null
      with a stable reason; no timestamp may be silently omitted.
    - Report observations only. There is no response-time Pass ceiling, and first write is not claimed as audible
-     onset.
+     onset. Developer must inspect every raw and mapped timestamp, null reason, clock proof and model/audio output
+     for completeness, ordering and reasonableness; the script summary is not an acceptance substitute.
 
 7. **`M4B-PI-RES-001` — offline, safety, cleanup and privacy**
-   - Split into eight independently executable automated cases; each has fresh setup, case ID, evidence partition
+   - Split into eight independently executable scripted cases; each has fresh setup, case ID, evidence partition
      and outcome, and a failure reruns only that case:
      - `R01-OFFLINE`: zero non-loopback network, downloader, telemetry, DNS and fallback attempt from before native
        import through exit.
-     - `R02-HEALTH`: zero swap growth, OOM/kernel fault, throttling and temperature-stop violation.
+     - `R02-HEALTH`: zero OOM/kernel fault, throttling and temperature-stop violation; enforce the 512 MiB
+       laboratory floor and report the measured swap trajectory without a zero-growth verdict.
      - `R03-PID`: complete unique-PID ownership with no duplicate, missing owner or owner leak.
      - `R04-NORMAL-CLOSE`: bounded owner/descendant exit after normal Conversation/session close.
      - `R05-RECOVERY`: correct planned-recovery order, bounded old-child exit, matching new READY and a usable
-       following child/turn.
+       following child/turn. A matching three-part close proof must pass the actual StateManager/adapter
+       fail-closed authorization before rebuild; the R05 ledger may prove this through the bound successful
+       authorization/new READY without redundantly copying the proof booleans into the capture.
      - `R06-FORCED-CLEANUP`: forced PGID cleanup boundedly reaps every descendant.
-     - `R07-SHUTDOWN`: final shutdown leaves no owner, child, waiter, task or resource handle.
+     - `R07-SHUTDOWN`: with the resource sampler and native child live, stop the real resource owners through
+       their lifecycle and prove bounded sampler/native-child exit, owner cleanup and zero case-partition
+       handles. This case is owner-lifecycle shutdown evidence, not by itself a full StateManager/product
+       shutdown claim; the product shutdown path is exercised separately by the wake and normal-close cases.
      - `R08-PRIVACY`: zero private-canary/reversible-encoding hits across logs, public evidence, temporary paths,
        process arguments, environment and persisted files. Raw evidence remains access-controlled and public
        evidence uses opaque locators plus SHA-256 only.
+   - Developer must inspect every case's raw counters, process/resource inventories, cleanup sequence, scan output
+     and negative result for reasonableness; eight script `Pass` summaries alone cannot satisfy this Test ID.
 
 The seven Pi evidence Test IDs remain independently visible at assertion level and share only the top-level `PV`
 content/target identity and aggregate disposition; their commands, state and evidence partitions remain separate.
+The aggregate requires the script result plus the applicable human result: USER semantic verdicts for #2 and
+Developer reasonableness review for #1/#3–#7. Neither human activity is inferred from a script status, and neither
+introduces identity/signature/authorization metadata.
 `PM`, `PR` and `PH` are not aliases or sequential M4B gates. The threshold estimates
 are evidence outputs rather than release-profile authority; their later adoption follows the focused ordinary
 pipeline described in §5.3 without a default replay of the accepted real Audio/model/context/human corpus.
@@ -686,8 +812,20 @@ Developer replaces these surfaces from this design and the approved test spec; p
 legacy behavior reuse. Temporary legacy code/test/design inventory is removed at cutover only after replacement
 portable and Pi verification; Git remains the historical reference.
 
-Developer entry is open after focused architecture/review PASS, the resolved ticket-disposal coverage in
-`TR_spec_M4B_VII`, the single-PV authority revision and the resolved mapping in `TR_spec_M4B_VIII`. Developer now
-implements the shared PV harness, independent commands/case reruns and obsolete-stage cleanup. Real product
-verification uses the automatically attested measurement profile and produces threshold estimates as evidence;
-it does not require a pre-frozen release profile or accept legacy candidate/POC observations as substitutes.
+The 2026-09-14 constrained-JSON correction supersedes the regex/GBNF implementation and its affected Test Spec
+mapping. A subsequent Designer audit found that the first correction invented an untried `oneOf/const/minLength`
+schema instead of restoring the POC artifact; that schema, its `642a94...` digest and all dependent Test Spec or
+Developer work are also superseded. Tester must remap the exact artifact locator/digest, POC-supported native
+keywords, Python semantic boundary, profile/lock/READY identity, JSON lexical equivalence, raw/decoded terminal
+paths, S2/outcomes and real-model answer regression. Tester completed that remapping and Designer confirmed no
+Blocking coverage gap; Developer correction is now open. The later USER evidence
+instruction also supersedes the script-only acceptance wording: every Test ID is script-evaluated, #2 additionally
+requires USER answer verdicts,
+and #1/#3/#5–#7 additionally require Developer inspection of every number and output; #4 instead requires
+automatic every-point validation and focused Developer reasonableness inspection. Tester now defines the exact
+review command/record schema, generated complete inspection catalog and evidence-manifest digest binding,
+`NeedsDeveloperReview` transition, one per-Test-ID WAKE/RES review after case aggregation, stale-review
+invalidation and finalizer truth table remain Designer-aligned; they provide no implementation or `PV PASS` credit.
+Real product verification uses the automatically attested measurement profile and produces threshold estimates as
+evidence; it does not require a pre-frozen release profile or accept legacy candidate/POC observations as
+substitutes.

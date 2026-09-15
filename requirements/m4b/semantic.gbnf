@@ -1,4 +1,0 @@
-root ::= "{\"text\":" string ",\"end\":" ("true" | "false") "}"
-string ::= "\"" char* "\""
-char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" hex hex hex hex)
-hex ::= [0-9a-fA-F]

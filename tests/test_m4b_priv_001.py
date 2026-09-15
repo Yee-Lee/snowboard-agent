@@ -241,7 +241,8 @@ def test_m4b_priv_001_protocol_exception_has_only_sanitized_fields() -> None:
 
 def test_V01_reversible_encoding_and_arbitrary_failure_detail_are_rejected():
     canary = b"PRIVATE_CANARY"
-    assert privacy_hits([("b64", base64.b64encode(canary)), ("hex", canary.hex().encode())],
+    assert privacy_hits([("b64", base64.b64encode(canary).rstrip(b"=")),
+                         ("hex", canary.hex().upper().encode())],
                         [canary]) == ["b64", "hex"]
     with pytest.raises(ObservationError) as error:
         failure_row(code=canary.decode(), stage="GENERATE", request_id=1,

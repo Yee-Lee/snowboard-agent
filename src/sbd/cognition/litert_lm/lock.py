@@ -14,7 +14,10 @@ from typing import TYPE_CHECKING, Any, Mapping
 if TYPE_CHECKING:
     from sbd.cognition.llm_child_protocol import LLMReadyIdentity
 from sbd.cognition.prompt_builder import PROFILE_ID, PROMPT_COUNTS, PROMPT_HASHES, validate_prompt_identity
-from sbd.cognition.semantic import GRAMMAR_BYTES, GRAMMAR_SHA256
+from sbd.cognition.semantic import (
+    RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, ResponseSchemaError,
+    load_response_schema,
+)
 
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -104,8 +107,8 @@ EXPECTED_PROFILE = {
     "core_prompt_tokens": PROMPT_COUNTS["core"],
     "personality_prompt_tokens": PROMPT_COUNTS["personality"],
     "prompt_tokens": PROMPT_COUNTS["system"],
-    "grammar_locator": "requirements/m4b/semantic.gbnf",
-    "grammar_sha256": GRAMMAR_SHA256,
+    "response_schema_locator": RESPONSE_SCHEMA_LOCATOR,
+    "response_schema_sha256": RESPONSE_SCHEMA_SHA256,
     "max_user_tokens": 32,
     "max_output_tokens": 128,
     "engine_context_tokens": 1024,
@@ -382,13 +385,15 @@ class LLMArtifactLock:
         licenses = _exact(raw["licenses"], EXPECTED_LICENSES, "licenses")
         closure: RuntimeClosure | None = None
         if repo_root is not None:
+            try:
+                load_response_schema(repo_root=repo_root)
+            except ResponseSchemaError:
+                raise LLMLockError("deployed response schema identity mismatch") from None
             closure_path = repo_root / str(closure_value["manifest_locator"])
             closure = RuntimeClosure.load(
                 closure_path,
                 expected_digest=str(closure_value["manifest_sha256"]),
             )
-            if _read_regular(repo_root / str(profile["grammar_locator"])) != GRAMMAR_BYTES:
-                raise LLMLockError("grammar artifact identity mismatch")
             notice_path = repo_root / str(licenses["notice_locator"])
             if _sha256(notice_path) != licenses["notice_sha256"]:
                 raise LLMLockError("third-party notice checksum mismatch")
@@ -408,7 +413,8 @@ class LLMArtifactLock:
         names = (
             "protocol_name", "candidate_id", "pairing_revision", "profile_id",
             "profile_stage", "profile_sha256", "runtime_sha256", "native_sha256",
-            "model_sha256", "prompt_sha256", "grammar_sha256", "prompt_tokens",
+            "model_sha256", "prompt_sha256", "response_schema_locator",
+            "response_schema_sha256", "prompt_tokens",
             "max_output_tokens", "engine_context_tokens", "temperature", "top_p",
             "threads", "min_mem_available_generate_bytes", "min_mem_available_speak_bytes",
             "network",

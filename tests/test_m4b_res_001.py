@@ -1,9 +1,7 @@
-"""M4B resource acquisition, signed measurement and independent release freeze."""
+"""M4B resource acquisition, measurement and deterministic estimate coverage."""
 
 from __future__ import annotations
 
-import json
-import hashlib
 from pathlib import Path
 from dataclasses import replace
 
@@ -15,12 +13,8 @@ from scripts.m4b_target_metrics import (
     owner_resource_accounting,
     process_group_members,
     MeasurementHarness, MeasurementPoint, derive_thresholds, validate_authorization, MIB,
-    freeze_release_profile,
 )
 from tests.test_m4b_mem_001 import sample
-
-
-VECTOR = Path(__file__).parent.parent / "requirements/m4b/r14-sanitized-vector.json"
 
 
 def test_m4b_res_001_kernel_sample_uses_real_swap_oom_thermal_throttle_fields() -> None:
@@ -35,6 +29,7 @@ def test_m4b_res_001_kernel_sample_uses_real_swap_oom_thermal_throttle_fields() 
         "mem_total_mib": 4096,
         "mem_available_mib": 2048,
         "system_used_mib": 2048,
+        "swap_total_mib": 1,
         "swap_used_mib": 0,
         "oom_kill": 7,
         "thermal_celsius": 55,
@@ -136,25 +131,6 @@ def test_dual_role_authorization_binds_exact_digest_tuple_and_timezone():
         mutation(value)
         with pytest.raises(MetricsError):
             validate_authorization(value, expected)
-
-
-def test_release_freeze_requires_both_roles_over_raw_derived_values():
-    from sbd.cognition.litert_lm.lock import load_product_profile, validate_product_profile
-    profile = load_product_profile(VECTOR.with_name("product-profile.json"), allow_measurement=True)
-    derived = derive_thresholds(series(), completed=True, cleanup_proven=True)
-    freeze = {"measurement_profile_sha256": profile["profile_sha256"], "evidence_sha256": "d" * 64,
-              **derived}
-    approvals = [dict(role=role, reviewer=role, approved_at="2026-09-12T12:00:00Z",
-        decision="Approved", freeze_tuple=dict(freeze)) for role in ("Designer", "Tester")]
-    result = freeze_release_profile(profile, series(), evidence_sha256="d" * 64,
-        approvals=approvals, completed=True, cleanup_proven=True)
-    assert result["profile_stage"] == "release" and result["profile_sha256"] != profile["profile_sha256"]
-    assert validate_product_profile(result)["min_mem_available_generate_bytes"] == 523 * MIB
-    assert profile["profile_stage"] == "measurement"
-    approvals[0]["freeze_tuple"]["min_mem_available_generate_bytes"] += 1
-    with pytest.raises(MetricsError):
-        freeze_release_profile(profile, series(), evidence_sha256="d" * 64,
-            approvals=approvals, completed=True, cleanup_proven=True)
 
 
 @pytest.mark.asyncio

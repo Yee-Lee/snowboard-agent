@@ -305,13 +305,15 @@ class ActionConfig:
 ```
 
 Reasoner固定required，不提供required override。Real driver四個paths都是absolute file，`profile_id`
-必須是`core-m4b-cognition-001`。Product profile逐欄固定model/runtime/ABI、V2D2 prompt與grammar hashes、
+必須是`core-m4b-cognition-001`。Product profile逐欄固定model/runtime/ABI、V2D2 prompt與constrained-JSON
+response-schema logical locator `requirements/m4b/semantic-output-v1.schema.json`、exact 352-byte artifact digest
+`796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9`、
 `temperature=0.0`、`top_p=1.0`、4 threads、32 user-token limit、128 output reserve、1024 context、
 `snowboard.llm/3`、offline flags，以及量測後核准的兩個MemAvailable byte thresholds。Normal
 `AppConfig`只接受`profile_stage="release"`；threshold為null的`measurement` stage只可由專用Pi量測
 script載入，不能啟動產品composition或產生PASS。
 
-YAML不得覆寫sampling、prompt、grammar、token/context、memory gate、artifact hash或offline flag。
+YAML不得覆寫sampling、prompt、response schema、token/context、memory gate、artifact hash或offline flag。
 原POC `c4557...` digest只作provenance，不能冒充新product profile；新profile須逐欄驗證並驗自身digest。
 `product_config_path`、`recycle_max_inference_attempts`、`recycle_owner_pss_delta_mib`與
 `recycle_min_mem_available_mib`皆為unknown legacy keys。沒有fake prewarm或固定8/48/768行為。
@@ -735,7 +737,7 @@ Config load發生在Event Bus / SM之前：
 18. defaults tree、dataclass decoder與strict overlay對perception使用完全相同的 nested paths；舊 `listen_adapter` / `look_adapter` 以 `UnknownConfigKey` 拒絕。
 19. repository完整 `config.example.yaml` 由 `load_config(local_path=example_path)` 走與production相同的strict merge、decode、field與cross-field validation並成功；assert adapter值落在 `config.perception.listen.adapter` 與 `config.perception.look.adapter` 。
 20. real LLM四個absolute files、exact `core-m4b-cognition-001` profile與有限正數watchdogs缺一即fail；mock path/profile全null且不讀lock。
-21. Real profile逐欄驗exact identity、prompt/grammar、sampling、32/128/1024、wire/offline及兩個量測memory thresholds；YAML覆寫任一欄或使用`product_config_path`/舊8/48/768 recycle keys均fail，NaN/Infinity與bool-as-int拒絕。
+21. Real profile逐欄驗exact identity、prompt/response-schema locator與deployed-file digest、sampling、32/128/1024、wire/offline及兩個量測memory thresholds；YAML覆寫任一欄或使用`product_config_path`/舊8/48/768 recycle keys均fail，NaN/Infinity與bool-as-int拒絕。
 22. real LLM invalid path/lock/profile在native import、child、workdir、sampler與RM registration前失敗且side effect=0；matching整檔digest不能跳過逐欄驗證。
 22a. real LLM缺任一schedule/wait/sampler窄介面fail；mock收到任一介面亦fail，且YAML無對應key。
 22b. real M4B profile搭配read/look/tool或external-message input任一enabled時在factory前fail；
