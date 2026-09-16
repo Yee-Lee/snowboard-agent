@@ -1,7 +1,6 @@
 # M4B — clean rewrite gates
 
-狀態：**Foundation verified / byte-for-byte POC constrained-JSON authority and Tester mapping resolved /
-Developer correction open**。
+狀態：**Accepted — same-bytes Raspberry Pi `PV` Pass；commit `f87cfa5` pushed**。
 
 本輪依USER決策重寫M4B design、production implementation與tests。舊設計及decision overlay已
 退役；POC交付只作新設計輸入，不自動成為產品契約。Accepted M4A與通用Core生命週期／錯誤
@@ -15,15 +14,15 @@ Developer correction open**。
 | `M4B-DESIGN-GATE-REASONER-BEHAVIOR` | Designer + USER | Closed | 完整normal/error語意固定action後路由、speech ownership、Conversation replacement與R2/R3/E1邊界 |
 | `M4B-FOUNDATION-ARCH-REVIEW` | Architect | Closed | `AR_impl_M4B_III`修訂sequential replacement、post-action route與pre-perception readiness架構契約；Reviewer PASS及Designer確認 |
 | `M4B-FOUNDATION-REVISION` | Designer + Tester + Developer | Closed — verified 2026-09-11 | Foundation candidate focused 68；immutable baseline 99 retained / 0 missing；strict baseline 99 passed / 0 skipped；full repository 770 passed / 2 pre-existing optional audio skips / 29 deselected |
-| `M4B-DESIGN-COMPLETE` | Designer | Revised — 2026-09-14 | [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md)撤回regex/GBNF及後續未經POC驗證的`oneOf/const/minLength`，改綁commit `4f34226...`的exact 352-byte schema artifact與Python semantic boundary |
+| `M4B-DESIGN-COMPLETE` | Designer | Closed — 2026-09-14 | [`ch_m4b_llm_production`](../implement/ch_m4b_llm_production.md)撤回regex/GBNF及後續未經POC驗證的`oneOf/const/minLength`，改綁commit `4f34226...`的exact 352-byte schema artifact與Python semantic boundary |
 | `M4B-ARCH-REVIEW` | Architect + Designer | Closed — 2026-09-12 | [`AR_impl_M4B_IV`](../reviews/history/AR_impl_M4B_IV.md)確認SM授權planned-recovery時序；Designer對齊§5.3；`arch.md`無修改 |
 | `M4B-DESIGN-REVIEW` | Reviewer + Designer | Closed — 2026-09-12 | [`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md) PASS／0 Blocking；Designer採納A1/A2並確認A3無需修改 |
 | `M4B-TEST-COVERAGE` | Tester + Designer | Resolved — exact POC schema remapped | P03/P09/A05 profile-ready、native/Python boundary、raw/decoded/S2與real Pi regression改綁exact artifact；Developer-review command/catalog/state/finalizer mapping保留 |
 | `M4B-DEVELOPMENT-REWRITE` | Developer | Closed — portable aligned 2026-09-13 | [`CR_M4B_II`](../reviews/history/CR_M4B_II.md)於 exact SHA `9ffd6e17ad5504d53c7c18799ca4718f69988f7e` Resolved；Linux aarch64 3.11/3.12/3.13各1005 PASS且零 forbidden outcome |
-| `M4B-SINGLE-PV-DESIGN` | Designer | Revised — human review aligned | 七項均由script執行；USER判讀#2答案；Developer逐項檢查#1/#3–#7所有數值與輸出，script summary不得單獨接受；不新增身份簽核或authorization gate |
-| `M4B-SINGLE-PV-COVERAGE` | Tester + Designer | Resolved — review portion only | 六項逐欄review可執行、綁定完整raw evidence、case aggregation無歧義，script-only Pass被禁止；不代表schema mapping closed |
-| `M4B-PRODUCT-VERIFICATION` | Developer → Verify | Active — correction open | Developer實作、portable與fresh Pi development evidence仍待驗；舊tuple與簡化review無credit，final seven-ID `PV` Pending |
-| `M4B-THRESHOLD-ADOPTION` | Design → Test Spec → Developer → Verify | Pending — after valid `PV` estimates | 另案採用threshold estimates並只驗直接受影響行為；不得稱為PR或預設重跑已接受的產品／人工 corpus |
+| `M4B-SINGLE-PV-DESIGN` | Designer | Closed — human review aligned | 七項均由script執行；USER判讀#2答案；Developer逐項檢查#1/#3–#7所有數值與輸出，script summary不得單獨接受；不新增身份簽核或authorization gate |
+| `M4B-SINGLE-PV-COVERAGE` | Tester + Designer | Closed | 六項逐欄review可執行、綁定完整raw evidence、case aggregation無歧義，script-only Pass被禁止；exact POC schema mapping已同步 |
+| `M4B-PRODUCT-VERIFICATION` | Developer → Verify | Closed — Accepted 2026-09-16 | `PV-M4B-FINITE-03`七項Pass；相同bytes commit `f87cfa5`已push；USER完成milestone disposition |
+| `M4B-THRESHOLD-ADOPTION` | Design → Test Spec → Developer → Verify | Deferred — separate post-acceptance delta | 558/699 MiB仍為finite-session estimates；若日後採用，另走正常pipeline，不阻擋M4B Accepted或M4C entry |
 
 Gate必須依表列順序解除。Foundation architecture、design與coverage未Closed前，只能準備
 review，不開Developer entry；foundation revision驗證完成後才進M4B cognition/product設計與開發。
@@ -54,7 +53,7 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 
 - Current product design: [`ch_m4b_llm_production.md`](../implement/ch_m4b_llm_production.md)
   （Designer byte-for-byte POC constrained-JSON與human-review authority complete；Tester schema mapping
-  Resolved；Developer correction open）。
+  Resolved；same-bytes Pi `PV` Accepted）。
 - Foundation implementation design:
   [`m4b_foundation_revision.md`](../implement/m4b_foundation_revision.md)（Designer complete；Tester
   coverage approved）。
@@ -65,31 +64,15 @@ review，不開Developer entry；foundation revision驗證完成後才進M4B cog
 - Temporary legacy Designer archive: `docs/implement/archive/m4b_legacy/` and
   `docs/status/archive/M4/M4B_MVA_legacy.md`。不得由current role自動載入。
 
-## Next action
+## Completion
 
-`AR_impl_M4B_IV`已Resolved且`arch.md`無修改；[`IR_review_M4B_III`](../reviews/history/IR_review_M4B_III.md)
-對replacement product authority與direct mappings判定PASS／0 Blocking，Designer已處理三項Advisory。
-Tester coverage與Designer mapping已依[`TR_spec_M4B_VI`](../reviews/history/TR_spec_M4B_VI.md)關閉。
-[`CR_M4B_II`](../reviews/history/CR_M4B_II.md)已在 exact SHA
-`9ffd6e17ad5504d53c7c18799ca4718f69988f7e`完成獨立 portable PASS 與 Designer alignment。
-USER已明確取消角色簽核與authorization JSON；舊§5.4 approval文字不具gate效力。`IR_dev_M4B_V`
-帶入更新的USER決策後，Designer接受B1並修訂產品§§5.3/11.2：PM、PR、PH不再是三個stage，改由
-一個`PV` aggregate disposition彙整彼此獨立的Test IDs，且不做第二次release run。Tester完成
-`TR_spec_M4B_VIII` B1–B5修正，Designer複審Resolved；Developer現在實作exact mapping並在Pi驗證。
-有效estimates的採用屬後續focused normal pipeline；目前不宣稱PV PASS或M4B Accepted。
-所有先前PM/PR/PH run及其partial/complete outputs一律作廢，不得作為新`PV`的輸入或證據；新run
-必須使用新run ID與空的private/public active evidence roots。
+`PV-M4B-FINITE-03`在Raspberry Pi 5對最終protected-content／harness／profile tuple完成七項
+驗證；七項script、六項適用Developer review及#2三題USER verdict全部Pass。Designer確認
+#1 ATT與#7 R01 evidence分工、R08 normalized answer digest及155/155直接受影響Pi測試，沒有新的
+design deviation或高風險regression。相同待提交bytes已成為commit
+`f87cfa50b9c9415430973076a59c6b1961228090`並push至`origin/core`；USER於2026-09-16接受M4B完成。
 
-USER於2026-09-14確認Core換成regex後，real LLM無法正常回答，且POC並未交付J-via-regex、
-canonical member order/whitespace或GBNF產品身份。Designer因此撤回`IR_dev_M4B_VI`後續的
-`char+`修補方向，不再以regex的shortest-path問題改寫產品語意。現行設計回復POC constrained-JSON
-`J`：`ResponseFormat.json(response_schema)`、真實JSON decoder與exact semantic validation；合法member order與
-insignificant whitespace必須等價，`end=true`再次允許empty text。Tester已完成直接影響映射，
-Designer當時誤認constrained-JSON本身無Blocking缺口；Tester隨後指出script-only evidence與最新USER要求
-衝突。§11.2現已修成七項均由script執行，#2由USER判讀答案，#1/#3–#7由Developer逐一檢查所有
-數值與輸出合理性，且不得只接受script summary。Tester現已補齊exact review command/schema、完整
-catalog/evidence binding、強制`NeedsDeveloperReview`、one per-Test-ID WAKE/RES review及G07–G10；
-Designer確認review-contract同步；但後續provenance audit證明Designer提供的`oneOf/const/minLength`
-schema並非POC artifact，因此當時不得開放Developer。Tester現已改綁352-byte artifact
-`796c311...`、locator與native/Python validation boundary；Designer確認映射無Blocking缺口並開放
-Developer correction。現有簡化review實作仍不得取得credit。
+此Accepted範圍不宣稱physical wake/display hardware、native context exhaustion/replacement、R06
+nested-descendant killing或R07 full-product shutdown。558/699 MiB是finite-session estimates，尚未成為
+release thresholds。這些界線不阻擋M4C Design entry；後續threshold adoption若發生，另走正常
+`Design → Test Spec → Developer → Verify`流程。
