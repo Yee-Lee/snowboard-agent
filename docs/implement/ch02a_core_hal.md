@@ -117,6 +117,36 @@ class AudioOutput(Protocol):
         """Consume PCM frames from the async iterator and play until iterator is exhausted."""
 ```
 
+### M4C startup-static output gain
+
+M4C不替`AudioOutput`增加音量方法，也不把gain塞入`Speak`、ALSA backend或
+`StreamFormatAdapter`。`src/sbd/core/audio/volume.py`提供decorator與獨立control port：
+
+```python
+@runtime_checkable
+class VolumeControl(Protocol):
+    def get_volume_percent(self) -> int: ...
+    def set_volume_percent(self, value: int) -> None: ...
+
+class VolumeControlledAudioOutput:
+    # implements existing AudioOutput and the separate VolumeControl port
+    ...
+```
+
+M4C composition先建立raw `AudioOutput`，再以同一個`VolumeControlledAudioOutput` instance包裝，
+並把wrapper作為`core.audio.output`與`Speak`的唯一輸出。Raw factory與Accepted M2/M3/M4A
+composition的default路徑不變；不得在factory、Speak及ALSA各縮放一次。
+
+目前產品只在startup以Ch 10 `volume_percent`初始化；沒有runtime caller。保留的control port是
+未來`adjustments/volume`唯一注入點，不經Event Bus或State Manager。未來動態caller必須在main
+event-loop thread呼叫；更新只影響下一個尚未縮放的完整chunk，不中斷或重啟當前`play()`。
+
+縮放輸入固定為AudioOutput canonical stream的16 kHz mono S16_LE。每個sample以
+`sign(sample) * (abs(sample) * volume_percent // 100)`計算，因此負值與正值皆向零截斷；
+`0`輸出同長度靜音bytes，`100`必須bit-exact passthrough。Value必須是非bool integer `0..100`；
+chunk必須是`bytes`且包含完整S16_LE samples，否則fail closed。Decorator最多持有一個輸入chunk，
+並透明保留iterator close、cancel/error、underlying drain與實際ALSA `audio_first_write`觀測語意。
+
 注意： `frames()` 本身是同步方法、return `AsyncIterator[bytes]` ——呼叫者以 `async for frame in audio_input.frames():` 消費。這使得 worker 可以在 `abort` 時透過 `AsyncIterator.aclose()` 主動中斷串流，符合 `arch.md` §6.5 收斂契約。
 
 ### PCM 格式與轉換邊界
@@ -142,6 +172,7 @@ Ch 10 分開描述硬體 `native_format` 與 HAL 對上層承諾的 `stream_form
 src/sbd/core/audio/
 ├── __init__.py          # factory: make_audio_input / make_audio_output
 ├── base.py              # AudioInput / AudioOutput Protocol
+├── volume.py            # M4C VolumeControlledAudioOutput + separate VolumeControl port
 ├── null/
 │   ├── __init__.py
 │   ├── input.py         # NullAudioInput : frames() 產出無限靜音 frame

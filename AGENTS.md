@@ -19,6 +19,8 @@
   證明或 authorization JSON。完整性風險以程式自動核對內容 digest、版本、設定與目標環境處理。
 - 所有開發內容都必須在 Raspberry Pi 上以待提交的相同 bytes 完成適用的自動、整合、硬體與
   人工測試。Pi 驗證未完成或失敗時不得 commit；不得把首次上機驗證延後到 commit 之後。
+- 待提交內容若全為文件且未修改程式碼，則不要求 Raspberry Pi 驗證；在工作站完成所有適用的
+  文件檢查與測試後即可 commit。文件與程式碼混合的提交仍適用前述 Pi 驗證要求。
 - Pi 驗證以 tracked-only patch/content digest、設定與 artifact digest 綁定待提交內容。回工作站後
   必須先確認待提交 bytes 與已驗證內容完全一致；任何差異都回到 Developer 並重新上 Pi 驗證。
 
@@ -27,5 +29,5 @@
 - 不得直接修改或存取 `.git/` 內部；版本控制一律使用標準 `git` 命令。
 - 準備任何 commit 前，先讀 `docs/roles/git.md`。向 USER 展示完整 subject、60–100 words
   的英文條列 body 與待提交檔案，取得明確同意後才可 commit。
-- 只有 `Verify` 已在 Pi 對相同內容完成且證據可定位時，才可準備 commit。
+- 除前述純文件例外外，只有 `Verify` 已在 Pi 對相同內容完成且證據可定位時，才可準備 commit。
 - Candidate 一經 push、送驗或正式驗證即不可改寫；Reject 後只能 append fix。

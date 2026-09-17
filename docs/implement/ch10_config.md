@@ -365,6 +365,7 @@ class AudioOutputConfig:
     stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
     device: str | None = None
     native_format: AudioFormatConfig | None = None
+    volume_percent: int = 100
 
 @dataclass(frozen=True, slots=True)
 class AudioConfig:
@@ -431,6 +432,9 @@ Cross validation :
 
 - `sample_format` 的 container bytes 為 `s16_le=2`、`s32_le=4`；`frame bytes = sample_rate * frame_duration_ms / 1000 * channels * container_bytes` 必須是整數；
 - AudioInput stream format與AudioOutput stream format獨立。Listen / ASR必須匹配 `audio.input.stream_format`；TTS / Speak必須匹配 `audio.output.stream_format`。Listen、ASR、TTS與Speak不得隱式resample；只有本節明列的M3 real AudioInput adaptation可在HAL內轉換native→stream；
+- `audio.output.volume_percent`必須是非bool integer `0..100`，在建立Audio backend前驗證；schema
+  default `100`保持既有config行為，M4C real product config明確設為`25`。此值startup-static，
+  runtime config reload、GPIO/Display adjustment與持久化不在M4C本輪範圍；
 - width / height正整數，camera quality 1..100；selected `DSP-PROFILE-OLED-128` 對所有 driver 都固定 `128×128`、`rgb565`、rotation `0`、RGB565 MSB-first 與 `128 * 128 * 2 = 32768` bytes 完整 frame。任何矛盾值都在 factory / native code 之前以 `ConfigValueError` 拒絕；未來 profile 必須另定 profile-specific validation；
 - `show_session_content` 實作 `DSP-REQ-004`，只控制 `display_spec.md` 的 Perception / Tool / Speak 內容；State、Error、Blank 與 lifecycle 不受影響，且此設定為 startup-static、不支援 runtime reload；
 - GPIO logical name與pin都不可重複，一pin一訂閱者；
