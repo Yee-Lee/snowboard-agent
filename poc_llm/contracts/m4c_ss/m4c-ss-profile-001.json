@@ -1,0 +1,72 @@
+{
+  "profile_id": "m4c-ss-poc-001",
+  "core_product_baseline": "f87cfa50b9c9415430973076a59c6b1961228090",
+  "target": {
+    "board": "Raspberry Pi 5 4 GB",
+    "os": "Debian 13",
+    "architecture": "aarch64",
+    "python": "3.13.5",
+    "cpu_threads": 4,
+    "network": "disabled_before_native_import"
+  },
+  "llm": {
+    "runtime_api": "0.16.0",
+    "runtime_source_commit": "924e79c91542761242244e4f1651851f822e4cbb",
+    "runtime_wheel_sha256": "5eb8c9faa5727730239591f8c912261ec7705512d5f30ec674586bc0005f2b00",
+    "native_library_sha256": "9b3a319b4878c3fafeea16db06eea7b2f023619e5f97037eb20b8e38662875e4",
+    "model_name": "gemma-4-E2B-it.litertlm",
+    "model_bytes": 2588147712,
+    "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "product_profile": "core-m4b-cognition-001",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "context_tokens": 1024,
+    "output_tokens": 128,
+    "wire": "snowboard.llm/3",
+    "system_prompt_sha256": "872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643",
+    "response_schema_source_commit": "4f34226728bafba445aa736e5e8ba24c0e2a69cd",
+    "response_schema_sha256": "796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9"
+  },
+  "audio": {
+    "accepted_tag": "audio_m4",
+    "tag_object_sha": "24b2571a23dde2f77027242b61142b0c1a59924c",
+    "completion_sha": "5694ead4ba6be928fdb4dbdf6da7155b214d72bd",
+    "accepted_manifest_sha256": "74e2737f5c965d1691a130176e6e0955dec207134d00686212de4cad60404fad",
+    "core_hal_execution_sha": "6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf",
+    "controller_manifest_sha256": "6bb24f9a0a2f2a66a522706b22222081fbf009b28c9dc0942a22d714114276f4",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "sample_format": "S16_LE"
+  },
+  "tts": {
+    "id": "tts-sherpa-matcha-zh-en-1.13.5",
+    "archive_sha256": "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",
+    "vocoder_sha256": "b599142a1fb8ff03de3e84ac35ff537c619e56f4267a6fe894851a42844acf9e",
+    "wrapper_wheel_sha256": "f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f",
+    "core_wheel_sha256": "4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa",
+    "voice_id": "matcha-zh-en-default-sid-0"
+  },
+  "mappings": [
+    "B1-IMMEDIATE-SEQUENTIAL",
+    "B2-ONE-LOOKAHEAD-COALESCE"
+  ],
+  "queue": {
+    "maximum_pending_fragments": 2,
+    "maximum_pending_utf8_bytes": 256
+  },
+  "watchdogs_seconds": {
+    "startup": 120,
+    "generation": 30,
+    "mode": 1800,
+    "cooperative_abort": 2,
+    "speak_force_abort": 1,
+    "reasoner_force_abort": 3
+  },
+  "safety": {
+    "minimum_mem_available_bytes": 536870912,
+    "maximum_temperature_c": 80,
+    "resource_sample_minimum_hz": 10,
+    "maximum_acoustic_uncertainty_ms": 50
+  },
+  "expected_case_count": 82
+}

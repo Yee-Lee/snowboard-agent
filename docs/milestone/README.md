@@ -2,9 +2,16 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-09-08
+最後更新：2026-09-19
 
-Pi storage補記：Core已接受Phase 3搬遷；Pi的clean canonical checkout、指定data roots、
+2026-09-19 closure／intake補記：Core已於2026-09-16接受M4B same-bytes Pi product verification；
+Accepted commit `f87cfa50b9c9415430973076a59c6b1961228090`已push至`origin/core`。因此舊
+`M4B-MVA-POC`與`M4B-MVA-EFFICIENCY`不再是active blocker，其POC deliveries已被Core產品baseline
+採用並納入M4B completion。Core於commit `56962d5c9802c1355d21187def74769c29f02620`
+交付byte-identical `M4C-SS` request；User於2026-09-19授權workstation開發、限定Pi preflight及本輪
+commit/push。Formal execution、network切換、reboot以外的target mutation與result publication仍未授權。
+
+以下Pi storage與MVA內容是已完成M4B round的歷史紀錄，不構成M4C-SS授權。Core已接受Phase 3搬遷；Pi的clean canonical checkout、指定data roots、
 product `8279e79`、artifact identity與private evidence transfer/legacy-run cleanup均有receipt。
 2026-09-06只讀驗收再次確認SHA、workspace、config、current binding、零product symlink與
 零writable product file。Core已授權exact-SHA離線MVA；User於2026-09-06確認Pi可連線並指示
@@ -23,7 +30,11 @@ dirty Pi development run不取得正式credit。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / GEMMA ACCEPTED / M4B-MVA-POC OPEN / MVA-EFFICIENCY OPEN / CORE REVISION PENDING`。
+狀態：`LLM POC COMPLETE / M4B CORE ACCEPTED / M4C-SS IN_PROGRESS / PI PREFLIGHT PARTIAL / EXECUTION NOT AUTHORIZED`。
+
+目前唯一active LLM POC delivery是M4C true streaming-speak feasibility。它以Accepted M4B與M4A為
+read-only inputs，先完成intake、deterministic controller、evidence/acoustic scaffold及execution freeze；
+只有獲得新的User授權後才可存取Pi或執行prototype。POC結果不關閉`M4C-SS`，Core Designer仍是gate owner。
 
 原LLM POC M0～M4與Gate 1/2A/2B保持完成且結果immutable。Core於2026-09-05正式交付
 `M4B-MVA-001`產品等價量測，User確認由既有POC團隊進入七步流程Step 5；本機先修正為
@@ -57,8 +68,9 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 2A | `CLOSED / CORE ACK` | P2, P3, P4, P5, P8 | final evidence已review；Gemma唯一model finalist；machine P2/P8 FAIL不改寫 |
 | Gate 2B | `CLOSED / CORE FINAL WINNER ACK` | P9, P10B | Attempt 006完成20/20；machine P9/P10B FAIL不改寫；Core接受User known-runtime-defect waiver與Gemma winner |
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
-| M4B-MVA-POC | `OPEN / STEP 5 DELIVERED` | MVA-002 result；no legacy P credit | Designer採用完整profile、完成dependent experiment與affected review後明確解除gate |
-| M4B-MVA-EFFICIENCY | `OPEN / CORE REVISION PENDING` | J/S2、conditional H、listen-only Reasoner與prompt探索工程交付 | Core review/revision → qualified prompt → clean exact-SHA formal packet |
+| M4B-MVA-POC | `CLOSED / INCORPORATED INTO CORE M4B ACCEPTANCE` | MVA-002 result；no legacy P credit | Core adopted the POC inputs and User accepted M4B at `f87cfa5…` |
+| M4B-MVA-EFFICIENCY | `CLOSED / INCORPORATED INTO CORE M4B ACCEPTANCE` | J/S2、conditional H、listen-only Reasoner及V2D2 | Delivery 003/004 became M4B design inputs；no separate formal rerun remains |
+| M4C-SS | `OPEN / PI PREFLIGHT PARTIAL` | engineering preflight only | timing/identity completion → frozen execution → User publication review → Core decision |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
 
@@ -71,7 +83,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M2 | `COMPLETE` | Core closed Gate 1；Gemma normal finalist；Qwen P7.1 FAIL且依defect waiver保留Gate 2A資格 |
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
-| M4B-MVA | `IN_PROGRESS / CORE REVISION PENDING` | User已核准efficiency工程交付；V1不可用且尚無合格prompt，formal evidence等待Core revision/freeze |
+| M4B-MVA | `COMPLETE / CORE INCORPORATED` | MVA、efficiency及V2D2交付已成為Accepted M4B input；歷史結果保持immutable |
+| M4C-SS | `IN_PROGRESS / PI PREFLIGHT PARTIAL` | 48/48 targeted tests；model identity與I2S speaker＋USB mic duplex PASS；`<=50 ms`未證明 |
 
 ## Cumulative P1～P12 rule
 
@@ -87,6 +100,15 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 詳細方法見[Execution Plan](m4b_execution_plan.md)與[Traceability](m4b_traceability_crosswalk.md)。
 
 ## Open dependencies and risks
+
+- **M4C-SS authority**：User授權workstation開發與測試至pre-Pi gate。Pi access、prototype execution、network、
+  reboot、artifact change/download、commit、push及benchmark/candidate publication仍須各自適用的明確授權。
+- **M4C-SS target/acoustic identity**：Pi/model identity及I2S speaker＋獨立USB microphone duplex已做
+  engineering preflight；USB capture實際為48 kHz mono S16_LE。`<=50 ms` uncertainty、runtime/TTS/Audio、
+  clean checkout、private roots及offline identity仍未完整驗證，缺一不得開始formal measurement。
+- **M4C-SS bounded design**：只比較`B1-IMMEDIATE-SEQUENTIAL`與
+  `B2-ONE-LOOKAHEAD-COALESCE`，共82個fixed samples/subcases；禁止第三candidate、open-ended tuning或
+  修改M4A/Core public contract。詳見[M4C-SS milestone](m4c_streaming_speak.md)。
 
 - **Pi storage migration**：Phase 1～3已完成並獲Core接受；2026-09-06 read-only postcheck再次確認
   canonical checkout、product/artifact identity、private evidence root與零product symlink/writable file。
@@ -188,6 +210,11 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Active packets
 
+- [M4C-SS milestone](m4c_streaming_speak.md)
+- [M4C-SS intake and preparation boundary](../response/ACK-LLM-POC-M4C-STREAMING-SPEAK-001.md)
+
+Completed M4B references：
+
 - [M4B-MVA product-parity milestone](m4b_mva_product_parity.md)
 - [M4B-MVA efficiency experiment plan](m4b_mva_efficiency.md)
 - [M4B-MVA efficiency intake and arrangement](../response/ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
@@ -220,19 +247,20 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Governing and historical inputs
 
-2026-09-06 intake audit：M4B-MVA measurement request仍治理尚未由Core release的原gate；新增的
-efficiency request是active dependent Income。兩者都保留於`docs/pm_handoff/`，不互相取代，也不回退
-或改寫既有MVA-002、cumulative、Gate 2A或Gate 2B結果。原M4b contract、Core task boundary及
-Gate 1 locked ACK維持原路徑；historical ACK/review仍在history。
+2026-09-19 intake audit：`M4C-SS` request是唯一active direct Income。M4B contract、task boundary、
+Gate 1 ACK、MVA measurement及efficiency request都已被Core M4B Accepted disposition納入或完成，
+目前仍因本輪尚未round-close commit而保留原路徑；下一次獲授權的round-closing commit必須保持內容
+不變移入`docs/pm_handoff/history/`並同步更新Document Index。歷史MVA/Gate結果保持immutable。
 
-- [M4b contract](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
-- [M4B-MVA measurement request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
-- [M4B-MVA efficiency request](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
+- [M4C-SS request](../pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md)
+- [M4b contract (retained governing Accepted-M4B provenance)](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)
+- [M4B-MVA measurement request (retained immutable surface input)](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md)
+- [M4B-MVA efficiency request (retained Accepted-M4B provenance)](../pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md)
 - [Pi storage-curation request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-PI-STORAGE-CURATION-001.md)
 - [M4B-MVA offline execution request (completed history)](../pm_handoff/history/REQUEST-POC-LLM-M4B-MVA-OFFLINE-EXECUTION-001.md)
 - [Pi packet R2 ACK (historical)](../pm_handoff/history/RESP-LLM-POC-PI-EXECUTION-PACKETS-002.md)
 - [Cumulative Gate R3 ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-CUMULATIVE-GATES-R3-ACK-001.md)
-- [Gate 1 closure ACK (governing locked input)](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
+- [Gate 1 closure ACK (retained immutable Gate 2A provenance)](../pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md)
 - [Gate 2A closure ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2A-CLOSURE-ACK-001.md)
 - [Gate 2B final review (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-REVIEW-001.md)
 - [Gate 2B final-winner ACK (historical)](../pm_handoff/history/DELIVERY-LLM-POC-M4B-GATE2B-FINAL-WINNER-ACK-001.md)

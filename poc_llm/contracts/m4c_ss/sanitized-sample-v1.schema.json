@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snowboard:llm-poc:m4c-ss:sanitized-sample:1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "case_key", "partition", "status", "identity", "text_facts",
+    "timings_ns", "queue", "resources", "cleanup", "null_reasons"
+  ],
+  "properties": {
+    "format": {"const": "m4c-ss-sanitized-sample-v1"},
+    "case_key": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,255}$"},
+    "partition": {"enum": ["controller", "mapping", "live", "negative"]},
+    "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_sha", "surface_sha256", "profile_sha256", "private_bundle_sha256", "private_locator"],
+      "properties": {
+        "execution_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "surface_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "private_bundle_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "private_locator": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}
+      }
+    },
+    "text_facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terminal_text_sha256", "terminal_codepoints", "fragment_count", "fragment_sha256"],
+      "properties": {
+        "terminal_text_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "terminal_codepoints": {"type": ["integer", "null"], "minimum": 0},
+        "fragment_count": {"type": "integer", "minimum": 0},
+        "fragment_sha256": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+      }
+    },
+    "timings_ns": {"type": "object", "additionalProperties": {"type": ["integer", "null"], "minimum": 0}},
+    "queue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["high_water_fragments", "high_water_utf8_bytes", "backpressure_count"],
+      "properties": {
+        "high_water_fragments": {"type": "integer", "minimum": 0, "maximum": 2},
+        "high_water_utf8_bytes": {"type": "integer", "minimum": 0, "maximum": 256},
+        "backpressure_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "resources": {"type": "object", "additionalProperties": {"type": ["integer", "number", "boolean", "null"]}},
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_absent", "pending_fragments", "audio_owner_absent", "normal_success_published"],
+      "properties": {
+        "owner_absent": {"type": "boolean"},
+        "pending_fragments": {"const": 0},
+        "audio_owner_absent": {"type": "boolean"},
+        "normal_success_published": {"type": "boolean"}
+      }
+    },
+    "null_reasons": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"}}
+  }
+}

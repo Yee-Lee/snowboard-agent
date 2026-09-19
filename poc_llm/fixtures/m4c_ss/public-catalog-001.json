@@ -1,0 +1,28 @@
+{
+  "catalog_id": "M4C-SS-PUBLIC-001",
+  "mapping_traces": {
+    "T01": {
+      "fragments": ["我是雪板，", "很高興為您服務！"],
+      "terminal_text": "我是雪板，很高興為您服務！"
+    },
+    "T02": {
+      "fragments": ["因為太陽光穿過大氣，", "藍光被散射，", "所以天空看起來是藍色的。"],
+      "terminal_text": "因為太陽光穿過大氣，藍光被散射，所以天空看起來是藍色的。"
+    },
+    "T03": {
+      "fragments": ["多聽多說，", "找對話練習，", "會很有幫助喔！"],
+      "terminal_text": "多聽多說，找對話練習，會很有幫助喔！"
+    }
+  },
+  "live_inputs": {
+    "L01-IDENTITY": "你是誰？",
+    "L02-EXPLAIN": "天空為什麼是藍色的？",
+    "L03-ADVICE": "我應該怎麼加強英語口說能力呢？",
+    "L04-END": "請結束對話。"
+  },
+  "quality_questions": [
+    "Is every word understandable?",
+    "Is any content duplicated, missing or reordered?",
+    "Is there a disruptive artificial pause or boundary that changes understanding?"
+  ]
+}

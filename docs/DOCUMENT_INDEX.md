@@ -5,11 +5,17 @@
 ## 1. Income (位於 `docs/pm_handoff/`)
 這些文件是從外部接收的任務、合約與需求，對本團隊為**嚴格唯讀 (Read-only)**：
 
-* [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - Core Designer M4b contract，2026-08-19 Gate 1 x86＋產品Pi compatibility revision
-* [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - Core Gate 1 closure ACK；由Gate 2A immutable lock持續驗證原路徑與雜湊，故保留為governing input
-* [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - M4b LLM 任務需求與邊界規範
-* [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - Core Designer已交付的M4B-MVA產品等價量測；gate `M4B-MVA-POC` Open，Step 5由POC執行
-* [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - Core Designer依DELIVERY-025新增的bounded encoding/readiness實驗；工程結果已由DELIVERY-003回覆，待Core revision
+* [`DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - retained governing Accepted-M4B contract and frozen historical surface input
+* [`DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md`](pm_handoff/DELIVERY-LLM-POC-M4B-GATE1-CLOSURE-ACK-001.md) - retained governing locked provenance for immutable Gate 2A surface
+* [`core_llm_m4b_tasks.md`](pm_handoff/core_llm_m4b_tasks.md) - retained governing Accepted-M4B scope boundary
+* [`REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-MEASURE-001.md) - retained governing input of the immutable MVA surface incorporated into Accepted M4B
+* [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](pm_handoff/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - retained governing input for the Accepted-M4B efficiency provenance
+* [`REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md`](pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md) - 唯一active Income；M4C true streaming-speak bounded feasibility與`M4C-SS` gate evidence request
+
+Round-close classification：前五份M4B direct Income雖已完成，但仍被Accepted-M4B contract、M4C
+baseline及immutable historical execution locks直接引用，因此分類為currently governing provenance並
+保留原路徑；M4C-SS request是唯一active work request。移動前五份會破壞既有frozen surface identity，
+不得以歸檔名義改寫歷史lock。
 
 ## 2. Income History (位於 `docs/pm_handoff/history/`)
 已完成處理、被新合約取代或不再處於活動狀態的 handoff 訊息，歸檔於此，**代表已完成不必重複追蹤**：
@@ -59,6 +65,8 @@ POC 團隊內部的技術確認、評估結果或對外部 Income 的技術 ACK�
 * [`ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/response/ACK-DELIVERY-LLM-POC-M4B-CONTRACT-001.md) - M4b 合約內部技術審查與 12 項測試指標承接確認
 * [`ACK-LLM-POC-M4B-MVA-MEASURE-001.md`](response/ACK-LLM-POC-M4B-MVA-MEASURE-001.md) - M4B-MVA正式收件、Core exact-source核對、產品等價設計修正與授權邊界
 * [`ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md`](response/ACK-LLM-POC-M4B-MVA-EFFICIENCY-002.md) - byte-identical新Income收件、J/P與D/H實驗安排、sample accounting及Pi/User gate
+* [`ACK-LLM-POC-M4C-STREAMING-SPEAK-001.md`](response/ACK-LLM-POC-M4C-STREAMING-SPEAK-001.md) - byte-identical M4C-SS intake、starting identity、bounded mappings、82-case accounting、acoustic/evidence plan及target authorization boundary
+* [`ASSESSMENT-LLM-POC-M4C-SS-PI-PREFLIGHT-001.md`](response/ASSESSMENT-LLM-POC-M4C-SS-PI-PREFLIGHT-001.md) - Pi/model identity、I2S speaker＋USB microphone duplex PASS及`<=50 ms` timing calibration pending的sanitized engineering preflight
 * [`ASSESSMENT-LLM-M4B-MVA-EFFICIENCY-SCOPE-EXPANSION-001.md`](response/ASSESSMENT-LLM-M4B-MVA-EFFICIENCY-SCOPE-EXPANSION-001.md) - User擴大P fallback責任、D/H風險、bounded solution funnel與Core revision boundary
 * [`PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001.md`](response/PLAN-LLM-POC-M4B-MVA-SCOPE-CONVERGENCE-001.md) - User收斂後的最小Reasoner listen架構、bounded prompt提案、停止線與Core revision順序
 * [`HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md`](response/HANDOFF-LLM-M4B-MVA-WORKSTATION-001.md) - 工作站更換前的Step 5完整continuation record、測試、round-close audit、未完成項目與授權邊界
@@ -166,6 +174,7 @@ Repo-owned 內部執行工作文件：
 * [`m4_llm_combined_validation_and_delivery.md`](file:///Users/yee/Workspace/poc_llm/snowboard-agent/docs/milestone/m4_llm_combined_validation_and_delivery.md) - combined validation 與最終交付
 * [`m4b_mva_product_parity.md`](milestone/m4b_mva_product_parity.md) - M4B-MVA Step 5產品等價contract、runner、Pi量測與Designer release計畫
 * [`m4b_mva_efficiency.md`](milestone/m4b_mva_efficiency.md) - M4B-MVA-002 encoding/readiness dependent gate、work packages、freeze與結果選擇邊界
+* [`m4c_streaming_speak.md`](milestone/m4c_streaming_speak.md) - active M4C-SS goal、authority、two-candidate boundary、fixed case accounting、acoustic evidence與work packages
 * [`GATE1-ENV-PREFLIGHT-ARM64-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001.md) - ARM64-only UTM executable request；與 x86_64 package/evidence 隔離
 * [`GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md`](../poc_llm/tests/gate1/GATE1-ENV-PREFLIGHT-ARM64-001-DIAGNOSTIC-001.md) - User-authorized ARM64 diagnostic `PASS` 與 formal change-review boundary
 * [`GATE1-PI-COMPAT-PACKET-007.md`](../poc_llm/tests/gate1/GATE1-PI-COMPAT-PACKET-007.md) - `DESIGN REVIEW`；Pi 5累積P1/P6/P7/P10A/P11/P12 executable packet

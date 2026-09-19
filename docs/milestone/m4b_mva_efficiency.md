@@ -1,10 +1,17 @@
 # M4B-MVA-EFFICIENCY：encoding與Conversation readiness受控實驗
 
-狀態：`IN_PROGRESS / ENGINEERING DELIVERY SUBMITTED / CORE REVISION PENDING`
+狀態：`COMPLETE / CORE INCORPORATED / HISTORICAL`
 
-External gates：`M4B-MVA-EFFICIENCY OPEN`；`M4B-MVA-POC OPEN`
+External gates：`M4B-MVA-EFFICIENCY CLOSED`；`M4B-MVA-POC CLOSED`
 
 Baseline：`M4B-MVA-002`
+
+## 2026-09-16 Core completion
+
+Core已把Delivery 003的J/S2、conditional H、listen-only Reasoner，以及Delivery 004的V2D2 prompt
+納入replacement M4B設計。same-bytes Pi product verification通過，User接受M4B，完成commit
+`f87cfa50b9c9415430973076a59c6b1961228090`已push。因此舊的`CORE REVISION PENDING`與
+formal efficiency rerun不再是active exit condition；本文件以下內容只保留設計與工程provenance。
 
 ## 2026-09-08 User scope convergence
 
@@ -153,9 +160,7 @@ solutions。這個上限防止演變成無限prompt/schema search；功能與con
 
 ## Current next action
 
-Core must review Delivery 003 and freeze the revised Reasoner input boundary, J/S2 encoding,
-conditional H lifecycle, prompt qualification criteria and affected formal cases. Prompt work must
-resume with a non-legacy personality-bearing candidate that passes human correctness and concise
-answer review, not merely constrained-output checks. Only then should POC freeze an exact surface,
-push it, clean-checkout that SHA on Pi, and execute the affected formal packet. Audio/TTS audible onset
-and the complete three-second end-to-end claim remain outside the present engineering evidence.
+None for this historical workstream. Core incorporated Delivery 003 and the V2D2 follow-up into the
+replacement M4B product, completed same-bytes Pi verification and obtained User acceptance. Any later
+M4B threshold adoption is a separate post-acceptance delta. Active POC work is now M4C-SS and does not
+rewrite or rerun these results.

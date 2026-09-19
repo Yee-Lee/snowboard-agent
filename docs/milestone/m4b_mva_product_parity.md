@@ -1,14 +1,21 @@
 # M4B-MVA：產品等價量測
 
-狀態：`IN_PROGRESS / STEP 5 DELIVERED / EFFICIENCY PLAN FREEZE`
+狀態：`COMPLETE / CORE INCORPORATED / HISTORICAL`
 
-External gates：`M4B-MVA-POC OPEN`；`M4B-MVA-EFFICIENCY OPEN`
+External gates：`M4B-MVA-POC CLOSED`；`M4B-MVA-EFFICIENCY CLOSED`
 
 Baseline：`M4B-MVA-001`
 
 Dependent baseline：`M4B-MVA-002`
 
 Core profile candidate：`core-m4b-mva-001`（非production lock）
+
+## 2026-09-16 Core completion
+
+Core採用本里程碑及後續efficiency/V2D2交付作為產品設計輸入，完成same-bytes Raspberry Pi
+verification，並由User接受M4B。Accepted product commit為
+`f87cfa50b9c9415430973076a59c6b1961228090`且已push。舊POC量測與machine dispositions保持
+immutable，但不再形成active gate或要求原formal efficiency rerun；目前工作已轉入M4C-SS。
 
 ## Goal
 
