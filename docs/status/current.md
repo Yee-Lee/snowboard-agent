@@ -1,11 +1,11 @@
 # Current handoff
 
-- Updated: 2026-09-17
+- Updated: 2026-09-20
 - Writer: Designer only
-- Current milestone: M4C-SS delivery followed by M4-ERR Design
-- Current stage: **M4C scenarios recorded；M4-ERR Design entry ready；M4C-SS exact delivery authorized after Core commit／push**
-- Next owner: Designer
-- Developer entry: **Closed；M4-ERR Accepted and M4C-SS Closed are required before M4C Test Spec／development**
+- Current milestone: M4-ERR Developer convergence and same-bytes Pi Verify
+- Current stage: **M4-ERR Design／Test Spec aligned；`IR_dev_M4_ERR_II` Resolved；Developer entry open**
+- Next owner: Developer
+- Developer entry: **M4-ERR Open；commit requires all applicable tests and same-bytes Pi Verify；M4C Closed**
 
 ## M4B completion disposition
 
@@ -59,20 +59,21 @@ evidence-backed abandonment to full-response A. The gate does not add a role-sig
 does not close it. M4C has no barge-in; VAD remains the M4A baseline with M4C product-quality observation.
 Repeated sessions, soak and formal performance/resource thresholds remain ALPHA scope.
 
-USER authorized M4C-SS exact-byte delivery on 2026-09-17 to the sibling `poc_llm` worktree at
-`docs/pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md`;
-the file does not currently exist and that worktree was clean at baseline
-`5080abd84dafcbc0f8307a086fa8009a0b6a818b`. Core must first commit and push the request, then copy those exact
-bytes and verify both SHA-256 values. POC execution, Pi access, reboot, network change, artifact download, commit
-and push remain unauthorized. M4-ERR Design entry is otherwise ready and does not depend on the M4C-SS result.
+M4C-SS was delivered byte-identically on 2026-09-19 to the sibling `poc_llm` worktree at
+`docs/pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md`, after fetching and fast-forwarding its clean `llm`
+branch to `origin/llm` baseline `5080abd84dafcbc0f8307a086fa8009a0b6a818b`. The committed Core source and
+delivered destination both had SHA-256 `234b5998589d3c956005f465862e137b471a2e26e75c3a19c6be5cb166c0b59c`.
+The incoming file is intentionally uncommitted pending LLM POC intake. POC execution, Pi access, reboot, network
+change, artifact download, commit and push remain unauthorized. M4-ERR Design is complete and its Test Spec work
+does not depend on the M4C-SS result.
 
 ## Role routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Designer | Same-bytes Pi Verify and Core commit/push；then exact-copy M4C-SS, verify both hashes, record receipt and enter M4-ERR Design |
-| Tester | Wait for the M4-ERR design handoff；M4C Test Spec follows only after M4-ERR Accepted and M4C-SS Closed |
-| Developer | Closed; no M4-ERR or M4C product changes yet |
-| Architect / Reviewer | No active request; enter only if M4C design exposes a focused conflict or review need |
+| Designer | `IR_dev_M4_ERR_II` Resolved；consume the LLM POC intake/result later for M4C-SS |
+| Tester | PI-012 prefix correction accepted；wait for Developer candidate and Verify；do not start M4C Test Spec |
+| Developer | Complete PI-012, all affected regressions and remaining WP7；then run full `M4-ERR-PV-001`–`M4-ERR-PV-005` in one same-bytes M4-ERR Pi Verify run before any commit |
+| Architect / Reviewer | No active request; enter only if an active design exposes a focused conflict or review need |
 
 Designer only replaces this file when the stage, gate, entry state or next owner changes.

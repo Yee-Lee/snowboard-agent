@@ -11,6 +11,7 @@ from sbd.adaptor.audio_lock import AudioArtifactLock
 from sbd.adaptor.errors import AdapterRejected
 from sbd.adaptor.framed_child import AudioProtocolError, ChildState
 from sbd.core.config.models import ASRConfig
+from sbd.core.faults import ComponentSystemFault
 from sbd.perception.listen.whispercpp.adapter import ASR_ERROR_CODES, WhisperCppASRAdapter
 from tests.fakes.m4a import ScriptedChild, asr_endpoint, asr_result
 
@@ -45,7 +46,7 @@ def test_m4a_asr_002_persistent_success_empty_and_error_reopen() -> None:
 
 
 @pytest.mark.parametrize("code", sorted(ASR_ERROR_CODES))
-def test_m4a_asr_002_every_whitelisted_error_reopens_same_child(code: str) -> None:
+def test_m4a_asr_002_whitelisted_outcome_or_system_fault(code: str) -> None:
     async def run() -> None:
         child = ScriptedChild([
             asr_endpoint(1, 1),
@@ -54,10 +55,21 @@ def test_m4a_asr_002_every_whitelisted_error_reopens_same_child(code: str) -> No
         ])
         adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
         await adapter.start()
-        with pytest.raises(AdapterRejected, match=code):
-            await adapter.transcribe(_one_frame())
-        assert (await adapter.transcribe(_one_frame())).text == "fresh"
-        assert child.start_count == 1 and child.state is ChildState.READY
+        if code in {"NO_SPEECH", "MULTIPLE_UTTERANCES"}:
+            with pytest.raises(AdapterRejected, match=code):
+                await adapter.transcribe(_one_frame())
+            assert (await adapter.transcribe(_one_frame())).text == "fresh"
+            assert child.state is ChildState.READY
+        else:
+            with pytest.raises(ComponentSystemFault) as raised:
+                await adapter.transcribe(_one_frame())
+            assert raised.value.code == (
+                "ASR_FRAME_CONTRACT_VIOLATION"
+                if code == "INVALID_FRAME"
+                else "ASR_INFERENCE_FAILED"
+            )
+            assert child.state is ChildState.DESTROYED
+        assert child.start_count == 1
 
     asyncio.run(run())
 
@@ -70,8 +82,9 @@ def test_m4a_asr_002_unknown_error_eof_and_late_terminal_are_protocol_failures()
         ])
         adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
         await adapter.start()
-        with pytest.raises(AudioProtocolError, match="unknown"):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(_one_frame())
+        assert raised.value.code == "ASR_PROTOCOL_FAILED"
         assert child.state is ChildState.DESTROYED
 
     async def eof() -> None:
@@ -79,8 +92,9 @@ def test_m4a_asr_002_unknown_error_eof_and_late_terminal_are_protocol_failures()
         child.receive_release.set()
         adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
         await adapter.start()
-        with pytest.raises(EOFError):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(_one_frame())
+        assert raised.value.code == "ASR_PROTOCOL_FAILED"
         assert child.state is ChildState.DESTROYED
 
     async def late() -> None:
@@ -91,8 +105,9 @@ def test_m4a_asr_002_unknown_error_eof_and_late_terminal_are_protocol_failures()
         adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
         await adapter.start()
         assert (await adapter.transcribe(_one_frame())).text == "first"
-        with pytest.raises(AudioProtocolError):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(_one_frame())
+        assert raised.value.code == "ASR_PROTOCOL_FAILED"
         assert child.state is ChildState.DESTROYED
 
     asyncio.run(unknown())

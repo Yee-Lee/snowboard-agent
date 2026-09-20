@@ -23,6 +23,7 @@ from sbd.action.speak import Speak
 from tests.fakes.m4a import ScriptedChild
 import pytest
 from sbd.adaptor.framed_child import AudioProtocolError, MAX_PCM_BYTES
+from sbd.core.faults import ComponentSystemFault
 
 
 LOCK = AudioArtifactLock.load(Path(__file__).parent.parent / "requirements/m4a/audio-artifacts.json")
@@ -193,8 +194,9 @@ def test_m4a_tts_001_rejects_malformed_pcm_header_before_yield(mutate) -> None:
         child = ScriptedChild([header], payload=payload)
         adapter = MatchaTTSAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
         await adapter.start()
-        with pytest.raises(AudioProtocolError):
+        with pytest.raises(ComponentSystemFault) as raised:
             [chunk async for chunk in adapter.synthesize("private")]
+        assert raised.value.code == "TTS_PROTOCOL_FAILED"
         assert child.force_count == 1
 
     asyncio.run(run())

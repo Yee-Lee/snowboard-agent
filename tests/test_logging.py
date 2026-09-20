@@ -6,8 +6,10 @@ from pathlib import Path
 
 from sbd.core.events import ErrorOccurred, PerceptionResult
 from sbd.core.logger import (
-    configure_logging, bootstrap_logging, redact_string, get_logger, SBD_LOGGER_NAME
+    configure_logging, bootstrap_logging, redact_string, get_logger, render_public_fatal,
+    SBD_LOGGER_NAME,
 )
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.error_observer import ErrorLoggingObserver
 from sbd.core.config.models import LogConfig
 from sbd.core.exceptions import (
@@ -122,7 +124,8 @@ def test_log_002_error_observer(caplog):
 
     assert len(caplog.records) == 1
     assert caplog.records[0].where == "invalid_where"
-    assert caplog.records[0].invalid_where == "BAD WHERE!"
+    assert caplog.records[0].invalid_where is True
+    assert "BAD WHERE!" not in caplog.text
 
 def test_log_003_redaction(caplog):
     s1 = "This is a password=secret123 and token=abc456 test."
@@ -159,3 +162,20 @@ def test_log_004_fatal_supervision():
     logger = get_logger("perception.listen")
     # if it were published, we should log WARNING, but that's handled by SM/worker layer.
     assert p5_res.status == "error"
+
+
+def test_log_005_public_fatal_renderer_never_walks_cause_or_message() -> None:
+    source = ValueError("PRIVATE-OUTPUT-CANARY")
+    fault = ComponentSystemFault.create(
+        where="cognition.reasoner",
+        code="LLM_PROTOCOL_FAILED",
+        backend=BackendDisposition.UNPROVEN,
+        recovery_keys=("backend.cognition.reasoner.llm",),
+    )
+    try:
+        raise fault from source
+    except ComponentSystemFault as raised:
+        rendered = render_public_fatal(raised)
+    assert rendered == "ComponentSystemFault:LLM_PROTOCOL_FAILED"
+    assert "PRIVATE-OUTPUT-CANARY" not in rendered
+    assert render_public_fatal(ValueError("PRIVATE-OUTPUT-CANARY")) == "ValueError"

@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4-ERR error-handling closure followed by M4C complete offline voice-device integration
-- State: **M4-ERR Design entry ready；M4C scenarios recorded／M4C-SS open**
-- Developer entry: **Closed；M4-ERR Accepted and M4C-SS Closed are required before M4C Test Spec／Developer entry**
+- State: **M4-ERR Design／Test Spec aligned；`IR_dev_M4_ERR_II` Resolved；M4C-SS open**
+- Developer entry: **M4-ERR Open；same-bytes Pi Verify required before commit；M4C Closed**
 
 ## Accepted inputs
 
@@ -57,9 +57,29 @@
 
 ## Next Designer work
 
-Commit and push the authorized M4C design/request bytes after same-bytes Pi Verify, deliver the byte-identical
-M4C-SS request to the confirmed sibling LLM POC destination, then enter M4-ERR Design. M4C whole-product scenarios
-are recorded; its only open product decision is M4C-SS.
+`IR_dev_M4_ERR_I` B1／B2 exposed retained M4A／M4B assertions that conflict with the USER-selected M4-ERR
+semantics. [`ch_m4_error_handling.md`](../implement/ch_m4_error_handling.md) now preserves the old Accepted SHA
+and evidence as immutable history while prospectively superseding only the named same-child TTS reuse,
+`__cause__ is None` and untyped observer escape oracles. It also fixes the raw cause boundary to the private
+in-memory supervised exception chain and requires a sanitized type/code-only public Level 3 traceback.
+
+Tester revision v2 of [`test_spec_M4_ERR.md`](../test_spec/test_spec_M4_ERR.md) is accepted. It preserves all
+unaffected G05/G06 assertions, keeps the two affected M4A TTS functions in G05, binds the four named function
+overlays to PI-011／PI-012, and uses exact private-cause／sanitized-public-renderer oracles. Developer is next owner
+for affected regression, remaining WP7 and the complete same-bytes M4-ERR Pi Verify run before any commit.
+
+`IR_dev_M4_ERR_II` subsequently identified one non-executable PI-012 row: the retained `prefix` stimulus creates
+a malformed `SemanticGeneration`, not a `ReplaceableGenerationFailure`. Design is unchanged; Tester must retain
+that stimulus and change only the `prefix` cause oracle to `__cause__ is None`, with the other seven rows and all
+accepted G05/G06／renderer／Pi requirements unchanged. The focused correction is accepted and the review is
+Resolved. Developer is next owner for PI-012 convergence, affected regressions, remaining WP7 and same-bytes Pi
+Verify before commit.
+
+The delivered M4C-SS request awaits LLM POC intake and later evidence. The request was
+copied byte-identically to the latest clean `llm` baseline `5080abd84dafcbc0f8307a086fa8009a0b6a818b`; both
+source and destination SHA-256 were `234b5998589d3c956005f465862e137b471a2e26e75c3a19c6be5cb166c0b59c`.
+M4C whole-product scenarios are recorded; its only open product decision is M4C-SS. M4C Test Spec／Developer
+entry remain closed until M4-ERR Accepted and M4C-SS Closed.
 Preserve the existing milestone exclusions for camera/look, voice wake, tool/MQTT and full graphics/animation.
 M4C fixes observable product behavior and scenario acceptance; M4-ERR owns the underlying lifecycle/error
 routing, diagnostics, recovery and fatal-exit closure. Do not create a second volume authority or another gate.

@@ -10,6 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+class TerminationProofError(RuntimeError):
+    """A required owner could not prove complete native termination."""
+
+
 # ---------------------------------------------------------------------------
 # ForceAbortReport — Level 2 force_abort() return value
 # ---------------------------------------------------------------------------

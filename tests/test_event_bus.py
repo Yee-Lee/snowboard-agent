@@ -121,9 +121,11 @@ def test_bus_003_handler_failure_deferred_error() -> None:
         assert errors[0].where == "manual"
         # Then the fallbacks from the original dispatch
         assert errors[1].where == "bus.dispatch.handler1"
-        assert errors[1].exception_type == "ValueError"
+        assert errors[1].exception_type is None
+        assert errors[1].code == "BUS_HANDLER_FAILED"
         assert errors[2].where == "bus.dispatch.handler3"
-        assert errors[2].exception_type == "KeyError"
+        assert errors[2].exception_type is None
+        assert errors[2].code == "BUS_HANDLER_FAILED"
 
     asyncio.run(async_test())
 

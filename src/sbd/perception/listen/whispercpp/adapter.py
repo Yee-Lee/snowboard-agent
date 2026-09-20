@@ -23,6 +23,8 @@ from sbd.adaptor.framed_child import (
 )
 from sbd.core.config.models import ASRConfig, AppConfig
 from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
+from sbd.core.fault_injection import DeterministicFaultInjector
 from sbd.perception.listen.asr import ASRResult
 
 
@@ -34,6 +36,16 @@ FRAME_BYTES = 640
 # silence plus 600 ms post-padding can converge without a new wire operation.
 EOF_TERMINAL_SILENCE_FRAMES = 100
 _SILENCE_FRAME = b"\x00" * FRAME_BYTES
+
+
+class _ASRRequestFault(AdapterError):
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+class ASRProtocolSystemFault(ComponentSystemFault, AudioProtocolError):
+    """Typed M4-ERR protocol fault retaining the M4A protocol boundary."""
 
 
 class _Child(Protocol):
@@ -66,10 +78,12 @@ class WhisperCppASRAdapter:
         *,
         lock: AudioArtifactLock,
         child_factory: Callable[[], _Child] | None = None,
+        fault_injector: DeterministicFaultInjector | None = None,
     ) -> None:
         self._config = config
         self._lock = lock
         self._child_factory = child_factory or self._default_child
+        self._fault_injector = fault_injector
         self._child: _Child = self._child_factory()
         self._operation_lock = asyncio.Lock()
         self._active_request_id: int | None = None
@@ -77,10 +91,15 @@ class WhisperCppASRAdapter:
         self._request_ready = asyncio.Event()
         self._request_ready.set()
         self._cancel_sent_for: int | None = None
+        self._destroyed_for_fault = False
 
     @property
     def state(self) -> ChildState:
         return self._child.state
+
+    @property
+    def ready_for_next(self) -> bool:
+        return self._child.state is ChildState.READY and self._active_request_id is None
 
     def _default_child(self) -> FramedProcess:
         config = self._config
@@ -137,7 +156,12 @@ class WhisperCppASRAdapter:
             except StopAsyncIteration:
                 raise AdapterRejected("ASR input contains no frames") from None
             if len(first) != FRAME_BYTES:
-                raise AdapterError(f"ASR frame must be exactly {FRAME_BYTES} bytes")
+                raise ComponentSystemFault.create(
+                    where="perception.listen.asr",
+                    code="ASR_FRAME_CONTRACT_VIOLATION",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=(ASR_KEY,),
+                )
             request_id = self._child.allocate_request_id()
             self._active_request_id = request_id
             self._cancel_requested.clear()
@@ -146,6 +170,19 @@ class WhisperCppASRAdapter:
             captured_pcm = bytearray()
             try:
                 await self._child.send({"protocol": 1, "op": "BEGIN", "request_id": request_id, "format": "16000_mono_s16le", "frame_bytes": 640})
+                injector = self._fault_injector
+                if injector is not None:
+                    identity = self.backend_identity()
+                    if injector.fire("asr.inference.rejected", identity):
+                        self._raise_request_error({
+                            "protocol": 1,
+                            "event": "ERROR",
+                            "request_id": request_id,
+                            "code": "INFERENCE_REJECTED",
+                        }, request_id)
+                    if injector.fire("asr.child.exit", identity):
+                        await self._child.force_terminate()
+                        raise EOFError("M4_ERR_INJECTED_ASR_CHILD_EXIT")
                 sequence = 0
                 frame: bytes | None = first
                 source_exhausted = False
@@ -238,13 +275,46 @@ class WhisperCppASRAdapter:
                     raise AudioProtocolError("unexpected ASR terminal event")
             except asyncio.CancelledError:
                 raise
-            except (AudioProtocolError, EOFError):
+            except _ASRRequestFault as exc:
                 await self._protocol_failure()
+                code = (
+                    "ASR_FRAME_CONTRACT_VIOLATION"
+                    if exc.code == "INVALID_FRAME"
+                    else "ASR_INFERENCE_FAILED"
+                )
+                backend = (
+                    BackendDisposition.UNPROVEN
+                    if exc.code == "INVALID_FRAME"
+                    else BackendDisposition.REBUILD_REQUIRED
+                )
+                fault = ComponentSystemFault.create(
+                    where="perception.listen.asr",
+                    code=code,
+                    backend=backend,
+                    recovery_keys=(ASR_KEY,),
+                )
+                raise fault from exc
+            except AdapterRejected:
                 raise
-            except AdapterError:
+            except (AudioProtocolError, EOFError) as exc:
+                await self._protocol_failure()
+                fault = ASRProtocolSystemFault.create(
+                    where="perception.listen.asr",
+                    code="ASR_PROTOCOL_FAILED",
+                    backend=BackendDisposition.REBUILD_REQUIRED,
+                    recovery_keys=(ASR_KEY,),
+                )
+                raise fault from exc
+            except AdapterError as exc:
                 if self._active_request_id is not None:
                     await self._protocol_failure()
-                raise
+                fault = ComponentSystemFault.create(
+                    where="perception.listen.asr",
+                    code="ASR_FRAME_CONTRACT_VIOLATION",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=(ASR_KEY,),
+                )
+                raise fault from exc
             finally:
                 captured_pcm.clear()
 
@@ -340,8 +410,11 @@ class WhisperCppASRAdapter:
         require_positive_request_id(event["request_id"], request_id)
         if event["code"] not in ASR_ERROR_CODES:
             raise AudioProtocolError("unknown ASR request error code")
+        code = event["code"]
         self._finish()
-        raise AdapterRejected(f"ASR request rejected: {event['code']}")
+        if code in {"NO_SPEECH", "MULTIPLE_UTTERANCES"}:
+            raise AdapterRejected(f"ASR request rejected: {code}")
+        raise _ASRRequestFault(code)
 
     def _finish(self) -> None:
         self._child.operation_finished()
@@ -357,6 +430,9 @@ class WhisperCppASRAdapter:
 
     async def force_abort(self) -> ForceAbortReport:
         if self._child.state in {ChildState.STOPPED, ChildState.DESTROYED}:
+            if self._destroyed_for_fault:
+                self._destroyed_for_fault = False
+                return ForceAbortReport((ASR_KEY,))
             return ForceAbortReport()
         await self._child.force_terminate()
         self._active_request_id = None
@@ -365,6 +441,7 @@ class WhisperCppASRAdapter:
 
     async def _protocol_failure(self) -> None:
         await self._child.force_terminate()
+        self._destroyed_for_fault = True
         self._active_request_id = None
         self._request_ready.set()
 
@@ -380,6 +457,21 @@ class WhisperCppASRAdapter:
             await replacement.force_terminate()
             raise
         self._child = replacement
+        self._destroyed_for_fault = False
+
+    def backend_identity(self) -> dict[str, str | int | bool]:
+        pid = getattr(self._child, "pid", None)
+        return {
+            "backend": "whispercpp",
+            "driver": self._config.driver,
+            "artifact_lock_sha256": self._lock.digest,
+            "pid": int(pid) if type(pid) is int else 0,
+            "live": (
+                type(pid) is int
+                and pid > 0
+                and self._child.state in {ChildState.READY, ChildState.BUSY}
+            ),
+        }
 
 
 __all__ = ["ASR_KEY", "WhisperCppASRAdapter"]

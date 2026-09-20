@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
 from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.faults import ComponentSystemFault
 
 
 T = TypeVar("T")
@@ -26,10 +27,14 @@ class WorkerRuntime:
 
     def __init__(self) -> None:
         self._active: _ActiveCall | None = None
+        self._completed_fault: ComponentSystemFault | None = None
 
     async def _run_call(self, body: Callable[[], Awaitable[None]]) -> None:
         if self._active is not None:
             raise RuntimeError("worker already has an active call")
+        # A new admission proves that any prior reusable/non-applicable fault
+        # no longer needs a deferred destruction hook.
+        self._completed_fault = None
         outer = asyncio.current_task()
         if outer is None:
             raise RuntimeError("worker call requires an asyncio Task")
@@ -42,6 +47,9 @@ class WorkerRuntime:
         except asyncio.CancelledError:
             if not active.cancel_requested.is_set():
                 raise
+        except ComponentSystemFault as fault:
+            self._completed_fault = fault
+            raise
         finally:
             operation = active.operation_task
             if operation is not None:
@@ -84,12 +92,15 @@ class WorkerRuntime:
 
     async def force_abort(self) -> ForceAbortReport:
         active = self._active
-        if active is None:
+        if active is None and self._completed_fault is None:
             return ForceAbortReport()
-        active.cancel_requested.set()
+        if active is not None:
+            active.cancel_requested.set()
         report = await self._force_abort_resources()
-        await self._cancel_operation(active)
-        await active.done.wait()
+        if active is not None:
+            await self._cancel_operation(active)
+            await active.done.wait()
+        self._completed_fault = None
         return report
 
     async def _abort_resources(self) -> None:

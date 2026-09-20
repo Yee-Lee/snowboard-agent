@@ -31,6 +31,7 @@ _STATES = {
     "ACTION": "回應中",
     "ERROR": "錯誤",
 }
+_ERROR_CATEGORIES = {"audio", "asr", "llm", "tts", "input", "internal"}
 
 
 class Oled128Renderer:
@@ -46,6 +47,7 @@ class Oled128Renderer:
         schemas = {
             "status.text": {"text": str},
             "status.state": {"state": str},
+            "status.error": {"category": str},
             "main.text": {"text": str},
             "fullscreen.blank": {},
         }
@@ -59,6 +61,8 @@ class Oled128Renderer:
                 raise DisplayHintError(f"{hint.template}.{field} has invalid type")
         if hint.template == "status.state" and hint.data["state"] not in _STATES:
             raise DisplayHintError("status.state contains an unknown state")
+        if hint.template == "status.error" and hint.data["category"] not in _ERROR_CATEGORIES:
+            raise DisplayHintError("status.error contains an unknown category")
 
     def render(self, *, size: tuple[int, int], model: RenderModel) -> bytes:
         if size != (128, 128):
@@ -76,10 +80,14 @@ class Oled128Renderer:
             return self._rgb565(image)
 
         draw = ImageDraw.Draw(image)
-        state = next(
-            (hint for slot, hint in model.status_slots if slot == "state"), None
+        error = next(
+            (hint for slot, hint in model.status_slots if slot == "error"), None
         )
-        if state is not None:
+        state = next((hint for slot, hint in model.status_slots if slot == "state"), None)
+        if error is not None:
+            text = error.data["category"]
+            draw.text((4, 2), text, font=self._medium, fill=(255, 255, 255))
+        elif state is not None:
             text = _STATES[state.data["state"]]
             draw.text((4, 2), text, font=self._medium, fill=(255, 255, 255))
         draw.line((0, 20, 127, 20), fill=(48, 52, 58), width=1)

@@ -120,6 +120,9 @@ class M2Composition:
         display = make_display(config.core.display)
         camera = make_camera(config.core.camera)
         gpio = make_gpio(config.core.gpio)
+        set_gpio_fault_publisher = getattr(gpio, "set_fault_publisher", None)
+        if callable(set_gpio_fault_publisher):
+            set_gpio_fault_publisher(bus.publish)
         asr = make_asr_adapter(config.perception.listen.adapter)
         vision = MockVisionAdapter()
         tts = make_tts_adapter(config.action.tts)

@@ -15,6 +15,7 @@ from sbd.adaptor.audio_lock import AudioArtifactLock
 from sbd.adaptor.errors import AdapterError, AdapterRejected
 from sbd.adaptor.framed_child import ChildState, FramedProcess
 from sbd.core.config.models import ASRConfig
+from sbd.core.faults import ComponentSystemFault
 from sbd.perception.listen.whispercpp.adapter import WhisperCppASRAdapter
 from sbd.perception.listen.whispercpp import adapter as adapter_module
 from sbd.perception.listen.whispercpp.supervisor import (
@@ -214,8 +215,9 @@ def test_m4a_asr_001_wrong_frame_rejected_before_any_child_message(size: int) ->
         async def frames():
             yield b"x" * size
 
-        with pytest.raises(AdapterError, match="640"):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(frames())
+        assert raised.value.code == "ASR_FRAME_CONTRACT_VIOLATION"
         assert child.messages == []
         assert child.request_id == 0
 
@@ -231,8 +233,9 @@ def test_m4a_asr_001_sequence_gap_is_protocol_failure_and_destroys_child() -> No
         async def frames():
             yield b"\x00" * 640
 
-        with pytest.raises(AdapterError, match="sequence"):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(frames())
+        assert raised.value.code == "ASR_PROTOCOL_FAILED"
         assert child.force_count == 1
 
     asyncio.run(run())
@@ -259,8 +262,9 @@ def test_m4a_asr_001_endpoint_count_or_bounded_hash_mismatch_destroys_child(
         async def frames():
             yield b"\x00" * 640
 
-        with pytest.raises(AdapterError):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(frames())
+        assert raised.value.code == "ASR_PROTOCOL_FAILED"
         assert child.force_count == 1
 
     asyncio.run(run())
@@ -276,8 +280,9 @@ def test_m4a_asr_001_invalid_later_frame_destroys_inflight_child() -> None:
             yield b"\x00" * 640
             yield b"\x00" * 639
 
-        with pytest.raises(AdapterError, match="640"):
+        with pytest.raises(ComponentSystemFault) as raised:
             await adapter.transcribe(frames())
+        assert raised.value.code == "ASR_FRAME_CONTRACT_VIOLATION"
         assert child.force_count == 1
 
     asyncio.run(run())

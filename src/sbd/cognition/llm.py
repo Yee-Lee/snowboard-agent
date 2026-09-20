@@ -85,6 +85,22 @@ class LLMFatalError(RuntimeError):
     """Unsafe backend/protocol failure; never a retry Fact."""
 
 
+class LLMProtocolError(LLMFatalError):
+    """Ticket, profile, revision, or wire contract failure."""
+
+
+class LLMBackendError(LLMFatalError):
+    """Child/backend failure that requires reconstruction."""
+
+
+class LLMCleanupUnprovenError(LLMFatalError):
+    """Request, discard, or close cleanup proof is incomplete."""
+
+
+class LLMObservationError(LLMFatalError):
+    """Resource observation can no longer support admission truth."""
+
+
 class ReplaceableGenerationFailure(RuntimeError):
     request_terminal_proven = True
     engine_usable = True
@@ -179,6 +195,10 @@ __all__ = [
     "GenerationMetrics",
     "SemanticGeneration",
     "LLMFatalError",
+    "LLMProtocolError",
+    "LLMBackendError",
+    "LLMCleanupUnprovenError",
+    "LLMObservationError",
     "ReplaceableGenerationFailure",
     "MemoryAdmissionDenied",
     "LLMEngineAdapter",

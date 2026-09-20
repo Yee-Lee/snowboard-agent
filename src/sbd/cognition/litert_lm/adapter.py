@@ -16,12 +16,17 @@ from typing import Any, Protocol
 
 from sbd.cognition.litert_lm.lock import LLMArtifactLock
 from sbd.cognition.llm import (AdmissionSnapshot, TicketDiscardProof, GenerationMetrics, SemanticGeneration,
-    LLMFatalError, ReplaceableGenerationFailure, MemoryAdmissionDenied,
+    LLMBackendError, LLMCleanupUnprovenError, LLMFatalError,
+    LLMObservationError, LLMProtocolError as ComponentLLMProtocolError,
+    ReplaceableGenerationFailure, MemoryAdmissionDenied,
     LLMResourceSampler, ScheduleRecovery, WaitRecovery)
 from sbd.cognition.llm_child_protocol import (MAX_CONTROL_BYTES, PROTOCOL_VERSION,
     LLMProtocolError, ProtocolLedger, encode_frame, read_frame, parse_ready, require, digest)
 from sbd.core.config.models import LLMConfig
 from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.lifecycle import TerminationProofError
+from sbd.core.fault_injection import DeterministicFaultInjector
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 
 RESOURCE_KEY = "backend.cognition.reasoner.llm"
 
@@ -157,16 +162,16 @@ class SubprocessLLMChild:
 
     async def send(self, frame: Mapping[str, object]) -> None:
         if self._process is None or self._process.stdin is None or self._process.returncode is not None:
-            raise LLMFatalError("child input is unavailable")
+            raise LLMBackendError("child input is unavailable")
         self._process.stdin.write(encode_frame(frame))
         try:
             await self._process.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as error:
-            raise LLMFatalError("child input closed") from None
+            raise LLMBackendError("child input closed") from error
 
     async def receive(self) -> Mapping[str, object]:
         if self._process is None or self._process.stdout is None:
-            raise LLMFatalError("child output is unavailable")
+            raise LLMBackendError("child output is unavailable")
         return await read_frame(self._process.stdout)
 
     async def stop(self) -> None:
@@ -220,7 +225,9 @@ class SubprocessLLMChild:
                         self._cfg.child_kill_wait_timeout_seconds,
                     )
                 except TimeoutError as error:
-                    raise LLMFatalError("child process-group exit could not be proven") from None
+                    raise TerminationProofError(
+                        "LLM child process-group exit could not be proven"
+                    ) from error
         if process is not None:
             await process.wait()
             members = self._live_process_group_members(process.pid)
@@ -303,7 +310,16 @@ class _ConversationControl:
         return await self._adapter.open_conversation(session_id, generation)
 
     async def close_conversation(self, session_id, generation, reason):
-        return await self._adapter.close_conversation(session_id, generation, reason)
+        try:
+            return await self._adapter.close_conversation(session_id, generation, reason)
+        except LLMCleanupUnprovenError as error:
+            fault = ComponentSystemFault.create(
+                where="cognition.reasoner.llm",
+                code="LLM_CLEANUP_UNPROVEN",
+                backend=BackendDisposition.UNPROVEN,
+                recovery_keys=(RESOURCE_KEY,),
+            )
+            raise fault from error
 
     async def authorize_recovery(self, session_id, generation, proof):
         return await self._adapter.authorize_recovery(session_id, generation, proof)
@@ -320,12 +336,14 @@ class LiteRTLMAdapter:
                  schedule_recovery: ScheduleRecovery, wait_recovery: WaitRecovery,
                  resource_sampler: LLMResourceSampler,
                  child_factory: ChildFactory = SubprocessLLMChild,
-                 observer: Any = None, measurement_grant: Any = None) -> None:
+                 observer: Any = None, measurement_grant: Any = None,
+                 fault_injector: DeterministicFaultInjector | None = None) -> None:
         self._cfg, self._lock = cfg, lock
         self._schedule_recovery, self._wait_recovery = schedule_recovery, wait_recovery
         self._sampler, self._child_factory = resource_sampler, child_factory
         self._observer = observer
         self._measurement_grant = measurement_grant
+        self._fault_injector = fault_injector
         if measurement_grant is not None:
             from sbd.cognition.litert_lm.measurement import MeasurementGrant
             require(type(measurement_grant) is MeasurementGrant, "measurement")
@@ -468,7 +486,7 @@ class LiteRTLMAdapter:
             raise
         except BaseException:
             await self._destroy()
-            self._responses.put_nowait(LLMFatalError("LLM wire failure"))
+            self._responses.put_nowait(LLMBackendError("LLM wire failure"))
 
     def _frame(self, op: str, session_id: str, generation: int, **extra: object) -> dict[str, object]:
         return {"protocol": 3, "op": op, "request_id": self._ledger.counter + 1,
@@ -491,6 +509,18 @@ class LiteRTLMAdapter:
                 self._clock_token = prove() if callable(prove) else None
                 self._clock_mapped = False
             await child.send(frame)
+            injector = self._fault_injector
+            if injector is not None:
+                identity = self.backend_identity()
+                if frame["op"] == "GENERATE" and injector.fire(
+                    "llm.child.exit", identity
+                ):
+                    await child.force_terminate()
+                    raise LLMBackendError("M4_ERR_INJECTED_LLM_CHILD_EXIT")
+                if frame["op"] in {"CLOSE", "DISCARD_TICKET"} and injector.fire(
+                    "llm.cleanup.unproven", identity
+                ):
+                    raise LLMCleanupUnprovenError("M4_ERR_INJECTED_LLM_CLEANUP")
             timeout = (self._cfg.generation_timeout_seconds if frame["op"] == "GENERATE"
                        else self._cfg.child_ready_timeout_seconds)
             if frame["op"] == "DISCARD_TICKET":
@@ -508,7 +538,7 @@ class LiteRTLMAdapter:
             except TimeoutError:
                 expired = True
                 if frame["op"] == "DISCARD_TICKET":
-                    raise LLMFatalError("ticket disposal timed out") from None
+                    raise LLMCleanupUnprovenError("ticket disposal timed out") from None
                 if self._ledger.active is not None and not self._ledger.cancelled:
                     cancel = {"protocol": 3, "op": "CANCEL", "request_id": frame["request_id"]}
                     self._ledger.command(cancel)
@@ -534,9 +564,20 @@ class LiteRTLMAdapter:
             else:
                 self._sync_state()
             raise
-        except BaseException:
+        except (
+            LLMBackendError,
+            LLMCleanupUnprovenError,
+            LLMObservationError,
+            ComponentLLMProtocolError,
+        ):
             await self._destroy()
-            raise LLMFatalError("LLM operation failed") from None
+            raise
+        except LLMProtocolError as error:
+            await self._destroy()
+            raise ComponentLLMProtocolError("LLM protocol failed") from error
+        except BaseException as error:
+            await self._destroy()
+            raise LLMBackendError("LLM operation failed") from error
         finally:
             self._operation_done.set()
 
@@ -569,7 +610,7 @@ class LiteRTLMAdapter:
                                   lifecycle_point=lifecycle_point)
         except BaseException:
             await self._destroy()
-            raise LLMFatalError("MEMORY_SAMPLE_INVALID") from None
+            raise LLMObservationError("MEMORY_SAMPLE_INVALID") from None
 
     async def open_conversation(self, session_id: str, generation: int):
         from sbd.core.state_manager.ports import ConversationReady, ConversationOpenRejected
@@ -631,7 +672,7 @@ class LiteRTLMAdapter:
                                           lifecycle_point="pre_generate")
             except BaseException:
                 await self._destroy()
-                raise LLMFatalError("MEMORY_SAMPLE_INVALID") from None
+                raise LLMObservationError("MEMORY_SAMPLE_INVALID") from None
             if decision is not MemoryDecision.GENERATE:
                 self.mark_recycle_pending(snapshot.session_id, snapshot.generation)
                 raise MemoryAdmissionDenied(speak_allowed=decision is MemoryDecision.NOTICE)
@@ -791,3 +832,22 @@ class LiteRTLMAdapter:
         self.state = AdapterState.RECOVERING
         await self._start_replacement()
         await self.observe_memory("post_replacement")
+
+    def backend_identity(self) -> dict[str, str | int | bool]:
+        child = self._child
+        pid = getattr(child, "pid", None)
+        pgid = getattr(child, "pgid", None)
+        return {
+            "backend": "litert_lm",
+            "artifact_lock_sha256": self._lock.digest,
+            "pid": int(pid) if type(pid) is int else 0,
+            "pgid": int(pgid) if type(pgid) is int else 0,
+            "live": (
+                child is not None
+                and type(pid) is int
+                and pid > 0
+                and type(pgid) is int
+                and pgid == pid
+                and self.state not in {AdapterState.STOPPED, AdapterState.DESTROYED}
+            ),
+        }

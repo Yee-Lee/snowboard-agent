@@ -21,6 +21,18 @@ SHARED_FILES = ("tests/test_config.py", "tests/test_resource_manager.py", "tests
     "tests/test_m3_audo_001_002_003_004_005_006_007.py", "tests/test_m3_aud_001_002_003_004.py")
 M4A_FILES = ("tests/test_m4a_ipc_001.py", "tests/test_m4a_asr_003.py",
              "tests/test_m4a_tts_002.py", "tests/test_m4a_priv_001.py")
+M4_ERR_G06_EXEMPTIONS = {
+    "tests/test_m4a_tts_002.py": {
+        "test_m4a_tts_002_persistent_error_reopen_and_next_success",
+        "test_m4a_tts_002_every_whitelisted_error_reopens_same_child",
+    },
+    "tests/test_m4b_p5_001.py": {
+        "test_product_fatal_boundary_has_no_normal_fact_and_sanitized_traceback",
+    },
+    "tests/test_m4b_priv_001.py": {
+        "test_V01_completion_callback_failure_reaches_worker_supervision",
+    },
+}
 
 
 def _pytest(tmp_path, files, name):
@@ -104,7 +116,11 @@ def test_G05_affected_m4a_portable_boundaries(tmp_path, record_property):
     nodes, counts = _pytest(tmp_path, M4A_FILES, "m4a")
     assert counts["passed"] == len(nodes)
     record_property("selected_files", ",".join(M4A_FILES))
-    record_property("selection_reason", "Shared IPC/process cleanup, ASR/TTS terminal and privacy boundaries")
+    record_property(
+        "selection_reason",
+        "Shared IPC/process cleanup, ASR/TTS terminal and privacy boundaries; "
+        "the two named M4A TTS functions execute the M4-ERR-PI-011 oracle",
+    )
 
 
 def _retained_definition_inventory(source):
@@ -126,13 +142,27 @@ def test_G06_immutable_test_names_and_assertions_match_predevelopment_sha():
         old = _retained_definition_inventory(before.stdout)
         current = _retained_definition_inventory((ROOT / relative).read_text(encoding="utf-8"))
         assert old.keys() <= current.keys(), relative
-        assert all(current[name] == assertions for name, assertions in old.items()), relative
+        exempt = M4_ERR_G06_EXEMPTIONS.get(relative, set())
+        assert exempt <= old.keys() & current.keys(), relative
+        assert all(
+            name in exempt or current[name] == definition
+            for name, definition in old.items()
+        ), relative
 
 
 def test_G06_guard_detects_weakened_stimulus_with_unchanged_assertion():
     original = "def test_example():\n    actual = product('boundary')\n    assert actual\n"
     weakened = "def test_example():\n    actual = product('trivial')\n    assert actual\n"
     assert _retained_definition_inventory(original) != _retained_definition_inventory(weakened)
+
+
+def test_G06_m4_err_exemption_is_exactly_four_named_functions():
+    assert sum(map(len, M4_ERR_G06_EXEMPTIONS.values())) == 4
+    assert set(M4_ERR_G06_EXEMPTIONS) == {
+        "tests/test_m4a_tts_002.py",
+        "tests/test_m4b_p5_001.py",
+        "tests/test_m4b_priv_001.py",
+    }
 
 
 def test_G06_complete_catalog_never_silently_drops_unimplemented_paths():

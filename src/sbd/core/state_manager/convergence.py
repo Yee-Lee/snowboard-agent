@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Mapping, Protocol
 
 from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +161,7 @@ class DefaultSessionConverger:
             active_targets: list[Any] = []
             for r in sorted_records:
                 task = getattr(r, "task", None)
+                completed_fault = self._completed_system_fault(r)
                 private_unproven = (
                     getattr(r, "completion_mode", "worker_fact") == "private_result"
                     and (
@@ -168,7 +170,14 @@ class DefaultSessionConverger:
                         or getattr(r, "engine_usable", None) is False
                     )
                 )
-                if (task is not None and not task.done()) or private_unproven:
+                fault_requires_level_2 = (
+                    completed_fault is not None
+                    and completed_fault.backend in {
+                        BackendDisposition.REBUILD_REQUIRED,
+                        BackendDisposition.UNPROVEN,
+                    }
+                )
+                if (task is not None and not task.done()) or private_unproven or fault_requires_level_2:
                     active_targets.append(r)
                 else:
                     # Harvest completed task exception if any (for logging context)
@@ -212,6 +221,20 @@ class DefaultSessionConverger:
                             f"Invalid destroyed_backend key: {repr(key)}"
                         )
                     destroyed.append(key)
+                fault = self._completed_system_fault(target)
+                if fault is not None and fault.backend in {
+                    BackendDisposition.REBUILD_REQUIRED,
+                    BackendDisposition.UNPROVEN,
+                }:
+                    reported = tuple(sorted(set(report.destroyed_backends)))
+                    if reported != fault.recovery_keys:
+                        raise ConvergenceFatalError.from_target(
+                            target,
+                            stage="fault_recovery_key_mismatch",
+                            cause=ConvergenceContractViolation(
+                                "force_abort report does not match declared fault recovery keys"
+                            ),
+                        )
                 if getattr(target, "completion_mode", "worker_fact") == "private_result":
                     if (
                         getattr(target, "engine_usable", None) is False
@@ -270,7 +293,21 @@ class DefaultSessionConverger:
             and getattr(target, "engine_usable", None) is False
         ):
             return _Level1Outcome(target, escalate=True, reason="engine_unusable")
+        fault = self._completed_system_fault(target)
+        if fault is not None and fault.backend in {
+            BackendDisposition.REBUILD_REQUIRED,
+            BackendDisposition.UNPROVEN,
+        }:
+            return _Level1Outcome(target, escalate=True, reason="system_fault")
         return _Level1Outcome(target, escalate=False)
+
+    @staticmethod
+    def _completed_system_fault(target: Any) -> ComponentSystemFault | None:
+        task = getattr(target, "task", None)
+        if task is None or not task.done() or task.cancelled():
+            return None
+        error = task.exception()
+        return error if isinstance(error, ComponentSystemFault) else None
 
     async def _run_force_abort(self, target: Any) -> tuple[Any, ForceAbortReport]:
         kind = getattr(target, "kind", "unknown")

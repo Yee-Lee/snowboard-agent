@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from sbd.adaptor.errors import AdapterError
+from sbd.core.lifecycle import TerminationProofError
 
 
 PROTOCOL_VERSION = 1
@@ -25,6 +26,10 @@ SHA256_LENGTH = 64
 
 class AudioProtocolError(AdapterError):
     """The child violated Audio Protocol v1."""
+
+
+class AudioTerminationProofError(AudioProtocolError, TerminationProofError):
+    """Audio child process-group termination could not be proven."""
 
 
 class ChildState(Enum):
@@ -304,7 +309,9 @@ class FramedProcess:
                         self._kill_timeout,
                     )
                 except TimeoutError as error:
-                    raise AudioProtocolError("child process group exit could not be proven") from error
+                    raise AudioTerminationProofError(
+                        "child process group exit could not be proven"
+                    ) from error
         self.state = ChildState.DESTROYED
         await self._cleanup()
 
@@ -313,8 +320,15 @@ class FramedProcess:
         live: set[int] = set()
         proc = Path("/proc")
         if not proc.is_dir():
-            # M4a production targets Linux.  A platform without /proc cannot
-            # provide the required descendant-exit proof.
+            # Portable development hosts can still prove that the process
+            # group no longer exists.  Linux targets use /proc below to
+            # exclude zombies and enumerate every remaining member.
+            try:
+                os.killpg(pgid, 0)
+            except ProcessLookupError:
+                return set()
+            except PermissionError:
+                return {pgid}
             return {pgid}
         for entry in proc.iterdir():
             if not entry.name.isdigit():

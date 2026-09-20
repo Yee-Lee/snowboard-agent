@@ -1,7 +1,8 @@
 import re
 from typing import Any
 from sbd.core.events import ErrorOccurred
-from sbd.core.logger import get_logger, redact_string
+from sbd.core.faults import safe_category_for_code
+from sbd.core.logger import get_logger
 
 logger = get_logger("error_observer")
 
@@ -33,12 +34,17 @@ class ErrorLoggingObserver:
         where = event.where
         extra: dict[str, Any] = {}
         if not WHERE_REGEX.match(where):
-            extra["invalid_where"] = redact_string(where)
+            extra["invalid_where"] = True
             where = "invalid_where"
 
-        error_msg = redact_string(event.error)
-
-        if event.exception_type:
-            extra["exception_type"] = event.exception_type
-
-        logger.error(error_msg, extra={"where": where, **extra})
+        logger.error(
+            event.error,
+            extra={
+                "where": where,
+                "code": event.code,
+                "backend_disposition": event.backend_disposition,
+                "recovery_keys": ",".join(sorted(event.recovery_keys)),
+                "safe_category": safe_category_for_code(event.code),
+                **extra,
+            },
+        )

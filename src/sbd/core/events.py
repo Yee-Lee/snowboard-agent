@@ -92,6 +92,9 @@ class ErrorOccurred:
     where: str
     error: str
     exception_type: str | None = None
+    code: str = "LEGACY_ERROR"
+    backend_disposition: str = "not_applicable"
+    recovery_keys: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------

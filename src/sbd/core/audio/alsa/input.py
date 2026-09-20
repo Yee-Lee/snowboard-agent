@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from sbd.core.config.models import AudioConfig
+from sbd.core.fault_injection import DeterministicFaultInjector
 
 
 NATIVE_RATE = 48_000
@@ -53,10 +54,12 @@ class AlsaAudioInput:
         *,
         source_factory: Callable[[], Any] | None = None,
         resampler_factory: Callable[[], Any] | None = None,
+        fault_injector: DeterministicFaultInjector | None = None,
     ) -> None:
         self._config = config
         self._source_factory = source_factory or self._make_alsa_source
         self._resampler_factory = resampler_factory or self._make_resampler
+        self._fault_injector = fault_injector
         self._executor: ThreadPoolExecutor | None = None
         self._source: Any | None = None
         self._resampler: Any | None = None
@@ -157,6 +160,11 @@ class AlsaAudioInput:
 
     def _next_frame_worker(self) -> bytes:
         self._ensure_open_worker()
+        injector = self._fault_injector
+        if injector is not None and injector.fire(
+            "alsa.capture.read", self.backend_identity()
+        ):
+            raise OSError("M4_ERR_INJECTED_ALSA_CAPTURE")
         while len(self._samples) < STREAM_SAMPLES:
             assert self._source is not None
             try:
@@ -246,6 +254,18 @@ class AlsaAudioInput:
             )
         self._native_info = dict(info)
         return pcm
+
+    def backend_identity(self) -> dict[str, str | int | bool]:
+        info = self._native_info
+        return {
+            "backend": "alsa.capture",
+            "device": self._config.input.device,
+            "rate": int(info.get("rate", 0)) if info is not None else 0,
+            "channels": int(info.get("channels", 0)) if info is not None else 0,
+            "format": str(info.get("format_name", "")).upper() if info is not None else "",
+            "period_size": int(info.get("period_size", 0)) if info is not None else 0,
+            "live": self._started and self._source is not None,
+        }
 
     @staticmethod
     def _make_resampler() -> Any:

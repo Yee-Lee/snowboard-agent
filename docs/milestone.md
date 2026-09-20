@@ -7,8 +7,9 @@
 ## M4 clean replacement boundary（2026-09-12）
 
 USER確認M4以最小可行離線語音架構為目標：M4A提供Accepted Audio，M4B完成最小Reasoner、
-同一Product Session的真實多輪Conversation與Audio+LLM resource/timing facts，M4C再完成整機
-State Manager/Display/streaming-speak composition及audible-onset驗證。實際tool在M5，camera/look在M6。
+同一Product Session的真實多輪Conversation與Audio+LLM resource/timing facts；M4-ERR先關閉production
+error taxonomy、backend usability、recovery與fatal exit，M4C再完成整機State Manager／Display／
+streaming-speak composition及audible-onset驗證。實際tool在M5，camera/look在M6。
 
 舊M4B-MVA-001/002、fresh-Conversation、model action envelope、fake prewarm與固定8/48/768 recycle
 均已退役，不是compatibility target。[M4B replacement design](implement/ch_m4b_llm_production.md)

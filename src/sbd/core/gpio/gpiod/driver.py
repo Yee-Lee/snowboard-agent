@@ -6,9 +6,13 @@ import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from sbd.core.config.models import GPIOConfig
 from sbd.core.gpio.base import Edge, GPIOCallback, GPIOEvent
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
+from sbd.core.fault_injection import DeterministicFaultInjector
 
 
 @dataclass(slots=True)
@@ -18,15 +22,29 @@ class _Input:
 
 
 class GpiodGPIO:
-    def __init__(self, config: GPIOConfig, *, gpiod_module=None, logger=None) -> None:
+    def __init__(
+        self,
+        config: GPIOConfig,
+        *,
+        gpiod_module=None,
+        logger=None,
+        fault_injector: DeterministicFaultInjector | None = None,
+    ) -> None:
         self._config = config
         self._gpiod = gpiod_module
         self._logger = logger or logging.getLogger(__name__)
+        self._fault_injector = fault_injector
         self._loop = None
         self._inputs: dict[int, _Input] = {}
         self._outputs: dict[int, object] = {}
         self._callback_tasks: set[asyncio.Task[None]] = set()
         self._started = False
+        self._publish_fault: Callable[[object], Awaitable[None]] | None = None
+
+    def set_fault_publisher(
+        self, publisher: Callable[[object], Awaitable[None]]
+    ) -> None:
+        self._publish_fault = publisher
 
     async def start(self) -> None:
         if self._started:
@@ -115,11 +133,64 @@ class GpiodGPIO:
         native = self._gpiod.line.Value.ACTIVE if value else self._gpiod.line.Value.INACTIVE
         self._outputs[pin].set_value(pin, native)
 
+    async def inject_verification_fault(self, pin: int) -> None:
+        """Fire the explicitly configured Pi-verification seam on a live line."""
+
+        injector = self._fault_injector
+        item = self._inputs.get(pin)
+        if injector is None or item is None:
+            raise RuntimeError("GPIO verification fault requires an injected live input")
+        identity = self.backend_identity(pin)
+        if injector.point == "gpio.button.callback":
+            if injector.fire(injector.point, identity):
+                async def failed_callback(event: GPIOEvent) -> None:
+                    del event
+                    raise RuntimeError("M4_ERR_INJECTED_GPIO_CALLBACK")
+
+                await self._run_callback(
+                    failed_callback,
+                    GPIOEvent(pin, "falling", asyncio.get_running_loop().time()),
+                )
+            return
+        if injector.point == "gpio.edge.read":
+            if injector.fire(injector.point, identity):
+                await self._report_fault(
+                    code="GPIO_EVENT_READ_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("core.gpio",),
+                    cause=OSError("M4_ERR_INJECTED_GPIO_EDGE_READ"),
+                )
+            return
+        raise RuntimeError("configured fault point does not belong to GPIO")
+
+    def backend_identity(self, pin: int) -> dict[str, str | int | bool]:
+        item = self._inputs.get(pin)
+        module_version = getattr(self._gpiod, "__version__", "unknown")
+        return {
+            "backend": "gpiod",
+            "chip": self._config.chip,
+            "pin": pin,
+            "module_version": str(module_version),
+            "request_fd": int(item.request.fd) if item is not None else -1,
+            "live": self._started and item is not None,
+        }
+
     def _read_ready(self, pin: int) -> None:
         item = self._inputs.get(pin)
         if item is None:
             return
-        for event in item.request.read_edge_events():
+        try:
+            events = item.request.read_edge_events()
+        except Exception as exc:
+            task = asyncio.create_task(self._report_fault(
+                code="GPIO_EVENT_READ_FAILED",
+                backend=BackendDisposition.UNPROVEN,
+                recovery_keys=("core.gpio",),
+                cause=exc,
+            ))
+            self._track_callback_task(task)
+            return
+        for event in events:
             edge = (
                 "rising" if event.event_type == self._gpiod.EdgeEvent.Type.RISING_EDGE
                 else "falling"
@@ -127,14 +198,54 @@ class GpiodGPIO:
             task = asyncio.create_task(
                 self._run_callback(item.callback, GPIOEvent(event.line_offset, edge, event.timestamp_ns / 1e9))
             )
-            self._callback_tasks.add(task)
-            task.add_done_callback(self._callback_tasks.discard)
+            self._track_callback_task(task)
 
     async def _run_callback(self, callback: GPIOCallback, event: GPIOEvent) -> None:
         try:
             await callback(event)
-        except Exception:
-            self._logger.exception("GPIO callback failed pin=%s", event.pin)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            await self._report_fault(
+                code="BUTTON_CALLBACK_FAILED",
+                backend=BackendDisposition.REUSABLE,
+                recovery_keys=(),
+                cause=exc,
+            )
+
+    async def _report_fault(
+        self,
+        *,
+        code: str,
+        backend: BackendDisposition,
+        recovery_keys: tuple[str, ...],
+        cause: Exception,
+    ) -> None:
+        fault = ComponentSystemFault.create(
+            where="core.gpio",
+            code=code,
+            backend=backend,
+            recovery_keys=recovery_keys,
+        )
+        if self._publish_fault is None:
+            raise fault from cause
+        await self._publish_fault(fault.to_event())
+
+    def _track_callback_task(self, task: asyncio.Task[None]) -> None:
+        self._callback_tasks.add(task)
+
+        def completed(done: asyncio.Task[None]) -> None:
+            self._callback_tasks.discard(done)
+            if not done.cancelled():
+                error = done.exception()
+                if error is not None:
+                    self._loop.call_exception_handler({
+                        "message": "supervised GPIO callback failed",
+                        "exception": error,
+                        "task": done,
+                    })
+
+        task.add_done_callback(completed)
 
     def _require_started(self) -> None:
         if not self._started:

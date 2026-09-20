@@ -42,6 +42,7 @@ prospective **M4B-MVA-002** 由[Designer decision package](implement/m4b_mva_002
 | **11** | [ch11_error_logging.md](implement/ch11_error_logging.md) | 錯誤處理與 logging 慣例 | §3.4 / §6.6 / §6.7 |
 | **M4a** | [ch_m4a_audio_production.md](implement/ch_m4a_audio_production.md) | Accepted Audio production adapter、runtime isolation、recovery 與 Gate 3 mapping | §2.4 / §2.8 / §6.4 / §6.8 |
 | **M4b** | [ch_m4b_llm_production.md](implement/ch_m4b_llm_production.md) | MVA定版：最小Reasoner、session continuity、text/end、capacity與POC量測；profile/test spec待後續gate | §2.7 / §6.3 / §6.4 / §6.8 |
+| **M4-ERR** | [ch_m4_error_handling.md](implement/ch_m4_error_handling.md) | M4 production taxonomy、lossless fault propagation、backend usability、recovery、diagnostic與fatal exit | §3.4 / §6.4–§6.8 |
 | **M4b.002** | [m4b_mva_002_decisions.md](implement/m4b_mva_002_decisions.md) | POC後效率候選、idle/capacity/reset、M4B/M4C/ALPHA邊界；採用與架構審查pending | §2.7 / §4 / §6.3 / §6.8 |
 | **M4b Gate intake** | [m4b_gate2a_intake.md](implement/m4b_gate2a_intake.md) | Gate 2A historical intake、Gemma selection與DELIVERY-019 adaptation lineage | M4b external Gate 2A / 2B |
 

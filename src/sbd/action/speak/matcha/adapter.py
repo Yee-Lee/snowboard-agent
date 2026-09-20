@@ -23,11 +23,27 @@ from sbd.adaptor.framed_child import (
     require_sha256,
 )
 from sbd.core.config.models import AppConfig, TTSConfig
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
+from sbd.core.fault_injection import DeterministicFaultInjector
 from sbd.core.lifecycle import ForceAbortReport
 
 
 TTS_KEY = "backend.action.speak.tts"
 TTS_ERROR_CODES = {"INVALID_TEXT", "GENERATION_REJECTED", "INVALID_PCM"}
+
+
+class _TTSRequestFault(AdapterError):
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+class TTSProtocolSystemFault(ComponentSystemFault, AudioProtocolError):
+    """Typed M4-ERR protocol fault retaining the M4A protocol boundary."""
+
+
+class TTSEOFSystemFault(ComponentSystemFault, EOFError):
+    """Typed M4-ERR EOF fault retaining the M4A EOF boundary."""
 
 
 class _Child(Protocol):
@@ -61,10 +77,12 @@ class MatchaTTSAdapter:
         *,
         lock: AudioArtifactLock,
         child_factory: Callable[[], _Child] | None = None,
+        fault_injector: DeterministicFaultInjector | None = None,
     ) -> None:
         self._config = config
         self._lock = lock
         self._child_factory = child_factory or self._default_child
+        self._fault_injector = fault_injector
         self._child: _Child = self._child_factory()
         self._operation_lock = asyncio.Lock()
         self._active_request_id: int | None = None
@@ -72,6 +90,7 @@ class MatchaTTSAdapter:
         self._request_ready = asyncio.Event()
         self._request_ready.set()
         self._cancel_sent_for: int | None = None
+        self._destroyed_for_fault = False
 
     @property
     def state(self) -> ChildState:
@@ -133,6 +152,12 @@ class MatchaTTSAdapter:
                 payload = b""
                 try:
                     await self._child.send({"protocol": 1, "op": "GENERATE", "request_id": request_id, "text": text, "voice_id": "matcha-zh-en-default-sid-0"})
+                    injector = self._fault_injector
+                    if injector is not None and injector.fire(
+                        "tts.child.exit", self.backend_identity()
+                    ):
+                        await self._child.force_terminate()
+                        raise EOFError("M4_ERR_INJECTED_TTS_CHILD_EXIT")
                     while True:
                         header = await self._receive_with_cancel(request_id)
                         name = header.get("event")
@@ -181,13 +206,50 @@ class MatchaTTSAdapter:
                         yield chunk
                 except asyncio.CancelledError:
                     raise
-                except (AudioProtocolError, EOFError):
+                except _TTSRequestFault as exc:
                     await self._protocol_failure()
+                    code = (
+                        "TTS_GENERATION_FAILED"
+                        if exc.code == "GENERATION_REJECTED"
+                        else "TTS_PROTOCOL_FAILED"
+                    )
+                    fault = ComponentSystemFault.create(
+                        where="action.speak.tts",
+                        code=code,
+                        backend=BackendDisposition.REBUILD_REQUIRED,
+                        recovery_keys=(TTS_KEY,),
+                    )
+                    raise fault from exc
+                except AdapterRejected:
                     raise
-                except AdapterError:
+                except (AudioProtocolError, EOFError) as exc:
+                    await self._protocol_failure()
+                    fault_type = (
+                        TTSEOFSystemFault if isinstance(exc, EOFError)
+                        else TTSProtocolSystemFault
+                    )
+                    fault = fault_type.create(
+                        where="action.speak.tts",
+                        code="TTS_PROTOCOL_FAILED",
+                        backend=BackendDisposition.REBUILD_REQUIRED,
+                        recovery_keys=(TTS_KEY,),
+                    )
+                    if isinstance(exc, AudioProtocolError):
+                        # M4A retained this fixed, payload-free protocol token
+                        # as the local exception boundary.  Public Event/log
+                        # projection still uses the M4-ERR code and summary.
+                        fault.args = (str(exc),)
+                    raise fault from exc
+                except AdapterError as exc:
                     if self._active_request_id is not None:
                         await self._protocol_failure()
-                    raise
+                    fault = ComponentSystemFault.create(
+                        where="action.speak.tts",
+                        code="TTS_GENERATION_FAILED",
+                        backend=BackendDisposition.REBUILD_REQUIRED,
+                        recovery_keys=(TTS_KEY,),
+                    )
+                    raise fault from exc
                 finally:
                     payload = b""
 
@@ -227,8 +289,9 @@ class MatchaTTSAdapter:
         require_positive_request_id(event["request_id"], request_id)
         if event["code"] not in TTS_ERROR_CODES:
             raise AudioProtocolError("unknown TTS request error code")
+        code = event["code"]
         self._finish()
-        raise AdapterRejected(f"TTS request rejected: {event['code']}")
+        raise _TTSRequestFault(code)
 
     def _finish(self) -> None:
         self._child.operation_finished()
@@ -244,6 +307,9 @@ class MatchaTTSAdapter:
 
     async def force_abort(self) -> ForceAbortReport:
         if self._child.state in {ChildState.STOPPED, ChildState.DESTROYED}:
+            if self._destroyed_for_fault:
+                self._destroyed_for_fault = False
+                return ForceAbortReport((TTS_KEY,))
             return ForceAbortReport()
         await self._child.force_terminate()
         self._active_request_id = None
@@ -252,6 +318,7 @@ class MatchaTTSAdapter:
 
     async def _protocol_failure(self) -> None:
         await self._child.force_terminate()
+        self._destroyed_for_fault = True
         self._active_request_id = None
         self._request_ready.set()
 
@@ -267,6 +334,21 @@ class MatchaTTSAdapter:
             await replacement.force_terminate()
             raise
         self._child = replacement
+        self._destroyed_for_fault = False
+
+    def backend_identity(self) -> dict[str, str | int | bool]:
+        pid = getattr(self._child, "pid", None)
+        return {
+            "backend": "matcha",
+            "driver": self._config.driver,
+            "artifact_lock_sha256": self._lock.digest,
+            "pid": int(pid) if type(pid) is int else 0,
+            "live": (
+                type(pid) is int
+                and pid > 0
+                and self._child.state in {ChildState.READY, ChildState.BUSY}
+            ),
+        }
 
 
 __all__ = ["MatchaTTSAdapter", "TTS_KEY"]

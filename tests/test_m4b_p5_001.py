@@ -100,18 +100,24 @@ def test_m4b_p5_001_outer_timeout_keeps_generation_alive_for_typed_abort() -> No
 
 @pytest.mark.parametrize("problem",["untyped","fatal","proof","prefix","semantic","capability","unsupported","generation"],ids=lambda x:"O11-"+x)
 def test_product_fatal_boundary_has_no_normal_fact_and_sanitized_traceback(problem):
-    import traceback
     from dataclasses import replace
+    from sbd.core.logger import render_public_fatal
     async def scenario():
         llm=ProductLLM()
         capabilities={"listen","speak"}
         perceptions=(fact(),)
         generation=1
-        if problem=="untyped": llm.result=ValueError("PRIVATE-OUTPUT-CANARY")
-        elif problem=="fatal": llm.result=LLMFatalError("PRIVATE-OUTPUT-CANARY")
+        original=None
+        if problem=="untyped":
+            original=ValueError("PRIVATE-OUTPUT-CANARY")
+            llm.result=original
+        elif problem=="fatal":
+            original=LLMFatalError("PRIVATE-OUTPUT-CANARY")
+            llm.result=original
         elif problem=="proof":
-            llm.result=ReplaceableGenerationFailure("INVALID_SEMANTIC")
-            llm.result.request_terminal_proven=False
+            original=ReplaceableGenerationFailure("INVALID_SEMANTIC")
+            original.request_terminal_proven=False
+            llm.result=original
         elif problem=="prefix": llm.result=replace(llm.result,safe_fragments=("PRIVATE-OUTPUT-CANARY",))
         elif problem=="semantic": llm.result=replace(llm.result,text="",end=False,safe_fragments=())
         elif problem=="capability": capabilities={"listen"}
@@ -122,8 +128,14 @@ def test_product_fatal_boundary_has_no_normal_fact_and_sanitized_traceback(probl
         try:
             await reasoner.reason("session",1,1,perceptions,(),conversation_generation=generation)
         except LLMFatalError as error:
-            assert "PRIVATE-OUTPUT-CANARY" not in "".join(traceback.format_exception(error))
-            assert error.__cause__ is None
+            if original is None:
+                assert error.__cause__ is None
+            else:
+                assert error.__cause__ is original
+            rendered=render_public_fatal(error)
+            assert "PRIVATE-OUTPUT-CANARY" not in rendered
+            assert "\n" not in rendered and "\r" not in rendered
+            assert rendered == f"{type(error).__name__}:{error.code}"
         else:
             pytest.fail("unsafe result accepted")
         assert responses==[] and len(errors)==1

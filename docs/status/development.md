@@ -1,5 +1,40 @@
 # Current development status
 
+## Active M4-ERR implementation — 2026-09-20
+
+- Developer implementation and same-bytes Pi verification are complete for PI-011, PI-012 and WP7. WP1–WP6
+  provide the closed typed fault taxonomy, safe public projection, owner-only convergence with exact recovery
+  keys, ASR/LLM/TTS/Audio/GPIO/Button/Display mappings, termination-proof exit handling, canonical sanitized
+  diagnostics and startup single-root/reverse rollback. WP7 provides deterministic candidate identity,
+  explicit pending-file binding and inert-unless-armed one-shot actual-backend fault injection.
+- The Designer disposition for PI-012 is implemented exactly: `untyped`, `fatal` and `proof` preserve cause
+  identity; `prefix` and the other non-cause cases expose no cause. The product sanitized renderer is used at
+  the runtime fatal boundary. PI-011 retains both named G05 TTS tests with exact code/disposition/key, original
+  cause, destroyed-child admission stop, RM rebuild and replacement-child PCM proof; G06 exempts exactly the
+  four named functions.
+- Final Raspberry Pi run `M4-ERR-DEV-04` is Pass on
+  `pi5-4gb-debian13-aarch64-cp3135`, CPython 3.13.5. All five independent result cards
+  `M4-ERR-PV-001` through `M4-ERR-PV-005` contain one Pass, zero Fail and zero Skip, and the finalizer lists all
+  five IDs. They cover actual ALSA and GPIO owners, ASR/LLM/TTS native children, recovery/READY proofs,
+  unproven cleanup/drain paths and product exit 4.
+- The final tuple binds content SHA-256
+  `2e3cb7ba5e1cdcb26e8d5dc1d79147b1eb05f41687efdac453700a47dc176f6f`, config SHA-256
+  `101e0d36f90681e1a62740d5b1ffe8842226e2d46874da42b46ed6e57ed0fde8`, ASR/TTS lock
+  `21389a0fb6030a9ca74645003239119a9e299bd2719b98e2df15bc19a0c360d4`, LLM lock
+  `86d8f2f1d68921bc56fa40be64d6b0cbb0844822bd93a38099c64a8719c7e506` and release-profile artifact
+  `ab556106d88960d696f9b0b4ff18112f4c680b123e18d92cb4d7cd11671d3dab`. The run uses a 120-second recovery
+  timeout so a genuine LiteRT-LM replacement can reach READY; the earlier 30-second diagnostic timed out while
+  the replacement was still starting and is not credited.
+- Final Pi regression evidence on the identical bytes is 1,715 Pass and 34 RPi-only deselections for the full
+  non-RPi suite; focused/affected execution previously passed 168/168. Compilation and `git diff --check`
+  pass. Post-run workstation/Pi reconciliation recomputed the same content digest above. The final public
+  manifest locator is Pi-local `verification/M4-ERR-DEV-04/public/final.json`, SHA-256
+  `ce1dd94d198ab6561fac49b1fc327d4f603f3dd2a78be4f052c1e477dc9c4226`.
+- Failed diagnostic runs `M4-ERR-DEV-01` through `03` remain separate and uncredited: they exposed runner
+  environment leakage, a non-inert consumed injector and the undersized recovery timeout, respectively. Each
+  correction received a new content/config binding and a fresh run ID. No commit or push has been made; the
+  completed package is ready for Verify and later USER-approved commit preparation.
+
 ## Completed seven-ID Pi PV and Designer verification handoff — 2026-09-15
 
 - Developer ran the final same-tuple `PV-M4B-FINITE-03` on Raspberry Pi 5

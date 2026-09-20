@@ -22,6 +22,7 @@ from sbd.core.logger import (
     bootstrap_logging,
     configure_logging,
     get_logger,
+    render_public_fatal,
 )
 from sbd.core.resource_manager import ResourceManager
 from sbd.core.state_manager import StateManager
@@ -29,6 +30,7 @@ from sbd.core.state_manager.convergence import (
     CancelTimeoutPolicy,
     DefaultSessionConverger,
 )
+from sbd.core.lifecycle import TerminationProofError
 
 logger = get_logger("main")
 EXIT_SUCCESS = 0
@@ -77,6 +79,7 @@ async def run_app(
     signal_installed: list[signal.Signals] = []
     shutdown_enqueued = False
     exit_code = EXIT_RUNTIME_FATAL
+    shutdown_termination_failed = False
 
     try:
         bus = EventBus()
@@ -113,7 +116,7 @@ async def run_app(
             stopped_task = asyncio.create_task(sm.wait_stopped())
             await rm.start()
         except Exception as error:
-            logger.critical("Startup failed: %s", error, exc_info=True)
+            logger.critical("Startup failed: %s", error)
             exit_code = EXIT_STARTUP_ERROR
             return exit_code
 
@@ -154,21 +157,13 @@ async def run_app(
             root_error = stopped_task.exception()
 
         if root_error is not None:
-            logger.critical(
-                "Runtime fatal error: %s",
-                root_error,
-                exc_info=(
-                    type(root_error),
-                    root_error,
-                    root_error.__traceback__,
-                ),
-            )
+            logger.critical("Runtime fatal error: %s", render_public_fatal(root_error))
             exit_code = EXIT_RUNTIME_FATAL
         else:
             exit_code = EXIT_SUCCESS
         return exit_code
     except Exception as error:
-        logger.critical("Unhandled runtime fatal: %s", error, exc_info=True)
+        logger.critical("Unhandled runtime fatal: %s", render_public_fatal(error))
         exit_code = EXIT_RUNTIME_FATAL
         return exit_code
     finally:
@@ -209,13 +204,19 @@ async def run_app(
                                 failure.error.__traceback__,
                             ),
                         )
-                except Exception:
+                        if isinstance(failure.error, TerminationProofError):
+                            shutdown_termination_failed = True
+                except Exception as error:
                     logger.error("Resource shutdown failed", exc_info=True)
+                    if isinstance(error, TerminationProofError):
+                        shutdown_termination_failed = True
 
             if observer is not None:
                 await observer.stop()
         await logging_runtime.flush(config.shutdown.logger_flush_timeout_seconds)
         logging_runtime.close()
+        if shutdown_termination_failed:
+            return EXIT_RUNTIME_FATAL
 
 
 def main() -> None:

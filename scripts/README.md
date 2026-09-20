@@ -14,6 +14,7 @@ Tester寫入`docs/outsource/evidence/`；Developer工具輸出不得改名為正
 | `m4a_target_metrics.py` | M4a target collector的pure parser helpers |
 | `m4a_developer_pi_check.py` | Developer-only Pi diagnostic；不是formal acceptance |
 | `m4_memory_preflight.py` | M4 composition smoke的bounded memory preflight；不是M4b PASS |
+| `run-m4-err-pv.py` | M4-ERR same-bytes Pi Verify開發runner；綁定content/config、逐項執行完整`M4-ERR-PV-001`–`005`並拒絕缺項finalize；不是Tester formal evidence |
 
 ## Hardware diagnostics
 

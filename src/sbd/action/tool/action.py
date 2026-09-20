@@ -7,6 +7,7 @@ import asyncio
 from sbd.action.tool.registry import ToolExecutionControl, ToolRegistry, ToolRegistryError
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ActionCompleted, ErrorOccurred
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.worker_runtime import WorkerRuntime
 
@@ -46,8 +47,13 @@ class Tool(WorkerRuntime):
             finally:
                 self._execution_control = None
             if unexpected is not None:
-                await self._bus.publish(ErrorOccurred("action.tool", "tool worker failed", type(unexpected).__name__))
-                raise unexpected
+                fault = ComponentSystemFault.create(
+                    where="action.tool",
+                    code="TOOL_UNEXPECTED",
+                    backend=BackendDisposition.NOT_APPLICABLE,
+                )
+                await self._bus.publish(fault.to_event())
+                raise fault from unexpected
             if self._may_publish():
                 await self._bus.publish(ActionCompleted("tool", status, {}, session_id, turn_id, correlation_id))
         await self._run_call(body)

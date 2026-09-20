@@ -16,6 +16,7 @@ from sbd.adaptor.framed_child import AudioProtocolError, ChildState
 from sbd.core.config.defaults import DEFAULT_CONFIG
 from sbd.core.config.models import TTSConfig
 from sbd.core.event_bus import EventBus
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
 from tests.fakes.m4a import ScriptedChild
 
@@ -54,39 +55,56 @@ def _register_required_workers(rm: ResourceManager) -> None:
         ))
 
 
-def test_m4a_tts_002_persistent_error_reopen_and_next_success() -> None:
-    async def run() -> None:
-        payload = b"\x01\x00"
-        child = ScriptedChild([
-            {"protocol":1,"event":"ERROR","request_id":1,"code":"GENERATION_REJECTED"},
-            _header(payload, 2),
-        ], payload=payload)
-        adapter = MatchaTTSAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
-        await adapter.start(); await adapter.start()
-        with pytest.raises(AdapterRejected, match="GENERATION_REJECTED"):
-            [chunk async for chunk in adapter.synthesize("first")]
-        assert [chunk async for chunk in adapter.synthesize("second")] == [payload]
-        assert child.start_count == 1 and child.request_id == 2
+async def _assert_typed_fault_rebuild(code: str) -> None:
+    payload = b"\x01\x00"
+    original = ScriptedChild([
+        {"protocol": 1, "event": "ERROR", "request_id": 1, "code": code},
+    ])
+    replacement = ScriptedChild([_header(payload, 1)], payload=payload)
+    children = iter((original, replacement))
+    adapter = MatchaTTSAdapter(CONFIG, lock=LOCK, child_factory=lambda: next(children))
+    rm = ResourceManager(_app_config(), EventBus())
+    rm.register(ResourceSpec(
+        key=TTS_KEY,
+        phase=StartPhase.BACKEND,
+        factory=lambda resolver: adapter,
+        recoverable=True,
+        recovery_hook=adapter,
+    ))
+    _register_required_workers(rm)
+    await rm.start()
 
-    asyncio.run(run())
+    expected = "TTS_GENERATION_FAILED" if code == "GENERATION_REJECTED" else "TTS_PROTOCOL_FAILED"
+    with pytest.raises(ComponentSystemFault) as caught:
+        [chunk async for chunk in adapter.synthesize("first")]
+    fault = caught.value
+    assert fault.code == expected
+    assert fault.backend is BackendDisposition.REBUILD_REQUIRED
+    assert fault.recovery_keys == (TTS_KEY,)
+    assert getattr(fault.__cause__, "code", None) == code
+    assert original.state is ChildState.DESTROYED
+    with pytest.raises(AdapterUnavailable, match="not ready"):
+        [chunk async for chunk in adapter.synthesize("forbidden")]
+
+    report = await adapter.force_abort()
+    assert report.destroyed_backends == (TTS_KEY,)
+    ticket = rm.begin_recovery((TTS_KEY,))
+    assert rm.recovery_ready() is False
+    await rm.wait_recovery(ticket)
+    assert rm.recovery_ready() is True
+    assert replacement is not original and replacement.start_count == 1
+    assert adapter.state is ChildState.READY
+    assert [chunk async for chunk in adapter.synthesize("recovered")] == [payload]
+    await rm.stop_all()
+
+
+def test_m4a_tts_002_persistent_error_reopen_and_next_success() -> None:
+    asyncio.run(_assert_typed_fault_rebuild("GENERATION_REJECTED"))
 
 
 @pytest.mark.parametrize("code", sorted(TTS_ERROR_CODES))
 def test_m4a_tts_002_every_whitelisted_error_reopens_same_child(code: str) -> None:
-    async def run() -> None:
-        payload = b"\x01\x00"
-        child = ScriptedChild([
-            {"protocol": 1, "event": "ERROR", "request_id": 1, "code": code},
-            _header(payload, 2),
-        ], payload=payload)
-        adapter = MatchaTTSAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
-        await adapter.start()
-        with pytest.raises(AdapterRejected, match=code):
-            [chunk async for chunk in adapter.synthesize("first")]
-        assert [chunk async for chunk in adapter.synthesize("second")] == [payload]
-        assert child.start_count == 1 and child.state is ChildState.READY
-
-    asyncio.run(run())
+    asyncio.run(_assert_typed_fault_rebuild(code))
 
 
 def test_m4a_tts_002_unknown_error_eof_and_late_terminal_are_protocol_failures() -> None:

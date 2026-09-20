@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Callable
 
 from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
 from sbd.cognition.llm import (LLMEngineAdapter, AdmissionSnapshot, SemanticGeneration,
-    LLMFatalError, MemoryAdmissionDenied, ReplaceableGenerationFailure)
+    LLMBackendError, LLMCleanupUnprovenError, LLMFatalError,
+    LLMObservationError, LLMProtocolError, MemoryAdmissionDenied,
+    ReplaceableGenerationFailure)
 from sbd.cognition.llm_child_protocol import (
     ReasoningInputContractError,
     ReasoningInputTooLarge,
@@ -20,7 +22,12 @@ from sbd.cognition.llm_child_protocol import (
 from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector, UnsupportedInputError
 from sbd.cognition.semantic import validate_semantic
 from sbd.core.event_bus import EventBus
-from sbd.core.events import ErrorOccurred, LLMResponse, PerceptionResult
+from sbd.core.events import LLMResponse, PerceptionResult
+from sbd.core.faults import (
+    BackendDisposition,
+    ComponentSystemFault,
+    legacy_error_event,
+)
 from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.worker_runtime import WorkerRuntime
 
@@ -40,6 +47,22 @@ _INPUT_LIMIT = "這句有點長，請縮短後再說一次。"
 _CONTEXT_LIMIT = "對話內容已滿，請再說一次。"
 _MEMORY_NOTICE = "系統需要整理，請稍後再試。"
 _REPLACEABLE = "剛才沒有成功，請再說一次。"
+
+
+class LLMComponentSystemFault(ComponentSystemFault, LLMFatalError):
+    """M4-ERR fault that preserves the accepted M4B fatal boundary type."""
+
+
+class _LocalProductFault(LLMFatalError):
+    """A product contract/state fault with no source exception."""
+
+
+class _CausedProductFault(LLMFatalError):
+    """A local mapping token that retains the actual source exception."""
+
+    def __init__(self, code: str, source: BaseException) -> None:
+        super().__init__(code)
+        self.source = source
 
 
 class Reasoner(WorkerRuntime):
@@ -146,7 +169,7 @@ class Reasoner(WorkerRuntime):
 
             if unexpected is not None:
                 await self._bus.publish(
-                    ErrorOccurred(
+                    legacy_error_event(
                         where="cognition.reasoner",
                         error="reasoner failed",
                         exception_type=type(unexpected).__name__,
@@ -162,7 +185,8 @@ class Reasoner(WorkerRuntime):
                               perceptions, pending_ids, generation) -> None:
         async def body() -> None:
             nonlocal perceptions, pending_ids
-            failure: LLMFatalError | None = None
+            fault: ComponentSystemFault | None = None
+            cause: BaseException | None = None
             response: LLMResponse | None = None
             try:
                 if self._observer is not None:
@@ -183,18 +207,90 @@ class Reasoner(WorkerRuntime):
                         pass  # An observation sink cannot replace cancellation.
                 raise
             except UnsupportedInputError:
-                failure = LLMFatalError("UNSUPPORTED_INPUT")
-            except TimeoutError:
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_PROTOCOL_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+                # Retain the accepted M4B public fatal token while the Event
+                # uses the new closed, privacy-safe M4-ERR summary.
+                fault.args = ("UNSUPPORTED_INPUT",)
+            except _LocalProductFault as exc:
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_PROTOCOL_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+                fault.args = exc.args
+            except _CausedProductFault as exc:
+                cause = exc.source
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_PROTOCOL_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+                fault.args = exc.args
+            except TimeoutError as exc:
                 try:
                     await self._llm.abort()
                 except asyncio.CancelledError:
                     raise
                 except Exception:
                     pass
-                failure = LLMFatalError("REASONER_TIMEOUT")
-            except Exception:
-                failure = LLMFatalError("M4B_REASONER_FAILED")
-            if failure is not None:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_CLEANUP_UNPROVEN",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            except ComponentSystemFault as exc:
+                cause = exc.__cause__
+                fault = exc
+            except LLMBackendError as exc:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_BACKEND_FAILED",
+                    backend=BackendDisposition.REBUILD_REQUIRED,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            except LLMCleanupUnprovenError as exc:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_CLEANUP_UNPROVEN",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            except LLMObservationError as exc:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_OBSERVATION_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            except (LLMProtocolError, LLMFatalError) as exc:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_PROTOCOL_FAILED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            except Exception as exc:
+                cause = exc
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="LLM_UNEXPECTED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("backend.cognition.reasoner.llm",),
+                )
+            if fault is not None:
                 if self._observer is not None:
                     try:
                         self._observer.outcome("E1")
@@ -202,9 +298,10 @@ class Reasoner(WorkerRuntime):
                     except Exception:
                         pass  # Preserve the original E1 and its supervision event.
                 if self._may_publish():
-                    await self._bus.publish(ErrorOccurred(where="cognition.reasoner",
-                        error=str(failure), exception_type=type(failure).__name__))
-                raise failure from None
+                    await self._bus.publish(fault.to_event())
+                if cause is None:
+                    raise fault from None
+                raise fault from cause
             if response is not None and self._may_publish():
                 await self._bus.publish(response)
 
@@ -220,7 +317,10 @@ class Reasoner(WorkerRuntime):
             if (self._capability_of("listen") is not True or
                     self._capability_of("speak") is not True):
                 raise UnsupportedInputError()
-            self._llm.assert_conversation(session_id, generation)
+            try:
+                self._llm.assert_conversation(session_id, generation)
+            except LLMFatalError:
+                raise _LocalProductFault("INVALID_CONVERSATION") from None
             text = self._prompt_builder.project(perceptions=perceptions,
                 session_id=session_id, turn_id=turn_id,
                 pending_message_count=len(pending_ids),
@@ -235,7 +335,7 @@ class Reasoner(WorkerRuntime):
                 return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
             snapshot = await self._llm.measure(session_id, generation, text)
             if not isinstance(snapshot, AdmissionSnapshot):
-                raise LLMFatalError("INVALID_ADMISSION")
+                raise _LocalProductFault("INVALID_ADMISSION")
             validate_counts({key:getattr(snapshot,key) for key in (
                 "user_tokens", "current_kv_tokens", "rendered_incremental_tokens",
                 "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens")})
@@ -243,10 +343,10 @@ class Reasoner(WorkerRuntime):
                     snapshot.generation != generation or type(snapshot.ticket) is not str or
                     re.fullmatch(r"[0-9a-f]{32}", snapshot.ticket) is None or
                     snapshot.input_sha256 != hashlib.sha256(text.encode()).hexdigest()):
-                raise LLMFatalError("INVALID_ADMISSION")
+                raise _LocalProductFault("INVALID_ADMISSION")
             revision = self._llm.conversation_revision
             if type(revision) is not int or revision < 0:
-                raise LLMFatalError("INVALID_REVISION")
+                raise _LocalProductFault("INVALID_REVISION")
             if snapshot.user_tokens > 32:
                 from sbd.cognition.llm import TicketDiscardProof
                 del text
@@ -259,12 +359,15 @@ class Reasoner(WorkerRuntime):
                         proof.native_render_scrubbed is not True or proof.ticket_invalidated is not True or
                         proof.private_input_erased is not True or proof.conversation_state != "ready" or
                         self._llm.conversation_revision != revision):
-                    raise LLMFatalError("INVALID_DISCARD_PROOF")
-                self._llm.assert_conversation(session_id, generation)
+                    raise _LocalProductFault("INVALID_DISCARD_PROOF")
+                try:
+                    self._llm.assert_conversation(session_id, generation)
+                except LLMFatalError:
+                    raise _LocalProductFault("INVALID_CONVERSATION") from None
                 del snapshot, proof
                 return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
             if revision == 0 and snapshot.runtime_prefill_tokens > 128:
-                raise LLMFatalError("INVALID_FRESH_PREFILL")
+                raise _LocalProductFault("INVALID_FRESH_PREFILL")
             if (snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens
                     + snapshot.output_reserve_tokens > snapshot.engine_context_tokens):
                 return self._product_fact(_CONTEXT_LIMIT, "REPLACE_NEXT", identity, outcome="R2")
@@ -272,28 +375,31 @@ class Reasoner(WorkerRuntime):
                 result = await self._llm.generate(snapshot, text)
             except MemoryAdmissionDenied as denied:
                 if type(denied.speak_allowed) is not bool:
-                    raise LLMFatalError("INVALID_MEMORY_OUTCOME") from None
+                    raise _LocalProductFault("INVALID_MEMORY_OUTCOME") from None
                 return self._product_fact(_MEMORY_NOTICE if denied.speak_allowed else "",
                                           "END_SESSION", identity,
                                           outcome="NOTICE" if denied.speak_allowed else "SILENT")
             except ReplaceableGenerationFailure as failed:
                 if (failed.request_terminal_proven is not True or failed.engine_usable is not True or
                         failed.code not in {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"}):
-                    raise LLMFatalError("INVALID_TERMINAL_PROOF") from None
+                    raise _CausedProductFault("INVALID_TERMINAL_PROOF", failed) from None
                 return self._product_fact(_REPLACEABLE, "REPLACE_NEXT", identity, outcome="R2")
             if not isinstance(result, SemanticGeneration):
-                raise LLMFatalError("INVALID_SEMANTIC_RESULT")
-            semantic = validate_semantic({"text":result.text,"end":result.end})
+                raise _LocalProductFault("INVALID_SEMANTIC_RESULT")
+            try:
+                semantic = validate_semantic({"text":result.text,"end":result.end})
+            except ValueError:
+                raise _LocalProductFault("INVALID_SEMANTIC_RESULT") from None
             if (type(result.safe_fragments) is not tuple or
                     any(type(fragment) is not str or not fragment for fragment in result.safe_fragments) or
                     not semantic.text.startswith("".join(result.safe_fragments))):
-                raise LLMFatalError("INVALID_SEMANTIC_PREFIX")
+                raise _LocalProductFault("INVALID_SEMANTIC_PREFIX")
             return self._product_fact(semantic.text,
                 "END_SESSION" if semantic.end else "KEEP_NEXT", identity)
 
     def _product_fact(self, text: str, route: str, identity: tuple, *, outcome="GENERATE") -> LLMResponse:
         if self._capability_of("speak") is not True or self._capability_of("listen") is not True:
-            raise LLMFatalError("UNSUPPORTED_INPUT")
+            raise _LocalProductFault("UNSUPPORTED_INPUT")
         kind = "speak" if text else "rest"
         payload = {"text":text} if text else {}
         self._action_validator.validate(kind, payload)

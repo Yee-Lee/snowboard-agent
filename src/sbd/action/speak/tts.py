@@ -19,6 +19,8 @@ class TTSAdapter(Protocol):
 
 
 class MockTTSAdapter:
+    legacy_neutral = True
+
     def __init__(
         self,
         frames: tuple[bytes, ...] = (b"\x01\x00",),

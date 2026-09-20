@@ -94,6 +94,7 @@ class StateManager:
         self._stopping = False
         self._shutting_down = False
         self._pending: _PendingConvergence | None = None
+        self._fault_recovery_keys: tuple[str, ...] = ()
         self._wake_control: WakeListenerControl | None = None
         self._external_control: ExternalMessageControl | None = None
         self._wake_set = False
@@ -278,6 +279,17 @@ class StateManager:
                 if self._pending is not None:
                     self._pending.buffer_exit_policy = "discard"
                 return
+            if item.backend_disposition in {"rebuild_required", "unproven"}:
+                keys = tuple(sorted(set(item.recovery_keys)))
+                if not keys:
+                    raise StateManagerInvariantViolation(
+                        "system fault requiring recovery has no recovery key"
+                    )
+                self._fault_recovery_keys = keys
+            elif item.recovery_keys:
+                raise StateManagerInvariantViolation(
+                    "non-recovery system fault declared recovery keys"
+                )
             await self._transition("ERROR", trigger="error")
             return
         if isinstance(item, ShutdownRequested):
@@ -901,10 +913,18 @@ class StateManager:
                 self._in_flight.pop(correlation_id, None)
         policy: Literal["flush_to_wake", "discard"] = "flush_to_wake" if trigger == "rest" else "discard"
         self._pending = _PendingConvergence(trigger, policy)
-        if result.destroyed_backends and trigger != "shutdown":
+        declared_keys = self._fault_recovery_keys if trigger == "error" else ()
+        self._fault_recovery_keys = ()
+        destroyed = tuple(sorted(set(result.destroyed_backends)))
+        if declared_keys and destroyed and not set(declared_keys) <= set(destroyed):
+            raise StateManagerInvariantViolation(
+                "system fault recovery keys do not match destroyed backends"
+            )
+        recovery_keys = tuple(sorted(set((*destroyed, *declared_keys))))
+        if recovery_keys and trigger != "shutdown":
             if self._recovery is None:
                 raise StateManagerInvariantViolation("destroyed backends require RecoveryControl")
-            ticket = self._recovery.begin_recovery(result.destroyed_backends)
+            ticket = self._recovery.begin_recovery(recovery_keys)
             self._pending.recovery_generation = ticket.generation
             self._pending.phase = "recovery"
 

@@ -8,6 +8,7 @@ from sbd.adaptor.errors import AdapterError
 from sbd.core.camera.base import Camera
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ErrorOccurred, PerceptionResult
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.worker_runtime import WorkerRuntime
 from sbd.perception.look.vision import VisionAdapter
@@ -66,14 +67,14 @@ class Look(WorkerRuntime):
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                await self._bus.publish(
-                    ErrorOccurred(
-                        where="perception.look",
-                        error="look worker failed",
-                        exception_type=type(exc).__name__,
-                    )
+                fault = ComponentSystemFault.create(
+                    where="perception.look",
+                    code="LOOK_UNEXPECTED",
+                    backend=BackendDisposition.UNPROVEN,
+                    recovery_keys=("core.camera",),
                 )
-                raise
+                await self._bus.publish(fault.to_event())
+                raise fault from exc
             if self._may_publish():
                 await self._bus.publish(result)
 

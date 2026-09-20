@@ -10,6 +10,7 @@ from typing import Any, Callable
 
 from .adaptation import StreamFormatAdapter
 from sbd.core.config.models import AudioConfig
+from sbd.core.fault_injection import DeterministicFaultInjector
 
 
 _NATIVE_FRAME_BYTES = 8  # 48 kHz / stereo / S32_LE
@@ -20,9 +21,11 @@ class AlsaAudioOutput:
     def __init__(
         self, config: AudioConfig, *, adapter_factory: Callable[[], StreamFormatAdapter] | None = None,
         observe: Callable[[str], None] | None = None,
+        fault_injector: DeterministicFaultInjector | None = None,
     ) -> None:
         self._config = config
         self._observe = observe
+        self._fault_injector = fault_injector
         self._first_write_observed = False
         stream = config.output.stream_format
         native = config.output.native_format or stream
@@ -171,10 +174,27 @@ class AlsaAudioOutput:
     def _drain_worker(self) -> None:
         if self._pcm is None:
             raise RuntimeError("ALSA playback is unavailable")
+        injector = self._fault_injector
+        if injector is not None and injector.fire(
+            "alsa.playback.drain", self.backend_identity()
+        ):
+            raise OSError("M4_ERR_INJECTED_ALSA_DRAIN")
         drain = getattr(self._pcm, "drain", None)
         if drain is None:
             raise RuntimeError("ALSA playback completion requires drain support")
         drain()
+
+    def backend_identity(self) -> dict[str, str | int | bool]:
+        info = self._native_info
+        return {
+            "backend": "alsa.playback",
+            "device": self._config.output.device,
+            "rate": int(info.get("rate", 0)) if info is not None else 0,
+            "channels": int(info.get("channels", 0)) if info is not None else 0,
+            "format": str(info.get("format_name", "")).upper() if info is not None else "",
+            "period_size": int(info.get("period_size", 0)) if info is not None else 0,
+            "live": self._started and self._pcm is not None,
+        }
 
     def _close_worker(self) -> None:
         pcm, self._pcm = self._pcm, None

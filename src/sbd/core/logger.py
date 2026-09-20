@@ -30,6 +30,18 @@ _SENSITIVE_EXTRA_KEY = re.compile(
 )
 
 
+def render_public_fatal(error: BaseException) -> str:
+    """Render exactly one safe root token without walking exception chains."""
+
+    type_name = type(error).__name__
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,127}", type_name) is None:
+        type_name = "RuntimeError"
+    code = getattr(error, "code", None)
+    if type(code) is str and re.fullmatch(r"[A-Z][A-Z0-9_]{2,63}", code):
+        return f"{type_name}:{code}"
+    return type_name
+
+
 def _safe_extra_value(value: Any) -> str | int | float | bool | None:
     """Return a bounded JSON scalar without inspecting arbitrary object reprs."""
     if value is None or type(value) in (int, bool):

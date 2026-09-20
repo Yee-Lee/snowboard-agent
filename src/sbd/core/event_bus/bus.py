@@ -12,6 +12,7 @@ import re
 from sbd.core.events import (ActionCompleted, ButtonPressed, ErrorOccurred, Event,
     ExternalMessageArrived, InterruptRequested, LLMResponse, PerceptionResult,
     ShutdownRequested, StateChanged, WakeWordDetected)
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 
 E = TypeVar("E", bound=Event)
 EventHandler = Callable[[E], Awaitable[None]]
@@ -160,12 +161,12 @@ class EventBus:
 
         # Fan-out complete. Now publish ErrorOccurred for any failures
         for failure in failures:
-            error_event = ErrorOccurred(
+            fault = ComponentSystemFault.create(
                 where=f"bus.dispatch.{failure.record.name}",
-                error=repr(failure.exc),
-                exception_type=type(failure.exc).__name__,
+                code="BUS_HANDLER_FAILED",
+                backend=BackendDisposition.NOT_APPLICABLE,
             )
-            await self.publish(error_event)
+            await self.publish(fault.to_event())
 
     async def _dispatch_error(
         self,

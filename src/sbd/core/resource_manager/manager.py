@@ -139,10 +139,13 @@ class ResourceManager:
             self._startup_complete = True
 
         except Exception as root_cause:
-            logger.error("Startup failure in RM, initiating rollback: %s", root_cause)
+            logger.error("Startup failure in RM; initiating rollback")
             rollback_failures = await self._rollback()
+            first_root = root_cause
+            while first_root.__cause__ is not None:
+                first_root = first_root.__cause__
             raise StartupError(
-                f"Startup failed: {root_cause}", rollback_failures=rollback_failures
+                str(first_root), rollback_failures=rollback_failures
             ) from root_cause
 
     def _topo_sort_phase(self, phase_specs: list[ResourceSpec]) -> list[ResourceSpec]:
@@ -220,7 +223,7 @@ class ResourceManager:
                     self._catalog.register(worker_kind, instance)
 
         except Exception as exc:
-            logger.warning("Failed to start resource %s: %s", spec.key, exc)
+            logger.warning("Failed to start resource %s", spec.key)
 
             # Core HAL Fallback
             if spec.phase == StartPhase.CORE:
@@ -259,7 +262,7 @@ class ResourceManager:
                 return
             if spec.phase == StartPhase.WORKER:
                 if spec.required:
-                    raise StartupError(f"Required worker {spec.key} failed start: {exc}") from exc
+                    raise StartupError(f"Required worker {spec.key} failed start") from exc
                 else:
                     if spec.capability_kind is not None:
                         self._capability_builder[spec.capability_kind] = False
@@ -267,7 +270,7 @@ class ResourceManager:
 
             # Input producer or Reasoner failure
             if spec.required:
-                raise StartupError(f"Required resource {spec.key} failed start: {exc}") from exc
+                raise StartupError(f"Required resource {spec.key} failed start") from exc
             else:
                 logger.warning("Optional resource %s failed start, skipping", spec.key)
 

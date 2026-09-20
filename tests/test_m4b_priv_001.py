@@ -486,6 +486,7 @@ async def test_V05_speaker_observation_preserves_cancel_and_async_completion_bar
 async def test_V01_completion_callback_failure_reaches_worker_supervision():
     from sbd.action.speak.speaker import Speak
     from sbd.core.events import ErrorOccurred
+    from sbd.core.faults import BackendDisposition, ComponentSystemFault
     events = []
     class TTS:
         async def synthesize(self, text):
@@ -497,11 +498,15 @@ async def test_V01_completion_callback_failure_reaches_worker_supervision():
     class Bus:
         async def publish(self, event):
             events.append(event)
+    original = ObservationError()
     async def failed(status):
-        raise ObservationError()
+        raise original
     speaker = Speak(tts=TTS(), audio_output=Output(), bus=Bus(), on_completion=failed)
-    with pytest.raises(ObservationError):
+    with pytest.raises(ComponentSystemFault) as caught:
         await speaker.execute("PRIVATE_SESSION", 1, 1, {"text": "PRIVATE_CANARY"})
+    assert caught.value.code == "SPEAK_UNEXPECTED"
+    assert caught.value.backend is BackendDisposition.UNPROVEN
+    assert caught.value.__cause__ is original
     assert len(events) == 1 and isinstance(events[0], ErrorOccurred)
     assert "PRIVATE_CANARY" not in repr(events) and speaker._pcm is None
 

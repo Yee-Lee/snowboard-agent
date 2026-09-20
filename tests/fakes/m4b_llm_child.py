@@ -207,7 +207,7 @@ class Child:
             self.queue.get_nowait()
 
 
-def adapter_fixture():
+def adapter_fixture(*, fault_injector=None):
     from sbd.cognition.litert_lm.adapter import LiteRTLMAdapter
     from sbd.core.config.models import LLMConfig
     from sbd.core.resource_manager.models import RecoveryTicket
@@ -224,7 +224,8 @@ def adapter_fixture():
     async def wait(ticket):
         await adapter.rebuild()
     adapter = LiteRTLMAdapter(LLMConfig(), lock=product_lock(), schedule_recovery=schedule,
-                             wait_recovery=wait, resource_sampler=sampler, child_factory=factory)
+                             wait_recovery=wait, resource_sampler=sampler, child_factory=factory,
+                             fault_injector=fault_injector)
     return adapter, children, tickets, sampler
 
 

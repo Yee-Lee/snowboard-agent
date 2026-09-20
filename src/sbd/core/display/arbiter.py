@@ -8,6 +8,7 @@ import threading
 from sbd.core.display.base import DisplayDevice
 from sbd.core.display.hints import DisplayHint, UnknownDisplaySlot
 from sbd.core.display.renderer import DisplayRenderer, RenderModel
+from sbd.core.faults import safe_category_for_code
 
 
 SLOT_REGISTRY = ("clock", "state", "volume", "connection", "capability", "error")
@@ -132,6 +133,12 @@ class DisplayArbiter:
         if self._rendering_enabled:
             self._rendering_enabled = False
             self._logger.error(
-                "display rendering disabled component=display.arbiter error_type=%s",
-                type(exc).__name__,
+                "Display rendering disabled",
+                extra={
+                    "where": "core.display",
+                    "code": "DISPLAY_RENDER_DISABLED",
+                    "backend_disposition": "not_applicable",
+                    "recovery_keys": (),
+                    "safe_category": safe_category_for_code("DISPLAY_RENDER_DISABLED"),
+                },
             )

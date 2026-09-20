@@ -20,6 +20,8 @@ class ASRResult:
 
 @runtime_checkable
 class ASRAdapter(Protocol):
+    @property
+    def ready_for_next(self) -> bool: ...
     async def start(self) -> None: ...
     async def stop(self) -> None: ...
     async def abort(self) -> None: ...
@@ -28,6 +30,8 @@ class ASRAdapter(Protocol):
 
 
 class MockASRAdapter:
+    legacy_neutral = True
+
     def __init__(
         self,
         outcomes: tuple[ASRResult | Exception, ...] = (ASRResult("fixture transcript"),),
@@ -43,6 +47,10 @@ class MockASRAdapter:
 
     async def start(self) -> None:
         pass
+
+    @property
+    def ready_for_next(self) -> bool:
+        return self.release.is_set()
 
     async def stop(self) -> None:
         self.release.set()
@@ -76,6 +84,10 @@ class NullASRAdapter:
 
             logging.getLogger(__name__).info("ASRAdapter: running in null mode")
         self._started = True
+
+    @property
+    def ready_for_next(self) -> bool:
+        return self._started
 
     async def stop(self) -> None:
         self._started = False

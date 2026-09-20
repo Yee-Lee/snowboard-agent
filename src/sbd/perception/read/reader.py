@@ -6,6 +6,7 @@ import asyncio
 
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ErrorOccurred, PerceptionResult
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.worker_runtime import WorkerRuntime
 from sbd.input_events.external_message import ExternalMessageError, ReadMessageConsumer
 
@@ -64,14 +65,13 @@ class Read(WorkerRuntime):
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                await self._bus.publish(
-                    ErrorOccurred(
-                        where="perception.read",
-                        error="read worker failed",
-                        exception_type=type(exc).__name__,
-                    )
+                fault = ComponentSystemFault.create(
+                    where="perception.read",
+                    code="READ_UNEXPECTED",
+                    backend=BackendDisposition.NOT_APPLICABLE,
                 )
-                raise
+                await self._bus.publish(fault.to_event())
+                raise fault from exc
             if self._may_publish():
                 await self._bus.publish(result)
 
