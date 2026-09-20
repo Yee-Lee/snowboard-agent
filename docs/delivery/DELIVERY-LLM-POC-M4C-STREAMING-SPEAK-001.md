@@ -9,7 +9,8 @@
 - Core baseline: `f87cfa50b9c9415430973076a59c6b1961228090`
 - POC starting baseline: `5080abd84dafcbc0f8307a086fa8009a0b6a818b`
 - Prospective tracked execution-surface SHA-256: `6ab4547e40afedabcbabe71061206abda11149a0208ae65bdf8168274631fdcd`
-- Delivery source: the commit containing this document; exact pushed SHA is reported by the POC operator after push
+- Implementation and reviewed report source SHA: `a6de0e66d7effe03549037eb8f50b99e42399620`
+- Delivery-record binding: the follow-up documentation commit that records the SHA above; reported after push
 
 ## 1. Recommendation
 
