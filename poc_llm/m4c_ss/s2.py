@@ -87,11 +87,14 @@ def consume_raw_s2(
     chunks: Iterable[RawStreamChunk],
     *,
     on_safe_text: Callable[[str], None],
+    max_codepoints: int = 24,
 ) -> S2Terminal:
-    """Release at most one normalized S2 fragment and require a native final."""
+    """Release stable normalized fragments and require an equal native terminal."""
 
+    from poc_llm.m4c_ss.incremental_s2 import IncrementalS2
+
+    incremental = IncrementalS2(max_codepoints=max_codepoints)
     wire = ""
-    released = ""
     terminal: S2Terminal | None = None
     final_seen = False
     try:
@@ -108,24 +111,24 @@ def consume_raw_s2(
             wire += chunk.text
             if len(wire) > 65536:
                 raise S2Error("WIRE_LIMIT")
+            for fragment in incremental.feed(wire):
+                on_safe_text(fragment)
             if terminal is None:
                 try:
                     candidate = validate_semantic(wire)
                 except S2Error:
                     continue
                 terminal = candidate
-                released = candidate.text
-                if released:
-                    on_safe_text(released)
+                for fragment in incremental.flush(candidate.text):
+                    on_safe_text(fragment)
         if not final_seen:
             raise S2Error("MISSING_TERMINAL")
         verified = validate_semantic(wire)
         if terminal is None:
             terminal = verified
-            released = verified.text
-            if released:
-                on_safe_text(released)
-        if verified != terminal or not verified.text.startswith(released):
+            for fragment in incremental.flush(verified.text):
+                on_safe_text(fragment)
+        if verified != terminal or incremental.released != verified.text:
             raise S2Error("TERMINAL_PREFIX_MISMATCH")
         return verified
     except RawStreamError as error:
@@ -133,6 +136,6 @@ def consume_raw_s2(
     except Exception:
         # An empty callback is the private rollback/cancel signal used by the
         # raw source adapter.  It is never admitted as a fragment.
-        if released:
+        if incremental.released:
             on_safe_text("")
         raise

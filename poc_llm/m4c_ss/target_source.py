@@ -26,10 +26,12 @@ class RawS2Source:
         chunk_factory: Callable[[], Iterable[RawStreamChunk]],
         cancel_hook: Callable[[], None],
         force_abort_hook: Callable[[], None],
+        max_codepoints: int = 24,
     ) -> None:
         self._chunk_factory = chunk_factory
         self._cancel_hook = cancel_hook
         self._force_abort_hook = force_abort_hook
+        self._max_codepoints = max_codepoints
         self._lock = threading.Lock()
         self._active = False
         self._used = False
@@ -51,7 +53,10 @@ class RawS2Source:
                 future = asyncio.run_coroutine_threadsafe(on_safe_text(text), loop)
                 future.result()
 
-            return consume_raw_s2(self._chunk_factory(), on_safe_text=emit)
+            return consume_raw_s2(
+                self._chunk_factory(), on_safe_text=emit,
+                max_codepoints=self._max_codepoints,
+            )
 
         try:
             return await asyncio.to_thread(consume)

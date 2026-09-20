@@ -115,25 +115,33 @@ def verify_private_receipt(receipt_path: Path, profile: dict[str, Any]) -> dict[
         if not isinstance(item, dict) or type(item.get("path")) is not str:
             raise TargetPreflightError("PRIVATE_RECEIPT_INVALID")
         observed[name] = verify_artifact(Path(item["path"]), digest, size)
+    acoustic = profile.get("acoustic_measurement")
+    if type(acoustic) is not dict:
+        raise TargetPreflightError("PROFILE_ACOUSTIC_IDENTITY_INVALID")
+    expected_microphone = {
+        "transport": acoustic.get("capture_transport"),
+        "alsa_card_id": acoustic.get("capture_card_id"),
+        "identity": acoustic.get("capture_identity"),
+        "capture_device": acoustic.get("capture_device"),
+        "sample_rate_hz": acoustic.get("capture_sample_rate_hz"),
+        "channels": acoustic.get("capture_channels"),
+        "sample_format": acoustic.get("capture_sample_format"),
+        "period_frames": acoustic.get("capture_period_frames"),
+    }
     if (
-        microphone.get("transport") != "usb"
-        or type(microphone.get("alsa_card_id")) is not str
-        or not microphone["alsa_card_id"]
-        or type(microphone.get("capture_device")) is not str
-        or not microphone["capture_device"]
+        expected_microphone["transport"] != "usb"
+        or any(microphone.get(key) != value for key, value in expected_microphone.items())
     ):
         raise TargetPreflightError("USB_MICROPHONE_IDENTITY_INVALID")
     return {
         "artifacts": observed,
         "measurement_microphone": {
-            "transport": "usb",
-            "alsa_card_id": microphone["alsa_card_id"],
-            "capture_device": microphone["capture_device"],
+            key: expected_microphone[key] for key in expected_microphone
         },
     }
 
 
-def verify_usb_microphone_inventory(alsa_card_id: str) -> None:
+def verify_usb_microphone_inventory(alsa_card_id: str, identity: str) -> None:
     try:
         result = subprocess.run(
             ["arecord", "-l"], capture_output=True, text=True,
@@ -142,7 +150,8 @@ def verify_usb_microphone_inventory(alsa_card_id: str) -> None:
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise TargetPreflightError("USB_MICROPHONE_PROBE_FAILED") from error
-    if result.returncode != 0 or alsa_card_id not in result.stdout:
+    expected = f": {alsa_card_id} [{identity}]"
+    if result.returncode != 0 or expected not in result.stdout:
         raise TargetPreflightError("USB_MICROPHONE_NOT_PRESENT")
 
 
@@ -158,7 +167,10 @@ def preflight_environment(
     require_clean_checkout(root, implementation_sha)
     profile = json.loads(profile_path.read_text())
     receipt = verify_private_receipt(receipt_path, profile)
-    verify_usb_microphone_inventory(receipt["measurement_microphone"]["alsa_card_id"])
+    verify_usb_microphone_inventory(
+        receipt["measurement_microphone"]["alsa_card_id"],
+        receipt["measurement_microphone"]["identity"],
+    )
     return {
         "status": "IDENTITY_VERIFIED_NOT_MEASURED",
         "platform": platform_facts,

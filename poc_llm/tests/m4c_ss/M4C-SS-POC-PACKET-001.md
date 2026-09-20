@@ -1,6 +1,6 @@
 # M4C-SS-POC-PACKET-001
 
-Status：`WORKSTATION IMPLEMENTATION VERIFIED / PI PREFLIGHT PARTIAL / EXECUTION SHA PENDING`
+Status：`RETAINED FORMAL PACKET / USER-DIRECTED ENGINEERING POC CLOSEOUT`
 
 ## Identity and authority
 
@@ -27,6 +27,8 @@ there is no automatic retry.
 
 Workstation result on 2026-09-19: M4C-SS 48/48 PASS, efficiency 46/46 PASS, and exactly 82 unique plan keys.
 The full macOS suite retains unrelated Linux/platform failures, so only the two targeted suites are entry checks.
+The dependency-free calibration, complete USB identity and no-device-override CLI checks raise the M4C-SS targeted total to 54/54 PASS
+on 2026-09-20.
 
 ## Future exact target command shape
 
@@ -35,9 +37,11 @@ User-authorized pushed values and `<PRIVATE_RECEIPT>` resolves through the appro
 
 ```text
 python3 -m poc_llm.tools.run_m4c_ss preflight --operator-authorized --implementation-sha <IMPLEMENTATION_SHA> --surface-sha256 <SURFACE_SHA256> --private-receipt <PRIVATE_RECEIPT>
+python3 -m poc_llm.tools.run_m4c_ss calibrate --operator-authorized
 ```
 
-Mapping, live A/B and negative execution commands will be enabled only after this preflight and USB acoustic
+The second command has no device override: it must use the frozen profile's I2S VoiceHAT playback and USB AB13X
+capture selectors. Mapping, live A/B and negative execution commands will be enabled only after both preflight and USB acoustic
 calibration pass. No placeholder command may produce formal evidence.
 
 ## Fixed accounting
@@ -67,5 +71,15 @@ gate, detector and calibration. Measured clock plus detector uncertainty must be
 latency is `INCONCLUSIVE` and no `B_RECOMMENDED` disposition is allowed.
 
 The 2026-09-19 engineering preflight proved simultaneous I2S VoiceHAT playback and independent USB AB13X
-capture at the USB device's negotiated 48 kHz mono S16_LE format. The strict monotonic calibration did not run,
-so the `<=50 ms` gate remains open. No packet case was executed.
+capture at the USB device's negotiated 48 kHz mono S16_LE format. On 2026-09-20 the dependency-free replacement
+measured a 60,403 ns maximum clock residual, 10 ms detector error and 20,060,403 ns combined uncertainty; both
+owners stopped. This engineering result passes the acoustic gate but must be repeated from the clean pushed
+execution SHA. No packet case was executed.
+
+## POC closeout note — 2026-09-20
+
+The User reviewed the engineering boundary and acoustic results, selected 12 normalized codepoints, and directed
+POC delivery without strict formal revalidation. This retained packet therefore remains an unexecuted 82-case
+formal design and must not be cited as completed evidence. Final workstation verification is 78/78 targeted tests;
+the delivery disposition and exact limitations are recorded in
+`docs/delivery/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md`.

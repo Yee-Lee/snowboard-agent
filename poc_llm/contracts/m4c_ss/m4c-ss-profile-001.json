@@ -38,6 +38,27 @@
     "channels": 1,
     "sample_format": "S16_LE"
   },
+  "acoustic_measurement": {
+    "playback_transport": "i2s_voicehat",
+    "playback_device": "hw:CARD=sndrpigooglevoi,DEV=0",
+    "playback_sample_rate_hz": 48000,
+    "playback_channels": 2,
+    "playback_sample_format": "S32_LE",
+    "capture_transport": "usb",
+    "capture_card_id": "Audio",
+    "capture_identity": "AB13X USB Audio",
+    "capture_device": "hw:CARD=Audio,DEV=0",
+    "capture_sample_rate_hz": 48000,
+    "capture_channels": 1,
+    "capture_sample_format": "S16_LE",
+    "capture_period_frames": 480,
+    "pulse_frequency_hz": 1000,
+    "pulse_duration_ms": 250,
+    "baseline_blocks": 30,
+    "threshold_method": "max_300_or_5x_baseline_median_rms",
+    "stable_active_blocks": 3,
+    "detector_error_blocks": 1
+  },
   "tts": {
     "id": "tts-sherpa-matcha-zh-en-1.13.5",
     "archive_sha256": "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",

@@ -2,7 +2,7 @@
 
 - Date: 2026-09-19
 - Scope: User-authorized M4C-SS Pi preflight only
-- Status: `PARTIAL PASS / TIMING CALIBRATION PENDING / NO EXPERIMENT EXECUTION`
+- Status: `ACOUSTIC PREFLIGHT PASS / FORMAL IDENTITY PENDING / NO EXPERIMENT EXECUTION`
 
 ## Sanitized observations
 
@@ -29,12 +29,37 @@ conversion path rather than claim native 16 kHz capture.
 The temporary pulse and capture were confined to `/tmp` and removed by the completed command. No raw audio,
 host name, endpoint, credential, physical artifact path, prompt or model output is retained in Git.
 
-## Fail-closed boundary
+## Timing calibration completion — 2026-09-20
 
-The stricter no-file monotonic calibration could not start because the system Python lacked the `alsaaudio`
-module. Per User direction, no alternate runtime search or installation was performed. Therefore simultaneous
-I2S-speaker plus USB-microphone availability is `PASS`, but the required combined clock/detector uncertainty
-`<= 50 ms` remains unproven and acoustic latency disposition remains `INCONCLUSIVE`.
+The replacement calibration harness uses only the system `arecord`/`aplay` executables and Python standard
+library. It retains no PCM and timestamps each 480-frame USB capture block with the same monotonic clock used by
+the controller. The workstation synthetic suite first proved both the passing bound and a 55 ms jitter case that
+must remain `INCONCLUSIVE`; the module was then streamed to the Pi without creating a target file.
+
+The repeated I2S-speaker plus USB-microphone pulse produced these sanitized engineering observations:
+
+| Field | Observation |
+| --- | ---: |
+| Capture format | 48 kHz / mono / S16_LE |
+| Capture period | 480 frames / 10 ms |
+| Ambient baseline RMS | 181.614 |
+| Frozen threshold RMS | 908.070 |
+| Detected onset RMS | 2,013.916 |
+| Maximum capture-clock residual | 60,403 ns |
+| Detector error bound | 10,000,000 ns |
+| Combined uncertainty | 20,060,403 ns |
+| Required maximum | 50,000,000 ns |
+| Capture/playback owners stopped | yes / yes |
+
+The acoustic clock/detector preflight therefore passes the `<=50 ms` gate. This was still an engineering run of
+workstation-streamed bytes, not formal evidence from a clean pushed execution SHA; the exact frozen command must
+be repeated after execution freeze.
+
+## Remaining fail-closed boundary
+
+The initial `alsaaudio`-based attempt could not start because the system Python lacked that optional module; no
+installation or alternate runtime search occurred. The dependency-free replacement above closes that harness
+gap without changing the selected microphone or playback path.
 
 The User also stopped further checkout/Audio-runtime inspection. Runtime wheel, native library, TTS/voice,
 Audio manifest, clean checkout, private evidence root and offline-network identity were not revalidated in this
@@ -42,6 +67,6 @@ scope. No controller, mapping, live A/B, negative, LLM inference, TTS or benchma
 
 ## Next authorized boundary
 
-Future work may complete the fixed-position monotonic calibration without changing microphone ownership. Formal
-M4C-SS execution still requires a clean exact pushed SHA, frozen surface/receipt, offline transition and separate
-User authorization. This assessment makes no candidate recommendation and publishes no benchmark result.
+Formal M4C-SS execution still requires a clean exact pushed SHA, frozen surface/receipt, remaining runtime/TTS/
+Audio identity, offline transition and separate User authorization. This assessment makes no candidate
+recommendation and publishes no benchmark result.

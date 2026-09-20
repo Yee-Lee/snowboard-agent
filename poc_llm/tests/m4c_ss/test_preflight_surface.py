@@ -5,8 +5,14 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from poc_llm.m4c_ss.preflight import TargetPreflightError, verify_artifact
+from poc_llm.m4c_ss.preflight import (
+    TargetPreflightError,
+    verify_artifact,
+    verify_private_receipt,
+    verify_usb_microphone_inventory,
+)
 from poc_llm.m4c_ss.surface import build_manifest, surface_digest, verify_manifest
 
 
@@ -37,6 +43,72 @@ class PreflightTests(unittest.TestCase):
             digest = hashlib.sha256(b"controlled").hexdigest()
             with self.assertRaisesRegex(TargetPreflightError, "PATH_INVALID"):
                 verify_artifact(link, digest)
+
+    def test_private_receipt_binds_complete_usb_capture_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            artifacts = {}
+            profile = {
+                "llm": {}, "tts": {},
+                "acoustic_measurement": {
+                    "capture_transport": "usb",
+                    "capture_card_id": "Audio",
+                    "capture_identity": "AB13X USB Audio",
+                    "capture_device": "hw:CARD=Audio,DEV=0",
+                    "capture_sample_rate_hz": 48000,
+                    "capture_channels": 1,
+                    "capture_sample_format": "S16_LE",
+                    "capture_period_frames": 480,
+                },
+            }
+            for name, section, key in (
+                ("runtime_wheel", "llm", "runtime_wheel_sha256"),
+                ("native_library", "llm", "native_library_sha256"),
+                ("model", "llm", "model_sha256"),
+                ("tts_archive", "tts", "archive_sha256"),
+                ("tts_vocoder", "tts", "vocoder_sha256"),
+                ("tts_wrapper_wheel", "tts", "wrapper_wheel_sha256"),
+                ("tts_core_wheel", "tts", "core_wheel_sha256"),
+            ):
+                path = root / name
+                path.write_bytes(name.encode())
+                digest = hashlib.sha256(name.encode()).hexdigest()
+                profile[section][key] = digest
+                artifacts[name] = {"path": str(path)}
+            profile["llm"]["model_bytes"] = len(b"model")
+            microphone = {
+                "transport": "usb",
+                "alsa_card_id": "Audio",
+                "identity": "AB13X USB Audio",
+                "capture_device": "hw:CARD=Audio,DEV=0",
+                "sample_rate_hz": 48000,
+                "channels": 1,
+                "sample_format": "S16_LE",
+                "period_frames": 480,
+            }
+            receipt = root / "receipt.json"
+            receipt.write_text(json.dumps({
+                "artifacts": artifacts,
+                "measurement_microphone": microphone,
+            }))
+            observed = verify_private_receipt(receipt, profile)
+            self.assertEqual(observed["measurement_microphone"], microphone)
+            receipt.write_text(json.dumps({
+                "artifacts": artifacts,
+                "measurement_microphone": {**microphone, "sample_rate_hz": 16000},
+            }))
+            with self.assertRaisesRegex(TargetPreflightError, "IDENTITY_INVALID"):
+                verify_private_receipt(receipt, profile)
+
+    def test_usb_inventory_requires_card_id_and_display_identity_together(self):
+        completed = type("Completed", (), {
+            "returncode": 0,
+            "stdout": "card 2: Audio [AB13X USB Audio], device 0: USB Audio [USB Audio]\n",
+        })()
+        with patch("poc_llm.m4c_ss.preflight.subprocess.run", return_value=completed):
+            verify_usb_microphone_inventory("Audio", "AB13X USB Audio")
+            with self.assertRaisesRegex(TargetPreflightError, "NOT_PRESENT"):
+                verify_usb_microphone_inventory("Audio", "Different Device")
 
 
 class SurfaceTests(unittest.TestCase):

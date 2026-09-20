@@ -33,6 +33,35 @@ class DeterministicCasesTests(unittest.TestCase):
         self.assertEqual(value["expected_case_count"], 82)
         self.assertEqual(len(set(value["case_keys"])), 82)
 
+    def test_calibration_is_operator_gated_and_has_no_device_override(self):
+        blocked = subprocess.run(
+            [sys.executable, "-m", "poc_llm.tools.run_m4c_ss", "calibrate"],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(blocked.returncode, 0)
+        self.assertIn("CALIBRATION_BLOCKED", blocked.stderr)
+        override = subprocess.run(
+            [
+                sys.executable, "-m", "poc_llm.tools.run_m4c_ss", "calibrate",
+                "--capture-device", "hw:CARD=sndrpigooglevoi,DEV=0",
+            ],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(override.returncode, 2)
+        self.assertIn("unrecognized arguments", override.stderr)
+
+    def test_mapping_engineering_is_operator_gated(self):
+        blocked = subprocess.run(
+            [
+                sys.executable, "-m", "poc_llm.tools.run_m4c_ss",
+                "mapping-engineering", "T01", "B1-IMMEDIATE-SEQUENTIAL", "1",
+                "--run-id", "engineering-001",
+            ],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(blocked.returncode, 0)
+        self.assertIn("MAPPING_ENGINEERING_BLOCKED", blocked.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

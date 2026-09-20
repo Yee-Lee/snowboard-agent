@@ -72,6 +72,24 @@ class TargetSourceTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "NOT_REUSABLE"):
             await source.generate(lambda _text: asyncio.sleep(0))
 
+    async def test_explicit_release_boundary_reaches_real_source(self):
+        emitted: list[str] = []
+        source = RawS2Source(
+            chunk_factory=lambda: iter([
+                RawStreamChunk('{"text":"甲乙丙', False),
+                RawStreamChunk('丁","end":false}', False),
+                RawStreamChunk("", True),
+            ]),
+            cancel_hook=lambda: None,
+            force_abort_hook=lambda: None,
+            max_codepoints=2,
+        )
+        result = await source.generate(
+            lambda text: emitted.append(text) or asyncio.sleep(0),
+        )
+        self.assertEqual(result.text, "甲乙丙丁")
+        self.assertEqual(emitted, ["甲乙", "丙丁"])
+
 
 if __name__ == "__main__":
     unittest.main()

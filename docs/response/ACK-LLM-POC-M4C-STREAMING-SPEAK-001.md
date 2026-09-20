@@ -9,7 +9,7 @@
 - POC starting source SHA：`5080abd84dafcbc0f8307a086fa8009a0b6a818b`
 - Starting tracked-tree SHA-256：
   `5f930e7e016ea1b2090ce86fb21e8e79fb198f8e6feb3b0150bd5352bbaff4c7`
-- Status：`RECEIVED / WORKSTATION VERIFIED / PI PREFLIGHT PARTIAL / EXECUTION NOT AUTHORIZED`
+- Status：`SUPERSEDED BY USER-DIRECTED POC DELIVERY / RETAINED INTAKE RECORD`
 
 ## Intake conclusion
 
@@ -122,5 +122,10 @@ Workstation implementation與targeted tests已收斂至pre-Pi gate。任何Pi結
 `B_RECOMMENDED` disposition在User審閱前不得發布。
 
 2026-09-19 User另行授權preflight；I2S VoiceHAT speaker＋獨立USB AB13X microphone duplex與frozen
-Gemma identity通過engineering check。USB capture實際協商48 kHz mono S16_LE；嚴格monotonic calibration
-因system Python無`alsaaudio`而在播放前fail-closed，故`<=50 ms`仍pending。沒有執行任何experiment case。
+Gemma identity通過engineering check。2026-09-20 dependency-free replacement以48 kHz mono S16_LE、
+10 ms blocks量得20.060403 ms combined uncertainty並完成zero-owner cleanup，故acoustic engineering gate
+PASS；formal exact-SHA rerun仍pending。沒有執行任何experiment case。
+
+2026-09-20後續User審閱engineering prototype結果、選定12-codepoint boundary並指示免除嚴格複驗、完成
+POC交付。本ACK保留intake當時邊界；current disposition與限制以
+[`DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001`](../delivery/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md)為準。

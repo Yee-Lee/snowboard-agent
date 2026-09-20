@@ -2,7 +2,7 @@
 
 本檔是External Gate、internal milestone、目前授權與風險的唯一狀態入口。
 
-最後更新：2026-09-19
+最後更新：2026-09-20
 
 2026-09-19 closure／intake補記：Core已於2026-09-16接受M4B same-bytes Pi product verification；
 Accepted commit `f87cfa50b9c9415430973076a59c6b1961228090`已push至`origin/core`。因此舊
@@ -30,7 +30,7 @@ dirty Pi development run不取得正式credit。
 
 ## Current reachability
 
-狀態：`LLM POC COMPLETE / M4B CORE ACCEPTED / M4C-SS IN_PROGRESS / PI PREFLIGHT PARTIAL / EXECUTION NOT AUTHORIZED`。
+狀態：`LLM POC COMPLETE / M4B CORE ACCEPTED / M4C-SS POC COMPLETE / B_RECOMMENDED / CORE DECISION PENDING`。
 
 目前唯一active LLM POC delivery是M4C true streaming-speak feasibility。它以Accepted M4B與M4A為
 read-only inputs，先完成intake、deterministic controller、evidence/acoustic scaffold及execution freeze；
@@ -70,7 +70,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | Gate 3 | `OUT_OF_POC_SCOPE` | Core tests | Core production acceptance |
 | M4B-MVA-POC | `CLOSED / INCORPORATED INTO CORE M4B ACCEPTANCE` | MVA-002 result；no legacy P credit | Core adopted the POC inputs and User accepted M4B at `f87cfa5…` |
 | M4B-MVA-EFFICIENCY | `CLOSED / INCORPORATED INTO CORE M4B ACCEPTANCE` | J/S2、conditional H、listen-only Reasoner及V2D2 | Delivery 003/004 became M4B design inputs；no separate formal rerun remains |
-| M4C-SS | `OPEN / PI PREFLIGHT PARTIAL` | engineering preflight only | timing/identity completion → frozen execution → User publication review → Core decision |
+| M4C-SS | `OPEN / POC RETURN READY` | engineering `B_RECOMMENDED`；B2＋12-codepoint boundary | Core design/boundary decision；POC result does not close gate |
 
 只有指定Reviewer/User/Core可以關閉其review/approval；POC self-test不等於external ACK。
 
@@ -84,7 +84,7 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 | M3 | `COMPLETE / CORE ACK` | 雙candidate final-surface Pi evidence獲User review；Gemma唯一model finalist；Core final ACK整併接受019/021語意與選型 |
 | M4 | `COMPLETE / CORE FINAL WINNER ACK` | Attempt 006完成20/20 combined sessions；Core接受User waiver、Gemma POC winner與R3 manifest |
 | M4B-MVA | `COMPLETE / CORE INCORPORATED` | MVA、efficiency及V2D2交付已成為Accepted M4B input；歷史結果保持immutable |
-| M4C-SS | `IN_PROGRESS / PI PREFLIGHT PARTIAL` | 48/48 targeted tests；model identity與I2S speaker＋USB mic duplex PASS；`<=50 ms`未證明 |
+| M4C-SS | `COMPLETE / USER-DIRECTED ENGINEERING CLOSEOUT` | Pi 76/76、workstation 78/78；true live chain PASS；B2＋12 recommended；82-case formal matrix explicitly waived for POC closeout |
 
 ## Cumulative P1～P12 rule
 
@@ -101,14 +101,15 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Open dependencies and risks
 
-- **M4C-SS authority**：User授權workstation開發與測試至pre-Pi gate。Pi access、prototype execution、network、
-  reboot、artifact change/download、commit、push及benchmark/candidate publication仍須各自適用的明確授權。
-- **M4C-SS target/acoustic identity**：Pi/model identity及I2S speaker＋獨立USB microphone duplex已做
-  engineering preflight；USB capture實際為48 kHz mono S16_LE。`<=50 ms` uncertainty、runtime/TTS/Audio、
-  clean checkout、private roots及offline identity仍未完整驗證，缺一不得開始formal measurement。
-- **M4C-SS bounded design**：只比較`B1-IMMEDIATE-SEQUENTIAL`與
-  `B2-ONE-LOOKAHEAD-COALESCE`，共82個fixed samples/subcases；禁止第三candidate、open-ended tuning或
-  修改M4A/Core public contract。詳見[M4C-SS milestone](m4c_streaming_speak.md)。
+- **M4C-SS POC closeout**：User已審閱boundary與首音結果，選定12 codepoints並指示完成POC交付、免除嚴格
+  複驗。`B_RECOMMENDED`只代表engineering design return；原82-case formal matrix為0 executed，不建立
+  Core Test Spec credit或M4C acceptance。
+- **M4C-SS target/acoustic identity**：Pi/model identity及I2S speaker＋獨立USB microphone engineering
+  preflight PASS；USB capture為48 kHz mono S16_LE，combined uncertainty 20.060403 ms。該結果須由clean
+  pushed SHA重跑；runtime/TTS/Audio、clean checkout、private roots及offline identity仍待補齊。
+- **M4C-SS bounded design**：工程結果推薦`B2-ONE-LOOKAHEAD-COALESCE`與12-codepoint S2 boundary；不修改
+  JSON、M4A/Core public contract或terminal semantic authority。Core仍須裁決原24→12 boundary change及
+  gate closure。詳見[M4C-SS delivery](../delivery/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md)。
 
 - **Pi storage migration**：Phase 1～3已完成並獲Core接受；2026-09-06 read-only postcheck再次確認
   canonical checkout、product/artifact identity、private evidence root與零product symlink/writable file。
@@ -210,8 +211,8 @@ process。舊P6/P7 credit與closure draft已撤回，User核准獨立P6.1/P7.1 p
 
 ## Active packets
 
-- [M4C-SS milestone](m4c_streaming_speak.md)
-- [M4C-SS intake and preparation boundary](../response/ACK-LLM-POC-M4C-STREAMING-SPEAK-001.md)
+- [M4C-SS delivery pending Core decision](../delivery/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md)
+- [M4C-SS completed POC milestone](m4c_streaming_speak.md)
 
 Completed M4B references：
 
@@ -247,10 +248,9 @@ Completed M4B references：
 
 ## Governing and historical inputs
 
-2026-09-19 intake audit：`M4C-SS` request是唯一active direct Income。M4B contract、task boundary、
-Gate 1 ACK、MVA measurement及efficiency request都已被Core M4B Accepted disposition納入或完成，
-目前仍因本輪尚未round-close commit而保留原路徑；下一次獲授權的round-closing commit必須保持內容
-不變移入`docs/pm_handoff/history/`並同步更新Document Index。歷史MVA/Gate結果保持immutable。
+2026-09-20 round-close audit：M4C-SS request已完成POC處理，但在Core裁決前仍是currently governing
+Income；其餘五份M4B direct Income雖已完成，仍被Accepted-M4B contract、M4C baseline及immutable
+historical execution locks直接引用，因此保持內容不變並保留原路徑。歷史MVA/Gate結果保持immutable。
 
 - [M4C-SS request](../pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md)
 - [M4b contract (retained governing Accepted-M4B provenance)](../pm_handoff/DELIVERY-LLM-POC-M4B-CONTRACT-001.md)

@@ -1,6 +1,6 @@
 # M4C-SS：true streaming-speak feasibility
 
-狀態：`IN_PROGRESS / PI PREFLIGHT PARTIAL / EXECUTION NOT AUTHORIZED`
+狀態：`COMPLETE / USER-DIRECTED ENGINEERING POC CLOSEOUT / CORE DECISION PENDING`
 
 External gate：`M4C-SS OPEN`
 
@@ -68,6 +68,12 @@ calibration在播放前即fail-closed；依User指示沒有尋找其他runtime�
 本次沒有執行LLM/TTS、controller、mapping、live A/B、negative或benchmark case。完整sanitized紀錄見
 [Pi preflight assessment](../response/ASSESSMENT-LLM-POC-M4C-SS-PI-PREFLIGHT-001.md)。
 
+2026-09-20以不依賴`alsaaudio`、不落盤PCM的`arecord`／`aplay` replacement重做同一路徑。48 kHz
+mono S16_LE USB capture以480-frame／10 ms block映射monotonic clock；maximum residual為60,403 ns，
+detector error為10,000,000 ns，合併uncertainty為20,060,403 ns，低於50,000,000 ns上限，且capture／
+playback owner均停止。Acoustic engineering preflight因此PASS；由於執行的是workstation-streamed未提交
+bytes，formal run前仍須從clean pushed execution SHA重跑同一命令。
+
 ## Frozen behavior carried from Core
 
 - 每turn最多一個綁定`(session_id, turn_id, correlation_id)`的logical streaming-speak operation；
@@ -129,7 +135,7 @@ Implementation packet須把82個expected IDs逐一列出，missing case固定為
 2. `SS-WP01 — deterministic contract/controller`：queue、fragment ledger、terminal equality、one-operation、
    completion gate、cancel/late-output isolation及C01–C10 tests。**workstation完成。**
 3. `SS-WP02 — evidence/acoustic`：schema、append-only writer、clock mapping、onset detector、resource sampler、
-   owner cleanup及private bundle manifest。**除target calibration／resource probe外workstation完成。**
+   owner cleanup及private bundle manifest。**acoustic engineering preflight PASS；formal exact-SHA rerun待執行。**
 4. `SS-WP03 — mappings/runtime adapters`：B1/B2、Accepted TTS/Audio private binding、A control與live LLM S2 feed。
    **workstation binding與fake/raw-stream tests完成；實體artifact binding待Pi。**
 5. `SS-WP04 — freeze`：exact commands、82-case catalog、explicit surface manifest、clean pushed SHA、artifact
@@ -141,7 +147,15 @@ Implementation packet須把82個expected IDs逐一列出，missing case固定為
 
 ## Current next action and blockers
 
-Workstation implementation及partial Pi preflight已完成；model identity與I2S speaker＋USB microphone
-duplex已確認。下一步仍須完成`<=50 ms` monotonic calibration，並在formal execution前補齊runtime/TTS/
-voice/Audio、clean checkout、private root及offline identity。User已授權本checkpoint commit/push；formal
-execution及正式result publication仍分別需要exact-scope authorization與User review。
+2026-09-20 User在審閱12-codepoint trade-off、聲學replay及true-live one-shot後，指示不做嚴格複驗並完成
+POC交付。Pi-native prototype證明LiteRT pre-terminal S2、B2、Matcha、I2S speaker及USB microphone可形成
+true streaming-speak；最終live L02由LLM send至首音為7,330.617 ms，首段文字至首音為1,427.087 ms。
+同一retained generation的12-codepoint B replay比full-response A早2.019 s出聲；Pi 76/76及final
+workstation 78/78 targeted tests均PASS，cleanup後無Audio owner或測試程序。
+
+POC disposition為`B_RECOMMENDED`：採B2並請Core將S2 boundary由punctuation-or-24改為
+punctuation-or-12 normalized codepoints；JSON／terminal semantic contract與既有TTS/Audio public API不變。
+完整結論、digest與限制見
+[M4C-SS delivery](../delivery/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md)。原82-case formal matrix未執行，
+不得冒充formal evidence；這是User明確縮限的engineering POC closeout。剩餘事項只有Core Designer對
+boundary、產品設計及`M4C-SS` gate的外部裁決，POC不再主動要求實驗。
