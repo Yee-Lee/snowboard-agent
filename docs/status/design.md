@@ -1,89 +1,53 @@
 # Current design status
 
 - Owner: Designer
-- Scope: M4-ERR error-handling closure followed by M4C complete offline voice-device integration
-- State: **M4-ERR Design／Test Spec aligned；`IR_dev_M4_ERR_II` Resolved；M4C-SS open**
-- Developer entry: **M4-ERR Open；same-bytes Pi Verify required before commit；M4C Closed**
+- Scope: M4C complete offline voice-device integration
+- State: **Design complete；M4-ERR Accepted；M4C-SS Closed／B2 adopted；Test Spec complete**
+- Developer entry: **Open**
 
 ## Accepted inputs
 
-- M4A Audio is Accepted and supplies the production ASR/TTS/audio lifecycle and composition surface.
-- M4B LLM / Reasoner is Accepted at commit
-  `f87cfa50b9c9415430973076a59c6b1961228090` after same-bytes Raspberry Pi `PV` Pass.
-- M4B supplies finite-session Audio+LLM resource estimates and monotonic stage observations. The
-  558/699 MiB values are observations, not M4C release thresholds.
-- M4B's declared non-claims—physical wake/display hardware, native context exhaustion, nested-
-  descendant killing and full-product shutdown—remain honest evidence boundaries. M4C owns only
-  the whole-product integration behavior required by its own scope.
+- M4A Audio supplies the production ASR／TTS／Audio lifecycle, existing public ports and exact artifact baseline.
+- M4B LLM／Reasoner supplies the constrained terminal semantic contract, `snowboard.llm/3`, safe incremental S2
+  source, Conversation lifecycle, resource observations and monotonic timing nodes.
+- M4-ERR is Accepted at commit `f572915d0b0d5c52067e9100c5b022e57aefe506` after same-bytes Raspberry Pi
+  run `M4-ERR-DEV-04`; M4C consumes its typed faults, backend disposition, recovery and fatal-exit behavior.
+- Accepted-history evidence remains immutable. M4C is a prospective composition delta and must reverify only
+  directly affected inheritance plus its whole-product scenarios on the final bytes.
 
-## USER-confirmed M4C volume direction
+## M4C-SS disposition
 
-- Include startup-static software output volume in M4C composition.
-- Keep the accepted `AudioOutput` Protocol unchanged; use one decorator plus a separate future
-  `VolumeControl` injection seam.
-- Schema default is `100`; M4C real product config is `25`, matching the M4B Pi playback attenuation
-  without adopting the runner-only wrapper as production code.
-- Runtime GPIO adjustment, Display volume projection, OSD, persistence and a separate mute state are
-  deferred. No `adjustments/volume` runtime module is created in this slice.
-- This addition remains inside the normal M4C Design → Test Spec → Developer → Verify pipeline and
-  does not open Developer entry by itself.
+- Designer adopts `B2-ONE-LOOKAHEAD-COALESCE` as the only real-model streaming-speak product path and fixes
+  the M4C S2 boundary at punctuation or 12 normalized codepoints.
+- The source delivery is bound to POC commits `a6de0e66d7effe03549037eb8f50b99e42399620` and
+  `a492a1416721c73c989dd46067b3e9dd1c24508d`; the preserved Core file SHA-256 is
+  `c097d550d263070ef216bfa391e87c69b6b27aa68baf26f09ea7428be8bf069f`.
+- The POC proved a usable pre-terminal raw-stream path, existing-interface B2 mapping, corrected physical
+  acoustic observation and bounded cleanup in engineering runs. It does not provide formal Core acceptance:
+  0/82 formal cases ran, the Pi checkout was dirty, the live A result was projected, and the full negative,
+  resource and human-quality matrices were omitted.
+- Those limitations are routed into M4C Test Spec and final same-bytes Pi Verify. No POC row may be credited as
+  a product PASS, and no second A-mode acceptance path or runtime A/B switch may be introduced.
 
-## USER-confirmed M4-ERR split
+## Fixed product design
 
-- Insert M4-ERR after Accepted M4A／M4B and before M4C product Test Spec／development.
-- M4-ERR completes the shared error taxonomy, lossless classification, sanitized diagnostics,
-  backend-usability decision, recovery and fatal-exit behavior for the generic Core and all
-  production components used by M4.
-- The current ASR `INFERENCE_REJECTED` mapping is a system-fault defect, not a retry interaction.
-  M4-ERR also audits equivalent broad/lossy mappings in the other M4 production components.
-- M4-ERR and M4C each follow `Design → Test Spec → Developer → Verify`. Accepted M4A／M4B history
-  remains immutable; affected behavior is corrected append-only and reverified on Pi.
-- M4C consumes the completed framework and verifies whole-product scenarios rather than repeating
-  every component-level diagnostic cause.
+The authoritative behavior is [`M4C`](../milestones/M4C.md). It fixes:
 
-## USER-confirmed M4C interaction and quality boundary
+- one SM-owned private streaming control per generated speak turn, with terminal `LLMResponse` and one
+  `ActionCompleted(ok)` remaining the only public cognition／action Facts;
+- a two-fragment／256-byte backpressured queue, B2 exact one-available-lookahead concatenation, sequential
+  existing-TTS calls and no public Audio／TTS API change;
+- terminal-only degeneration inside B2 when no pre-terminal fragment exists; once any fragment is admitted,
+  full-terminal replay and fallback-to-A are forbidden;
+- shared cancellation of generation／queue／TTS／Audio, M4-ERR error mapping, rejection of stale／late output,
+  and zero-owner cleanup before reuse or recovery;
+- startup-static output volume 25%, complete no-input Session behavior, no barge-in and the nine exact-product
+  scenarios already defined by M4C.
 
-- M4C has no barge-in. TTS playback and Listen do not overlap; short press is the only active-Session
-  interruption mechanism in this milestone.
-- Existing M4A VAD／endpoint settings remain the baseline. M4C observes endpoint quality in the real
-  product path and changes it only for a reproducible clipping／missing-text／excess-wait problem with
-  fixed before／after evidence and affected regression.
-- Voice-normal-end acceptance stays small: one explicit spoken ending must produce `end=true` and
-  converge to IDLE; no application keyword parser is added.
-- `M4C-SS` is a USER-defined design gate and must close before M4C Test Spec. Its disposition chooses
-  exactly one of streaming B or evidence-backed abandonment to full-response A.
-- M4C scenarios end at IDLE／defined process exit. Repeated sessions, soak and formal latency／memory／
-  thermal targets belong to ALPHA.
+## Next work
 
-## Next Designer work
-
-`IR_dev_M4_ERR_I` B1／B2 exposed retained M4A／M4B assertions that conflict with the USER-selected M4-ERR
-semantics. [`ch_m4_error_handling.md`](../implement/ch_m4_error_handling.md) now preserves the old Accepted SHA
-and evidence as immutable history while prospectively superseding only the named same-child TTS reuse,
-`__cause__ is None` and untyped observer escape oracles. It also fixes the raw cause boundary to the private
-in-memory supervised exception chain and requires a sanitized type/code-only public Level 3 traceback.
-
-Tester revision v2 of [`test_spec_M4_ERR.md`](../test_spec/test_spec_M4_ERR.md) is accepted. It preserves all
-unaffected G05/G06 assertions, keeps the two affected M4A TTS functions in G05, binds the four named function
-overlays to PI-011／PI-012, and uses exact private-cause／sanitized-public-renderer oracles. Developer is next owner
-for affected regression, remaining WP7 and the complete same-bytes M4-ERR Pi Verify run before any commit.
-
-`IR_dev_M4_ERR_II` subsequently identified one non-executable PI-012 row: the retained `prefix` stimulus creates
-a malformed `SemanticGeneration`, not a `ReplaceableGenerationFailure`. Design is unchanged; Tester must retain
-that stimulus and change only the `prefix` cause oracle to `__cause__ is None`, with the other seven rows and all
-accepted G05/G06／renderer／Pi requirements unchanged. The focused correction is accepted and the review is
-Resolved. Developer is next owner for PI-012 convergence, affected regressions, remaining WP7 and same-bytes Pi
-Verify before commit.
-
-The delivered M4C-SS request awaits LLM POC intake and later evidence. The request was
-copied byte-identically to the latest clean `llm` baseline `5080abd84dafcbc0f8307a086fa8009a0b6a818b`; both
-source and destination SHA-256 were `234b5998589d3c956005f465862e137b471a2e26e75c3a19c6be5cb166c0b59c`.
-M4C whole-product scenarios are recorded; its only open product decision is M4C-SS. M4C Test Spec／Developer
-entry remain closed until M4-ERR Accepted and M4C-SS Closed.
-Preserve the existing milestone exclusions for camera/look, voice wake, tool/MQTT and full graphics/animation.
-M4C fixes observable product behavior and scenario acceptance; M4-ERR owns the underlying lifecycle/error
-routing, diagnostics, recovery and fatal-exit closure. Do not create a second volume authority or another gate.
-
-Start with [`M4C`](../milestones/M4C.md), then load only the routed M4A §§1, 7, 10, 12 and M4B
-§§1, 5–7, 9–10, 11.2 sections listed in [`current.md`](current.md). Open a focused architecture
-request only if those accepted contracts cannot support the required M4C composition.
+Developer is next owner. Implement [`M4C`](../milestones/M4C.md) against
+[`test_spec_M4C.md`](../test_spec/test_spec_M4C.md), including the portable B2／volume／no-input coverage and the
+17 exact Pi variants. The pending tracked bytes, config, harness and artifacts must remain digest-bound through
+Pi Verify and workstation same-bytes reconciliation; do not commit before that verification passes. Raise a
+focused design request only for an actual authority conflict, not for an additional review or approval gate.

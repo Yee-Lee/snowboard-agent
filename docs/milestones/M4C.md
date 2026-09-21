@@ -1,6 +1,6 @@
 # M4C — complete offline voice-device integration
 
-狀態：**Scenarios recorded／M4C-SS open；M4-ERR Accepted且M4C-SS Closed前不進Test Spec／Developer**。
+狀態：**Design complete；M4-ERR Accepted；M4C-SS Closed（採用 B2）；Test Spec complete／Developer open**。
 
 M4C完成Button→Listen/ASR→Reasoner/LLM→Speak/TTS、Rest與基本Session Display的exact-product
 composition。Camera/look與voice wake留M6，tool/MQTT留M5，完整圖形與動畫留M7。
@@ -26,10 +26,86 @@ recovery與fatal-exit契約。M4C只以whole-product場景驗證composition是�
 
 ## M4C-SS gate
 
-`M4C-SS`是M4C streaming-speak設計gate，必須在M4C交Tester建立Test Spec前Closed。其證據工作由
-[`REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001`](../outsource/deliveries/active/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md)
-提供；POC結果本身不關閉gate。Designer必須依證據明確採用true streaming方案B，或有證據地放棄B並
-固定full-response方案A。Closed後Test Spec只允許一種產品行為，不保留A／B雙重驗收路徑。
+`M4C-SS`已由Designer裁定 **Closed／採用true streaming B**，唯一產品mapping為
+`B2-ONE-LOOKAHEAD-COALESCE`。依據是
+[`DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001`](../outsource/pm_handoff/history/DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001.md)：
+POC implementation／reviewed-report source為`a6de0e66d7effe03549037eb8f50b99e42399620`，delivery binding
+commit為`a492a1416721c73c989dd46067b3e9dd1c24508d`，Core保存檔SHA-256為
+`c097d550d263070ef216bfa391e87c69b6b27aa68baf26f09ea7428be8bf069f`。
+
+此裁決只採用可行性與mapping選型，不把POC自評當產品PASS。POC明列原定82項formal case執行數為0、
+Pi使用dirty development checkout、live A值為projection，且沒有完整negative／resource／human-quality
+matrix；這些限制不支持任何M4C Test ID的PASS credit。它仍足以關閉設計選型，因為同一retained
+generation的實體A／B replay直接觀察到B提前2.019秒audible onset，真實
+`LiteRT-LM → S2(12) → B2 → Matcha → I2S speaker → USB microphone`鏈路也在terminal前269.958毫秒
+開始發聲，21.677030毫秒acoustic uncertainty內沒有改動既有public TTS／Audio／Fact contract。
+未完成的qualification全部回到正常`Test Spec → Developer → Verify`，不得再保留A／B雙重產品路徑。
+
+### Adopted streaming-speak contract
+
+1. SM在每個需要real-model generation的THINK entry建立一個private `StreamingSpeakControl`，另配唯一
+   speak correlation，並與本turn的`(session_id, turn_id)`綁定。Reasoner只可把同turn、同generation、
+   已由`snowboard.llm/3` ledger驗證的`SAFE_TEXT`送入該control；fragment不是Fact、action、turn或
+   state transition。
+2. M4C前瞻性把Accepted M4B §4.2在此產品composition的release boundary固定為「punctuation或
+   **12個normalized codepoints**，取最早者」。Unicode／JSON仍先經完整incremental decode與穩定
+   normalization segment；escape、partial UTF-8、未穩定combining sequence、JSON syntax及`end`不得
+   提前外洩。這是M4C implement delta，不改寫M4B Accepted歷史。
+3. 每個fragment必須non-empty、sequence連續、不可revision；已admit文字串接後永遠是terminal
+   normalized text的exact prefix。queue只計尚未consume的fragment，最多2個且合計最多256 UTF-8
+   bytes；滿載時producer backpressure，不drop、重排、偷偷merge或建立unbounded task/list。
+4. B2每次dequeue取queue head，且只可合併當下已在queue中的下一個fragment；不得等待未來lookahead。
+   合併只做exact concatenation，不改字。每個batch依序呼叫既有`TTSAdapter.synthesize(text)`並由同一
+   `AudioOutput`完整play／drain後才ack；同turn永遠只有一個logical Speak operation與一個最終
+   `ActionCompleted`。
+5. 第一個fragment可在THINK啟動既有Speak owner；SM從啟動起把它列為同turn in-flight。Speak即使先
+   播完也只能留下private completion，不得在terminal semantic validation及ACTION admission前publish
+   或return normal success。Reasoner驗證terminal speak intent、完整text與fragment equality後關閉
+   admission並發布唯一`LLMResponse`；SM進ACTION時adopt既有Speak record，才允許它在全部batch
+   drain後發布唯一`ActionCompleted(ok)`。
+6. 產品沒有runtime A/B knob或第二條full-response acceptance path。若某turn在terminal前沒有合法
+   `SAFE_TEXT`，同一B2 control於terminal validation後把完整terminal text當唯一final fragment；這是B2
+   的terminal-only退化，不是可選A mode。只要已有fragment admit，就禁止以完整terminal重播或以A
+   重試。
+7. Empty／duplicate／out-of-order／oversize／post-terminal／stale-operation fragment一律fail closed。
+   Invalid terminal、prefix mismatch，或已admit fragment後的replaceable generation failure，必須取消
+   generation、queue、TTS iterator與Audio playback且不得發布正常`LLMResponse`或`ActionCompleted`。
+   request terminal、stream cleanup、Conversation cleanup與`engine_usable=True`全部有typed proof時，使用
+   M4-ERR既有taxonomy的`STREAMING_TERMINAL_FAILED + REUSABLE`（無recovery key）；任一proof缺失則使用
+   `LLM_CLEANUP_UNPROVEN + UNPROVEN + LLM key`。identity／intent／wire不一致仍使用既有
+   `LLM_PROTOCOL_FAILED + UNPROVEN + LLM key`。若尚未admit任何fragment，原M4B具完整proof的R2仍可走
+   code-declared固定提示。
+8. Interrupt、shutdown或任一LLM／TTS／Audio system fault立即關閉admission並沿用M4-ERR Level 1／2／3
+   與原backend disposition。已可聽見內容不回滾；正確性要求停止未來generation、fragment、synthesis
+   與playback，拒絕late callback，清空queue/in-flight iterator與device owner，且不污染下一turn/session。
+9. ACTION Display只顯示terminal-validated回答，不顯示provisional fragment。公開log／evidence只保存
+   sequence、長度、digest、queue high-water、timing與stable code，不保存fragment／terminal文字、PCM、
+   session ID或private path。
+
+### Test Spec handoff for M4C-SS
+
+POC的non-formal結果不可替代Core qualification。Tester須把下列內容納入M4C Test Spec，與其他M4C
+scenario在同一正常pipeline收斂，不新增POC review gate：
+
+- portable controller coverage須逐項固定single／multi fragment、2件／256-byte backpressure、invalid
+  terminal、prefix mismatch、post-terminal、queued／synthesizing／playing interrupt、shutdown、TTS
+  error／timeout／force-abort、late old-operation callback及zero-owner cleanup；每項都驗證恰一個logical
+  operation與0或1個合法terminal Fact。
+- outcome coverage須區分zero-fragment R2、partial-fragment且完整proof的
+  `STREAMING_TERMINAL_FAILED + REUSABLE`、cleanup proof缺失的`LLM_CLEANUP_UNPROVEN + UNPROVEN`，以及
+  identity／intent／wire mismatch的`LLM_PROTOCOL_FAILED + UNPROVEN`；未使用的control也必須close且零owner。
+- extraction／mapping coverage須驗證punctuation-or-12、Unicode normalization stability、terminal flush、
+  B2只合併一個already-available lookahead、exact concatenation，以及沒有lookahead時不等待。
+- Pi exact-product qualification須在same-bytes M4C candidate上使用真實LiteRT-LM、Matcha、25% product
+  volume、I2S speaker及獨立microphone。至少一個eligible正常turn須證明first `SAFE_TEXT`、first PCM、
+  Audio first write、physical audible onset、terminal、final audible sample的同clock ordering，並證明
+  terminal前已開始實體發聲；這是功能／完整性判定，不建立latency ceiling或A/B performance gate。
+- selected B2須用固定公開speech sample做understandable、無duplicate／missing／reorder、無破壞理解的
+  artificial boundary之真人判讀；只有這項產品本身需要的聲音品質保留人工結果。negative cancellation
+  tail與cleanup使用自動target facts，不要求人工逐項判讀。
+- `M4C-S09-STREAMING-SPEAK`同時覆蓋正常turn與queued／synthesizing／playing三個短按variant；每個
+  variant fresh setup，停止後無later fragment／success／cross-session leakage。所有結果綁定tracked-only
+  content digest、product config、artifact digests、target facts與private evidence digest。
 
 ## Accepted entry baseline
 
@@ -51,9 +127,11 @@ M4C design entry所需條件已完成：
 3. M4B Audio+LLM vertical slice產出可重用的memory與timing facts；
 4. M4B product candidate完成，且與Accepted M4A的inheritance/delta可對齊。
 
-上述四項已由M4B Accepted disposition滿足，因此Designer可開始M4C產品場景design。USER後續新增
-M4-ERR與M4C-SS作為M4C Test Spec／Developer entry的前置依賴；前者未Accepted或後者未Closed時可
-繼續收斂場景，但不得把M4C交Tester或開始實作。
+上述四項已由M4B Accepted disposition滿足。USER後續新增的兩個Test Spec前置依賴也已完成：
+M4-ERR以commit `f572915d0b0d5c52067e9100c5b022e57aefe506`完成same-bytes Pi Verify並Accepted；
+M4C-SS由本章依回傳evidence裁定Closed／B2。Tester已在
+[`test_spec_M4C.md`](../test_spec/test_spec_M4C.md)完成所有scenario、streaming contract與直接
+regression映射；`TR_spec_M4C_I`已Resolved／0 Blocking，Developer entry因此開啟。
 
 M4C不得直接把M4B觀測值固定為response-time target、resource reserve/hysteresis、streaming策略、
 session soak數或其他驗收數值；只有M4C產品需求與設計可以建立這些新契約。先前M4C planning內容
@@ -126,7 +204,7 @@ graceful `exit 0`，或明列的Level 3 nonzero exit。
 | `M4C-S06-RECOVERABLE-FAULT` | 三個獨立variant在PERCEPTION、THINK、ACTION各注入一個M4-ERR已驗證的backend system fault | 不fabricate正常Fact、不要求USER重說；ERROR安全摘要；Session convergence及對應rebuild完成；不重跑底層diagnostic cause matrix | recovery barrier clear後`IDLE`；不要求第二Session |
 | `M4C-S07-DISPLAY-DEGRADE` | 正常Session中注入Display runtime failure | Display依既有contract latch disabled；語音主流程不進ERROR且仍完成；process exit code不因Display改變 | Session cleanup後`IDLE` |
 | `M4C-S08-RECOVERY-FATAL` | 一個代表性backend system fault後注入rebuild timeout／READY mismatch | 不回假`IDLE`、不接受新Session；bounded cleanup；保存sanitized stable failure evidence | Level 3 nonzero exit |
-| `M4C-S09-STREAMING-SPEAK` | 使用M4C-SS Closed後唯一採用的A或B路徑完成正常與短按中止turn | spoken text與terminal validated text一致；無duplicate／missing／reorder／late output；audible onset與completion節點可定位 | 正常turn續Listen／REST，或中止後`IDLE` |
+| `M4C-S09-STREAMING-SPEAK` | 使用唯一B2路徑完成一個eligible正常turn；另以fresh setup在queued／synthesizing／playing三點實體短按 | 正常turn在terminal前開始實體發聲，spoken text與terminal validated text一致；各中止variant無duplicate／missing／reorder／late output、正常success或owner leak；audible onset、tail與completion節點可定位 | 正常turn續Listen／REST；各中止variant清理後`IDLE` |
 
 所有適用scenario在network disabled的產品設定執行；不得fallback至網路服務。公開log／evidence不得含
 transcript、prompt、raw model output、PCM、credential、session ID或完整私人path。Display沿用

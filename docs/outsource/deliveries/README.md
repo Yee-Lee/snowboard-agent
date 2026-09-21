@@ -11,7 +11,6 @@
 | Shared Pi | [`PI-MIGRATION-STATUS-001`](active/PI-MIGRATION-STATUS-001.md) | current migration state |
 | LLM MVA | [`RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002`](active/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md) | gate open; incoming bytes verified |
 | LLM MVA | [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002`](active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) | execute efficiency gate |
-| LLM M4C | [`REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001`](active/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md) | byte-identical delivery complete on latest `llm` baseline; intake ACK pending; POC execution remains unauthorized |
 | Audio Pi | [`REQUEST-POC-AUDIO-PI-MIGRATION-PUBLISH-001`](active/REQUEST-POC-AUDIO-PI-MIGRATION-PUBLISH-001.md) | authorized: reconcile and push |
 | Audio Pi | [`REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001`](active/REQUEST-POC-AUDIO-PI-STORAGE-PHASE3-001.md) | open: implement and validate |
 | Audio Pi | [`FEEDBACK-POC-AUDIO-PI-STORAGE-PHASE3-001`](active/FEEDBACK-POC-AUDIO-PI-STORAGE-PHASE3-001.md) | blocking: revise and return |

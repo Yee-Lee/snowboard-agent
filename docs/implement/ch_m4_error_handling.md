@@ -1,6 +1,6 @@
 # M4-ERR — production error handling closure
 
-狀態：**Design complete；`IR_dev_M4_ERR_I` Test Spec alignment accepted；Developer entry open**
+狀態：**Accepted；same-bytes Pi Verify complete；commit `f572915d0b0d5c52067e9100c5b022e57aefe506`**
 
 上游：`arch.md` §3.4、§6.4–§6.8；Ch 1、Ch 4–6、Ch 11；Accepted M4A／M4B。
 

@@ -1,79 +1,52 @@
 # Current handoff
 
-- Updated: 2026-09-20
+- Updated: 2026-09-21
 - Writer: Designer only
-- Current milestone: M4-ERR Developer convergence and same-bytes Pi Verify
-- Current stage: **M4-ERR Design／Test Spec aligned；`IR_dev_M4_ERR_II` Resolved；Developer entry open**
+- Current milestone: M4C complete offline voice-device integration
+- Current stage: **M4-ERR Accepted；M4C Design complete；M4C-SS Closed（B2）；Test Spec complete**
 - Next owner: Developer
-- Developer entry: **M4-ERR Open；commit requires all applicable tests and same-bytes Pi Verify；M4C Closed**
+- Developer entry: **M4C Open**
 
-## M4B completion disposition
+## Gate transition facts
 
-USER accepted M4B as complete on 2026-09-16. The same-bytes Raspberry Pi 5 product verification
-`PV-M4B-FINITE-03` passed all seven Test IDs, including six applicable Developer reviews and the
-three USER semantic verdicts. The verified protected-content, harness and profile digests are:
+- M4-ERR final run `M4-ERR-DEV-04` passed `M4-ERR-PV-001`–`M4-ERR-PV-005`, 1,715 applicable
+  non-RPi regressions and same-bytes digest reconciliation. The verified content was committed and pushed as
+  `f572915d0b0d5c52067e9100c5b022e57aefe506`; M4-ERR is Accepted and its taxonomy／recovery behavior is now
+  the M4C input rather than an open implementation slice.
+- LLM POC returned `DELIVERY-LLM-POC-M4C-STREAMING-SPEAK-001` from implementation／review source
+  `a6de0e66d7effe03549037eb8f50b99e42399620`, bound by pushed commit
+  `a492a1416721c73c989dd46067b3e9dd1c24508d`. The byte-identical Core copy has SHA-256
+  `c097d550d263070ef216bfa391e87c69b6b27aa68baf26f09ea7428be8bf069f`.
+- Designer closes `M4C-SS` by adopting true streaming `B2-ONE-LOOKAHEAD-COALESCE` with a
+  punctuation-or-12-normalized-codepoint S2 boundary. Existing public TTS／Audio／Fact contracts remain
+  unchanged, so no architecture request is needed.
+- The POC executed 0 of its 82 formal cases and used a dirty Pi development checkout; its engineering
+  observations select the design but provide no M4C Test ID PASS credit. Core exact-product qualification,
+  negative coverage, speech-quality judgment and same-bytes Pi evidence remain mandatory.
+- [`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) now maps the fixed volume, B2 controller／extraction／
+  outcome, no-input, regression and nine whole-product scenario contracts. `TR_spec_M4C_I` is Resolved with
+  0 Blocking; its finalizer requires one active designation for each of 17 exact variants while retaining
+  superseded same-tuple attempts as non-designated evidence.
 
-- `f6b9cfe2dcadeac675deb4811b2711e9c0c6a28d73e4985fc9ae321fb08c7545`
-- `cb79a96c06cdf427142fd9171523ce545e2b35951c59117d9d1dc8cf95988b33`
-- `8d957a4600fc172fd7dd7b285098710af0b753d7d1b697a21bd31611637b3f90`
+## Developer route
 
-The verified bytes were committed as
-`f87cfa50b9c9415430973076a59c6b1961228090` (`feat[M4B]: complete constrained-JSON product
-verification`) and pushed to `origin/core`; local `HEAD` and `origin/core` matched that SHA when
-the completion transition was recorded. M4B is Accepted and read-only unless a named regression
-or focused post-acceptance delta explicitly reopens it.
+Implement the current M4C design and Test Spec from:
 
-The accepted claim does not include physical wake/display hardware, native context exhaustion,
-R06 nested-descendant killing or R07 full-product shutdown. The measured 558/699 MiB values remain
-finite-session estimates rather than adopted release thresholds. These declared boundaries do not
-block M4B acceptance or M4C design entry. Any later threshold adoption is a separate normal-pipeline
-delta.
+1. [`M4C`](../milestones/M4C.md) as product design authority;
+2. [`M4C Test Spec`](../test_spec/test_spec_M4C.md) as the executable Test ID／oracle authority; and
+3. accepted M4A／M4B／M4-ERR only through the direct regression and composition boundaries routed by those files.
 
-## M4C entry
-
-M4C's four prerequisites are satisfied: the Reasoner behavior gate is closed; replacement design,
-protocol/profile and Test Spec coverage are complete; reusable Audio+LLM resource/timing evidence
-exists; and the product candidate is verified, committed and aligned with Accepted M4A.
-
-Designer may now start M4C design from:
-
-1. [`M4C`](../milestones/M4C.md) for scope and entry boundaries;
-2. [`M4A Audio production`](../implement/ch_m4a_audio_production.md) §§1, 7, 10 and 12 for the
-   accepted audio composition surface;
-3. [`M4B LLM / Reasoner product`](../implement/ch_m4b_llm_production.md) §§1, 5–7, 9–10 and 11.2 for
-   the accepted cognition, lifecycle, resource and timing inputs.
-
-Do not open Developer entry until the resulting M4C design has gone through Test Spec coverage.
-Do not infer new response-time ceilings, resource thresholds, streaming behavior or soak counts
-from M4B observations; M4C must define those only where its own product requirements need them.
-
-USER subsequently inserted M4-ERR between Accepted M4A／M4B and M4C implementation. M4C product-scenario
-design may continue, but M4C must not enter Test Spec or development until M4-ERR has completed its own
-`Design → Test Spec → Developer → Verify`. M4-ERR closes the generic and M4-production error taxonomy,
-diagnostics, backend-usability, recovery and fatal-exit behavior; M4C then verifies representative
-whole-product scenarios without repeating every component-level fault cause.
-
-M4C-SS is a separate USER-defined M4C design gate. Before M4C Test Spec, Designer must consume the bounded
-streaming-speak POC evidence and close the gate with exactly one disposition: adopt true streaming B, or
-evidence-backed abandonment to full-response A. The gate does not add a role-signoff stage and POC self-PASS
-does not close it. M4C has no barge-in; VAD remains the M4A baseline with M4C product-quality observation.
-Repeated sessions, soak and formal performance/resource thresholds remain ALPHA scope.
-
-M4C-SS was delivered byte-identically on 2026-09-19 to the sibling `poc_llm` worktree at
-`docs/pm_handoff/REQUEST-LLM-POC-M4C-STREAMING-SPEAK-001.md`, after fetching and fast-forwarding its clean `llm`
-branch to `origin/llm` baseline `5080abd84dafcbc0f8307a086fa8009a0b6a818b`. The committed Core source and
-delivered destination both had SHA-256 `234b5998589d3c956005f465862e137b471a2e26e75c3a19c6be5cb166c0b59c`.
-The incoming file is intentionally uncommitted pending LLM POC intake. POC execution, Pi access, reboot, network
-change, artifact download, commit and push remain unauthorized. M4-ERR Design is complete and its Test Spec work
-does not depend on the M4C-SS result.
+Implement the single B2 path without reopening the POC or adding an A-mode fallback. Complete all applicable
+portable tests, then execute the 17 designated Pi sub-runs on the pending tracked bytes. Pi Verify and workstation
+same-bytes reconciliation must pass before any commit preparation.
 
 ## Role routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Designer | `IR_dev_M4_ERR_II` Resolved；consume the LLM POC intake/result later for M4C-SS |
-| Tester | PI-012 prefix correction accepted；wait for Developer candidate and Verify；do not start M4C Test Spec |
-| Developer | Complete PI-012, all affected regressions and remaining WP7；then run full `M4-ERR-PV-001`–`M4-ERR-PV-005` in one same-bytes M4-ERR Pi Verify run before any commit |
-| Architect / Reviewer | No active request; enter only if an active design exposes a focused conflict or review need |
+| Designer | Design and Test Spec alignment complete；answer only focused implementation conflicts |
+| Tester | Test Spec complete；retain authority over Test IDs and formal evidence |
+| Developer | Implement M4C, run portable coverage and complete same-bytes Pi Verify before commit preparation |
+| Architect / Reviewer | No active request；enter only for a focused conflict that the accepted contracts cannot support |
 
-Designer only replaces this file when the stage, gate, entry state or next owner changes.
+Designer replaces this file only when Test Spec coverage, Developer entry, stage, gate or next owner changes.
