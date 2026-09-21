@@ -177,6 +177,12 @@ async def run_app(
             *(waiter for waiter in (fatal_bus_task, fatal_rm_task, stopped_task) if waiter is not None),
             return_exceptions=True,
         )
+        # RM and SM can surface the same recovery failure in the same loop
+        # turn.  If RM wins FIRST_COMPLETED, cancelling the outer SM waiter
+        # must not leave the already-failed dispatch task un-retrieved and
+        # produce a second, raw asyncio traceback after the sanitized root.
+        if sm is not None and sm._loop_task is not None and sm._loop_task.done():
+            await asyncio.gather(sm.wait_stopped(), return_exceptions=True)
 
         if exit_code != EXIT_RUNTIME_FATAL:
             if rm is not None:

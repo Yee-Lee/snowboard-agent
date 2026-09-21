@@ -79,6 +79,11 @@ def test_G01_guard_rejects_aliases_and_constant_only_assertions(source):
     assert m4b_source_violations(source)
 
 
+def test_G01_alias_cycle_audit_is_bounded_and_inert():
+    source = "\n".join(("left = right", "right = left") * 1_000)
+    assert m4b_source_violations(source) == []
+
+
 def test_G02_exact_99_nodes_execute_with_strict_zero_skip_junit(tmp_path, record_property):
     nodes, counts = _pytest(tmp_path, BASELINE_FILES, "foundation99")
     audit = m4b_collection_audit(BASELINE.read_bytes(), nodes)

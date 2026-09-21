@@ -102,12 +102,20 @@ def test_m4_err_pv_finalize_requires_all_five_same_binding(
     }
     monkeypatch.setattr(RUNNER, "_verify_binding", lambda root, run_id: binding)
     for test_id in RUNNER.TEST_NODES:
-        _write(tmp_path / "public" / test_id / "result.json", {
+        if test_id in RUNNER.OBSERVATION_REQUIRED:
+            _write(tmp_path / "private" / test_id / "product-observation.json", {
+                "test_id": test_id,
+            })
+        card = {
             "run_id": "M4-ERR-run-1",
             "test_id": test_id,
             "status": "Pass",
             **binding,
-        })
+        }
+        observation = RUNNER._observation_identity(tmp_path, test_id)
+        if observation is not None:
+            card["product_observation"] = observation
+        _write(tmp_path / "public" / test_id / "result.json", card)
     args = SimpleNamespace(output=tmp_path, run_id="M4-ERR-run-1")
     assert RUNNER._finalize(args) == 0
     final = json.loads((tmp_path / "public/final.json").read_text(encoding="utf-8"))
@@ -124,11 +132,31 @@ def test_m4_err_pv_finalize_rejects_failed_or_mixed_card(
     }
     monkeypatch.setattr(RUNNER, "_verify_binding", lambda root, run_id: binding)
     for index, test_id in enumerate(RUNNER.TEST_NODES):
-        _write(tmp_path / "public" / test_id / "result.json", {
+        if test_id in RUNNER.OBSERVATION_REQUIRED:
+            _write(tmp_path / "private" / test_id / "product-observation.json", {
+                "test_id": test_id,
+            })
+        card = {
             "run_id": "M4-ERR-run-2",
             "test_id": test_id,
             "status": "Fail" if index == 3 else "Pass",
             **binding,
-        })
+        }
+        observation = RUNNER._observation_identity(tmp_path, test_id)
+        if observation is not None:
+            card["product_observation"] = observation
+        _write(tmp_path / "public" / test_id / "result.json", card)
     with pytest.raises(RUNNER.RunnerError, match="CARD_INVALID"):
         RUNNER._finalize(SimpleNamespace(output=tmp_path, run_id="M4-ERR-run-2"))
+
+
+def test_m4_err_pv_observation_is_required_and_content_bound(tmp_path: Path) -> None:
+    with pytest.raises(RUNNER.RunnerError, match="OBSERVATION_MISSING"):
+        RUNNER._observation_identity(tmp_path, "M4-ERR-PV-001")
+    observation = tmp_path / "private/M4-ERR-PV-001/product-observation.json"
+    _write(observation, {"structured_log": {"code": "AUDIO_CAPTURE_FAILED"}})
+    identity = RUNNER._observation_identity(tmp_path, "M4-ERR-PV-001")
+    assert identity is not None
+    assert identity["locator"] == "private/M4-ERR-PV-001/product-observation.json"
+    assert len(identity["sha256"]) == 64
+    assert RUNNER._observation_identity(tmp_path, "M4-ERR-PV-003") is None

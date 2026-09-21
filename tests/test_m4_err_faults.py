@@ -11,13 +11,17 @@ from pathlib import Path
 import pytest
 
 from sbd.core import error_observer
-from sbd.core.events import ErrorOccurred
+from sbd.core.display import status_bar
+from sbd.core.display.hints import DisplayHint
+from sbd.core.event_bus import EventBus, FatalDispatchError
+from sbd.core.events import ErrorOccurred, PerceptionResult
 from sbd.core.faults import (
     SAFE_FAULT_SUMMARIES,
     BackendDisposition,
     ComponentSystemFault,
     safe_category_for_code,
 )
+from sbd.perception.listen import ASRResult, Listen, MockASRAdapter
 
 
 def _fault(
@@ -120,25 +124,149 @@ def test_m4_err_pu_002_error_event_schema_and_production_publishers() -> None:
     assert offenders == []
 
 
-def test_m4_err_pu_003_taxonomy_paths_are_mutually_exclusive() -> None:
-    request_outcome = {"facts": 1, "faults": 0, "diagnostics": 0, "fatal": 0}
-    system_fault = {"facts": 0, "faults": 1, "diagnostics": 0, "fatal": 0}
-    degradation = {"facts": 0, "faults": 0, "diagnostics": 1, "fatal": 0}
-    cancellation = {"facts": 0, "faults": 0, "diagnostics": 0, "fatal": 0}
-    fatal = {"facts": 0, "faults": 0, "diagnostics": 0, "fatal": 1}
-    for path in (request_outcome, system_fault, degradation, cancellation, fatal):
-        assert sum(path.values()) <= 1
+class _Audio:
+    def frames(self):
+        async def generate():
+            yield b"\0" * 640
 
-    reusable_timeout = _fault(BackendDisposition.REUSABLE)
-    unproven_timeout = ComponentSystemFault.create(
-        where="perception.listen",
-        code="ASR_TIMEOUT_UNPROVEN",
-        backend=BackendDisposition.UNPROVEN,
-        recovery_keys=("backend.perception.listen.asr",),
+        return generate()
+
+
+async def _taxonomy_path(kind: str) -> dict[str, int]:
+    counters = {"facts": 0, "faults": 0, "diagnostics": 0, "fatal": 0}
+    bus = EventBus()
+
+    async def fact(event: PerceptionResult) -> None:
+        counters["facts"] += 1
+
+    async def fault(event: ErrorOccurred) -> None:
+        counters["faults"] += 1
+
+    bus.subscribe(PerceptionResult, fact)
+    bus.subscribe(ErrorOccurred, fault)
+    if kind == "request-outcome":
+        await Listen(
+            audio_input=_Audio(), asr=MockASRAdapter((ASRResult(""),)), bus=bus,
+        ).perceive("session", 1, 1, 1.0)
+    elif kind == "system-fault":
+        system_fault = _fault(BackendDisposition.REBUILD_REQUIRED,
+                              keys=("backend.perception.listen.asr",))
+        with pytest.raises(ComponentSystemFault):
+            await Listen(
+                audio_input=_Audio(), asr=MockASRAdapter((system_fault,)), bus=bus,
+            ).perceive("session", 1, 1, 1.0)
+    elif kind == "degradation":
+        from sbd.core.display.arbiter import DisplayArbiter
+
+        class Device:
+            def size(self): return (1, 1)
+            def clear(self): pass
+            def write_pixels(self, pixels): pass
+            def show(self): raise RuntimeError("PRIVATE_DISPLAY")
+
+        class Renderer:
+            def validate(self, hint): pass
+            def render(self, *, size, model): return b"\0\0"
+
+        class Logger:
+            def error(self, message, *, extra): counters["diagnostics"] += 1
+            def debug(self, *args): pass
+
+        display = DisplayArbiter(Device(), Renderer(), logger=Logger())
+        await display.start()
+        await display.stop()
+    elif kind == "cancellation":
+        adapter = MockASRAdapter(blocked=True)
+        listener = Listen(audio_input=_Audio(), asr=adapter, bus=bus)
+        operation = asyncio.create_task(listener.perceive("session", 1, 1, 5.0))
+        await adapter.entered.wait()
+        await listener.abort()
+        await operation
+    else:
+        fatal_bus = EventBus()
+
+        async def fail(event: ErrorOccurred) -> None:
+            raise RuntimeError("PRIVATE_FATAL")
+
+        fatal_bus.subscribe(ErrorOccurred, fail)
+        with pytest.raises(FatalDispatchError):
+            await fatal_bus.publish(_fault(BackendDisposition.REUSABLE).to_event())
+        fatal_waiter = asyncio.create_task(fatal_bus.wait_fatal())
+        with pytest.raises(FatalDispatchError):
+            await fatal_waiter
+        counters["fatal"] += 1
+    return counters
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    ("request-outcome", "system-fault", "degradation", "cancellation", "fatal"),
+    ids=("request-outcome", "system-fault", "optional-degradation", "cancellation", "fatal"),
+)
+async def test_m4_err_pu_003_runtime_taxonomy_is_mutually_exclusive(kind: str) -> None:
+    counters = await _taxonomy_path(kind)
+    assert counters == {
+        "facts": int(kind == "request-outcome"),
+        "faults": int(kind == "system-fault"),
+        "diagnostics": int(kind == "degradation"),
+        "fatal": int(kind == "fatal"),
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("proof", (True, False), ids=("timeout-proof", "timeout-unproven"))
+async def test_m4_err_pu_003_timeout_requires_reusable_proof(proof: bool) -> None:
+    class TimeoutASR(MockASRAdapter):
+        @property
+        def ready_for_next(self) -> bool:
+            return proof
+
+        async def abort(self) -> None:
+            self.release.set()
+
+    bus = EventBus()
+    facts: list[PerceptionResult] = []
+    faults: list[ErrorOccurred] = []
+    bus.subscribe(PerceptionResult, lambda event: _append(facts, event))
+    bus.subscribe(ErrorOccurred, lambda event: _append(faults, event))
+    listener = Listen(audio_input=_Audio(), asr=TimeoutASR(blocked=True), bus=bus)
+    if proof:
+        await listener.perceive("session", 1, 1, 0.001)
+        assert len(facts) == 1 and facts[0].status == "timeout" and faults == []
+    else:
+        with pytest.raises(ComponentSystemFault) as raised:
+            await listener.perceive("session", 1, 1, 0.001)
+        assert raised.value.code == "ASR_TIMEOUT_UNPROVEN"
+        assert facts == [] and [event.code for event in faults] == ["ASR_TIMEOUT_UNPROVEN"]
+
+
+async def _append(target: list, event) -> None:
+    target.append(event)
+
+
+def _assert_sentinel_absent(sentinel: str, *surfaces: object) -> None:
+    assert all(sentinel not in repr(surface) for surface in surfaces)
+
+
+@pytest.mark.asyncio
+async def test_m4_err_pu_003_unknown_exception_is_typed_unproven() -> None:
+    class UnknownASR(MockASRAdapter):
+        legacy_neutral = False
+
+    bus = EventBus()
+    faults: list[ErrorOccurred] = []
+    bus.subscribe(ErrorOccurred, lambda event: _append(faults, event))
+    unknown = RuntimeError("PRIVATE_NATIVE")
+    listener = Listen(
+        audio_input=_Audio(), asr=UnknownASR((unknown,)), bus=bus,
     )
-    assert reusable_timeout.backend is BackendDisposition.REUSABLE
-    assert unproven_timeout.backend is BackendDisposition.UNPROVEN
-    assert not isinstance(RuntimeError("native"), ComponentSystemFault)
+    with pytest.raises(ComponentSystemFault) as raised:
+        await listener.perceive("session", 1, 1, 1.0)
+    assert raised.value.code == "ASR_UNEXPECTED"
+    assert raised.value.backend is BackendDisposition.UNPROVEN
+    assert raised.value.__cause__ is unknown
+    assert [event.code for event in faults] == ["ASR_UNEXPECTED"]
 
 
 def test_m4_err_pu_004_closed_set_has_no_unclassified_fault() -> None:
@@ -176,6 +304,12 @@ def test_m4_err_pu_007_safe_projection(code: str, category: str) -> None:
     assert safe_category_for_code(code) == category
     assert safe_category_for_code(code) == category
     assert error_observer.safe_category_for_code is safe_category_for_code
+    assert status_bar.safe_category_for_code is safe_category_for_code
+
+
+def test_m4_err_pu_007_display_and_log_share_projection_object() -> None:
+    assert error_observer.safe_category_for_code is safe_category_for_code
+    assert status_bar.safe_category_for_code is safe_category_for_code
 
 
 @pytest.mark.parametrize(
@@ -189,7 +323,7 @@ def test_m4_err_pu_007_safe_projection(code: str, category: str) -> None:
         "NEWLINE_SENTINEL\n",
     ),
 )
-def test_m4_err_pu_009_private_sentinels_rejected(sentinel: str) -> None:
+def test_m4_err_pu_009_private_sentinels_rejected(sentinel: str, caplog) -> None:
     assert sentinel not in repr(SAFE_FAULT_SUMMARIES)
     with pytest.raises(ValueError):
         ComponentSystemFault(
@@ -198,6 +332,48 @@ def test_m4_err_pu_009_private_sentinels_rejected(sentinel: str) -> None:
             safe_summary=sentinel,
             backend=BackendDisposition.REUSABLE,
         )
+
+    async def run() -> tuple[ErrorOccurred, DisplayHint]:
+        class Arbiter:
+            def __init__(self) -> None:
+                self.hints: list[DisplayHint] = []
+
+            def write_status_slot(self, slot, hint) -> None:
+                if slot == "error":
+                    self.hints.append(hint)
+
+        bus = EventBus()
+        observer = error_observer.ErrorLoggingObserver(bus)
+        arbiter = Arbiter()
+        display = status_bar.StatusBar(arbiter, bus)
+        await observer.start()
+        await display.start()
+        fault = _fault(BackendDisposition.REUSABLE)
+        try:
+            raise fault from RuntimeError(sentinel)
+        except ComponentSystemFault as raised:
+            event = raised.to_event()
+        await bus.publish(event)
+        await display.stop()
+        await observer.stop()
+        return event, arbiter.hints[-1]
+
+    with caplog.at_level(logging.ERROR, logger="sbd.error_observer"):
+        event, hint = asyncio.run(run())
+    _assert_sentinel_absent(sentinel, event, caplog.text, hint)
+    assert hint.data["category"] == "asr"
+
+
+@pytest.mark.parametrize("surface", ("event", "structured-log", "display"))
+def test_m4_err_pu_009_negative_surface_leak_is_rejected(surface: str) -> None:
+    sentinel = "PAYLOAD_SENTINEL"
+    surfaces = {
+        "event": ({"error": sentinel}, {"message": "safe"}, {"category": "internal"}),
+        "structured-log": ({"error": "safe"}, {"message": sentinel}, {"category": "internal"}),
+        "display": ({"error": "safe"}, {"message": "safe"}, {"text": sentinel}),
+    }[surface]
+    with pytest.raises(AssertionError):
+        _assert_sentinel_absent(sentinel, *surfaces)
 
 
 def test_m4_err_pu_009_invalid_where_is_not_logged(caplog) -> None:

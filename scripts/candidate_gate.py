@@ -441,23 +441,46 @@ def m4b_source_violations(source: str) -> list[tuple[int, str]]:
         elif isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 aliases[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+
     def resolve(node):
         if isinstance(node, ast.Name):
-            return aliases.get(node.id, node.id)
+            return aliases.get(node.id, "")
         if isinstance(node, ast.Attribute):
-            return f"{resolve(node.value)}.{node.attr}"
+            prefix = resolve(node.value)
+            return f"{prefix}.{node.attr}" if prefix else ""
         return ""
-    for _ in range(len(tuple(ast.walk(tree)))):
+
+    # Resolve assignment aliases monotonically.  The former implementation
+    # repeatedly rewrote already-known names and could oscillate on an alias
+    # cycle for one full AST-node-count pass, making the G01 repository audit
+    # quadratic.  A target is now resolved at most once from an import-rooted
+    # value; unresolved and cyclic assignments stay inert.
+    assignments: list[tuple[str, ast.expr]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            if node.value is not None:
+                assignments.extend(
+                    (target.id, node.value)
+                    for target in targets
+                    if isinstance(target, ast.Name)
+                )
+    unresolved = assignments
+    while unresolved:
         changed = False
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign):
-                name = resolve(node.value)
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and name and aliases.get(target.id) != name:
-                        aliases[target.id] = name
-                        changed = True
+        remaining: list[tuple[str, ast.expr]] = []
+        for target, value in unresolved:
+            if target in aliases:
+                continue
+            name = resolve(value)
+            if name:
+                aliases[target] = name
+                changed = True
+            else:
+                remaining.append((target, value))
         if not changed:
             break
+        unresolved = remaining
     forbidden = {"pytest.skip", "pytest.xfail", "pytest.importorskip", "pytest.mark.skip",
                  "pytest.mark.skipif", "pytest.mark.xfail", "pytest.mark.rpi"}
     violations = set()

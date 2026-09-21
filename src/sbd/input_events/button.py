@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from sbd.core.config.models import ButtonInputConfig, GPIOPinConfig
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ButtonPressed, ShutdownRequested
 from sbd.core.gpio.base import GPIO, GPIOEvent
+
+
+logger = logging.getLogger(__name__)
 
 
 class ButtonInputSource:
@@ -58,6 +62,7 @@ class ButtonInputSource:
                 return
             pressed_at, self._pressed_at = self._pressed_at, None
             if pressed_at is None or event.at < pressed_at:
+                logger.debug("Dropping stale button release")
                 return
             duration_ms = int(round((event.at - pressed_at) * 1000))
             if duration_ms >= self._config.long_press_min_ms:
@@ -66,3 +71,5 @@ class ButtonInputSource:
                 await self._bus.publish(
                     ButtonPressed(self._config.conversation_pin, duration_ms)
                 )
+            else:
+                logger.debug("Dropping button bounce")

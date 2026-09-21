@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import time
 import wave
@@ -34,6 +35,8 @@ from sbd.core.candidate_identity import tracked_content_digest
 from sbd.core.config import load_config
 from sbd.core.event_bus import EventBus
 from sbd.core.events import ErrorOccurred, LLMResponse, PerceptionResult
+from sbd.core.events import ShutdownRequested, StateChanged
+from sbd.core.error_observer import ErrorLoggingObserver
 from sbd.core.fault_injection import DeterministicFaultInjector
 from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.gpio.gpiod.driver import GpiodGPIO
@@ -41,8 +44,10 @@ from sbd.core.resource_manager import ResourceManager, ResourceSpec, StartPhase
 from sbd.core.resource_manager.manager import RecoveryContractViolation
 from sbd.core.m1_composition import register_m1_resources
 from sbd.main import EXIT_RUNTIME_FATAL, run_app
+from sbd.core.logger import SbdJsonFormatter
 from sbd.perception.listen import Listen, MockASRAdapter
 from sbd.perception.listen.whispercpp.adapter import ASR_KEY, WhisperCppASRAdapter
+from tests.test_state_manager import make_sm, start_perception
 
 
 pytestmark = pytest.mark.rpi
@@ -127,6 +132,29 @@ def _record(bus: EventBus, event_type, target: list) -> None:
     bus.subscribe(event_type, append)
 
 
+def _write_product_observation(test_id: str, value: dict[str, object]) -> None:
+    root = Path(os.environ["SBD_M4_ERR_RUN_ROOT"]).resolve(strict=True)
+    path = root / "private" / test_id / "product-observation.json"
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+        0o600,
+    )
+    with os.fdopen(descriptor, "w", encoding="utf-8") as sink:
+        json.dump(value, sink, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        sink.write("\n")
+
+
+class _StructuredLogCapture(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__(logging.ERROR)
+        self.setFormatter(SbdJsonFormatter())
+        self.entries: list[dict[str, object]] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.entries.append(json.loads(self.format(record)))
+
+
 def _register_required_workers(
     rm: ResourceManager, *, dependency: str | None = None
 ) -> None:
@@ -199,6 +227,13 @@ async def test_m4_err_pv_001() -> None:
     bus = EventBus()
     events: list[ErrorOccurred] = []
     _record(bus, ErrorOccurred, events)
+    observer = ErrorLoggingObserver(bus)
+    capture = _StructuredLogCapture()
+    product_logger = logging.getLogger("sbd.error_observer")
+    original_level = product_logger.level
+    product_logger.addHandler(capture)
+    product_logger.setLevel(logging.ERROR)
+    await observer.start()
     listen = Listen(audio_input=owner, asr=MockASRAdapter(), bus=bus)
     await owner.start()
     try:
@@ -210,9 +245,20 @@ async def test_m4_err_pv_001() -> None:
         )
         assert len(events) == 1 and events[0].code == "AUDIO_CAPTURE_FAILED"
         assert "M4_ERR_INJECTED_ALSA_CAPTURE" not in repr(events)
+        assert len(capture.entries) == 1
+        assert capture.entries[0]["code"] == "AUDIO_CAPTURE_FAILED"
+        assert "M4_ERR_INJECTED_ALSA_CAPTURE" not in json.dumps(capture.entries)
         assert injector.evidence.backend_identity["live"] is True
         await _assert_product_exit4(events[0])
+        _write_product_observation("M4-ERR-PV-001", {
+            "event_code": events[0].code,
+            "structured_log": capture.entries[0],
+            "raw_sentinel_absent": True,
+        })
     finally:
+        await observer.stop()
+        product_logger.removeHandler(capture)
+        product_logger.setLevel(original_level)
         await owner.stop()
 
 
@@ -222,9 +268,12 @@ async def test_m4_err_pv_002() -> None:
     pin_name = config.input_sources.button.conversation_pin
     pin = config.core.gpio.pins[pin_name].pin
     observed: list[ErrorOccurred] = []
+    states: list[str] = []
 
-    async def publish(event) -> None:
-        observed.append(event)
+    bus, sm, listen, *_ = make_sm(hold_perception=True)
+    _record(bus, ErrorOccurred, observed)
+    _record(bus, StateChanged, states)
+    await start_perception(bus, sm, listen)
 
     async def callback(event) -> None:
         del event
@@ -237,20 +286,42 @@ async def test_m4_err_pv_002() -> None:
             },
         )
         gpio = GpiodGPIO(config.core.gpio, fault_injector=injector)
-        gpio.set_fault_publisher(publish)
+        if point == "gpio.button.callback":
+            gpio.set_fault_publisher(bus.publish)
+        else:
+            async def publish_edge(event) -> None:
+                observed.append(event)
+
+            gpio.set_fault_publisher(publish_edge)
         await gpio.start()
         try:
             await gpio.register_input(pin, "both", callback)
             await gpio.inject_verification_fault(pin)
             assert injector.evidence.backend_identity["live"] is True
+            if point == "gpio.button.callback":
+                # The live driver publishes into the SM inbox; wait for the
+                # serial consumer so the observation proves the transition,
+                # not merely successful event publication.
+                await sm._inbox.join()
         finally:
             await gpio.stop()
     assert [(event.code, event.backend_disposition) for event in observed] == [
         ("BUTTON_CALLBACK_FAILED", "reusable"),
         ("GPIO_EVENT_READ_FAILED", "unproven"),
     ]
+    state_names = [event.new for event in states]
+    assert state_names.count("ERROR") == 1
     assert "M4_ERR_INJECTED_GPIO" not in repr(observed)
     await _assert_product_exit4(observed[-1])
+    if sm._loop_task is not None and not sm._loop_task.done():
+        await bus.publish(ShutdownRequested())
+        await sm.wait_stopped()
+    await sm.stop()
+    _write_product_observation("M4-ERR-PV-002", {
+        "event_codes": [event.code for event in observed],
+        "error_transition_count": state_names.count("ERROR"),
+        "state_transitions": state_names,
+    })
 
 
 async def _run_asr_fault(config, point: str, wav: Path) -> None:

@@ -21,18 +21,24 @@ from sbd.cognition.llm import (
 )
 from sbd.cognition.prompt_builder import ListenProjector
 from sbd.cognition.reasoner import Reasoner
-from sbd.core.config.models import GPIOConfig
+from sbd.core.config.models import ButtonInputConfig, GPIOConfig, GPIOPinConfig
 from sbd.core.audio.mock import MockAudioOutput
 from sbd.core.display.arbiter import DisplayArbiter
-from sbd.core.display.hints import DisplayHint
+from sbd.core.display.hints import DisplayHint, DisplayHintError
+from sbd.core.display.status_bar import StatusBar
 from sbd.core.event_bus import EventBus
-from sbd.core.events import ErrorOccurred, PerceptionResult
+from sbd.core.events import (
+    ButtonPressed, ErrorOccurred, PerceptionResult, ShutdownRequested, StateChanged,
+)
 from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.gpio.gpiod.driver import GpiodGPIO
+from sbd.core.gpio.mock import MockGPIO
+from sbd.input_events.button import ButtonInputSource
 from sbd.core.logger import render_public_fatal
 from sbd.perception.listen import ASRResult, Listen, MockASRAdapter
 from tests.test_m3_gpiod_backend import FakeLoop, _module
 from tests.test_m4b_outcome_001 import ProductLLM, fact
+from tests.test_state_manager import make_sm, start_perception
 
 
 def _validator() -> ActionPayloadValidator:
@@ -336,6 +342,74 @@ async def test_m4_err_pi_008_gpio_callback_and_read_faults_are_observable() -> N
 
 
 @pytest.mark.asyncio
+async def test_m4_err_pi_008_legal_and_stale_button_rows(caplog) -> None:
+    bus, gpio = EventBus(), MockGPIO()
+    observed: list[object] = []
+    _record(bus, ButtonPressed, observed)
+    _record(bus, ShutdownRequested, observed)
+    source = ButtonInputSource(
+        gpio=gpio,
+        bus=bus,
+        config=ButtonInputConfig(short_press_min_ms=50, long_press_min_ms=1_500),
+        pin_config=GPIOPinConfig(pin=5, debounce_ms=0),
+    )
+    await gpio.start()
+    await source.start()
+    await source.arm()
+    with caplog.at_level("DEBUG", logger="sbd.input_events.button"):
+        await gpio.simulate_event(5, "falling", at=1.0)  # release without press
+        await gpio.simulate_event(5, "rising", at=2.0)
+        await gpio.simulate_event(5, "falling", at=2.01)  # bounded bounce
+        await gpio.simulate_event(5, "rising", at=3.0)
+        await gpio.simulate_event(5, "falling", at=3.1)
+        await gpio.simulate_event(5, "rising", at=4.0)
+        await gpio.simulate_event(5, "falling", at=5.5)
+        await gpio.wait_callbacks()
+    assert [type(event) for event in observed] == [ButtonPressed, ShutdownRequested]
+    assert "Dropping stale button release" in caplog.text
+    assert "Dropping button bounce" in caplog.text
+    assert not any(isinstance(event, ErrorOccurred) for event in observed)
+    await source.stop()
+    await gpio.stop()
+
+
+@pytest.mark.asyncio
+async def test_m4_err_pi_008_callback_drives_active_session_to_error_once() -> None:
+    requests = []
+    gpio = GpiodGPIO(GPIOConfig(driver="gpiod"), gpiod_module=_module(requests))
+    await gpio.start()
+    gpio._loop = FakeLoop(gpio._loop)
+    bus, sm, listen, *_ = make_sm(hold_perception=True)
+    faults: list[ErrorOccurred] = []
+    states: list[str] = []
+    _record(bus, ErrorOccurred, faults)
+    _record(bus, StateChanged, states)
+    gpio.set_fault_publisher(bus.publish)
+
+    async def broken_callback(event) -> None:
+        raise RuntimeError("PRIVATE_CALLBACK")
+
+    await gpio.register_input(5, "both", broken_callback)
+    await start_perception(bus, sm, listen)
+    request = requests[-1]
+    request.events.append(
+        SimpleNamespace(event_type=1, line_offset=5, timestamp_ns=1_000_000_000)
+    )
+    callback, args = gpio._loop.readers[request.fd]
+    callback(*args)
+    await asyncio.gather(*tuple(gpio._callback_tasks))
+    await sm._inbox.join()
+    assert [fault.code for fault in faults] == ["BUTTON_CALLBACK_FAILED"]
+    assert [event.new for event in states].count("ERROR") == 1
+    assert "PRIVATE_CALLBACK" not in repr(faults)
+    if sm._loop_task is not None and not sm._loop_task.done():
+        await bus.publish(ShutdownRequested())
+        await sm.wait_stopped()
+    await sm.stop()
+    await gpio.stop()
+
+
+@pytest.mark.asyncio
 async def test_m4_err_pi_009_display_disables_once_and_subsequent_writes_noop() -> None:
     class Device:
         def __init__(self) -> None:
@@ -386,3 +460,77 @@ async def test_m4_err_pi_009_display_disables_once_and_subsequent_writes_noop() 
     await arbiter.stop()
     assert device.show_calls == 1
     assert len(logger.errors) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "row",
+    ("single-diagnostic", "atomic-disable", "no-self-render", "voice-independent", "caller-hint"),
+    ids=("D01-single-diagnostic", "D02-atomic-disable", "D03-no-self-render",
+         "D06-voice-independent", "D07-caller-hint-warning-drop"),
+)
+async def test_m4_err_pi_009_display_matrix(row: str) -> None:
+    class Device:
+        def __init__(self) -> None:
+            self.show_calls = 0
+
+        def size(self): return (1, 1)
+        def clear(self): pass
+        def write_pixels(self, pixels): pass
+        def show(self):
+            self.show_calls += 1
+            raise RuntimeError("PRIVATE_DISPLAY")
+
+    class Renderer:
+        def validate(self, hint):
+            if hint.template == "invalid":
+                raise DisplayHintError("PRIVATE_HINT")
+
+        def render(self, *, size, model): return b"\0\0"
+
+    class Logger:
+        def __init__(self) -> None:
+            self.errors = []
+            self.warnings = []
+
+        def error(self, message, *, extra): self.errors.append((message, extra))
+        def warning(self, message): self.warnings.append(message)
+        def debug(self, *args): pass
+
+    device, logger = Device(), Logger()
+    arbiter = DisplayArbiter(device, Renderer(), logger=logger)
+    if row == "caller-hint":
+        device.show = lambda: None
+        await arbiter.start()
+        before = device.show_calls
+        arbiter.write_main(DisplayHint("invalid"))
+        assert logger.warnings == ["Dropping invalid display hint"]
+        assert logger.errors == [] and device.show_calls == before
+        return
+
+    await arbiter.start()
+    if row == "single-diagnostic":
+        assert len(logger.errors) == 1
+        assert logger.errors[0][1]["code"] == "DISPLAY_RENDER_DISABLED"
+    elif row == "atomic-disable":
+        before = device.show_calls
+        arbiter.write_main(DisplayHint("main.text", {"text": "ignored"}))
+        assert device.show_calls == before
+    elif row == "no-self-render":
+        assert device.show_calls == 1
+        assert all(item[1]["code"] == "DISPLAY_RENDER_DISABLED" for item in logger.errors)
+    else:
+        bus = EventBus()
+        status = StatusBar(arbiter, bus)
+        observed: list[ErrorOccurred] = []
+        _record(bus, ErrorOccurred, observed)
+        await status.start()
+        event = ComponentSystemFault.create(
+            where="perception.listen",
+            code="ASR_PROTOCOL_FAILED",
+            backend=BackendDisposition.REBUILD_REQUIRED,
+            recovery_keys=("backend.perception.listen.asr",),
+        ).to_event()
+        await bus.publish(event)
+        assert observed == [event]
+        await status.stop()

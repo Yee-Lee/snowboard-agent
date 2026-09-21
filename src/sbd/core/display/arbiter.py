@@ -6,7 +6,7 @@ import logging
 import threading
 
 from sbd.core.display.base import DisplayDevice
-from sbd.core.display.hints import DisplayHint, UnknownDisplaySlot
+from sbd.core.display.hints import DisplayHint, DisplayHintError, UnknownDisplaySlot
 from sbd.core.display.renderer import DisplayRenderer, RenderModel
 from sbd.core.faults import safe_category_for_code
 
@@ -52,7 +52,8 @@ class DisplayArbiter:
         if not self._ready_for_write():
             return
         if hint is not None:
-            self._renderer.validate(hint)
+            if not self._valid_hint(hint):
+                return
             self._slots[slot_id] = hint
         else:
             self._slots.pop(slot_id, None)
@@ -63,7 +64,8 @@ class DisplayArbiter:
         if not self._ready_for_write():
             return
         if hint is not None:
-            self._renderer.validate(hint)
+            if not self._valid_hint(hint):
+                return
         self._main = hint
         if self._fullscreen_owner is None:
             self._render_current()
@@ -75,7 +77,8 @@ class DisplayArbiter:
             raise ValueError("fullscreen owner_id must be non-empty")
         if self._fullscreen_owner not in {None, owner_id}:
             return False
-        self._renderer.validate(hint)
+        if not self._valid_hint(hint):
+            return False
         self._fullscreen_owner = owner_id
         self._fullscreen = hint
         self._render_current()
@@ -105,6 +108,14 @@ class DisplayArbiter:
     def _assert_loop_thread(self) -> None:
         if self._thread_id is not None and threading.get_ident() != self._thread_id:
             raise RuntimeError("DisplayArbiter must be called from its event-loop thread")
+
+    def _valid_hint(self, hint: DisplayHint) -> bool:
+        try:
+            self._renderer.validate(hint)
+        except DisplayHintError:
+            self._logger.warning("Dropping invalid display hint")
+            return False
+        return True
 
     def _model(self) -> RenderModel:
         return RenderModel(

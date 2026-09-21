@@ -38,6 +38,7 @@ TEST_NODES = {
     "M4-ERR-PV-004": "tests/test_m4_err_pv_rpi.py::test_m4_err_pv_004",
     "M4-ERR-PV-005": "tests/test_m4_err_pv_rpi.py::test_m4_err_pv_005",
 }
+OBSERVATION_REQUIRED = frozenset({"M4-ERR-PV-001", "M4-ERR-PV-002"})
 RUN_ID = re.compile(r"M4-ERR-[A-Za-z0-9][A-Za-z0-9._-]{2,95}")
 
 
@@ -196,6 +197,18 @@ def _junit_counts(path: Path) -> dict[str, int]:
     return {"passed": int(not failed and not skipped), "failed": failed, "skipped": skipped}
 
 
+def _observation_identity(root: Path, test_id: str) -> dict[str, str] | None:
+    path = root / "private" / test_id / "product-observation.json"
+    if test_id not in OBSERVATION_REQUIRED:
+        return None
+    if not path.is_file() or path.is_symlink():
+        raise RunnerError("M4_ERR_PRODUCT_OBSERVATION_MISSING")
+    return {
+        "locator": f"private/{test_id}/product-observation.json",
+        "sha256": _sha256(path),
+    }
+
+
 def _run_case(args: argparse.Namespace) -> int:
     if args.test_id not in TEST_NODES:
         raise RunnerError("M4_ERR_TEST_ID_INVALID")
@@ -262,6 +275,9 @@ def _run_case(args: argparse.Namespace) -> int:
         "private_log_sha256": _sha256(log_path),
         "junit_sha256": _sha256(junit),
     }
+    observation = _observation_identity(root, args.test_id)
+    if observation is not None:
+        card["product_observation"] = observation
     _write_json(public / "result.json", card)
     return 0 if status == "Pass" else 1
 
@@ -272,6 +288,7 @@ def _finalize(args: argparse.Namespace) -> int:
     cards = []
     for test_id in TEST_NODES:
         card = _read_json(root / "public" / test_id / "result.json")
+        observation = _observation_identity(root, test_id)
         if (
             card.get("run_id") != args.run_id
             or card.get("test_id") != test_id
@@ -279,6 +296,10 @@ def _finalize(args: argparse.Namespace) -> int:
             or card.get("content_sha256") != binding["content_sha256"]
             or card.get("config_sha256") != binding["config_sha256"]
             or card.get("artifact_identity") != binding["artifact_identity"]
+            or (
+                observation is not None
+                and card.get("product_observation") != observation
+            )
         ):
             raise RunnerError("M4_ERR_FINALIZE_CARD_INVALID")
         cards.append(card)
