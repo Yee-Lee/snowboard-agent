@@ -120,6 +120,7 @@ core:
       stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}
       device: null
       native_format: null
+      volume_percent: 100
   display:
     driver: mock
     profile: DSP-PROFILE-OLED-128

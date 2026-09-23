@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Mapping, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Awaitable, Callable, Literal, Mapping, Protocol, runtime_checkable
 
 from sbd.cognition.prompt_builder import ReasoningInput
 from sbd.core.lifecycle import ForceAbortReport
@@ -148,7 +148,10 @@ class LLMEngineAdapter(Protocol):
     async def open_conversation(self, session_id: str, generation: int) -> ConversationReady | ConversationOpenRejected: ...
     async def measure(self, session_id: str, generation: int, text: str) -> AdmissionSnapshot: ...
     async def discard_ticket(self, snapshot: AdmissionSnapshot) -> TicketDiscardProof: ...
-    async def generate(self, snapshot: AdmissionSnapshot, text: str) -> SemanticGeneration: ...
+    async def generate(
+        self, snapshot: AdmissionSnapshot, text: str,
+        on_safe_text: Callable[[int, str], Awaitable[None]] | None = None,
+    ) -> SemanticGeneration: ...
     async def close_conversation(self, session_id: str, generation: int, reason: str) -> ConversationCloseProof: ...
 
 

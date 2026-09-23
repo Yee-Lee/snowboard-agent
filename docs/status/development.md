@@ -1,5 +1,54 @@
 # Current development status
 
+## Active M4C implementation — 2026-09-23
+
+- Entry is Open by `docs/status/current.md`; authority is `docs/milestones/M4C.md` and
+  `docs/test_spec/test_spec_M4C.md`. Scope stops after portable convergence and preparation of
+  the exact tracked bytes / harness for Pi verification; this work package does not claim or
+  execute any of the 17 Pi sub-runs and does not prepare a commit.
+- Work packages: WP1 startup-static output volume and one-time product composition; WP2
+  punctuation-or-12 incremental extraction and the bounded B2 controller; WP3 authenticated
+  `SAFE_TEXT` delivery from the LLM wire through Reasoner plus THINK-to-ACTION Speak adoption;
+  WP4 Session no-input streak and sanitized ASR classification; WP5 portable regression catalog
+  and the fail-closed `run-m4c-pv.py` binding / 17-variant runner entry.
+- Affected production paths: `src/sbd/core/config/{models,validate}.py`, `config.example.yaml`,
+  `src/sbd/core/audio/`, `src/sbd/core/m2_composition.py`, `src/sbd/cognition/{llm,reasoner}.py`,
+  `src/sbd/cognition/litert_lm/adapter.py`, `src/sbd/action/speak/`,
+  `src/sbd/perception/listen/listener.py`, and `src/sbd/core/state_manager/{manager,session}.py`.
+  Affected verification paths: new M4C portable test modules/catalog, directly affected accepted
+  M4A/M4B/M4-ERR regressions, `scripts/run-m4c-pv.py`, and its runner tests.
+- Test IDs: `M4C-VOL-001`, `M4C-SS-CTRL-001`, `M4C-SS-EXTRACT-001`,
+  `M4C-SS-OUTCOME-001`, `M4C-NOINPUT-001`, `M4C-REG-001`, plus runner coverage for
+  `M4C-PI-S01` through `M4C-PI-S09`. Estimate: 13 points.
+- Planned workstation checks: focused M4C tests per Test ID; directly affected M4A/M4B/M4-ERR
+  tests; complete non-RPi suite; CPython 3.11/3.12/3.13 portable collection/execution where the
+  interpreters are available; `python -m compileall -q src scripts tests`; `git diff --check`.
+  All commands receive an outer timeout. Any unavailable matrix cell is reported as pending Pi /
+  Verify work and is not converted to Pass.
+- Workstation implementation has reached the Pi-entry boundary. The M4C portable catalog passes
+  512/512, including all six specified portable Test IDs and eight coordinator fail-closed tests;
+  directly affected worker wire/outcome coverage passes 189/189. Pure-Python imports of
+  `VolumeControlledAudioOutput`, `AudioOutputConfig`, `StreamingSpeakControl`, and
+  `SessionContext` pass under installed CPython 3.11, 3.12, and 3.13 without Pi-native modules.
+  Compilation and `git diff --check` pass.
+- The complete default non-RPi suite reports 1,832 Pass and 34 RPi-only deselections. Its sole
+  failure is the pre-existing Darwin execution of
+  `test_m4b_pv_runner.py::test_resource_structural_commands_emit_independent_sanitized_cards[R02-HEALTH]`,
+  which reads Linux-only `/proc/meminfo` despite that test's monkeypatch and reproduces outside the
+  M4C catalog. It is not counted as an M4C failure and has not been changed outside this scope.
+- Next execution is on the Pi against these same pending bytes: first exercise the pinned LiteRT-LM
+  0.16 raw streaming bridge plus real Matcha/ALSA cancellation and output, then finish/converge the
+  whole-product `tests/test_m4c_pv_rpi.py` scenario driver before any of the formal 17 sub-runs can
+  be credited. `scripts/run-m4c-pv.py` already binds the fixed catalog, protected tuple, privacy,
+  supersession, human-result set and explicit `-m rpi` selection, but formal PV is not yet claimed.
+  No Raspberry Pi result exists for this work package; the transfer commit below is not a candidate.
+- USER paused Pi execution on 2026-09-23 so the verification method and runtime-risk budget can be
+  discussed before any hardware run. The connected Pi was not used and no evidence locator exists.
+  USER then explicitly directed one commit and push of the complete unverified working tree solely to
+  transfer work to another workstation. Resume from this section and the transfer commit; do not treat
+  workstation results or that commit as Pi Verify, a formal candidate, or formal PV credit. Applicable
+  Pi validation, same-bytes reconciliation, scenario-driver completion and acceptance remain pending.
+
 ## Active M4-ERR implementation — 2026-09-20
 
 - Developer implementation and same-bytes Pi verification are complete for PI-011, PI-012 and WP7. WP1–WP6

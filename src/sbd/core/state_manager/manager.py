@@ -826,7 +826,13 @@ class StateManager:
             assert self._session is not None
             if len(self._session.perception_results) == len(self._session.selected_perceptions):
                 await self._close_read()
-                await self._transition("THINK")
+                local_response = self._m4c_no_input_response()
+                if local_response is None:
+                    await self._transition("THINK")
+                else:
+                    self._session.llm_response = local_response
+                    await self._validate_response(local_response)
+                    await self._transition("ACTION")
         elif self._state == "THINK":
             if self._session is not None and self._session.llm_response is not None:
                 try:
@@ -888,6 +894,45 @@ class StateManager:
                 await self._transition("PERCEPTION")
             else:
                 await self._transition("ERROR", trigger="error")
+
+    def _m4c_no_input_response(self) -> LLMResponse | None:
+        """Resolve product request-level no-input without calling the LLM."""
+        session = self._session
+        if session is None or getattr(self._workers.reasoner(), "_product", False) is not True:
+            return None
+        if session.selected_perceptions != ("listen",) or len(session.perception_results) != 1:
+            return None
+        fact = session.perception_results[0]
+        code = fact.extra.get("asr_error_code") if type(fact.extra) is dict else None
+        no_input = (
+            fact.status == "timeout"
+            or (fact.status == "ok" and (fact.text is None or not fact.text.strip()))
+            or code == "NO_SPEECH"
+        )
+        if not no_input and code != "MULTIPLE_UTTERANCES":
+            if fact.status == "ok" and type(fact.text) is str and fact.text.strip():
+                session.no_input_streak = 0
+            return None
+        if code == "MULTIPLE_UTTERANCES":
+            text = "請一次只說一句。"
+            route = "KEEP_NEXT"
+        else:
+            session.no_input_streak += 1
+            if session.no_input_streak == 1:
+                text = "我沒聽清楚，請再說一次。"
+                route = "KEEP_NEXT"
+            else:
+                text = ""
+                route = "END_SESSION"
+        return LLMResponse(
+            action_kind="speak" if text else "rest",
+            action_payload={"text": text} if text else {},
+            post_action_route=route,
+            next_perceptions=("listen",) if route == "KEEP_NEXT" else (),
+            session_id=session.session_id,
+            turn_id=session.turn_id,
+            correlation_id=0,
+        )
 
     async def _begin_convergence(self, trigger: Literal["rest", "interrupt", "error", "shutdown"]) -> None:
         self._cancel_wake_timer()

@@ -34,7 +34,7 @@ if str(_CANDIDATE_PACKAGE_ROOT) not in sys.path:
 from sbd.cognition.llm_child_protocol import (
     MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
 from sbd.cognition.semantic import (
-    RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
+    IncrementalSafeTextParser, RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
     validate_semantic, SemanticError,
 )
 from sbd.cognition.prompt_builder import SYSTEM_PROMPT
@@ -63,6 +63,27 @@ class WorkerCancelled(RuntimeError):
 
 class WorkerCancelFailed(RuntimeError):
     pass
+
+
+def _native_message_text(serialized: str) -> str:
+    try:
+        message = json.loads(serialized)
+    except (json.JSONDecodeError, UnicodeError):
+        raise SemanticError() from None
+    if type(message) is not dict or set(message).difference({"role", "content"}):
+        raise SemanticError()
+    content = message.get("content")
+    if type(content) is str:
+        return content
+    if type(content) is not list:
+        raise SemanticError()
+    values: list[str] = []
+    for item in content:
+        if (type(item) is not dict or set(item).difference({"type", "text"})
+                or item.get("type") != "text" or type(item.get("text")) is not str):
+            raise SemanticError()
+        values.append(item["text"])
+    return "".join(values)
 
 def _verify_native_library(path: Path, expected_sha256: str) -> None:
     if path.is_symlink() or path.parent.is_symlink():
@@ -232,6 +253,87 @@ class LiteRTRuntime:
             with self._lock:
                 self._active = None
 
+    def generate_stream(self, text: str, emit) -> tuple[object, int, int, int]:
+        """Use the pinned 0.16 private C bridge and emit M4C SAFE_TEXT."""
+        conversation = self._conversation
+        require(conversation is not None)
+        try:
+            from litert_lm._ffi import STREAM_CALLBACK_TYPE
+            from litert_lm._messages import normalize_message
+        except (ImportError, AttributeError):
+            raise RuntimeError("streaming bridge unavailable") from None
+        require(not getattr(conversation, "automatic_tool_calling", True), "stream")
+        require(bool(getattr(conversation, "_ptr", None)), "stream")
+        parser = IncrementalSafeTextParser(12)
+        callback_errors: list[BaseException] = []
+        final_seen = False
+        with self._lock:
+            if self._pending_cancel:
+                self._pending_cancel = False
+                raise WorkerCancelled()
+            self._active = conversation
+        try:
+            response_format = self._response_format.json(load_response_schema())
+
+            def callback(unused_data: Any, chunk_ptr: Any) -> None:
+                nonlocal final_seen
+                if callback_errors:
+                    return
+                try:
+                    error_value = conversation._lib.litert_lm_stream_chunk_get_error(chunk_ptr)
+                    if error_value:
+                        detail = error_value.decode("utf-8", errors="replace")
+                        if "CANCELLED" in detail:
+                            raise WorkerCancelled()
+                        raise RuntimeError("native stream failed")
+                    raw = conversation._lib.litert_lm_stream_chunk_get_text(chunk_ptr)
+                    chunk = raw.decode("utf-8") if raw else ""
+                    final = bool(conversation._lib.litert_lm_stream_chunk_is_final(chunk_ptr))
+                    if final_seen or (final and chunk):
+                        raise SemanticError()
+                    if chunk:
+                        semantic_wire = _native_message_text(chunk)
+                        for fragment in parser.feed(semantic_wire.encode("utf-8")):
+                            emit(fragment)
+                    if final:
+                        final_seen = True
+                except BaseException as error:
+                    callback_errors.append(error)
+
+            c_callback = STREAM_CALLBACK_TYPE(callback)
+            conversation._current_callback = c_callback
+            normalized = normalize_message(text)
+            active_format = conversation._resolve_response_format(
+                normalized, response_format)
+            optional_args = conversation._create_optional_args(
+                repetition_penalty_config=None, no_repeat_ngram_config=None,
+                suppress_tokens_config=None, max_output_tokens=None,
+                thinking_config=None, current_message=normalized,
+                response_format=active_format)
+            try:
+                result = conversation._lib.litert_lm_conversation_send_message_stream(
+                    conversation._ptr, json.dumps(normalized),
+                    json.dumps(getattr(conversation, "extra_context", {})),
+                    optional_args, c_callback, None)
+            finally:
+                conversation._delete_optional_args(optional_args)
+            if callback_errors:
+                raise callback_errors[0]
+            require(result == 0 and final_seen, "stream")
+            terminal, flushed = parser.finish()
+            for fragment in flushed:
+                emit(fragment)
+            info = conversation.get_benchmark_info()
+            return (terminal, info.last_decode_token_count,
+                    conversation.token_count, info.last_prefill_token_count)
+        except WorkerCancelled:
+            raise
+        except BaseException:
+            raise
+        finally:
+            with self._lock:
+                self._active = None
+
     def scrub_ticket(self) -> None:
         conversation = self._conversation
         require(conversation is not None, "scrub")
@@ -270,7 +372,7 @@ class WorkerSession:
         self.runtime = runtime
         self.ledger = ProtocolLedger()
 
-    def execute(self, frame: Mapping[str, object]) -> list[dict[str, object]]:
+    def execute(self, frame: Mapping[str, object], emit=None) -> list[dict[str, object]]:
         # Caller has already accepted the command into the ledger.
         base = {key: frame[key] for key in ("protocol", "request_id", "session_id", "generation")}
         op = frame["op"]
@@ -300,24 +402,40 @@ class WorkerSession:
         require(counts["user_tokens"] <= 32)
         require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
         send = time.monotonic_ns()
-        raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
+        safe_times: list[int] = []
+        if emit is None or not hasattr(self.runtime, "generate_stream"):
+            raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
+            try:
+                semantic = validate_semantic(raw)
+            except SemanticError:
+                return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
+                    "request_terminal_proven": True, "engine_usable": True,
+                    "terminal_monotonic_ns": time.monotonic_ns()}]
+        else:
+            def safe_emit(fragment: str) -> None:
+                instant = time.monotonic_ns()
+                sequence = len(safe_times)
+                safe_times.append(instant)
+                emit(sequence, fragment, instant)
+            try:
+                semantic, decode, kv, actual_prefill = self.runtime.generate_stream(
+                    frame["text"], safe_emit)
+            except SemanticError:
+                return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
+                    "request_terminal_proven": True, "engine_usable": True,
+                    "terminal_monotonic_ns": time.monotonic_ns()}]
         _diagnostic_mark("native_prefill_check", request_id=frame.get("request_id"),
             expected_prefill_tokens=counts["runtime_prefill_tokens"],
             actual_prefill_tokens=actual_prefill)
         require(type(actual_prefill) is int and actual_prefill == counts["runtime_prefill_tokens"], "runtime_prefill")
         # Native synchronous SendMessage calls session WaitUntilDone; the
         # control loop additionally joins this worker thread before any terminal.
-        try:
-            semantic = validate_semantic(raw)
-        except SemanticError:
-            return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
-                "request_terminal_proven": True, "engine_usable": True,
-                "terminal_monotonic_ns": time.monotonic_ns()}]
         return [{**base, "event": "RESULT", "conversation_revision": self.ledger.revision + 1,
             "text": semantic.text, "end": semantic.end,
             **{key: counts[key] for key in ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")},
             "decode_tokens": decode, "conversation_kv_tokens": kv,
-            "llm_send_monotonic_ns": send, "first_safe_text_monotonic_ns": None,
+            "llm_send_monotonic_ns": send,
+            "first_safe_text_monotonic_ns": safe_times[0] if emit is not None and safe_times else None,
             "terminal_monotonic_ns": time.monotonic_ns()}]
 
 
@@ -425,10 +543,18 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
             _write(ack)
             return 0
         result_queue: queue.Queue = queue.Queue()
+        stream_queue: queue.Queue = queue.Queue(maxsize=2)
         runtime.clear_pending_cancel()
+        def emit_safe(sequence: int, text: str, monotonic_ns: int) -> None:
+            stream_queue.put({
+                "protocol": 3, "event": "SAFE_TEXT",
+                "request_id": frame["request_id"], "sequence": sequence,
+                "text": text, "monotonic_ns": monotonic_ns,
+            })
         def execute() -> None:
             try:
-                outcome = session.execute(frame)
+                outcome = session.execute(
+                    frame, emit_safe if frame["op"] == "GENERATE" else None)
             except WorkerCancelled:
                 outcome = WorkerCancelled()
             except BaseException as error:
@@ -444,6 +570,13 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
         thread = threading.Thread(target=execute, name="llm-native", daemon=False)
         thread.start()
         while True:
+            while True:
+                try:
+                    stream_event = stream_queue.get_nowait()
+                except queue.Empty:
+                    break
+                session.ledger.event(stream_event)
+                _write(stream_event)
             alive = thread.is_alive()
             if control.ready(0.01 if alive else 0):
                 cancel = control.read()
@@ -456,6 +589,13 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
             elif not alive:
                 break
         thread.join()
+        while True:
+            try:
+                stream_event = stream_queue.get_nowait()
+            except queue.Empty:
+                break
+            session.ledger.event(stream_event)
+            _write(stream_event)
         events = result_queue.get_nowait()
         if session.ledger.cancelled:
             op = frame["op"]

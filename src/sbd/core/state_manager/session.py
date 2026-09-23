@@ -23,3 +23,4 @@ class SessionContext:
     post_action_route: PostActionRoute | None = None
     normalized_next_perceptions: tuple[str, ...] = ()
     action_phase: Literal["none", "primary", "post_action_rest"] = "none"
+    no_input_streak: int = 0

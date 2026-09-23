@@ -14,6 +14,7 @@ from sbd.core.candidate_identity import tracked_content_digest
 EXPECTED_PUBLISHER_SITES = {
     "src/sbd/action/rest/action.py|Rest.execute.body|typed_publish",
     "src/sbd/action/speak/speaker.py|Speak.execute.body|typed_publish",
+    "src/sbd/action/speak/streaming.py|StreamingSpeakControl._run|typed_publish",
     "src/sbd/action/tool/action.py|Tool.execute.body|typed_publish",
     "src/sbd/cognition/reasoner.py|Reasoner.reason.body|legacy_publish",
     "src/sbd/cognition/reasoner.py|Reasoner._reason_product.body|typed_publish",
@@ -43,7 +44,7 @@ EXPECTED_MAPPING_CATCHES = {
     ),
     "src/sbd/cognition/reasoner.py|Reasoner._reason_product.body": (
         "asyncio.CancelledError", "Exception", "UnsupportedInputError",
-        "_LocalProductFault", "_CausedProductFault", "TimeoutError",
+        "_LocalProductFault", "_CausedProductFault", "_StreamingTerminalFailure", "TimeoutError",
         "asyncio.CancelledError", "Exception", "ComponentSystemFault",
         "LLMBackendError", "LLMCleanupUnprovenError", "LLMObservationError",
         "(LLMProtocolError, LLMFatalError)", "Exception", "Exception",

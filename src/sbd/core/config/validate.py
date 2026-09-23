@@ -165,6 +165,13 @@ def validate_config(config: 'AppConfig'):
 
 
     ac = config.core.audio
+    if (
+        type(ac.output.volume_percent) is not int
+        or not 0 <= ac.output.volume_percent <= 100
+    ):
+        raise ConfigValueError(
+            "core.audio.output.volume_percent must be an integer in 0..100"
+        )
     container_bytes = {"s16_le": 2, "s32_le": 4}
     for path, fmt, duration in (
         ("core.audio.input", ac.input.stream_format, ac.input.frame_duration_ms),

@@ -332,6 +332,7 @@ class _ConversationControl:
 
 
 class LiteRTLMAdapter:
+    supports_safe_text_callback = True
     def __init__(self, cfg: LLMConfig, *, lock: LLMArtifactLock,
                  schedule_recovery: ScheduleRecovery, wait_recovery: WaitRecovery,
                  resource_sampler: LLMResourceSampler,
@@ -492,7 +493,7 @@ class LiteRTLMAdapter:
         return {"protocol": 3, "op": op, "request_id": self._ledger.counter + 1,
                 "session_id": session_id, "generation": generation, **extra}
 
-    async def _request(self, frame: Mapping[str, object]) -> Mapping[str, object]:
+    async def _request(self, frame: Mapping[str, object], on_safe_text=None) -> Mapping[str, object]:
         child = self._child
         require(child is not None and self.state is not AdapterState.DESTROYED, "state")
         try:
@@ -530,6 +531,8 @@ class LiteRTLMAdapter:
                     event = await self._responses.get()
                     if isinstance(event, BaseException):
                         raise event
+                    if event["event"] == "SAFE_TEXT" and on_safe_text is not None:
+                        await on_safe_text(event["sequence"], event["text"])
                     if event["event"] not in {"SAFE_TEXT", "CANCEL_DEFERRED"}:
                         return event
             expired = False
@@ -640,7 +643,8 @@ class LiteRTLMAdapter:
                 self._observer.measured(snapshot)
             return snapshot
 
-    async def generate(self, snapshot: AdmissionSnapshot, text: str) -> SemanticGeneration:
+    async def generate(self, snapshot: AdmissionSnapshot, text: str,
+                       on_safe_text=None) -> SemanticGeneration:
         from sbd.cognition.litert_lm.resource import memory_decision, MemoryDecision
         async with self.serialized():
             self.assert_conversation(snapshot.session_id, snapshot.generation)
@@ -678,7 +682,8 @@ class LiteRTLMAdapter:
                 raise MemoryAdmissionDenied(speak_allowed=decision is MemoryDecision.NOTICE)
             event = await self._request(self._frame("GENERATE", snapshot.session_id,
                 snapshot.generation, conversation_revision=self._ledger.revision,
-                ticket=snapshot.ticket, text=text, input_sha256=snapshot.input_sha256))
+                ticket=snapshot.ticket, text=text, input_sha256=snapshot.input_sha256),
+                on_safe_text=on_safe_text)
             await self.observe_memory("post_generate")
             if event["event"] == "REQUEST_FAILED":
                 if self._observer is not None:

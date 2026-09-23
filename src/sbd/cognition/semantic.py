@@ -8,6 +8,7 @@ import json
 import os
 import stat
 import unicodedata
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -166,3 +167,153 @@ class IncrementalSemanticParser:
         self._buffer = self._prefix = ""
         self._decoder.reset()
         return result
+
+
+_TEXT_PREFIX = re.compile(r'^\s*\{\s*"text"\s*:\s*')
+_SIMPLE_ESCAPES = {
+    '"': '"', "\\": "\\", "/": "/", "b": "\b", "f": "\f",
+    "n": "\n", "r": "\r", "t": "\t",
+}
+
+
+def _partial_json_text(value: str, start: int) -> tuple[str, bool]:
+    if start >= len(value) or value[start] != '"':
+        raise SemanticError()
+    result: list[str] = []
+    index = start + 1
+    while index < len(value):
+        char = value[index]
+        if char == '"':
+            return "".join(result), True
+        if ord(char) < 0x20:
+            raise SemanticError()
+        if char != "\\":
+            result.append(char)
+            index += 1
+            continue
+        if index + 1 >= len(value):
+            break
+        escape = value[index + 1]
+        if escape in _SIMPLE_ESCAPES:
+            result.append(_SIMPLE_ESCAPES[escape])
+            index += 2
+            continue
+        if escape != "u" or index + 6 > len(value):
+            if escape != "u":
+                raise SemanticError()
+            break
+        try:
+            codepoint = int(value[index + 2:index + 6], 16)
+        except ValueError:
+            raise SemanticError() from None
+        index += 6
+        if 0xD800 <= codepoint <= 0xDBFF:
+            if index + 6 > len(value):
+                break
+            if value[index:index + 2] != "\\u":
+                raise SemanticError()
+            try:
+                low = int(value[index + 2:index + 6], 16)
+            except ValueError:
+                raise SemanticError() from None
+            if not 0xDC00 <= low <= 0xDFFF:
+                raise SemanticError()
+            result.append(chr(0x10000 + ((codepoint - 0xD800) << 10) + low - 0xDC00))
+            index += 6
+        elif 0xDC00 <= codepoint <= 0xDFFF:
+            raise SemanticError()
+        else:
+            result.append(chr(codepoint))
+    return "".join(result), False
+
+
+class IncrementalSafeTextParser:
+    """M4C punctuation-or-12 extraction with irrevocable normalization."""
+
+    def __init__(self, boundary_codepoints: int = 12) -> None:
+        if type(boundary_codepoints) is not int or not 1 <= boundary_codepoints <= 256:
+            raise ValueError("INVALID_RELEASE_BOUNDARY")
+        self._decoder = codecs.getincrementaldecoder("utf-8")("strict")
+        self._buffer = ""
+        self._released = ""
+        self._boundary_codepoints = boundary_codepoints
+        self._terminal = False
+        self._failed = False
+
+    @property
+    def released(self) -> str:
+        return self._released
+
+    def _fail(self) -> None:
+        self._failed = True
+        self._buffer = self._released = ""
+        self._decoder.reset()
+        raise SemanticError()
+
+    def feed(self, chunk: bytes) -> tuple[str, ...]:
+        if self._terminal or self._failed or type(chunk) is not bytes:
+            self._fail()
+        try:
+            self._buffer += self._decoder.decode(chunk, final=False)
+            if len(self._buffer) > 65536:
+                self._fail()
+            match = _TEXT_PREFIX.match(self._buffer)
+            if match is None:
+                if len(self._buffer) < 12:
+                    return ()
+                self._fail()
+            decoded, closed = _partial_json_text(self._buffer, match.end())
+            stable = self._stable_prefix(decoded, closed)
+            if not stable.startswith(self._released):
+                self._fail()
+            fragments: list[str] = []
+            while True:
+                pending = stable[len(self._released):]
+                boundary = self._boundary(pending)
+                if boundary is None:
+                    break
+                fragment = pending[:boundary]
+                if not fragment:
+                    break
+                self._released += fragment
+                fragments.append(fragment)
+            return tuple(fragments)
+        except (UnicodeError, ValueError):
+            self._fail()
+
+    def finish(self) -> tuple[SemanticOutput, tuple[str, ...]]:
+        if self._terminal or self._failed:
+            self._fail()
+        try:
+            self._buffer += self._decoder.decode(b"", final=True)
+            terminal = validate_semantic(self._buffer)
+            if not terminal.text.startswith(self._released):
+                self._fail()
+            remainder = terminal.text[len(self._released):]
+            self._released = terminal.text
+        except (UnicodeError, ValueError):
+            self._fail()
+        self._terminal = True
+        return terminal, ((remainder,) if remainder else ())
+
+    @staticmethod
+    def _stable_prefix(decoded: str, closed: bool) -> str:
+        if closed:
+            return normalize_text(decoded)
+        last_starter = None
+        for index, char in enumerate(decoded):
+            decomposition = unicodedata.normalize("NFKD", char)
+            if decomposition and unicodedata.combining(decomposition[0]) == 0:
+                last_starter = index
+        if last_starter is None:
+            return ""
+        return normalize_text(decoded[:last_starter])
+
+    def _boundary(self, pending: str) -> int | None:
+        candidates = [
+            index + 1 for index, char in enumerate(pending)
+            if unicodedata.category(char).startswith("P")
+        ]
+        if len(pending) >= self._boundary_codepoints:
+            candidates.append(self._boundary_codepoints)
+        return min(candidates) if candidates else None

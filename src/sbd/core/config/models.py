@@ -223,6 +223,7 @@ class AudioOutputConfig:
     stream_format: AudioFormatConfig = field(default_factory=AudioFormatConfig)
     device: str | None = None
     native_format: AudioFormatConfig | None = None
+    volume_percent: int = 100
 
 @dataclass(frozen=True, slots=True)
 class AudioConfig:

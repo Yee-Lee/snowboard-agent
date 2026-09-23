@@ -14,6 +14,7 @@ from sbd.core.events import ActionCompleted, ErrorOccurred
 from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from sbd.core.lifecycle import ForceAbortReport
 from sbd.core.worker_runtime import WorkerRuntime
+from sbd.action.speak.streaming import StreamingSpeakControl
 
 
 class Speak(WorkerRuntime):
@@ -29,6 +30,7 @@ class Speak(WorkerRuntime):
         self._on_completion = on_completion
         self._before_start = before_start
         self._pcm: AsyncIterator[bytes] | None = None
+        self._streaming: StreamingSpeakControl | None = None
 
     async def start(self) -> None:
         await self._tts.start()
@@ -38,6 +40,31 @@ class Speak(WorkerRuntime):
         await self._tts.stop()
 
     async def execute(self, session_id: str, turn_id: int, correlation_id: int, payload: dict) -> None:
+        streaming = self._streaming
+        text = payload.get("text") if type(payload) is dict else None
+        if (
+            streaming is not None
+            and (streaming.session_id, streaming.turn_id) == (session_id, turn_id)
+            and type(text) is str
+            and set(payload) == {"text"}
+        ):
+            async def streamed_body() -> None:
+                status = "error"
+                try:
+                    await streaming.adopt(session_id, turn_id, correlation_id, text)
+                    await streaming.wait()
+                    status = "ok"
+                finally:
+                    if self._on_completion is not None:
+                        completed = self._on_completion(status)
+                        if inspect.isawaitable(completed):
+                            await completed
+            try:
+                await self._run_call(streamed_body)
+            finally:
+                if self._streaming is streaming:
+                    self._streaming = None
+            return
         async def body() -> None:
             fault: ComponentSystemFault | None = None
             cause: BaseException | None = None
@@ -113,6 +140,25 @@ class Speak(WorkerRuntime):
                 await self._bus.publish(ActionCompleted("speak", status, {}, session_id, turn_id, correlation_id))
         await self._run_call(body)
 
+    def begin_streaming(
+        self, session_id: str, turn_id: int, operation_id: str
+    ) -> StreamingSpeakControl:
+        if self._streaming is not None:
+            raise RuntimeError("streaming Speak operation already active")
+        control = StreamingSpeakControl(
+            session_id=session_id, turn_id=turn_id, operation_id=operation_id,
+            tts=self._tts, audio_output=self._audio_output, bus=self._bus,
+            observe=self._observe,
+            before_start=self._before_start,
+        )
+        self._streaming = control
+        control.start()
+        return control
+
+    def release_streaming(self, control: StreamingSpeakControl) -> None:
+        if self._streaming is control:
+            self._streaming = None
+
     async def _observed_pcm(self) -> AsyncIterator[bytes]:
         first = True
         assert self._pcm is not None
@@ -130,7 +176,18 @@ class Speak(WorkerRuntime):
             await pcm.aclose()
 
     async def _abort_resources(self) -> None:
+        streaming = self._streaming
+        if streaming is not None:
+            await streaming.cancel()
+            if self._streaming is streaming:
+                self._streaming = None
         await self._tts.abort()
 
     async def _force_abort_resources(self) -> ForceAbortReport:
+        streaming = self._streaming
+        if streaming is not None:
+            report = await streaming.force_abort()
+            if self._streaming is streaming:
+                self._streaming = None
+            return report
         return await self._tts.force_abort()

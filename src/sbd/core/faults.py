@@ -33,6 +33,7 @@ SAFE_FAULT_SUMMARIES: dict[str, str] = {
     "LLM_CLEANUP_UNPROVEN": "LLM cleanup unproven",
     "LLM_OBSERVATION_FAILED": "LLM observation failed",
     "LLM_PROTOCOL_FAILED": "LLM protocol failed",
+    "STREAMING_TERMINAL_FAILED": "Streaming terminal validation failed",
     "LLM_UNEXPECTED": "LLM operation failed",
     "READ_UNEXPECTED": "Read operation failed",
     "REST_OBSERVATION_FAILED": "REST_OBSERVATION_FAILED",

@@ -18,7 +18,11 @@ from sbd.cognition.factory import make_llm_adapter, _validate_shape as validate_
 from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector
 from sbd.cognition.reasoner import Reasoner
 from sbd.cognition.observability import CognitionObserver
-from sbd.core.audio import make_audio_input, make_audio_output
+from sbd.core.audio import (
+    VolumeControlledAudioOutput,
+    make_audio_input,
+    make_audio_output,
+)
 from sbd.core.audio.null import NullAudioInput, NullAudioOutput
 from sbd.core.camera import make_camera
 from sbd.core.camera.null import NullCamera
@@ -116,7 +120,10 @@ class M2Composition:
         if not real and self._llm_resource_sampler is not None:
             raise ConfigValueError("mock M4B composition does not accept a resource sampler")
         audio_input = make_audio_input(config.core.audio)
-        audio_output = make_audio_output(config.core.audio)
+        raw_audio_output = make_audio_output(config.core.audio)
+        audio_output = VolumeControlledAudioOutput(
+            raw_audio_output, config.core.audio.output.volume_percent
+        )
         display = make_display(config.core.display)
         camera = make_camera(config.core.camera)
         gpio = make_gpio(config.core.gpio)
@@ -146,7 +153,7 @@ class M2Composition:
             llm._observer = observer
             conversation_control = llm.control
             if config.core.audio.driver == "alsa":
-                audio_output._observe = observer.mark
+                raw_audio_output._observe = observer.mark
         else:
             observer = None
             llm = MockLLMEngineAdapter(self.llm_outcomes)
@@ -178,6 +185,14 @@ class M2Composition:
                     except Exception:
                         pass
                     raise
+        speak_worker = Speak(
+            tts=tts,
+            audio_output=audio_output,
+            bus=bus,
+            observe=observer.mark if observer is not None else None,
+            before_start=before_speak if observer is not None else None,
+            on_completion=speech_complete if observer is not None else None,
+        )
         external = ExternalMessageSource(
             bus=bus,
             max_items=config.external_message.buffer_max,
@@ -207,7 +222,9 @@ class M2Composition:
         rm.register(ResourceSpec(
             key="core.audio.output", phase=StartPhase.CORE,
             factory=lambda resolver: audio_output,
-            null_factory=lambda resolver: NullAudioOutput(),
+            null_factory=lambda resolver: VolumeControlledAudioOutput(
+                NullAudioOutput(), config.core.audio.output.volume_percent
+            ),
         ))
         rm.register(ResourceSpec(
             key="core.audio", phase=StartPhase.CORE,
@@ -313,6 +330,7 @@ class M2Composition:
                 config.cognition.reason_timeout_seconds,
                 control=conversation_control,
                 observer=observer,
+                streaming_speak=speak_worker if real else None,
             ),
             required=True,
         ))
@@ -323,14 +341,7 @@ class M2Composition:
                     "core.audio.output",
                     "backend.action.speak.tts",
                 ),
-                factory=lambda resolver: Speak(
-                    tts=resolver.require("backend.action.speak.tts"),
-                    audio_output=resolver.require("core.audio.output"),
-                    bus=bus,
-                    observe=observer.mark if observer is not None else None,
-                    before_start=before_speak if observer is not None else None,
-                    on_completion=speech_complete if observer is not None else None,
-                ),
+                factory=lambda resolver: speak_worker,
                 required=config.action.speak.required,
                 capability_kind="speak", capability_dependencies=("audio",),
             ))

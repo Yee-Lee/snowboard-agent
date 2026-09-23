@@ -1,4 +1,5 @@
 from .speaker import Speak
+from .streaming import StreamingSpeakControl, StreamingSpeakError, StreamingSpeakProof
 from sbd.core.config.models import TTSConfig
 
 from .tts import MockTTSAdapter, NullTTSAdapter, TTSAdapter
@@ -23,4 +24,7 @@ def make_tts_adapter(cfg: TTSConfig) -> TTSAdapter:
     )
 
 
-__all__ = ["MockTTSAdapter", "NullTTSAdapter", "Speak", "TTSAdapter", "make_tts_adapter"]
+__all__ = [
+    "MockTTSAdapter", "NullTTSAdapter", "Speak", "StreamingSpeakControl",
+    "StreamingSpeakError", "StreamingSpeakProof", "TTSAdapter", "make_tts_adapter",
+]

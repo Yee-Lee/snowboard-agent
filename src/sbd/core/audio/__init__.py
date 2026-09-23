@@ -1,6 +1,7 @@
 """Lazy audio HAL factories."""
 
 from sbd.core.audio.base import AudioInput, AudioOutput
+from sbd.core.audio.volume import VolumeControl, VolumeControlledAudioOutput
 
 
 def make_audio_input(config) -> AudioInput:
@@ -29,4 +30,7 @@ def make_audio_output(config) -> AudioOutput:
     raise ValueError(f"unknown audio driver: {config.driver}")
 
 
-__all__ = ["AudioInput", "AudioOutput", "make_audio_input", "make_audio_output"]
+__all__ = [
+    "AudioInput", "AudioOutput", "VolumeControl", "VolumeControlledAudioOutput",
+    "make_audio_input", "make_audio_output",
+]

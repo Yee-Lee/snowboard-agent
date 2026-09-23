@@ -89,9 +89,13 @@ class Listen(WorkerRuntime):
                         backend=BackendDisposition.UNPROVEN,
                         recovery_keys=("backend.perception.listen.asr",),
                     )
-            except AdapterRejected:
+            except AdapterRejected as exc:
+                code = getattr(exc, "code", None)
+                extra = {"asr_error_code": code} if code in {
+                    "NO_SPEECH", "MULTIPLE_UTTERANCES"
+                } else {}
                 result = PerceptionResult(
-                    "listen", "error", None, {},
+                    "listen", "error", None, extra,
                     session_id, turn_id, correlation_id,
                 )
             except ComponentSystemFault as exc:

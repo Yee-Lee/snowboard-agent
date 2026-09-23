@@ -413,7 +413,7 @@ class WhisperCppASRAdapter:
         code = event["code"]
         self._finish()
         if code in {"NO_SPEECH", "MULTIPLE_UTTERANCES"}:
-            raise AdapterRejected(f"ASR request rejected: {code}")
+            raise AdapterRejected(f"ASR request rejected: {code}", code=code)
         raise _ASRRequestFault(code)
 
     def _finish(self) -> None:

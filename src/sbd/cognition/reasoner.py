@@ -65,6 +65,10 @@ class _CausedProductFault(LLMFatalError):
         self.source = source
 
 
+class _StreamingTerminalFailure(LLMFatalError):
+    """Terminal failed after audible-prefix admission with complete cleanup."""
+
+
 class Reasoner(WorkerRuntime):
     """Drive one stateless LLM turn and publish exactly one terminal Fact."""
 
@@ -79,6 +83,7 @@ class Reasoner(WorkerRuntime):
         *,
         control: object | None = None,
         observer: object | None = None,
+        streaming_speak: object | None = None,
     ) -> None:
         super().__init__()
         self._llm = llm
@@ -90,6 +95,7 @@ class Reasoner(WorkerRuntime):
         self._product = isinstance(prompt_builder, ListenProjector)
         self._control = llm.control if self._product else control
         self._observer = observer
+        self._streaming_speak = streaming_speak
 
     @property
     def control(self) -> object | None:
@@ -233,6 +239,13 @@ class Reasoner(WorkerRuntime):
                     recovery_keys=("backend.cognition.reasoner.llm",),
                 )
                 fault.args = exc.args
+            except _StreamingTerminalFailure as exc:
+                cause = exc.__cause__
+                fault = LLMComponentSystemFault.create(
+                    where="cognition.reasoner",
+                    code="STREAMING_TERMINAL_FAILED",
+                    backend=BackendDisposition.REUSABLE,
+                )
             except TimeoutError as exc:
                 try:
                     await self._llm.abort()
@@ -371,9 +384,30 @@ class Reasoner(WorkerRuntime):
             if (snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens
                     + snapshot.output_reserve_tokens > snapshot.engine_context_tokens):
                 return self._product_fact(_CONTEXT_LIMIT, "REPLACE_NEXT", identity, outcome="R2")
+            streaming = None
             try:
-                result = await self._llm.generate(snapshot, text)
+                if self._streaming_speak is not None:
+                    streaming = self._streaming_speak.begin_streaming(
+                        session_id, turn_id, f"stream-{generation}-{turn_id}-{correlation_id}"
+                    )
+
+                async def on_safe_text(sequence: int, fragment: str) -> None:
+                    assert streaming is not None
+                    await streaming.feed(session_id, turn_id, sequence, fragment)
+
+                if (
+                    streaming is None
+                    or getattr(self._llm, "supports_safe_text_callback", False) is not True
+                ):
+                    result = await self._llm.generate(snapshot, text)
+                else:
+                    result = await self._llm.generate(
+                        snapshot, text, on_safe_text=on_safe_text
+                    )
             except MemoryAdmissionDenied as denied:
+                if streaming is not None:
+                    await streaming.close_unused()
+                    self._streaming_speak.release_streaming(streaming)
                 if type(denied.speak_allowed) is not bool:
                     raise _LocalProductFault("INVALID_MEMORY_OUTCOME") from None
                 return self._product_fact(_MEMORY_NOTICE if denied.speak_allowed else "",
@@ -382,18 +416,53 @@ class Reasoner(WorkerRuntime):
             except ReplaceableGenerationFailure as failed:
                 if (failed.request_terminal_proven is not True or failed.engine_usable is not True or
                         failed.code not in {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"}):
+                    if streaming is not None:
+                        await streaming.cancel()
+                        self._streaming_speak.release_streaming(streaming)
                     raise _CausedProductFault("INVALID_TERMINAL_PROOF", failed) from None
+                if streaming is not None and streaming.admitted_count:
+                    await streaming.fail()
+                    self._streaming_speak.release_streaming(streaming)
+                    raise _StreamingTerminalFailure("STREAMING_TERMINAL_FAILED") from failed
+                if streaming is not None:
+                    await streaming.close_unused()
+                    self._streaming_speak.release_streaming(streaming)
                 return self._product_fact(_REPLACEABLE, "REPLACE_NEXT", identity, outcome="R2")
+            except BaseException:
+                if streaming is not None:
+                    await streaming.cancel()
+                    self._streaming_speak.release_streaming(streaming)
+                raise
             if not isinstance(result, SemanticGeneration):
+                if streaming is not None:
+                    await streaming.cancel()
+                    self._streaming_speak.release_streaming(streaming)
                 raise _LocalProductFault("INVALID_SEMANTIC_RESULT")
             try:
                 semantic = validate_semantic({"text":result.text,"end":result.end})
             except ValueError:
+                if streaming is not None:
+                    await streaming.fail()
+                    self._streaming_speak.release_streaming(streaming)
                 raise _LocalProductFault("INVALID_SEMANTIC_RESULT") from None
             if (type(result.safe_fragments) is not tuple or
                     any(type(fragment) is not str or not fragment for fragment in result.safe_fragments) or
                     not semantic.text.startswith("".join(result.safe_fragments))):
+                if streaming is not None:
+                    await streaming.fail()
+                    self._streaming_speak.release_streaming(streaming)
                 raise _LocalProductFault("INVALID_SEMANTIC_PREFIX")
+            if streaming is not None:
+                for sequence, fragment in enumerate(
+                    result.safe_fragments[streaming.admitted_count:],
+                    start=streaming.admitted_count,
+                ):
+                    await streaming.feed(session_id, turn_id, sequence, fragment)
+                if semantic.text:
+                    await streaming.finish(session_id, turn_id, semantic.text)
+                else:
+                    await streaming.close_unused()
+                    self._streaming_speak.release_streaming(streaming)
             return self._product_fact(semantic.text,
                 "END_SESSION" if semantic.end else "KEEP_NEXT", identity)
 
