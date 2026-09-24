@@ -49,6 +49,45 @@
   workstation results or that commit as Pi Verify, a formal candidate, or formal PV credit. Applicable
   Pi validation, same-bytes reconciliation, scenario-driver completion and acceptance remain pending.
 
+## Completed TR_dev_M4_ERR_I retained correction — 2026-09-21
+
+- Tester re-review cleared B3/B4 and retained two Blocking false-green cases: a same-function second lossy
+  catch can satisfy the shared-mapping heuristic by assigning its cause to an arbitrary variable, and a
+  required catalog key can be replaced by an undefined same-prefix row while preserving prefix counts.
+- `tests/test_m4_err_candidate.py` now requires the handler-bound cause to reach a typed `raise ... from`
+  sink (or the closed `_HandlerFailure` sink), and the Tester exact lossy-catch shape is rejected.
+  `tests/test_m4_err_catalog.py` compares the exact 57-row key set and rejects `ASR-11` to `ASR-12`
+  substitution with explicit missing/unexpected IDs.
+- Workstation retained-targeted result is 12 passed; affected result is 146 passed. Final content SHA-256 is
+  `c4004c40a5f9d3790b9ac54f54c2822cd070cd46637622a5ae0e3a0ab0beb14c`, equal on workstation/Pi.
+  Fresh Pi `M4-ERR-DEV-08` passed 1752 portable tests with 34 RPi-only deselections and passed all five PV
+  cards on the same binding. Final manifest SHA-256 is
+  `a8151c905562fa8a8dbed19d553a58335e3f04324a34c060c0419b67f932c518`; next owner is Tester.
+
+## Completed TR_dev_M4_ERR_I correction — 2026-09-21
+
+- All four Blocking findings are corrected and the Tester-owned review is `Revised`. Closed AST/runtime
+  oracles now enumerate production publishers and catch sites, exercise all five taxonomy paths, and reject
+  positional/neutral publishers, lossy catches, cancellation publication, second bad catches, privacy leaks,
+  missing/duplicate matrix rows and fatal double cycles.
+- `tests/m4_err_required_rows.json` binds 57 required rows to 57 unique executable nodes. Its isolated
+  collection/execution gate rejects deselection, skip, xfail and xpass. Missing runtime coverage was added
+  for recovery failure, exit 2/3/4/0, single-root handling, active-Session GPIO callback, Button stale/bounce,
+  Display warning/drop and convergence independence.
+- The M4B G01 timeout was an alias-cycle quadratic scan in `m4b_source_violations`; monotonic import-rooted
+  alias resolution and a bounded cyclic regression remove the hang. A separate RM/SM completion race that
+  could emit a raw un-retrieved task traceback was also corrected. Workstation focused/affected result is
+  144 passed in 79.66 seconds; compilation and `git diff --check` pass.
+- Final candidate content SHA-256 is
+  `c5edbe68a3d777a2c515a1adfee9a801a3a8b00648b19907e16ecdf81f546634`, independently equal on the
+  workstation and isolated Pi checkout. Pi `M4-ERR-DEV-06` full portable result is 1750 passed, 34 RPi-only
+  deselected, zero failed/skipped/xfail/xpass in 62.05 seconds. The same binding then passed PV-001 through
+  PV-005, one pass and zero fail/skip per card.
+- Pi-local evidence root is
+  `m4err-fix-20260921-1o4NLJ/verification/M4-ERR-DEV-06/`; final manifest SHA-256 is
+  `60dabf576c7ff3d998a657681cf55cc24c71d60429e5c92e36f03d4b6322b03a`. PV-001/PV-002 cards bind
+  their product structured-log and active-Session transition observations. Failed diagnostic `DEV-05` is
+  uncredited and was not combined with the final run. No commit or push has been made; next owner is Tester.
 ## Active M4-ERR implementation — 2026-09-20
 
 - Developer implementation and same-bytes Pi verification are complete for PI-011, PI-012 and WP7. WP1–WP6

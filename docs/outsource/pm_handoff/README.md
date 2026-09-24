@@ -9,6 +9,7 @@
 | --- | --- |
 | [`DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003`](DELIVERY-LLM-POC-M4B-MVA-EFFICIENCY-003.md) | Retained as a clean-redesign input; it is not an active product profile or formal gate blocker |
 | [`DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004`](DELIVERY-LLM-POC-M4B-PROMPT-V2D2-004.md) | Retained as the current POC prompt reference; replacement product prompt/customization remains to be designed |
+| [`PROPOSAL-AUDIO-VOLUME-ADJUSTMENT-001`](PROPOSAL-AUDIO-VOLUME-ADJUSTMENT-001.md) | Accepted into M4C design with startup-static config volume and a future control seam; downstream design incorporation remains active |
 
 ## 使用方式
 
