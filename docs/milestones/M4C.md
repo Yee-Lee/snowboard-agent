@@ -35,11 +35,9 @@ commit為`a492a1416721c73c989dd46067b3e9dd1c24508d`，Core保存檔SHA-256為
 
 此裁決只採用可行性與mapping選型，不把POC自評當產品PASS。POC明列原定82項formal case執行數為0、
 Pi使用dirty development checkout、live A值為projection，且沒有完整negative／resource／human-quality
-matrix；這些限制不支持任何M4C Test ID的PASS credit。它仍足以關閉設計選型，因為同一retained
-generation的實體A／B replay直接觀察到B提前2.019秒audible onset，真實
-`LiteRT-LM → S2(12) → B2 → Matcha → I2S speaker → USB microphone`鏈路也在terminal前269.958毫秒
-開始發聲，21.677030毫秒acoustic uncertainty內沒有改動既有public TTS／Audio／Fact contract。
-未完成的qualification全部回到正常`Test Spec → Developer → Verify`，不得再保留A／B雙重產品路徑。
+matrix；這些限制不支持任何M4C Test ID的PASS credit。它足以關閉設計選型，因為工程觀察已證明B2可在
+terminal前交付文字到既有TTS／Audio鏈路，且沒有改動既有public TTS／Audio／Fact contract。未完成的
+qualification全部回到正常`Test Spec → Developer → Verify`，不得再保留A／B雙重產品路徑。
 
 ### Adopted streaming-speak contract
 
@@ -97,9 +95,9 @@ scenario在同一正常pipeline收斂，不新增POC review gate：
 - extraction／mapping coverage須驗證punctuation-or-12、Unicode normalization stability、terminal flush、
   B2只合併一個already-available lookahead、exact concatenation，以及沒有lookahead時不等待。
 - Pi exact-product qualification須在same-bytes M4C candidate上使用真實LiteRT-LM、Matcha、25% product
-  volume、I2S speaker及獨立microphone。至少一個eligible正常turn須證明first `SAFE_TEXT`、first PCM、
-  Audio first write、physical audible onset、terminal、final audible sample的同clock ordering，並證明
-  terminal前已開始實體發聲；這是功能／完整性判定，不建立latency ceiling或A/B performance gate。
+  volume與I2S speaker。`M4C-S02-NORMAL-END`是唯一的正常B2產品turn：它以原S09的eligible輸入完成
+  streaming回答及正常conversation close，並自動驗證first `SAFE_TEXT`、first PCM、Audio first write與
+  terminal的因果順序、B2路徑及terminal-validated文字一致性。
 - selected B2須用固定公開speech sample做understandable、無duplicate／missing／reorder、無破壞理解的
   artificial boundary之真人判讀；只有這項產品本身需要的聲音品質保留人工結果。negative cancellation
   tail與cleanup使用自動target facts，不要求人工逐項判讀。
@@ -115,8 +113,8 @@ scenario在同一正常pipeline收斂，不新增POC review gate：
   行為。這些surface由replacement M4B與後續M4C review重新定義。
 - M4B已交付Audio+LLM combined memory evidence、各階段同時駐留模型／資源，以及同一monotonic
   clock的節點時間紀錄。M4C用這些資料做whole-product composition，不回頭重做subsystem breakdown。
-- M4C仍負責整機State Manager／Display wiring、實體audible onset與final product SHA驗證；M4B的
-  Audio first write只是一個節點，不等於聲音已可聽見。
+- M4C仍負責整機State Manager／Display wiring與final product same-bytes驗證；M4B的
+  Audio first write是產品內可觀察的Audio節點。
 
 ## Entry conditions
 
@@ -197,14 +195,14 @@ graceful `exit 0`，或明列的Level 3 nonzero exit。
 | Scenario | Trigger與主要步驟 | 必須觀察 | 終點 |
 | :--- | :--- | :--- | :--- |
 | `M4C-S01-START-IDLE` | 手動啟動正式application；等待required resources READY | 尚未建立Conversation；Status=`待命`；Main為空；Display保持開啟 | `IDLE` |
-| `M4C-S02-NORMAL-END` | IDLE短按；說「你是誰？」並完成回答；下一turn說「請結束對話。」 | WAKE後才建立Conversation；THINK保留final ASR文字；ACTION顯示並播放同一validated回答；同一Session／Conversation；`end=true`有文字則播完再REST、無文字直接REST | close／cleanup後`IDLE`、Status=`待命`、Main清空 |
+| `M4C-S02-NORMAL-END` | IDLE短按；以eligible輸入完成B2 streaming回答；下一turn說「請結束對話。」 | WAKE後才建立Conversation；THINK保留final ASR文字；至少一個pre-terminal `SAFE_TEXT`進入唯一B2 control；ACTION顯示並播放同一terminal-validated回答；同一Session／Conversation；`end=true`有文字則播完再REST、無文字直接REST | close／cleanup後`IDLE`、Status=`待命`、Main清空 |
 | `M4C-S03-NO-INPUT` | IDLE短按；連續兩次timeout、空白或`NO_SPEECH` | 第一次只說固定重試句並保持同一Session／Conversation；第二次不再說重試句且不呼叫LLM | REST／cleanup後`IDLE` |
 | `M4C-S04-INTERRUPT` | 三個獨立variant分別在PERCEPTION、THINK、ACTION實體短按 | 接受後Main=`已中止`；停止未來收音／生成／播放；不發布舊operation正常成功；完成Conversation與owner cleanup | `IDLE`且Main清空 |
 | `M4C-S05-APP-EXIT` | application READY／IDLE時實體長按 | 停止接受新Session；reverse cleanup；Display final blank；所有child／HAL owner bounded exit；不要求Pi關機或application自啟 | application `exit 0` |
 | `M4C-S06-RECOVERABLE-FAULT` | 三個獨立variant在PERCEPTION、THINK、ACTION各注入一個M4-ERR已驗證的backend system fault | 不fabricate正常Fact、不要求USER重說；ERROR安全摘要；Session convergence及對應rebuild完成；不重跑底層diagnostic cause matrix | recovery barrier clear後`IDLE`；不要求第二Session |
 | `M4C-S07-DISPLAY-DEGRADE` | 正常Session中注入Display runtime failure | Display依既有contract latch disabled；語音主流程不進ERROR且仍完成；process exit code不因Display改變 | Session cleanup後`IDLE` |
 | `M4C-S08-RECOVERY-FATAL` | 一個代表性backend system fault後注入rebuild timeout／READY mismatch | 不回假`IDLE`、不接受新Session；bounded cleanup；保存sanitized stable failure evidence | Level 3 nonzero exit |
-| `M4C-S09-STREAMING-SPEAK` | 使用唯一B2路徑完成一個eligible正常turn；另以fresh setup在queued／synthesizing／playing三點實體短按 | 正常turn在terminal前開始實體發聲，spoken text與terminal validated text一致；各中止variant無duplicate／missing／reorder／late output、正常success或owner leak；audible onset、tail與completion節點可定位 | 正常turn續Listen／REST；各中止variant清理後`IDLE` |
+| `M4C-S09-STREAMING-SPEAK` | 固定B2 speech-quality sample；另以fresh setup在queued／synthesizing／playing三點實體短按 | fixed sample的spoken text與terminal-validated text一致；各中止variant無duplicate／missing／reorder／late output、正常success或owner leak | fixed sample完成；各中止variant清理後`IDLE` |
 
 所有適用scenario在network disabled的產品設定執行；不得fallback至網路服務。公開log／evidence不得含
 transcript、prompt、raw model output、PCM、credential、session ID或完整私人path。Display沿用
@@ -214,12 +212,12 @@ ACTION Main只顯示terminal-validated實際回答，不顯示streaming provisio
 
 ### Product-quality observations
 
-`M4C-S02`及`M4C-S09`另保存單一product timeline：button acceptance／Conversation ready、ASR final、
-LLM send、first safe text、LLM terminal、TTS first PCM、Audio first write、physical audible onset及final
-audible sample。這些值在M4C是完整性與順序證據，不建立正式response ceiling。VAD使用固定短句、
-一般句及尾音較弱句觀察是否截斷、漏字或有明顯多餘等待；只有可重現問題才依前述focused-delta
-規則調整。startup-static volume須為product config的`25`，聲音可懂且無clipping；長期品質、
-repeated sessions、soak與正式performance/resource門檻仍由ALPHA承接。
+`M4C-S02`保存必要的產品內timeline：button acceptance／Conversation ready、ASR final、LLM send、
+first safe text、LLM terminal、TTS first PCM與Audio first write；只驗證因果順序，不建立response
+ceiling。VAD使用固定短句、一般句及尾音較弱句觀察是否截斷、漏字或有明顯多餘等待；
+只有可重現問題才依前述focused-delta規則調整。startup-static volume須為product config的`25`；固定
+speech sample保留一次必要的可懂度／內容完整性人工判讀。長期品質、repeated sessions、soak與正式
+performance/resource門檻仍由ALPHA承接。
 
 Accepted M4B disposition見[`M4B_MVA.md`](M4B_MVA.md)，current owner見
 [`status/current.md`](../status/current.md)。

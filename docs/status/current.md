@@ -24,9 +24,9 @@
   observations select the design but provide no M4C Test ID PASS credit. Core exact-product qualification,
   negative coverage, speech-quality judgment and same-bytes Pi evidence remain mandatory.
 - [`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) now maps the fixed volume, B2 controller／extraction／
-  outcome, no-input, regression and nine whole-product scenario contracts. `TR_spec_M4C_I` is Resolved with
-  0 Blocking; its finalizer requires one active designation for each of 17 exact variants while retaining
-  superseded same-tuple attempts as non-designated evidence.
+  outcome, no-input, regression and nine whole-product scenario contracts. `M4C-S02` absorbs the eligible B2
+  normal turn and is automatic; S09 has the fixed quality sample plus three interrupt variants, for 16 exact
+  variants total. `TR_spec_M4C_I` remains Resolved with 0 Blocking.
 
 ## Developer route
 
@@ -37,7 +37,7 @@ Implement the current M4C design and Test Spec from:
 3. accepted M4A／M4B／M4-ERR only through the direct regression and composition boundaries routed by those files.
 
 Implement the single B2 path without reopening the POC or adding an A-mode fallback. Complete all applicable
-portable tests, then execute the 17 designated Pi sub-runs on the pending tracked bytes. Pi Verify and workstation
+portable tests, then execute the 16 designated Pi sub-runs on the pending bytes. Pi Verify and one workstation
 same-bytes reconciliation must pass before any commit preparation.
 
 ## Role routing now

@@ -22,8 +22,8 @@
 - The source delivery is bound to POC commits `a6de0e66d7effe03549037eb8f50b99e42399620` and
   `a492a1416721c73c989dd46067b3e9dd1c24508d`; the preserved Core file SHA-256 is
   `c097d550d263070ef216bfa391e87c69b6b27aa68baf26f09ea7428be8bf069f`.
-- The POC proved a usable pre-terminal raw-stream path, existing-interface B2 mapping, corrected physical
-  acoustic observation and bounded cleanup in engineering runs. It does not provide formal Core acceptance:
+- The POC proved a usable pre-terminal raw-stream path, existing-interface B2 mapping and bounded cleanup in
+  engineering runs. It does not provide formal Core acceptance:
   0/82 formal cases ran, the Pi checkout was dirty, the live A result was projected, and the full negative,
   resource and human-quality matrices were omitted.
 - Those limitations are routed into M4C Test Spec and final same-bytes Pi Verify. No POC row may be credited as
@@ -48,6 +48,6 @@ The authoritative behavior is [`M4C`](../milestones/M4C.md). It fixes:
 
 Developer is next owner. Implement [`M4C`](../milestones/M4C.md) against
 [`test_spec_M4C.md`](../test_spec/test_spec_M4C.md), including the portable B2／volume／no-input coverage and the
-17 exact Pi variants. The pending tracked bytes, config, harness and artifacts must remain digest-bound through
-Pi Verify and workstation same-bytes reconciliation; do not commit before that verification passes. Raise a
+16 exact Pi variants. The operator must reconcile the Pi-verified candidate with workstation pending bytes once
+before commit preparation; do not commit before that verification passes. Raise a
 focused design request only for an actual authority conflict, not for an additional review or approval gate.

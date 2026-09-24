@@ -14,8 +14,8 @@
 - Assertions must detect a stated product risk. Scenario startup and execution do not perform routine
   source, model, artifact, evidence or text digest work, generic close-proof, or owner enumeration.
   Content checks remain operator-triggered transfer/candidate diagnostics only when actually needed.
-- The product has no USB microphone. Pi scenarios use the selected INMP441/ALSA input and I2S speaker.
-  No M4C result depends on external acoustic capture or exact ASR wording.
+- Pi scenarios use the selected INMP441/ALSA input and I2S speaker. No M4C result depends on
+  external capture or exact ASR wording.
 
 ### Current implementation result
 
@@ -39,7 +39,7 @@
 
 ### S02 — implementation closed
 
-- `M4C-PI-S02/NORMAL_END` incorporates the former live-eligible S09 proof. Turn 1 requires
+- `M4C-PI-S02/NORMAL_END_B2` incorporates the former live-eligible S09 proof. Turn 1 requires
   `first_safe_text <= tts_first_pcm <= audio_first_write < llm_terminal`, complete ordered playback and
   drain, and equality between synthesized, terminal and final Display text. Turn 2 accepts the legal
   `speak, speak, rest` or `speak, rest` action branch and returns to IDLE. ASR text itself is not graded.
@@ -61,16 +61,15 @@
   the second capture. The second calls no LLM, plays no retry, executes Rest/END_SESSION and returns to
   IDLE with Status `待命` and empty Main.
 - Public evidence retains the timeout/streak/action/count/order facts. Private evidence retains identities,
-  correlations and native ASR/TTS/ALSA diagnostics. There is no USB-microphone, acoustic or exact-ASR-text
-  assertion. Affected paths are the no-input portable tests, M4C Pi scenario driver and runner tests;
+  correlations and native ASR/TTS/ALSA diagnostics. Exact ASR text is not asserted. Affected paths are the
+  no-input portable tests, M4C Pi scenario driver and runner tests;
   estimate: 3 points.
 - Next action: implement the S03 real-State-Manager/fake-native workstation path and fail-closed cases,
   run focused and affected regressions, then execute its single Pi product sub-run. Final full M4C PV
   remains pending until all scenarios are complete.
 
-### Remaining authority blocker
+### Current authority route
 
-- `docs/milestones/M4C.md` and `docs/test_spec/test_spec_M4C.md` still mention the borrowed USB microphone,
-  physical-acoustic S02 assertions, a separate `S09/LIVE_ELIGIBLE_L02`, two S02/S09 USER results and a
-  17-run catalog. Their Designer/Tester owners must synchronize the settled USER decisions to the
-  16-run catalog before final M4C PV; Developer does not edit those owner files.
+- `docs/milestones/M4C.md` and `docs/test_spec/test_spec_M4C.md` now define the automatic
+  `S02/NORMAL_END_B2`, the four-variant S09 catalog and the 16-run final PV. Update the runner
+  to that catalog before final M4C PV; Developer owns the implementation change.

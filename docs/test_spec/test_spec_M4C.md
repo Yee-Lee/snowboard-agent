@@ -17,7 +17,7 @@ in this document. Developer entry requires this spec to be complete.
 **In scope**: `VolumeControlledAudioOutput` decorator and config; `StreamingSpeakControl`
 (`B2-ONE-LOOKAHEAD-COALESCE`) portable controller coverage; session no-input streak and
 product classification; whole-product scenario composition
-(`M4C-S01`–`M4C-S09`); product-quality timeline; M4C regression continuity.
+(`M4C-S01`–`M4C-S09`); necessary B2 speech-quality judgment; M4C regression continuity.
 
 **Out of scope**: barge-in; runtime volume adjustment; Display animation/graphics (留 M7);
 camera/look (留 M6); tool/MQTT (留 M5); repeated-session soak; formal latency/memory/thermal
@@ -30,9 +30,8 @@ any M4C Test ID.
 
 ### 2.1 Result vocabulary
 
-- **Pass**: every required assertion passes, evidence is present, and tracked-content /
-  config / artifact digest agrees. Where USER audible-quality inspection is required, that
-  result is also Pass.
+- **Pass**: every required assertion passes and required evidence is present. Where USER
+  audible-quality inspection is required, that result is also Pass.
 - **Fail**: an assertion fails, a forbidden call or artifact occurs, a test is
   skipped / xfail / xpass, or a required USER audible-quality result is missing or Fail.
 - **Incomplete**: a required evidence field, measurement, or explicit null reason is absent.
@@ -43,7 +42,7 @@ any M4C Test ID.
   Pass and complete captured evidence, but no USER verdict yet. Not Pass; cannot be
   designated by aggregation.
 
-Script-only cases (all cases except S02 timeline-quality and S09/QUALITY_T02) are decided
+Script-only cases (all cases except S09/QUALITY_T02) are decided
 entirely by automatic assertions and target facts; no separate Developer human-result column
 or manual gate is added.
 
@@ -54,14 +53,14 @@ or manual gate is added.
 | `PU` | Portable unit | CPython 3.11, 3.12, 3.13; Linux x86_64/aarch64 and macOS arm64; no native/network | 60 s per Test ID |
 | `PI` | Portable integration | CPython 3.11, 3.12, 3.13; Linux x86_64/aarch64 and macOS arm64; deterministic adapter/fake seams | 90 s per Test ID |
 | `PS` | Portable subprocess | Linux x86_64/aarch64, CPython 3.13 only; fake child in real POSIX process group | 120 s per Test ID |
-| `PV` | Pi product verification | Raspberry Pi 5 4 GB, Debian 13 aarch64, CPython 3.13; real LiteRT-LM, Matcha TTS, ALSA I2S speaker, USB microphone; `volume_percent=25`; network disabled; same tracked bytes as pending commit | 60 min per Test-ID sub-run |
+| `PV` | Pi product verification | Raspberry Pi 5 4 GB, Debian 13 aarch64, CPython 3.13; real LiteRT-LM, Matcha TTS and ALSA I2S speaker; `volume_percent=25`; network disabled; same pending bytes as the commit candidate | 60 min per Test-ID sub-run |
 
-Every result record contains: `schema_version`, `test_id`, `case_id`, `base_sha`,
-`tracked_content_sha256`, pending-path set, harness/config/artifact digests, target facts,
-matrix/platform/Python identity, start/end monotonic timestamps, `status`, and
-`evidence_sha256`. Changing any pending byte, harness/config/artifact digest or target fact
-invalidates the result. `user_result` is present only for S02 timeline-quality and
-S09/QUALITY_T02; all other results are automatic.
+Every result record contains: `schema_version`, `test_id`, `case_id`, product config and target
+facts, matrix/platform/Python identity, start/end monotonic timestamps, `status`, and a
+minimal evidence locator. The operator performs one independent same-bytes reconciliation
+between the Pi-verified candidate and workstation pending content before commit preparation;
+it is not a per-sub-run assertion. `user_result` is present only for S09/QUALITY_T02; all
+other results are automatic.
 
 All async and concurrent cases use named `asyncio.Event`, pipe/queue acknowledgement, task-join,
 action-complete, and close-proof barriers. Correctness sleeps, poll-until-lucky loops and
@@ -231,46 +230,46 @@ python3.13 scripts/run-m4c-pv.py init \
   --binding-manifest <BINDING_JSON>
 ```
 
-`init` fails unless both roots are newly empty and the binding manifest automatically attests:
-`base_sha`, `tracked_content_sha256`, pending-path set, harness/config/artifact digests, and
-target facts including `volume_percent=25` and network disabled. No role authorization,
-reviewer identity, signature or freeze artifact is an execution input.
+`init` records the fresh public/private roots, product config and target facts including
+`volume_percent=25` and network disabled. No source, patch, config, model, artifact or
+evidence digest is a per-sub-run assertion; no role authorization, reviewer identity,
+signature or freeze artifact is an execution input.
 
 ### 5.1 Fixed sub-run catalog
 
-The finalizer requires exactly **17 fresh sub-runs** over **9 aggregate Test IDs**:
+The finalizer requires exactly **16 fresh sub-runs** over **9 aggregate Test IDs**:
 
 ```text
 S01: START_IDLE            (1 sub-run)
-S02: NORMAL_END            (1 sub-run)
+S02: NORMAL_END_B2         (1 sub-run)
 S03: TWO_TIMEOUTS          (1 sub-run)
 S04: PERCEPTION, THINK, ACTION     (3 sub-runs)
 S05: APP_EXIT              (1 sub-run)
 S06: PERCEPTION_ASR_INFERENCE, THINK_LLM_CHILD_EXIT, ACTION_TTS_CHILD_EXIT  (3 sub-runs)
 S07: DISPLAY_DEGRADE       (1 sub-run)
 S08: LLM_READY_MISMATCH_FATAL      (1 sub-run)
-S09: LIVE_ELIGIBLE_L02, QUALITY_T02, QUEUED, SYNTHESIZING, PLAYING  (5 sub-runs)
+S09: QUALITY_T02, QUEUED, SYNTHESIZING, PLAYING  (4 sub-runs)
 ```
 
 The finalizer rejects a missing, duplicate, extra, or mismatched variant. A missing sub-run
 partition is Incomplete for that Test ID and prevents `pv_status=Pass`.
 
-`user_result` is required for exactly two sub-runs: `S02/NORMAL_END` (timeline quality) and
-`S09/QUALITY_T02` (speech quality). All other sub-run results are automatic.
+`user_result` is required only for `S09/QUALITY_T02` (speech quality). All other sub-run
+results are automatic.
 
 ### 5.2 Execution matrix
 
 | Test ID | Variant / sub-run | Human result | Evidence locator |
 | :--- | :--- | :--- | :--- |
 | `M4C-PI-S01` | `START_IDLE` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S01/` |
-| `M4C-PI-S02` | `NORMAL_END` | `user_result` (timeline quality) | `<public_root>/<pv_run_id>/M4C-PI-S02/` |
+| `M4C-PI-S02` | `NORMAL_END_B2` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S02/` |
 | `M4C-PI-S03` | `TWO_TIMEOUTS` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S03/` |
 | `M4C-PI-S04` | `PERCEPTION`, `THINK`, `ACTION` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S04/` |
 | `M4C-PI-S05` | `APP_EXIT` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S05/` |
 | `M4C-PI-S06` | `PERCEPTION_ASR_INFERENCE`, `THINK_LLM_CHILD_EXIT`, `ACTION_TTS_CHILD_EXIT` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S06/` |
 | `M4C-PI-S07` | `DISPLAY_DEGRADE` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S07/` |
 | `M4C-PI-S08` | `LLM_READY_MISMATCH_FATAL` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S08/` |
-| `M4C-PI-S09` | `LIVE_ELIGIBLE_L02`, `QUALITY_T02`, `QUEUED`, `SYNTHESIZING`, `PLAYING` | `user_result` for `QUALITY_T02` only; others automatic | `<public_root>/<pv_run_id>/M4C-PI-S09/` |
+| `M4C-PI-S09` | `QUALITY_T02`, `QUEUED`, `SYNTHESIZING`, `PLAYING` | `user_result` for `QUALITY_T02` only; others automatic | `<public_root>/<pv_run_id>/M4C-PI-S09/` |
 
 ### 5.3 Common Pi execution requirements
 
@@ -305,8 +304,8 @@ python3.13 scripts/run-m4c-pv.py run \
 
 ```text
 python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S02 --variant NORMAL_END \
-  --utterance-1 '你是誰？' --utterance-2 '請結束對話。' \
+  --test-id M4C-PI-S02 --variant NORMAL_END_B2 \
+  --utterance-1 '天空為什麼是藍色的？' --utterance-2 '請結束對話。' \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
@@ -316,28 +315,20 @@ python3.13 scripts/run-m4c-pv.py run \
 | Observation | Required assertion |
 | :--- | :--- |
 | Conversation created | Only after WAKE; not before short-press |
-| Turn 1 THINK | Main shows final ASR text for「你是誰？」|
-| Turn 1 ACTION | Main shows terminal-validated answer; audio played; shown text equals spoken text |
+| Turn 1 THINK | Main shows final ASR text; at least one pre-terminal `SAFE_TEXT` is admitted to the unique B2 control |
+| Turn 1 ACTION | Only `B2-ONE-LOOKAHEAD-COALESCE`; terminal-validated answer is displayed and played; shown and spoken digests agree; no A-mode or second full-response path |
 | Turn 2 (`end=true`) | Non-empty answer: played to completion then REST; empty answer: direct REST |
 | Session/Conversation cleanup | Matching close proof; bounded owner cleanup |
 | Final state | IDLE; Status=`待命`; Main empty |
 
-**Product-quality timeline** (Turn 1 and Turn 2): Record monotonic timestamps for:
+**Automatic B2 timeline** (Turn 1): Record monotonic timestamps for:
 
 ```
 button_acceptance → conversation_ready → asr_final → llm_send →
-first_safe_text → llm_terminal → tts_first_pcm →
-audio_first_write → physical_audible_onset → final_audible_sample
+first_safe_text → tts_first_pcm → audio_first_write → llm_terminal
 ```
 
-Assert nondecreasing order of all applicable nodes. Every missing/not-applicable node is
-explicit null with stable reason. No duration establishes a PASS ceiling.
-
-**USER audible-quality inspection**: Speech is understandable at approximately 25 % volume;
-no clipping; no duplicate, missing or reordered content; no disruptive artificial boundary.
-VAD observation: note any tail truncation, missing words, or excess silence (reproducible
-problems only trigger focused delta; no unilateral parameter change during verification).
-`user_result` binds the exact `pv_run_id`, `sub_run_id`, `base_sha` and `tracked_content_sha256`.
+Assert the listed causal order. No duration establishes a PASS ceiling.
 
 ### 5.6 M4C-PI-S03 — Consecutive no-input and automatic session close
 
@@ -487,20 +478,11 @@ from `core-m4b-cognition-001`.
 | Cleanup | Bounded; sanitized single root; no raw exception string in public evidence |
 | Process exit | Exactly `exit 4` |
 
-### 5.12 M4C-PI-S09 — Streaming speak (5 sub-runs)
+### 5.12 M4C-PI-S09 — Streaming speak (4 sub-runs)
 
-Five fresh sub-runs:
+Four fresh sub-runs:
 
 ```text
-# Live eligible turn
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S09 --variant LIVE_ELIGIBLE_L02 \
-  --utterance '天空為什麼是藍色的？' \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
 # Fixed quality sample
 python3.13 scripts/run-m4c-pv.py run \
   --test-id M4C-PI-S09 --variant QUALITY_T02 \
@@ -532,23 +514,6 @@ python3.13 scripts/run-m4c-pv.py run \
   --binding-manifest <BINDING_JSON> --fresh-setup
 ```
 
-**`LIVE_ELIGIBLE_L02`** (`天空為什麼是藍色的？`):
-
-If the real LiteRT-LM produces no pre-terminal fragment for this input, the sub-run is
-**Incomplete** (must not switch to A-mode or any alternative path).
-
-Required automatic assertions when at least one pre-terminal fragment is produced:
-
-| Observation | Required assertion |
-| :--- | :--- |
-| Same-clock node ordering | `first_safe_text → tts_first_pcm → audio_first_write → physical_audible_onset` nondecreasing |
-| Onset before terminal | `physical_audible_onset` timestamp strictly precedes `llm_terminal` timestamp |
-| Acoustic uncertainty | Measured clock-to-acoustic mapping uncertainty ≤ 50 ms; `llm_terminal − physical_audible_onset` strictly greater than that measured uncertainty |
-| B2 path | Only `B2-ONE-LOOKAHEAD-COALESCE`; no A-mode or second full-response path |
-| Spoken text vs terminal | Spoken digest matches terminal-validated answer digest; no provisional fragment shown in Display |
-
-Model text and audio remain private; public evidence contains only lengths, digests, timings and verdicts.
-
 **`QUALITY_T02`** — fixed controlled trace (real Matcha / Audio):
 
 ```text
@@ -566,8 +531,7 @@ one `ActionCompleted(ok)`; audio played without duplicate/missing/reorder.
 3. Does any artificial boundary disrupt understanding?
 
 Pass requires: **yes / no / no**. Model text and audio remain private; public record contains
-only USER verdicts, counts, digests and the bound tuple. `user_result` binds the exact
-`pv_run_id`, `sub_run_id`, `base_sha` and `tracked_content_sha256`.
+only USER verdicts and counts.
 
 **Interrupt variants** (`QUEUED`, `SYNTHESIZING`, `PLAYING`) — fresh setup each:
 
@@ -581,7 +545,7 @@ All variants: no duplicate, missing, reorder or late output; no normal success; 
 
 ### 5.13 PV aggregation and finalization
 
-After all 17 designated sub-run results exist:
+After all 16 designated sub-run results exist:
 
 ```text
 python3.13 scripts/run-m4c-pv.py finalize \
@@ -592,24 +556,22 @@ python3.13 scripts/run-m4c-pv.py finalize \
 ```
 
 `pv_status=Pass` only when:
-- All 17 catalog entries each have exactly one automatically designated, non-superseded
+- All 16 catalog entries each have exactly one automatically designated, non-superseded
   result with script status Pass.
-- `user_result=Pass` for `S02/NORMAL_END` and `S09/QUALITY_T02`.
-- All designated results share the identical protected tuple (`base_sha`,
-  `tracked_content_sha256`, pending-path set, harness/config/artifact digests, target facts).
+- `user_result=Pass` for `S09/QUALITY_T02`.
+- The operator has completed the one required Pi/workstation same-bytes reconciliation before
+  commit preparation.
 
 **Attempts vs. designated results.** Each sub-run command creates one attempt. The finalizer
 selects exactly one *designated* (non-superseded) result per catalog entry from all attempts
 present under that `pv_run_id`. Retrying a failed sub-run atomically marks the previous
-same-tuple attempt for that catalog entry as *superseded*; the new attempt becomes the
+attempt for that catalog entry as *superseded*; the new attempt becomes the
 designated result for that entry. Superseded attempts remain as evidence but are not counted
-among the 17 designated results and cannot satisfy any catalog entry.
+among the 16 designated results and cannot satisfy any catalog entry.
 
 The finalizer rejects: a missing designated result for any catalog entry; duplicate active
 designations for the same catalog entry; an extra attempt whose catalog entry is not in the
-17-variant catalog; a tuple mismatch between any attempt and the protected tuple; or a
-supersession chain that is ambiguous or cyclic. A superseded attempt with a different
-protected tuple is Blocked and cannot be reactivated.
+16-variant catalog; or a supersession chain that is ambiguous or cyclic.
 
 ---
 
@@ -617,20 +579,19 @@ protected tuple is Blocked and cannot be reactivated.
 
 | M4C design section | Portable Test IDs | Pi sub-run variants |
 | :--- | :--- | :--- |
-| Static output volume boundary | `M4C-VOL-001` | `S02/NORMAL_END` (audible quality), `S09/LIVE_ELIGIBLE_L02`, `S09/QUALITY_T02` |
-| B2 streaming-speak controller | `M4C-SS-CTRL-001` | `S09/LIVE_ELIGIBLE_L02`, `S09/QUALITY_T02`, `S09/QUEUED`, `S09/SYNTHESIZING`, `S09/PLAYING` |
-| Fragment extraction / punctuation-or-12 | `M4C-SS-EXTRACT-001` | `S09/LIVE_ELIGIBLE_L02` |
+| Static output volume boundary | `M4C-VOL-001` | `S02/NORMAL_END_B2`, `S09/QUALITY_T02` |
+| B2 streaming-speak controller | `M4C-SS-CTRL-001` | `S02/NORMAL_END_B2`, `S09/QUALITY_T02`, `S09/QUEUED`, `S09/SYNTHESIZING`, `S09/PLAYING` |
+| Fragment extraction / punctuation-or-12 | `M4C-SS-EXTRACT-001` | `S02/NORMAL_END_B2` |
 | Streaming-speak outcome / error taxonomy | `M4C-SS-OUTCOME-001` | `S04/ACTION`, `S06/ACTION_TTS_CHILD_EXIT` |
 | Session no-input streak | `M4C-NOINPUT-001` | `S03/TWO_TIMEOUTS` |
 | Startup / IDLE | — | `S01/START_IDLE` |
-| Normal two-turn session and close | — | `S02/NORMAL_END` |
+| Normal two-turn session and close, eligible B2 proof | — | `S02/NORMAL_END_B2` |
 | Interrupt (PERCEPTION / THINK / ACTION) | `M4C-SS-CTRL-001` C14–C16 | `S04/PERCEPTION`, `S04/THINK`, `S04/ACTION` |
 | Application exit | — | `S05/APP_EXIT` |
 | Recoverable fault (whole-product) | — | `S06/PERCEPTION_ASR_INFERENCE`, `S06/THINK_LLM_CHILD_EXIT`, `S06/ACTION_TTS_CHILD_EXIT` |
 | Display degradation | — | `S07/DISPLAY_DEGRADE` |
 | Recovery fatal / exit 4 | — | `S08/LLM_READY_MISMATCH_FATAL` |
-| Streaming speak eligible live proof | — | `S09/LIVE_ELIGIBLE_L02` |
 | Streaming speak B2 quality | — | `S09/QUALITY_T02` |
 | Streaming speak interrupt | `M4C-SS-CTRL-001` C14–C16 | `S09/QUEUED`, `S09/SYNTHESIZING`, `S09/PLAYING` |
 | Regression continuity | `M4C-REG-001` | all Pi sub-runs |
-| Product-quality timeline | — | `S02/NORMAL_END`, `S09/LIVE_ELIGIBLE_L02` |
+| Automatic B2 timeline | — | `S02/NORMAL_END_B2` |
