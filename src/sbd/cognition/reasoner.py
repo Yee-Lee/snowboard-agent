@@ -84,6 +84,7 @@ class Reasoner(WorkerRuntime):
         control: object | None = None,
         observer: object | None = None,
         streaming_speak: object | None = None,
+        owns_llm_lifecycle: bool = True,
     ) -> None:
         super().__init__()
         self._llm = llm
@@ -96,17 +97,20 @@ class Reasoner(WorkerRuntime):
         self._control = llm.control if self._product else control
         self._observer = observer
         self._streaming_speak = streaming_speak
+        self._owns_llm_lifecycle = owns_llm_lifecycle
 
     @property
     def control(self) -> object | None:
         return self._control
 
     async def start(self) -> None:
-        await self._llm.start()
+        if self._owns_llm_lifecycle:
+            await self._llm.start()
 
     async def stop(self) -> None:
         await self.abort()
-        await self._llm.stop()
+        if self._owns_llm_lifecycle:
+            await self._llm.stop()
 
     async def abort(self) -> None:
         await super().abort()

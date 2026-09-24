@@ -6,7 +6,7 @@ from pathlib import Path
 from dataclasses import replace
 import math
 
-from sbd.cognition.litert_lm.lock import LLMArtifactLock
+from sbd.cognition.litert_lm.lock import LLMArtifactLock, load_product_profile
 from sbd.cognition.llm import (
     LLMEngineAdapter,
     LLMGeneration,
@@ -82,7 +82,8 @@ def make_llm_adapter(
     assert cfg.artifact_lock_path is not None
     repo_root = cfg.artifact_lock_path.resolve().parents[2]
     lock = LLMArtifactLock.load(cfg.artifact_lock_path, repo_root=repo_root)
-    profile = lock.verify_config_paths(cfg)
+    lock.validate_runtime_paths(cfg)
+    profile = load_product_profile(cfg.product_profile_path)
     lock = replace(lock, identity=lock.ready_identity(profile), product_profile=profile)
 
     # The internal adapter module is pure Python. The selected native runtime is

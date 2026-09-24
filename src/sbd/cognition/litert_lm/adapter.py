@@ -423,13 +423,6 @@ class LiteRTLMAdapter:
         self.state = AdapterState.AUTHENTICATING
         if self._measurement_grant is not None:
             self._measurement_grant.authorize_profile(self._lock.product_profile)
-        diagnostic_child_verification = (self._measurement_grant is not None
-            and self._measurement_grant.is_user_diagnostic())
-        if self._lock.runtime_closure is not None and not diagnostic_child_verification:
-            require(self._cfg.runtime_python is not None)
-            self._lock.runtime_closure.verify_install(
-                self._cfg.runtime_python.parent.parent / "lib/python3.13/site-packages")
-            self._lock.verify_config_paths(self._cfg, allow_measurement=self._measurement_grant is not None)
         require(self._lock.identity is not None, "identity")
         self._epoch += 1
         self._destruction_task = None

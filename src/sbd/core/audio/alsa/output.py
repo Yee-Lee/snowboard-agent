@@ -45,6 +45,12 @@ class AlsaAudioOutput:
         self._pcm: Any | None = None
         self._native_info: dict[str, Any] | None = None
         self._started = False
+        self._completed_play_count = 0
+
+    @property
+    def completed_play_count(self) -> int:
+        """Successful streams whose final ALSA drain has returned."""
+        return self._completed_play_count
 
     async def start(self) -> None:
         if self._started:
@@ -92,6 +98,7 @@ class AlsaAudioOutput:
             # Error and cancellation paths skip this call and retain the bounded
             # close/drop behavior in stop().
             await self._run(self._drain_worker)
+            self._completed_play_count += 1
         finally:
             self._reset_adapter()
 

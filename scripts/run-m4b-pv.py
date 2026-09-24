@@ -2144,8 +2144,7 @@ def _run_att(args) -> int:
             raise PVError("M4B_PV_CHILD_ATTESTATION_MISSING")
         stages = [json.loads(line)["stage"] for line in child_events[0].read_text().splitlines()]
         required_stages = {"artifact_lock_verified", "response_schema_verified",
-                           "runtime_closure_verified",
-                           "model_profile_verified", "network_denial_installed",
+                           "runtime_paths_validated", "network_denial_installed",
                            "native_runtime_ready", "ready_emitting"}
         if not required_stages.issubset(stages):
             raise PVError("M4B_PV_CHILD_ATTESTATION_MISSING")

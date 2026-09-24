@@ -60,11 +60,11 @@ async def run_app(
 
     logging_runtime = configure_logging(config.log)
     if composition is None:
-        from sbd.core.m2_composition import M2Composition
+        from sbd.core.m3_composition import M3Composition
 
-        m2_composition = M2Composition()
-        effective_composition: Composition = m2_composition
-        action_validator = m2_composition.action_validator
+        product_composition = M3Composition()
+        effective_composition: Composition = product_composition
+        action_validator = product_composition.action_validator
     else:
         effective_composition = composition
         action_validator = None

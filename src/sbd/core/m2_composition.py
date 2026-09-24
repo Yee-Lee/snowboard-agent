@@ -193,6 +193,7 @@ class M2Composition:
             before_start=before_speak if observer is not None else None,
             on_completion=speech_complete if observer is not None else None,
         )
+        self._speak_worker = speak_worker
         external = ExternalMessageSource(
             bus=bus,
             max_items=config.external_message.buffer_max,
@@ -331,6 +332,7 @@ class M2Composition:
                 control=conversation_control,
                 observer=observer,
                 streaming_speak=speak_worker if real else None,
+                owns_llm_lifecycle=False,
             ),
             required=True,
         ))

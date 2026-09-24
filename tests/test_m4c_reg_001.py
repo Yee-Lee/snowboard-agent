@@ -15,7 +15,8 @@ CATALOG = ROOT / "tests/m4c_portable_suite.txt"
 
 def test_m4c_reg_001_g01_affected_sources_have_no_weakening_controls() -> None:
     affected = [
-        *ROOT.joinpath("tests").glob("test_m4c_*.py"),
+        *(path for path in ROOT.joinpath("tests").glob("test_m4c_*.py")
+          if path.name != "test_m4c_pv_rpi.py"),
         ROOT / "src/sbd/action/speak/streaming.py",
         ROOT / "src/sbd/core/audio/volume.py",
         ROOT / "src/sbd/cognition/reasoner.py",
@@ -28,6 +29,20 @@ def test_m4c_reg_001_g01_affected_sources_have_no_weakening_controls() -> None:
             for line, reason in m4b_source_violations(path.read_text(encoding="utf-8"))
         )
     assert violations == []
+
+
+def test_m4c_reg_001_g01_pi_driver_is_explicitly_rpi_only() -> None:
+    source = (ROOT / "tests/test_m4c_pv_rpi.py").read_text(encoding="utf-8")
+    assert "pytestmark = pytest.mark.rpi" in source
+    assert "@pytest.mark.skip" not in source
+    assert "@pytest.mark.xfail" not in source
+
+
+def test_m4c_reg_001_g01_pi_driver_checkpoints_raw_observations_before_assertions() -> None:
+    source = (ROOT / "tests/test_m4c_pv_rpi.py").read_text(encoding="utf-8")
+    checkpoint = source.index('stage_path.with_name("raw-observation.json")')
+    adjudication = source.index("assert not errors")
+    assert checkpoint < adjudication
 
 
 def test_m4c_reg_001_g02_catalog_is_exact_existing_and_unique() -> None:

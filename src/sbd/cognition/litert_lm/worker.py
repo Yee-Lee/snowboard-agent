@@ -69,8 +69,12 @@ def _native_message_text(serialized: str) -> str:
     try:
         message = json.loads(serialized)
     except (json.JSONDecodeError, UnicodeError):
-        raise SemanticError() from None
-    if type(message) is not dict or set(message).difference({"role", "content"}):
+        # LiteRT's public wrapper treats a callback value that is not a full
+        # Message JSON object as a raw incremental text fragment.
+        return serialized
+    if type(message) is not dict or "content" not in message:
+        return serialized
+    if set(message).difference({"role", "content"}):
         raise SemanticError()
     content = message.get("content")
     if type(content) is str:
@@ -85,10 +89,9 @@ def _native_message_text(serialized: str) -> str:
         values.append(item["text"])
     return "".join(values)
 
-def _verify_native_library(path: Path, expected_sha256: str) -> None:
+def _validate_native_library(path: Path, expected_size_bytes: int) -> None:
     if path.is_symlink() or path.parent.is_symlink():
         raise RuntimeError("native runtime identity mismatch")
-    digest = hashlib.sha256()
     flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(path, flags)
@@ -96,20 +99,17 @@ def _verify_native_library(path: Path, expected_sha256: str) -> None:
         raise RuntimeError("native runtime identity mismatch") from None
     try:
         metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size != expected_size_bytes:
             raise RuntimeError("native runtime identity mismatch")
-        while block := os.read(descriptor, 1024 * 1024):
-            digest.update(block)
     finally:
         os.close(descriptor)
-    if digest.hexdigest() != expected_sha256:
-        raise RuntimeError("native runtime identity mismatch")
 
 class LiteRTRuntime:
     """Pinned 0.16.0 CPU Engine; only this child imports native dependencies."""
 
-    def __init__(self, *, model: str, runtime_root: str, native_sha256: str) -> None:
-        # Authenticate the native bytes before importing a module that may load them.
+    def __init__(self, *, model: str, runtime_root: str, native_size_bytes: int) -> None:
+        # Artifact bytes are verified once during staging/PV. Product startup
+        # performs only bounded shape checks before importing the native module.
         root_input = Path(runtime_root)
         if (
             not root_input.is_absolute()
@@ -120,7 +120,7 @@ class LiteRTRuntime:
             raise RuntimeError("runtime root escaped verified closure")
         root = root_input
         native_path = root / "litert_lm/liblitert-lm.so"
-        _verify_native_library(native_path, native_sha256)
+        _validate_native_library(native_path, native_size_bytes)
         sys.path.insert(0, str(root))
         import litert_lm  # type: ignore[import-not-found]
         from litert_lm import (  # type: ignore[import-not-found]
@@ -265,7 +265,7 @@ class LiteRTRuntime:
         require(not getattr(conversation, "automatic_tool_calling", True), "stream")
         require(bool(getattr(conversation, "_ptr", None)), "stream")
         parser = IncrementalSafeTextParser(12)
-        callback_errors: list[BaseException] = []
+        native_events: queue.Queue[tuple[str, bool] | BaseException] = queue.Queue()
         final_seen = False
         with self._lock:
             if self._pending_cancel:
@@ -276,9 +276,6 @@ class LiteRTRuntime:
             response_format = self._response_format.json(load_response_schema())
 
             def callback(unused_data: Any, chunk_ptr: Any) -> None:
-                nonlocal final_seen
-                if callback_errors:
-                    return
                 try:
                     error_value = conversation._lib.litert_lm_stream_chunk_get_error(chunk_ptr)
                     if error_value:
@@ -289,16 +286,9 @@ class LiteRTRuntime:
                     raw = conversation._lib.litert_lm_stream_chunk_get_text(chunk_ptr)
                     chunk = raw.decode("utf-8") if raw else ""
                     final = bool(conversation._lib.litert_lm_stream_chunk_is_final(chunk_ptr))
-                    if final_seen or (final and chunk):
-                        raise SemanticError()
-                    if chunk:
-                        semantic_wire = _native_message_text(chunk)
-                        for fragment in parser.feed(semantic_wire.encode("utf-8")):
-                            emit(fragment)
-                    if final:
-                        final_seen = True
+                    native_events.put((chunk, final))
                 except BaseException as error:
-                    callback_errors.append(error)
+                    native_events.put(error)
 
             c_callback = STREAM_CALLBACK_TYPE(callback)
             conversation._current_callback = c_callback
@@ -317,9 +307,21 @@ class LiteRTRuntime:
                     optional_args, c_callback, None)
             finally:
                 conversation._delete_optional_args(optional_args)
-            if callback_errors:
-                raise callback_errors[0]
-            require(result == 0 and final_seen, "stream")
+            require(result == 0, "stream")
+            while not final_seen:
+                event = native_events.get()
+                if isinstance(event, BaseException):
+                    raise event
+                chunk, final = event
+                _diagnostic_mark("native_stream_chunk", raw_json=chunk, final=final)
+                if final and chunk:
+                    raise SemanticError()
+                if chunk:
+                    semantic_wire = _native_message_text(chunk)
+                    for fragment in parser.feed(semantic_wire.encode("utf-8")):
+                        emit(fragment)
+                if final:
+                    final_seen = True
             terminal, flushed = parser.finish()
             for fragment in flushed:
                 emit(fragment)
@@ -693,26 +695,14 @@ def main() -> int:
         profile = load_product_profile(Path(args.product_profile))
     verify_platform_abi(profile)
     _diagnostic_mark("platform_abi_verified")
-    if args.measurement_user_diagnostic:
-        # This explicitly non-formal path is for rapid user-driven Pi debugging.
-        # The launcher already binds exact paths and the native loader will fail
-        # closed on unusable bytes; avoid rescanning the multi-gigabyte model.
-        model_path = Path(args.model)
-        require(Path(args.runtime_root).is_dir() and model_path.is_file()
-                and not model_path.is_symlink(), "runtime")
-        _diagnostic_mark("diagnostic_artifact_hash_skipped")
-    else:
-        require(lock.runtime_closure is not None, "runtime")
-        lock.runtime_closure.verify_install(Path(args.runtime_root))
-        _diagnostic_mark("runtime_closure_verified")
-        # Reauthenticate paths in the child before native import/Engine creation.
-        # Importing sbd.core.config executes its YAML-backed application loader. The
-        # isolated native runtime intentionally contains only the locked LiteRT-LM
-        # closure, so the worker uses the two path fields this verifier requires.
-        cfg = SimpleNamespace(model_path=Path(args.model),
-                              product_profile_path=Path(args.product_profile))
-        lock.verify_config_paths(cfg, allow_measurement=grant is not None)
-        _diagnostic_mark("model_profile_verified")
+    runtime_root = Path(args.runtime_root)
+    require(runtime_root.is_dir() and not runtime_root.is_symlink(), "runtime")
+    # Full runtime/model digests are staging/PV work.  Repeating them in both
+    # parent and child made every product boot rescan gigabytes of immutable
+    # local artifacts without changing the supported trust model.
+    cfg = SimpleNamespace(model_path=Path(args.model))
+    lock.validate_runtime_paths(cfg)
+    _diagnostic_mark("runtime_paths_validated")
     install_network_denial()
     _diagnostic_mark("network_denial_installed")
     if _DIAGNOSTIC_DIRECTORY is not None:
@@ -727,7 +717,7 @@ def main() -> int:
     native_started = time.monotonic_ns()
     _diagnostic_mark("native_runtime_starting")
     runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
-                            native_sha256=lock.runtime["native_sha256"])
+                            native_size_bytes=lock.runtime["native_size_bytes"])
     _diagnostic_mark("native_runtime_ready",
                      startup_duration_ns=time.monotonic_ns() - native_started)
     ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 
 from sbd.adaptor.errors import AdapterError
@@ -31,6 +32,11 @@ class Speak(WorkerRuntime):
         self._before_start = before_start
         self._pcm: AsyncIterator[bytes] | None = None
         self._streaming: StreamingSpeakControl | None = None
+        self._streaming_history: list[tuple[object, tuple[str, ...]]] = []
+        # A successful wait is after every AudioOutput.play() has returned.  For
+        # ALSA that return is explicitly after snd_pcm_drain(), so this is the
+        # controller-clock playback/drain completion evidence seam.
+        self._streaming_completion_history: list[int] = []
 
     async def start(self) -> None:
         await self._tts.start()
@@ -52,7 +58,9 @@ class Speak(WorkerRuntime):
                 status = "error"
                 try:
                     await streaming.adopt(session_id, turn_id, correlation_id, text)
-                    await streaming.wait()
+                    proof = await streaming.wait()
+                    self._streaming_history.append((proof, tuple(streaming._admitted)))
+                    self._streaming_completion_history.append(time.monotonic_ns())
                     status = "ok"
                 finally:
                     if self._on_completion is not None:

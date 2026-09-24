@@ -106,7 +106,21 @@ def timing_row(*, clock_domain: str, events: Mapping[str, int | None],
     if set(null_reasons) != absent or any(v not in NULL_REASONS for v in null_reasons.values()):
         raise ObservationError()
     present = [events[name] for name in TIMING_NODES if events[name] is not None]
-    if any(not _counter(v) for v in present) or present != sorted(present):
+    # M4C streaming speech deliberately overlaps generation: TTS and the first
+    # audio write may precede llm_terminal.  Validate the two causal branches
+    # independently instead of imposing the legacy full-response tuple order.
+    causal_edges = (
+        ("conversation_ready", "asr_final"),
+        ("asr_final", "llm_send"),
+        ("llm_send", "first_safe_text"),
+        ("llm_send", "llm_terminal"),
+        ("first_safe_text", "tts_pcm_ready"),
+        ("tts_pcm_ready", "audio_first_write"),
+    )
+    if (any(not _counter(v) for v in present)
+            or any(events[left] is not None and events[right] is not None
+                   and events[left] > events[right]
+                   for left, right in causal_edges)):
         raise ObservationError()
     return {"clock_domain": clock_domain, "events": {
         name: {"monotonic_ns": events[name], "null_reason": null_reasons.get(name)}

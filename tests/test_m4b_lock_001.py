@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -102,6 +104,31 @@ def test_m4b_lock_001_install_inventory_rejects_missing_extra_and_symlink(tmp_pa
     (root / "unsafe").symlink_to(path)
     with pytest.raises(LLMLockError, match="unsafe"):
         closure.verify_install(root)
+
+
+def test_runtime_path_validation_is_bounded_and_does_not_hash_model(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    from sbd.cognition.litert_lm import lock as lock_module
+
+    model_path = tmp_path / "model"
+    model_path.write_bytes(b"model")
+    lock = LLMArtifactLock.load(LOCK, repo_root=ROOT)
+    runtime_lock = replace(lock, model={
+        **lock.model,
+        "filename": model_path.name,
+        "size_bytes": model_path.stat().st_size,
+    })
+
+    def unexpected_hash(path):
+        raise AssertionError("runtime startup must not hash artifact content")
+
+    monkeypatch.setattr(lock_module, "_sha256", unexpected_hash)
+    runtime_lock.validate_runtime_paths(SimpleNamespace(model_path=model_path))
+
+    model_path.write_bytes(b"wrong-size")
+    with pytest.raises(LLMLockError, match="shape"):
+        runtime_lock.validate_runtime_paths(SimpleNamespace(model_path=model_path))
 
 
 def test_m4b_lock_001_manifest_cannot_add_interpreter_to_product_payload(tmp_path: Path) -> None:

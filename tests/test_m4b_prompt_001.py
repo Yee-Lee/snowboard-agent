@@ -159,3 +159,103 @@ def test_native_generation_uses_json_schema_and_never_regex():
     assert calls == [("json", load_response_schema())]
     assert validate_semantic(raw).text == "我是雪板,很高興為您服務!"
     assert (decode, conversation, prefill) == (23, 106, 83)
+
+
+def test_native_stream_waits_for_callbacks_after_c_call_returns(monkeypatch):
+    from sbd.cognition.litert_lm.worker import LiteRTRuntime
+    import sys
+    from types import ModuleType
+
+    package = ModuleType("litert_lm")
+    package.__path__ = []
+    ffi = ModuleType("litert_lm._ffi")
+    ffi.STREAM_CALLBACK_TYPE = lambda callback: callback
+    messages = ModuleType("litert_lm._messages")
+    messages.normalize_message = lambda text: {
+        "role": "user", "content": [{"type": "text", "text": text}]
+    }
+    monkeypatch.setitem(sys.modules, "litert_lm", package)
+    monkeypatch.setitem(sys.modules, "litert_lm._ffi", ffi)
+    monkeypatch.setitem(sys.modules, "litert_lm._messages", messages)
+
+    wire = '{"text":"延後回覆。","end":false}'
+    callback_thread = None
+
+    class Lib:
+        @staticmethod
+        def litert_lm_stream_chunk_get_error(chunk):
+            return chunk.get("error")
+
+        @staticmethod
+        def litert_lm_stream_chunk_get_text(chunk):
+            value = chunk.get("text")
+            return None if value is None else value.encode()
+
+        @staticmethod
+        def litert_lm_stream_chunk_is_final(chunk):
+            return chunk["final"]
+
+        @staticmethod
+        def litert_lm_conversation_send_message_stream(
+            pointer, message, context, optional, callback, data
+        ):
+            nonlocal callback_thread
+            assert pointer == 1 and optional == "optional"
+
+            def deliver():
+                threading.Event().wait(0.02)
+                callback(None, {"text": wire[:11], "final": False})
+                callback(None, {"text": wire[11:], "final": False})
+                callback(None, {"text": None, "final": True})
+
+            callback_thread = threading.Thread(target=deliver)
+            callback_thread.start()
+            return 0
+
+    class Conversation:
+        automatic_tool_calling = False
+        _ptr = 1
+        _lib = Lib()
+        extra_context = {}
+        token_count = 105
+
+        @staticmethod
+        def _resolve_response_format(message, response_format):
+            return response_format
+
+        @staticmethod
+        def _create_optional_args(**kwargs):
+            assert kwargs["response_format"] == "json-constraint"
+            return "optional"
+
+        @staticmethod
+        def _delete_optional_args(optional):
+            assert optional == "optional"
+
+        @staticmethod
+        def get_benchmark_info():
+            return SimpleNamespace(last_decode_token_count=9,
+                                   last_prefill_token_count=83)
+
+    class ResponseFormat:
+        @staticmethod
+        def json(schema):
+            assert schema == load_response_schema()
+            return "json-constraint"
+
+    runtime = LiteRTRuntime.__new__(LiteRTRuntime)
+    runtime._conversation = Conversation()
+    runtime._response_format = ResponseFormat
+    runtime._pending_cancel = False
+    runtime._active = None
+    runtime._lock = threading.Lock()
+    emitted = []
+
+    semantic, decode, conversation, prefill = runtime.generate_stream(
+        "問題", emitted.append
+    )
+    assert callback_thread is not None
+    callback_thread.join()
+    assert semantic.text == "延後回覆。" and semantic.end is False
+    assert emitted == ["延後回覆。"]
+    assert (decode, conversation, prefill) == (9, 105, 83)

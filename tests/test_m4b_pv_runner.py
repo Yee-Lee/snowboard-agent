@@ -387,8 +387,7 @@ def test_att_command_emits_assertion_level_card_after_child_cleanup(
 
     async def ready(_binding, private, _recorder):
         stages = ("artifact_lock_verified", "response_schema_verified",
-            "runtime_closure_verified",
-            "model_profile_verified", "network_denial_installed", "native_runtime_ready",
+            "runtime_paths_validated", "network_denial_installed", "native_runtime_ready",
             "ready_emitting")
         (private / "llm-child-1-events.jsonl").write_text("".join(
             json.dumps({"stage": stage}) + "\n" for stage in stages))

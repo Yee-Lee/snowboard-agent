@@ -422,14 +422,26 @@ class LLMArtifactLock:
         return LLMReadyIdentity({**{name: profile[name] for name in names},
                                  "conversation_state": "none"})
 
-    def verify_config_paths(self, config: Any, *, allow_measurement: bool = False) -> Mapping[str, Any]:
+    def validate_runtime_paths(self, config: Any) -> None:
+        """Perform bounded startup checks without hashing deployed artifacts.
+
+        Full content verification belongs to artifact staging/PV.  Product
+        startup only rejects an obviously wrong model path or size before the
+        native loader opens it.
+        """
         if config.model_path.name != self.model["filename"]:
             raise LLMLockError("model filename mismatch")
         try:
-            if config.model_path.stat().st_size != self.model["size_bytes"]:
-                raise LLMLockError("model size mismatch")
+            metadata = config.model_path.lstat()
         except OSError:
             raise LLMLockError("model file unavailable") from None
+        if (not stat.S_ISREG(metadata.st_mode) or config.model_path.is_symlink()
+                or metadata.st_size != self.model["size_bytes"]):
+            raise LLMLockError("model file shape mismatch")
+
+    def verify_config_paths(self, config: Any, *, allow_measurement: bool = False) -> Mapping[str, Any]:
+        """Full artifact verification for staging and explicit PV only."""
+        self.validate_runtime_paths(config)
         if _sha256(config.model_path) != self.model["sha256"]:
             raise LLMLockError("model checksum mismatch")
         return load_product_profile(config.product_profile_path, allow_measurement=allow_measurement)

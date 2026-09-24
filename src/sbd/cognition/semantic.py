@@ -262,6 +262,8 @@ class IncrementalSafeTextParser:
                 if len(self._buffer) < 12:
                     return ()
                 self._fail()
+            if match.end() == len(self._buffer):
+                return ()
             decoded, closed = _partial_json_text(self._buffer, match.end())
             stable = self._stable_prefix(decoded, closed)
             if not stable.startswith(self._released):

@@ -1,5 +1,15 @@
 # M4 completed and legacy progress
 
+## M4-ERR completion locator
+
+- USER disposition: Accepted on 2026-09-21.
+- Verified and pushed commit: `f572915d0b0d5c52067e9100c5b022e57aefe506`.
+- Pi verification: `M4-ERR-DEV-04`; all five cards `M4-ERR-PV-001` through
+  `M4-ERR-PV-005` passed on the same pending content.
+- Later retained Test-Spec corrections converged in `M4-ERR-DEV-08` before acceptance. Detailed
+  intermediate diagnostics remain addressable through their run IDs and Git history and are not
+  duplicated here.
+
 ## M4B completion locator
 
 - USER disposition: Accepted on 2026-09-16.

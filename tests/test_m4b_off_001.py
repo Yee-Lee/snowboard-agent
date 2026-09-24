@@ -5,7 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 import pytest
 from sbd.cognition.litert_lm.adapter import isolated_child_environment
-from sbd.cognition.litert_lm.worker import _verify_native_library
+from sbd.cognition.litert_lm.worker import _validate_native_library
 
 def test_environment_strips_injection_and_disables_downloads():
     environment = isolated_child_environment(Path("/runtime"), {
@@ -20,14 +20,17 @@ def test_environment_strips_injection_and_disables_downloads():
 def test_controller_import_never_loads_native_runtime():
     assert "litert_lm" not in sys.modules
 
-def test_native_hash_rejects_symlink_before_import(tmp_path):
+def test_native_shape_check_rejects_symlink_without_hashing(tmp_path, monkeypatch):
     import pytest
+    from sbd.cognition.litert_lm import worker
     library = tmp_path / "lib.so"
     library.write_bytes(b"public-fixture")
     link = tmp_path / "alias.so"
     link.symlink_to(library)
     with pytest.raises(RuntimeError, match="identity"):
-        _verify_native_library(link, "0" * 64)
+        _validate_native_library(link, library.stat().st_size)
+    monkeypatch.setattr(worker.os, "read", lambda *_args: pytest.fail("content scan"))
+    _validate_native_library(library, library.stat().st_size)
 
 
 def test_network_filter_checks_arch_and_denies_socket_creation():
@@ -285,8 +288,7 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
     stages = []
     real_lock = product_lock()
     fake_lock = SimpleNamespace(
-        runtime_closure=SimpleNamespace(verify_install=lambda root: stages.append("install")),
-        verify_config_paths=lambda cfg, **kwargs: stages.append(("paths", kwargs)),
+        validate_runtime_paths=lambda cfg: stages.append("paths"),
         ready_identity=real_lock.ready_identity, runtime=real_lock.runtime)
     monkeypatch.setattr(lock_module.LLMArtifactLock, "load", lambda *args, **kwargs: fake_lock)
     monkeypatch.setattr(worker, "verify_platform_abi", lambda profile: stages.append("abi"))
@@ -316,10 +318,7 @@ def test_native_child_reauthenticates_measurement_before_native_import(tmp_path,
     if authorization in {"valid", "diagnostic"}:
         assert worker.main() == 0
         assert contexts == [expected]
-        expected_stages = (["abi", "network", "native", "measurement"]
-                           if authorization == "diagnostic" else
-                           ["abi", "install", ("paths", {"allow_measurement": True}),
-                            "network", "native", "measurement"])
+        expected_stages = ["abi", "paths", "network", "native", "measurement"]
         assert stages == expected_stages
         if authorization == "diagnostic":
             logs = list(tmp_path.glob("llm-child-*-events.jsonl"))

@@ -294,6 +294,35 @@ def test_V05_one_clock_requires_explicit_null_reason_and_order():
             timing_row(**bad)
 
 
+def test_V05_one_clock_accepts_streaming_audio_before_llm_terminal():
+    events = dict(
+        conversation_ready=1,
+        asr_final=2,
+        llm_send=3,
+        first_safe_text=4,
+        llm_terminal=8,
+        tts_pcm_ready=5,
+        audio_first_write=6,
+    )
+    row = timing_row(
+        clock_domain="controller_monotonic", events=events, null_reasons={}
+    )
+    assert row["events"]["audio_first_write"]["monotonic_ns"] == 6
+    assert row["events"]["llm_terminal"]["monotonic_ns"] == 8
+
+    for invalid in (
+        {**events, "tts_pcm_ready": 3},
+        {**events, "audio_first_write": 4},
+        {**events, "llm_terminal": 2},
+    ):
+        with pytest.raises(ObservationError):
+            timing_row(
+                clock_domain="controller_monotonic",
+                events=invalid,
+                null_reasons={},
+            )
+
+
 def test_V02_V03_V05_live_observer_retains_only_counters_and_controller_clock():
     from sbd.cognition.llm import AdmissionSnapshot, GenerationMetrics
     rows = []

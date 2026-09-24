@@ -73,3 +73,11 @@ def test_m4c_ss_extract_001_e10_whitespace_only_emits_nothing() -> None:
     terminal, fragments = _feed(b'{"text":" \\t ","end":true}')
     assert terminal == SemanticOutput("", True)
     assert fragments == ()
+
+
+def test_m4c_ss_extract_001_every_byte_boundary_is_incremental() -> None:
+    wire = b'{"text":"answer.","end":false}'
+    for boundary in range(len(wire) + 1):
+        terminal, fragments = _feed(wire, (boundary,))
+        assert terminal == SemanticOutput("answer.", False)
+        assert "".join(fragments) == terminal.text

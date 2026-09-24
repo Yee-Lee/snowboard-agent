@@ -36,14 +36,12 @@ CATALOG = (
     ("M4C-PI-S06", "ACTION_TTS_CHILD_EXIT"),
     ("M4C-PI-S07", "DISPLAY_DEGRADE"),
     ("M4C-PI-S08", "LLM_READY_MISMATCH_FATAL"),
-    ("M4C-PI-S09", "LIVE_ELIGIBLE_L02"),
     ("M4C-PI-S09", "QUALITY_T02"),
     ("M4C-PI-S09", "QUEUED"),
     ("M4C-PI-S09", "SYNTHESIZING"),
     ("M4C-PI-S09", "PLAYING"),
 )
 HUMAN_VARIANTS = frozenset({
-    ("M4C-PI-S02", "NORMAL_END"),
     ("M4C-PI-S09", "QUALITY_T02"),
 })
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{2,95}")
@@ -286,6 +284,10 @@ def _run(args: argparse.Namespace) -> int:
     args.public_root = public_matches[0].parent
     args.private_root = private_matches[0].parent
     binding, public_run, private_run = _load_run(args)
+    config_path = args.config.resolve(strict=True)
+    _safe_regular(config_path)
+    if _sha256(config_path) != binding["config_sha256"]:
+        raise RunnerError("M4C_CONFIG_CHANGED")
     if (not _under(public_partition, public_run) or not _under(private_partition, private_run)
             or public_partition.exists() or private_partition.exists()):
         raise RunnerError("M4C_PARTITION_INVALID")
@@ -302,6 +304,7 @@ def _run(args: argparse.Namespace) -> int:
         "SBD_M4C_SUB_RUN_ID": args.sub_run_id,
         "SBD_M4C_PRIVATE_PARTITION": str(private_partition),
         "SBD_M4C_BINDING_MANIFEST": str(args.binding_manifest.resolve(strict=True)),
+        "SBD_M4C_CONFIG": str(config_path),
     }
     for option, name in (
         (args.utterance, "SBD_M4C_UTTERANCE"),
@@ -472,6 +475,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--public-partition", required=True, type=Path)
     run.add_argument("--private-partition", required=True, type=Path)
     run.add_argument("--binding-manifest", required=True, type=Path)
+    run.add_argument("--config", required=True, type=Path)
     run.add_argument("--fresh-setup", action="store_true")
     run.add_argument("--utterance")
     run.add_argument("--utterance-1")

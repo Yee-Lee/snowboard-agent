@@ -16,13 +16,25 @@
 - 唯一交付流程是 `Design → Test Spec → Developer → Verify`。不得插入角色互簽、重複 review、
   文件核准或 candidate freeze 作為額外 gate；只有產品需求本身明定的真人判讀才保留人工結果。
 - Designer 不得預設參與者會偽造、變造或冒用文件／身份，也不得以此假設設計多重簽核、身份
-  證明或 authorization JSON。完整性風險以程式自動核對內容 digest、版本、設定與目標環境處理。
+  證明或 authorization JSON。
+- 所有新設計、Test Spec 與開發測試都必須先做明確的價值／風險檢查；沒有可說明的產品失敗風險、
+  價值低、風險低或只是沿用模板的 assertion、matrix、evidence 與重複測試必須刪除。不得預設加入
+  SHA／digest、signature、freeze、authorization、通用 close-proof、owner enumeration 或其他
+  administrative closure。只有當前情境確實在驗 lifecycle leakage、interrupt、recovery 或 shutdown
+  時，才保留直接對應該風險的 lifecycle assertion。
+- 測試情境與 application startup 不得自動計算或驗證 source、patch、config、model、artifact、
+  evidence 或 text SHA／digest。需要確認內容時，只能由 operator 在明確需要的 transfer、candidate
+  或問題診斷邊界主動執行一次獨立檢查；它不是產品測項、PASS assertion 或每個 run 重複成本。
+  private runtime 可直接比較實值，public evidence只記錄必要的boolean、count與stable code。
+- 上述測試精簡原則只向前適用於 active 與未來工作；不得為此重開、重測、改寫或追究已完成、
+  Accepted、已推送或已封存的階段與歷史證據。
 - 所有開發內容都必須在 Raspberry Pi 上以待提交的相同 bytes 完成適用的自動、整合、硬體與
   人工測試。Pi 驗證未完成或失敗時不得 commit；不得把首次上機驗證延後到 commit 之後。
 - 待提交內容若全為文件且未修改程式碼，則不要求 Raspberry Pi 驗證；在工作站完成所有適用的
   文件檢查與測試後即可 commit。文件與程式碼混合的提交仍適用前述 Pi 驗證要求。
-- Pi 驗證以 tracked-only patch/content digest、設定與 artifact digest 綁定待提交內容。回工作站後
-  必須先確認待提交 bytes 與已驗證內容完全一致；任何差異都回到 Developer 並重新上 Pi 驗證。
+- 回工作站後必須確認待提交 bytes 與 Pi 已驗證內容完全一致；需要時依前述原則主動執行一次獨立
+  內容檢查，不得把該檢查內建到每個測項或 application startup。任何實際差異都回到 Developer
+  並重新執行受影響的 Pi 驗證。
 
 # Git safety
 
