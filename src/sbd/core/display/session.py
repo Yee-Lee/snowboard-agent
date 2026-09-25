@@ -5,7 +5,7 @@ from __future__ import annotations
 from sbd.core.display.arbiter import DisplayArbiter
 from sbd.core.display.hints import DisplayHint
 from sbd.core.event_bus import EventBus
-from sbd.core.events import StateChanged
+from sbd.core.events import ButtonPressed, InterruptRequested, StateChanged
 
 
 class SessionDisplay:
@@ -15,18 +15,43 @@ class SessionDisplay:
         self._arbiter = arbiter
         self._bus = bus
         self._state_manager = state_manager
-        self._subscription = None
+        self._subscriptions = []
 
     async def start(self) -> None:
         self._arbiter.write_main(None)
-        self._subscription = self._bus.subscribe(
-            StateChanged, self._on_state_changed, name="observer.session_display.state"
-        )
+        self._subscriptions = [
+            self._bus.subscribe(
+                StateChanged, self._on_state_changed,
+                name="observer.session_display.state",
+            ),
+            self._bus.subscribe(
+                ButtonPressed, self._on_interrupt,
+                name="observer.session_display.button_interrupt",
+            ),
+            self._bus.subscribe(
+                InterruptRequested, self._on_interrupt,
+                name="observer.session_display.interrupt",
+            ),
+        ]
 
     async def stop(self) -> None:
-        if self._subscription is not None:
-            self._bus.unsubscribe(self._subscription)
-            self._subscription = None
+        for subscription in self._subscriptions:
+            self._bus.unsubscribe(subscription)
+        self._subscriptions.clear()
+
+    async def _on_interrupt(
+        self, event: ButtonPressed | InterruptRequested
+    ) -> None:
+        del event
+        if (
+            self._state_manager.state in {"WAKE", "PERCEPTION", "THINK", "ACTION"}
+            and self._state_manager._session is not None
+            and self._state_manager._pending is None
+            and not self._state_manager._shutting_down
+        ):
+            self._arbiter.write_main(
+                DisplayHint("main.text", {"text": "已中止"})
+            )
 
     async def _on_state_changed(self, event: StateChanged) -> None:
         if event.new in {"IDLE", "WAKE"}:

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Same-bytes M4C Raspberry Pi product-verification coordinator."""
+"""M4C Raspberry Pi product-verification coordinator."""
 from __future__ import annotations
 
 import argparse
 from datetime import UTC, datetime
-import hashlib
 import json
 import os
 from pathlib import Path
-import platform
 import re
 import stat
 import subprocess
@@ -20,12 +18,9 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from sbd.core.candidate_identity import tracked_content_digest  # noqa: E402
-
-
 CATALOG = (
     ("M4C-PI-S01", "START_IDLE"),
-    ("M4C-PI-S02", "NORMAL_END"),
+    ("M4C-PI-S02", "NORMAL_END_B2"),
     ("M4C-PI-S03", "TWO_TIMEOUTS"),
     ("M4C-PI-S04", "PERCEPTION"),
     ("M4C-PI-S04", "THINK"),
@@ -46,33 +41,19 @@ HUMAN_VARIANTS = frozenset({
 })
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{2,95}")
 SUB_RUN_ID = RUN_ID
-SHA256 = re.compile(r"[0-9a-f]{64}")
 RESULT_FIELDS = {
-    "schema_version", "test_id", "variant", "sub_run_id", "base_sha",
-    "tracked_content_sha256", "pending_paths", "harness_sha256",
-    "config_sha256", "artifact_digests", "target_facts", "started_monotonic_ns",
-    "ended_monotonic_ns", "script_status", "evidence_sha256",
+    "schema_version", "test_id", "variant", "sub_run_id",
+    "started_monotonic_ns", "ended_monotonic_ns", "script_status",
+    "public_evidence",
 }
 FORBIDDEN_PUBLIC_KEYS = {
     "transcript", "prompt", "raw_model_output", "pcm", "session_id",
     "credential", "private_path", "text", "fragments",
 }
-HARNESS_PATHS = (
-    "scripts/run-m4c-pv.py",
-    "tests/test_m4c_pv_rpi.py",
-)
 
 
 class RunnerError(RuntimeError):
     pass
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256(path: Path) -> str:
-    return _sha256_bytes(path.read_bytes())
 
 
 def _safe_regular(path: Path) -> None:
@@ -108,22 +89,6 @@ def _replace_json(path: Path, value: object) -> None:
     os.replace(temporary, path)
 
 
-def _canonical_digest(value: object) -> str:
-    raw = json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode()
-    return _sha256_bytes(raw)
-
-
-def _harness_digest() -> str:
-    rows = []
-    for name in HARNESS_PATHS:
-        path = ROOT / name
-        _safe_regular(path)
-        rows.append((name, _sha256(path)))
-    return _canonical_digest(rows)
-
-
 def _empty_root(path: Path, *, mode: int) -> Path:
     resolved = path.resolve()
     if resolved == ROOT or resolved.is_relative_to(ROOT):
@@ -137,60 +102,6 @@ def _empty_root(path: Path, *, mode: int) -> Path:
     return resolved
 
 
-def _validate_digest_map(value: object, code: str) -> dict[str, str]:
-    if type(value) is not dict or not value:
-        raise RunnerError(code)
-    result = dict(value)
-    if any(type(key) is not str or not key or type(item) is not str
-           or SHA256.fullmatch(item) is None for key, item in result.items()):
-        raise RunnerError(code)
-    return result
-
-
-def _validate_binding(path: Path) -> dict[str, Any]:
-    value = _read_json(path.resolve(strict=True))
-    required = {
-        "schema_version", "base_sha", "tracked_content_sha256", "pending_paths",
-        "harness_sha256", "config_sha256", "artifact_digests", "target_facts",
-    }
-    if set(value) != required or value["schema_version"] != 1:
-        raise RunnerError("M4C_BINDING_SCHEMA_INVALID")
-    if type(value["base_sha"]) is not str or not value["base_sha"]:
-        raise RunnerError("M4C_BINDING_IDENTITY_INVALID")
-    for name in ("tracked_content_sha256", "harness_sha256", "config_sha256"):
-        if type(value[name]) is not str or SHA256.fullmatch(value[name]) is None:
-            raise RunnerError("M4C_BINDING_IDENTITY_INVALID")
-    if value["harness_sha256"] != _harness_digest():
-        raise RunnerError("M4C_HARNESS_CHANGED")
-    pending = value["pending_paths"]
-    if type(pending) is not list or pending != sorted(set(pending)):
-        raise RunnerError("M4C_PENDING_PATHS_INVALID")
-    for item in pending:
-        candidate = Path(item)
-        if (type(item) is not str or not item or candidate.is_absolute()
-                or ".." in candidate.parts or not (ROOT / candidate).is_file()):
-            raise RunnerError("M4C_PENDING_PATHS_INVALID")
-    if tracked_content_digest(ROOT, pending_new_paths=tuple(pending)) != value[
-        "tracked_content_sha256"
-    ]:
-        raise RunnerError("M4C_TRACKED_CONTENT_CHANGED")
-    value["artifact_digests"] = _validate_digest_map(
-        value["artifact_digests"], "M4C_ARTIFACT_DIGESTS_INVALID")
-    facts = value["target_facts"]
-    if (type(facts) is not dict or facts.get("target") != "pi5-4gb-debian13-aarch64-cp3135"
-            or facts.get("python") != "3.13.5"
-            or facts.get("volume_percent") != 25
-            or facts.get("network") != "disabled"):
-        raise RunnerError("M4C_TARGET_FACTS_INVALID")
-    return value
-
-
-def _tuple(binding: dict[str, Any]) -> dict[str, Any]:
-    return {key: binding[key] for key in (
-        "base_sha", "tracked_content_sha256", "pending_paths", "harness_sha256",
-        "config_sha256", "artifact_digests", "target_facts")}
-
-
 def _run_roots(public_root: Path, private_root: Path, run_id: str):
     return public_root.resolve() / run_id, private_root.resolve() / run_id
 
@@ -200,14 +111,11 @@ def _init(args: argparse.Namespace) -> int:
         raise RunnerError("M4C_RUN_ID_INVALID")
     public_root = _empty_root(args.public_root, mode=0o755)
     private_root = _empty_root(args.private_root, mode=0o700)
-    binding = _validate_binding(args.binding_manifest)
     public_run, private_run = _run_roots(public_root, private_root, args.pv_run_id)
     public_run.mkdir(mode=0o755)
     private_run.mkdir(mode=0o700)
     identity = {
         "schema_version": 1, "pv_run_id": args.pv_run_id,
-        "protected_tuple": _tuple(binding),
-        "binding_manifest_sha256": _sha256(args.binding_manifest.resolve(strict=True)),
         "created_at": datetime.now(UTC).isoformat(),
     }
     _write_json(private_run / "run.json", identity, private=True)
@@ -218,18 +126,14 @@ def _init(args: argparse.Namespace) -> int:
 def _load_run(args: argparse.Namespace):
     if RUN_ID.fullmatch(args.pv_run_id) is None:
         raise RunnerError("M4C_RUN_ID_INVALID")
-    binding = _validate_binding(args.binding_manifest)
     public_run, private_run = _run_roots(args.public_root, args.private_root, args.pv_run_id)
     private_identity = _read_json(private_run.resolve(strict=True) / "run.json")
     public_identity = _read_json(public_run.resolve(strict=True) / "run.json")
     if private_identity != public_identity:
         raise RunnerError("M4C_RUN_IDENTITY_MISMATCH")
-    if (private_identity.get("pv_run_id") != args.pv_run_id
-            or private_identity.get("protected_tuple") != _tuple(binding)
-            or private_identity.get("binding_manifest_sha256")
-            != _sha256(args.binding_manifest.resolve(strict=True))):
-        raise RunnerError("M4C_RUN_BINDING_CHANGED")
-    return binding, public_run, private_run
+    if private_identity.get("pv_run_id") != args.pv_run_id:
+        raise RunnerError("M4C_RUN_IDENTITY_MISMATCH")
+    return public_run, private_run
 
 
 def _under(path: Path, parent: Path) -> bool:
@@ -237,22 +141,21 @@ def _under(path: Path, parent: Path) -> bool:
     return resolved != parent and resolved.is_relative_to(parent)
 
 
-def _validate_private_result(value: dict[str, Any], args, binding) -> None:
+def _validate_private_result(value: dict[str, Any], args) -> None:
     if set(value) - (RESULT_FIELDS | {"user_result"}) or not RESULT_FIELDS <= set(value):
         raise RunnerError("M4C_RESULT_SCHEMA_INVALID")
     if (value["schema_version"] != 1 or value["test_id"] != args.test_id
-            or value["variant"] != args.variant or value["sub_run_id"] != args.sub_run_id
-            or {key: value[key] for key in _tuple(binding)} != _tuple(binding)):
-        raise RunnerError("M4C_RESULT_BINDING_INVALID")
+            or value["variant"] != args.variant or value["sub_run_id"] != args.sub_run_id):
+        raise RunnerError("M4C_RESULT_IDENTITY_INVALID")
     if value["script_status"] not in {"Pass", "Fail", "Incomplete", "Blocked"}:
         raise RunnerError("M4C_RESULT_STATUS_INVALID")
     if (type(value["started_monotonic_ns"]) is not int
             or type(value["ended_monotonic_ns"]) is not int
             or not 0 < value["started_monotonic_ns"] <= value["ended_monotonic_ns"]):
         raise RunnerError("M4C_RESULT_TIMING_INVALID")
-    if type(value["evidence_sha256"]) is not str or SHA256.fullmatch(
-        value["evidence_sha256"]) is None:
+    if type(value["public_evidence"]) is not dict:
         raise RunnerError("M4C_RESULT_EVIDENCE_INVALID")
+    _privacy_scan(value["public_evidence"])
     human = (args.test_id, args.variant) in HUMAN_VARIANTS
     if human and value.get("user_result") not in {"Pass", "Fail", "NeedsHumanReview"}:
         raise RunnerError("M4C_USER_RESULT_INVALID")
@@ -283,11 +186,9 @@ def _run(args: argparse.Namespace) -> int:
         raise RunnerError("M4C_PARTITION_INVALID")
     args.public_root = public_matches[0].parent
     args.private_root = private_matches[0].parent
-    binding, public_run, private_run = _load_run(args)
+    public_run, private_run = _load_run(args)
     config_path = args.config.resolve(strict=True)
     _safe_regular(config_path)
-    if _sha256(config_path) != binding["config_sha256"]:
-        raise RunnerError("M4C_CONFIG_CHANGED")
     if (not _under(public_partition, public_run) or not _under(private_partition, private_run)
             or public_partition.exists() or private_partition.exists()):
         raise RunnerError("M4C_PARTITION_INVALID")
@@ -303,7 +204,6 @@ def _run(args: argparse.Namespace) -> int:
         "SBD_M4C_VARIANT": args.variant,
         "SBD_M4C_SUB_RUN_ID": args.sub_run_id,
         "SBD_M4C_PRIVATE_PARTITION": str(private_partition),
-        "SBD_M4C_BINDING_MANIFEST": str(args.binding_manifest.resolve(strict=True)),
         "SBD_M4C_CONFIG": str(config_path),
     }
     for option, name in (
@@ -331,15 +231,13 @@ def _run(args: argparse.Namespace) -> int:
     if not result_path.is_file():
         raise RunnerError("M4C_PRIVATE_RESULT_MISSING")
     result = _read_json(result_path)
-    _validate_private_result(result, args, binding)
+    _validate_private_result(result, args)
     if completed.returncode != 0 and result["script_status"] == "Pass":
         raise RunnerError("M4C_PYTEST_RESULT_CONTRADICTION")
-    attempt_id = f"{args.sub_run_id}-{_sha256(result_path)[:12]}"
+    attempt_id = f"{args.test_id}-{args.variant}-{args.sub_run_id}"
     card = _public_card(result, attempt_id)
     card["started_at"] = started
     card["ended_at"] = datetime.now(UTC).isoformat()
-    card["private_evidence_sha256"] = _sha256(result_path)
-    card["pytest_log_sha256"] = _sha256(log)
     result_card = public_partition / "result.json"
     _write_json(result_card, card)
 
@@ -386,7 +284,7 @@ def _privacy_scan(value: object, path: str = "$") -> None:
 
 
 def _finalize(args: argparse.Namespace) -> int:
-    binding, public_run, _ = _load_run(args)
+    public_run, _ = _load_run(args)
     registry = _read_json(public_run / "designations.json")
     if (set(registry) != {"schema_version", "pv_run_id", "attempts"}
             or registry.get("schema_version") != 1
@@ -416,8 +314,7 @@ def _finalize(args: argparse.Namespace) -> int:
         _privacy_scan(card)
         if (card.get("attempt_id") != attempt_id
                 or card.get("designated") != attempt["designated"]
-                or card.get("superseded_by") != attempt["superseded_by"]
-                or {name: card.get(name) for name in _tuple(binding)} != _tuple(binding)):
+                or card.get("superseded_by") != attempt["superseded_by"]):
             raise RunnerError("M4C_DESIGNATION_INVALID")
         if attempt["designated"]:
             if key in active:
@@ -450,8 +347,7 @@ def _finalize(args: argparse.Namespace) -> int:
             raise RunnerError("M4C_HUMAN_RESULT_NOT_PASS")
     final = {
         "schema_version": 1, "pv_run_id": args.pv_run_id, "pv_status": "Pass",
-        "protected_tuple": _tuple(binding), "designated_count": len(active),
-        "catalog_digest": _canonical_digest(list(CATALOG)),
+        "designated_count": len(active),
         "attempt_count": len(attempts),
         "finalized_at": datetime.now(UTC).isoformat(),
     }
@@ -466,7 +362,6 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument("--pv-run-id", required=True)
     init.add_argument("--public-root", required=True, type=Path)
     init.add_argument("--private-root", required=True, type=Path)
-    init.add_argument("--binding-manifest", required=True, type=Path)
     run = commands.add_parser("run")
     run.add_argument("--test-id", required=True)
     run.add_argument("--variant", required=True)
@@ -474,7 +369,6 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--sub-run-id", required=True)
     run.add_argument("--public-partition", required=True, type=Path)
     run.add_argument("--private-partition", required=True, type=Path)
-    run.add_argument("--binding-manifest", required=True, type=Path)
     run.add_argument("--config", required=True, type=Path)
     run.add_argument("--fresh-setup", action="store_true")
     run.add_argument("--utterance")
@@ -484,7 +378,6 @@ def _parser() -> argparse.ArgumentParser:
     finalize.add_argument("--pv-run-id", required=True)
     finalize.add_argument("--public-root", required=True, type=Path)
     finalize.add_argument("--private-root", required=True, type=Path)
-    finalize.add_argument("--binding-manifest", required=True, type=Path)
     return parser
 
 

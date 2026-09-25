@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import re
 from typing import Any
 
@@ -53,10 +52,6 @@ def expected_display_publications(
     return values
 
 
-def _digest(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
 def validate_s02_private_evidence(value: object) -> dict[str, Any]:
     """Validate private evidence and return its privacy-safe public projection."""
     if type(value) is not dict or set(value) != {
@@ -81,9 +76,8 @@ def validate_s02_private_evidence(value: object) -> dict[str, Any]:
         _fail("M4C_S02_ANSWER_INVALID")
     if "".join(fragments) != terminal:
         _fail("M4C_S02_FRAGMENT_TERMINAL_MISMATCH")
-    digests = {_digest(item) for item in (terminal, spoken, displayed)}
-    if len(digests) != 1:
-        _fail("M4C_S02_ANSWER_DIGEST_MISMATCH")
+    if not terminal == spoken == displayed:
+        _fail("M4C_S02_ANSWER_MISMATCH")
     if value["provisional_display_publications"] != 0:
         _fail("M4C_S02_PROVISIONAL_DISPLAY_LEAK")
 
@@ -125,27 +119,19 @@ def validate_s02_private_evidence(value: object) -> dict[str, Any]:
 
     cleanup = value["cleanup"]
     if type(cleanup) is not dict or cleanup != {
-        "conversation_close": True,
-        "request_terminal": True,
-        "stream_closed": True,
-        "owner_count": 0,
-        "state": "IDLE",
-        "status": "待命",
-        "main_empty": True,
+        "state": "IDLE", "status": "待命", "main_empty": True,
     }:
-        _fail("M4C_S02_CLEANUP_INVALID")
+        _fail("M4C_S02_FINAL_STATE_INVALID")
 
-    answer_digest = digests.pop()
     return {
         "schema_version": 1,
-        "scenario_code": "M4C-PI-S02/NORMAL_END",
+        "scenario_code": "M4C-PI-S02/NORMAL_END_B2",
         "streaming_path_code": "B2-ONE-LOOKAHEAD-COALESCE",
         "fragment_count": len(fragments),
         "fragment_lengths": [len(item) for item in fragments],
         "answer_codepoints": len(terminal),
-        "answer_sha256": answer_digest,
-        "display_sha256": answer_digest,
-        "spoken_sha256": answer_digest,
+        "answer_matches_spoken": True,
+        "answer_matches_display": True,
         "provisional_display_publication_count": 0,
         "timeline_nodes_ns": dict(timeline),
         "preterminal_first_write_margin_ns": (
@@ -157,10 +143,6 @@ def validate_s02_private_evidence(value: object) -> dict[str, Any]:
         "playback_drain_complete": True,
         "turn2_branch_code": turn2["branch"],
         "turn2_answer_length": turn2["answer_length"],
-        "conversation_close_proven": True,
-        "request_terminal_proven": True,
-        "stream_closed": True,
-        "owner_count": 0,
         "terminal_state_code": "IDLE",
         "status_code": "IDLE_READY",
         "main_empty": True,

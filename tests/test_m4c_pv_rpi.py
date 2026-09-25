@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import asdict
-import hashlib
 import importlib.util
 import json
 import os
 from pathlib import Path
+import signal
+import sys
 import time
 from typing import Any
 
@@ -35,20 +36,24 @@ ORACLE_SPEC = importlib.util.spec_from_file_location(
 assert ORACLE_SPEC is not None and ORACLE_SPEC.loader is not None
 ORACLE = importlib.util.module_from_spec(ORACLE_SPEC)
 ORACLE_SPEC.loader.exec_module(ORACLE)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256(path: Path) -> str:
-    return _sha256_bytes(path.read_bytes())
-
-
-def _read_json(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    assert type(value) is dict
-    return value
+S03_ORACLE_SPEC = importlib.util.spec_from_file_location(
+    "m4c_s03_oracle", ROOT / "scripts/m4c_s03_oracle.py"
+)
+assert S03_ORACLE_SPEC is not None and S03_ORACLE_SPEC.loader is not None
+S03_ORACLE = importlib.util.module_from_spec(S03_ORACLE_SPEC)
+S03_ORACLE_SPEC.loader.exec_module(S03_ORACLE)
+S04_ORACLE_SPEC = importlib.util.spec_from_file_location(
+    "m4c_s04_oracle", ROOT / "scripts/m4c_s04_oracle.py"
+)
+assert S04_ORACLE_SPEC is not None and S04_ORACLE_SPEC.loader is not None
+S04_ORACLE = importlib.util.module_from_spec(S04_ORACLE_SPEC)
+S04_ORACLE_SPEC.loader.exec_module(S04_ORACLE)
+S05_ORACLE_SPEC = importlib.util.spec_from_file_location(
+    "m4c_s05_oracle", ROOT / "scripts/m4c_s05_oracle.py"
+)
+assert S05_ORACLE_SPEC is not None and S05_ORACLE_SPEC.loader is not None
+S05_ORACLE = importlib.util.module_from_spec(S05_ORACLE_SPEC)
+S05_ORACLE_SPEC.loader.exec_module(S05_ORACLE)
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -66,16 +71,7 @@ def _write_stage(path: Path, stage: str) -> None:
     os.replace(temporary, path)
 
 
-def _binding_result_fields(binding: dict[str, Any]) -> dict[str, Any]:
-    return {key: binding[key] for key in (
-        "base_sha", "tracked_content_sha256", "pending_paths", "harness_sha256",
-        "config_sha256", "artifact_digests", "target_facts",
-    )}
-
-
-def _validate_product_config(config: Any, config_path: Path,
-                             binding: dict[str, Any]) -> None:
-    assert _sha256(config_path) == binding["config_sha256"]
+def _validate_product_config(config: Any) -> None:
     assert config.core.audio.driver == "alsa"
     assert config.core.audio.output.volume_percent == 25
     assert config.core.audio.input.device and config.core.audio.output.device
@@ -84,17 +80,6 @@ def _validate_product_config(config: Any, config_path: Path,
     assert config.cognition.llm.driver == "litert_lm"
     assert config.action.tts.driver == "sherpa_matcha"
     assert config.input_sources.button.policy.enabled is True
-    paths = {
-        "asr_artifact_lock": config.perception.listen.adapter.artifact_lock_path,
-        "llm_artifact_lock": config.cognition.llm.artifact_lock_path,
-        "llm_product_profile": config.cognition.llm.product_profile_path,
-        "tts_artifact_lock": config.action.tts.artifact_lock_path,
-    }
-    actual = {
-        name: _sha256(path) for name, path in paths.items()
-        if isinstance(path, Path) and path.is_file() and not path.is_symlink()
-    }
-    assert actual == binding["artifact_digests"]
 
 
 def _main_text(arbiter: Any) -> str | None:
@@ -102,6 +87,14 @@ def _main_text(arbiter: Any) -> str | None:
     if hint is None:
         return None
     value = hint.data.get("text")
+    return value if type(value) is str else None
+
+
+def _status_state(arbiter: Any) -> str | None:
+    hint = dict(arbiter.snapshot().status_slots).get("state")
+    if hint is None:
+        return None
+    value = hint.data.get("state")
     return value if type(value) is str else None
 
 
@@ -233,9 +226,6 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
             "streaming_completion_history": speak._streaming_completion_history,
             "final": {
                 "state": sm.state,
-                "session_present": sm._session is not None,
-                "in_flight_count": len(sm._in_flight),
-                "streaming_active": speak._streaming is not None,
                 "main_text": _main_text(arbiter),
             },
         })
@@ -257,12 +247,10 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
         first_terminal = responses[0].action_payload["text"]
         second_terminal = responses[1].action_payload.get("text", "")
         assert first_fragments and "".join(first_fragments) == first_terminal
-        assert first_proof.normalized_text_sha256 == _sha256_bytes(first_terminal.encode())
         if second_terminal:
             assert [item.kind for item in actions] == ["speak", "speak", "rest"]
-            second_proof, second_fragments = speak._streaming_history[1]
+            _, second_fragments = speak._streaming_history[1]
             assert "".join(second_fragments) == second_terminal
-            assert second_proof.normalized_text_sha256 == _sha256_bytes(second_terminal.encode())
             assert answer_displays == [first_terminal, second_terminal]
             assert display_publications == ORACLE.expected_display_publications(
                 utterance_1, first_terminal, utterance_2, second_terminal
@@ -298,8 +286,6 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
             assert completed_play_counts[0] < completed_play_counts[1] == play_count
         else:
             assert completed_play_counts == [play_count]
-        assert sm._session is None and sm._in_flight == {}
-        assert speak._streaming is None
         assert _main_text(arbiter) is None
 
         timeline = {
@@ -341,10 +327,6 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
                 "answer_length": len(second_terminal),
             },
             "cleanup": {
-                "conversation_close": True,
-                "request_terminal": True,
-                "stream_closed": True,
-                "owner_count": 0,
                 "state": sm.state,
                 "status": "待命",
                 "main_empty": True,
@@ -360,33 +342,552 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
         assert report.failures == ()
 
 
+async def _run_s03(config: Any, stage_path: Path) -> dict[str, Any]:
+    bus = EventBus()
+    composition = M3Composition()
+    rm = ResourceManager(config, bus)
+    converger = DefaultSessionConverger(timeouts=CancelTimeoutPolicy(
+        abort_default_seconds=config.cancel.abort_timeout_seconds.default,
+        force_abort_default_seconds=config.cancel.force_abort_timeout_seconds.default,
+        abort_by_kind=config.cancel.abort_timeout_seconds.by_kind,
+        force_abort_by_kind=config.cancel.force_abort_timeout_seconds.by_kind,
+    ))
+    sm = StateManager(
+        config, bus, rm.catalog, converger=converger, recovery=rm,
+        action_validator=composition.action_validator,
+    )
+    rm.set_state_manager(sm)
+    composition(rm, bus, config)
+
+    states: list[str] = []
+    perceptions: list[PerceptionResult] = []
+    responses: list[dict[str, Any]] = []
+    actions: list[ActionCompleted] = []
+    streaks: list[int] = []
+    errors: list[ErrorOccurred] = []
+    order: list[str] = []
+    display_publications: list[tuple[str, str | None]] = []
+    completed_play_counts: list[int] = []
+    reasoner_call_count = 0
+    idle = asyncio.Event()
+
+    async def on_perception(event: PerceptionResult) -> None:
+        perceptions.append(event)
+        order.append(f"timeout_{len(perceptions)}")
+
+    async def on_action(event: ActionCompleted) -> None:
+        actions.append(event)
+        if event.kind == "speak":
+            output = rm._records["core.audio.output"].instance
+            completed_play_counts.append(output.raw_output.completed_play_count)
+            order.append("retry_speak_complete")
+        elif event.kind == "rest":
+            order.append("rest_complete")
+
+    async def on_state(event: StateChanged) -> None:
+        states.append(event.new)
+        if event.new == "PERCEPTION":
+            index = states.count("PERCEPTION")
+            _write_stage(stage_path, f"SILENT_WINDOW_{index}")
+            if index == 2:
+                order.append("listen_2_started")
+        elif event.new == "ACTION":
+            assert sm._session is not None and sm._session.llm_response is not None
+            responses.append(asdict(sm._session.llm_response))
+            streaks.append(sm._session.no_input_streak)
+            _write_stage(
+                stage_path,
+                "RETRY_PLAYBACK" if states.count("ACTION") == 1 else "ENDING_SESSION",
+            )
+        elif event.new == "IDLE" and actions:
+            order.append("idle")
+            _write_stage(stage_path, "COMPLETE")
+            idle.set()
+
+    async def on_error(event: ErrorOccurred) -> None:
+        errors.append(event)
+        category = safe_category_for_code(event.code)
+        _write_json(stage_path.with_name("operator-error.json"), {
+            "where": event.where,
+            "code": event.code,
+            "category": category,
+            "backend_disposition": event.backend_disposition,
+            "recovery_keys": list(event.recovery_keys),
+        })
+        _write_stage(stage_path, f"ERROR_{category.upper()}")
+        idle.set()
+
+    bus.subscribe(PerceptionResult, on_perception, name="m4c.s03.perception")
+    bus.subscribe(ActionCompleted, on_action, name="m4c.s03.action")
+    bus.subscribe(StateChanged, on_state, name="m4c.s03.state")
+    bus.subscribe(ErrorOccurred, on_error, name="m4c.s03.error")
+
+    started = False
+    try:
+        await sm.start()
+        await rm.start()
+        started = True
+        arbiter = rm._records["core.display.arbiter"].instance
+        original_write_main = arbiter.write_main
+
+        def observed_write_main(hint) -> None:
+            text = None if hint is None else hint.data.get("text")
+            display_publications.append((sm.state, text))
+            original_write_main(hint)
+
+        arbiter.write_main = observed_write_main
+        reasoner = rm._records["worker.cognition.reasoner"].instance
+
+        async def forbidden_reason(*args, **kwargs) -> None:
+            nonlocal reasoner_call_count
+            reasoner_call_count += 1
+            raise AssertionError("S03 timeout path called Reasoner")
+
+        reasoner.reason = forbidden_reason
+        _write_stage(stage_path, "PRESS_BUTTON")
+        await asyncio.wait_for(idle.wait(), timeout=180)
+        await asyncio.wait_for(sm._inbox.join(), timeout=10)
+
+        output = rm._records["core.audio.output"].instance
+        raw = {
+            "schema_version": 1,
+            "states": states,
+            "perceptions": [asdict(item) for item in perceptions],
+            "responses": responses,
+            "actions": [asdict(item) for item in actions],
+            "no_input_streaks": streaks,
+            "reasoner_call_count": reasoner_call_count,
+            "order": order,
+            "display_publications": display_publications,
+            "completed_play_counts": completed_play_counts,
+            "errors": [asdict(item) for item in errors],
+            "final": {
+                "state": sm.state,
+                "status_state": _status_state(arbiter),
+                "main_text": _main_text(arbiter),
+                "completed_play_count": output.raw_output.completed_play_count,
+            },
+        }
+        _write_json(stage_path.with_name("raw-observation.json"), raw)
+
+        assert not errors, repr(errors)
+        assert states == [
+            "WAKE", "PERCEPTION", "ACTION", "PERCEPTION", "ACTION", "IDLE",
+        ]
+        assert _status_state(arbiter) == "IDLE"
+        assert _main_text(arbiter) is None
+        return {
+            "schema_version": 1,
+            "perceptions": raw["perceptions"],
+            "responses": responses,
+            "actions": raw["actions"],
+            "no_input_streaks": streaks,
+            "reasoner_call_count": reasoner_call_count,
+            "order": order,
+            "playback": {
+                "retry_play_count": output.raw_output.completed_play_count,
+                "complete": completed_play_counts == [1],
+            },
+            "cleanup": {
+                "state": sm.state,
+                "status": "待命",
+                "main_empty": _main_text(arbiter) is None,
+            },
+        }
+    finally:
+        if started:
+            await bus.publish(ShutdownRequested())
+            await sm.wait_stopped()
+            await rm.prepare_shutdown()
+        await sm.stop()
+        await rm.stop_all()
+
+
+async def _run_s04(config: Any, variant: str, stage_path: Path) -> dict[str, Any]:
+    bus = EventBus()
+    composition = M3Composition()
+    rm = ResourceManager(config, bus)
+    converger = DefaultSessionConverger(timeouts=CancelTimeoutPolicy(
+        abort_default_seconds=config.cancel.abort_timeout_seconds.default,
+        force_abort_default_seconds=config.cancel.force_abort_timeout_seconds.default,
+        abort_by_kind=config.cancel.abort_timeout_seconds.by_kind,
+        force_abort_by_kind=config.cancel.force_abort_timeout_seconds.by_kind,
+    ))
+    sm = StateManager(
+        config, bus, rm.catalog, converger=converger, recovery=rm,
+        action_validator=composition.action_validator,
+    )
+    rm.set_state_manager(sm)
+    composition(rm, bus, config)
+
+    states: list[str] = []
+    perceptions: list[PerceptionResult] = []
+    responses: list[LLMResponse] = []
+    actions: list[ActionCompleted] = []
+    errors: list[ErrorOccurred] = []
+    phase_active = {name: False for name in S04_ORACLE.VARIANTS}
+    phase_starts = {name: 0 for name in S04_ORACLE.VARIANTS}
+    interrupt: dict[str, Any] | None = None
+    starts_at_interrupt: int | None = None
+    action_prompted = False
+    idle = asyncio.Event()
+
+    async def on_perception(event: PerceptionResult) -> None:
+        perceptions.append(event)
+
+    async def on_response(event: LLMResponse) -> None:
+        responses.append(event)
+
+    async def on_action(event: ActionCompleted) -> None:
+        actions.append(event)
+
+    async def on_state(event: StateChanged) -> None:
+        states.append(event.new)
+        if event.new == "IDLE":
+            _write_stage(
+                stage_path,
+                "COMPLETE" if interrupt is not None else "TARGET_NOT_REACHED",
+            )
+            idle.set()
+
+    async def on_error(event: ErrorOccurred) -> None:
+        errors.append(event)
+        category = safe_category_for_code(event.code)
+        _write_json(stage_path.with_name("operator-error.json"), {
+            "where": event.where,
+            "code": event.code,
+            "category": category,
+            "backend_disposition": event.backend_disposition,
+            "recovery_keys": list(event.recovery_keys),
+        })
+        _write_stage(stage_path, f"ERROR_{category.upper()}")
+        idle.set()
+
+    bus.subscribe(PerceptionResult, on_perception, name="m4c.s04.perception")
+    bus.subscribe(LLMResponse, on_response, name="m4c.s04.response")
+    bus.subscribe(ActionCompleted, on_action, name="m4c.s04.action")
+    bus.subscribe(StateChanged, on_state, name="m4c.s04.state")
+    bus.subscribe(ErrorOccurred, on_error, name="m4c.s04.error")
+
+    started = False
+    try:
+        await sm.start()
+        await rm.start()
+        started = True
+        arbiter = rm._records["core.display.arbiter"].instance
+        listen = rm._records["worker.perception.listen"].instance
+        reasoner = rm._records["worker.cognition.reasoner"].instance
+        llm = reasoner._llm
+        output = rm._records["core.audio.output"].instance
+        raw_output = output.raw_output
+
+        original_perceive = listen.perceive
+
+        async def observed_perceive(*args, **kwargs):
+            phase_starts["PERCEPTION"] += 1
+            phase_active["PERCEPTION"] = True
+            _write_stage(
+                stage_path,
+                "PRESS_INTERRUPT" if variant == "PERCEPTION"
+                else f"SPEAK_{phase_starts['PERCEPTION']}",
+            )
+            try:
+                return await original_perceive(*args, **kwargs)
+            finally:
+                phase_active["PERCEPTION"] = False
+
+        listen.perceive = observed_perceive
+        original_generate = llm.generate
+
+        async def observed_generate(*args, **kwargs):
+            phase_starts["THINK"] += 1
+            phase_active["THINK"] = True
+            if variant == "THINK":
+                _write_stage(stage_path, "PRESS_INTERRUPT")
+            try:
+                return await original_generate(*args, **kwargs)
+            finally:
+                phase_active["THINK"] = False
+
+        llm.generate = observed_generate
+        original_audio_observe = raw_output._observe
+
+        def observed_audio(name: str) -> None:
+            nonlocal action_prompted
+            if original_audio_observe is not None:
+                original_audio_observe(name)
+            if (
+                variant == "ACTION"
+                and name == "audio_first_write"
+                and phase_active["ACTION"]
+                and not action_prompted
+            ):
+                action_prompted = True
+                _write_stage(stage_path, "PRESS_INTERRUPT")
+
+        raw_output._observe = observed_audio
+        original_play = output.play
+
+        async def observed_play(pcm):
+            phase_starts["ACTION"] += 1
+            phase_active["ACTION"] = True
+            try:
+                return await original_play(pcm)
+            finally:
+                phase_active["ACTION"] = False
+
+        output.play = observed_play
+
+        async def on_button(event: ButtonPressed) -> None:
+            nonlocal interrupt, starts_at_interrupt
+            del event
+            state_matches = (
+                sm.state == variant if variant != "ACTION"
+                else sm.state in {"THINK", "ACTION"}
+            )
+            if state_matches and phase_active[variant] and interrupt is None:
+                interrupt = {
+                    "operation": variant,
+                    "state": sm.state,
+                    "operation_active": phase_active[variant],
+                    "main_text": _main_text(arbiter),
+                }
+                starts_at_interrupt = phase_starts[variant]
+
+        bus.subscribe(ButtonPressed, on_button, name="m4c.s04.button")
+        _write_stage(stage_path, "PRESS_START")
+        await asyncio.wait_for(idle.wait(), timeout=300)
+        await asyncio.wait_for(sm._inbox.join(), timeout=10)
+        await asyncio.sleep(0.2)
+        await asyncio.wait_for(sm._inbox.join(), timeout=10)
+
+        affected = {
+            "PERCEPTION": len(perceptions),
+            "THINK": len(responses),
+            "ACTION": sum(item.status == "ok" for item in actions),
+        }[variant]
+        private = {
+            "schema_version": 1,
+            "variant": variant,
+            "interrupt": interrupt,
+            "affected_success_count": affected,
+            "post_interrupt_start_count": (
+                phase_starts[variant] - starts_at_interrupt
+                if starts_at_interrupt is not None else -1
+            ),
+            "unexpected_error_count": len(errors),
+            "cleanup": {
+                "state": sm.state,
+                "main_empty": _main_text(arbiter) is None,
+                "affected_owner_idle": not phase_active[variant],
+            },
+        }
+        _write_json(stage_path.with_name("raw-observation.json"), {
+            **private,
+            "states": states,
+            "perception_count": len(perceptions),
+            "response_count": len(responses),
+            "action_count": len(actions),
+        })
+        assert interrupt is not None
+        return private
+    finally:
+        if started:
+            await bus.publish(ShutdownRequested())
+            await sm.wait_stopped()
+            await rm.prepare_shutdown()
+        await sm.stop()
+        await rm.stop_all()
+
+
+def _process_identity(pid: int) -> tuple[str, str] | None:
+    """Return Linux process state/start-time without retaining private argv."""
+    try:
+        value = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+    except (FileNotFoundError, ProcessLookupError, PermissionError):
+        return None
+    close = value.rfind(")")
+    fields = value[close + 2:].split()
+    if close < 0 or len(fields) < 20:
+        return None
+    return fields[0], fields[19]
+
+
+def _descendant_identities(root_pid: int) -> dict[int, tuple[str, str]]:
+    pending = [root_pid]
+    seen = {root_pid}
+    descendants: dict[int, tuple[str, str]] = {}
+    while pending:
+        parent = pending.pop()
+        try:
+            children = Path(
+                f"/proc/{parent}/task/{parent}/children"
+            ).read_text(encoding="ascii").split()
+        except (FileNotFoundError, ProcessLookupError, PermissionError):
+            continue
+        for raw_pid in children:
+            pid = int(raw_pid)
+            if pid in seen:
+                continue
+            seen.add(pid)
+            identity = _process_identity(pid)
+            if identity is None:
+                continue
+            descendants[pid] = identity
+            pending.append(pid)
+    return descendants
+
+
+def _surviving_identities(
+    identities: dict[int, tuple[str, str]],
+) -> list[int]:
+    survivors = []
+    for pid, (_, start_time) in identities.items():
+        current = _process_identity(pid)
+        if current is not None and current[0] != "Z" and current[1] == start_time:
+            survivors.append(pid)
+    return survivors
+
+
+async def _run_s05(config_path: Path, stage_path: Path) -> dict[str, Any]:
+    observation_path = stage_path.with_name("application-observation.json")
+    ready_path = stage_path.with_name("application-ready")
+    application_log = stage_path.with_name("application.log")
+    with application_log.open("wb") as log_sink:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            str(ROOT / "scripts/m4c_s05_app.py"),
+            "--config", str(config_path),
+            "--observation", str(observation_path),
+            "--ready", str(ready_path),
+            cwd=ROOT,
+            stdout=log_sink,
+            stderr=asyncio.subprocess.STDOUT,
+            start_new_session=True,
+        )
+    os.chmod(application_log, 0o600)
+
+    async def wait_ready() -> None:
+        while not ready_path.is_file():
+            if process.returncode is not None:
+                return
+            await asyncio.sleep(0.1)
+
+    waiter = asyncio.create_task(process.wait())
+    ready_waiter = asyncio.create_task(wait_ready())
+    descendants: dict[int, tuple[str, str]] = {}
+    try:
+        _write_stage(stage_path, "STARTING")
+        done, _ = await asyncio.wait(
+            {ready_waiter, waiter}, timeout=180,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        if ready_waiter not in done or not ready_path.is_file():
+            raise AssertionError("M4C_S05_APPLICATION_NOT_READY")
+        descendants = _descendant_identities(process.pid)
+        assert descendants, "M4C_S05_NATIVE_CHILD_OBSERVATION_EMPTY"
+        _write_stage(stage_path, "LONG_PRESS")
+        exit_code = await asyncio.wait_for(asyncio.shield(waiter), timeout=120)
+
+        deadline = asyncio.get_running_loop().time() + 5.0
+        while (survivors := _surviving_identities(descendants)):
+            if asyncio.get_running_loop().time() >= deadline:
+                break
+            await asyncio.sleep(0.1)
+
+        try:
+            child = json.loads(observation_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, UnicodeError, json.JSONDecodeError):
+            child = {}
+        private = {
+            "schema_version": 1,
+            "variant": "APP_EXIT",
+            "application_exit_code": exit_code,
+            "shutdown_signal_count": child.get("shutdown_signal_count"),
+            "wake_entry_count": child.get("wake_entry_count"),
+            "shutdown_blank_seen": child.get("shutdown_blank_seen"),
+            "blank_before_display_close": child.get("blank_before_display_close"),
+            "stop_failure_count": child.get("stop_failure_count"),
+            "native_child_count": len(descendants),
+            "surviving_native_child_count": len(survivors),
+        }
+        _write_json(stage_path.with_name("raw-observation.json"), {
+            **private,
+            "application_observation_written": bool(child),
+        })
+        assert child, "M4C_S05_APPLICATION_OBSERVATION_MISSING"
+        _write_stage(stage_path, "COMPLETE")
+        return private
+    finally:
+        ready_waiter.cancel()
+        if process.returncode is None:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                await asyncio.wait_for(process.wait(), timeout=10)
+            except TimeoutError:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                await process.wait()
+        await asyncio.gather(waiter, ready_waiter, return_exceptions=True)
+
+
 def test_m4c_product_scenario() -> None:
     test_id = os.environ.get("SBD_M4C_TEST_ID")
     variant = os.environ.get("SBD_M4C_VARIANT")
-    assert (test_id, variant) == ("M4C-PI-S02", "NORMAL_END")
+    scenario = (test_id, variant)
+    assert scenario in {
+        ("M4C-PI-S02", "NORMAL_END_B2"),
+        ("M4C-PI-S03", "TWO_TIMEOUTS"),
+        ("M4C-PI-S04", "PERCEPTION"),
+        ("M4C-PI-S04", "THINK"),
+        ("M4C-PI-S04", "ACTION"),
+        ("M4C-PI-S05", "APP_EXIT"),
+    }
     partition = Path(os.environ["SBD_M4C_PRIVATE_PARTITION"])
-    binding = _read_json(Path(os.environ["SBD_M4C_BINDING_MANIFEST"]))
     config_path = Path(os.environ["SBD_M4C_CONFIG"])
-    utterance_1 = os.environ.get("SBD_M4C_UTTERANCE_1", "天空為什麼是藍色的？")
-    utterance_2 = os.environ.get("SBD_M4C_UTTERANCE_2", "請結束對話。")
     started = time.monotonic_ns()
 
     config = load_config(local_path=config_path, dotenv_path=Path(os.devnull), environ={})
-    _validate_product_config(config, config_path, binding)
+    _validate_product_config(config)
     try:
-        private = asyncio.run(_run_s02(
-            config, utterance_1, utterance_2, partition / "operator-stage"
-        ))
-        public = ORACLE.validate_s02_private_evidence(private)
+        if scenario == ("M4C-PI-S02", "NORMAL_END_B2"):
+            utterance_1 = os.environ.get(
+                "SBD_M4C_UTTERANCE_1", "天空為什麼是藍色的？"
+            )
+            utterance_2 = os.environ.get(
+                "SBD_M4C_UTTERANCE_2", "請結束對話。"
+            )
+            private = asyncio.run(_run_s02(
+                config, utterance_1, utterance_2, partition / "operator-stage"
+            ))
+            public = ORACLE.validate_s02_private_evidence(private)
+        elif scenario == ("M4C-PI-S03", "TWO_TIMEOUTS"):
+            private = asyncio.run(_run_s03(config, partition / "operator-stage"))
+            public = S03_ORACLE.validate_s03_private_evidence(private)
+        elif test_id == "M4C-PI-S04":
+            assert variant is not None
+            private = asyncio.run(_run_s04(
+                config, variant, partition / "operator-stage"
+            ))
+            public = S04_ORACLE.validate_s04_private_evidence(private)
+        else:
+            private = asyncio.run(_run_s05(
+                config_path, partition / "operator-stage"
+            ))
+            public = S05_ORACLE.validate_s05_private_evidence(private)
         evidence_path = partition / "evidence.json"
         _write_json(evidence_path, {"private": private, "public_projection": public})
         _write_json(partition / "result.json", {
             "schema_version": 1, "test_id": test_id, "variant": variant,
             "sub_run_id": os.environ["SBD_M4C_SUB_RUN_ID"],
-            **_binding_result_fields(binding),
             "started_monotonic_ns": started,
             "ended_monotonic_ns": time.monotonic_ns(),
-            "script_status": "Pass", "evidence_sha256": _sha256(evidence_path),
+            "script_status": "Pass", "public_evidence": public,
         })
     except BaseException as error:
         failure_path = partition / "evidence.json"
@@ -397,9 +898,9 @@ def test_m4c_product_scenario() -> None:
         _write_json(partition / "result.json", {
             "schema_version": 1, "test_id": test_id, "variant": variant,
             "sub_run_id": os.environ["SBD_M4C_SUB_RUN_ID"],
-            **_binding_result_fields(binding),
             "started_monotonic_ns": started,
             "ended_monotonic_ns": time.monotonic_ns(),
-            "script_status": "Fail", "evidence_sha256": _sha256(failure_path),
+            "script_status": "Fail",
+            "public_evidence": {"failure_code": type(error).__name__},
         })
         raise

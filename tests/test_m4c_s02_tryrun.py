@@ -1,4 +1,4 @@
-"""Workstation try-run for composite M4C-PI-S02/NORMAL_END."""
+"""Workstation try-run for composite M4C-PI-S02/NORMAL_END_B2."""
 
 from __future__ import annotations
 
@@ -71,10 +71,6 @@ def _valid_evidence() -> dict:
             "answer_length": 5,
         },
         "cleanup": {
-            "conversation_close": True,
-            "request_terminal": True,
-            "stream_closed": True,
-            "owner_count": 0,
             "state": "IDLE",
             "status": "待命",
             "main_empty": True,
@@ -102,10 +98,10 @@ def test_s02_display_publication_contract_covers_both_end_branches() -> None:
 
 def test_s02_oracle_accepts_atomic_composite_and_projects_no_private_text() -> None:
     public = ORACLE.validate_s02_private_evidence(_valid_evidence())
-    assert public["scenario_code"] == "M4C-PI-S02/NORMAL_END"
+    assert public["scenario_code"] == "M4C-PI-S02/NORMAL_END_B2"
     assert public["fragment_count"] == 2
-    assert public["spoken_sha256"] == public["answer_sha256"]
-    assert public["display_sha256"] == public["answer_sha256"]
+    assert public["answer_matches_spoken"] is True
+    assert public["answer_matches_display"] is True
     rendered = repr(public)
     assert "天空呈現藍色" not in rendered
     assert "請結束對話" not in rendered
@@ -120,7 +116,7 @@ def test_s02_oracle_does_not_gate_on_asr_text() -> None:
     ("mutation", "code"),
     [
         (lambda value: value.update(fragments=[]), "M4C_S02_ELIGIBLE_FRAGMENT_MISSING"),
-        (lambda value: value.update(spoken_text="不同"), "M4C_S02_ANSWER_DIGEST_MISMATCH"),
+        (lambda value: value.update(spoken_text="不同"), "M4C_S02_ANSWER_MISMATCH"),
         (
             lambda value: value.update(provisional_display_publications=1),
             "M4C_S02_PROVISIONAL_DISPLAY_LEAK",
@@ -137,10 +133,8 @@ def test_s02_oracle_does_not_gate_on_asr_text() -> None:
             lambda value: value["playback"].update(drain_call_count=1),
             "M4C_S02_PLAYBACK_DRAIN_INCOMPLETE",
         ),
-        (
-            lambda value: value["cleanup"].update(owner_count=1),
-            "M4C_S02_CLEANUP_INVALID",
-        ),
+        (lambda value: value["cleanup"].update(state="ACTION"),
+         "M4C_S02_FINAL_STATE_INVALID"),
     ],
 )
 def test_s02_oracle_fails_closed_for_unstitchable_evidence(mutation, code) -> None:

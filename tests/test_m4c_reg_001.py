@@ -40,9 +40,23 @@ def test_m4c_reg_001_g01_pi_driver_is_explicitly_rpi_only() -> None:
 
 def test_m4c_reg_001_g01_pi_driver_checkpoints_raw_observations_before_assertions() -> None:
     source = (ROOT / "tests/test_m4c_pv_rpi.py").read_text(encoding="utf-8")
-    checkpoint = source.index('stage_path.with_name("raw-observation.json")')
-    adjudication = source.index("assert not errors")
-    assert checkpoint < adjudication
+    marker = 'stage_path.with_name("raw-observation.json")'
+    checkpoints = []
+    offset = 0
+    while (checkpoint := source.find(marker, offset)) != -1:
+        checkpoints.append(checkpoint)
+        offset = checkpoint + len(marker)
+    assert len(checkpoints) == 4
+    adjudications = (
+        "assert not errors",
+        "assert not errors",
+        "assert interrupt is not None",
+        "assert child",
+    )
+    assert all(
+        checkpoint < source.index(adjudication, checkpoint)
+        for checkpoint, adjudication in zip(checkpoints, adjudications, strict=True)
+    )
 
 
 def test_m4c_reg_001_g02_catalog_is_exact_existing_and_unique() -> None:
