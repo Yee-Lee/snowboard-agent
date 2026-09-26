@@ -1,21 +1,56 @@
-# AI 專案入口
+# Display POC agent entry
 
-Snowboard 是運行於 Raspberry Pi 5 的全離線語音助理，以 OLED 顯示本機狀態，核心整合 ASR、LLM、TTS、視覺與硬體 HAL。
+Snowboard Display POC runs on Raspberry Pi 5 with the physical 128×128 SSD1351 OLED. The accepted M3
+hardware baseline is preserved at tag `display_p4`; current work is the M7 UX discovery requested by Core.
 
-目前座標：Display POC 的工作準備（P0）完成；Immutable Candidate Freeze（P1）待執行，Core M3 尚未解鎖。進度與下一步只以 `docs/poc/milestone_plan.md` 為準。
+## Current task
 
-架構原則只預載標題：P1 Core = 契約 + Library Adapter；P2 契約依實際使用情境；P3 Adaptor 只承擔對外通道；P4 介面允許未來跨 process；P5 Worker 內部降級、例外外洩為最後手段。完整定義按需查 `docs/arch.md` §1.3。
+- Active authority: `docs/pm_handoff/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md`
+- Progress and next action: `docs/poc/milestone_plan.md`
+- Reserved return ID: `DELIVERY-DISPLAY-POC-M7-UX-DISCOVERY-001`
+- Owner: Display POC team
 
-## 按需索引
+The request is discovery input for later Core M7 Design. It does not authorize this repo to change Core
+architecture, declare M7 accepted, or silently turn excluded features into product requirements.
 
-- 進度、未完成工作：`docs/poc/milestone_plan.md`
-- 架構、狀態機、契約：`docs/arch.md`
-- 外部團隊原始交付與審查：`docs/pm_handoff/`（唯讀參考，不直接改寫）
-- Display 實作設計：`src/sbd/core/display/display_arch.md`
-- POC 實機流程、證據：`poc_display/README.md`、`poc_display/evidence/`
+## Startup and context
 
-## AI 工作方式
+1. Read this file, then the active request and only its directly relevant source/test/evidence files.
+2. Do not preload `docs/pm_handoff/history/`, `reviews/`, raw evidence, or all legacy Display code.
+3. Treat USER direction first, then this file, the active request, and the Core authority at its named baseline.
+4. Preserve accepted P1–P4 commits, tags, evidence and decisions. M7 work is append-only from `display_p4`.
+5. Search history only for a named ID, SHA, finding or decision source.
 
-- 不預讀整個 `docs/` 或 `docs/pm_handoff/`。先用 `rg` 搜尋任務關鍵字，再局部讀取命中段落；只有上下文不足時才擴大範圍。
-- 判斷現況先看里程碑 checkbox，再以程式、測試與 evidence 驗證；外部交付文件不能取代當前狀態。
-- 保留工作樹既有變更；修改前先看 `git status`，不要覆寫無關成果。
+## Working rules
+
+- Work from product decisions: compare a small number of meaningful visual/rendering directions, eliminate
+  low-value experiments, and state the failure risk each retained experiment resolves.
+- Keep the runtime offline and map recommendations back to Core's
+  `DisplayHint → RenderModel → Renderer → DisplayArbiter → DisplayDevice` flow.
+- Prototype code may be disposable. Do not present a standalone animation demo as Core integration proof.
+- Do not add Progress UI, OSD, touch, LED, fullscreen preemption, raw model output or conversation history
+  unless returned as an explicit focused finding for Core to decide.
+- Use exact content or asset digests only at a deliberate candidate/transfer boundary. Do not add recurring
+  digest checks to application startup or every test run.
+- Keep credentials, SSH endpoints, private paths, raw conversation content and large media outside Git.
+  Commit only sanitized summaries, small fixtures and manifests needed to evaluate the recommendation.
+- Code intended for delivery must complete applicable workstation checks and Raspberry Pi/OLED validation on
+  the same bytes before commit. Documentation-only changes need only applicable document checks.
+
+## Delivery flow
+
+Use the single flow `Discovery design → Test plan → Prototype/measure → Verify → Core delivery`. Do not add
+role sign-offs, candidate authorization files or repeated review gates. Human judgment is retained only where
+the physical OLED must be assessed for readability, flicker, smoothness or product fit.
+
+The final Core-facing package uses the reserved return ID and follows section 6 of the active request. Large
+videos and raw logs remain in approved external custody with neutral locators; the committed delivery contains
+the recommendation, measurements, mappings, limitations and focused findings.
+
+## Git policy
+
+- Commit only at a meaningful milestone or after completing same-bytes target verification.
+- Use subject format `{work-type}{milestone/stage}: {title}`.
+- Use a concise English bullet-list body of 60–100 words.
+- Before any commit, show the USER the complete subject, body and file list and obtain explicit approval.
+- Do not rewrite an accepted or externally delivered candidate; append fixes in a later commit.

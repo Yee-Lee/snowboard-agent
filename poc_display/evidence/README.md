@@ -1,6 +1,8 @@
 # POC Display evidence workflow
 
-狀態：`P3_PASS / Core re-review pending`；sanitized summary 為 `m3/M3-HW-SUMMARY-2026-08-12.md`。
+M3 狀態：`P4_ACCEPTED_AS_DESIGN_INPUT`；sanitized summary 為
+`m3/M3-HW-SUMMARY-2026-08-12.md`。目前 active work 是 M7 UX discovery，權威入口為
+`../../docs/pm_handoff/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md`。
 
 流程沿用 Audio POC 經驗：先跑 read-only remote pre-test，再於 exact clean SHA 的 Pi checkout 跑 capability packet。環境不足回報 `INCONCLUSIVE`，契約行為失敗才回報 `FAIL`；不能把「畫面看得到」或 SSH command 結束當作 cleanup 證據。
 
@@ -39,3 +41,12 @@ runner/
 - panel revision 與 config 一致；fixture/wiring、RGB565 color、orientation、flicker operator attestation 全數 PASS；不要求照片。
 
 Raw evidence 只留在核准的 evidence custody。Review 後使用 `poc_display/evidence/m3/M3-HW-SUMMARY-TEMPLATE.md` 建立 sanitized summary；不得提交 endpoint、account、key path、private absolute path 或完整私人終端輸出。
+
+## M7 evidence
+
+M7 raw runs 放在 `poc_display/evidence/m7/<timestamp>-<experiment>/` 並由 `.gitignore` 排除。可提交的
+sanitized summary 直接放在 `poc_display/evidence/m7/`，但只保留能支持產品方向選擇的測量、實體 OLED
+觀察、方法與限制。大型影片、逐 frame capture、private raw logs 與 operator-specific 路徑不得進 Git。
+
+M7 不重跑已 Accepted 的 M3 能力作為形式上的 PASS credit；只有新建議依賴或改變既有行為時，才補
+直接對應的證據。自動 timing/resource/cleanup facts 與人工 readability/flicker/product-fit 判讀必須分開。

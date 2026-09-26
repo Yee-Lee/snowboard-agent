@@ -1,4 +1,29 @@
-# Display POC → Core M3 Milestone Plan
+# Display POC milestone plan
+
+> Current task: **M7 Display UX discovery — OPEN**
+> Incoming authority: `docs/pm_handoff/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md`
+> Restored branch/worktree baseline: `display_p4` / `aecf75f45b7117cbc20010f4eb88e45e0cefa14e`
+> Reserved return ID: `DELIVERY-DISPLAY-POC-M7-UX-DISCOVERY-001`
+
+## Active milestone — M7 UX discovery
+
+Core has delivered one autonomous discovery request. It is non-blocking input to later M7 Design and may run
+before M6 acceptance; it does not open Core M7 implementation or acceptance.
+
+- [x] Restore an independent `display` worktree from the accepted `display_p4` baseline.
+- [x] Place the Core request in the active `docs/pm_handoff/` inbox.
+- [ ] Select and compare the smallest useful set of screen, transition, animation and rendering directions.
+- [ ] Measure the retained candidates on Raspberry Pi 5 and the physical SSD1351 under representative product
+      load, including frame/SPI cost, CPU, memory, assets, cancellation, fallback and cleanup.
+- [ ] Record physical-panel readability, flicker, perceived smoothness, product value and OLED-protection
+      observations separately from automatic measurements.
+- [ ] Produce one coherent `DELIVERY-DISPLAY-POC-M7-UX-DISCOVERY-001` package satisfying all ten return items
+      in the request, with unsupported or inconclusive decisions stated honestly.
+
+The Display team owns experiment sequencing and may return a restrained/static recommendation when evidence
+does not justify animation. Core retains architecture and product-decision authority.
+
+## Completed baseline — Core M3 Display HAL P0–P4
 
 > 更新日期：2026-08-12
 > 目前狀態：**P1–P4 completed；Core Team 已以 `DELIVERY-005-poc_display-m3-v0.3-ack` 接受為 M3 design input，Core M3 development 已解鎖**

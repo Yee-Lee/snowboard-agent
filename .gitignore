@@ -6,6 +6,10 @@
 poc_display/evidence/m3/*/
 !poc_display/evidence/m3/.gitkeep
 
+# M7 videos, frame captures and raw measurements stay in evidence custody.
+# Commit only sanitized summaries directly under poc_display/evidence/m7/.
+poc_display/evidence/m7/*/
+
 # Python
 __pycache__/
 *.py[cod]
