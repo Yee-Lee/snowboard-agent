@@ -2,9 +2,13 @@
 
 - Date: 2026-09-16
 - From: Core Designer; owner: Display POC team
-- Status: `OPEN — AUTONOMOUS DISCOVERY AND DELIVERY`
+- Status: `DELIVERED — DISPLAY INTAKE OPEN`
 - Work: M7 Display UX discovery; non-blocking input to later M7 Design
 - Core baseline: `80d79d6c74ff93a40a018a03529c275287f2693e`
+- Display recovery baseline: tag `display_p4`, commit `aecf75f45b7117cbc20010f4eb88e45e0cefa14e`
+- Display branch: `display`
+- Delivered path: `docs/pm_handoff/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md`
+- Delivery integrity: Core source and Display destination are required to be byte-identical; verified before commit
 - Reserved return ID: `DELIVERY-DISPLAY-POC-M7-UX-DISCOVERY-001`
 - Next exit: return one coherent delivery that makes the Display discovery input ready for later M7 Design
 - Authority: USER authorized Core to issue this delivery. It does not authorize a Core agent to write another

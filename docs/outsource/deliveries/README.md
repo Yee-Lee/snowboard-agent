@@ -7,7 +7,7 @@
 
 | Area | Document | State / next action |
 |---|---|---|
-| Display UX | [`REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001`](active/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md) | open: autonomous discovery and return delivery |
+| Display UX | [`REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001`](active/REQUEST-DISPLAY-POC-M7-UX-DISCOVERY-001.md) | delivered to `display` at `b04a0a1485cd606f94c5b318fb472eacfd153b39`; autonomous discovery open |
 | Shared Pi | [`PI-MIGRATION-STATUS-001`](active/PI-MIGRATION-STATUS-001.md) | current migration state |
 | LLM MVA | [`RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002`](active/RECEIPT-LLM-POC-M4B-MVA-EFFICIENCY-002.md) | gate open; incoming bytes verified |
 | LLM MVA | [`REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002`](active/REQUEST-LLM-POC-M4B-MVA-EFFICIENCY-002.md) | execute efficiency gate |
