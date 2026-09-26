@@ -3,9 +3,9 @@
 - Updated: 2026-09-26
 - Writer: Designer only
 - Current milestone: M4C complete offline voice-device integration
-- Current stage: **M4-ERR Accepted；M4C Design／Test Spec streamlined；Developer final alignment**
-- Next owner: Developer
-- Developer entry: **M4C Open**
+- Current stage: **M4 Accepted；M4C formal Pi PV 7/7 Pass**
+- Next owner: Designer
+- Developer entry: **M4C Closed**
 
 ## Gate transition facts
 
@@ -28,27 +28,25 @@
   no-input, Display isolation and directly affected regressions. The Pi catalog is S01–S05 only: five Test
   IDs and seven sub-runs. S06/S07 are portable integration; S08 adds no test; S09 is traced to S02,
   C14/C15 and S04/ACTION. No independent S09 human result remains.
+- Candidate `0b2160e5d48dcc959b08f4a23ede91a9e0d5640d` completed formal Raspberry Pi run
+  `M4C-FORMAL-PV-20260926-01`. All seven catalog entries are designated Pass; the finalizer reports
+  `pv_status=Pass` with one earlier S02 timeout retained as a superseded attempt. The Pi checkout remained
+  clean and its tracked-content SHA-256 matched the workstation value
+  `d5d94f7c539c3f8de276f3974876074ac43bae810bb1cdab08bf9b9bd93a3502`.
 
-## Developer route
+## Acceptance disposition
 
-Implement the current M4C design and Test Spec from:
-
-1. [`M4C`](../milestones/M4C.md) as product design authority;
-2. [`M4C Test Spec`](../test_spec/test_spec_M4C.md) as the executable Test ID／oracle authority; and
-3. accepted M4A／M4B／M4-ERR only through the direct regression and composition boundaries routed by those files.
-
-Keep the single B2 path without reopening the POC or adding an A-mode fallback. Align the runner to the
-seven-entry Pi catalog, retain the completed S06/S07 integration coverage, and run every test applicable to
-the final pending bytes on Pi. A content comparison is performed once only when transfer/candidate preparation
-actually requires it; it is not a per-run Test ID.
+M4C and its parent M4 milestone are Accepted. Preserve the fixed B2 path, seven-entry catalog and formal
+evidence; do not reopen completed scenarios merely to add administrative checks. ALPHA is a separate product
+convergence gate and begins only as its own routed task.
 
 ## Role routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Designer | Streamlined Design authority complete；answer only focused implementation conflicts |
-| Tester | Streamlined Test Spec complete；Verify against its Test IDs and catalog |
-| Developer | Align runner to seven entries and keep the verified S06/S07 implementation unchanged |
+| Designer | M4C acceptance recorded；route the next explicitly selected milestone or gate |
+| Tester | M4C formal evidence complete；no active M4C work |
+| Developer | M4C closed；enter only for a concrete regression or newly routed milestone |
 | Architect / Reviewer | No active request；enter only for a focused conflict that the accepted contracts cannot support |
 
 Designer replaces this file only when Test Spec coverage, Developer entry, stage, gate or next owner changes.

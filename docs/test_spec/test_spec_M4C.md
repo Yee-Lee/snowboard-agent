@@ -11,7 +11,14 @@
 - M4C-SS: Closed／Adopted `B2-ONE-LOOKAHEAD-COALESCE`; POC delivery binding commit
   `a492a1416721c73c989dd46067b3e9dd1c24508d`.
 
-**Status**: Current — Tester-owned streamlined executable authority for M4C Developer and Verify.
+**Status**: Accepted — formal Pi PV Pass on candidate
+`0b2160e5d48dcc959b08f4a23ede91a9e0d5640d`.
+
+**Acceptance result (2026-09-26)**: `M4C-FORMAL-PV-20260926-01` completed all seven
+designated Pi catalog entries and finalized with `pv_status=Pass`. The finalizer recorded eight
+attempts because the first S02 operator attempt timed out; it is retained as superseded and the
+second S02 attempt is the designated Pass. Public evidence locator:
+`M4C-FORMAL-PV-20260926-01/final.json`.
 
 **In scope**: `VolumeControlledAudioOutput` decorator and config; `StreamingSpeakControl`
 (`B2-ONE-LOOKAHEAD-COALESCE`) portable controller coverage; session no-input streak and

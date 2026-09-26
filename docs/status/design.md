@@ -2,8 +2,8 @@
 
 - Owner: Designer
 - Scope: M4C complete offline voice-device integration
-- State: **Design complete；M4-ERR Accepted；M4C-SS Closed／B2 adopted；streamlined Test Spec current**
-- Developer entry: **Open**
+- State: **M4C Accepted；formal Pi PV 7/7 Pass**
+- Developer entry: **Closed**
 
 ## Accepted inputs
 
@@ -60,10 +60,10 @@ The authoritative behavior is [`M4C`](../milestones/M4C.md). It fixes:
   are not M4C product assertions. Only lifecycle observations directly required by interrupt, recovery or
   shutdown remain.
 
-## Next work
+## Acceptance disposition
 
-Developer uses [`M4C`](../milestones/M4C.md) and
-[`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) to align the runner to the seven-entry Pi catalog and retain
-the S06/S07 portable integration coverage. Verify runs all tests applicable to the final pending bytes on Pi;
-content comparison is performed once only when candidate transfer makes it necessary. Raise a focused design
-request only for an actual authority conflict, not for another review or approval gate.
+Candidate `0b2160e5d48dcc959b08f4a23ede91a9e0d5640d` completed formal Pi run
+`M4C-FORMAL-PV-20260926-01`: all seven catalog entries are designated Pass and the finalizer reports
+`pv_status=Pass`. The fixed Pi checkout remained clean and matched the workstation tracked-content SHA-256
+`d5d94f7c539c3f8de276f3974876074ac43bae810bb1cdab08bf9b9bd93a3502` after execution. M4C is closed;
+future work does not reopen it unless a concrete regression is found.

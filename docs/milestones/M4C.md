@@ -1,9 +1,15 @@
 # M4C — complete offline voice-device integration
 
-狀態：**Design complete；M4-ERR Accepted；M4C-SS Closed（採用 B2）；streamlined verification approved／Developer active**。
+狀態：**Accepted — candidate `0b2160e5d48dcc959b08f4a23ede91a9e0d5640d`；formal Pi PV 7/7 Pass**。
 
 M4C完成Button→Listen/ASR→Reasoner/LLM→Speak/TTS、Rest與基本Session Display的exact-product
 composition。Camera/look與voice wake留M6，tool/MQTT留M5，完整圖形與動畫留M7。
+
+正式驗收 `M4C-FORMAL-PV-20260926-01` 在 Raspberry Pi 5、CPython 3.13.5、network-isolated
+product runtime 對固定 candidate 完成七個 designated sub-run並由runner finalizer判定
+`pv_status=Pass`。Pi與workstation的tracked-content SHA-256同為
+`d5d94f7c539c3f8de276f3974876074ac43bae810bb1cdab08bf9b9bd93a3502`；公開final evidence位於
+`M4C-FORMAL-PV-20260926-01/final.json`。一次S02操作timeout保留為superseded attempt，不提供PASS credit。
 
 M4C另納入startup-static software output volume：產品composition以config固定輸出音量，並保留
 未來`adjustments/volume`可注入的獨立control seam；本階段不交付runtime按鍵調整、Display音量
