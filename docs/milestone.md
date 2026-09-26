@@ -104,7 +104,7 @@ SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
 | **M2** | 使用 mock / null 完成可啟動、可對話、可收斂的垂直切片 | 開發機 | `Ch 2a / 2b / 7 / 9` |
 | **M3** | Raspberry Pi 5 真實 HAL、null fallback 與 selected Display profile | Raspberry Pi 5 | `Ch 2a / 5 / 8 / 10 / 11`、`display_spec.md` selected profile、Core 已採用的 Audio / Display POC contract |
 | **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、M2B後的provisional model recipe與Gate 2B後的final model baseline |
-| **ALPHA** | Voice-only 產品化收斂 Gate：固定 hardware / config / model / dependency / manifest，驗證可重現 session / soak / failure / recovery / shutdown / resource / privacy | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted exact SHA |
+| **ALPHA** | Voice-only 產品化收斂 Gate：分離驗證 repeated-session lifecycle、受控 performance baseline、一次整機 LLM recovery 與六項固定品質案例 | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted product path |
 | **ALPHA.R1** | 條件式 ASR Product R1 Voice-only 收斂 Gate；不改寫或取代原 ALPHA 結論 | Raspberry Pi 5 | `docs/milestones/ALPHA_R1.md`；M4.R1 Accepted exact SHA |
 | **M5** | 依 baseline selection 選定的唯一 ALPHA 或 ALPHA.R1 Accepted exact SHA 擴充 MQTT、read 與 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
 | **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
