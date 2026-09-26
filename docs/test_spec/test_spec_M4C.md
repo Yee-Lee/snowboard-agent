@@ -11,13 +11,12 @@
 - M4C-SS: Closed／Adopted `B2-ONE-LOOKAHEAD-COALESCE`; POC delivery binding commit
   `a492a1416721c73c989dd46067b3e9dd1c24508d`.
 
-**Status**: Current — Tester-owned entry spec for M4C. No implementation or acceptance result
-in this document. Developer entry requires this spec to be complete.
+**Status**: Current — Tester-owned streamlined executable authority for M4C Developer and Verify.
 
 **In scope**: `VolumeControlledAudioOutput` decorator and config; `StreamingSpeakControl`
 (`B2-ONE-LOOKAHEAD-COALESCE`) portable controller coverage; session no-input streak and
-product classification; whole-product scenario composition
-(`M4C-S01`–`M4C-S09`); necessary B2 speech-quality judgment; M4C regression continuity.
+product classification; whole-product scenario composition (`M4C-S01`–`M4C-S05`); focused
+streaming-fault and Display-degradation integration; directly affected regression continuity.
 
 **Out of scope**: barge-in; runtime volume adjustment; Display animation/graphics (留 M7);
 camera/look (留 M6); tool/MQTT (留 M5); repeated-session soak; formal latency/memory/thermal
@@ -30,40 +29,34 @@ any M4C Test ID.
 
 ### 2.1 Result vocabulary
 
-- **Pass**: every required assertion passes and required evidence is present. Where USER
-  audible-quality inspection is required, that result is also Pass.
-- **Fail**: an assertion fails, a forbidden call or artifact occurs, a test is
-  skipped / xfail / xpass, or a required USER audible-quality result is missing or Fail.
-- **Incomplete**: a required evidence field, measurement, or explicit null reason is absent.
+- **Pass**: every required product-risk assertion passes.
+- **Fail**: an assertion fails, a forbidden product effect occurs, or execution does not reach the
+  required terminal state.
+- **Incomplete**: execution ends without enough direct observation to decide a required assertion.
   Incomplete never converts to Pass.
 - **Blocked**: the bound tracked content, target, artifact, or required hardware is unavailable
   before execution begins.
-- **NeedsHumanReview**: a case requires USER audible-quality inspection, has script status
-  Pass and complete captured evidence, but no USER verdict yet. Not Pass; cannot be
-  designated by aggregation.
 
-Script-only cases (all cases except S09/QUALITY_T02) are decided
-entirely by automatic assertions and target facts; no separate Developer human-result column
-or manual gate is added.
+All current Test IDs are decided by automatic assertions. The completed S02 product run already
+contains the single necessary audible-product observation; no standalone S09 human result or
+second quality playback is required.
 
 ### 2.2 Execution matrix
 
 | Matrix ID | Layer | Required environment | Timeout |
 | :--- | :--- | :--- | :--- |
-| `PU` | Portable unit | CPython 3.11, 3.12, 3.13; Linux x86_64/aarch64 and macOS arm64; no native/network | 60 s per Test ID |
-| `PI` | Portable integration | CPython 3.11, 3.12, 3.13; Linux x86_64/aarch64 and macOS arm64; deterministic adapter/fake seams | 90 s per Test ID |
+| `PU` | Portable unit | Project workstation environment and target Pi CPython 3.13; no hardware or network required | 60 s per Test ID |
+| `PI` | Portable integration | Project workstation environment and target Pi CPython 3.13; real product logic with deterministic adapter/fake seams | 90 s per Test ID |
 | `PS` | Portable subprocess | Linux x86_64/aarch64, CPython 3.13 only; fake child in real POSIX process group | 120 s per Test ID |
 | `PV` | Pi product verification | Raspberry Pi 5 4 GB, Debian 13 aarch64, CPython 3.13; real LiteRT-LM, Matcha TTS and ALSA I2S speaker; `volume_percent=25`; network disabled; same pending bytes as the commit candidate | 60 min per Test-ID sub-run |
 
-Every result record contains: `schema_version`, `test_id`, `case_id`, product config and target
-facts, matrix/platform/Python identity, start/end monotonic timestamps, `status`, and a
-minimal evidence locator. The operator performs one independent same-bytes reconciliation
-between the Pi-verified candidate and workstation pending content before commit preparation;
-it is not a per-sub-run assertion. `user_result` is present only for S09/QUALITY_T02; all
-other results are automatic.
+Portable runs need only pytest outcome and failure output. Pi scenario results retain the stable
+counts, booleans and state codes required by their oracle. Source/config/model/artifact/evidence
+digests are not startup behavior, Test ID assertions or per-run work. If content identity must be
+checked at transfer or candidate preparation, the operator performs one independent diagnostic.
 
 All async and concurrent cases use named `asyncio.Event`, pipe/queue acknowledgement, task-join,
-action-complete, and close-proof barriers. Correctness sleeps, poll-until-lucky loops and
+operation-complete, and resource-release barriers. Correctness sleeps, poll-until-lucky loops and
 timing-order assumptions are forbidden. Fakes expose call ledgers and fail if an unexpected
 model, speech, file-write or network call occurs.
 
@@ -72,9 +65,9 @@ case explicitly tests a watchdog and observes required bounded cleanup.
 
 ### 2.3 Evidence and privacy rules
 
-Public evidence contains only: sequence, length, digest, queue high-water mark, timing node
-labels and stable codes. It must not contain: transcript, prompt, raw model output, PCM,
-fragment or terminal text, session ID, credential, or complete private path.
+Public evidence contains only the stable counts, booleans, timing labels and codes needed by a Pi
+oracle. It must not contain transcript, prompt, raw model output, PCM, fragment or terminal text,
+session ID, credential, or complete private path.
 
 ---
 
@@ -87,9 +80,11 @@ fragment or terminal text, session ID, credential, or complete private path.
 | `M4C-SS-EXTRACT-001` | M4C-SS clause 2; punctuation-or-12 boundary, Unicode stability, terminal flush, exact concatenation | `PU`; 60 s | `portable/M4C-SS-EXTRACT-001.*` |
 | `M4C-SS-OUTCOME-001` | M4C-SS clauses 5–8; zero-fragment R2, partial-fragment STREAMING_TERMINAL_FAILED, cleanup-unproven, protocol-failed outcomes | `PI`; 90 s | `portable/M4C-SS-OUTCOME-001.*` |
 | `M4C-NOINPUT-001` | M4C §Session no-input completion; streak counter, product speech, cross-session isolation, request-code classification | `PU, PI`; 60/90 s | `portable/M4C-NOINPUT-001.*` |
-| `M4C-REG-001` | Accepted M4A/M4B/M4-ERR regression baseline; deletion or weakening of covered nodes | `PI`; 180 s suite cap | `portable/M4C-REG-001.*` |
+| `M4C-DISPLAY-001` | Display failure during a real voice-control vertical must not enter ERROR or interrupt LLM→TTS→Audio | `PI`; 90 s | `tests/test_m4c_s07_tryrun.py` |
+| `M4C-REG-001` | Directly affected Accepted M4A/M4B/M4-ERR behavior regresses under the M4C delta | `PI`; 180 s suite cap | pytest result |
 
-All PU and PI Test IDs run on CPython 3.11, 3.12 and 3.13. PS is Linux/CPython 3.13 only.
+PU/PI run once on the project workstation and once on the same pending bytes on target Pi. PS runs
+on Linux/CPython 3.13. M4C does not create an operating-system/Python cross-product gate.
 
 ---
 
@@ -98,7 +93,7 @@ All PU and PI Test IDs run on CPython 3.11, 3.12 and 3.13. PS is Linux/CPython 3
 ### M4C-VOL-001 — `VolumeControlledAudioOutput` scaling and composition
 
 Fixture: a byte-exact S16_LE sample bank; `MockAudioOutput` call ledger; injected
-`AudioOutputConfig`; `VolumeControl` port probe. All three Python minors required.
+`AudioOutputConfig`; `VolumeControl` port probe.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -113,13 +108,13 @@ Fixture: a byte-exact S16_LE sample bank; `MockAudioOutput` call ledger; injecte
 | `V09` | Exercise `VolumeControl` port seam directly without injecting an `adjustments/volume` runtime module | Port exists and accepts volume instance without error; no Event/Signal/Fact published; State Manager state unchanged |
 | `V10` | Production composition: assert exactly one `VolumeControlledAudioOutput` wraps the raw `AudioOutput` in the product wiring | Exactly one decorator instance in composition; no double-wrapping; no second gain application on any product path |
 | `V11` | `volume_percent` field absent from config (schema default `100`) | Behavior identical to explicit `volume_percent=100`; bit-exact passthrough |
-| `V12` | Portable import and collection: import `VolumeControlledAudioOutput` and `AudioOutputConfig` on CPython 3.11, 3.12 and 3.13 with Pi-only native dependencies unavailable | Import succeeds on all three Python minors; no `ImportError` from ALSA/GPIO/Pi-native modules |
+| `V12` | Portable import and collection with Pi-only native dependencies unavailable | `VolumeControlledAudioOutput` and `AudioOutputConfig` import without loading ALSA/GPIO/Pi-native modules |
 
 ### M4C-SS-CTRL-001 — `StreamingSpeakControl` B2 controller
 
 Fixture: `StreamingSpeakControl` with `MockTTSAdapter`, `MockAudioOutput` call ledger, fragment
 barrier, queue depth probe, and `ActionCompleted` capture. Turn correlation `(session_id,
-turn_id)` is unique per case. All three Python minors required for PU/PI; PS on CPython 3.13 only.
+turn_id)` is unique per case.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -149,7 +144,7 @@ turn_id)` is unique per case. All three Python minors required for PU/PI; PS on 
 ### M4C-SS-EXTRACT-001 — Fragment extraction boundary and normalization
 
 Fixture: byte-chunk matrix feeding the real incremental parser; `SAFE_TEXT` fragment capture
-barrier; no Speak/TTS dispatch in these cases. All three Python minors required.
+barrier; no Speak/TTS dispatch in these cases.
 
 | Case | Deterministic stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -168,7 +163,6 @@ barrier; no Speak/TTS dispatch in these cases. All three Python minors required.
 
 Fixture: parameterized Reasoner with fragment ledger, TTS/Audio fakes and SM barriers. Each
 case verifies exactly one logical operation and zero or one legitimate terminal Fact.
-All three Python minors required.
 
 | Case | Stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -178,11 +172,14 @@ All three Python minors required.
 | `O04` | Identity / intent / wire inconsistency (`session_id`, `turn_id`, or correlation mismatch) | `LLM_PROTOCOL_FAILED + UNPROVEN + LLM key`; no normal Fact |
 | `O05` | Control closed without any admitted fragment; zero owner | Owner count = 0; no Fact; no Error; control closed cleanly |
 | `O06` | Terminal-only degradation: no pre-terminal fragment admitted; complete terminal text used as single final fragment via B2 terminal-only path | One `synthesize` call with complete terminal text; one `ActionCompleted(ok)`; no A-mode retry; no duplicate |
+| `O07` | Worker emits a safe partial fragment, then returns a proven replaceable invalid-semantic terminal | Partial output is never converted into normal terminal success; the typed failure remains eligible for the existing O02 mapping |
+| `O08` | LLM emits a partial fragment, then raises `LLM_BACKEND_FAILED` | Streaming control and future playback are cleared; exactly one LLM fault; no `LLMResponse` or successful `ActionCompleted` |
+| `O09` | TTS raises `TTS_PROTOCOL_FAILED` while StreamingSpeak owns queued/inflight fragments | Pending bytes, inflight fragments, PCM and owner are cleared before one fault is exposed; no audio or successful `ActionCompleted` |
 
 ### M4C-NOINPUT-001 — Session no-input streak and product classification
 
 Fixture: one Product Session with fake Listen/ASR seam; streak counter probe; fixed-speech
-ledger; `PerceptionResult.extra` capture. All three Python minors required.
+ledger; `PerceptionResult.extra` capture.
 
 | Case | Stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
@@ -198,27 +195,34 @@ ledger; `PerceptionResult.extra` capture. All three Python minors required.
 | `N10` | Backend system fault during PERCEPTION | Not counted in no-input streak; no retry prompt; ERROR / recovery per M4-ERR |
 | `N11` | ASR stable code stored in `PerceptionResult.extra["asr_error_code"]` | Sanitized stable code present; no exception string, transcript, PCM, or native diagnostic in field |
 
-### M4C-REG-001 — Regression continuity and anti-weakening
+### M4C-DISPLAY-001 — Display degradation isolation
 
-Fixture: candidate diff against `base_sha` determines the affected symbol set; the accepted
-regression/Test ID inventory from M4A (`6c3ba954...`), M4B (`f87cfa50...`) and M4-ERR
-(`f572915d...`) is the node baseline. Indirect callers discovered through the diff are
-included; import-only affected-test discovery is not sufficient.
-All three Python minors required.
+Fixture: real Event Bus, State Manager, Reasoner, Speak, Rest and SessionDisplay with deterministic
+voice backends. The fake Display succeeds through startup and WAKE, then raises once when THINK
+projects final ASR text.
 
 | Case | Stimulus | Required assertions and forbidden effects |
 | :--- | :--- | :--- |
-| `G01` | AST scan of `src/**/*.py` and `tests/**/*.py` | No direct/aliased skip, xfail, `pytest.skip/xfail`, false-constant assertion or marker omission affecting any existing M4A/M4B/M4-ERR/Foundation Test ID |
-| `G02` | Run all M4A/M4B/M4-ERR/Foundation regression nodes whose production dependency is changed or shared by the M4C delta (via candidate diff) | failures=0, errors=0, skipped=0; no xfail/xpass; exact collected node list published |
-| `G03` | `VolumeControlledAudioOutput` inserted between M4A `AudioOutput` and `Speak` in composition | M4A portable acceptance nodes still pass; no new direct `AudioOutput` caller bypasses the decorator in product wiring |
-| `G04` | Portable import and collection for pure-Python modules (`StreamingSpeakControl`, `AudioOutputConfig`, no-input streak counter) on CPython 3.11, 3.12 and 3.13 with Pi-only native dependencies unavailable | Import and pytest collection succeed on all three Python minors without Pi-native dependencies |
+| `D01` | One Display `show()` failure during THINK in a normal two-turn Session | Rendering latches disabled with one `DISPLAY_RENDER_DISABLED`; no later device call, `ErrorOccurred` or ERROR state; both LLM→TTS→Audio turns complete and cleanup reaches IDLE |
+
+### M4C-REG-001 — Directly affected regression continuity
+
+Fixture: run the accepted M4A/M4B/M4-ERR tests that directly exercise production symbols changed
+by M4C or their immediate product wiring. Do not turn source scanning, an exact test-file inventory,
+skip-marker policing or evidence packaging into product assertions.
+
+| Case | Stimulus | Required assertions and forbidden effects |
+| :--- | :--- | :--- |
+| `G01` | Run directly affected accepted regression nodes | failures=0 and errors=0; a skipped test does not provide coverage for the changed behavior |
+| `G02` | `VolumeControlledAudioOutput` product composition | Exactly one wrapper is present and no product Speak path bypasses it |
+| `G03` | Import and collect the changed pure-Python surfaces without Pi-only dependencies | Workstation and target-Pi environments import and collect successfully |
 
 ---
 
 ## 5. Pi product verification — whole-product scenarios
 
-These Test IDs are pending until the automatically bound tracked content, target, implemented
-harness and Tester execution gate exist. Portable fake results cannot satisfy them.
+Portable results cannot replace the real Pi product paths below. S01–S05 contain seven hardware
+sub-runs; S06–S09 are not Pi catalog entries.
 
 Initialize one aggregate `PV` identity:
 
@@ -226,18 +230,16 @@ Initialize one aggregate `PV` identity:
 python3.13 scripts/run-m4c-pv.py init \
   --pv-run-id <NEW_PV_RUN_ID> \
   --public-root <NEW_EMPTY_PUBLIC_ROOT> \
-  --private-root <NEW_EMPTY_PRIVATE_ROOT> \
-  --binding-manifest <BINDING_JSON>
+  --private-root <NEW_EMPTY_PRIVATE_ROOT>
 ```
 
-`init` records the fresh public/private roots, product config and target facts including
-`volume_percent=25` and network disabled. No source, patch, config, model, artifact or
-evidence digest is a per-sub-run assertion; no role authorization, reviewer identity,
-signature or freeze artifact is an execution input.
+`init` creates the result roots. Product configuration is passed explicitly to each run. It does
+not calculate or validate content digests; any necessary transfer/candidate comparison is a separate
+operator diagnostic rather than a Test ID assertion.
 
 ### 5.1 Fixed sub-run catalog
 
-The finalizer requires exactly **16 fresh sub-runs** over **9 aggregate Test IDs**:
+The Pi catalog contains exactly **7 sub-runs** over **5 Test IDs**:
 
 ```text
 S01: START_IDLE            (1 sub-run)
@@ -245,17 +247,10 @@ S02: NORMAL_END_B2         (1 sub-run)
 S03: TWO_TIMEOUTS          (1 sub-run)
 S04: PERCEPTION, THINK, ACTION     (3 sub-runs)
 S05: APP_EXIT              (1 sub-run)
-S06: PERCEPTION_ASR_INFERENCE, THINK_LLM_CHILD_EXIT, ACTION_TTS_CHILD_EXIT  (3 sub-runs)
-S07: DISPLAY_DEGRADE       (1 sub-run)
-S08: LLM_READY_MISMATCH_FATAL      (1 sub-run)
-S09: QUALITY_T02, QUEUED, SYNTHESIZING, PLAYING  (4 sub-runs)
 ```
 
-The finalizer rejects a missing, duplicate, extra, or mismatched variant. A missing sub-run
-partition is Incomplete for that Test ID and prevents `pv_status=Pass`.
-
-`user_result` is required only for `S09/QUALITY_T02` (speech quality). All other sub-run
-results are automatic.
+The finalizer requires one designated Pass for each catalog entry and rejects an unknown or
+duplicate active variant. No human-result field is part of this catalog.
 
 ### 5.2 Execution matrix
 
@@ -266,10 +261,6 @@ results are automatic.
 | `M4C-PI-S03` | `TWO_TIMEOUTS` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S03/` |
 | `M4C-PI-S04` | `PERCEPTION`, `THINK`, `ACTION` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S04/` |
 | `M4C-PI-S05` | `APP_EXIT` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S05/` |
-| `M4C-PI-S06` | `PERCEPTION_ASR_INFERENCE`, `THINK_LLM_CHILD_EXIT`, `ACTION_TTS_CHILD_EXIT` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S06/` |
-| `M4C-PI-S07` | `DISPLAY_DEGRADE` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S07/` |
-| `M4C-PI-S08` | `LLM_READY_MISMATCH_FATAL` | automatic | `<public_root>/<pv_run_id>/M4C-PI-S08/` |
-| `M4C-PI-S09` | `QUALITY_T02`, `QUEUED`, `SYNTHESIZING`, `PLAYING` | `user_result` for `QUALITY_T02` only; others automatic | `<public_root>/<pv_run_id>/M4C-PI-S09/` |
 
 ### 5.3 Common Pi execution requirements
 
@@ -280,8 +271,7 @@ results are automatic.
   streaming provisional fragment).
 - Public evidence must not contain: transcript, prompt, raw model output, PCM, session ID,
   credential, or complete private path.
-- Success endpoints: cleanup-complete `IDLE`, graceful `exit 0`, or explicitly listed Level 3
-  `exit 4`. No other terminal state is Pass.
+- Success endpoints: cleanup-complete `IDLE` or graceful `exit 0` as specified by the scenario.
 
 ### 5.4 M4C-PI-S01 — Startup and IDLE
 
@@ -291,7 +281,7 @@ python3.13 scripts/run-m4c-pv.py run \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 ```
 
 | Observation | Required assertion |
@@ -309,16 +299,16 @@ python3.13 scripts/run-m4c-pv.py run \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 ```
 
 | Observation | Required assertion |
 | :--- | :--- |
 | Conversation created | Only after WAKE; not before short-press |
 | Turn 1 THINK | Main shows final ASR text; at least one pre-terminal `SAFE_TEXT` is admitted to the unique B2 control |
-| Turn 1 ACTION | Only `B2-ONE-LOOKAHEAD-COALESCE`; terminal-validated answer is displayed and played; shown and spoken digests agree; no A-mode or second full-response path |
+| Turn 1 ACTION | Only `B2-ONE-LOOKAHEAD-COALESCE`; terminal-validated answer is displayed and played; private oracle compares the actual shown/spoken/terminal values and exposes only equality booleans; no A-mode or second full-response path |
 | Turn 2 (`end=true`) | Non-empty answer: played to completion then REST; empty answer: direct REST |
-| Session/Conversation cleanup | Matching close proof; bounded owner cleanup |
+| Session/Conversation cleanup | The active Session ends, affected operations finish and no late output is accepted |
 | Final state | IDLE; Status=`待命`; Main empty |
 
 **Automatic B2 timeline** (Turn 1): Record monotonic timestamps for:
@@ -338,7 +328,7 @@ python3.13 scripts/run-m4c-pv.py run \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 ```
 
 Stimulus: two consecutive real product Listen windows with no speech until the configured listen
@@ -348,7 +338,7 @@ timeout; both outcomes must be `timeout` (not `NO_SPEECH`).
 | :--- | :--- |
 | First `timeout` | Fixed speech「我沒聽清楚，請再說一次。」played; same Session/Conversation; LLM not called |
 | Second `timeout` | No retry speech; no LLM call; `rest + END_SESSION` |
-| Cleanup | Conversation close proof; bounded owner cleanup |
+| Cleanup | The active Session ends and no retry, LLM call or late playback remains |
 | Final state | IDLE; Status=`待命`; Main empty |
 
 ### 5.7 M4C-PI-S04 — Interrupt (3 sub-runs)
@@ -361,21 +351,21 @@ python3.13 scripts/run-m4c-pv.py run \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 
 python3.13 scripts/run-m4c-pv.py run \
   --test-id M4C-PI-S04 --variant THINK \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 
 python3.13 scripts/run-m4c-pv.py run \
   --test-id M4C-PI-S04 --variant ACTION \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 ```
 
 | Variant | Interrupt point | Required assertions |
@@ -394,7 +384,7 @@ python3.13 scripts/run-m4c-pv.py run \
   --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
   --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
   --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
+  --config <PRODUCT_CONFIG> --fresh-setup
 ```
 
 | Observation | Required assertion |
@@ -404,174 +394,32 @@ python3.13 scripts/run-m4c-pv.py run \
 | Display | Final blank |
 | Process exit | `exit 0`; no orphaned processes in PGID |
 
-### 5.9 M4C-PI-S06 — Recoverable fault (3 sub-runs)
+### 5.9 PV aggregation and finalization
 
-Three fresh sub-runs with fixed fault codes:
-
-```text
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S06 --variant PERCEPTION_ASR_INFERENCE \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S06 --variant THINK_LLM_CHILD_EXIT \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S06 --variant ACTION_TTS_CHILD_EXIT \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-```
-
-| Variant | Injected fault | Required fault code | Required terminal |
-| :--- | :--- | :--- | :--- |
-| `PERCEPTION_ASR_INFERENCE` | `asr.inference.rejected` during active real ASR inference | `ASR_INFERENCE_FAILED + REBUILD_REQUIRED + backend.perception.listen.asr` | Rebuild READY; final IDLE |
-| `THINK_LLM_CHILD_EXIT` | `llm.child.exit` during active GENERATE | `LLM_BACKEND_FAILED + REBUILD_REQUIRED + backend.cognition.reasoner.llm` | Rebuild READY; final IDLE |
-| `ACTION_TTS_CHILD_EXIT` | `tts.child.exit` during active synthesize | `TTS_PROTOCOL_FAILED + REBUILD_REQUIRED + backend.action.speak.tts` | Rebuild READY; final IDLE |
-
-All variants: no fabricated normal Fact; ERROR safe summary; no user retry prompt; no second
-Session required; M4-ERR cause-code matrix not re-run.
-
-### 5.10 M4C-PI-S07 — Display degradation
-
-```text
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S07 --variant DISPLAY_DEGRADE \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-```
-
-| Observation | Required assertion |
-| :--- | :--- |
-| Display runtime failure injected during normal Session | Display latches disabled per existing contract |
-| Voice main path | Continues without entering ERROR; normal LLM→TTS→Audio path completes |
-| Process exit code | Unchanged by Display failure |
-| Final state | Session cleanup → IDLE |
-
-### 5.11 M4C-PI-S08 — Recovery fatal (exit 4)
-
-```text
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S08 --variant LLM_READY_MISMATCH_FATAL \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-```
-
-Stimulus: fire `llm.child.exit`; replacement child returns READY with `profile_id` different
-from `core-m4b-cognition-001`.
-
-| Observation | Required assertion |
-| :--- | :--- |
-| No false IDLE or new Session accepted | Automatic; no fabricated recovery |
-| Cleanup | Bounded; sanitized single root; no raw exception string in public evidence |
-| Process exit | Exactly `exit 4` |
-
-### 5.12 M4C-PI-S09 — Streaming speak (4 sub-runs)
-
-Four fresh sub-runs:
-
-```text
-# Fixed quality sample
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S09 --variant QUALITY_T02 \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
-# Interrupt variants — three fresh sub-runs, one per variant
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S09 --variant QUEUED \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S09 --variant SYNTHESIZING \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-
-python3.13 scripts/run-m4c-pv.py run \
-  --test-id M4C-PI-S09 --variant PLAYING \
-  --pv-run-id <PV_RUN_ID> --sub-run-id <NEW_SUB_RUN_ID> \
-  --public-partition <NEW_EMPTY_PUBLIC_PARTITION> \
-  --private-partition <NEW_EMPTY_PRIVATE_PARTITION> \
-  --binding-manifest <BINDING_JSON> --fresh-setup
-```
-
-**`QUALITY_T02`** — fixed controlled trace (real Matcha / Audio):
-
-```text
-fragments = 「因為太陽光穿過大氣，」 + 「藍光被散射，」 + 「所以天空看起來是藍色的。」
-terminal  = 「因為太陽光穿過大氣，藍光被散射，所以天空看起來是藍色的。」
-```
-
-Script verifies: exact three fragments in sequence; concatenation equals terminal text;
-one `ActionCompleted(ok)`; audio played without duplicate/missing/reorder.
-
-**USER audible-quality inspection (`user_result` required)**. USER answers exactly three questions:
-
-1. Is the speech understandable?
-2. Is any content duplicated or missing?
-3. Does any artificial boundary disrupt understanding?
-
-Pass requires: **yes / no / no**. Model text and audio remain private; public record contains
-only USER verdicts and counts.
-
-**Interrupt variants** (`QUEUED`, `SYNTHESIZING`, `PLAYING`) — fresh setup each:
-
-| Variant | Short press at | Required assertions |
-| :--- | :--- | :--- |
-| `QUEUED` | Fragment in queue, not yet synthesizing | Queue cleared; no synthesis; no `ActionCompleted(ok)`; no later fragment or normal-success leak; cleanup → IDLE |
-| `SYNTHESIZING` | During `synthesize` call | Synthesis aborted; no `ActionCompleted(ok)`; no cross-session leak; cleanup → IDLE |
-| `PLAYING` | During audio playback | Playback stopped; no further synthesis; no `ActionCompleted(ok)`; cleanup → IDLE |
-
-All variants: no duplicate, missing, reorder or late output; no normal success; no owner leak.
-
-### 5.13 PV aggregation and finalization
-
-After all 16 designated sub-run results exist:
+After all 7 designated sub-run results exist:
 
 ```text
 python3.13 scripts/run-m4c-pv.py finalize \
   --pv-run-id <PV_RUN_ID> \
   --public-root <PUBLIC_ROOT> \
-  --private-root <PRIVATE_ROOT> \
-  --binding-manifest <BINDING_JSON>
+  --private-root <PRIVATE_ROOT>
 ```
 
 `pv_status=Pass` only when:
-- All 16 catalog entries each have exactly one automatically designated, non-superseded
-  result with script status Pass.
-- `user_result=Pass` for `S09/QUALITY_T02`.
-- The operator has completed the one required Pi/workstation same-bytes reconciliation before
-  commit preparation.
+- All 7 catalog entries each have exactly one designated result with script status Pass.
+- The final pending content has completed all applicable Pi automated/integration verification.
+- If candidate identity needs confirmation before commit preparation, the operator performs one
+  independent comparison; it is not a product Test ID or repeated sub-run assertion.
 
 **Attempts vs. designated results.** Each sub-run command creates one attempt. The finalizer
 selects exactly one *designated* (non-superseded) result per catalog entry from all attempts
 present under that `pv_run_id`. Retrying a failed sub-run atomically marks the previous
 attempt for that catalog entry as *superseded*; the new attempt becomes the
-designated result for that entry. Superseded attempts remain as evidence but are not counted
-among the 16 designated results and cannot satisfy any catalog entry.
+designated result for that entry. Superseded attempts remain diagnostic history but are not counted
+among the 7 designated results and cannot satisfy any catalog entry.
 
-The finalizer rejects: a missing designated result for any catalog entry; duplicate active
-designations for the same catalog entry; an extra attempt whose catalog entry is not in the
-16-variant catalog; or a supersession chain that is ambiguous or cyclic.
+The finalizer rejects: a missing designated result for any catalog entry, duplicate active
+designations, an unknown catalog entry, or an ambiguous supersession chain.
 
 ---
 
@@ -579,19 +427,19 @@ designations for the same catalog entry; an extra attempt whose catalog entry is
 
 | M4C design section | Portable Test IDs | Pi sub-run variants |
 | :--- | :--- | :--- |
-| Static output volume boundary | `M4C-VOL-001` | `S02/NORMAL_END_B2`, `S09/QUALITY_T02` |
-| B2 streaming-speak controller | `M4C-SS-CTRL-001` | `S02/NORMAL_END_B2`, `S09/QUALITY_T02`, `S09/QUEUED`, `S09/SYNTHESIZING`, `S09/PLAYING` |
+| Static output volume boundary | `M4C-VOL-001` | `S02/NORMAL_END_B2` |
+| B2 streaming-speak controller | `M4C-SS-CTRL-001` | `S02/NORMAL_END_B2`, `S04/ACTION` |
 | Fragment extraction / punctuation-or-12 | `M4C-SS-EXTRACT-001` | `S02/NORMAL_END_B2` |
-| Streaming-speak outcome / error taxonomy | `M4C-SS-OUTCOME-001` | `S04/ACTION`, `S06/ACTION_TTS_CHILD_EXIT` |
+| Streaming-speak outcome / error taxonomy | `M4C-SS-OUTCOME-001` O01–O09 | `S04/ACTION` |
 | Session no-input streak | `M4C-NOINPUT-001` | `S03/TWO_TIMEOUTS` |
+| Display degradation isolation | `M4C-DISPLAY-001` | — |
 | Startup / IDLE | — | `S01/START_IDLE` |
 | Normal two-turn session and close, eligible B2 proof | — | `S02/NORMAL_END_B2` |
 | Interrupt (PERCEPTION / THINK / ACTION) | `M4C-SS-CTRL-001` C14–C16 | `S04/PERCEPTION`, `S04/THINK`, `S04/ACTION` |
 | Application exit | — | `S05/APP_EXIT` |
-| Recoverable fault (whole-product) | — | `S06/PERCEPTION_ASR_INFERENCE`, `S06/THINK_LLM_CHILD_EXIT`, `S06/ACTION_TTS_CHILD_EXIT` |
-| Display degradation | — | `S07/DISPLAY_DEGRADE` |
-| Recovery fatal / exit 4 | — | `S08/LLM_READY_MISMATCH_FATAL` |
-| Streaming speak B2 quality | — | `S09/QUALITY_T02` |
-| Streaming speak interrupt | `M4C-SS-CTRL-001` C14–C16 | `S09/QUEUED`, `S09/SYNTHESIZING`, `S09/PLAYING` |
-| Regression continuity | `M4C-REG-001` | all Pi sub-runs |
+| Recoverable backend fault baseline | `M4C-SS-OUTCOME-001` O08/O09 plus Accepted M4-ERR | — |
+| Recovery fatal / exit 4 | Accepted M4B/M4-ERR regressions | — |
+| Streaming speak B2 audible path | — | `S02/NORMAL_END_B2` |
+| Streaming speak interrupt | `M4C-SS-CTRL-001` C14/C15 | `S04/ACTION` |
+| Regression continuity | `M4C-REG-001` | affected Pi paths only |
 | Automatic B2 timeline | — | `S02/NORMAL_END_B2` |

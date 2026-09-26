@@ -2,7 +2,7 @@
 
 - Owner: Designer
 - Scope: M4C complete offline voice-device integration
-- State: **Design complete；M4-ERR Accepted；M4C-SS Closed／B2 adopted；Test Spec complete**
+- State: **Design complete；M4-ERR Accepted；M4C-SS Closed／B2 adopted；streamlined Test Spec current**
 - Developer entry: **Open**
 
 ## Accepted inputs
@@ -41,13 +41,29 @@ The authoritative behavior is [`M4C`](../milestones/M4C.md). It fixes:
   full-terminal replay and fallback-to-A are forbidden;
 - shared cancellation of generation／queue／TTS／Audio, M4-ERR error mapping, rejection of stale／late output,
   and zero-owner cleanup before reuse or recovery;
-- startup-static output volume 25%, complete no-input Session behavior, no barge-in and the nine exact-product
-  scenarios already defined by M4C.
+- startup-static output volume 25%, complete no-input Session behavior, no barge-in, five Pi product
+  scenarios／seven sub-runs, and focused workstation closure for streaming faults and Display degradation.
+
+## Streamlined verification disposition
+
+- S01–S05 remain the complete Pi product catalog: START_IDLE, NORMAL_END_B2, TWO_TIMEOUTS,
+  PERCEPTION／THINK／ACTION interrupt and APP_EXIT.
+- S06 retains only two portable integration risks: partial streaming followed by LLM backend fault, and a
+  TTS child fault while StreamingSpeak owns queued/inflight work. Accepted M4-ERR remains authority for the
+  ASR／LLM／TTS fault matrix, rebuild and ERROR recovery.
+- S07 retains one workstation vertical proving that a THINK-time Display failure disables rendering without
+  interrupting the voice path. S08 adds no test because existing M4B／M4-ERR coverage proves the complete
+  READY-rejection-to-exit-4 chain.
+- S09 has no independent scenario: S02 owns normal audible B2 behavior, C14/C15 own queued/synthesizing
+  cancellation, and S04/ACTION owns real playback interruption.
+- SHA/digest, authorization, generic closure, global owner enumeration and repeated fresh-run bookkeeping
+  are not M4C product assertions. Only lifecycle observations directly required by interrupt, recovery or
+  shutdown remain.
 
 ## Next work
 
-Developer is next owner. Implement [`M4C`](../milestones/M4C.md) against
-[`test_spec_M4C.md`](../test_spec/test_spec_M4C.md), including the portable B2／volume／no-input coverage and the
-16 exact Pi variants. The operator must reconcile the Pi-verified candidate with workstation pending bytes once
-before commit preparation; do not commit before that verification passes. Raise a
-focused design request only for an actual authority conflict, not for an additional review or approval gate.
+Developer uses [`M4C`](../milestones/M4C.md) and
+[`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) to align the runner to the seven-entry Pi catalog and retain
+the S06/S07 portable integration coverage. Verify runs all tests applicable to the final pending bytes on Pi;
+content comparison is performed once only when candidate transfer makes it necessary. Raise a focused design
+request only for an actual authority conflict, not for another review or approval gate.

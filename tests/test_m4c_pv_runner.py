@@ -19,7 +19,7 @@ RUNNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RUNNER)
 
 
-def test_fixed_catalog_and_human_variants_are_exact() -> None:
+def test_fixed_catalog_is_exact_and_has_no_human_variants() -> None:
     assert RUNNER.CATALOG == (
         ("M4C-PI-S01", "START_IDLE"),
         ("M4C-PI-S02", "NORMAL_END_B2"),
@@ -28,19 +28,8 @@ def test_fixed_catalog_and_human_variants_are_exact() -> None:
         ("M4C-PI-S04", "THINK"),
         ("M4C-PI-S04", "ACTION"),
         ("M4C-PI-S05", "APP_EXIT"),
-        ("M4C-PI-S06", "PERCEPTION_ASR_INFERENCE"),
-        ("M4C-PI-S06", "THINK_LLM_CHILD_EXIT"),
-        ("M4C-PI-S06", "ACTION_TTS_CHILD_EXIT"),
-        ("M4C-PI-S07", "DISPLAY_DEGRADE"),
-        ("M4C-PI-S08", "LLM_READY_MISMATCH_FATAL"),
-        ("M4C-PI-S09", "QUALITY_T02"),
-        ("M4C-PI-S09", "QUEUED"),
-        ("M4C-PI-S09", "SYNTHESIZING"),
-        ("M4C-PI-S09", "PLAYING"),
     )
-    assert RUNNER.HUMAN_VARIANTS == {
-        ("M4C-PI-S09", "QUALITY_T02"),
-    }
+    assert not hasattr(RUNNER, "HUMAN_VARIANTS")
 
 
 def test_run_parser_accepts_utterance_inputs_without_binding_manifest() -> None:
@@ -67,11 +56,11 @@ def test_public_privacy_scan_rejects_private_content(value: object) -> None:
         RUNNER._privacy_scan(value)
 
 
-def test_private_result_requires_human_verdict_only_for_declared_variants() -> None:
+def test_private_result_forbids_human_verdict() -> None:
     value = {
         "schema_version": 1,
-        "test_id": "M4C-PI-S09",
-        "variant": "QUALITY_T02",
+        "test_id": "M4C-PI-S02",
+        "variant": "NORMAL_END_B2",
         "sub_run_id": "sub-run-001",
         "started_monotonic_ns": 1,
         "ended_monotonic_ns": 2,
@@ -79,15 +68,9 @@ def test_private_result_requires_human_verdict_only_for_declared_variants() -> N
         "public_evidence": {"understandable": True},
     }
     args = argparse.Namespace(
-        test_id="M4C-PI-S09", variant="QUALITY_T02", sub_run_id="sub-run-001"
+        test_id="M4C-PI-S02", variant="NORMAL_END_B2", sub_run_id="sub-run-001"
     )
-    with pytest.raises(RUNNER.RunnerError, match="M4C_USER_RESULT_INVALID"):
-        RUNNER._validate_private_result(value, args)
     value["user_result"] = "Pass"
-    RUNNER._validate_private_result(value, args)
-
-    value["test_id"], value["variant"] = "M4C-PI-S02", "NORMAL_END_B2"
-    args.test_id, args.variant = value["test_id"], value["variant"]
     with pytest.raises(RUNNER.RunnerError, match="M4C_USER_RESULT_FORBIDDEN"):
         RUNNER._validate_private_result(value, args)
 
@@ -180,3 +163,51 @@ def test_private_result_rejects_public_evidence_privacy_leak() -> None:
     )
     with pytest.raises(RUNNER.RunnerError, match="M4C_PUBLIC_PRIVACY_VIOLATION"):
         RUNNER._validate_private_result(value, args)
+
+
+def test_finalizer_requires_and_accepts_exact_seven_entry_catalog(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    public_run = tmp_path / "public" / "pv-run-001"
+    public_run.mkdir(parents=True)
+    attempts = []
+    for index, (test_id, variant) in enumerate(RUNNER.CATALOG, start=1):
+        sub_run_id = f"sub-run-{index:03d}"
+        attempt_id = f"{test_id}-{variant}-{sub_run_id}"
+        card_path = public_run / test_id / sub_run_id / "result.json"
+        card_path.parent.mkdir(parents=True)
+        card = {
+            "schema_version": 1,
+            "test_id": test_id,
+            "variant": variant,
+            "sub_run_id": sub_run_id,
+            "started_monotonic_ns": index,
+            "ended_monotonic_ns": index + 1,
+            "script_status": "Pass",
+            "public_evidence": {"passed": True},
+            "attempt_id": attempt_id,
+            "designated": True,
+            "superseded_by": None,
+        }
+        card_path.write_text(json.dumps(card), encoding="utf-8")
+        attempts.append({
+            "attempt_id": attempt_id,
+            "test_id": test_id,
+            "variant": variant,
+            "sub_run_id": sub_run_id,
+            "card": str(card_path.relative_to(public_run)),
+            "designated": True,
+            "superseded_by": None,
+        })
+    (public_run / "designations.json").write_text(json.dumps({
+        "schema_version": 1,
+        "pv_run_id": "pv-run-001",
+        "attempts": attempts,
+    }), encoding="utf-8")
+    monkeypatch.setattr(RUNNER, "_load_run", lambda args: (public_run, tmp_path / "private"))
+
+    args = argparse.Namespace(pv_run_id="pv-run-001")
+    assert RUNNER._finalize(args) == 0
+    final = json.loads((public_run / "final.json").read_text(encoding="utf-8"))
+    assert final["pv_status"] == "Pass"
+    assert final["designated_count"] == 7

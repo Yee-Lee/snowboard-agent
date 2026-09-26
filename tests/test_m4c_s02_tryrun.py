@@ -79,19 +79,19 @@ def _valid_evidence() -> dict:
 
 
 def test_s02_display_publication_contract_covers_both_end_branches() -> None:
-    assert ORACLE.expected_display_publications("u1", "a1", "u2", "a2") == [
+    assert ORACLE.expected_display_publications("actual-asr-1", "a1", "actual-asr-2", "a2") == [
         ("WAKE", None),
-        ("THINK", "u1"),
+        ("THINK", "actual-asr-1"),
         ("ACTION", "a1"),
-        ("THINK", "u2"),
+        ("THINK", "actual-asr-2"),
         ("ACTION", "a2"),
         ("IDLE", None),
     ]
-    assert ORACLE.expected_display_publications("u1", "a1", "u2", "") == [
+    assert ORACLE.expected_display_publications("actual-asr-1", "a1", "actual-asr-2", "") == [
         ("WAKE", None),
-        ("THINK", "u1"),
+        ("THINK", "actual-asr-1"),
         ("ACTION", "a1"),
-        ("THINK", "u2"),
+        ("THINK", "actual-asr-2"),
         ("IDLE", None),
     ]
 

@@ -1,9 +1,9 @@
 # Current handoff
 
-- Updated: 2026-09-21
+- Updated: 2026-09-26
 - Writer: Designer only
 - Current milestone: M4C complete offline voice-device integration
-- Current stage: **M4-ERR Accepted；M4C Design complete；M4C-SS Closed（B2）；Test Spec complete**
+- Current stage: **M4-ERR Accepted；M4C Design／Test Spec streamlined；Developer final alignment**
 - Next owner: Developer
 - Developer entry: **M4C Open**
 
@@ -22,11 +22,12 @@
   unchanged, so no architecture request is needed.
 - The POC executed 0 of its 82 formal cases and used a dirty Pi development checkout; its engineering
   observations select the design but provide no M4C Test ID PASS credit. Core exact-product qualification,
-  negative coverage, speech-quality judgment and same-bytes Pi evidence remain mandatory.
-- [`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) now maps the fixed volume, B2 controller／extraction／
-  outcome, no-input, regression and nine whole-product scenario contracts. `M4C-S02` absorbs the eligible B2
-  normal turn and is automatic; S09 has the fixed quality sample plus three interrupt variants, for 16 exact
-  variants total. `TR_spec_M4C_I` remains Resolved with 0 Blocking.
+  negative coverage and same-bytes Pi verification remain in the normal M4C pipeline; the necessary audible
+  observation is part of S02 rather than a separate gate.
+- [`test_spec_M4C.md`](../test_spec/test_spec_M4C.md) maps fixed volume, B2 controller／extraction／outcome,
+  no-input, Display isolation and directly affected regressions. The Pi catalog is S01–S05 only: five Test
+  IDs and seven sub-runs. S06/S07 are portable integration; S08 adds no test; S09 is traced to S02,
+  C14/C15 and S04/ACTION. No independent S09 human result remains.
 
 ## Developer route
 
@@ -36,17 +37,18 @@ Implement the current M4C design and Test Spec from:
 2. [`M4C Test Spec`](../test_spec/test_spec_M4C.md) as the executable Test ID／oracle authority; and
 3. accepted M4A／M4B／M4-ERR only through the direct regression and composition boundaries routed by those files.
 
-Implement the single B2 path without reopening the POC or adding an A-mode fallback. Complete all applicable
-portable tests, then execute the 16 designated Pi sub-runs on the pending bytes. Pi Verify and one workstation
-same-bytes reconciliation must pass before any commit preparation.
+Keep the single B2 path without reopening the POC or adding an A-mode fallback. Align the runner to the
+seven-entry Pi catalog, retain the completed S06/S07 integration coverage, and run every test applicable to
+the final pending bytes on Pi. A content comparison is performed once only when transfer/candidate preparation
+actually requires it; it is not a per-run Test ID.
 
 ## Role routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Designer | Design and Test Spec alignment complete；answer only focused implementation conflicts |
-| Tester | Test Spec complete；retain authority over Test IDs and formal evidence |
-| Developer | Implement M4C, run portable coverage and complete same-bytes Pi Verify before commit preparation |
+| Designer | Streamlined Design authority complete；answer only focused implementation conflicts |
+| Tester | Streamlined Test Spec complete；Verify against its Test IDs and catalog |
+| Developer | Align runner to seven entries and keep the verified S06/S07 implementation unchanged |
 | Architect / Reviewer | No active request；enter only for a focused conflict that the accepted contracts cannot support |
 
 Designer replaces this file only when Test Spec coverage, Developer entry, stage, gate or next owner changes.

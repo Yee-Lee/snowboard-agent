@@ -98,8 +98,98 @@ def _status_state(arbiter: Any) -> str | None:
     return value if type(value) is str else None
 
 
-async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
-                   stage_path: Path) -> dict[str, Any]:
+def _display_is_open(rm: ResourceManager) -> bool:
+    record = rm._records["core.display"]
+    display = record.instance
+    return bool(
+        record.started
+        and (
+            getattr(display, "_started", False) is True
+            or (
+                getattr(display, "_handle", 0) != 0
+                and getattr(display, "_lib", None) is not None
+            )
+        )
+    )
+
+
+async def _run_s01(config: Any, stage_path: Path) -> dict[str, Any]:
+    bus = EventBus()
+    composition = M3Composition()
+    rm = ResourceManager(config, bus)
+    sm = StateManager(
+        config, bus, rm.catalog, recovery=rm,
+        action_validator=composition.action_validator,
+    )
+    rm.set_state_manager(sm)
+    composition(rm, bus, config)
+
+    states: list[str] = []
+    perceptions: list[PerceptionResult] = []
+    errors: list[ErrorOccurred] = []
+
+    async def on_state(event: StateChanged) -> None:
+        states.append(event.new)
+
+    async def on_perception(event: PerceptionResult) -> None:
+        perceptions.append(event)
+
+    async def on_error(event: ErrorOccurred) -> None:
+        errors.append(event)
+
+    bus.subscribe(StateChanged, on_state, name="m4c.s01.state")
+    bus.subscribe(PerceptionResult, on_perception, name="m4c.s01.perception")
+    bus.subscribe(ErrorOccurred, on_error, name="m4c.s01.error")
+
+    started = False
+    try:
+        _write_stage(stage_path, "STARTING")
+        await sm.start()
+        await rm.start()
+        started = True
+        await asyncio.sleep(0.25)
+        await asyncio.wait_for(sm._inbox.join(), timeout=10)
+
+        arbiter = rm._records["core.display.arbiter"].instance
+        audio_input = rm._records["core.audio.input"].instance
+        private = {
+            "schema_version": 1,
+            "state": sm.state,
+            "state_changes": states,
+            "session_created": sm._session is not None,
+            "perception_count": len(perceptions),
+            "audio_capture_active": getattr(audio_input, "_active", None) is not None,
+            "status_state": _status_state(arbiter),
+            "main_empty": _main_text(arbiter) is None,
+            "display_open": _display_is_open(rm),
+            "error_count": len(errors),
+        }
+        _write_json(stage_path.with_name("raw-observation.json"), private)
+        assert private == {
+            "schema_version": 1,
+            "state": "IDLE",
+            "state_changes": [],
+            "session_created": False,
+            "perception_count": 0,
+            "audio_capture_active": False,
+            "status_state": "IDLE",
+            "main_empty": True,
+            "display_open": True,
+            "error_count": 0,
+        }
+        _write_stage(stage_path, "COMPLETE")
+        return private
+    finally:
+        if started:
+            await bus.publish(ShutdownRequested())
+            await sm.wait_stopped()
+            await rm.prepare_shutdown()
+        await sm.stop()
+        report = await rm.stop_all()
+        assert report.failures == ()
+
+
+async def _run_s02(config: Any, stage_path: Path) -> dict[str, Any]:
     bus = EventBus()
     composition = M3Composition()
     rm = ResourceManager(config, bus)
@@ -232,6 +322,7 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
 
         assert not errors, repr(errors)
         assert len(perceptions) == 2
+        assert all(type(item.text) is str and item.text.strip() for item in perceptions)
         assert len(responses) == 2
         assert [item.post_action_route for item in responses] == ["KEEP_NEXT", "END_SESSION"]
         assert actions and all(item.status == "ok" for item in actions)
@@ -253,7 +344,8 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
             assert "".join(second_fragments) == second_terminal
             assert answer_displays == [first_terminal, second_terminal]
             assert display_publications == ORACLE.expected_display_publications(
-                utterance_1, first_terminal, utterance_2, second_terminal
+                perceptions[0].text, first_terminal,
+                perceptions[1].text, second_terminal,
             )
             turn2_branch = "nonempty_play_then_rest"
             turn2_completion = speak._streaming_completion_history[1]
@@ -262,7 +354,7 @@ async def _run_s02(config: Any, utterance_1: str, utterance_2: str,
             assert len(speak._streaming_history) == 1
             assert answer_displays == [first_terminal]
             assert display_publications == ORACLE.expected_display_publications(
-                utterance_1, first_terminal, utterance_2, ""
+                perceptions[0].text, first_terminal, perceptions[1].text, ""
             )
             turn2_branch = "empty_direct_rest"
             turn2_completion = action_timestamps[1]
@@ -841,6 +933,7 @@ def test_m4c_product_scenario() -> None:
     variant = os.environ.get("SBD_M4C_VARIANT")
     scenario = (test_id, variant)
     assert scenario in {
+        ("M4C-PI-S01", "START_IDLE"),
         ("M4C-PI-S02", "NORMAL_END_B2"),
         ("M4C-PI-S03", "TWO_TIMEOUTS"),
         ("M4C-PI-S04", "PERCEPTION"),
@@ -855,16 +948,20 @@ def test_m4c_product_scenario() -> None:
     config = load_config(local_path=config_path, dotenv_path=Path(os.devnull), environ={})
     _validate_product_config(config)
     try:
-        if scenario == ("M4C-PI-S02", "NORMAL_END_B2"):
-            utterance_1 = os.environ.get(
-                "SBD_M4C_UTTERANCE_1", "天空為什麼是藍色的？"
-            )
-            utterance_2 = os.environ.get(
-                "SBD_M4C_UTTERANCE_2", "請結束對話。"
-            )
-            private = asyncio.run(_run_s02(
-                config, utterance_1, utterance_2, partition / "operator-stage"
-            ))
+        if scenario == ("M4C-PI-S01", "START_IDLE"):
+            private = asyncio.run(_run_s01(config, partition / "operator-stage"))
+            public = {
+                "schema_version": 1,
+                "scenario_code": "M4C-PI-S01/START_IDLE",
+                "status_code": "IDLE_READY",
+                "terminal_state_code": "IDLE",
+                "conversation_created": private["session_created"],
+                "audio_capture_started": private["audio_capture_active"],
+                "main_empty": private["main_empty"],
+                "display_open": private["display_open"],
+            }
+        elif scenario == ("M4C-PI-S02", "NORMAL_END_B2"):
+            private = asyncio.run(_run_s02(config, partition / "operator-stage"))
             public = ORACLE.validate_s02_private_evidence(private)
         elif scenario == ("M4C-PI-S03", "TWO_TIMEOUTS"):
             private = asyncio.run(_run_s03(config, partition / "operator-stage"))

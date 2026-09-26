@@ -266,13 +266,11 @@ class StreamingSpeakControl:
         except asyncio.CancelledError:
             raise
         except ComponentSystemFault as error:
-            if self._state not in {"CANCELLED", "FAILED"}:
-                self._state = "FAILED"
+            if await self._finish_worker_failure():
                 await self._bus.publish(error.to_event())
             raise
         except AdapterError as error:
-            if self._state not in {"CANCELLED", "FAILED"}:
-                self._state = "FAILED"
+            if await self._finish_worker_failure():
                 fault = ComponentSystemFault.create(
                     where="action.speak.tts", code="TTS_GENERATION_FAILED",
                     backend=BackendDisposition.REBUILD_REQUIRED,
@@ -280,8 +278,7 @@ class StreamingSpeakControl:
                 await self._bus.publish(fault.to_event())
             raise
         except BaseException as error:
-            if self._state not in {"CANCELLED", "FAILED"}:
-                self._state = "FAILED"
+            if await self._finish_worker_failure():
                 fault = ComponentSystemFault.create(
                     where="action.speak.audio", code="AUDIO_PLAYBACK_FAILED",
                     backend=BackendDisposition.UNPROVEN,
@@ -290,6 +287,19 @@ class StreamingSpeakControl:
             raise
         finally:
             await self._close_pcm()
+
+    async def _finish_worker_failure(self) -> bool:
+        """Drop all operation-owned work before exposing a worker fault."""
+        async with self._condition:
+            publish = self._state not in {"CANCELLED", "FAILED"}
+            if publish:
+                self._state = "FAILED"
+            self._pending.clear()
+            self._pending_bytes = 0
+            self._inflight = ()
+            self._condition.notify_all()
+        await self._close_pcm()
+        return publish
 
     async def _observed_pcm(self, source):
         first = True

@@ -5,6 +5,7 @@ tests/test_m4c_ss_outcome_001.py
 tests/test_m4c_noinput_001.py
 tests/test_m4c_reg_001.py
 tests/test_m4c_pv_runner.py
+tests/test_m4c_s07_tryrun.py
 tests/test_config.py
 tests/test_state_manager.py
 tests/test_m3_composition.py

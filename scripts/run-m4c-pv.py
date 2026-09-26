@@ -26,19 +26,7 @@ CATALOG = (
     ("M4C-PI-S04", "THINK"),
     ("M4C-PI-S04", "ACTION"),
     ("M4C-PI-S05", "APP_EXIT"),
-    ("M4C-PI-S06", "PERCEPTION_ASR_INFERENCE"),
-    ("M4C-PI-S06", "THINK_LLM_CHILD_EXIT"),
-    ("M4C-PI-S06", "ACTION_TTS_CHILD_EXIT"),
-    ("M4C-PI-S07", "DISPLAY_DEGRADE"),
-    ("M4C-PI-S08", "LLM_READY_MISMATCH_FATAL"),
-    ("M4C-PI-S09", "QUALITY_T02"),
-    ("M4C-PI-S09", "QUEUED"),
-    ("M4C-PI-S09", "SYNTHESIZING"),
-    ("M4C-PI-S09", "PLAYING"),
 )
-HUMAN_VARIANTS = frozenset({
-    ("M4C-PI-S09", "QUALITY_T02"),
-})
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{2,95}")
 SUB_RUN_ID = RUN_ID
 RESULT_FIELDS = {
@@ -142,7 +130,9 @@ def _under(path: Path, parent: Path) -> bool:
 
 
 def _validate_private_result(value: dict[str, Any], args) -> None:
-    if set(value) - (RESULT_FIELDS | {"user_result"}) or not RESULT_FIELDS <= set(value):
+    if "user_result" in value:
+        raise RunnerError("M4C_USER_RESULT_FORBIDDEN")
+    if set(value) != RESULT_FIELDS:
         raise RunnerError("M4C_RESULT_SCHEMA_INVALID")
     if (value["schema_version"] != 1 or value["test_id"] != args.test_id
             or value["variant"] != args.variant or value["sub_run_id"] != args.sub_run_id):
@@ -156,17 +146,10 @@ def _validate_private_result(value: dict[str, Any], args) -> None:
     if type(value["public_evidence"]) is not dict:
         raise RunnerError("M4C_RESULT_EVIDENCE_INVALID")
     _privacy_scan(value["public_evidence"])
-    human = (args.test_id, args.variant) in HUMAN_VARIANTS
-    if human and value.get("user_result") not in {"Pass", "Fail", "NeedsHumanReview"}:
-        raise RunnerError("M4C_USER_RESULT_INVALID")
-    if not human and "user_result" in value:
-        raise RunnerError("M4C_USER_RESULT_FORBIDDEN")
 
 
 def _public_card(private: dict[str, Any], attempt_id: str) -> dict[str, Any]:
     card = {key: private[key] for key in RESULT_FIELDS}
-    if "user_result" in private:
-        card["user_result"] = private["user_result"]
     card.update(attempt_id=attempt_id, designated=True, superseded_by=None)
     return card
 
@@ -340,11 +323,9 @@ def _finalize(args: argparse.Namespace) -> int:
             ):
                 raise RunnerError("M4C_SUPERSESSION_INVALID")
             current = target
-    for key, card in active.items():
+    for card in active.values():
         if card["script_status"] != "Pass":
             raise RunnerError("M4C_DESIGNATED_RESULT_NOT_PASS")
-        if key in HUMAN_VARIANTS and card.get("user_result") != "Pass":
-            raise RunnerError("M4C_HUMAN_RESULT_NOT_PASS")
     final = {
         "schema_version": 1, "pv_run_id": args.pv_run_id, "pv_status": "Pass",
         "designated_count": len(active),

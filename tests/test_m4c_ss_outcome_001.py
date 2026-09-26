@@ -9,7 +9,7 @@ import pytest
 from sbd.action.speak import Speak
 from sbd.action.speak.tts import MockTTSAdapter
 from sbd.cognition.llm import (
-    GenerationMetrics, LLMCleanupUnprovenError, LLMProtocolError,
+    GenerationMetrics, LLMBackendError, LLMCleanupUnprovenError, LLMProtocolError,
     ReplaceableGenerationFailure, SemanticGeneration,
 )
 from sbd.cognition.prompt_builder import ListenProjector
@@ -17,6 +17,7 @@ from sbd.cognition.reasoner import LLMComponentSystemFault, Reasoner
 from sbd.cognition.semantic import SemanticError
 from sbd.core.audio.mock import MockAudioOutput
 from sbd.core.events import ActionCompleted, ErrorOccurred, LLMResponse
+from sbd.core.faults import BackendDisposition, ComponentSystemFault
 from tests.test_m2_wrk_003 import _validator
 from tests.test_m4b_outcome_001 import ProductLLM, fact
 from sbd.core.event_bus import EventBus
@@ -170,3 +171,76 @@ def test_m4c_ss_outcome_001_o07_child_partial_invalid_terminal_is_replaceable() 
     assert result[0]["code"] == "INVALID_SEMANTIC"
     assert result[0]["request_terminal_proven"] is True
     assert result[0]["engine_usable"] is True
+
+
+def test_m4c_ss_outcome_001_o08_partial_llm_fault_cleans_streaming() -> None:
+    async def run() -> None:
+        reasoner, speak, _, responses, errors, actions, audio = _system(
+            LLMBackendError("backend"), ("部分回答，",)
+        )
+
+        with pytest.raises(LLMComponentSystemFault):
+            await reasoner.reason(
+                "session", 1, 1, (fact(),), (), conversation_generation=1
+            )
+
+        played = tuple(audio.frames_played)
+        await asyncio.sleep(0)
+        assert responses == []
+        assert actions == []
+        assert len(errors) == 1
+        assert errors[0].code == "LLM_BACKEND_FAILED"
+        assert errors[0].backend_disposition == "rebuild_required"
+        assert errors[0].recovery_keys == ("backend.cognition.reasoner.llm",)
+        assert speak._streaming is None
+        assert tuple(audio.frames_played) == played
+
+    asyncio.run(run())
+
+
+def test_m4c_ss_outcome_001_o09_tts_fault_clears_streaming_without_success() -> None:
+    async def run() -> None:
+        bus = EventBus()
+        errors: list[ErrorOccurred] = []
+        actions: list[ActionCompleted] = []
+
+        async def capture_error(event: ErrorOccurred) -> None:
+            errors.append(event)
+
+        async def capture_action(event: ActionCompleted) -> None:
+            actions.append(event)
+
+        bus.subscribe(ErrorOccurred, capture_error, name="m4c.s06.tts.error")
+        bus.subscribe(ActionCompleted, capture_action, name="m4c.s06.tts.action")
+        fault = ComponentSystemFault.create(
+            where="action.speak.tts",
+            code="TTS_PROTOCOL_FAILED",
+            backend=BackendDisposition.REBUILD_REQUIRED,
+            recovery_keys=("backend.action.speak.tts",),
+        )
+        tts = MockTTSAdapter(error=fault)
+        audio = MockAudioOutput()
+        speak = Speak(tts=tts, audio_output=audio, bus=bus)
+        control = speak.begin_streaming("session", 1, "operation")
+        await control.feed("session", 1, 0, "第一段，")
+        await control.feed("session", 1, 1, "第二段。")
+
+        await asyncio.wait_for(tts.entered.wait(), 1)
+        with pytest.raises(ComponentSystemFault):
+            await control.wait()
+
+        assert len(errors) == 1
+        assert errors[0].code == "TTS_PROTOCOL_FAILED"
+        assert errors[0].backend_disposition == "rebuild_required"
+        assert errors[0].recovery_keys == ("backend.action.speak.tts",)
+        assert actions == []
+        assert audio.frames_played == []
+        assert control.state == "FAILED"
+        assert control.queue_depth == 0
+        assert control.pending_utf8_bytes == 0
+        assert control._inflight == ()
+        assert control._pcm is None
+        speak.release_streaming(control)
+        assert speak._streaming is None
+
+    asyncio.run(run())

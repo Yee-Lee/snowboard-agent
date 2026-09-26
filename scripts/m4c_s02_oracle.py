@@ -34,17 +34,17 @@ def _fail(code: str) -> None:
 
 
 def expected_display_publications(
-    utterance_1: str,
+    perception_text_1: str,
     answer_1: str,
-    utterance_2: str,
+    perception_text_2: str,
     answer_2: str,
 ) -> list[tuple[str, str | None]]:
-    """Exact Main-slot publications for either legal second-turn branch."""
+    """Exact Main publications derived from actual ASR and terminal answers."""
     values = [
         ("WAKE", None),
-        ("THINK", utterance_1),
+        ("THINK", perception_text_1),
         ("ACTION", answer_1),
-        ("THINK", utterance_2),
+        ("THINK", perception_text_2),
     ]
     if answer_2:
         values.append(("ACTION", answer_2))

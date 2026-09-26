@@ -176,8 +176,13 @@ class _Worker:
             return
         self.start_count += 1
         await self.bus.publish(LLMResponse(
-            "speak", {"text": "這是一個足以播放的回答。"}, "KEEP_NEXT", ("listen",),
-            session_id, turn_id, correlation_id,
+            action_kind="speak",
+            action_payload={"text": "這是一個足以播放的回答。"},
+            post_action_route="KEEP_NEXT",
+            next_perceptions=("listen",),
+            session_id=session_id,
+            turn_id=turn_id,
+            correlation_id=correlation_id,
         ))
 
     async def execute(self, session_id, turn_id, correlation_id, payload):

@@ -46,8 +46,9 @@ def test_m4c_reg_001_g01_pi_driver_checkpoints_raw_observations_before_assertion
     while (checkpoint := source.find(marker, offset)) != -1:
         checkpoints.append(checkpoint)
         offset = checkpoint + len(marker)
-    assert len(checkpoints) == 4
+    assert len(checkpoints) == 5
     adjudications = (
+        "assert private ==",
         "assert not errors",
         "assert not errors",
         "assert interrupt is not None",

@@ -1,6 +1,6 @@
 # M4C — complete offline voice-device integration
 
-狀態：**Design complete；M4-ERR Accepted；M4C-SS Closed（採用 B2）；Test Spec complete／Developer open**。
+狀態：**Design complete；M4-ERR Accepted；M4C-SS Closed（採用 B2）；streamlined verification approved／Developer active**。
 
 M4C完成Button→Listen/ASR→Reasoner/LLM→Speak/TTS、Rest與基本Session Display的exact-product
 composition。Camera/look與voice wake留M6，tool/MQTT留M5，完整圖形與動畫留M7。
@@ -76,9 +76,9 @@ qualification全部回到正常`Test Spec → Developer → Verify`，不得再�
 8. Interrupt、shutdown或任一LLM／TTS／Audio system fault立即關閉admission並沿用M4-ERR Level 1／2／3
    與原backend disposition。已可聽見內容不回滾；正確性要求停止未來generation、fragment、synthesis
    與playback，拒絕late callback，清空queue/in-flight iterator與device owner，且不污染下一turn/session。
-9. ACTION Display只顯示terminal-validated回答，不顯示provisional fragment。公開log／evidence只保存
-   sequence、長度、digest、queue high-water、timing與stable code，不保存fragment／terminal文字、PCM、
-   session ID或private path。
+9. ACTION Display只顯示terminal-validated回答，不顯示provisional fragment。private runtime可直接比較
+   實值；公開log／evidence只保存必要的equality boolean、count、timing label與stable code，不保存
+   fragment／terminal文字、PCM、session ID或private path。
 
 ### Test Spec handoff for M4C-SS
 
@@ -98,12 +98,11 @@ scenario在同一正常pipeline收斂，不新增POC review gate：
   volume與I2S speaker。`M4C-S02-NORMAL-END`是唯一的正常B2產品turn：它以原S09的eligible輸入完成
   streaming回答及正常conversation close，並自動驗證first `SAFE_TEXT`、first PCM、Audio first write與
   terminal的因果順序、B2路徑及terminal-validated文字一致性。
-- selected B2須用固定公開speech sample做understandable、無duplicate／missing／reorder、無破壞理解的
-  artificial boundary之真人判讀；只有這項產品本身需要的聲音品質保留人工結果。negative cancellation
-  tail與cleanup使用自動target facts，不要求人工逐項判讀。
-- `M4C-S09-STREAMING-SPEAK`同時覆蓋正常turn與queued／synthesizing／playing三個短按variant；每個
-  variant fresh setup，停止後無later fragment／success／cross-session leakage。所有結果綁定tracked-only
-  content digest、product config、artifact digests、target facts與private evidence digest。
+- selected B2的實際可懂度、內容完整性與無破壞理解的boundary觀察併入唯一的
+  `M4C-S02-NORMAL-END`產品run；不再建立固定sample、第二次播放或獨立人工結果表。negative
+  cancellation tail與cleanup只使用直接對應風險的自動assertion。
+- queued／synthesizing取消由portable `M4C-SS-CTRL-001` C14/C15覆蓋；真實playing取消由
+  `M4C-S04/ACTION`覆蓋。`M4C-S09-STREAMING-SPEAK`不再是獨立scenario或Pi catalog項目。
 
 ## Accepted entry baseline
 
@@ -173,9 +172,11 @@ M4C Test Spec必須完整覆蓋此產品行為，而不只單元測試counter：
 Session／Conversation、第二次直接正常結束且沒有第二段重試語音、有效非空listen後歸零、跨Session
 不繼承、適用request code的產品分類／redaction，以及final Pi exact-product composition中從Button啟動、真實
 Listen/ASR路徑、Speak/Rest、Conversation close、worker/resource cleanup、Display清除與回到`IDLE`
-的整條路徑。System fault不計入no-input streak，也不得提示使用者重說；其whole-product代表情境
-統一由`M4C-S06-RECOVERABLE-FAULT`覆蓋。Rebuild resource可用性由M4-ERR證明，M4C不要求再啟動
-第二個Session，也不逐一重跑所有native diagnostic cause。受影響的M4B outcome與M4A/M4B regression在相同final bytes上保留；Accepted M4B歷史
+的整條路徑。System fault不計入no-input streak，也不得提示使用者重說；ASR／LLM／TTS的fault
+mapping、rebuild與ERROR→IDLE已由Accepted M4-ERR證明，不建立新的M4C Pi fault matrix。M4C只保留
+partial streaming後LLM backend fault與StreamingSpeak持有queue/inflight時TTS child fault兩個
+portable整合缺口。M4C不要求再啟動第二個Session，也不逐一重跑native diagnostic cause。受影響的
+M4B outcome與M4A/M4B regression在相同final bytes上保留；Accepted M4B歷史
 evidence不因本delta改寫，也不直接提供M4C PASS credit。
 
 ## M4C／ALPHA quality boundary
@@ -187,10 +188,10 @@ response／recovery ceiling、resource與thermal收斂由[`ALPHA`](ALPHA.md)負�
 
 ## Whole-product scenario authority
 
-M4C驗收的是使用者可觀察的exact-product composition，而不是重跑M4-ERR的cause-code matrix。下列
-scenario各自fresh setup、獨立結果；除同一正常Session內明列的turn外，不跨scenario沿用Session、
-Conversation、Display Main、no-input streak或in-flight owner。成功終點只能是清理完成後的`IDLE`、
-graceful `exit 0`，或明列的Level 3 nonzero exit。
+M4C驗收的是使用者可觀察的exact-product composition，而不是重跑M4-ERR的cause-code matrix。
+Pi product catalog只保留下列五個scenario、七個sub-run；每個scenario以fresh application setup開始，
+除同一正常Session內明列的turn外，不跨scenario沿用Session、Conversation、Display Main、no-input
+streak或in-flight owner。成功終點為清理完成後的`IDLE`或graceful `exit 0`。
 
 | Scenario | Trigger與主要步驟 | 必須觀察 | 終點 |
 | :--- | :--- | :--- | :--- |
@@ -199,10 +200,15 @@ graceful `exit 0`，或明列的Level 3 nonzero exit。
 | `M4C-S03-NO-INPUT` | IDLE短按；連續兩次timeout、空白或`NO_SPEECH` | 第一次只說固定重試句並保持同一Session／Conversation；第二次不再說重試句且不呼叫LLM | REST／cleanup後`IDLE` |
 | `M4C-S04-INTERRUPT` | 三個獨立variant分別在PERCEPTION、THINK、ACTION實體短按 | 接受後Main=`已中止`；停止未來收音／生成／播放；不發布舊operation正常成功；完成Conversation與owner cleanup | `IDLE`且Main清空 |
 | `M4C-S05-APP-EXIT` | application READY／IDLE時實體長按 | 停止接受新Session；reverse cleanup；Display final blank；所有child／HAL owner bounded exit；不要求Pi關機或application自啟 | application `exit 0` |
-| `M4C-S06-RECOVERABLE-FAULT` | 三個獨立variant在PERCEPTION、THINK、ACTION各注入一個M4-ERR已驗證的backend system fault | 不fabricate正常Fact、不要求USER重說；ERROR安全摘要；Session convergence及對應rebuild完成；不重跑底層diagnostic cause matrix | recovery barrier clear後`IDLE`；不要求第二Session |
-| `M4C-S07-DISPLAY-DEGRADE` | 正常Session中注入Display runtime failure | Display依既有contract latch disabled；語音主流程不進ERROR且仍完成；process exit code不因Display改變 | Session cleanup後`IDLE` |
-| `M4C-S08-RECOVERY-FATAL` | 一個代表性backend system fault後注入rebuild timeout／READY mismatch | 不回假`IDLE`、不接受新Session；bounded cleanup；保存sanitized stable failure evidence | Level 3 nonzero exit |
-| `M4C-S09-STREAMING-SPEAK` | 固定B2 speech-quality sample；另以fresh setup在queued／synthesizing／playing三點實體短按 | fixed sample的spoken text與terminal-validated text一致；各中止variant無duplicate／missing／reorder／late output、正常success或owner leak | fixed sample完成；各中止variant清理後`IDLE` |
+
+### Focused integration closure
+
+| Former scenario scope | Current coverage authority | No additional scope |
+| :--- | :--- | :--- |
+| `M4C-S06-RECOVERABLE-FAULT` | Accepted M4-ERR保留ASR／LLM／TTS mapping、rebuild與ERROR recovery；M4C portable integration只補partial-fragment後LLM backend fault及StreamingSpeak中的TTS child fault | 無Pi fault sub-run、第二Session或cause matrix |
+| `M4C-S07-DISPLAY-DEGRADE` | 一個workstation vertical在THINK Display projection注入一次`show()` failure，驗Display latch disabled且LLM→TTS→Audio與Session→IDLE不受影響 | 無Pi injection、重複failure point、exit或人工OLED判讀 |
+| `M4C-S08-RECOVERY-FATAL` | M4B READY逐欄拒絕、RM rebuild failure／timeout、M4B admission barrier與M4-ERR `run_app()` exit 4共同提供完整coverage | 無新test或Pi sub-run |
+| `M4C-S09-STREAMING-SPEAK` | 正常B2與audible product path由S02覆蓋；queued／synthesizing由C14/C15；真實playing interrupt由S04/ACTION | 無獨立scenario、fixed sample、第二人工結果或Pi sub-run |
 
 所有適用scenario在network disabled的產品設定執行；不得fallback至網路服務。公開log／evidence不得含
 transcript、prompt、raw model output、PCM、credential、session ID或完整私人path。Display沿用
@@ -216,7 +222,8 @@ ACTION Main只顯示terminal-validated實際回答，不顯示streaming provisio
 first safe text、LLM terminal、TTS first PCM與Audio first write；只驗證因果順序，不建立response
 ceiling。VAD使用固定短句、一般句及尾音較弱句觀察是否截斷、漏字或有明顯多餘等待；
 只有可重現問題才依前述focused-delta規則調整。startup-static volume須為product config的`25`；固定
-speech sample保留一次必要的可懂度／內容完整性人工判讀。長期品質、repeated sessions、soak與正式
+的獨立speech sample與S09人工結果不再保留，S02實際回答的一次可懂度／內容完整性觀察已包含在正常
+product run。長期品質、repeated sessions、soak與正式
 performance/resource門檻仍由ALPHA承接。
 
 Accepted M4B disposition見[`M4B_MVA.md`](M4B_MVA.md)，current owner見
