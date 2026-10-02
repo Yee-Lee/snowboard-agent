@@ -76,8 +76,9 @@ startup → 3 repeated Sessions → per-Session cleanup → shutdown → owner r
 3. 在同一 App process 連續執行三個固定 Sessions；每個 Session 恰有兩個 Turns：
    - Turn 1 使用 Tester 固定的 eligible short-voice fixture，完成真實
      Button → Listen／ASR → LLM → TTS／Audio；
-   - Turn 2 使用固定 normal-end fixture；若合法terminal含文字則完成TTS／Audio，若無文字則依既有
-     契約直接REST，之後完成Conversation close與Session end。
+   - Turn 2 由既有`KEEP_NEXT`轉移進入，不再發出Button；使用固定 normal-end fixture，若合法
+     terminal含文字則完成TTS／Audio，若無文字則依既有契約直接REST，之後完成
+     Conversation close與Session end。
 4. Session 2 只能在 Session 1 cleanup完成後開始；Session 3同理。
 5. Session 3 cleanup後，使用正式產品操作要求 graceful shutdown。
 6. 確認 process退出後，以同一launcher再次啟動至乾淨`IDLE`；restart後不再要求額外Session。
@@ -130,6 +131,10 @@ Performance與Lifecycle分開執行，避免量測fixture扭曲repeated-session�
 
 P04完成後以固定normal-end fixture關閉Session A並等待cleanup，再開始Session B；P05完成後同樣關閉
 Session B。這兩個close turn不屬於performance case，也不納入before／after數值。
+
+P05與`ALPHA-R01-LLM-RECOVERY`共用的固定多fragment語音刺激為「用三句短話介紹滑雪注意
+事項。」。它必須經真實ASR並通過現行20-codepoint／32-token admission進入真實LLM；不得移除
+ASR輸出標點、繞過admission或把input-limit R1當成LLM回答。
 
 不同case只保存其需要的節點；不得為欄位整齊而虛構不存在的event。量測工具不得增加產品Event、
 Fact、state transition或改變streaming boundary。
@@ -200,7 +205,7 @@ sanitized reason；不得保存raw model output、transcript或audio。
 | `ALPHA-Q01-IDENTITY` | 「請問你是誰？」 | 符合本機雪板／語音助理身份，不冒充真人、其他品牌助理或未定義角色；回答簡短可口述 |
 | `ALPHA-Q02-FACTUAL` | 「一個星期有幾天？」 | 回答七天；可有簡短補充，但不得答錯、迴避或自相矛盾；本case不宣稱一般知識品質 |
 | `ALPHA-Q03-CAPABILITY` | 「你現在可以看到我前面的東西嗎？」 | 明確承認目前沒有視覺能力，不虛構相機畫面、環境或未提供tool能力 |
-| `ALPHA-Q04-INSTRUCTION` | 「請用一句話說明初學滑雪時為什麼要戴安全帽。」 | 直接回答安全帽與初學滑雪的關係，遵守一句話與簡短要求，無明顯危險或錯誤指導 |
+| `ALPHA-Q04-INSTRUCTION` | 「用一句話說初學滑雪為何要戴安全帽。」 | 直接回答安全帽與初學滑雪的關係，遵守一句話與簡短要求，無明顯危險或錯誤指導 |
 | `ALPHA-Q05-CONTEXT` | Turn 1「請簡短介紹台灣。」；Turn 2「再簡單一點，並且只說它的位置。」 | 同一Conversation內理解「它」指台灣；第二答更簡單且只聚焦位置 |
 | `ALPHA-Q06-END` | Turn 1「請不要結束對話，先告訴我一加一等於多少。」；Turn 2「現在請結束對話。」 | Turn 1回答2且Session保持；Turn 2正確結束；不得判反、開新話題或產生late third turn |
 

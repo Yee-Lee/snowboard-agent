@@ -2,9 +2,9 @@
 
 - Owner: Designer
 - Scope: ALPHA Voice-only product convergence
-- State: **Design complete；Test Spec entry open**
-- Next owner: Tester
-- Developer entry: **Closed pending `test_spec_ALPHA.md`**
+- State: **Design and Test Spec correction complete；Developer entry open**
+- Next owner: Developer
+- Developer entry: **Open — resume the bounded ALPHA runner work package**
 
 ## Accepted input
 
@@ -13,6 +13,8 @@
 - [`ALPHA.md`](../milestones/ALPHA.md) is the current authority. USER fixed the product questions, run split,
   quality rubric and exclusions on 2026-09-26.
 - No architecture change or external POC is required for Test Spec entry.
+- `IR_dev_ALPHA_I` reproduced and resolved two executable-contract conflicts. The accepted product behavior remains unchanged:
+  one Button starts a Session and Turn 2 follows `KEEP_NEXT`; the 20-codepoint／32-token admission limit remains.
 
 ## Fixed ALPHA design
 
@@ -27,6 +29,10 @@ Performance baseline is mandatory; a code optimization is not. Only a clear, att
 create one bounded improvement work item, followed by the same before／after measurement and directly affected
 regression.
 
+The focused 2026-10-02 correction fixes the shared P05／Recovery stimulus as
+「用三句短話介紹滑雪注意事項。」 and Q04 as 「用一句話說初學滑雪為何要戴安全帽。」. Both retain the approved
+semantic intent while providing an eligible production-LLM path without changing admission behavior.
+
 ## Explicit exclusions
 
 - No 20-session or two-hour soak, long-term-stability claim, resource／thermal／memory research, performance
@@ -35,8 +41,9 @@ regression.
   generic close-proof or repeated administrative evidence.
 - Cleanup assertions remain only where they prove Session, recovery or shutdown behavior.
 
-## Tester handoff
+## Developer handoff
 
-Tester creates `docs/test_spec/test_spec_ALPHA.md` and maps exactly the four authorities above. Fixtures may be
-frozen in the Test Spec, but coverage must not add excluded scope. Developer remains closed until the Test Spec
-provides executable IDs, steps, outcome criteria and the single `NEEDS_USER_DECISION` route for semantic ambiguity.
+The existing `test_spec_ALPHA.md` now requires exactly three Session-start Buttons and six voice turns, uses the
+two corrected exact stimuli, and retains real ASR／LLM admission, the existing rubrics and all four run boundaries.
+`IR_dev_ALPHA_I` is Resolved with no open findings. Developer resumes only the existing bounded ALPHA runner work
+package; no new Test ID, rerun matrix, product-source workaround or review gate is authorized.

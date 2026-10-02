@@ -1,17 +1,17 @@
 # Current handoff
 
-- Updated: 2026-09-26
+- Updated: 2026-10-02
 - Writer: Designer only
 - Current milestone: ALPHA Voice-only product convergence
-- Current stage: **ALPHA Design complete；Test Spec entry open**
-- Next owner: Tester
-- Developer entry: **Closed pending `test_spec_ALPHA.md`**
+- Current stage: **ALPHA Design and Test Spec complete；Developer entry open**
+- Next owner: Developer
+- Developer entry: **Open — resume the bounded ALPHA runner work package**
 
 ## Gate transition facts
 
 - M4 and M4C are Accepted; candidate `0b2160e5d48dcc959b08f4a23ede91a9e0d5640d` completed formal Pi run
   `M4C-FORMAL-PV-20260926-01` with all seven catalog entries Pass. Accepted M4 evidence remains immutable.
-- USER approved the ALPHA product scope on 2026-09-26. [`ALPHA.md`](../milestones/ALPHA.md) now fixes
+- USER approved the ALPHA product scope on 2026-09-26. [`ALPHA.md`](../milestones/ALPHA.md) fixes
   `ALPHA-L01-LIFECYCLE`, `ALPHA-P01-PERFORMANCE`, `ALPHA-R01-LLM-RECOVERY` and
   `ALPHA-Q-RUN-01-QUALITY` as four independent runs.
 - Lifecycle is one startup → three Sessions × two Turns → per-Session cleanup → shutdown → owner absence →
@@ -25,14 +25,17 @@
   judgment, and only an unresolved `NEEDS_USER_DECISION` is routed to USER.
 - Resource／thermal research, soak, latency ceilings, manifest／checksum revalidation, repeated fault matrices and
   extra review／sign-off gates are outside ALPHA.
+- [`IR_dev_ALPHA_I`](../reviews/history/IR_dev_ALPHA_I.md) is Resolved with zero open findings. Authority and Test
+  Spec now require one Button per Session, Turn 2 through `KEEP_NEXT`, and eligible fixed P05／Recovery and Q04
+  stimuli without changing product Button or admission behavior.
 
 ## Role routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Tester | Create `docs/test_spec/test_spec_ALPHA.md`; map the four authorities without adding excluded scope |
-| Designer | Design authority complete；respond only to a concrete Test Spec conflict or USER scope change |
-| Developer | Entry closed until Test Spec coverage is complete and routed |
-| Architect / Reviewer | No active request；enter only for a focused contract conflict that accepted architecture cannot support |
+| Developer | Resume the existing bounded ALPHA runner work package against corrected `ALPHA.md` and `test_spec_ALPHA.md` |
+| Tester | Test Spec correction complete; enter next for candidate Verify or a concrete implementation conflict |
+| Designer | Design correction complete; enter only for a new concrete authority conflict or USER scope change |
+| Architect / Reviewer | No active request; enter only for a focused contract conflict that accepted architecture cannot support |
 
 Designer replaces this file only when Test Spec coverage, Developer entry, stage, gate or next owner changes.
