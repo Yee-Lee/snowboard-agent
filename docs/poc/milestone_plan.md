@@ -23,6 +23,49 @@ before M6 acceptance; it does not open Core M7 implementation or acceptance.
 The Display team owns experiment sequencing and may return a restrained/static recommendation when evidence
 does not justify animation. Core retains architecture and product-decision authority.
 
+### M7 execution stages
+
+USER confirmed the formal stage IDs as **M7D1–M7D6**, abbreviated **D1–D6** within the M7 context.
+These IDs are distinct from the historical M3 D1–D5 findings below.
+
+| Stage | Task | Status | Output |
+|---|---|---|---|
+| M7D1 | Discovery design | IN PROGRESS | [Decision scope](m7_discovery_design.md); tool-oriented static and restrained-transition candidates |
+| M7D2 | Test plan | NOT STARTED | Scenarios, methods, automatic measurements and human OLED observations |
+| M7D3 | Offline prototype | NOT STARTED | Candidate screens, transitions, rendering paths and necessary assets |
+| M7D4 | Workstation and Pi/OLED verification | NOT STARTED | Same-bytes checks, metrics, failure behavior and physical-panel observations |
+| M7D5 | Recommendation and Core mapping | NOT STARTED | Selected direction, tradeoffs, requirements/ownership mapping and limitations |
+| M7D6 | Core delivery | NOT STARTED | One complete package under the reserved return ID |
+
+Next action: complete M7D1 screen and behavior decisions, then derive M7D2 from the retained candidates and
+their unresolved risks. USER selected a tool-oriented interface; other design choices remain proposals.
+Design hierarchy is USER-confirmed **Style → Theme → Scene**. Initial candidates are STYLE-01 (text-only
+StatusBar) and STYLE-02 (icon + text StatusBar), using THM-baseline (Core baseline) and draft cards for
+SCN-02 / SCN-06 / SCN-08. Next design artifact: static sketches of those combinations, including Tool/Speak.
+The first eight static sketches are now available in `docs/poc/m7_sketches/`; they are documentation-only
+workstation drafts, with no physical-panel or integration claim. Next: review sketches and content-update
+behavior before expanding the remaining scenes.
+USER requested a reserved typewriter text effect: design supports instant/typewriter strategies with instant
+as the default; Theme parameters and Scene eligibility are recorded in M7D1. Implementation, Core mapping
+and same-bytes workstation/Pi verification remain outstanding.
+USER reviewed the first sketch sheet without requested changes and named THM-baseline **baseline**.
+Both Style candidates remain; next action is to extend the remaining six scenes using this theme.
+The remaining six scenes now have draft cards and 14 static sketches (Perception includes empty/text).
+All nine scenarios have initial static coverage. Next: USER review of the second sheet, then resolve
+auxiliary information, protection and motion candidates, experiment selection and Core mappings to finish M7D1.
+USER chose a small hourglass animation beside the SCN-05 StatusBar label「思考中」. Theme variables reserve
+its asset and cycle; animation detail and implementation remain pending. The current three-dot sketch is superseded
+for this design choice and has not yet been redrawn. Continue discussing details before generating more sketches.
+USER selected hourglass option B: flip-only loop, without falling-sand animation. Cycle/flip timing remain pending.
+USER finalized theme ID **THM-baseline** and ANI IDs that uniquely identify semantic animation items across
+themes. **ANI-001** means thinking hourglass in every theme; THM-baseline describes its flip-only treatment.
+Theme-specific appearance/motion changes retain that ID and are recorded descriptively before extracting parameters.
+
+**Discussion checkpoint:** USER requested recording up to the ANI semantic-ID decision. M7D1 remains
+IN PROGRESS; no further design is being expanded. See the opening checkpoint in `m7_discovery_design.md`
+for confirmed choices and remaining questions. Next discussion: SCN-05 hourglass appearance/timing and Main
+content, before redrawing. No Git commit or M7 Pi/OLED validation has been performed.
+
 ## Completed baseline — Core M3 Display HAL P0–P4
 
 > 更新日期：2026-08-12
