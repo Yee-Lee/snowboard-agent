@@ -29,8 +29,8 @@ sys.path.insert(0, str(ROOT))
 from scripts.alpha_oracle import FIXTURES, QUALITY, InvalidObservation, require
 
 FIXTURE_TEXT = dict(zip(FIXTURES, (
-    "一加一等於多少？", "一個星期有幾天？", "請再簡短回答一次。",
-    "用三句短話介紹滑雪注意事項。", "現在請結束對話。", "請問你是誰？",
+    "一個星期有幾天？", "一個星期有幾天？", "請再簡短回答一次。",
+    "請列出三個滑雪安全重點。", "現在請結束對話。", "請問你是誰？",
     "一個星期有幾天？", "你現在可以看到我前面的東西嗎？",
     "用一句話說初學滑雪為何要戴安全帽。", "請簡短介紹台灣。",
     "再簡單一點，並且只說它的位置。", "請不要結束對話，先告訴我一加一等於多少。",
@@ -183,6 +183,11 @@ def hardware_fds() -> dict[str, int]:
     return counts
 
 
+def process_reaped(process) -> bool:
+    return (process is not None and process.returncode is not None
+            and process_identity(process.pid) is None)
+
+
 class ProductProbe:
     def __init__(self, run: str, fixtures: dict[str, bytes], process_start: int):
         self.run, self.fixtures = run, fixtures
@@ -203,6 +208,7 @@ class ProductProbe:
         self.recovery = {}
         self.failed_control = None
         self.killed = None
+        self.killed_process = None
         self.initial_pids = None
         self.first_child = None
         self.failed_session = None
@@ -358,10 +364,13 @@ class ProductProbe:
     async def normal_session(self, plan) -> None:
         context_case = self.run == "quality" and plan[0][0] == QUALITY[4]
         self.closing_quality_context = context_case
+        first_row = len(self.rows)
         self.pending.extend(plan)
         await self.button()
-        await self.until(lambda: self.sm._session is not None)
-        session_id = self.sm._session.session_id
+        # PCM admission records the actual Session identity durably. A short
+        # Session can complete between polls of the live State Manager pointer.
+        await self.until(lambda: len(self.rows) > first_row)
+        session_id = self.rows[first_row]["session_id"]
         if context_case:
             await self.until(lambda: any(row["case_id"] == QUALITY[4] and row["fixture_id"] == "FX-Q05-T2"
                                         and any(a["kind"] == "speak" and a["status"] == "ok"
@@ -396,12 +405,10 @@ class ProductProbe:
                 llm = self.rm._records["backend.cognition.reasoner.llm"].instance
                 replacement = llm._child
                 old = self.killed
-                process = old._process
                 self.recovery.update(
                     fault_locator=self.errors == [{"code": "LLM_BACKEND_FAILED",
                         "disposition": "rebuild_required", "keys": ["backend.cognition.reasoner.llm"]}],
-                    old_reaped=process is not None and process.returncode is not None
-                               and process_identity(old.pid) is None,
+                    old_reaped=process_reaped(self.killed_process),
                     new_child=replacement is not old and replacement.pid != old.pid,
                     sole_replacement=len(self.llm_children) == 2,
                     replacement_count=len(self.llm_children) - 1,
@@ -598,6 +605,7 @@ async def launch(args) -> int:
             require(child is not None and child._process.returncode is None
                     and len(probe.llm_children) == 1, "LLM_KILL_TARGET_INVALID")
             probe.killed, probe.failed_control = child, self
+            probe.killed_process = child._process
             probe.failed_session = sid
             probe.recovery.update(killed_sole_llm=True, after_safe_admission=True,
                                   admitted_at_kill=self.admitted_count)

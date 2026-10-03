@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Mapping
 
 from sbd.cognition.litert_lm.resource import OWNERS, SystemResourceSample
+from sbd.cognition.prompt_builder import PROFILE_ID, PROMPT_COUNTS, PROMPT_HASHES
 
 LIFECYCLE_POINTS = frozenset({"engine_ready", "conversation_preparation", "conversation_ready",
     "pre_generate", "post_generate", "pre_speak", "audio_completion", "primary_completion",
@@ -80,13 +81,13 @@ class PromptDashboard:
     def record(self, *, profile_id: str, counts: Mapping[str, int],
                hashes: Mapping[str, str]) -> dict[str, object] | None:
         names = {"core", "personality", "combined"}
-        if (profile_id != "core-m4b-cognition-001" or set(counts) != names
+        if (profile_id != PROFILE_ID or set(counts) != names
                 or set(hashes) != names or any(not _counter(v) for v in counts.values())
-                or dict(counts) != {"core": 57, "personality": 9, "combined": 66}
+                or dict(counts) != {"core": PROMPT_COUNTS["core"], "personality": PROMPT_COUNTS["personality"],
+                                    "combined": PROMPT_COUNTS["system"]}
                 or dict(hashes) != {
-                    "core": "8caba35159407882407c1ac1be22c66791ac66236e323bc1b63fa072c1340eec",
-                    "personality": "57191898561df177e820a10eed88ad9d47649ba9e5e19c059b554acedda777e5",
-                    "combined": "872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643"}
+                    "core": PROMPT_HASHES["core"], "personality": PROMPT_HASHES["personality"],
+                    "combined": PROMPT_HASHES["system"]}
                 or any(type(v) is not str or re.fullmatch(r"[0-9a-f]{64}", v) is None
                        for v in hashes.values())):
             raise ObservationError()

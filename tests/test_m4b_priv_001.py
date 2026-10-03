@@ -252,12 +252,12 @@ def test_V01_reversible_encoding_and_arbitrary_failure_detail_are_rejected():
 
 def test_V02_prompt_emits_once_and_is_separate_from_runtime():
     dashboard = PromptDashboard()
-    args = dict(profile_id="core-m4b-cognition-001", counts={"core": 57, "personality": 9, "combined": 66},
-        hashes={"core": "8caba35159407882407c1ac1be22c66791ac66236e323bc1b63fa072c1340eec",
+    args = dict(profile_id="core-m4b-cognition-001", counts={"core": 59, "personality": 9, "combined": 68},
+        hashes={"core": "c25814706de0946929c982634e47a3fdb3c4bb8cfef0ee0151088658210a827b",
         "personality": "57191898561df177e820a10eed88ad9d47649ba9e5e19c059b554acedda777e5",
-        "combined": "872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643"})
+        "combined": "98bba29c3fb3b24784e50fedabe4434bdc2951f8073592d84600ab6260dab410"})
     row = dashboard.record(**args)
-    assert len(row) == 7 and row["combined_tokens"] == 66
+    assert len(row) == 7 and row["combined_tokens"] == 68
     assert dashboard.record(**args) is None
     assert "prompt" not in row and "text" not in row
 

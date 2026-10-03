@@ -1,6 +1,7 @@
 """Portable ALPHA driver regressions; these do not claim native Pi acceptance."""
 import asyncio
 import json
+import sys
 from types import SimpleNamespace as NS
 import wave
 
@@ -12,6 +13,31 @@ from sbd.core.event_bus import EventBus
 from sbd.core.events import ButtonPressed, ShutdownRequested
 from sbd.core.gpio.base import GPIOEvent
 from sbd.input_events.button import ButtonInputSource
+
+
+def test_recovery_retains_real_process_proof_after_child_cleanup(monkeypatch):
+    from scripts.alpha_product import process_reaped
+
+    async def scenario():
+        process = await asyncio.create_subprocess_exec(
+            sys.executable, "-c", "import time; time.sleep(30)")
+        child = NS(_process=process)
+        retained = child._process
+        try:
+            assert not process_reaped(retained)
+            process.kill()
+            await process.wait()
+            child._process = None  # Production cleanup clears this field after waitpid.
+            assert not process_reaped(child._process)
+            assert process_reaped(retained)
+            monkeypatch.setattr("scripts.alpha_product.process_identity", lambda pid: ("live", "pid"))
+            assert not process_reaped(retained)
+        finally:
+            if process.returncode is None:
+                process.kill()
+            await process.wait()
+
+    asyncio.run(scenario())
 
 
 def test_privacy_observes_actual_file_logs_without_short_answer_false_positive(tmp_path):
@@ -177,8 +203,10 @@ def test_fixture_preparation_binds_once_and_outputs_real_asr_format(tmp_path, mo
     assert mapping_path.stat().st_mode & 0o777 == 0o600
 
 
-@pytest.mark.parametrize("run", ["lifecycle", "quality"])
-def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run):
+@pytest.mark.parametrize("run,completed_before_observation", [
+    ("lifecycle", False), ("lifecycle", True), ("quality", False),
+])
+def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run, completed_before_observation):
     """Actual controller/worker integration, with explicit portable backend doubles."""
     from sbd.action.rest import Rest
     from sbd.action.speak import Speak
@@ -262,6 +290,17 @@ def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run):
                     input_sources=NS(button=NS(policy=NS(enabled=True))))
         probe.attach(composition, rm, bus, config)
         probe.initial_pids = set()
+        if completed_before_observation:
+            send_button = probe.button
+            async def settled_button(*, shutdown=False):
+                first_row = len(probe.rows)
+                await send_button(shutdown=shutdown)
+                if not shutdown:
+                    # Execute the real two-turn controller path before allowing
+                    # normal_session's start observer to inspect the live state.
+                    await probe.until(lambda: len(probe.rows) > first_row
+                                      and sm.state == "IDLE" and sm._session is None)
+            probe.button = settled_button
         await display.start()
         await sm.start()
         sm.set_conversation_lifecycle(llm)

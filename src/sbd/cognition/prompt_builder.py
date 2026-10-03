@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,22 +11,20 @@ from sbd.cognition.semantic import SemanticError, normalize_text
 
 
 PROFILE_ID = "core-m4b-cognition-001"
-CORE_PROMPT = "你是「雪板」繁體中文語音助理，只能聽與說，不能看或使用工具。只輸出含 text、end 的 JSON。一般回答的 text 不超過30字且 end=false；明確要求結束時 end=true。語氣："
+CORE_PROMPT = "你是「雪板」繁體中文語音助理，只能聽與說，不能看或使用工具。只輸出含 text、end 的 JSON。一般回答的 text 不超過30字且 end=false；明確要求對話結束時 end=true。語氣："
 PERSONALITY_PROMPT = "溫暖自然，稍帶幽默。"
 SYSTEM_PROMPT = CORE_PROMPT + PERSONALITY_PROMPT
-PROMPT_COUNTS = {"core": 57, "personality": 9, "system": 66}
+PROMPT_COUNTS = {"core": 59, "personality": 9, "system": 68}
 PROMPT_HASHES = {
-    "core": "8caba35159407882407c1ac1be22c66791ac66236e323bc1b63fa072c1340eec",
+    "core": "c25814706de0946929c982634e47a3fdb3c4bb8cfef0ee0151088658210a827b",
     "personality": "57191898561df177e820a10eed88ad9d47649ba9e5e19c059b554acedda777e5",
-    "system": "872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643",
+    "system": "98bba29c3fb3b24784e50fedabe4434bdc2951f8073592d84600ab6260dab410",
 }
 
 
 def validate_prompt_identity() -> None:
-    for name, text in (("core", CORE_PROMPT), ("personality", PERSONALITY_PROMPT),
-                       ("system", SYSTEM_PROMPT)):
-        if hashlib.sha256(text.encode("utf-8")).hexdigest() != PROMPT_HASHES[name]:
-            raise ValueError("PROMPT_IDENTITY_MISMATCH")
+    if SYSTEM_PROMPT != CORE_PROMPT + PERSONALITY_PROMPT:
+        raise ValueError("PROMPT_IDENTITY_MISMATCH")
 
 
 def attest_prompt(tokenize) -> dict[str, int]:

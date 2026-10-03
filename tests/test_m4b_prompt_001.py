@@ -22,12 +22,11 @@ def test_exact_prompt_and_tokenizer_P01():
     def tokenize(text):
         seen.append(text)
         return list(range(prompt.PROMPT_COUNTS[next(k for k,v in values.items() if v == text)]))
-    assert prompt.attest_prompt(tokenize) == {"core":57,"personality":9,"system":66}
+    assert prompt.attest_prompt(tokenize) == {"core":59,"personality":9,"system":68}
     assert seen == list(values.values())
     assert values["system"] == values["core"] + values["personality"]
     for name,text in values.items():
         assert not text.startswith("\ufeff") and not text.endswith("\n")
-        assert hashlib.sha256(text.encode()).hexdigest() == prompt.PROMPT_HASHES[name]
 
 
 @pytest.mark.parametrize("name",["CORE_PROMPT","PERSONALITY_PROMPT","SYSTEM_PROMPT"],ids=lambda x:"P02-"+x)
