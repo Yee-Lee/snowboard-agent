@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "description": "Review theme; input/reply colors, logo text and all timing are provisional preview values.",
+  "theme": {
+    "status_bg": "#000000",
+    "status_fg": "#FFFFFF",
+    "main_bg": "#000000",
+    "main_fg": "#FFFFFF",
+    "input_fg": "#FFFFFF",
+    "reply_fg": "#90EE90",
+    "error_fg": "#FFB000",
+    "logo": "Snowboard",
+    "theme_id": "THM-baseline",
+    "status_size": 12,
+    "status_line_height": 16,
+    "main_size": 14,
+    "main_line_height": 20,
+    "error_size": 14,
+    "error_line_height": 20,
+    "icon_size": 12,
+    "icon_gap": 4,
+    "animations": {
+      "ANI-001": {
+        "name": "思考沙漏",
+        "description": "小沙漏停留後翻轉循環，不做落沙。",
+        "preview": {
+          "kind": "flip",
+          "cycle": 1.5,
+          "flip_seconds": 0.3
+        }
+      },
+      "ANI-002": {
+        "name": "開機標誌",
+        "description": "簡單標誌；本輪静態，將來可設計短動畫。",
+        "preview": {
+          "kind": "static"
+        }
+      },
+      "ANI-003": {
+        "name": "準備光芒",
+        "description": "光芒緩慢明暗呼吸，文字穩定。",
+        "preview": {
+          "kind": "breath",
+          "cycle": 1.5
+        }
+      },
+      "ANI-004": {
+        "name": "關機標誌",
+        "description": "與開機共用標誌，短暫呈現後全黑。",
+        "preview": {
+          "kind": "static"
+        }
+      },
+      "ANI-005": {
+        "name": "文字逐步揭露",
+        "description": "供 review 開關比較的打字機能力，未選為預設效果。",
+        "preview": {
+          "kind": "typewriter",
+          "char_seconds": 0.08,
+          "max_seconds": 3.0
+        }
+      }
+    }
+  }
+}

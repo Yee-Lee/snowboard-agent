@@ -61,10 +61,62 @@ USER finalized theme ID **THM-baseline** and ANI IDs that uniquely identify sema
 themes. **ANI-001** means thinking hourglass in every theme; THM-baseline describes its flip-only treatment.
 Theme-specific appearance/motion changes retain that ID and are recorded descriptively before extracting parameters.
 
-**Discussion checkpoint:** USER requested recording up to the ANI semantic-ID decision. M7D1 remains
-IN PROGRESS; no further design is being expanded. See the opening checkpoint in `m7_discovery_design.md`
-for confirmed choices and remaining questions. Next discussion: SCN-05 hourglass appearance/timing and Main
-content, before redrawing. No Git commit or M7 Pi/OLED validation has been performed.
+**Current discussion checkpoint (2026-10-09):** prior records/sketches were committed and pushed as 4353fbc.
+USER resumed discussion and requested a first pass through all scenes and shared decisions, deferring hourglass
+detail. See the opening checkpoint and overview in `m7_discovery_design.md`. M7D1 remains IN PROGRESS;
+the current task is direction-level discussion, not new animation previews or Pi/OLED validation.
+First-pass SCN-01 decision: USER wants a simple boot animation eventually; start with a static logo.
+ANI-002 identifies the boot-logo item; its baseline graphic is undecided, and Blank remains the fallback.
+First-pass SCN-02 decision: USER confirmed「待命」in StatusBar, empty Main and blanking after inactivity;
+timeout, recovery trigger and ownership mapping remain pending. Continue with SCN-03 wake behavior.
+First-pass SCN-03 decision: USER confirmed「準備中」with empty Main and no animation for this round.
+Static icon choice remains open; ordinary wake from IDLE is blank already. Other backing-content paths
+must retain baseline behavior or return a focused finding. Continue with SCN-04 perception.
+USER confirmed StatusBar icon meanings for the first pass: hollow circle (IDLE), simple rays (WAKE),
+receive signal (PERCEPTION), hourglass (THINK), execution arrow (ACTION), warning triangle (ERROR).
+Only THINK animates this round. Shapes remain theme-specific design work; text-only drafts stay as comparison
+baselines. Continue discussing SCN-04 Main content rather than detailed icon drawing.
+USER updated SCN-03:「準備中」also needs a processing indication, and confirmed a slowly breathing rays icon
+with stable text and empty Main. ANI-003 identifies preparation rays across themes; baseline uses brightness
+breathing. This supersedes the earlier static WAKE decision. Appearance/timing and implementation remain deferred;
+continue the first pass with SCN-04, whose Main proposal has not yet been confirmed.
+USER accepted SCN-04 label「感知中」as a proposed Core wording change. Core arch §2.6 permits parallel
+perception modules per turn. Multi-source icon-group layout is under discussion; authoritative module-set
+availability and a possible minimal contract delta remain unresolved. Main behavior is still a proposal.
+USER accepted the SCN-04 source-icon group direction: microphone → message → camera, compacted on the left
+for the current turn's enabled sources, then「感知中」. Icon sizes remain draft parameters; data availability
+is still unresolved. Next first-pass topic is SCN-05 Main content, without further hourglass detail.
+USER confirmed SCN-05 Main retains current valid Perception text while thinking, or stays empty when no
+text is available; suppressed content remains suppressed. Hourglass details stay deferred. Continue with SCN-06.
+During SCN-06 discussion, USER chose distinct Main text colors for valid input and Speak reply, rejected
+redundant content labels and left/right alignment differences, and retained a single current-content surface.
+THM-baseline reserves COLOR-INPUT-FG and COLOR-REPLY-FG; actual values and content-role mapping remain pending.
+Existing PNGs have not been recolored; this is a design decision, not implemented Core support.
+USER confirmed SCN-06 StatusBar: tool actions use a wrench +「執行中」; Speak uses a speaker +「回應中」,
+with static icons for the first pass. This supersedes the execution-arrow draft. Both remain ACTION;
+tool wording and authoritative action-type projection require Core mapping/adoption. Existing PNGs are unchanged.
+Continue the first pass with SCN-07 accepted interrupt feedback.
+USER confirmed SCN-07: after accepted interruption, Main shows「已中止」and stops the previous text effect;
+clear Main when truly back in IDLE. StatusBar continues following authoritative state. Continue with SCN-08.
+USER confirmed SCN-08: warning triangle +「錯誤」in StatusBar, sanitized category/summary in a separate
+Main error color, static without flashing, cleared after recovery to IDLE. Continue with SCN-09 shutdown.
+USER confirmed SCN-09: show the same simple logo as boot, then Blank; a later short animation must not delay
+shutdown. ANI-004 identifies the shutdown-logo item, sharing graphic design with boot ANI-002 but retaining
+its own lifecycle. Logo design/previews remain pending. The first pass has covered all nine scenarios;
+next discuss shared volume/connection/capability presentation and close remaining explicit questions before D2.
+USER requested a reusable theme-review tool as the common future review entrypoint, including animation,
+then commit/push and stop for the day. `poc_display/review/` holds shared synthetic scenes, THM-baseline and
+authoring/run instructions; `poc_display/tools/m7_review.py` supports offline browser export, mock playback
+and existing SSD1351 HAL playback. Host checks: 11 passed, plus mock/interactive runs. Theme colors/logo/timing
+are provisional. Pi connection is now verified; the first same-bytes OLED pass and terminal controls succeeded.
+USER reported confusing interrupt status and insufficient visible reply-color distinction; the prototype fixes
+use stop +「中止中」and white-input/pale-green-reply. The final same-bytes rerun is recorded in the review summary.
+Code remains uncommitted pending final verification and explicit approval of the full commit proposal.
+M7D1 remains IN PROGRESS; this scoped review tool does not advance the full D2–D4 gates.
+Final tool checks completed: 12 host tests passed; revised 14/14 physical review, final black and owner
+release passed on the same transferred bytes. See `poc_display/evidence/m7/M7-REVIEW-SUMMARY-2026-10-09.md`.
+USER requested Pi poweroff after evidence retrieval; request accepted and SSH unavailable. No further hardware
+work today. Remaining action is explicit approval of the displayed commit proposal, then commit/push.
 
 ## Completed baseline — Core M3 Display HAL P0–P4
 
