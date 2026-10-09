@@ -162,16 +162,18 @@ class StreamingSpeakControl:
 
     async def cancel(self) -> None:
         async with self._condition:
-            if self._state in {"COMPLETED", "CANCELLED", "FAILED"}:
+            if self._state == "COMPLETED":
                 return
             self._state = "CANCELLED"
             self._pending.clear()
             self._pending_bytes = 0
             self._condition.notify_all()
+        # Keep the protocol consumer alive until the typed CANCEL terminal is
+        # consumed. Cancelling it first strands a BUSY TTS owner with no reader.
+        await self._tts.abort()
         task = self._task
         if task is not None and not task.done():
             task.cancel()
-        await self._tts.abort()
         if task is not None:
             await asyncio.gather(task, return_exceptions=True)
         await self._close_pcm()
@@ -207,8 +209,21 @@ class StreamingSpeakControl:
         self._inflight = ()
 
     async def force_abort(self) -> ForceAbortReport:
-        await self.cancel()
-        return await self._tts.force_abort()
+        async with self._condition:
+            self._state = "CANCELLED"
+            self._pending.clear()
+            self._pending_bytes = 0
+            self._condition.notify_all()
+        # Level 2 must not re-enter the Level-1 wait that already timed out.
+        report = await self._tts.force_abort()
+        task = self._task
+        if task is not None and not task.done():
+            task.cancel()
+        if task is not None:
+            await asyncio.gather(task, return_exceptions=True)
+        await self._close_pcm()
+        self._inflight = ()
+        return report
 
     async def _dequeue(self) -> tuple[_Fragment, ...] | None:
         async with self._condition:

@@ -130,6 +130,8 @@ class MatchaTTSAdapter:
         await self._child.start()
 
     async def stop(self) -> None:
+        if self._child.state in {ChildState.STOPPED, ChildState.DESTROYED}:
+            return
         if self._child.state is ChildState.BUSY:
             await self.force_abort()
             return

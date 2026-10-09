@@ -116,6 +116,10 @@ class Reasoner(WorkerRuntime):
         await super().abort()
 
     async def force_abort(self) -> ForceAbortReport:
+        if self._active is None and self._provisional_streaming() is not None:
+            # A cancelled outer call is not proof that its provisional audio
+            # owner was cleaned. Preserve the Level-2 hook for that owner.
+            return await self._force_abort_resources()
         return await super().force_abort()
 
     async def reason(
@@ -586,6 +590,23 @@ class Reasoner(WorkerRuntime):
 
     async def _abort_resources(self) -> None:
         await self._llm.abort()
+        streaming = self._provisional_streaming()
+        if streaming is not None:
+            await streaming.cancel()
+            self._streaming_speak.release_streaming(streaming)
 
     async def _force_abort_resources(self) -> ForceAbortReport:
-        return await self._llm.force_abort()
+        llm_report = await self._llm.force_abort()
+        streaming = self._provisional_streaming()
+        if streaming is None:
+            return llm_report
+        audio_report = await streaming.force_abort()
+        self._streaming_speak.release_streaming(streaming)
+        return ForceAbortReport(tuple(sorted(set(
+            (*llm_report.destroyed_backends, *audio_report.destroyed_backends)))))
+
+    def _provisional_streaming(self):
+        speaker = self._streaming_speak
+        if speaker is None or speaker._active is not None:
+            return None
+        return speaker._streaming

@@ -2,6 +2,405 @@
 
 ## Active ALPHA implementation
 
+### Developer delivery scope and next owner — 2026-10-09
+
+- USER requested delivering this Developer iteration first, then Designer planning the next
+  performance improvement round, and deciding ALPHA closure afterward. Deliver the tested fixed
+  terminal installation and interruption/restart/stop repair; do not claim ALPHA Accepted, create
+  a completion tag or run a service/optimization as a prerequisite for this delivery.
+- Iteration verification is not skipped: Pi portable regressions, real native interruption/restart
+  checks, fixed-entry startup/stop and USER live retest are recorded below. Final whole-ALPHA
+  acceptance Verify is deferred, not relabeled as PASS or spliced from older candidates.
+- Prompt correction is already in WIP `9c13509`: `明確要求對話結束時`, counts 59/9/68. No new
+  prompt change is pending in this iteration. Designer must reconcile existing authority and
+  Test Spec with the measured wording/fixtures and USER's retired-question/quality decision;
+  retain original FAIL observations. Synchronization is feedback, not another approval gate.
+- Next owner after this delivery: Designer for one bounded performance work item. Primary
+  observation is slow first response (most recent live ASR-final → first-audio 13.333 s,
+  LLM-send → first-safe-text 12.762 s). Later native-generation Turns are faster, but cause and
+  stable improvement are unproven. Fix timing retention before drawing optimization conclusions:
+  text logging truncates rows, human speech end is missing, and first audio write is not an
+  acoustic perception timestamp. Preserve privacy and measure the selected before/after path.
+- Existing `docs/status/current.md` and `docs/status/design.md` remain Designer-owned and were
+  not modified. Handoff is this existing owner record plus the USER reply, not a new summary file.
+- Pending commit is an append-only Developer delivery after WIP `9c13509`, not an amendment,
+  ALPHA closure or authorization to push. Full subject/body/file approval is required below.
+
+### Interrupted-session repair result — 2026-10-09
+
+- USER requested fixing the reproduced failures. Value/risk: after a real Button interruption,
+  backend cleanup must complete or report destroyed resources for RM recovery before a new
+  Session; final stop must tolerate already-terminated TTS without a false stop failure.
+- Estimate: 3 points. Affected paths: `src/sbd/action/speak/streaming.py`,
+  `src/sbd/cognition/reasoner.py`, `src/sbd/action/speak/matcha/adapter.py`,
+  `tests/test_alpha_interrupt.py`, `scripts/check_interrupt.py` for targeted native regression,
+  `scripts/install_app.py` / `tests/test_app_install.py` for the fixed-entry release selector,
+  narrowly affected streaming tests if required, this status.
+  Preserve public APIs, lifecycle timeout values, schema, prompt, admission and fault taxonomy.
+- Repair plan: keep the PCM consumer alive for typed TTS cancellation, complete repeated cleanup
+  instead of equating CANCELLED with already-clean; forced cleanup bypasses graceful wait and
+  returns actual destruction keys. Reasoner owns provisional streaming cleanup before Speak
+  adoption, including a durable cleanup hook after a cancelled outer call. Matcha stop is
+  idempotent for a child whose STOPPED/DESTROYED cleanup already completed.
+- Verify plan: convert the two diagnostic reproductions to graceful/forced-recovery regressions,
+  affected portable integration tests on workstation/Pi, real native backend interruption/restart
+  and shutdown on a new Pi candidate with private logs, then install a new fixed-entry revision
+  without rewriting earlier tested product source or evidence. USER's old quality questions are
+  not replayed. No commit or final whole-ALPHA acceptance is implied.
+- Implemented and verified: StreamingSpeak keeps its native TTS terminal consumer alive through
+  typed cancellation; repeated cancellation finishes pending cleanup. Level 2 bypasses graceful
+  waiting and reports destruction. Reasoner clears its provisional streaming owner and preserves
+  the forced-cleanup hook even after an outer call finishes. Matcha stop accepts an already
+  STOPPED/DESTROYED owner without attempting another READY-only shutdown.
+- Workstation affected regression: **159 Pass**, exit 0. Pi same affected selection: **159 Pass**,
+  exit 0, 1.65 s. Complete Pi non-RPi regression after the core fix: **1967 Pass / 35 deselected**,
+  exit 0, 61.56 s; no Fail/Skip/XFail. The later installer selector adds one test, covered in the
+  final Pi deployment/interruption/launcher selection: **18 Pass**, exit 0, 0.58 s. Do not label
+  that later selector as included in the earlier complete suite.
+- Candidate: `/home/<operator>/alpha-interrupt-fix-20261009-PluRne/repo`, WIP `9c13509` plus
+  pending changes. Logs: `<root>/focused-regression.log`, `non-rpi-regression.log`,
+  `deployment-regression.log`. New fixed diagnostic PCM was prepared once from two camping/
+  encouragement stimuli, not the retired Quality questions; mapping `<root>/fixed-pcm/fixtures.json`.
+- Actual Pi native backend regression passed: `provisional-01/result.json` proves interruption
+  in THINK with a safe fragment admitted and real TTS BUSY; `playback-02/result.json` proves
+  interruption in ACTION after ALSA's first positive audio write with playback still active.
+  Both prove old work/control/queues cleaned, TTS and recovery READY before new admission, a new
+  Session completing real ASR → LLM → TTS → Audio, normal close and exit 0, zero stop failures,
+  and no remaining child/audio/display/hardware owners. No substitutes for LLM/TTS/Audio were used.
+  Input is controlled new PCM through `AudioInput.frames`, and Buttons use the production GPIO
+  callback; this native regression is not a second live-microphone human judgment.
+- Native `playback-01` is retained as a failed/ineligible observation: the initial helper read a
+  timing node emitted only after completion, so it never observed active playback or injected
+  the intended Button. App later hit WorkerContractViolation during unscheduled capture; exit 4,
+  cleanup booleans false at the snapshot. Later inspection confirmed process/fd release. Corrected
+  only the helper's playback detector to the actual live ALSA write flag, without changing product
+  source/config/PCM, then obtained the separate `playback-02` Pass. Never relabel the first result.
+- Deployed fix as `/home/<operator>/snowboard-app/releases/interrupt-fix-20261009` with `current`
+  pointing there. Original installed source/model/runtime/config and original entry bytes remain
+  preserved; only fixed-entry routing changes. `~/snowboard-app/run.sh` still needs no arguments.
+  New release uses the stable shared runtime/model/audio products; no test-directory dependency
+  is introduced into normal operation. Future fresh installer supports the same release selector.
+- Fixed-entry smoke reached clean IDLE, then terminal Ctrl+C exited **0** with no product/native
+  child or hardware holder; `<root>/installed-fix-startup-01.log`. App is stopped; Pi stays online.
+  USER saw standby during this operator startup check, not a hung second-Session attempt.
+- Independent transfer-boundary comparisons found no differences across nine modified source/
+  installer/helper/test files in the Pi checkout, nor installed release `src`/`requirements`/launcher
+  (caches excluded). Syntax, compile, whitespace and changed-file privacy checks Pass.
+- USER completed two rounds through the fixed entry and long-pressed to close the repaired App.
+  Latest launch reached IDLE at 17:51:31 +08:00. First speaking Session had two Turns, including
+  ACTION → IDLE at 17:52:20; the new Session began at 17:52:23, completed further voice Turns,
+  and returned PERCEPTION → IDLE at 17:53:27. A brief final WAKE/PERCEPTION sequence occurred
+  before return to IDLE at 17:53:35 during the reported final close; it is recorded, not silently
+  counted as a third completed voice test. Latest-launch ERROR/CRITICAL count **0**, WARNING **0**.
+  Follow-up inspection found no repaired App/native child or capture/playback/SPI/GPIO holder.
+  USER terminal exit status was not retained, so no independently measured exit-0 claim for this
+  human run. Pi is still online; App is stopped. Human interruption/restart/close retest is complete.
+
+| Repaired live Session / Turn | ASR final → first audio write (s) | LLM send → first safe text (s) |
+| :--- | ---: | ---: |
+| S1 / T1 | 13.333 | 12.762 |
+| S1 / T2 | 3.021 | 2.202 |
+| S2 / T1 | 2.985 | 2.089 |
+| S2 / T2 | 1.966 | 1.533 |
+| S2 / T3 | 0.683 | unavailable |
+| S2 / T4 | 2.140 | 1.555 |
+| S2 / T5 | 2.376 | 1.680 |
+
+- The same existing 512-character truncation and missing physical speech-end limitations apply.
+  S2/T3 has no surviving LLM-send/safe-text nodes and cannot earn fast-generation credit.
+  Interrupted S1/T2 first-audio time does not prove a full audio drain. First-response latency
+  remains visible and unoptimized; repair success is functional, not a performance improvement.
+- Next: Developer completes final common-candidate ALPHA Verify and measured scope/prompt feedback
+  to existing design/Test Spec owners. Native/portable repair verification and repaired-version
+  human retest are complete; original failure findings below are preserved provenance, superseded
+  by this resolution. Do not replay retired Quality questions or infer formal ALPHA acceptance.
+  No commit, push, service change or performance optimization was performed.
+
+### Pre-fix focused interruption debug record — 2026-10-09
+
+- USER requested actual debug rather than hypothesis-only reporting. Value/risk: reproduce a
+  second Session rejected after interruption and distinguish streaming-owner leakage from model
+  quality. Estimate: 1 point for reproduction. Affected path: `tests/test_alpha_interrupt.py`
+  plus this status; production source is not modified in this diagnostic step.
+- Plan: real Reasoner/WorkerRuntime/StreamingSpeak/Matcha adapter cancellation path with a
+  controlled child protocol seam; deadline interruption during TTS receive; then a second real
+  Reasoner turn. Separately reproduce repeated TTS stop after forced termination using the real
+  FramedProcess state check. Run on workstation and Pi; no native input replay, debugger attachment
+  to the live App, forced shutdown or old quality questions. A diagnostic Pass means defect
+  reproduced as asserted, not product behavior accepted.
+- Executed on workstation: **2 diagnostic reproductions Pass**, exit 0, 0.18 s. Reproduced
+  cancelled streaming control still claimed after timed-out Reasoner abort, then a second turn
+  raising `RuntimeError("streaming Speak operation already active")`, projected as `LLM_UNEXPECTED`.
+  Separately the actual Matcha adapter/FramedProcess state path reproduced BUSY stop → DESTROYED
+  → repeated stop rejecting non-READY state. The second reproduction creates no native subprocess.
+- Same two tests on Pi: **2 diagnostic reproductions Pass**, exit 0;
+  `/home/<operator>/alpha-launcher-20261009-x1EXAr/interrupt-debug-01.log`.
+  Both execute product classes, but use controlled child/LLM seams; they are not a native microphone
+  replay or proof of the live exception traceback. The live symptom's stage/code and reproduced
+  failure mechanism agree. No production fix or installed-source change is claimed yet.
+
+### Interrupted Session restart finding — 2026-10-09
+
+- USER attempted another interrupted-session test and reported the second round stuck. No
+  operator button, replay, shutdown, restart or code mutation was performed during inspection.
+- Latest installed launch reached IDLE at 17:14:55 +08:00. One completed ACTION → PERCEPTION
+  was followed by a second THINK, then THINK → IDLE at 17:16:13. Second physical Button was
+  received (IDLE → WAKE at 17:16:15), real ASR completed (PERCEPTION → THINK at 17:16:25),
+  then `LLM_UNEXPECTED`, UNPROVEN LLM resource, occurred before any LLM-send/first-safe-text/
+  first-audio timing node. Current run is a failed second-Session response, not an unreceived Button.
+- Fault entered ERROR, replaced the LLM child once as observed in the process/log snapshots,
+  and returned to IDLE at 17:16:25.991. Main App, ASR and TTS were still alive; replacement LLM
+  PID was 4100. Therefore latest observed state is recovered standby, not a permanently stuck
+  TTS playback. USER-visible output/Display confirmation remains separate from log evidence.
+- Important boundary: logged first interruption was THINK → IDLE, not ACTION → IDLE. It does
+  not reproduce the earlier speak-abort/long-press TTS shutdown sequence exactly. Do not assume
+  both incidents have the same cause. Error projection retains only a stable code, not the
+  underlying exception detail; exact cause of LLM_UNEXPECTED is not established yet.
+- Source diagnosis points to the streaming-control creation/release boundary as one candidate:
+  a new turn can prepare admission successfully and then fail before GENERATE if the previous
+  StreamingSpeak control remains claimed. This needs a targeted reproduction, not an inference
+  presented as proven. Previous live error/raw records remain in the installed private product log.
+- Next owner: Developer for focused interruption/restart diagnosis. Do not mark ALPHA function
+  convergence complete while the confirmed second-Session failure and TTS shutdown finding remain
+  open. No final Verify, new quality questions, service change or performance optimization occurred.
+
+### USER-operated installed-entry test — 2026-10-09
+
+- USER ran `~/snowboard-app/run.sh` and reported completing one round. Latest installed-log
+  startup reached IDLE at 17:02:11 +08:00; first Button trigger at 17:02:21. Observed nine
+  THINK → ACTION entries, eight ACTION → PERCEPTION continuations, then ACTION → IDLE at
+  17:04:40. Exact audible/semantic assessment and the final physical/terminal stop action are
+  not yet confirmed; do not label all nine actions clean completions from transitions alone.
+- Latest launch contains **one ERROR and two WARNING** rows: speak Level-1 abort timeout at
+  17:04:39, TTS stop warning at 17:04:44 (`clean shutdown is legal only from READY`), followed
+  by a resource-stop error for `backend.action.speak.tts`. Older installation fatal remains
+  preserved separately. The raw private trace is in `~/snowboard-app/logs/application.log`.
+- Follow-up inspection found no installed App/LLM/ASR/TTS process and no capture/playback/SPI/GPIO
+  hardware holder. App is stopped and Pi remains reachable. USER launch did not retain an exit
+  status, so no exit-0 claim. This live shutdown finding is open even though no owner leaked.
+- Retained timing nodes from this launch (seconds):
+
+| Turn | ASR final → first audio write | LLM send → first safe text |
+| :--- | ---: | ---: |
+| 1 | 13.999 | 13.379 |
+| 2 | 2.758 | 1.993 |
+| 3 | 0.749 | unavailable |
+| 4 | 2.634 | 1.988 |
+| 5 | 2.356 | 1.791 |
+| 6 | 2.500 | 1.851 |
+| 7 | 3.355 | 2.352 |
+| 8 | 3.451 | 2.307 |
+| 9 | 2.288 | 1.790 |
+
+- All timing rows are truncated by the existing text logger. Missing Turn-3 LLM nodes remain
+  unavailable; no LLM-generation timing credit is inferred. Last Turn was aborted/closed, so
+  first-audio timing does not prove complete audio drain. Human speech-end/acoustic output and
+  interrupt-to-silence latency remain unmeasured. No input replay or optimization occurred.
+- USER clarified the exact final sequence: short-press to standby, then long-press to stop App.
+  This is supported operation, not operator misuse. Short-press speak convergence hit the
+  Level-1 timeout; the later long-press shutdown hit TTS stop-state rejection.
+- Source inspection: `MatchaTTSAdapter.stop` forces a BUSY child to DESTROYED, but another stop
+  then delegates DESTROYED to `FramedProcess.stop`, which permits only READY/STOPPED. `Speak.stop`
+  also stops its TTS adapter, and Resource Manager separately stops that backend. Thus repeated
+  shutdown after a forced termination has an unsafe stop-state boundary. Exact live child state
+  and abort escalation were not captured, so this is a localized failure mechanism to reproduce,
+  not a claim that the full live causal sequence is already proven.
+- Next bounded diagnosis: reproduce the confirmed short-press/standby/long-press sequence and
+  the TTS abort/stop state boundary. This is a real interrupt/shutdown failure risk, not an administrative gate.
+  No fix or new test matrix was implemented during this read-only observation/recording step.
+
+### Fixed offline installation work package — 2026-10-09
+
+- USER rejected the temporary-checkout command as formal delivery and instructed completing
+  startup before wrapping it as a service. Proceed without another proposal-only pause.
+- Value/risk: formal startup must not depend on development/checkpoint config, model, locks,
+  controller/LLM venv or Display library. Existing accepted audio products under
+  `/var/lib/snowboard/products/` remain stable shared dependencies, not duplicated research.
+- Estimate: 3 points. Affected paths: `scripts/install_app.py`, `tests/test_app_install.py`,
+  existing launcher/tests as necessary and this status. Install a fresh fixed product directory;
+  reject existing destinations rather than overwrite. Copy tested source, runtime, model, locks,
+  release profile and Display library; rewrite only deployment paths plus private log location.
+  No service, startup digest, source optimization or voice-question change.
+- Installed fixed directory: `/home/<operator>/snowboard-app`, initially confirmed not present. Entry is
+  `<prefix>/run.sh`, defaults select that installation's Python/config without command arguments.
+  Use installed stable ASR/TTS audio product dependencies. Preserve previous source and evidence.
+- Workstation final installer/launcher tests: **14 Pass**, exit 0. Pi final installation/launcher
+  and ALPHA driver/oracle/runner tests: **74 Pass**, exit 0, 1.09 s;
+  `/home/<operator>/alpha-launcher-20261009-x1EXAr/install-final-regression-02.log`.
+- Installation diagnosis preserved: initial model copy used a generic basename, corrected before
+  first native startup to preserve the locked model filename. First native installed launch then
+  exited **4**, missing the audio runtime-lock companion because lock files had been relocated
+  outside `requirements`. Final installer preserves `requirements/m4a` companions and the
+  `requirements/m4b` layout needed by LLM factory root inference. Tests now assert those paths.
+  Initial failed terminal log is `<verification-root>/installed-startup-01.log`; the CRITICAL row
+  remains in the installed product log. Do not relabel it as a successful launch.
+- Operator corrected only the newly created installation's model name and lock/config paths to
+  match the final installer output, retaining old evidence and source. Final config parses and
+  product composition initializes successfully. No product source/API/prompt or admission changed.
+- Final installed entry was run twice from `/tmp` with **no arguments**. Both reached clean IDLE;
+  terminal Ctrl+C returned **exit 0**, with no installed App/LLM/ASR process and no capture,
+  playback, SPI or GPIO holders after each shutdown. Private terminal records:
+  `<verification-root>/installed-startup-02.log`, `installed-startup-03.log`, where
+  `<verification-root>` is `/home/<operator>/alpha-launcher-20261009-x1EXAr`.
+  First corrected model startup took roughly a minute; next startup succeeded much faster.
+  This is a deployment observation, not controlled before/after performance or a proven cause.
+- Installed controller/LLM Python, model, release profile, artifact locks and Display library now
+  live under the product prefix; ASR/TTS use the existing `/var/lib/snowboard/products` deployment.
+  Old editable-package hooks were omitted from the copied runtime. No application runtime path
+  depends on ALPHA test directories. Model/runtime preparation is offline and leaves sources intact.
+- Independent transfer-boundary dry-run comparisons found no differences for four installer/
+  launcher/test files on Pi and for installed `src`, `requirements`, launcher (cache excluded).
+  Workstation/Pi compile, shell syntax, whitespace and changed-file privacy checks Pass.
+  App was stopped after verification; Pi remains online. No service, commit/push or final
+  whole-ALPHA acceptance is claimed. Installation-specific voice use remains available to USER.
+
+#### Fixed installed operation — current entry
+
+On the Pi, from any directory:
+
+```bash
+~/snowboard-app/run.sh
+```
+
+- Wait for the Display to show standby, then short-press to start speaking. Short-press during a
+  Session ends it; long-press or terminal Ctrl+C stops App, not Pi. Keep the terminal open.
+- Logs: `~/snowboard-app/logs/application.log` (private, current text-log truncation still applies).
+  Use `tail -f ~/snowboard-app/logs/application.log` in a second terminal for state/error monitoring.
+  `~/snowboard-app/run.sh --help` explains the launcher. No venv activation, Python/config arguments
+  or knowledge of candidate/test paths is needed for normal operation.
+- Installer for a future fresh prefix is `scripts/install_app.py --prefix <new-product-directory>
+  --python <tested-controller-venv>/bin/python --config <tested-product-config>`. It rejects existing
+  destinations; it is not an updater. Any later service must call this same installed `run.sh`,
+  not introduce a second product startup path or modify this WIP's history.
+
+### Terminal launcher work package — 2026-10-09
+
+- USER approved completing a terminal launcher before ALPHA delivery. Value/risk: USER must be
+  able to run/stop the real App independently, with the intended config and repository code;
+  missing config must not silently start a mock default. No systemd/service or auto-start change.
+- Estimate: 2 points. Affected paths: `scripts/run-app.sh`, `tests/test_app_launcher.py`, this
+  existing operator/status document. Scope: ALPHA external launcher startup/shutdown and live
+  microphone entry; existing product composition, prompt, timings and input behavior stay unchanged.
+- Implemented: foreground shell `exec` of the existing production `run_app`, explicit `--config` and
+  `--python` with repository-local defaults, help/argument checks, Ctrl+C graceful shutdown.
+  No background daemon, PCM injection, automatic digest check or new acceptance gate.
+- Workstation: **9 launcher tests Pass**, exit 0. Pi: **69 launcher/ALPHA driver/oracle/runner
+  tests Pass**, exit 0, 1.37 s. Tests execute the shell/subprocess path, check default and relative
+  paths (including spaces), repository import precedence, missing config/Python errors, actual
+  exit-code propagation and SIGINT delivery across shell `exec`. Native proof is separate below.
+- New isolated Pi checkout: `/home/<operator>/alpha-launcher-20261009-x1EXAr/repo`, WIP `9c13509`
+  from standard Git bundle plus the two new files. Portable log: `<root>/launcher-regression.log`.
+  Same existing production Python and unchanged v3 config/profile were used; older candidates
+  and live-test evidence were preserved.
+- Twice ran the executable script on a real Pi terminal with production hardware to clean IDLE,
+  then sent terminal Ctrl+C. Both App exits were **0** (retained by `script -e`), with no matching
+  App/LLM/ASR process and no capture/playback/SPI/GPIO hardware holder after each shutdown.
+  Logs are private `<root>/startup-01.log` and `startup-02.log`; no voice input was injected.
+  This verifies launcher startup/stop/restart, not a repeat of the full ALPHA Lifecycle run.
+- Workstation/Pi shell syntax, compile and whitespace checks Pass. One independent transfer-boundary
+  `rsync -nrcRi` comparison found no byte differences for the launcher/test files. Privacy checks
+  cover only the public changed files; raw terminal logs remain on Pi. App was stopped after both
+  checks; Pi remains online. No commit/push or formal final ALPHA Verify is claimed.
+
+#### Development-only predecessor — superseded by fixed installed operation above
+
+- With `.venv/bin/python` and `config.local.yaml` installed in the repository, run
+  `./scripts/run-app.sh`. Otherwise supply `--python` and `--config` explicitly. Defaults are
+  relative to the script's repository, while supplied relative paths are relative to your terminal.
+- Retained development checkout/config: replace the operator placeholder with your Pi account in this example.
+
+```bash
+cd /home/<operator>/alpha-launcher-20261009-x1EXAr/repo
+./scripts/run-app.sh \
+  --python /home/<operator>/snowboard-agent-dev/core/.venv/bin/python \
+  --config /home/<operator>/alpha-performance-v3-20261003-qFdPG1/product.local.yaml
+```
+
+- Wait for `M2 runtime ready state=IDLE`, short-press to begin a live microphone conversation;
+  short-press again to stop that conversation. Long-press or Ctrl+C exits App normally, not Pi.
+  The script stays in the foreground; closing the terminal may stop App. It is not a service,
+  background launcher or login-independent daemon. `./scripts/run-app.sh --help` requires no
+  config/native runtime and explains these controls.
+- For SSH operation, open an interactive terminal with `ssh -t <operator>@<pi-host>` first and
+  keep it open while using the App. Do not use the discarded ephemeral agent SSH launch method.
+
+### Live microphone session resumed — 2026-10-09
+
+- USER resumed from WIP `9c13509`, confirmed Pi availability and requested live microphone testing.
+  USER considers the previous Quality findings tolerable and explicitly instructed not to reuse
+  those questions. Do not replay the old six-case script or pursue those defects as today's task.
+  Existing strict test cards remain unchanged; live conversation is separate development evidence.
+- Pi capture/playback Voice HAT devices are present and no product App was running. One independent
+  transfer-boundary comparison found no differences in the eight modified code/test/profile files
+  between the WIP and the existing v4 checkout. Production config selects ALSA, whispercpp,
+  litert_lm, sherpa_matcha, enabled physical Button and ssd1351 Display.
+- Planned launch: from `<v4-root>/repo`, set `PYTHONPATH=src` and use the existing product Python
+  to call `asyncio.run(sbd.main.run_app(<v3-root>/product.local.yaml))` directly. No fixed PCM,
+  injected Button, fault injection, ASR rewrite or backend substitution. User speaks freely and
+  reports the observed microphone, speaker, Display and multi-turn behavior. Production startup
+  reached `M2 runtime ready state=IDLE` at 16:22:38 +08:00 on 2026-10-09; live USER observations
+  and final App shutdown remain pending. The first interactive SSH process did not persist:
+  later inspection found no product App, and USER reported no button response with the last
+  standby frame retained on Display. That startup is not a completed live test.
+- Relaunched the same production entrypoint with `nohup`, stdin detached, and private mode-0600
+  stdout/stderr log at `/home/<operator>/alpha-live-20261009-VkWLZT/application.log`.
+  This changes operator launch supervision only, not product source/config. Recorded App PID
+  is 1313; confirm its current identity before any later signal. Relaunch reached clean IDLE
+  at 16:25:47 +08:00. Live monitoring then observed WAKE → PERCEPTION → THINK → ACTION →
+  PERCEPTION, followed by the next THINK. Button-triggered real input and a return to listening
+  are observed; audible output/answer quality still require USER confirmation. This is not a
+  semantic PASS inferred from state transitions. The App remains running for USER testing.
+- USER reported completion of the live test and a physical button press returning the Display
+  to standby. Log confirms one Button-started Session with four THINK → ACTION → PERCEPTION
+  cycles, then PERCEPTION → IDLE at 16:27:25 +08:00. App PID 1313 remained running afterward.
+  No ERROR/WARNING appeared in the inspected recent log window. The operator/button/standby
+  observations are recorded. USER subsequently confirmed "功能皆正常" after discussion of
+  live input/output, pauses, interruption and spoken end/restart. Record the live functional
+  experience as USER-confirmed normal; no per-scenario timings, exhaustive factual correctness
+  or measured environmental-noise robustness is inferred from that overall confirmation.
+  App is intentionally left in IDLE; USER has not requested App stop or Pi shutdown this session.
+- USER later reported closing the App. Follow-up SSH inspection confirmed PID 1313 was absent
+  and no matching `run_app`, `sbd.main`, LiteRT LLM worker or whisper server process remained.
+  Pi itself remained reachable. Last logged transitions at 16:32:45–16:32:49 +08:00 were
+  IDLE → WAKE → PERCEPTION → IDLE. Detached launch did not retain an exit-status file, so
+  process absence is confirmed but exit code 0 is not independently claimed.
+- Live functional testing is complete to USER's satisfaction. Remaining work is synchronization
+  of tested prompt/fixture and USER-directed Quality scope into existing authority/Test Spec,
+  followed by applicable final common-candidate Pi Verify/content reconciliation. Do not replay
+  retired quality questions or add further live cases without a concrete risk or USER request.
+  Original quality FAIL cards remain intact; this confirmation does not by itself complete the
+  outstanding formal Verify. Before the subsequent launcher work, only Developer status changed.
+- USER asked whether response times were recorded. The retained live log has four timing and four
+  runtime rows and zero ERROR/WARNING rows. Existing log sanitization in `src/sbd/core/logger.py`
+  truncates messages to 512 characters; every timing row is truncated. Only ASR final, first audio
+  write, Conversation ready, first safe text and LLM send nodes survive completely. No raw spoken
+  transcript is captured by this launch. The following intervals were reconstructed directly from
+  surviving controller-monotonic timestamps without replaying input:
+
+| Live Turn | ASR final → first audio write (s) | LLM send → first safe text (s) | Safe text → first audio write (s) |
+| :--- | ---: | ---: | ---: |
+| 1 | 13.668 | 12.971 | 0.519 |
+| 2 | 2.756 | 2.067 | 0.514 |
+| 3 | 3.036 | 2.279 | 0.581 |
+| 4 | 3.226 | 2.277 | 0.773 |
+
+- ASR final → LLM send was 0.178 / 0.176 / 0.177 / 0.176 s. First-Turn generation latency is
+  visibly larger; its cause is not established. Do not claim warm-up or an optimization benefit.
+  These intervals begin after ASR completion and end at an audio write, not at human speech end
+  or acoustic sound perception. PERCEPTION duration also includes listening/pauses and cannot
+  substitute for ASR processing latency. Physical button time, exact speech end, LLM terminal,
+  full TTS/Audio drain and interrupt-to-silence latency cannot be reconstructed precisely here.
+  If complete live timing is needed next, retain structured boolean/count/timing-only observations
+  outside the truncated text logger; do not disable privacy sanitization or claim this run contains
+  missing nodes. No code change or additional live run was made for this timing inspection.
+- Existing CLI `python -m sbd.main` reads `config.local.yaml` from its working directory; it has
+  no config argument or dedicated ALPHA one-command wrapper. Today's direct API launch uses the
+  existing explicit config without changing source or overwriting the candidate.
+- Prompt correction is already implemented in WIP: `明確要求對話結束時`, metadata 59/9/68.
+  Remaining prompt feedback is synchronization of the existing authority/Test Spec with tested
+  bytes, not a new prompt experiment or prerequisite document approval. No additional wording
+  change is planned before this live test.
+
 ### USER-requested pause and next-session entry — 2026-10-03
 
 - USER subsequently requested a WIP commit of these ten changed files, approved the displayed
