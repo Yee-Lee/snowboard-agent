@@ -160,10 +160,21 @@ def test_native_generation_uses_json_schema_and_never_regex():
     assert (decode, conversation, prefill) == (23, 106, 83)
 
 
-def test_native_stream_waits_for_callbacks_after_c_call_returns(monkeypatch):
+def test_native_stream_waits_for_callbacks_after_c_call_returns(monkeypatch, tmp_path):
     from sbd.cognition.litert_lm.worker import LiteRTRuntime
     import sys
     from types import ModuleType
+    from sbd.cognition import observability
+    from sbd.cognition.litert_lm import worker
+    directory = tmp_path / "private-timing"
+    directory.mkdir(mode=0o700)
+    recorder = observability.PrivateTimingRecorder(directory)
+    monkeypatch.setattr(observability, "_PRIVATE_TIMING_RECORDER", recorder)
+    monkeypatch.setattr(worker, "_ACTIVE_TIMING_FRAME", {
+        "request_id": 3, "session_id": "private-session", "generation": 1})
+    io_counts = iter(({"major_fault_count": 5, "input_block_count": 10, "cpu_time_ns": 1_000_000},
+                     {"major_fault_count": 8, "input_block_count": 42, "cpu_time_ns": 9_000_000}))
+    monkeypatch.setattr(worker, "_native_request_counters", lambda: next(io_counts))
 
     package = ModuleType("litert_lm")
     package.__path__ = []
@@ -234,7 +245,11 @@ def test_native_stream_waits_for_callbacks_after_c_call_returns(monkeypatch):
         @staticmethod
         def get_benchmark_info():
             return SimpleNamespace(last_decode_token_count=9,
-                                   last_prefill_token_count=83)
+                                   last_prefill_token_count=83,
+                                   last_prefill_tokens_per_second=83.0,
+                                   last_decode_tokens_per_second=9.0,
+                                   init_time_in_second=0.25,
+                                   time_to_first_token_in_second=0.015)
 
     class ResponseFormat:
         @staticmethod
@@ -258,3 +273,110 @@ def test_native_stream_waits_for_callbacks_after_c_call_returns(monkeypatch):
     assert semantic.text == "延後回覆。" and semantic.end is False
     assert emitted == ["延後回覆。"]
     assert (decode, conversation, prefill) == (9, 105, 83)
+    rows = [json.loads(line) for line in recorder.path.read_text().splitlines()]
+    stages = {row["stage"]: row for row in rows}
+    assert sum(row["stage"] == "first_generated_output" for row in rows) == 1
+    assert all(row["request_id"] == 3 for row in rows)
+    assert stages["response_format_begin"]["monotonic_ns"] <= stages["response_format_end"]["monotonic_ns"]
+    assert stages["optional_args_begin"]["monotonic_ns"] <= stages["optional_args_end"]["monotonic_ns"]
+    assert stages["native_submit_begin"]["monotonic_ns"] <= stages["native_submit_end"]["monotonic_ns"]
+    assert stages["native_submit_end"]["monotonic_ns"] < stages["first_generated_output"]["monotonic_ns"]
+    assert stages["native_benchmark"]["reported_init_ns"] == 250_000_000
+    assert stages["native_benchmark"]["reported_ttft_ns"] == 15_000_000
+    assert stages["native_benchmark"]["derived_prefill_ns"] == 1_000_000_000
+    assert stages["native_benchmark"]["derived_decode_ns"] == 1_000_000_000
+    assert stages["native_submit_begin"]["major_fault_count"] == 5
+    assert stages["first_generated_output"]["major_fault_count"] == 8
+    assert stages["first_generated_output"]["input_block_count"] == 42
+    assert stages["first_generated_output"]["cpu_time_ns"] - stages["native_submit_begin"]["cpu_time_ns"] == 8_000_000
+    assert "延後回覆" not in recorder.path.read_text()
+
+
+def test_cache_prefetch_reads_once_without_changing_file_and_closes(tmp_path):
+    from sbd.cognition.litert_lm.worker import WeightCachePrefetch
+    cache = tmp_path / "weights.xnnpack_cache"
+    data = b"cache" * 300_000
+    cache.write_bytes(data)
+    reader = WeightCachePrefetch(cache, {"request_id": 1, "session_id": "s", "generation": 1})
+    reader.start()
+    assert reader.done.wait(2)
+    original_thread = reader.thread
+    reader.start()
+    reader.stop()
+    assert reader.thread is original_thread and not reader.thread.is_alive()
+    assert reader.status == "COMPLETED" and reader.bytes_read == len(data)
+    assert cache.read_bytes() == data
+    assert reader.done.is_set()
+
+
+def test_cache_prefetch_missing_file_falls_back_without_generation_failure(tmp_path):
+    from sbd.cognition.litert_lm.worker import WeightCachePrefetch
+    reader = WeightCachePrefetch(tmp_path / "absent", {"request_id": 1, "session_id": "s", "generation": 1})
+    reader.start()
+    assert reader.done.wait(2)
+    reader.stop()
+    assert reader.status == "FAILED" and reader.bytes_read == 0
+    assert not reader.thread.is_alive()
+
+
+def test_cache_prefetch_shutdown_cancels_reader_and_closes_fd(tmp_path, monkeypatch):
+    from sbd.cognition.litert_lm.worker import WeightCachePrefetch
+    entered, release = threading.Event(), threading.Event()
+    cache = tmp_path / "cache"
+    cache.write_bytes(b"x" * 4096)
+    source = cache.open("rb", buffering=0)
+    class ControlledRead:
+        def __enter__(self): return self
+        def __exit__(self, *args): source.close()
+        def fileno(self): return source.fileno()
+        def read(self, size):
+            entered.set()
+            assert release.wait(2)
+            return source.read(size)
+    monkeypatch.setattr(type(cache), "open", lambda self, *args, **kw: ControlledRead())
+    reader = WeightCachePrefetch(cache, {"request_id": 1, "session_id": "s", "generation": 1})
+    reader.start()
+    assert entered.wait(2)
+    reader.cancelled.set()
+    release.set()
+    reader.stop()
+    assert reader.status == "CANCELLED" and reader.done.is_set()
+    assert not reader.thread.is_alive() and source.closed
+
+
+def test_runtime_prefetch_is_engine_owned_once_and_never_waits_for_reader(tmp_path, monkeypatch):
+    from sbd.cognition.litert_lm import worker
+    model = tmp_path / "model.litertlm"
+    cache = tmp_path / "model.litertlm_123_456.xnnpack_cache"
+    monkeypatch.setattr(Path, "read_text", lambda *args, **kwargs:
+        f"1000-2000 r--p 0000 00:00 1 {cache}\n")
+    readers = []
+    class Reader:
+        def __init__(self, path, frame):
+            self.path = path
+            self.started = self.stopped = False
+            readers.append(self)
+        def start(self): self.started = True
+        def stop(self): self.stopped = True
+    monkeypatch.setattr(worker, "WeightCachePrefetch", Reader)
+    class Conversation:
+        def close(self): pass
+    class Engine:
+        def create_conversation(self, **kwargs): return Conversation()
+        def close(self): pass
+    runtime = worker.LiteRTRuntime.__new__(worker.LiteRTRuntime)
+    runtime._model_path = model
+    runtime._conversation = None
+    runtime._cache_prefetch = None
+    runtime._cache_prefetch_attempted = False
+    runtime._engine = Engine()
+    runtime._constraint = runtime._sampler_config = object()
+    runtime.open_conversation()
+    assert runtime._conversation is not None and len(readers) == 1 and readers[0].started
+    runtime.close_conversation()
+    assert not readers[0].stopped  # Conversation close retains the engine-owned read.
+    runtime.open_conversation()
+    assert len(readers) == 1
+    runtime.close_conversation()
+    runtime.close()
+    assert readers[0].stopped

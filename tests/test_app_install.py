@@ -15,6 +15,8 @@ def inputs(tmp_path, monkeypatch):
         (source / name).mkdir(parents=True)
     (source / "src/example.py").write_text("value = 1")
     (source / "scripts/run-app.sh").write_text("#!/bin/sh\nexit 0\n")
+    for name in ("alpha_product.py", "alpha_oracle.py"):
+        (source / "scripts" / name).write_text("# packaged experiment instrumentation\n")
     for name in ("controller", "llm-runtime"):
         runtime = tmp_path / name
         (runtime / "bin").mkdir(parents=True)

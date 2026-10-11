@@ -13,12 +13,155 @@ import pytest
 from scripts.alpha_oracle import (
     BARRIER_BOOLS, BARRIER_COUNTS, CLEANUP, QUALITY, TURN_BOOLS,
     InvalidObservation, check_public, evaluate, timing_view,
+    experiment_block,
 )
 from scripts.alpha_product import session_plan
 
 SPEC = importlib.util.spec_from_file_location("alpha_runner", Path(__file__).parents[1] / "scripts/run-alpha-pv.py")
 RUNNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RUNNER)
+
+
+def experiment_observation(mode="pn"):
+    value = observation("performance")
+    value.update(launcher_exit_code=0, engine_reused=True, child_reused=True,
+                 startup={"process_start": 1, "config_complete": 2, "idle": 8,
+                          "resources_ready": {"core.audio.input": 3}}, timing_events=[],
+                 startup_timing_events=[{"stage": stage, "monotonic_ns": instant} for stage, instant in
+                    (("native_runtime_begin", 3), ("engine_init_begin", 4),
+                     ("engine_init_end", 5), ("native_runtime_ready", 6))],
+                 host_context={"boot_id": "private-boot", "uptime_start_ns": 1, "uptime_end_ns": 999_000_000})
+    measured = 0
+    sessions = ("private-a", "private-b")
+    for turn_index, row in enumerate(value["turns"]):
+        row.update(session_id=sessions[turn_index // 3], fragments=[])
+        if row["case_id"] == "CLOSE":
+            continue
+        row["case_id"] = mode.upper() + ("02", "04", "03", "05")[measured]
+        base = 100_000_000 + measured * 200_000_000
+        nodes = row["nodes"] = {
+            "first_frame": base, "last_frame": base + 40_000_000,
+            "speech_end": base + 20_000_000, "asr_final": base + 60_000_000,
+            "llm_send": base + 72_000_000, "first_safe_text": base + 73_500_000,
+            "llm_terminal": base + 80_000_000, "tts_first_pcm": base + 90_000_000,
+            "audio_first_write": base + 95_000_000, "audio_complete": base + 120_000_000}
+        if measured in (1, 3):
+            nodes.update(previous_action_complete=base - 80_000_000, next_perception_start=base - 1_000_000)
+        row["pacing"] = {"frames": [{"delivered_ns": base + index * 20_000_000,
+            "lateness_ns": 0} for index in range(3)]}
+        identity = {"session_id": row["session_id"], "generation": turn_index // 3 + 1,
+                    "request_id": 3 + measured * 2}
+        events = value["timing_events"]
+        for stage, offset in (("render_begin", 65), ("render_end", 66)):
+            events.append({**identity, "request_id": identity["request_id"] - 1,
+                           "stage": stage, "monotonic_ns": base + offset * 1_000_000})
+        if measured in (0, 2):
+            for stage, offset in (("conversation_create", -2), ("conversation_ready", -1)):
+                events.append({**identity, "stage": stage, "monotonic_ns": base + offset * 1_000_000})
+        for stage, offset in (("parent_request_send", 70), ("child_request_receive", 71),
+            ("native_generation_start", 72), ("first_generated_output", 73),
+            ("child_safe_text_emit", 74), ("parent_safe_text_receive", 75),
+            ("child_terminal_emit", 80), ("parent_terminal_receive", 81)):
+            event = {**identity, "stage": stage, "monotonic_ns": base + offset * 1_000_000}
+            if "safe_text" in stage:
+                event["sequence"] = 0
+            elif stage == "native_generation_start":
+                event.update(user_tokens=5, current_kv_tokens=0, rendered_incremental_tokens=20)
+            elif stage == "first_generated_output":
+                event.update(cpu_time_ns=11_000_000, major_fault_count=3, input_block_count=5)
+            elif stage == "child_terminal_emit":
+                event["decode_tokens"] = 9
+            events.append(event)
+        for stage, offset in (("response_format_begin", 72_010_000), ("response_format_end", 72_020_000),
+            ("optional_args_begin", 72_030_000), ("optional_args_end", 72_040_000),
+            ("native_submit_begin", 72_100_000), ("native_submit_end", 72_200_000)):
+            event = {**identity, "stage": stage, "monotonic_ns": base + offset}
+            if stage == "native_submit_begin":
+                event.update(cpu_time_ns=1_000_000, major_fault_count=1, input_block_count=2)
+            events.append(event)
+        for sequence in range(2 if measured == 3 else 1):
+            row["fragments"].append({"sequence": sequence, "admission": base + 76_000_000,
+                "queue_wait_ns": 1_000_000, "queue_entry_depth": sequence + 1, "batch_index": 0,
+                "tts_start": base + 80_000_000, "tts_first_pcm": nodes["tts_first_pcm"],
+                "audio_first_write": nodes["audio_first_write"],
+                "audio_start": base + 81_000_000, "audio_complete": nodes["audio_complete"]})
+        measured += 1
+    return value
+
+
+def test_experiment_projects_correlated_boundaries_without_private_identity():
+    report = experiment_block("pn", experiment_observation())
+    assert report["disposition"] == "VALID_OBSERVATION"
+    assert [row["case_id"] for row in report["performance"]] == ["PN01", "PN02", "PN04", "PN03", "PN05"]
+    first = report["performance"][1]
+    assert first["durations_ns"]["parent_request_send_to_child_request_receive"] == 1_000_000
+    assert first["durations_ns"]["native_generation_start_to_first_safe_text"] == 1_500_000
+    assert first["token_counts"]["output_tokens"] == 9
+    check_public(report)
+    assert "private-a" not in json.dumps(report)
+
+
+@pytest.mark.parametrize("failure", ["missing", "stale_request", "late_pacing", "missing_engine", "missing_counter"])
+def test_experiment_never_accepts_missing_correlation_or_distorted_input(failure):
+    value = experiment_observation()
+    receive = next(event for event in value["timing_events"] if event["stage"] == "child_request_receive")
+    if failure == "missing":
+        value["timing_events"].remove(receive)
+    elif failure == "stale_request":
+        receive["request_id"] += 100
+    elif failure == "late_pacing":
+        value["turns"][0]["pacing"]["frames"][1]["lateness_ns"] = 20_000_001
+    elif failure == "missing_engine":
+        value["startup_timing_events"] = []
+    else:
+        next(event for event in value["timing_events"] if event["stage"] == "first_generated_output").pop("cpu_time_ns")
+    report = experiment_block("pn", value)
+    assert report["disposition"] == "INVALID"
+    assert report["reason_code"] == ("PACING_DISTORTED" if failure == "late_pacing" else "DIAGNOSTIC_INCOMPLETE")
+    assert report["turns"]  # Failed observations are retained.
+
+
+def test_human_audio_writes_cannot_replace_hearing_confirmation():
+    value = experiment_observation("ph")
+    pending = experiment_block("ph", value)
+    assert pending["disposition"] == "PENDING"
+    hearing = [{"turn_index": index, "case_id": case, "report_status": "CONFIRMED",
+                "unclear_speech": False, "stutter": False, "perceived_waiting": True,
+                "playback_agreement": True} for index, case in enumerate(("PH02", "PH04", "PH03", "PH05"))]
+    assert experiment_block("ph", value, hearing=hearing)["disposition"] == "VALID_OBSERVATION"
+    hearing[0]["unclear_speech"] = True
+    assert experiment_block("ph", value, hearing=hearing)["disposition"] == "FAIL"
+
+
+@pytest.mark.parametrize("missing_boundary", [False, True])
+def test_experiment_runner_executes_two_fresh_blocks_or_stops_without_retry(tmp_path, monkeypatch, missing_boundary):
+    entry = tmp_path / "run.sh"
+    entry.write_text("#!/bin/sh\nexit 0\n")
+    called = []
+    def child(args, private, run, suffix):
+        called.append(suffix)
+        value = experiment_observation()
+        if missing_boundary:
+            value["timing_events"] = []
+        return value
+    monkeypatch.setattr(RUNNER.platform, "machine", lambda: "aarch64")
+    monkeypatch.setattr(RUNNER, "no_previous_app", lambda: True)
+    monkeypatch.setattr(RUNNER, "resolve_fixtures", lambda path, needed: {})
+    monkeypatch.setattr(RUNNER, "run_child", child)
+    args = NS(run="pn", run_id="PN-PORTABLE-001", installed_entry=entry,
+              config=tmp_path / "config", fixtures=tmp_path / "fixtures", output=tmp_path / "evidence",
+              watchdog=900, cleanup_timeout=20, cause_control_reason=None, phase="before")
+    status = RUNNER.execute_experiment(args)
+    report = json.loads((args.output / "result.json").read_text())
+    if missing_boundary:
+        assert status == 2 and called == ["-block-1"]
+        assert report["blocks"][1]["disposition"] == "NOT_EXECUTED"
+        assert report["disposition"] == "INVALID"
+    else:
+        assert status == 0 and called == ["-block-1", "-block-2"]
+        assert len(report["ranges"]) == 5
+        assert report["capture_error_bound_ns"] is None
+        assert report["improvement_claim_allowed"] is False
 
 
 def test_public_privacy_short_answer_is_not_a_case_id_substring():

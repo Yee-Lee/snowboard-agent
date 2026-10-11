@@ -55,8 +55,16 @@ cd "$REPO_ROOT"
 export PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 exec "$APP_PYTHON" -u -c '
 import asyncio
+import os
 import sys
 from sbd.main import bootstrap_logging, run_app
 bootstrap_logging()
+if os.environ.get("ALPHA_EXPERIMENT"):
+    from scripts.alpha_product import launch_installed
+    raise SystemExit(asyncio.run(launch_installed(sys.argv[1], os.environ["ALPHA_EXPERIMENT"])))
+if os.environ.get("ALPHA_TIMING_DIRECTORY"):
+    from pathlib import Path
+    from sbd.cognition import observability
+    observability._PRIVATE_TIMING_RECORDER = observability.PrivateTimingRecorder(Path(os.environ["ALPHA_TIMING_DIRECTORY"]))
 raise SystemExit(asyncio.run(run_app(sys.argv[1])))
 ' "$APP_CONFIG"

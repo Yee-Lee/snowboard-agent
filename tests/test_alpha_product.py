@@ -15,6 +15,189 @@ from sbd.core.gpio.base import GPIOEvent
 from sbd.input_events.button import ButtonInputSource
 
 
+def test_realtime_pcm_records_schedule_padding_and_speech_boundary():
+    from scripts.alpha_product import paced_pcm, FRAME_NS
+    async def scenario():
+        now = 1_000_000_000
+        def clock():
+            return now
+        async def sleep(seconds):
+            nonlocal now
+            now += round(seconds * 1_000_000_000)
+        observation = {}
+        frames = [frame async for frame in paced_pcm(b"\1\0" * 321 + b"\0" * 640,
+                  observation, clock=clock, sleep=sleep)]
+        assert len(frames) == 3 and all(len(frame) == 640 for frame in frames)
+        assert frames[1] == b"\1\0" + b"\0" * 638
+        assert observation["complete"] is True
+        assert [row["delivered_ns"] for row in observation["frames"]] == [
+            1_000_000_000 + index * FRAME_NS for index in range(3)]
+        assert observation["speech_end_ns"] == 1_000_000_000 + 2 * FRAME_NS
+        assert observation["delivery_span_error_ns"] == 0
+    asyncio.run(scenario())
+
+
+def test_realtime_pcm_retains_stall_and_never_bursts_to_catch_up():
+    from scripts.alpha_product import paced_pcm, FRAME_NS
+    async def scenario():
+        now = 1_000_000_000
+        def clock(): return now
+        async def sleep(seconds):
+            nonlocal now
+            now += round(seconds * 1_000_000_000)
+        observation = {}
+        source = paced_pcm(b"\1\0" * 960, observation, clock=clock, sleep=sleep)
+        assert len(await anext(source)) == 640
+        now += 3 * FRAME_NS  # Actual consumer stalled for multiple frames.
+        with pytest.raises(InvalidObservation, match="PACING_DISTORTED"):
+            await anext(source)
+        assert len(observation["frames"]) == 2
+        assert observation["frames"][-1]["lateness_ns"] == 2 * FRAME_NS
+        assert observation["complete"] is False
+    asyncio.run(scenario())
+
+
+def test_human_probe_preserves_live_microphone_frames(capsys):
+    async def scenario():
+        probe = ProductProbe("ph", {}, 1)
+        probe.sm = NS(_session=NS(session_id="human", turn_id=1))
+        probe.pending.append(("PH02", "FX-SHORT-B", "KEEP_NEXT"))
+        calls = []
+        async def microphone():
+            calls.append("actual input")
+            yield b"\2\0" * 320
+            yield b"\3\0" * 320
+        probe.live_frames = microphone
+        frames = [frame async for frame in probe.frames()]
+        assert calls == ["actual input"]
+        assert frames == [b"\2\0" * 320, b"\3\0" * 320]
+        assert "speech_end" not in probe.rows[0]["nodes"]
+        assert probe.rows[0]["capture_closed"] is True
+    asyncio.run(scenario())
+    assert "ALPHA_GUIDE SAY FX-SHORT-B" in capsys.readouterr().out
+
+
+def test_human_probe_releases_live_microphone_after_early_asr_stop():
+    async def scenario():
+        probe = ProductProbe("ph", {}, 1)
+        probe.sm = NS(_session=NS(session_id="human", turn_id=1))
+        probe.pending.extend((("PH02", "FX-SHORT-B", "KEEP_NEXT"),
+                              ("PH04", "FX-FOLLOW-UP", "KEEP_NEXT")))
+        active = False
+
+        async def microphone():
+            nonlocal active
+            assert not active
+            active = True
+            try:
+                yield b"\2\0" * 320
+                yield b"\3\0" * 320
+            finally:
+                active = False
+
+        probe.live_frames = microphone
+        first = probe.frames()
+        assert await anext(first) == b"\2\0" * 320
+        await first.aclose()
+        assert not active
+        probe.sm._session.turn_id = 2
+        second = probe.frames()
+        assert await anext(second) == b"\2\0" * 320
+        await second.aclose()
+        assert not active
+
+    asyncio.run(scenario())
+
+
+def test_batch_audio_writes_are_observed_under_real_volume_wrapper():
+    from scripts.alpha_product import observe_audio_output
+    from sbd.core.audio.volume import VolumeControlledAudioOutput
+    async def scenario():
+        writes, observed = [], []
+        class Native:
+            def __init__(self): self._observe = observed.append
+            async def start(self): pass
+            async def stop(self): pass
+            async def play(self, pcm):
+                async for chunk in pcm:
+                    self._observe("audio_first_write")
+                    writes.append(chunk)
+        native = Native()
+        output = VolumeControlledAudioOutput(native, 100)
+        probe = ProductProbe("pn", {}, 1)
+        probe.sm = NS(_session=object())
+        first, second = {"sequence": 0, "tts_start": 1}, {"sequence": 1}
+        probe.current = {"fragments": [first, second]}
+        observe_audio_output(output, probe)
+        async def pcm(): yield b"\1\0" * 320
+        await output.play(pcm())
+        assert first["audio_start"] <= first["audio_first_write"] <= first["audio_complete"]
+        assert "audio_first_write" not in second
+        second["tts_start"] = first["audio_complete"]
+        await output.play(pcm())
+        assert second["audio_start"] <= second["audio_first_write"] <= second["audio_complete"]
+        assert first["audio_complete"] <= second["audio_first_write"]
+        assert observed == ["audio_first_write"] * 2
+        assert writes == [b"\1\0" * 320] * 2
+    asyncio.run(scenario())
+
+
+def test_private_timing_retains_complete_rows_and_rejects_content(tmp_path, monkeypatch):
+    from sbd.cognition import observability
+    directory = tmp_path / "private"
+    directory.mkdir(mode=0o700)
+    recorder = observability.PrivateTimingRecorder(directory)
+    monkeypatch.setattr(observability, "_PRIVATE_TIMING_RECORDER", recorder)
+    frame = {"request_id": 3, "session_id": "session-" + "a" * 700, "generation": 1}
+    observability.private_timing("native_generation_start", frame, 100,
+        user_tokens=3, current_kv_tokens=7, rendered_incremental_tokens=12, runtime_prefill_tokens=12)
+    observability.private_timing("child_safe_text_emit", frame, 200, sequence=0, output_codepoints=5)
+    observability.private_startup_timing("engine_init_begin", 50)
+    observability.private_startup_timing("engine_init_end", 90)
+    rows = [json.loads(line) for line in recorder.path.read_text().splitlines()]
+    assert [row["monotonic_ns"] for row in rows] == [100, 200]
+    assert all(row["session_id"] == frame["session_id"] for row in rows)
+    assert recorder.path.stat().st_mode & 0o777 == 0o600
+    startup_path = recorder.path.with_name(recorder.path.name.replace("timing-", "startup-timing-"))
+    assert [json.loads(line)["monotonic_ns"] for line in startup_path.read_text().splitlines()] == [50, 90]
+    with pytest.raises(observability.ObservationError):
+        observability.private_timing("child_safe_text_emit", frame, 300, text="private speech")
+    assert len(recorder.path.read_text().splitlines()) == 2
+
+
+def test_parent_timing_observes_actual_wire_send_and_receive(tmp_path, monkeypatch):
+    from sbd.cognition import observability
+    from sbd.cognition.litert_lm.adapter import SubprocessLLMChild
+    from sbd.cognition.llm_child_protocol import encode_frame
+    directory = tmp_path / "private"
+    directory.mkdir(mode=0o700)
+    recorder = observability.PrivateTimingRecorder(directory)
+    monkeypatch.setattr(observability, "_PRIVATE_TIMING_RECORDER", recorder)
+    async def scenario():
+        class Writer:
+            def write(self, raw): self.raw = raw
+            async def drain(self): pass
+        reader, writer = asyncio.StreamReader(), Writer()
+        child = SubprocessLLMChild(None, None, 1)
+        child._process = NS(stdin=writer, stdout=reader, returncode=None)
+        frame = {"protocol": 3, "op": "GENERATE", "request_id": 3,
+                 "session_id": "private-session", "generation": 1}
+        await child.send(frame)
+        assert json.loads(writer.raw)["request_id"] == 3
+        reader.feed_data(encode_frame({"protocol": 3, "event": "SAFE_TEXT",
+            "request_id": 3, "sequence": 0, "text": "private answer", "monotonic_ns": 10}))
+        assert (await child.receive())["text"] == "private answer"
+        reader.feed_data(encode_frame({"protocol": 3, "event": "RESULT", "request_id": 3}))
+        await child.receive()
+    asyncio.run(scenario())
+    rows = [json.loads(line) for line in recorder.path.read_text().splitlines()]
+    assert [row["stage"] for row in rows] == ["parent_request_send", "parent_safe_text_receive",
+                                             "parent_terminal_receive"]
+    assert all(row["request_id"] == 3 and row["session_id"] == "private-session" for row in rows)
+    assert rows[0]["monotonic_ns"] <= rows[1]["monotonic_ns"] <= rows[2]["monotonic_ns"]
+    assert "private answer" not in recorder.path.read_text()
+
+
 def test_recovery_retains_real_process_proof_after_child_cleanup(monkeypatch):
     from scripts.alpha_product import process_reaped
 
@@ -178,7 +361,7 @@ def test_quality_fixed_case_order_and_context_turns():
 
 
 def test_fixture_preparation_binds_once_and_outputs_real_asr_format(tmp_path, monkeypatch):
-    from scripts.alpha_product import FIXTURE_TEXT, prepare_fixtures
+    from scripts.alpha_product import FIXTURE_TEXT, prepare_fixtures, quality_revision
     calls = []
     class TTS:
         async def start(self): pass
@@ -196,15 +379,23 @@ def test_fixture_preparation_binds_once_and_outputs_real_asr_format(tmp_path, mo
     mapping = json.loads(mapping_path.read_text())
     assert set(mapping) == set(FIXTURE_TEXT)
     assert len(calls) == len(set(FIXTURE_TEXT.values()))
-    assert mapping["FX-SHORT-B"] == mapping["FX-Q02"]
-    assert mapping["FX-NORMAL-END"] == mapping["FX-Q06-T2"]
+    assert mapping["FX-SHORT-A"] == mapping["FX-SHORT-B"]
+    assert mapping["FX-SHORT-B"] != mapping["FX-Q02"]
+    assert mapping["FX-NORMAL-END"] != mapping["FX-Q06-T2"]
     resolved = resolve_fixtures(mapping_path, set(FIXTURE_TEXT))
     assert resolved["FX-SHORT-A"] == b"\0" * 16000 + b"\1\0" * 320 + b"\0" * 32000
     assert mapping_path.stat().st_mode & 0o777 == 0o600
+    assert quality_revision(mapping_path) == "Q-20261011"
+    metadata_path = destination / "fixture-metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["quality_bindings"]["FX-Q02"]["text"] = "一個星期有幾天？"
+    metadata_path.write_text(json.dumps(metadata))
+    with pytest.raises(InvalidObservation, match="QUALITY_FIXTURE_REVISION_INVALID"):
+        quality_revision(mapping_path)
 
 
 @pytest.mark.parametrize("run,completed_before_observation", [
-    ("lifecycle", False), ("lifecycle", True), ("quality", False),
+    ("lifecycle", False), ("lifecycle", True), ("quality", False), ("pn", False),
 ])
 def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run, completed_before_observation):
     """Actual controller/worker integration, with explicit portable backend doubles."""
@@ -228,6 +419,8 @@ def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run, complete
         plan = session_plan(run)
         probe = ProductProbe(run, {fixture: b"\1\0" * 320 for session in plan
                                   for _, fixture, _ in session}, 1)
+        if run == "pn":
+            probe.pcm_pacing = "realtime"
         bus = EventBus()
         observer = CognitionObserver()
 
@@ -310,7 +503,7 @@ def test_probe_drives_actual_listen_reasoner_streaming_and_cleanup(run, complete
             for session in probe.plan:
                 await asyncio.wait_for(probe.normal_session(session), 2)
             probe.finish_turns()
-            assert probe.buttons == (3 if run == "lifecycle" else 7)
+            assert probe.buttons == (3 if run == "lifecycle" else 2 if run == "pn" else 7)
             assert len(probe.sessions) == len(plan)
             assert len(probe.rows) == sum(len(session) for session in plan)
             assert len({row["session_id"] for row in probe.rows}) == len(plan)

@@ -2,6 +2,504 @@
 
 ## Active ALPHA implementation
 
+### Workstation departure checkpoint — 2026-10-11
+
+- USER's six-item latency review is recorded below. Items 1 (3.8 s boundary), 4 (M4A comparison),
+  and 5 (cache implementation plus focused Pi verification) are closed within those stated scopes.
+  Item 6 (voice cue after `準備中`) is deferred to the next product discussion. Only items 2+3 remain
+  active: distinguish live human speech end→VAD endpoint from endpoint→ASR result with one focused
+  real-microphone diagnostic. Its design is recorded below; no diagnostic source or live run exists yet.
+- Last product/instrumentation Pi state: r10 cache candidate passed affected tests, one cold focused
+  request and two formal PN blocks. r11 only repaired the PH observation wrapper and passed affected
+  Pi tests; its PH run ended early on ASR text/route mismatch. PH hearing, final M free use and final
+  same-content L/R/Q Verify are outstanding. Neither complete P/ALPHA acceptance nor a general
+  speedup claim is recorded. No product commit or push has occurred for this work package.
+- Resume from the unchanged r11 Pi checkout `/home/<operator>/alpha-prefetch-r11-20261011/repo` and its
+  retained observations in `/home/<operator>/alpha-prefetch-r11-20261011/ph-after-11/`. The old PH-12 helper
+  remains only a retained fixture; do not run a full PH repeat for the focused 2+3 diagnostic.
+  Implement and Pi-check the narrow live timing probe first, then collect the one human utterance.
+- USER confirmed the Pi is powered off at this checkpoint. No further Pi execution or final
+  same-content verification is possible in this session; pending source/test/runner changes remain
+  uncommitted until the required Pi verification is complete.
+
+### ALPHA P／M development opened — 2026-10-11
+
+- Entry: current.md opens the bounded P (PN／PH) and M package after completed Design／Test Spec.
+  Baseline is delivered `19d9ca2`; the 2026-10-09 owner routing below is retained delivery context,
+  superseded by this active package. No whole-ALPHA acceptance or commit is implied.
+- Value/risk: lossless request-correlated timings prevent attributing first-response waiting to the
+  wrong phase; real-time PCM prevents uncontrolled input delivery from confounding PN／PH comparison;
+  revised Q fixtures prevent replaying retired questions. No optimization is selected before baseline.
+- Estimate: 8 points for shared collection／parent-child boundaries, PN pacing／two-block runner,
+  PH guide and fixture synchronization. Any one improvement is estimated only after supported diagnosis.
+- Planned affected paths: `scripts/alpha_product.py`, `scripts/alpha_oracle.py`,
+  `scripts/run-alpha-pv.py`, `src/sbd/cognition/observability.py`,
+  `src/sbd/cognition/litert_lm/{adapter,worker}.py`, their directly affected existing tests,
+  `scripts/run-app.sh`／`scripts/install_app.py` and their tests for entering the shared observer
+  through the formal installed launcher, and this status. Actual collector gaps may require narrowly
+  affected speech instrumentation.
+- Test IDs: PN01–PN05／PH01–PH05; PN06／PH06 only for a recorded discrimination gap;
+  ALPHA-Q01–Q06 fixture synchronization; M final-version real use remains separately identified.
+- Workstation verification: `PYTHONPATH=src .venv/bin/python -m pytest -q
+  tests/test_alpha_product.py tests/test_alpha_pv_runner.py -o addopts=''`, affected cognition tests
+  when collection changes, syntax checks and `git diff --check`.
+- Pi plan: isolated checkout of pending content, affected portable／integration tests with the Pi
+  Python, exactly two fresh-App PN blocks and two fresh-App PH blocks before any improvement;
+  900 s automatic／1800 s human watchdog and 20 s teardown. Exact new CLI commands will be recorded
+  after implementation; existing P behavior is preserved. Final common-content L／R／Q／M remains pending.
+- Execution order confirmed by USER: implement and check on workstation, then synchronize to an
+  isolated Pi checkout for applicable verification before commit. USER will announce Pi readiness;
+  do not connect again before that announcement. The previous alias-resolution failure is only an
+  environment observation, not a reason to move development onto Pi.
+- Authority precedence: USER／AGENTS.md forbids automatic source/config/model/evidence digests in
+  tests/startup; older digest instructions in role/candidate documents are not applied. One independent
+  transfer-boundary content comparison is performed only when needed.
+- Implemented workstation scope: optional lossless private timing/count JSONL, actual parent send／receive
+  and child receive／native-start／first-output／safe-text emit／terminal boundaries; PN real-time PCM,
+  two fresh-App blocks and conditional matched controls; physical-input PH guide and same-observation
+  hearing adjudication; formal installed launcher integration; revised `Q-20261011` fixture binding.
+  PN／PH `VALID_OBSERVATION` is capture status only, not P completion, improvement or ALPHA acceptance.
+- Pre-block observation limits: admission render begin／end is the existing MEASURE renderer, not native
+  generation's internal rendering. Native render／prefill begin／end and distinct ASR endpoint are not
+  exposed. Native callback first generated output is directly measured, not first native token. Human
+  speech-end／acoustic onset remain NOT_MEASURED. Enclosing native-start→callback→safe-text and last
+  microphone frame→ASR final are retained without invented internal phases.
+- Count definitions: `input_tokens` = direct-user tokenizer count; `rendered_input_tokens` = rendered
+  incremental tokens; `context_tokens` = KV tokens before this turn; `output_tokens` = native benchmark
+  decode-token count. Request correlation includes private session／generation／request identity;
+  each measured row matches the actual legacy native-start timestamp. Public contains only counts,
+  booleans, case IDs and times. Startup prework means existing Engine setup and prompt token attestation;
+  prior-inference reports observed GENERATE calls before IDLE, not hidden native internals.
+- Pre-block precision: same Pi monotonic domain, integer nanosecond timestamps, actual clock resolution
+  in the report; PN frames every 20 ms, no early frames, maximum 20 ms lateness/span error. Boundary-hook
+  capture error has no supported bound yet: `capture_error_bound_ns=null`, timings descriptive,
+  `improvement_claim_allowed=false`. No speedup claim can be made from these captures alone.
+- Workstation focused checks: **282 Pass / 3 Linux-only deselected**, 4.33 s. Broader non-RPi selection:
+  **1978 Pass / 1 Fail / 38 deselected**, 49.84 s; failure is existing R02-HEALTH's `/proc/meminfo`
+  access on macOS, retained rather than relabeled. Syntax／shell syntax／whitespace checks Pass.
+- USER announced Pi readiness. Candidate `/home/<operator>/alpha-pnph-20261011-d4Vxz8/repo`, base
+  `19d9ca2` plus complete pending tracked patch, full Git history retained. Pi focused checks:
+  **285 Pass**, 5.10 s (`<root>/focused-regression.log`); complete non-RPi suite:
+  **1982 Pass / 35 deselected**, 58.65 s (`<root>/non-rpi-regression.log`). No Fail／Skip／XFail.
+  One independent `rsync -nrcRi --from0 --files-from=<tracked-list>` found no tracked-content difference
+  at the r1 transfer; subsequent observation-entry repair below requires its own Pi verification.
+- Fixed 13-PCM binding prepared once with production TTS, `<root>/fixed-pcm/fixtures.json` and
+  `fixture-metadata.json`; preparation log `<root>/fixture-preparation.log`. No LLM pre-test inference.
+- PN command from `<root>/repo`: `<installed-python> scripts/run-alpha-pv.py --run pn
+  --run-id ALPHA-PN-BEFORE-20261011-01 --installed-entry /home/<operator>/snowboard-app/run.sh
+  --config <root>/product.local.yaml --fixtures <root>/fixed-pcm/fixtures.json
+  --python <installed-python> --output <root>/pn-before-01 --phase before --watchdog 900
+  --cleanup-timeout 20`. PH changes selector to `ph`, run ID/output to PH locators, watchdog to 1800.
+  Conditional 06 is a separate two-block run with `--cause-control-reason <private hypothesis>`;
+  do not enable without an actual discrimination gap. PH hearing report uses the same run with
+  `--run ph --adjudicate <PH-output> --judgments <private-report.json>`; no product replay.
+- M uses the final fixed entry with `ALPHA_TIMING_DIRECTORY=<fresh-0700-private-directory>`;
+  the shared recorder retains parent/child timings and allowlisted runtime/timing dashboards while
+  input and questions stay free. M segment, USER confirmation, actual exit status and release still
+  require operator recording; no M PASS is inferred from PH or portable tests.
+- Remaining: run PN／PH, retain full observations and interpret correspondence／causes; decide at most
+  one supported improvement or NO_CHANGE; final-version M and final common-content L／R／Q Verify.
+  No commit, push, performance claim or completed-P claim.
+- PN r1 `ALPHA-PN-BEFORE-20261011-01`: **INVALID**, exit 2, `DRIVER_INCOMPLETE` before any voice
+  stimulus. Actual App startup exit 2: strict configuration rejected `SBD_ALPHA_EXPERIMENT`.
+  Block 2 is NOT_EXECUTED; result and private startup log remain `<r1-root>/pn-before-01/`.
+  No product/native/hardware owner remained. Correct only experimental environment names to
+  `ALPHA_EXPERIMENT`／`ALPHA_TIMING_DIRECTORY`, preserving the strict SBD config contract.
+  Add regression through the formal launcher and real environment overlay. Preserve r1 source/release
+  and evidence; create a new checkout/release/run ID for the repaired entry. This is instrumentation
+  repair, not the package's one optional performance optimization.
+- PN r2 `ALPHA-PN-BEFORE-20261011-02`: **INVALID**, `FRAGMENT_NODE_MISSING`. Block 1 completed
+  all six real voice Turns and cleanup, but lacked every batch's `audio_first_write`; Block 2
+  NOT_EXECUTED. The core resource is a VolumeControlledAudioOutput around ALSA, so the hook was
+  attached above the native callback. Preserve all r2 observations/source/release at
+  `/home/<operator>/alpha-pnph-r2-20261011-J3Vs9R/`; do not earn complete baseline credit.
+  PN02 native-start→safe-text **13.476 s**, ASR-final→first-write **14.506 s**; PN04／PN03
+  native-start→safe-text **1.976／2.197 s**. These are descriptive retained samples, not cause proof.
+  r2 focused Pi regression **285 Pass**, 4.98 s; r2 transfer/deployment comparisons had no differences.
+  Fix only the observation hook beneath the actual volume wrapper and test two separate batches
+  with the real volume wrapper; use new source/release/run locator for affected PN baseline.
+- Active r3 checkout: `/home/<operator>/alpha-pnph-r3-20261011-uRHDr0/repo`; installed release
+  `/home/<operator>/snowboard-app/releases/pnph-observation-20261011-r3`, selected by the retained
+  `~/snowboard-app/run.sh`. Older delivered repair and r1/r2 releases remain preserved. Fixed PCM
+  is the original r1 binding via `<r3-root>/fixed-pcm`; no questions/audio regenerated after observations.
+- r3 workstation directly affected runner/launcher/wrapper checks: **87 Pass / 3 Linux-only deselected**,
+  1.15 s. Pi complete non-RPi regression: **1983 Pass / 35 deselected**, 55.98 s;
+  `<r3-root>/non-rpi-regression.log`. Pi Python/shell syntax and whitespace checks Pass. Independent
+  r3 transfer/deployment comparisons found no actual content differences; no product/source/test/runner
+  changes occurred after these checks. Subsequent edits to this owner record describe results only.
+- PN r3 `ALPHA-PN-BEFORE-20261011-03`: **VALID_OBSERVATION**, exit 0. Exactly two fresh-App blocks,
+  each two Sessions/six voice Turns (four measured/two excluded close); no unexecuted cases. Required
+  request/Turn/batch correlation, direct native observations and real-time PCM validity passed;
+  both blocks have all product/process/hardware final-release booleans true. App is stopped.
+  Public evidence `<r3-root>/pn-before-03/result.json`; private complete observations and per-process
+  timing/dashboard JSONL under the sibling `private/`; outer log `<r3-root>/pn-before-03.log`.
+  Same command as above with r3 root, `--run-id ALPHA-PN-BEFORE-20261011-03`, output `pn-before-03`.
+
+| r3 PN case | Block 1 native-start→safe-text (s) | Block 2 native-start→safe-text (s) | Block 1 ASR-final→first-write (s) | Block 2 ASR-final→first-write (s) |
+| :--- | ---: | ---: | ---: | ---: |
+| PN02 fresh-App first Turn | 2.314925 | 2.296988 | 3.253033 | 3.183944 |
+| PN04 same-Conversation follow-up | 1.903001 | 1.897801 | 2.553638 | 2.653576 |
+| PN03 new Session, same engine/child | 2.185940 | 2.186723 | 3.131903 | 3.222388 |
+| PN05 streaming | 1.913959 | 1.889188 | 2.603224 | 2.605796 |
+
+- PN01 startup **4.620832／4.481774 s**. PN02/PN03 matched counts in both blocks: direct-user 6,
+  context 0, rendered incremental 87, output 23 tokens. PN04 counts 7/111/15/20; PN05 9/111/17/29.
+  PN05 yielded three fragments/two actual TTS batches in each block. Maximum observed frame lateness
+  **4.202 ms**, below predeclared 20 ms validity limit. No average/best-of or rejected sample replacement.
+- Retained r2 slow-sample localization: parent-send→child-receive **0.000100 s**,
+  child-receive→native-start **0.000262 s**, native-start→first callback **11.990502 s**,
+  first callback→child safe-text wire emit **1.495486 s**, wire emit→parent receive **0.000800 s**.
+  r2 PN03 has identical direct-user/context/rendered counts 6/0/87 but native-start→first callback
+  **0.824449 s**. This directly locates most waiting inside the native invocation before first output;
+  it does not distinguish prefill, constraints, cache initialization or other hidden native phases.
+- Latest complete r3 PN blocks **did not reproduce** the earlier slow first response: first-callback
+  wait **0.944394／0.928840 s**. Fresh process alone is therefore not a sufficient explanation;
+  fresh App does not promise cold OS/filesystem/native caches. No performance change was made between
+  the retained slow r2 observation and fast r3 runs, so their difference is not an optimization benefit.
+- Next owner remains Developer. USER directs automatic cause analysis to continue without waiting
+  for PH; do not treat human availability as a prerequisite for focused diagnosis. Physical PH is
+  still pending, and cannot be substituted with PCM. Planned PH locator:
+  `ALPHA-PH-BEFORE-20261011-01`, `<r3-root>/ph-before-01`, same formal entry/config/runtime/collector,
+  watchdog 1800 s and cleanup 20 s. Complete two fixed-script blocks, retain all hearing reports and
+  compare common endpoints before choosing optimization disposition. PN06/PH06 is not enabled.
+  M free-use and final same-content L/R/Q remain pending. P/ALPHA remain open; no commit/push.
+- Focused native-wait diagnosis now authorized: distinguish Python response-format/argument preparation,
+  synchronous native submission, and submission-return→first callback. Value/risk: the existing
+  native-start stamp precedes those preparations, so attributing the whole 12 s to prefill may choose
+  the wrong change. Estimate 2 points; affected paths `src/sbd/cognition/litert_lm/worker.py`, private
+  timing allowlist in `observability.py`, existing native callback test, this record. Retain public
+  protocol/model/prompt/input/settings; no optimization, pre-inference, OS reboot or cache mutation.
+- Fixed deployed SDK `litert_lm/interfaces.py` exposes total engine/conversation init seconds,
+  time-to-first-token seconds and the last prefill/decode token counts/rates. Collect these as native
+  reported summaries; last count/rate gives a labeled derived duration, not begin/end stamps. The
+  SDK's TTFT accessor is not yet proven per-Turn, so do not present it as each turn's interval or sum
+  it with enclosing controller intervals. Native prefill begin/end remain NATIVE_NOT_EXPOSED.
+- Before the next diagnostic stimulus, add format/optional-argument preparation boundaries and native
+  call begin/end; capture first callback from the existing hook. Test on workstation, synchronize to
+  a new Pi checkout/release, run affected regression, then exactly two fixed fresh-App PN blocks.
+  Preserve r3 valid baseline and all r1/r2 failures. Additional repetitions require a new concrete
+  discrimination question; do not retry until a preferred slow/fast outcome appears. USER stopped
+  the M4 history inquiry; no further historical source is required for this analysis.
+- USER confirms Pi was just booted before the retained r2 slow observation. Concrete remaining
+  hypothesis: host-boot cold state versus App-process-first behavior. r3 fresh Apps were fast, so
+  repeating arbitrary warm Apps cannot discriminate this. Prepare the same two-block PN schedule for
+  the first App after a controlled Pi boot, then a fresh App on that same boot; retain fixed input,
+  runtime/model/settings and no prior LLM inference. Host reboot has not been requested/executed yet.
+- To make that prospective slow sample useful, also capture native-child cumulative major-page-fault
+  and block-input counters at native submit and first callback, correlated to the same request. Their
+  differences are narrowly scoped IO/page-in clues, not a generic CPU/memory/thermal survey or an IO
+  duration assertion. Positive deltas alone cannot prove all waiting was disk IO. Affected paths stay
+  worker/observation allowlist/native callback test; no cache clearing/model mutation or new Test ID.
+- r4 native-stage implementation: workstation affected **218 Pass**, 3.54 s; Pi affected **286 Pass**,
+  4.96 s (`/home/<operator>/alpha-native-r4-20261011-0qxvrW/focused-regression.log`). Independent
+  transfer and deployment comparisons found no differences. New release
+  `native-observation-20261011-r4`; previous releases remain preserved.
+- r4 `ALPHA-PN-NATIVE-DIAG-20261011-04`: **VALID_OBSERVATION**, exit 0, both fixed fresh-App blocks
+  complete; all final owner-release booleans true. Result/private data at
+  `/home/<operator>/alpha-native-r4-20261011-0qxvrW/native-diag-04/`. No slow sample in this run.
+  Native-start→first callback across all eight measured Turns **0.814193–0.972857 s**.
+  Response-format setup **0.205592–0.236924 ms**; argument setup **0.047241–0.081963 ms**;
+  native API call **1.482106–2.199160 ms**. All observed first callbacks arrived after that API
+  returned. First-Turn return→callback **0.970696／0.932100 s**. These locate the warm-path wait;
+  they do not prove the retained 12-second slow sample used the same internal split.
+- r4 native benchmark: first-Turn derived last-prefill duration **0.795273／0.757561 s**.
+  Actual TTFT report remained **0.902854／0.864681 s** on the following Turn of each Conversation,
+  despite different directly measured callback waits, and changed on new Conversation. Treat it as
+  the Conversation-first native summary in this runtime, never an independently measured per-Turn
+  duration. No aggregate reported times are added to overlapping controller intervals.
+- r5 IO-count addition: workstation affected **218 Pass**, 3.61 s. Preparing a new Pi candidate
+  `/home/<operator>/alpha-native-r5-20261011-chETZR/` for the host-boot discrimination question;
+  preserve r4 source/evidence, run applicable Pi checks first, and make the precise cold-boot command
+  ready before requesting a host restart. Do not run more arbitrary warm PN blocks for this question.
+- r5 standalone preparation suite: **1983 Pass / 35 deselected**, 55.94 s;
+  `<r5-root>/non-rpi-regression.log`. It predates the following boot/CPU/Engine completeness additions
+  and does not verify those later bytes. r5 has no new native run or selected installed release.
+- Cold-boot collection refined before restart: private boot ID and App-start host uptime/wall time,
+  direct child runtime/Engine begin/ready timestamps, existing Conversation/create-ready and all
+  generation-preparation/submission/callback/safe-text boundaries; request-correlated cumulative CPU
+  time (all LLM-child threads), major faults and block-input at submit/first callback. Public projects
+  uptime and necessary counter deltas; boot IDs remain private. CPU can exceed wall time with multiple
+  native threads, so do not interpret it as single-thread utilization or sum it with wall durations.
+- New completeness checks reject missing Engine stamps, boot context, preparation boundaries or
+  CPU/IO counters as diagnostic INVALID. Preserve counter before/after and native reported summaries
+  privately. Distinct native prefill begin/end remain unavailable; count/rate-derived duration is
+  labeled derived, and native TTFT stays a Conversation-first summary. No general resource survey.
+- Affected scope for this refinement also includes `scripts/run-alpha-pv.py`, `alpha_oracle.py` and
+  their existing tests. Workstation final focused selection: **285 Pass / 3 Linux-only deselected**,
+  4.49 s; whitespace Pass. Preparing new r6 Pi checkout and full applicable suite. No reboot yet.
+- r6 full Pi non-RPi suite: **1985 Pass / 35 deselected**, 56.24 s; candidate
+  `/home/<operator>/alpha-cold-r6-20261011-u0HIIx/repo`, log `<r6-root>/non-rpi-regression.log`.
+  Source and installed `cold-observation-20261011-r6` comparisons found zero differences;
+  Python/shell syntax and whitespace Pass. Pre-boot reference and precise command prepared outside repo.
+- USER now explicitly authorizes one Pi reboot and confirms no other users/workloads. USER also directs
+  that subsequent experiment-only observation changes need no regression suite, and that each diagnostic
+  run must test only the relevant question. Apply prospectively; no completed evidence is reopened.
+- Focused cold-run schedule supersedes the pending full PN schedule for this cause question: exactly
+  three real PCM/ASR/native LLM/TTS/Audio short turns, all `FX-SHORT-B` with empty Conversation context:
+  first App/new host's first turn; same App/engine/child in a new Session; then one fresh App on the
+  same host boot. Close each Session through the supported short Button callback after actual Audio
+  completion, without extra voice-close questions, then supported App shutdown. No Q, follow-up,
+  streaming or arbitrary repeated cases. This is diagnostic-only, not PN01–PN05 completion credit.
+- Add `--diagnostic-first-use` to the existing `--run pn` entry; preserve normal PN behavior separately.
+  Scope is experiment runner/oracle/stimulus helper and this status. Check syntax/whitespace and actual
+  target capture validity; do not rerun portable regression solely for this observation helper delta.
+  Prepare a new r7 checkout/release and fixed `ALPHA-NATIVE-COLD-20261011-07` command before reboot.
+- r7 focused preparation: `/home/<operator>/alpha-focus-r7-20261011-urAGdg/repo`, installed
+  `focus-observation-20261011-r7`, current fixed entry selects it. Workstation/Pi syntax and whitespace
+  passed; one transfer comparison found no differences. No new regression run, per USER instruction.
+- Authorized reboot executed once; private boot reference differs afterward. First App began at
+  host uptime **42.989 s**, second at **97.716 s**, both on the same new boot with distinct App processes.
+  Command from `<r7-root>/repo`: `<installed-python> scripts/run-alpha-pv.py --run pn
+  --diagnostic-first-use --run-id ALPHA-NATIVE-COLD-20261011-07
+  --installed-entry /home/<operator>/snowboard-app/run.sh --config <r7-root>/product.local.yaml
+  --fixtures <r7-root>/fixed-pcm/fixtures.json --python <installed-python>
+  --output <r7-root>/cold-focus-07 --phase before --watchdog 900 --cleanup-timeout 20`.
+  First request had no preceding generation on that App/child; no other user/workload per USER.
+- r7 **DIAGNOSTIC_OBSERVATION**, exit 0: exactly three short PCM→ASR→LLM→TTS→Audio Turns,
+  supported Button Session close and App shutdown, all release booleans true. No extra voice close,
+  Q, follow-up or streaming question. Both helper blocks VALID_OBSERVATION, none unexecuted. Public
+  result `<r7-root>/cold-focus-07/result.json`, raw private data in sibling `private/`, outer log
+  `<r7-root>/cold-focus-07.log`. Diagnostic-only result earns no formal PN01–PN05 completion credit.
+
+| r7 same short input / empty Conversation | Cold first | Same engine, new Session | New App, same boot |
+| :--- | ---: | ---: | ---: |
+| Native-start→first callback (s) | 12.034470 | 0.832777 | 0.946605 |
+| Native call return→first callback (s) | 12.019743 | 0.830767 | 0.944400 |
+| LLM-child aggregate CPU delta to first callback (s) | 2.630148 | 2.647538 | 2.750422 |
+| Major-fault delta | 1917 | 0 | 0 |
+| Block-input delta | 1799744 | 0 | 0 |
+| Native-start→safe-text (s) | 13.542481 | 2.210375 | 2.311703 |
+| ASR-final→first Audio write (s) | 14.334911 | 3.151757 | 3.299428 |
+| Derived native last-prefill duration (s) | 5.699157 | 0.728715 | 0.766344 |
+| Derived native last-decode duration (s) | 8.784737 | 2.406175 | 2.466832 |
+
+- All three rows have direct-user/context/rendered/output counts **6/0/87/23**, same fixed PCM and
+  model/settings. Response-format setup **0.220–0.225 ms**, argument setup **0.065–0.082 ms**.
+  Cold native API call **14.119 ms**, warm **1.495／1.587 ms**. Cold App startup **12.078 s**,
+  Engine constructor **4.045 s**; warm fresh-App startup **4.626 s**, Engine constructor **0.319 s**.
+  Conversation open **3.265／3.192／3.245 s**. This is not an App-first-only or context-token effect.
+- Cold native reported TTFT **6.081 s** versus callback **12.034 s**: do not label the entire callback
+  wait as prefill. Native reported prefill and decode both lengthened; callback includes later release
+  beyond the native first-token report. Similar CPU deltas plus cold-only major faults/block input
+  strongly support page-in/IO waiting rather than extra CPU computation. Per-file attribution is not
+  yet directly measured; model versus packed-cache reads remain to distinguish before choosing a change.
+- Relevant existing model-directory files: original model **2588147712 bytes**, XNNPACK weight cache
+  **788412736 bytes**. Do not regenerate/delete cache, change model/runtime, force inference prewarm or
+  claim the cache is absent. Inspect actual native Engine/Conversation mappings without generation,
+  then use the smallest per-file observation needed to identify cold read source. App remains stopped;
+  no product optimization or commit/push, P/ALPHA still open.
+- Actual native mapping inspection without GENERATE confirms both files are mapped at Engine-ready
+  and Conversation-ready: model seven regions/**2211381248 mapped bytes**, XNNPACK cache one region/
+  **788414464 mapped bytes** (page-rounded). Private result `<r7-root>/cache-mapping-inspection-02.json`;
+  zero generation requests, normal CLOSE/SHUTDOWN, child stopped. The first operator inspection omitted
+  required CLOSE reason and failed; corrected only that operator command, retained tool failure, did not
+  rerun product questions or edit product code. Mapping presence alone does not identify IO attribution.
+- Next focused cause experiment: after a new controlled host boot, read only the actual mapped
+  **788412736-byte XNNPACK cache** sequentially once, leave original model bytes unread by the operator,
+  then run one same short/empty-context first request. Compare native wall/CPU/fault/block-input and
+  reported prefill/decode with r7 cold sample. Record pre-read duration separately from App startup and
+  process-start→first Audio write; it is not a claimed speedup or a product prewarm/optimization.
+  Cache content/model/runtime/settings remain unchanged; no inference occurs during pre-read.
+- Value/risk: targeted cache-only intervention distinguishes packed-cache cold reads from the broader
+  model/IO hypothesis. Cost: one read and one short real native Turn, no Q/full PN/regression replay.
+  Add experiment-only `--diagnostic-single-request` on `--diagnostic-first-use`; scope scripts driver/
+  runner/oracle plus status, estimate 1 point. Syntax/whitespace and actual capture validity only per USER.
+  This is cause discrimination, not the package's one optional product optimization. Preserve all r7 data;
+  new checkout/release/run locator for this helper delta. USER's host-reboot authorization remains in scope.
+- r8 cache-only intervention: `/home/<operator>/alpha-cache-r8-20261011-w0Devn/`, source helper adds
+  `--diagnostic-single-request`; syntax/whitespace and one transfer comparison passed, no regression
+  replay per USER. One controlled reboot, then cache-only sequential read, then exactly one short native
+  Turn with Button Session close/shutdown. `ALPHA-CACHE-PRELOAD-20261011-08` is
+  **DIAGNOSTIC_OBSERVATION**, exit 0, all capture/release conditions true. Public/private result at
+  `<r8-root>/cache-preload-08/`; pre-read/residency observations `<r8-root>/cache-preload-observation.json`.
+- Non-faulting `mincore` confirmed before pre-read: model/cache **0/0 resident pages**; after pre-read:
+  original model still **0**, cache **48121/48121 pages** resident, page size **16384 bytes**.
+  Only cache bytes **788412736** were read, taking **8.364313 s**. Neither model nor cache content changed;
+  no operator model-data read or generation preceded the first request.
+- Same input/context/rendered/output counts **6/0/87/23**. Native-start→callback **2.769164 s**
+  versus retained cold **12.034470 s**; CPU **2.773745 s**, major faults **1117**, block input **260288**
+  versus **2.630148 s / 1917 / 1799744**. Derived prefill/decode **2.581636/2.617829 s** versus
+  **5.699157/8.784737 s**. ASR-final→first Audio write **5.421345 s** versus **14.334911 s**.
+  This cache-specific intervention supports packed-weight cache cold page-in as the dominant first-output
+  delay; residual IO remains and is not falsely attributed entirely to cache or CPU.
+- Pre-read is not a performance fix: App startup **12.124196 s**, process-start→first Audio write
+  **27.583085 s**; adding the separate pre-read gives **35.947398 s**, versus original **36.447726 s**.
+  Single-sample near equality and unsupported capture-error bound cannot support a total speedup claim.
+- USER asks whether pre-read is possible. Select one bounded product experiment supported by the cache
+  intervention: optional engine-owned background read of the already-mapped cache, launched at first
+  Conversation OPEN, overlapping the measured ~3.2 s Conversation construction plus PCM input/ASR time.
+  No fake inference, model change, cache creation/deletion or blocking pre-read gate.
+- Predicted affected nodes: fewer cache IO faults between GENERATE and first callback, shorter first
+  ASR-final→Audio and process-start→first Audio without equivalent added startup wait. Cost/risk:
+  one small read buffer/thread, disk contention may slow ASR, stop must cancel/join the reader and close
+  its FD; these are the direct functional/lifecycle risks to test. Estimate 2 points. Affected paths:
+  worker implementation, private observation allowlist, experiment flag forwarding in alpha driver/runner,
+  existing native/worker tests and this owner record. Keep public LLM API, protocol, timeouts and profile.
+- Check only affected prefetch completion/cancellation/no-file behavior and existing directly affected
+  native worker/streaming tests on Pi, then one cold same-short-input product run with the feature enabled.
+  No full question set or regression suite; observation-only follow-ups still skip regression per USER.
+  Record all prefetch begin/end/cancel/fail outcomes and startup/ASR/first-audio costs. This is the one
+  optional product optimization trial; ineffective/regressing behavior is rejected, no second trial here.
+- USER explicitly requests formal solution, implementation and completed testing, then remaining PN/PH
+  against the retained solution. Formal design stays inside ALPHA's one bounded improvement contract:
+  default first-OPEN background read of the one already-mapped XNNPACK cache, once per Engine; no new
+  public API/config flag and no startup/inference wait. Failed/unavailable cache read retains the original
+  generation path. Conversation close retains engine-owned reading; Engine shutdown cancels/joins it,
+  closes the file and then destroys Engine. Parent force-termination remains the existing final fallback.
+- Test mapping before implementation/Verify: existing native worker/prompt/streaming suites plus four
+  direct risks: complete read leaves file unchanged and starts once; missing-file IO fallback; shutdown
+  cancels the read and closes FD; Runtime's first OPEN launches without waiting and later OPEN does not
+  duplicate the reader. All are actual implementation tests, no new generic closure or hashing assertions.
+  Pi cold one-short-question integration checks prefetch start/end versus first GENERATE, context/schema/
+  ASR/TTS/Audio/stop/release, startup and speech-end/ASR/first-audio costs. Then final PN01–PN05/PH01–PH05
+  according to existing Test Spec, reusing applicable final-content data; no retired P/Q replay.
+- Implemented `WeightCachePrefetch`: one read-only 1 MiB buffer, one non-daemon Engine-owned thread,
+  captured OPEN identity for complete correlation, one attempt per Engine, normal fallback on IO failure.
+  Stop checks cancellation between chunks and bounded join; does not modify LLM/public protocol or timeout
+  settings. Private observations identify completion/cancellation/failure without file contents/paths.
+- Workstation native/prompt/wire/streaming affected selection after reader code: **199 Pass**, 3.17 s;
+  newest prompt/reader/Runtime integration selection **43 Pass**, 0.15 s. Syntax/whitespace Pass.
+  Prepare r9 new Pi checkout/release; run only directly affected tests and focused native integration,
+  preserving r7/r8 diagnosis/source. Final formal PN/PH use this retained implementation after convergence.
+- r9 same-content Pi checkout `/home/<operator>/alpha-prefetch-r9-20261011-RYHsb5/repo`, selected installed
+  release `/home/<operator>/snowboard-app/releases/prefetch-20261011-r9`. Directly affected Pi native/wire/
+  streaming checks **200 Pass**, 3.82 s; `<r9-root>/affected-regression.log`. Python/shell syntax,
+  whitespace and independent tracked-file transfer comparison passed. The r9 installed entry uses the
+  original product runtime/model/config APIs with only the private experiment log path redirected.
+- Cold boot diagnostic `ALPHA-PREFETCH-COLD-20261011-09` is **INVALID**, `PACING_DISTORTED` before ASR
+  or GENERATE; preserve `<r9-root>/prefetch-cold-09/` without retrying under that ID. The cache reader
+  started during first OPEN. Fixed PCM frame 10 was delivered **75.527 ms** late against the declared
+  20 ms bound, so this run cannot demonstrate a first-response benefit. Startup/native timing and the
+  partial pacing record remain diagnostic only. A cold product benefit is still unproven; disk/resource
+  competition during concurrent pre-read is a live risk, not a proven cause of that one late frame.
+- Formal same-content PN `ALPHA-PN-AFTER-20261011-09`: **VALID_OBSERVATION**, exit 0, exactly two
+  fresh-App blocks with PN02/04/03/05 and two excluded voice closes each, all Turn/cleanup criteria
+  Pass. Public `<r9-root>/pn-after-09/result.json`, full private observation/timing/dashboard files
+  under its `private/`. Both blocks include cache start and complete, before first GENERATE; reader
+  completed in block 1 in 4.080 s. Real-time PCM max lateness across counted Turns was 1.19 ms.
+  PN02 native-start→first callback **2.771851／0.938319 s** and ASR-final→first Audio write
+  **5.199270／3.137593 s**; the first block retained residual major faults
+  despite cache completion. Do not claim cold-boot improvement from these same-boot PN blocks, and do
+  not treat `VALID_OBSERVATION` as P acceptance.
+- Collection scope for later felt-delay analysis: App/Engine startup, Conversation OPEN, input frame
+  pacing, last captured frame→ASR final, parent/child/native LLM boundaries, first safe text, TTS
+  first PCM, actual Audio write/completion, plus native CPU/major-fault/block-input counters and cache
+  reader begin/end are recorded per correlated Turn. Native internal render/prefill timestamps, ASR's
+  internal endpoint, human speech end and speaker acoustic onset are unavailable; those intervals are
+  labeled rather than inferred. The r9 cold invalid observation shows pacing must be checked before
+  comparing timing. PH is still required for human-perceived wait and speech quality.
+- PH physical-input helper on Pi: `<r9-root>/run-ph.sh` (shell syntax checked, mode 0700), using the
+  same installed entry and r9 bytes, output `<r9-root>/ph-after-09`. It prints each Button/utterance/
+  shutdown cue; no PCM substitution or automatic hearing judgment. USER physical execution and the
+  eight hearing rows remain pending. No commit, push or whole-ALPHA conclusion.
+- A second independent cold reboot with unchanged r9 bytes, `ALPHA-PREFETCH-COLD-20261011-10`, also
+  ended **INVALID/PACING_DISTORTED** before ASR or GENERATE: fixed frame 10 arrived **87.181 ms** late.
+  Cache pre-read had started and not ended in both r9 cold observations. Preserve both invalid runs;
+  they expose a repeatable cold-start resource-contention risk without proving its exact scheduler cause.
+- Refine the same cache-reader trial by lowering only its Linux thread CPU priority and I/O class to
+  idle; failures to set priority preserve the original read fallback. This is a targeted remedy for
+  disrupting foreground capture, not another performance trial. Workstation and Pi directly affected
+  native/wire/streaming tests each **200 Pass**; r10 checkout
+  `/home/<operator>/alpha-prefetch-r10-20261011/repo`, release
+  `/home/<operator>/snowboard-app/releases/prefetch-20261011-r10`; independent tracked-file transfer check
+  found no difference at this point. Pi log `<r10-root>/affected-regression.log`.
+- r10 new cold boot focused one-request `ALPHA-PREFETCH-COLD-20261011-11`: **DIAGNOSTIC_OBSERVATION**,
+  inner block **VALID_OBSERVATION**, normal shutdown. All 133 real-time PCM frames were valid;
+  maximum lateness **6.489 ms**. Cache pre-read completed its 788,412,736 bytes in **8.876 s** before
+  GENERATE. Native-start→first callback **2.765636 s**, ASR-final→first Audio write **5.202723 s**,
+  process-start→first Audio write **27.344184 s**; native request still had 1117 major faults and
+  260288 block-input units. Preserve `<r10-root>/prefetch-cold-11/`; one cold sample supports a
+  local reduction in first-output waiting against retained r7, but cannot establish a general speedup
+  or eliminate residual page-in.
+- Formal same-content r10 PN `ALPHA-PN-AFTER-20261011-10`: **VALID_OBSERVATION**, exit 0, two fresh
+  installed-App blocks, all six Turns per block Pass and clean shutdown, all required correlated phase
+  observations present. Public `<r10-root>/pn-after-10/result.json` and complete private source records
+  under its `private/`. PN02 native-start→first callback **0.941／0.932 s**; cache read completed before
+  GENERATE in both blocks. Maximum counted PCM lateness **1.213 ms**. This confirms warm same-content
+  operation; the separate valid cold one-request diagnostic above supplies cold-start evidence.
+- PH helper was updated to `<r10-root>/run-ph.sh` (shell syntax Pass, mode 0700) with r10 installed
+  release/config and `ALPHA-PH-AFTER-20261011-10` output `<r10-root>/ph-after-10`. PH's two fresh-App
+  blocks and eight physical hearing rows were pending USER execution. No commit/push or whole-ALPHA
+  conclusion; M free use and final same-content L/R/Q Verify remain separate.
+- USER executed the r10 physical PH. `ALPHA-PH-AFTER-20261011-10` is **INVALID/DRIVER_INCOMPLETE**;
+  PH02 completed and PH04 began, then App exited fatal with `AUDIO_CAPTURE_FAILED` at the second
+  capture. PH03/PH05 and block 2 were not executed. Public `<r10-root>/ph-after-10/result.json`,
+  private observation and App log are retained; no hearing result is inferred. The PH observation
+  wrapper iterated the live ALSA stream but did not close that inner stream when ASR stopped early,
+  leaving AudioInput active for the next Turn. Repair only the wrapper with `aclose()` in a `finally`;
+  add a two-Turn early-stop resource test, then verify affected code on Pi and create a new append
+  r11 checkout/release/run ID for PH. Do not ask USER to repeat the invalid r10 script.
+- r11 PH wrapper repair closes the real inner microphone stream in `finally` when the listener
+  closes the outer observation stream. A direct two-Turn early-ASR-stop test proves the second
+  capture can open after the first closes. Workstation PH probe selection **23 Pass**; the combined
+  macOS runner selection had **74 Pass / 3 Fail** solely in existing `/proc`-dependent Linux tests,
+  which were rerun on Pi. Pi affected product/runner selection **77 Pass**, 1.04 s, log
+  `/home/<operator>/alpha-prefetch-r11-20261011/affected-regression.log`. The new checkout and selected
+  release are `<r11-root>/repo` and `/home/<operator>/snowboard-app/releases/prefetch-20261011-r11`;
+  independent tracked-file comparison and shell syntax passed. Physical PH helper is
+  `<r11-root>/run-ph.sh`, new output `<r11-root>/ph-after-11`; no result exists yet.
+- After the r10 fatal, USER observed the OLED still showing the last frame. Pi process and audio-owner
+  inspection found no App/child or ALSA owner: `run_app` intentionally skips the normal RM/display
+  clear path for `EXIT_RUNTIME_FATAL`, and SSD1351 retains its last pixels. An isolated r11
+  `DisplayDriver.start → clear → show → stop` command exited 0 and released SPI; subsequent process/
+  SPI-owner inspection was empty. This operator screen reset does not turn invalid r10 PH into a pass
+  and does not change product source. The repaired PH will exercise normal shutdown.
+- USER executed r11 physical PH `ALPHA-PH-AFTER-20261011-11`: **FAIL/SESSION_ENDED_BEFORE_FIXTURES**.
+  Session A PH02/PH04/normal close all completed. New Session B PH03 entered with a different Session
+  identity and zero prior KV tokens, but actual ASR decoded `1月星期有幾天。` for the fixed spoken question;
+  native response routed END_SESSION rather than KEEP_NEXT. Thus PH05, the second close and block 2
+  were not executed. Preserve `<r11-root>/ph-after-11/` and its exact route/ASR record; do not relabel
+  the Turn or claim a PH pass. App exit was 0 and ALSA/display/hardware owners were released; public
+  `stopped_cleanly=false` reflects incomplete test driver, not a surviving App. An append run helper
+  `<r11-root>/run-ph-12.sh` uses unchanged r11 product bytes and new ID/output
+  `ALPHA-PH-AFTER-20261011-12` / `<r11-root>/ph-after-12`; USER must physically speak the unchanged
+  prescribed script. No question/fixture, route, ASR or product setting is changed.
+- USER pauses further PH execution and prioritizes the felt delay from WAKE/`準備中` through live
+  `接收中`. Current records must use correct boundaries: `last_frame→asr_final`, not microphone-start→
+  result or pure Whisper runtime. Across 24 distinct r3-before/r10-after PN Turns (including excluded
+  close Turns), known fixed-PCM last nonzero speech frame→last received frame is **0.540–0.621 s**
+  (mean **0.561 s**), consistent with the fixed 600 ms VAD endpoint rule but not an exact human
+  speech-end measurement. Last received frame→ASR final is **3.665–3.968 s** (mean **3.788 s**);
+  four distinct r11 live PH Turns are **3.716–3.766 s**. For analysis label the latter ASR
+  post-capture/return time; endpoint-event, WAV/IPC and native transcription begin/end were not
+  stamped, so do not call the whole interval native inference.
+- Targeted M4A comparison: existing Pi `M4A-ASR-001` accepted card in
+  `docs/outsource/evidence/M4A-TESTER-6C3BA954-20260829/m4a/target/cards/` reports
+  **3535.366 ms** and M4A-ASR-002 reports the same maximum for two Turns. The M4A test's helper
+  times `asr.transcribe(_pcm_frames(path))` from call to returned result and feeds its PCM without
+  real-time pacing. It is similar in scale to the current ~3.8 s post-last-frame interval but is
+  not the same metric; no historic result is rewritten or reopened.
+- Focused live-speech diagnostic design (observation only, before any endpoint tuning): one fixed
+  short utterance spoken through the real microphone, optionally repeated once if speech/noise is
+  ambiguous. Retain the same input frames with 20 ms delivery timestamps in private memory and write
+  the short audio only after timing capture; annotate the final audible syllable on the waveform as an
+  independent human speech-end estimate with annotation uncertainty. Record request-correlated VAD
+  first possible end, confirmed end/ENDPOINT, Whisper transcription begin/end and ASR result receive
+  using the Pi monotonic clock, without transcript/PCM in public evidence. Compare human end→ENDPOINT
+  and ENDPOINT→result, reporting annotation uncertainty and distinguishing VAD proxy from acoustic end.
+  The existing fixed PCM supplies a control with known last nonzero frame; no full PN/PH rerun or
+  latency threshold change is needed. Value: resolve whether apparent live waiting is before or after
+  endpoint; risk: a human stop marker inferred from VAD itself would be circular, while synchronous
+  disk writes during capture could distort latency. No experiment source is implemented yet.
+- USER item 5 — cache reader status: default first-OPEN pre-read and lower-priority reader are
+  implemented. Their directly affected Pi tests passed; one r10 cold short-Turn diagnostic and two
+  r10 fresh-App PN blocks were valid. This is completed focused engineering verification of the cache
+  change, not completion of the whole P/ALPHA acceptance or proof of a general speedup. The later r11
+  change is limited to the PH observation wrapper and passed its affected Pi tests; it does not require
+  repeating PN solely to verify the unchanged cache reader. Remaining package work is a complete valid
+  physical PH observation with hearing adjudication, final-version real-use M and common-content
+  L/R/Q Verify before commit. The r11 PH run ended early on an ASR/route mismatch, not a cache failure.
+  No commit or push.
+- USER item 6 — a short voice cue after `準備中` is retained for later product discussion. It has not
+  been designed or implemented and is outside the current cache/ASR diagnostic.
+- USER six-item disposition: **1 closed as a measurement definition**, with ~3.8 s meaning last
+  captured frame→ASR result rather than capture start→result; **4 closed as the targeted M4A
+  comparison**; **5 closed for cache implementation and focused Pi verification only**. These closures
+  do not assert whole-P/ALPHA acceptance. **2 remains open** for the discrepancy between fixed-PCM
+  endpoint behavior and perceived live waiting; fixed PCM does not establish human speech end.
+  **3 remains open** for the one-utterance live-speech timing experiment above. **6 moves to the next
+  product discussion** and is outside this experiment. The active diagnostic scope is only 2+3.
+
 ### Developer delivery scope and next owner — 2026-10-09
 
 - USER requested delivering this Developer iteration first, then Designer planning the next

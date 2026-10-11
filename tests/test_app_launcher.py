@@ -56,6 +56,24 @@ def test_help_does_not_require_product_environment():
     assert "Ctrl+C" in result.stdout and "--config" in result.stdout
 
 
+def test_experiment_uses_packaged_instrumentation_through_formal_launcher(product, tmp_path):
+    from sbd.core.config.env import overlay_env
+    root, launcher, config = product
+    (root / "scripts/alpha_product.py").write_text('''
+import json
+async def launch_installed(config, experiment):
+    print(json.dumps({"config": config, "experiment": experiment}))
+    return 23
+''')
+    experiment = tmp_path / "experiment with spaces.json"
+    experiment.write_text("{}")
+    env = dict(os.environ, ALPHA_EXPERIMENT=str(experiment))
+    assert overlay_env({"ALPHA_EXPERIMENT": str(experiment), "ALPHA_TIMING_DIRECTORY": str(tmp_path)}) == {}
+    result = invoke(launcher, "--python", sys.executable, cwd=tmp_path, env=env)
+    assert result.returncode == 23
+    assert json.loads(result.stdout) == {"config": str(config), "experiment": str(experiment)}
+
+
 @pytest.mark.parametrize("args", [("--config",), ("--python",), ("--unexpected",)])
 def test_invalid_arguments_fail_without_launch(args):
     result = invoke(LAUNCHER, *args)

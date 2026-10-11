@@ -196,7 +196,7 @@ Vision adapter 不直接取得 Camera；拍攝與分析的資源順序由 Look w
 
 ### 3.1 PromptBuilder
 
-M4B 固定 V2D2-based 66-token system prompt與單一 trusted personality，不接受 YAML/user suffix。
+M4B 固定 V2D2-based、ALPHA 修正後的 68-token system prompt與單一 trusted personality，不接受 YAML/user suffix。
 每 turn 只 project 一個 normalized listen text；不傳 Core envelope、handler、private ID 或完整 history。
 Runtime Conversation 管理 session 內 history/KV；Core 無 transcript store、摘要或檢索。
 輸入限 `20` normalized code points / `32` direct-user tokens；exact child MEASURE 分開回報 current KV、

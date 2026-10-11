@@ -1,41 +1,63 @@
 # Current handoff
 
-- Updated: 2026-10-02
+- Updated: 2026-10-11
 - Writer: Designer only
-- Current milestone: ALPHA Voice-only product convergence
-- Current stage: **ALPHA Design and Test Spec complete；Developer entry open**
+- Current milestone: ALPHA Voice-only product convergence — L／P／R／Q／M
+- Current stage: **Design and Test Spec complete；READY_FOR_DEVELOPER；Developer entry open**
 - Next owner: Developer
-- Developer entry: **Open — resume the bounded ALPHA runner work package**
+- Developer entry: **Open — bounded ALPHA P (PN／PH) and M work package**
 
 ## Gate transition facts
 
-- M4 and M4C are Accepted; candidate `0b2160e5d48dcc959b08f4a23ede91a9e0d5640d` completed formal Pi run
-  `M4C-FORMAL-PV-20260926-01` with all seven catalog entries Pass. Accepted M4 evidence remains immutable.
-- USER approved the ALPHA product scope on 2026-09-26. [`ALPHA.md`](../milestones/ALPHA.md) fixes
-  `ALPHA-L01-LIFECYCLE`, `ALPHA-P01-PERFORMANCE`, `ALPHA-R01-LLM-RECOVERY` and
-  `ALPHA-Q-RUN-01-QUALITY` as four independent runs.
-- Lifecycle is one startup → three Sessions × two Turns → per-Session cleanup → shutdown → owner absence →
-  restart run. Offline and one aggregate privacy scan are embedded; they are not separate Test IDs.
-- Performance is a separate controlled run with five case-specific timing views and no numeric acceptance gate.
-  Baseline is required; code optimization occurs only for a clear product bottleneck and is bounded to one selected
-  improvement work item.
-- Recovery is one real LLM-child failure after a safe streaming fragment, followed by full convergence, one
-  replacement, a new normal Session and final owner absence. It does not reopen the accepted fault matrix.
-- Quality contains six fixed cases, each executed once. The runner owns objective path results; Codex owns semantic
-  judgment, and only an unresolved `NEEDS_USER_DECISION` is routed to USER.
-- Resource／thermal research, soak, latency ceilings, manifest／checksum revalidation, repeated fault matrices and
-  extra review／sign-off gates are outside ALPHA.
-- [`IR_dev_ALPHA_I`](../reviews/history/IR_dev_ALPHA_I.md) is Resolved with zero open findings. Authority and Test
-  Spec now require one Button per Session, Turn 2 through `KEEP_NEXT`, and eligible fixed P05／Recovery and Q04
-  stimuli without changing product Button or admission behavior.
+- M4／M4C remains Accepted; old evidence is not reopened.
+- Developer delivery `19d9ca2` retains WIP `9c13509` and delivers fixed terminal installation plus repaired
+  interruption／restart／stop. Pi native／portable／installed-entry checks and USER live retest are in
+  [development.md](development.md). Iteration delivery does not imply whole-ALPHA Accepted.
+- USER and Designer agree to close ALPHA against exactly five areas: Lifecycle (L), Performance (P),
+  Recovery (R), Quality (Q), Manual (M). ALPHA.P is P's analysis／experiment／improvement work package.
+- Reopen P and M work, preserving the delivered repair. P01–P05 definitions／results remain unchanged by
+  the new round. New automated cases are PN01–PN05, paired with fixed-scenario human PH01–PH05;
+  PN06／PH06 is conditional on a concrete cause-discrimination gap. PN／PH are inside P, not new areas.
+- [ALPHA.md](../milestones/ALPHA.md) §4.5–§4.7 fixes questions, two fresh-App blocks per mode,
+  before／after rules, real-time PN PCM, shared structured observations, diagnostic completeness,
+  correspondence／uncertainty, failure handling and at most one evidence-supported improvement.
+- Reproduced slow samples require analyzable request／Turn／fragment correlation, observed parent／child／
+  LLM／TTS／Audio boundaries and relevant token／context counts. Missing required data is diagnostic INVALID;
+  inaccessible native subphases are explicit limits, not invented causes.
+- ALPHA §6A now records M's original live-testing background, failed launches／operation findings,
+  successful repaired-version retest and retained timings with existing log／status locators. It classifies
+  earlier unnamed activity without manufacturing prior M test cards／run IDs or rewriting failures.
+- Latest M first-response observation: ASR final → Audio first write 13.333 s; legacy `llm_send` →
+  first-safe-text 12.762 s. Legacy `llm_send` is child native-generation start, not measured parent IPC send.
+  Cause remains unproven; old text rows truncate and human speech-end／acoustic timestamps are absent.
+- M final-version free conversation／operation confirmation is required and distinct from PH's fixed timing
+  script. They may share a user session with separately identified segments, avoiding duplicate operation.
+- Q retains six mandatory revised basic-quality cases after ALPHA.P. Old questions are retired and original
+  Q05／Q06 FAIL cards remain. Earlier overall quality acceptance does not waive final objective／semantic PASS.
+- L／R／Q design is not reopened. Apply directly affected development regression and complete final L／R／Q,
+  valid P and M against one final product content; no splicing older candidates. Existing applicable
+  final-candidate P／PH／M evidence may be reused without duplicate testing.
 
-## Role routing now
+## Test Spec coverage confirmed
+
+- Designer checked the revised [test_spec_ALPHA.md](../test_spec/test_spec_ALPHA.md), marked
+  READY_FOR_DEVELOPER, against ALPHA's five-area authority. No blocking coverage or contract gap found.
+- Spec §§4.5–4.10 cover fixed PN／PH cases and two-block schedules, pacing／capture uncertainty,
+  request／fragment correlation, mandatory versus inaccessible native nodes, conditional 06, mode discrepancy,
+  failed／invalid／pending handling and the one-improvement boundary. Legacy native-start timing is distinguished
+  from parent send／child receive; missing human acoustic endpoints are not invented.
+- Spec §6 maps all eight new stimuli in the six Q cases and preserves historical FAIL. §6A maps M's free
+  two-Session use, USER confirmation and stop／release; §8 maps final same-content L／P／R／Q／M closure.
+- Local links／fences, Q stimulus alignment, PN／PH mapping and `git diff --check` passed on workstation.
+  This is document coverage confirmation, not execution PASS, new approval gate or whole-ALPHA acceptance.
+
+## Exact routing now
 
 | Role | Action now |
 | :--- | :--- |
-| Developer | Resume the existing bounded ALPHA runner work package against corrected `ALPHA.md` and `test_spec_ALPHA.md` |
-| Tester | Test Spec correction complete; enter next for candidate Verify or a concrete implementation conflict |
-| Designer | Design correction complete; enter only for a new concrete authority conflict or USER scope change |
-| Architect / Reviewer | No active request; enter only for a focused contract conflict that accepted architecture cannot support |
+| Developer | Estimate and implement actual collector／PN pacing／PH guide／revised-fixture gaps; establish native observation limits and precision before the first block; run paired baseline and M, diagnose and test at most one supported improvement |
+| Tester | Spec synchronization complete; enter next for candidate Verify or a concrete implementation／spec conflict |
+| Designer | Design and coverage complete; enter only for a concrete authority conflict or USER scope change |
+| Verify | Close L／P／R／Q／M on one final version with applicable Pi／human evidence; retain old failures and original P mode |
 
-Designer replaces this file only when Test Spec coverage, Developer entry, stage, gate or next owner changes.
+No new handoff／summary file, service, commit, push, completion tag or extra approval gate is introduced.

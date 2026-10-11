@@ -163,7 +163,16 @@ class SubprocessLLMChild:
     async def send(self, frame: Mapping[str, object]) -> None:
         if self._process is None or self._process.stdin is None or self._process.returncode is not None:
             raise LLMBackendError("child input is unavailable")
-        self._process.stdin.write(encode_frame(frame))
+        raw = encode_frame(frame)
+        if frame["op"] != "CANCEL":
+            self._timing_request = {key: frame.get(key) for key in
+                                    ("op", "request_id", "session_id", "generation")}
+        instant = time.monotonic_ns()
+        self._process.stdin.write(raw)
+        if frame["op"] in {"OPEN", "GENERATE"}:
+            from sbd.cognition.observability import private_timing
+            private_timing("conversation_create" if frame["op"] == "OPEN" else "parent_request_send",
+                           frame, instant)
         try:
             await self._process.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as error:
@@ -172,7 +181,18 @@ class SubprocessLLMChild:
     async def receive(self) -> Mapping[str, object]:
         if self._process is None or self._process.stdout is None:
             raise LLMBackendError("child output is unavailable")
-        return await read_frame(self._process.stdout)
+        frame = await read_frame(self._process.stdout)
+        instant = time.monotonic_ns()
+        event = frame.get("event")
+        if event in {"OPENED", "SAFE_TEXT", "RESULT", "REQUEST_FAILED", "CANCELLED"}:
+            from sbd.cognition.observability import private_timing
+            operation = getattr(self, "_timing_request", None)
+            if operation is not None and operation.get("request_id") == frame.get("request_id"):
+                stage = ("conversation_ready" if event == "OPENED" else
+                         "parent_safe_text_receive" if event == "SAFE_TEXT" else "parent_terminal_receive")
+                counts = {"sequence": frame["sequence"]} if event == "SAFE_TEXT" else {}
+                private_timing(stage, operation, instant, **counts)
+        return frame
 
     async def stop(self) -> None:
         async with self._stop_lock:

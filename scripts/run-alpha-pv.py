@@ -20,8 +20,9 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.alpha_oracle import CLEANUP, RUNS, InvalidObservation, check_public, evaluate, require
-from scripts.alpha_product import private_json, process_identity, resolve_fixtures, session_plan
+from scripts.alpha_oracle import CLEANUP, RUNS, InvalidObservation, check_public, evaluate, experiment_block, require
+from scripts.alpha_product import (FIXTURE_TEXT, private_json, process_identity, quality_revision,
+                                   resolve_fixtures, session_plan)
 
 
 def process_tree(root: int) -> dict[int, tuple[str, str]]:
@@ -97,6 +98,21 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
     command = [str(args.python), str(ROOT / "scripts/alpha_product.py"), "--run", run,
                "--config", str(args.config.resolve()), "--fixtures", str(args.fixtures.resolve()),
                "--observation", str(observation), "--process-start-ns", str(start)]
+    environment = None
+    host_context = None
+    if run in {"pn", "ph"}:
+        host_context = {"boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+                        "uptime_start_ns": time.monotonic_ns(), "wall_start_ns": time.time_ns()}
+        timing = private / f"timings{suffix}"
+        timing.mkdir(mode=0o700)
+        experiment = private / f"experiment{suffix}.json"
+        private_json(experiment, {"run": run, "fixtures": str(args.fixtures.resolve()),
+            "observation": str(observation), "process_start_ns": start,
+            "timing_directory": str(timing), "control": bool(args.cause_control_reason),
+            "diagnostic_role": getattr(args, "diagnostic_role", None)})
+        environment = dict(os.environ, ALPHA_EXPERIMENT=str(experiment))
+        command = [str(args.installed_entry.resolve()), "--config", str(args.config.resolve()),
+                   "--python", str(args.python)]
     if args.run == "lifecycle":
         if args.network_launcher == "sudo-unshare":
             # Root creates only the namespace. Return to the caller for hardware access,
@@ -111,15 +127,42 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
     with log.open("xb") as sink:
         os.chmod(log, 0o600)
         process = subprocess.Popen(command, cwd=ROOT, stdout=sink, stderr=subprocess.STDOUT,
-                                   start_new_session=True)
+                                   start_new_session=True, env=environment)
+        previous_interrupt = signal.getsignal(signal.SIGINT)
+        if run == "ph":
+            def forward_interrupt(signum, frame):
+                try:
+                    process.send_signal(signal.SIGINT)
+                except ProcessLookupError:
+                    pass
+            signal.signal(signal.SIGINT, forward_interrupt)
+        guide_offset = 0
         try:
             while process.poll() is None:
+                if run == "ph":
+                    with log.open("r") as source:
+                        source.seek(guide_offset)
+                        while True:
+                            line = source.readline()
+                            if not line or not line.endswith("\n"):
+                                break
+                            guide_offset = source.tell()
+                            if line.startswith("ALPHA_GUIDE "):
+                                instruction = line.strip().split()[1:]
+                                if instruction[0] == "SAY" and instruction[1] in FIXTURE_TEXT:
+                                    print("請說：" + FIXTURE_TEXT[instruction[1]], flush=True)
+                                elif instruction[0] == "START_SESSION":
+                                    print("請短按按鈕開始新 Session，等候下一個指定問題。", flush=True)
+                                elif instruction[0] == "STOP_APP":
+                                    print("請長按按鈕或 Ctrl+C 正常停止 App。", flush=True)
                 identities.update(process_tree(process.pid))
                 if time.monotonic() >= deadline:
                     timed_out = True
                     break
                 time.sleep(0.02)
         finally:
+            if run == "ph":
+                signal.signal(signal.SIGINT, previous_interrupt)
             # This also captures detached native child groups, beyond the launcher PGID.
             if process.poll() is None:
                 finish_process(process, identities, args.cleanup_timeout)
@@ -155,6 +198,13 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
     value["launcher_exit_code"] = process.returncode
     value["process_start_ns"] = start
     value["process_end_ns"] = time.monotonic_ns()
+    if run in {"pn", "ph"}:
+        host_context.update(uptime_end_ns=time.monotonic_ns(), wall_end_ns=time.time_ns())
+        value["host_context"] = host_context
+        value["timing_events"] = [json.loads(line) for path in sorted(timing.glob("timing-*.jsonl"))
+                                  for line in path.read_text().splitlines()]
+        value["startup_timing_events"] = [json.loads(line) for path in sorted(timing.glob("startup-timing-*.jsonl"))
+                                          for line in path.read_text().splitlines()]
     return value
 
 
@@ -204,6 +254,8 @@ def write_public(path: Path, report: dict) -> None:
 
 
 def execute(args) -> int:
+    if args.run in {"pn", "ph"}:
+        return execute_experiment(args)
     require(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{2,95}", args.run_id) is not None, "RUN_ID_INVALID")
     require(math.isfinite(args.watchdog) and args.watchdog > 0
             and math.isfinite(args.cleanup_timeout) and 0 < args.cleanup_timeout <= 60, "WATCHDOG_INVALID")
@@ -222,6 +274,8 @@ def execute(args) -> int:
         require(no_previous_app(), "PREVIOUS_APP_PRESENT")
         needed = {fixture for session in session_plan(args.run) for _, fixture, _ in session}
         resolve_fixtures(args.fixtures, needed)  # Resolve before any product stimulus; no digest.
+        if args.run == "quality":
+            metadata["fixture_revision"] = quality_revision(args.fixtures)
         args.deadline = time.monotonic() + args.watchdog
         value = run_child(args, private, args.run)
         if args.run == "lifecycle" and value.get("driver_complete"):
@@ -260,7 +314,100 @@ def execute(args) -> int:
     return 0 if report["disposition"] in {"PASS", "VALID_BASELINE"} else 2
 
 
+def execute_experiment(args) -> int:
+    diagnostic = getattr(args, "diagnostic_first_use", False)
+    single = getattr(args, "diagnostic_single_request", False)
+    require(not single or diagnostic, "DIAGNOSTIC_MODE_INVALID")
+    require(not diagnostic or (args.run == "pn" and args.cause_control_reason is None), "DIAGNOSTIC_MODE_INVALID")
+    require(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{2,95}", args.run_id) is not None, "RUN_ID_INVALID")
+    require(args.installed_entry is not None and args.installed_entry.is_file(), "INSTALLED_ENTRY_REQUIRED")
+    require(args.cause_control_reason is None or bool(args.cause_control_reason.strip()), "CAUSE_CONTROL_REASON_REQUIRED")
+    require(math.isfinite(args.watchdog) and args.watchdog > 0
+            and math.isfinite(args.cleanup_timeout) and 0 < args.cleanup_timeout <= 60, "WATCHDOG_INVALID")
+    root = args.output.resolve()
+    require(not root.is_relative_to(ROOT), "EVIDENCE_INSIDE_REPOSITORY")
+    root.mkdir(parents=True, exist_ok=False, mode=0o700)
+    private = root / "private"
+    private.mkdir(mode=0o700)
+    report = {"test_id": RUNS[args.run], "run_id": args.run_id, "mode": args.run.upper(),
+        "phase": args.phase, "control_enabled": bool(args.cause_control_reason),
+        "target": {"architecture": platform.machine(), "python": platform.python_version()},
+        "watchdog_seconds": args.watchdog, "clock_resolution_ns": time.get_clock_info("monotonic").resolution * 1e9,
+        "timestamp_quantization_ns": 1, "capture_error_bound_ns": None,
+        "improvement_claim_allowed": False,
+        "limits": {"prefill": "NATIVE_NOT_EXPOSED", "native_render": "NATIVE_NOT_EXPOSED",
+                   "admission_render": "EXPOSED", "asr_endpoint": "NOT_EXPOSED",
+                   "human_speech_end": "NOT_MEASURED", "acoustic_onset": "NOT_MEASURED"},
+        "blocks": [{"block": block, "disposition": "NOT_EXECUTED", "performance": [],
+                    "turns": [], "unexecuted_cases": [args.run.upper() + "01"] + (
+                        [args.run.upper() + "06"] * 4 if args.cause_control_reason else
+                        [args.run.upper() + suffix for suffix in ("02", "04", "03", "05")])}
+                   for block in (1, 2)],
+        "fixture_revision": "PNPH-20261011", "ranges": [], "disposition": "INVALID", "reason_code": "PRECONDITION_FAILED"}
+    observations = []
+    if diagnostic:
+        report.pop("test_id")  # Focused diagnosis earns no formal PN-case acceptance credit.
+        for block in report["blocks"]:
+            block["unexecuted_cases"] = ["NATIVE-APP-START"] + (
+                ["NATIVE-FIRST", "NATIVE-REUSED"] if block["block"] == 1 else ["NATIVE-FRESH-APP"])
+        if single:
+            report["blocks"] = report["blocks"][:1]
+            report["blocks"][0]["unexecuted_cases"] = ["NATIVE-APP-START", "NATIVE-FIRST"]
+    try:
+        require(platform.machine() == "aarch64", "PI_TARGET_REQUIRED")
+        require(no_previous_app(), "PREVIOUS_APP_PRESENT")
+        if args.run == "pn":
+            needed = {"FX-SHORT-B"} if diagnostic else {
+                fixture for session in session_plan("pn", control=bool(args.cause_control_reason))
+                for _, fixture, _ in session}
+            resolve_fixtures(args.fixtures, needed)
+        for block in ((1,) if single else (1, 2)):
+            args.diagnostic_role = ("single_request" if single else
+                "first_app" if block == 1 else "fresh_app") if diagnostic else None
+            args.deadline = time.monotonic() + args.watchdog
+            observed = run_child(args, private, args.run, f"-block-{block}")
+            observations.append(observed)
+            view = experiment_block(args.run, observed, control=bool(args.cause_control_reason),
+                                    diagnostic_role=args.diagnostic_role)
+            view["block"] = block
+            report["blocks"][block - 1] = view
+            if view["disposition"] not in {"VALID_OBSERVATION", "PENDING"}:
+                report.update(disposition=view["disposition"], reason_code=view["reason_code"])
+                break
+        else:
+            report.update(disposition="PENDING" if args.run == "ph" else "VALID_OBSERVATION",
+                          reason_code="HEARING_REPORT_PENDING" if args.run == "ph" else "BASELINE_CAPTURED")
+            if diagnostic:
+                report.update(disposition="DIAGNOSTIC_OBSERVATION", reason_code="FOCUSED_CAPTURED")
+            else:
+                add_experiment_ranges(report)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        report.update(disposition="INVALID", reason_code=error.code if isinstance(error, InvalidObservation)
+                      else "DIAGNOSTIC_INCOMPLETE")
+    private_json(private / "run-observation.json", {"blocks": observations,
+        "cause_control_reason": args.cause_control_reason})
+    write_public(root / "result.json", report)
+    print(json.dumps(report, separators=(",", ":")))
+    return 0 if report["disposition"] in {"VALID_OBSERVATION", "DIAGNOSTIC_OBSERVATION"} else 2
+
+
+def add_experiment_ranges(report: dict) -> None:
+    report["ranges"] = []
+    if len(report["blocks"]) != 2:
+        return
+    first, second = (block["performance"] for block in report["blocks"])
+    for left, right in zip(first, second, strict=True):
+        require(left["case_id"] == right["case_id"], "EXPERIMENT_SEQUENCE_FAILED")
+        report["ranges"].append({"case_id": left["case_id"],
+            "turn_index": left.get("turn_index"), "durations_ns": {
+                key: {"minimum_ns": min(value, right["durations_ns"][key]),
+                      "maximum_ns": max(value, right["durations_ns"][key])}
+                for key, value in left["durations_ns"].items()}})
+
+
 def adjudicate(args) -> int:
+    if args.run == "ph":
+        return adjudicate_hearing(args)
     require(args.run == "quality" and args.judgments is not None, "QUALITY_JUDGMENTS_REQUIRED")
     root = args.adjudicate.resolve()
     old = json.loads((root / "result.json").read_text())
@@ -269,13 +416,42 @@ def adjudicate(args) -> int:
     value = json.loads((root / "private/run-observation.json").read_text())
     judgments = json.loads(args.judgments.read_text())
     report = evaluate("quality", value, judgments=judgments)
-    for key in ("run_id", "target", "watchdog_seconds", "fixture_ids", "cleanup"):
+    for key in ("run_id", "target", "watchdog_seconds", "fixture_ids", "cleanup", "fixture_revision"):
+        if key == "fixture_revision" and key not in old:
+            continue  # Retained historical pending observations have their original metadata.
         report[key] = old[key]
     # Preserve the initial objective observation and pending card; adjudication is not a retry.
     write_public(root / "adjudicated-result.json", report)
     private_json(root / "private/semantic-judgments.json", judgments)
     print(json.dumps(report, separators=(",", ":")))
     return 0 if report["disposition"] == "PASS" else 2
+
+
+def adjudicate_hearing(args) -> int:
+    require(args.judgments is not None, "HEARING_REPORT_REQUIRED")
+    root = args.adjudicate.resolve()
+    report = json.loads((root / "result.json").read_text())
+    require(report["test_id"] == RUNS["ph"] and report["disposition"] == "PENDING", "HUMAN_NOT_PENDING")
+    observations = json.loads((root / "private/run-observation.json").read_text())
+    hearing = json.loads(args.judgments.read_text())
+    require(type(hearing) is list and len(hearing) == 8
+            and all(type(row) is dict and row.get("block") in {1, 2} for row in hearing), "HEARING_REPORT_INVALID")
+    require(all(sorted(row.get("turn_index", -1) for row in hearing if row["block"] == block)
+                == list(range(4)) for block in (1, 2)), "HEARING_REPORT_INVALID")
+    report["blocks"] = []
+    for block, observed in enumerate(observations["blocks"], 1):
+        view = experiment_block("ph", observed, control=report["control_enabled"],
+                                hearing=[row for row in hearing if row["block"] == block])
+        view["block"] = block
+        report["blocks"].append(view)
+    failed = next((block for block in report["blocks"] if block["disposition"] != "VALID_OBSERVATION"), None)
+    report.update(disposition=failed["disposition"] if failed else "VALID_OBSERVATION",
+                  reason_code=failed["reason_code"] if failed else "BASELINE_CAPTURED")
+    add_experiment_ranges(report)
+    write_public(root / "adjudicated-result.json", report)
+    private_json(root / "private/hearing-report.json", hearing)
+    print(json.dumps(report, separators=(",", ":")))
+    return 0 if report["disposition"] == "VALID_OBSERVATION" else 2
 
 
 def main(argv=None) -> int:
@@ -286,12 +462,19 @@ def main(argv=None) -> int:
     parser.add_argument("--fixtures", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
-    parser.add_argument("--watchdog", type=float, default=900)
+    parser.add_argument("--watchdog", type=float)
     parser.add_argument("--cleanup-timeout", type=float, default=20)
     parser.add_argument("--network-launcher", choices=("unshare", "sudo-unshare"), default="unshare")
     parser.add_argument("--adjudicate", type=Path)
     parser.add_argument("--judgments", type=Path)
+    parser.add_argument("--installed-entry", type=Path)
+    parser.add_argument("--phase", choices=("before", "after"), default="before")
+    parser.add_argument("--cause-control-reason")
+    parser.add_argument("--diagnostic-first-use", action="store_true")
+    parser.add_argument("--diagnostic-single-request", action="store_true")
     args = parser.parse_args(argv)
+    if args.watchdog is None:
+        args.watchdog = 1800 if args.run == "ph" else 900
     try:
         if args.adjudicate is not None:
             return adjudicate(args)

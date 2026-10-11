@@ -8,13 +8,16 @@ approved DISCARD_TICKET replaces it using the fixed public scrub rendering.
 """
 from __future__ import annotations
 import argparse
+import ctypes
 from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
 import json
+import math
 import os
 import platform
 import queue
+import resource
 import select
 import stat
 import sys
@@ -40,6 +43,44 @@ from sbd.cognition.semantic import (
 from sbd.cognition.prompt_builder import SYSTEM_PROMPT
 
 _DIAGNOSTIC_DIRECTORY: Path | None = None
+_ACTIVE_TIMING_FRAME: Mapping[str, object] = {}
+
+
+def _timing_mark(stage: str, instant: int | None = None, **counts: int) -> None:
+    from sbd.cognition.observability import private_timing
+    private_timing(stage, _ACTIVE_TIMING_FRAME,
+                   time.monotonic_ns() if instant is None else instant, **counts)
+
+
+def _timing_benchmark(info: object) -> None:
+    """Keep native reported summaries separate from boundary timestamps."""
+    values = {}
+    for field, output in (("init_time_in_second", "reported_init_ns"),
+                          ("time_to_first_token_in_second", "reported_ttft_ns")):
+        value = getattr(info, field, None)
+        if type(value) in {float, int} and math.isfinite(value) and value >= 0:
+            values[output] = round(value * 1_000_000_000)
+    for phase in ("prefill", "decode"):
+        count = getattr(info, f"last_{phase}_token_count", None)
+        rate = getattr(info, f"last_{phase}_tokens_per_second", None)
+        if (type(count) is int and count >= 0 and type(rate) in {float, int}
+                and math.isfinite(rate) and rate > 0):
+            values[f"derived_{phase}_ns"] = round(count / rate * 1_000_000_000)
+    _timing_mark("native_benchmark", **values)
+
+
+def _native_request_counters() -> dict[str, int]:
+    from sbd.cognition import observability
+    if observability._PRIVATE_TIMING_RECORDER is None:
+        return {}
+    sample = resource.getrusage(resource.RUSAGE_SELF)
+    return {"major_fault_count": sample.ru_majflt, "input_block_count": sample.ru_inblock,
+            "cpu_time_ns": time.process_time_ns()}
+
+
+def _startup_mark(stage: str) -> None:
+    from sbd.cognition.observability import private_startup_timing
+    private_startup_timing(stage, time.monotonic_ns())
 
 
 def _diagnostic_mark(stage: str, **values: object) -> None:
@@ -63,6 +104,72 @@ class WorkerCancelled(RuntimeError):
 
 class WorkerCancelFailed(RuntimeError):
     pass
+
+
+class WeightCachePrefetch:
+    """One engine-owned, read-only cache job; generation never waits on it."""
+    CHUNK_BYTES = 1024 * 1024
+
+    def __init__(self, path: Path, frame: Mapping[str, object]) -> None:
+        self.path = path
+        self.frame = dict(frame)
+        self.cancelled = threading.Event()
+        self.done = threading.Event()
+        self.thread: threading.Thread | None = None
+        self.bytes_read = 0
+        self.status = "READY"
+
+    def _record(self, stage: str, total: int = 0) -> None:
+        from sbd.cognition.observability import private_timing
+        private_timing(stage, self.frame, time.monotonic_ns(),
+                       cache_total_bytes=total, cache_read_bytes=self.bytes_read)
+
+    def start(self) -> None:
+        if self.thread is not None:
+            return
+        self.thread = threading.Thread(target=self._read, name="llm-cache-read", daemon=False)
+        self.thread.start()
+
+    def _read(self) -> None:
+        total = 0
+        try:
+            # This thread must yield disk service to live capture/ASR and native
+            # generation. Linux nice and ioprio are per task, so neither changes
+            # the Engine's foreground thread or its other workers.
+            if sys.platform == "linux":
+                try:
+                    os.nice(10)
+                    syscall_number = 30 if platform.machine() == "aarch64" else 251
+                    if platform.machine() in {"aarch64", "x86_64"}:
+                        ctypes.CDLL(None, use_errno=True).syscall(
+                            syscall_number, 1, 0, 3 << 13)  # current task, idle I/O class
+                except (OSError, AttributeError):
+                    pass
+            with self.path.open("rb", buffering=0) as source:
+                total = os.fstat(source.fileno()).st_size
+                self.status = "READING"
+                self._record("cache_prefetch_start", total)
+                while self.bytes_read < total and not self.cancelled.is_set():
+                    chunk = source.read(min(self.CHUNK_BYTES, total - self.bytes_read))
+                    if not chunk:
+                        raise OSError("cache ended before declared size")
+                    self.bytes_read += len(chunk)
+            self.status = "CANCELLED" if self.cancelled.is_set() else "COMPLETED"
+            self._record("cache_prefetch_cancelled" if self.status == "CANCELLED"
+                         else "cache_prefetch_complete", total)
+        except Exception:
+            # A best-effort read cannot change model output or reject a request.
+            self.status = "FAILED"
+            self._record("cache_prefetch_failed", total)
+        finally:
+            self.done.set()
+
+    def stop(self) -> None:
+        self.cancelled.set()
+        if self.thread is not None:
+            self.thread.join(timeout=0.5)
+            if self.thread.is_alive():
+                raise WorkerCancelFailed("cache reader did not stop")
 
 
 def _native_message_text(serialized: str) -> str:
@@ -159,15 +266,20 @@ class LiteRTRuntime:
             enable=True,
             provider=LiteRtLmConstraintProviderType.LL_GUIDANCE,
         )
+        _startup_mark("engine_init_begin")
         self._engine = Engine(
             model,
             backend=Backend.CPU(thread_count=4),
             max_num_tokens=1024,
             enable_benchmark=True,
         )
+        _startup_mark("engine_init_end")
         from sbd.cognition.prompt_builder import attest_prompt
         attest_prompt(self._engine.tokenize)
         self._conversation: Any = None
+        self._model_path = Path(model).resolve()
+        self._cache_prefetch: WeightCachePrefetch | None = None
+        self._cache_prefetch_attempted = False
         self._active: Any = None
         self._pending_cancel = False
         self._cancel_requested = False
@@ -176,6 +288,22 @@ class LiteRTRuntime:
 
     def open_conversation(self) -> None:
         require(self._conversation is None)
+        if not self._cache_prefetch_attempted:
+            self._cache_prefetch_attempted = True
+            prefix = str(self._model_path) + "_"
+            paths = set()
+            try:
+                for line in Path("/proc/self/maps").read_text().splitlines():
+                    fields = line.split(maxsplit=5)
+                    if len(fields) == 6 and fields[5].startswith(prefix) and fields[5].endswith(".xnnpack_cache"):
+                        paths.add(Path(fields[5]))
+            except OSError:
+                pass
+            if len(paths) == 1:
+                self._cache_prefetch = WeightCachePrefetch(paths.pop(), _ACTIVE_TIMING_FRAME)
+                self._cache_prefetch.start()
+            else:
+                _timing_mark("cache_prefetch_unavailable")
         self._conversation = self._engine.create_conversation(
             system_message=SYSTEM_PROMPT, automatic_tool_calling=False,
             constrained_decoding_config=self._constraint,
@@ -190,7 +318,9 @@ class LiteRTRuntime:
         # path as SendMessage. The product never uses has_pending_message:
         # RenderSingleTurnTemplateCommon returns false appending state and
         # never appends history. No inference/session input allocation occurs.
+        _timing_mark("render_begin")
         rendered = conversation.render_message_to_string(text)
+        _timing_mark("render_end")
         require(type(rendered) is str and bool(rendered))
         user = len(self._engine.tokenize(text))
         incremental = len(self._engine.tokenize(rendered))
@@ -267,15 +397,20 @@ class LiteRTRuntime:
         parser = IncrementalSafeTextParser(12)
         native_events: queue.Queue[tuple[str, bool] | BaseException] = queue.Queue()
         final_seen = False
+        first_output_seen = False
         with self._lock:
             if self._pending_cancel:
                 self._pending_cancel = False
                 raise WorkerCancelled()
             self._active = conversation
         try:
+            _timing_mark("response_format_begin")
             response_format = self._response_format.json(load_response_schema())
+            _timing_mark("response_format_end")
 
             def callback(unused_data: Any, chunk_ptr: Any) -> None:
+                nonlocal first_output_seen
+                instant = time.monotonic_ns()
                 try:
                     error_value = conversation._lib.litert_lm_stream_chunk_get_error(chunk_ptr)
                     if error_value:
@@ -285,6 +420,9 @@ class LiteRTRuntime:
                         raise RuntimeError("native stream failed")
                     raw = conversation._lib.litert_lm_stream_chunk_get_text(chunk_ptr)
                     chunk = raw.decode("utf-8") if raw else ""
+                    if chunk and not first_output_seen:
+                        first_output_seen = True
+                        _timing_mark("first_generated_output", instant, **_native_request_counters())
                     final = bool(conversation._lib.litert_lm_stream_chunk_is_final(chunk_ptr))
                     native_events.put((chunk, final))
                 except BaseException as error:
@@ -292,6 +430,7 @@ class LiteRTRuntime:
 
             c_callback = STREAM_CALLBACK_TYPE(callback)
             conversation._current_callback = c_callback
+            _timing_mark("optional_args_begin")
             normalized = normalize_message(text)
             active_format = conversation._resolve_response_format(
                 normalized, response_format)
@@ -300,11 +439,19 @@ class LiteRTRuntime:
                 suppress_tokens_config=None, max_output_tokens=None,
                 thinking_config=None, current_message=normalized,
                 response_format=active_format)
+            message_wire = json.dumps(normalized)
+            context_wire = json.dumps(getattr(conversation, "extra_context", {}))
+            _timing_mark("optional_args_end")
             try:
+                io_before = _native_request_counters()
+                instant = time.monotonic_ns()
                 result = conversation._lib.litert_lm_conversation_send_message_stream(
-                    conversation._ptr, json.dumps(normalized),
-                    json.dumps(getattr(conversation, "extra_context", {})),
+                    conversation._ptr, message_wire, context_wire,
                     optional_args, c_callback, None)
+                returned = time.monotonic_ns()
+                # Record after return so the boundary hook cannot delay native submission.
+                _timing_mark("native_submit_begin", instant, **io_before)
+                _timing_mark("native_submit_end", returned)
             finally:
                 conversation._delete_optional_args(optional_args)
             require(result == 0, "stream")
@@ -326,6 +473,7 @@ class LiteRTRuntime:
             for fragment in flushed:
                 emit(fragment)
             info = conversation.get_benchmark_info()
+            _timing_benchmark(info)
             return (terminal, info.last_decode_token_count,
                     conversation.token_count, info.last_prefill_token_count)
         except WorkerCancelled:
@@ -365,6 +513,8 @@ class LiteRTRuntime:
 
     def close(self) -> None:
         require(self._conversation is None)
+        if self._cache_prefetch is not None:
+            self._cache_prefetch.stop()
         self._engine.close()
 
 
@@ -375,8 +525,10 @@ class WorkerSession:
         self.ledger = ProtocolLedger()
 
     def execute(self, frame: Mapping[str, object], emit=None) -> list[dict[str, object]]:
+        global _ACTIVE_TIMING_FRAME
         # Caller has already accepted the command into the ledger.
         base = {key: frame[key] for key in ("protocol", "request_id", "session_id", "generation")}
+        _ACTIVE_TIMING_FRAME = base
         op = frame["op"]
         if op == "OPEN":
             self.runtime.open_conversation()
@@ -404,6 +556,8 @@ class WorkerSession:
         require(counts["user_tokens"] <= 32)
         require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
         send = time.monotonic_ns()
+        _timing_mark("native_generation_start", send, **{key: counts[key] for key in
+            ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")})
         safe_times: list[int] = []
         if emit is None or not hasattr(self.runtime, "generate_stream"):
             raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
@@ -442,7 +596,14 @@ class WorkerSession:
 
 
 def _write(frame: Mapping[str, object]) -> None:
-    sys.stdout.buffer.write(encode_frame(frame))
+    raw = encode_frame(frame)
+    if frame.get("event") == "SAFE_TEXT":
+        _timing_mark("child_safe_text_emit", sequence=frame["sequence"],
+                     output_codepoints=len(frame["text"]))
+    elif frame.get("event") in {"RESULT", "REQUEST_FAILED", "CANCELLED"}:
+        counts = {"decode_tokens": frame["decode_tokens"]} if "decode_tokens" in frame else {}
+        _timing_mark("child_terminal_emit", **counts)
+    sys.stdout.buffer.write(raw)
     sys.stdout.buffer.flush()
 
 
@@ -532,11 +693,17 @@ def install_network_denial() -> None:
 
 
 def run(runtime: Any, ready: Mapping[str, object]) -> int:
+    global _ACTIVE_TIMING_FRAME
     session = WorkerSession(runtime)
     control = _ControlInput(sys.stdin.fileno())
     _write(ready)
     while True:
         frame = control.read()
+        instant = time.monotonic_ns()
+        _ACTIVE_TIMING_FRAME = {key: frame.get(key) for key in
+                                ("request_id", "session_id", "generation")}
+        if frame.get("op") == "GENERATE":
+            _timing_mark("child_request_receive", instant)
         session.ledger.command(frame)
         if frame["op"] == "SHUTDOWN":
             runtime.close()
@@ -649,6 +816,10 @@ def main() -> int:
     parser.add_argument("--measurement-diagnostic-directory")
     parser.add_argument("--measurement-expected")
     args = parser.parse_args()
+    timing_directory = os.environ.get("ALPHA_TIMING_DIRECTORY")
+    if timing_directory:
+        from sbd.cognition import observability
+        observability._PRIVATE_TIMING_RECORDER = observability.PrivateTimingRecorder(Path(timing_directory))
     require(bool(args.measurement_diagnostic_directory) == args.measurement_user_diagnostic,
             "measurement")
     require(bool(args.measurement_private_directory)
@@ -716,8 +887,10 @@ def main() -> int:
             os.close(descriptor)
     native_started = time.monotonic_ns()
     _diagnostic_mark("native_runtime_starting")
+    _startup_mark("native_runtime_begin")
     runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
                             native_size_bytes=lock.runtime["native_size_bytes"])
+    _startup_mark("native_runtime_ready")
     _diagnostic_mark("native_runtime_ready",
                      startup_duration_ns=time.monotonic_ns() - native_started)
     ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,

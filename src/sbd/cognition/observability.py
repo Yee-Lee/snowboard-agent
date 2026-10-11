@@ -4,6 +4,8 @@ from __future__ import annotations
 import re
 import json
 import logging
+import os
+from pathlib import Path
 import threading
 import time
 from collections.abc import Callable
@@ -12,6 +14,110 @@ from typing import Mapping
 
 from sbd.cognition.litert_lm.resource import OWNERS, SystemResourceSample
 from sbd.cognition.prompt_builder import PROFILE_ID, PROMPT_COUNTS, PROMPT_HASHES
+
+PRIVATE_TIMING_STAGES = frozenset({"parent_request_send", "parent_safe_text_receive",
+    "parent_terminal_receive", "child_request_receive", "native_generation_start",
+    "first_generated_output", "child_safe_text_emit", "child_terminal_emit",
+    "conversation_create", "conversation_ready", "render_begin", "render_end",
+    "response_format_begin", "response_format_end", "optional_args_begin", "optional_args_end",
+    "native_submit_begin", "native_submit_end", "native_benchmark", "cache_prefetch_start",
+    "cache_prefetch_complete", "cache_prefetch_cancelled", "cache_prefetch_failed",
+    "cache_prefetch_unavailable"})
+PRIVATE_TIMING_COUNTS = frozenset({"sequence", "user_tokens", "current_kv_tokens",
+    "rendered_incremental_tokens", "runtime_prefill_tokens", "decode_tokens",
+    "output_codepoints", "reported_init_ns", "reported_ttft_ns", "derived_prefill_ns",
+    "derived_decode_ns", "major_fault_count", "input_block_count", "cpu_time_ns",
+    "cache_total_bytes", "cache_read_bytes"})
+PRIVATE_STARTUP_STAGES = frozenset({"native_runtime_begin", "native_runtime_ready",
+                                  "engine_init_begin", "engine_init_end"})
+
+
+class PrivateTimingRecorder:
+    """Lossless experiment observations, separate from the truncated text logger.
+
+    Callers capture boundary timestamps before formatting. Request identity is
+    private; only timing and counts can accompany it, never speech or model text.
+    """
+    def __init__(self, directory: Path) -> None:
+        directory = directory.resolve(strict=True)
+        if not directory.is_dir() or directory.stat().st_mode & 0o077:
+            raise ObservationError()
+        self.path = directory / f"timing-{os.getpid()}.jsonl"
+        self._lock = threading.Lock()
+
+    def record(self, stage: str, frame: Mapping[str, object], instant: int,
+               **counts: int) -> None:
+        if (stage not in PRIVATE_TIMING_STAGES or type(instant) is not int or instant <= 0
+                or not set(counts) <= PRIVATE_TIMING_COUNTS
+                or any(type(value) is not int or value < 0 for value in counts.values())):
+            raise ObservationError()
+        identity = {key: frame.get(key) for key in ("request_id", "session_id", "generation")}
+        if (type(identity["request_id"]) is not int or identity["request_id"] <= 0
+                or type(identity["generation"]) is not int or identity["generation"] <= 0
+                or type(identity["session_id"]) is not str or not identity["session_id"]):
+            raise ObservationError()
+        row = {"stage": stage, "monotonic_ns": instant, **identity, **counts}
+        self._append(self.path, row)
+
+    def dashboard(self, name: str, values: Mapping[str, object], metadata: Mapping[str, object]) -> None:
+        if name not in {"timing", "runtime"}:
+            return
+        # Reuse the product's allowlisted row validators; omit prompt hashes and memory observations.
+        if name == "runtime":
+            absent = {key: "NOT_OBSERVED" for key, value in values.items() if value is None}
+            runtime_row(values, null_reasons=absent)
+        else:
+            events = values.get("events", {})
+            if (set(values) != {"clock_domain", "events"} or set(events) != set(TIMING_NODES)
+                    or any(type(node) is not dict or set(node) != {"monotonic_ns", "null_reason"}
+                           for node in events.values())):
+                raise ObservationError()
+            timing_row(clock_domain=values["clock_domain"],
+                events={key: node["monotonic_ns"] for key, node in events.items()},
+                null_reasons={key: node["null_reason"] for key, node in events.items()
+                              if node["monotonic_ns"] is None})
+        allowed_metadata = {key: value for key, value in metadata.items()
+                            if key in {"conversation_generation", "turn_index"}}
+        if any(type(value) is not int or value < 0 for value in allowed_metadata.values()):
+            raise ObservationError()
+        self._append(self.path.with_name(f"dashboards-{os.getpid()}.jsonl"),
+                     {"dashboard": name, "values": dict(values), **allowed_metadata})
+
+    def startup(self, stage: str, instant: int) -> None:
+        if stage not in PRIVATE_STARTUP_STAGES or type(instant) is not int or instant <= 0:
+            raise ObservationError()
+        self._append(self.path.with_name(f"startup-timing-{os.getpid()}.jsonl"),
+                     {"stage": stage, "monotonic_ns": instant})
+
+    def _append(self, path: Path, row: Mapping[str, object]) -> None:
+        raw = (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+        with self._lock:
+            fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+            try:
+                os.fchmod(fd, 0o600)
+                view = memoryview(raw)
+                while view:
+                    written = os.write(fd, view)
+                    if written <= 0:
+                        raise ObservationError()
+                    view = view[written:]
+            finally:
+                os.close(fd)
+
+
+_PRIVATE_TIMING_RECORDER: PrivateTimingRecorder | None = None
+
+
+def private_timing(stage: str, frame: Mapping[str, object], instant: int,
+                   **counts: int) -> None:
+    recorder = _PRIVATE_TIMING_RECORDER
+    if recorder is not None:
+        recorder.record(stage, frame, instant, **counts)
+
+
+def private_startup_timing(stage: str, instant: int) -> None:
+    if _PRIVATE_TIMING_RECORDER is not None:
+        _PRIVATE_TIMING_RECORDER.startup(stage, instant)
 
 LIFECYCLE_POINTS = frozenset({"engine_ready", "conversation_preparation", "conversation_ready",
     "pre_generate", "post_generate", "pre_speak", "audio_completion", "primary_completion",
@@ -166,6 +272,8 @@ class CognitionObserver:
 
     def _emit(self, dashboard: str, values: dict[str, object], **metadata: object) -> None:
         try:
+            if _PRIVATE_TIMING_RECORDER is not None:
+                _PRIVATE_TIMING_RECORDER.dashboard(dashboard, values, metadata)
             self._sink({"dashboard": dashboard, "values": values, **metadata})
         except Exception:
             raise ObservationError() from None

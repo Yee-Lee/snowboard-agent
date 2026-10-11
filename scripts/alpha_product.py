@@ -30,11 +30,41 @@ from scripts.alpha_oracle import FIXTURES, QUALITY, InvalidObservation, require
 
 FIXTURE_TEXT = dict(zip(FIXTURES, (
     "一個星期有幾天？", "一個星期有幾天？", "請再簡短回答一次。",
-    "請列出三個滑雪安全重點。", "現在請結束對話。", "請問你是誰？",
-    "一個星期有幾天？", "你現在可以看到我前面的東西嗎？",
-    "用一句話說初學滑雪為何要戴安全帽。", "請簡短介紹台灣。",
-    "再簡單一點，並且只說它的位置。", "請不要結束對話，先告訴我一加一等於多少。",
-    "現在請結束對話。"), strict=True))
+    "請列出三個滑雪安全重點。", "現在請結束對話。", "請介紹你自己。",
+    "一天通常有幾個小時？", "你能看見房間裡的東西嗎？",
+    "請用一句短話描述下雪的景色。", "我喜歡滑雪。",
+    "我剛才說喜歡什麼？", "請聊聊冬天。",
+    "對話到這裡，請結束。"), strict=True))
+QUALITY_FIXTURE_REVISION = "Q-20261011"
+FRAME_NS = 20_000_000
+
+
+async def paced_pcm(payload: bytes, observation: dict, *, clock=time.monotonic_ns,
+                    sleep=asyncio.sleep):
+    """Deliver fixed frames on sample time; stop rather than burst after a stall."""
+    require(bool(payload) and len(payload) % 2 == 0, "FIXTURE_PCM_INVALID")
+    speech_frames = [index for index, offset in enumerate(range(0, len(payload), 640))
+                     if any(payload[offset:offset + 640])]
+    start = clock()
+    observation.update(frame_period_ns=FRAME_NS, frames=[], complete=False)
+    if speech_frames:
+        observation["speech_end_ns"] = start + (speech_frames[-1] + 1) * FRAME_NS
+    first = None
+    for index, offset in enumerate(range(0, len(payload), 640)):
+        scheduled = start + index * FRAME_NS
+        while (remaining := scheduled - clock()) > 0:
+            await sleep(remaining / 1_000_000_000)
+        actual = clock()
+        first = actual if first is None else first
+        lateness = actual - scheduled
+        span_error = actual - first - index * FRAME_NS
+        observation["frames"].append({"index": index, "scheduled_ns": scheduled,
+                                      "delivered_ns": actual, "lateness_ns": lateness})
+        require(0 <= lateness <= FRAME_NS and abs(span_error) <= FRAME_NS,
+                "PACING_DISTORTED")
+        frame = payload[offset:offset + 640].ljust(640, b"\0")
+        yield frame
+    observation.update(complete=True, delivery_span_error_ns=span_error)
 
 
 async def prepare_fixtures(config_path: Path, output: Path) -> None:
@@ -76,6 +106,10 @@ async def prepare_fixtures(config_path: Path, output: Path) -> None:
                 await pcm.aclose()
             mapping[identity] = already_bound[text] = path.name
         private_json(output / "fixtures.json", mapping)
+        private_json(output / "fixture-metadata.json", {
+            "quality_revision": QUALITY_FIXTURE_REVISION,
+            "quality_bindings": {identity: {"text": text, "file": mapping[identity]}
+                                 for identity, text in FIXTURE_TEXT.items() if identity.startswith("FX-Q")}})
     finally:
         await tts.stop()
 
@@ -140,11 +174,35 @@ def resolve_fixtures(path: Path, needed: set[str]) -> dict[str, bytes]:
     return result
 
 
-def session_plan(run: str) -> list[list[tuple[str, str, str]]]:
+def quality_revision(path: Path) -> str:
+    """Check the predeclared stimulus binding once, before entering the Q run."""
+    try:
+        metadata = json.loads(path.with_name("fixture-metadata.json").read_text())
+        mapping = json.loads(path.read_text())
+    except (OSError, ValueError):
+        raise InvalidObservation("QUALITY_FIXTURE_REVISION_MISSING") from None
+    expected = {identity: {"text": text, "file": mapping.get(identity)}
+                for identity, text in FIXTURE_TEXT.items() if identity.startswith("FX-Q")}
+    require(metadata.get("quality_revision") == QUALITY_FIXTURE_REVISION
+            and metadata.get("quality_bindings") == expected,
+            "QUALITY_FIXTURE_REVISION_INVALID")
+    return QUALITY_FIXTURE_REVISION
+
+
+def session_plan(run: str, *, control: bool = False) -> list[list[tuple[str, str, str]]]:
     end = ("CLOSE", "FX-NORMAL-END", "END_SESSION")
     if run == "lifecycle":
         return [[(f"L{i}-T1", "FX-SHORT-A", "KEEP_NEXT"),
                  (f"L{i}-T2", "FX-NORMAL-END", "END_SESSION")] for i in range(1, 4)]
+    if run in {"pn", "ph"}:
+        prefix = run.upper()
+        if control:
+            return [[(prefix + "06", "FX-SHORT-B", "KEEP_NEXT") for _ in range(2)] + [end]
+                    for _ in range(2)]
+        return [[(prefix + "02", "FX-SHORT-B", "KEEP_NEXT"),
+                 (prefix + "04", "FX-FOLLOW-UP", "KEEP_NEXT"), end],
+                [(prefix + "03", "FX-SHORT-B", "KEEP_NEXT"),
+                 (prefix + "05", "FX-MULTI-FRAGMENT", "KEEP_NEXT"), end]]
     if run == "performance":
         return [[("P02-FIRST-TURN", "FX-SHORT-B", "KEEP_NEXT"),
                  ("P04-FOLLOW-UP", "FX-FOLLOW-UP", "KEEP_NEXT"), end],
@@ -191,6 +249,10 @@ def process_reaped(process) -> bool:
 class ProductProbe:
     def __init__(self, run: str, fixtures: dict[str, bytes], process_start: int):
         self.run, self.fixtures = run, fixtures
+        self.pcm_pacing = "legacy"
+        self.pacing_failure = None
+        self.live_frames = None
+        self.diagnostic_role = None
         self.plan = session_plan(run)
         self.pending = deque()
         self.rows = []
@@ -220,6 +282,8 @@ class ProductProbe:
 
     async def until(self, predicate) -> None:
         while not predicate():
+            if self.pacing_failure is not None:
+                raise InvalidObservation(self.pacing_failure)
             if self.sm._loop_task.done():
                 self.sm._loop_task.result()
                 raise InvalidObservation("APP_STOPPED_EARLY")
@@ -281,8 +345,29 @@ class ProductProbe:
                 row["nodes"]["previous_action_complete"] = self.rows[-1]["nodes"].get("audio_complete")
             self.rows.append(row)
             self.current = row
-            payload = self.fixtures[identity]
             try:
+                if self.run == "ph":
+                    print("ALPHA_GUIDE SAY " + identity, flush=True)
+                    stream = self.live_frames()
+                    try:
+                        async for frame in stream:
+                            instant = time.monotonic_ns()
+                            row["nodes"].setdefault("first_frame", instant)
+                            row["nodes"]["last_frame"] = instant
+                            yield frame
+                    finally:
+                        await stream.aclose()
+                    return
+                payload = self.fixtures[identity]
+                if self.pcm_pacing == "realtime":
+                    pacing = row["pacing"] = {}
+                    async for frame in paced_pcm(payload, pacing):
+                        row["nodes"].setdefault("first_frame", pacing["frames"][0]["delivered_ns"])
+                        row["nodes"]["last_frame"] = pacing["frames"][-1]["delivered_ns"]
+                        if "speech_end_ns" in pacing:
+                            row["nodes"]["speech_end"] = pacing["speech_end_ns"]
+                        yield frame
+                    return
                 for offset in range(0, len(payload), 640):
                     frame = payload[offset:offset + 640].ljust(640, b"\0")
                     if any(frame):
@@ -290,6 +375,10 @@ class ProductProbe:
                         row["nodes"]["speech_end"] = time.monotonic_ns()
                     yield frame
                     await asyncio.sleep(0)  # No artificial real-time playback pacing.
+            except InvalidObservation as error:
+                if error.code == "PACING_DISTORTED":
+                    self.pacing_failure = error.code
+                raise
             finally:
                 row["capture_closed"] = True
         return stream()
@@ -363,14 +452,24 @@ class ProductProbe:
 
     async def normal_session(self, plan) -> None:
         context_case = self.run == "quality" and plan[0][0] == QUALITY[4]
-        self.closing_quality_context = context_case
+        self.closing_quality_context = context_case or self.diagnostic_role is not None
         first_row = len(self.rows)
         self.pending.extend(plan)
-        await self.button()
+        if self.run == "ph":
+            print("ALPHA_GUIDE START_SESSION", flush=True)
+        else:
+            await self.button()
         # PCM admission records the actual Session identity durably. A short
         # Session can complete between polls of the live State Manager pointer.
         await self.until(lambda: len(self.rows) > first_row)
         session_id = self.rows[first_row]["session_id"]
+        if self.diagnostic_role is not None:
+            await self.until(lambda: any(a["kind"] == "speak" and a["status"] == "ok"
+                                        for a in self.rows[first_row]["actions"])
+                             and bool(self.rows[first_row]["runtime"])
+                             or self.sm._session is None)
+            if self.sm._session is not None:
+                await self.button()
         if context_case:
             await self.until(lambda: any(row["case_id"] == QUALITY[4] and row["fixture_id"] == "FX-Q05-T2"
                                         and any(a["kind"] == "speak" and a["status"] == "ok"
@@ -433,7 +532,10 @@ class ProductProbe:
             if getattr(self, "failure_path", None) is not None:
                 private_json(self.failure_path, {**self.result, "turns": self.rows, "sessions": self.sessions})
         finally:
-            await self.button(shutdown=True)
+            if self.run == "ph":
+                print("ALPHA_GUIDE STOP_APP", flush=True)
+            else:
+                await self.button(shutdown=True)
 
     def finish_turns(self) -> None:
         for row in self.rows:
@@ -483,6 +585,45 @@ class ProductProbe:
         return cases
 
 
+def observe_audio_output(output, probe) -> None:
+    """Observe native writes beneath volume wrappers without changing PCM routing."""
+    play = output.play
+    active_fragments = []
+    native = output
+    while hasattr(native, "_output"):
+        native = native._output
+    original_observe = getattr(native, "_observe", None)
+
+    def observed_write(node):
+        instant = time.monotonic_ns()
+        if node == "audio_first_write":
+            for fragment in active_fragments:
+                fragment.setdefault("audio_first_write", instant)
+        if original_observe is not None:
+            original_observe(node)
+
+    if probe.run in {"pn", "ph"} and hasattr(native, "_observe"):
+        native._observe = observed_write
+
+    async def observed_play(pcm):
+        nonlocal active_fragments
+        row = probe.current
+        if probe.sm._session is None:
+            probe.late_audio += 1
+        fragments = [] if row is None else [f for f in row["fragments"] if "tts_start" in f
+                                            and "audio_start" not in f]
+        started = time.monotonic_ns()
+        active_fragments = fragments
+        for fragment in fragments:
+            fragment["audio_start"] = started
+        await play(pcm)
+        complete = time.monotonic_ns()
+        for fragment in fragments:
+            fragment["audio_complete"] = complete
+        active_fragments = []
+    output.play = observed_play
+
+
 async def launch(args) -> int:
     # Import main first: it sets native thread policy before product imports.
     import sbd.main as app_main
@@ -494,9 +635,22 @@ async def launch(args) -> int:
     from sbd.core.events import ButtonPressed
 
     plan = session_plan(args.run) if args.run != "restart" else []
+    diagnostic_role = getattr(args, "diagnostic_role", None)
+    if diagnostic_role is not None:
+        cases = (["NATIVE-FIRST", "NATIVE-REUSED"] if diagnostic_role == "first_app" else
+                 ["NATIVE-FIRST"] if diagnostic_role == "single_request" else ["NATIVE-FRESH-APP"])
+        plan = [[(case, "FX-SHORT-B", "KEEP_NEXT")] for case in cases]
     needed = {fixture for session in plan for _, fixture, _ in session}
-    fixtures = resolve_fixtures(args.fixtures, needed)
+    fixtures = {} if args.run == "ph" else resolve_fixtures(args.fixtures, needed)
     probe = ProductProbe(args.run, fixtures, args.process_start_ns)
+    probe.diagnostic_role = diagnostic_role
+    if probe.diagnostic_role is not None:
+        probe.plan = plan
+    if getattr(args, "control", False):
+        probe.plan = session_plan(args.run, control=True)
+    probe.pcm_pacing = getattr(args, "pcm_pacing", "legacy")
+    if args.run == "pn":
+        probe.pcm_pacing = "realtime"
     probe.failure_path = args.observation.with_name(f"{args.observation.stem}-failure.json")
     originals = {"compose": M3Composition.__call__, "start_one": ResourceManager._start_one,
                  "ready": app_main.logger.info, "config": app_main.load_config,
@@ -523,25 +677,10 @@ async def launch(args) -> int:
         if spec.required and record.started:
             probe.resource_ready[spec.key] = time.monotonic_ns()
         if spec.key == "core.audio.input":
+            probe.live_frames = record.instance.frames
             record.instance.frames = probe.frames
         if spec.key == "core.audio.output":
-            output = record.instance
-            play = output.play
-
-            async def observed_play(pcm):
-                row = probe.current
-                if probe.sm._session is None:
-                    probe.late_audio += 1
-                fragments = [] if row is None else [f for f in row["fragments"] if "tts_start" in f
-                                                    and "audio_start" not in f]
-                started = time.monotonic_ns()
-                for fragment in fragments:
-                    fragment["audio_start"] = started
-                await play(pcm)
-                complete = time.monotonic_ns()
-                for fragment in fragments:
-                    fragment["audio_complete"] = complete
-            output.play = observed_play
+            observe_audio_output(record.instance, probe)
         if spec.key == "backend.action.speak.tts":
             tts = record.instance
             synthesize = tts.synthesize
@@ -613,11 +752,16 @@ async def launch(args) -> int:
 
     async def dequeue(self):
         batch = await originals["dequeue"](self)
+        instant = time.monotonic_ns()
         if batch is not None and probe.current is not None:
             sequences = {fragment.sequence for fragment in batch}
             for row in probe.current["fragments"]:
                 if row["sequence"] in sequences:
                     row["dequeued"] = True
+                    if probe.run in {"pn", "ph"}:
+                        row["queue_wait_ns"] = instant - row["admission"]
+                        row["batch_index"] = getattr(self, "_alpha_batch_index", 0)
+            self._alpha_batch_index = getattr(self, "_alpha_batch_index", 0) + 1
         return batch
 
     def recovery(self, keys):
@@ -648,6 +792,13 @@ async def launch(args) -> int:
 
     logs = PublicLogObservation()
     with ExitStack() as stack:
+        timing_directory = getattr(args, "timing_directory", None)
+        if timing_directory is not None:
+            from sbd.cognition import observability
+            directory = timing_directory.resolve(strict=True)
+            recorder = observability.PrivateTimingRecorder(directory)
+            stack.enter_context(patch.object(observability, "_PRIVATE_TIMING_RECORDER", recorder))
+            stack.enter_context(patch.dict(os.environ, {"ALPHA_TIMING_DIRECTORY": str(directory)}))
         if args.run in {"lifecycle", "restart"}:
             stack.enter_context(patch.object(logging.Handler, "handle",
                 lambda handler, record: logs.handle(handler, record)))
@@ -681,6 +832,12 @@ async def launch(args) -> int:
                                 "alsa_absent": counts["alsa"] == 0,
                                 "display_owner_absent": counts["display_owner"] == 0,
                                 "hardware_owners_absent": counts["hardware_owners"] == 0})
+        if args.run in {"pn", "ph"}:
+            probe.result.update(startup=probe.startup, resources_ready=probe.resource_ready,
+                                prefetch_expected=True,
+                                engine_reused=len(probe.llm_children) == 1,
+                                child_reused=bool(probe.llm_children)
+                                    and probe.first_child is probe.llm_children[-1])
         if args.run == "performance":
             probe.result["performance"] = probe.performance()
         if args.run in {"lifecycle", "restart"}:
@@ -690,13 +847,27 @@ async def launch(args) -> int:
     return exit_code
 
 
+async def launch_installed(config: str, experiment: str) -> int:
+    """Opt-in experiment using this installation's regular runtime/composition."""
+    values = json.loads(Path(experiment).read_text())
+    from types import SimpleNamespace
+    require(values.get("run") in {"pn", "ph"}, "EXPERIMENT_MODE_INVALID")
+    return await launch(SimpleNamespace(run=values["run"], config=Path(config),
+        fixtures=Path(values["fixtures"]), observation=Path(values["observation"]),
+        process_start_ns=values["process_start_ns"], pcm_pacing="realtime",
+        timing_directory=Path(values["timing_directory"]), control=bool(values.get("control")),
+        diagnostic_role=values.get("diagnostic_role")))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run", choices=("lifecycle", "performance", "recovery", "quality", "restart"))
+    parser.add_argument("--run", choices=("lifecycle", "performance", "recovery", "quality", "restart", "pn", "ph"))
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--fixtures", type=Path)
     parser.add_argument("--observation", type=Path)
     parser.add_argument("--process-start-ns", type=int)
+    parser.add_argument("--pcm-pacing", choices=("legacy", "realtime"), default="legacy")
+    parser.add_argument("--timing-directory", type=Path)
     parser.add_argument("--prepare-fixtures", type=Path)
     args = parser.parse_args()
     os.umask(0o077)

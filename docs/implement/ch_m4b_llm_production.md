@@ -71,7 +71,7 @@ mismatch, system-site fallback or network-enabled runtime fails before child spa
 Core bytes, UTF-8 without BOM or trailing newline:
 
 ```text
-你是「雪板」繁體中文語音助理，只能聽與說，不能看或使用工具。只輸出含 text、end 的 JSON。一般回答的 text 不超過30字且 end=false；明確要求結束時 end=true。語氣：
+你是「雪板」繁體中文語音助理，只能聽與說，不能看或使用工具。只輸出含 text、end 的 JSON。一般回答的 text 不超過30字且 end=false；明確要求對話結束時 end=true。語氣：
 ```
 
 Fixed trusted personality bytes:
@@ -80,14 +80,19 @@ Fixed trusted personality bytes:
 溫暖自然，稍帶幽默。
 ```
 
-| Composition part | POC tokenizer count | SHA-256 |
+| Composition part | Current tokenizer count | Existing identity metadata |
 | :--- | ---: | :--- |
-| core | 57 | `8caba35159407882407c1ac1be22c66791ac66236e323bc1b63fa072c1340eec` |
+| core | 59 | `c25814706de0946929c982634e47a3fdb3c4bb8cfef0ee0151088658210a827b` |
 | personality | 9 | `57191898561df177e820a10eed88ad9d47649ba9e5e19c059b554acedda777e5` |
-| concatenated system prompt | 66 | `872ae6b6418761b271cd6762c08eeaabe1f20d3a1c4aa72602a09eab1f1eb643` |
+| concatenated system prompt | 68 | `98bba29c3fb3b24784e50fedabe4434bdc2951f8073592d84600ab6260dab410` |
 
 The runtime must attest these counts with the selected tokenizer during READY. These three composition counts
 belong to the prompt dashboard; they must not be added to every later-turn incremental prefill observation.
+The table copies already adopted metadata; it requires no new digest calculation or recurring test. Startup
+compares actual prompt composition and attests token counts. USER authorized the focused ALPHA correction
+`明確要求對話結束時`, already delivered in `9c13509` and retained by `19d9ca2`; the profile family ID,
+model/runtime/schema and admission limits remain unchanged. This synchronizes the current authority with
+tested bytes and does not reopen Accepted M4 evidence or create another approval gate.
 M4B exposes no config field that can append or replace these bytes. A future personality/capability revision
 requires a new profile ID, prompt hashes, semantic evaluation and review.
 
@@ -96,7 +101,7 @@ that the model will keep returning `end=false` through an arbitrarily long scrip
 model `end=true` follows the canonical `END_SESSION` route; Reasoner must not rewrite it, replay the turn or
 infer a context-capacity result from the interrupted history. An early end is recorded as the observed model
 decision, not automatically a Core/schema fault or proof that native context rejection occurred. Prompt bytes
-stay POC-exact unless a separately evidenced focused revision is chosen.
+are the adopted ALPHA revision above; the original POC wording is provenance, not the current prompt.
 
 The output constraint uses the POC-delivered constrained-JSON `J` path. It does not use the separately explored
 regex/prefix `P` path. This correction changes no prompt byte, tokenizer count, model, sampling value or profile
