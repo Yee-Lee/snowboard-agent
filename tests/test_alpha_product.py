@@ -109,6 +109,83 @@ def test_human_probe_releases_live_microphone_after_early_asr_stop():
     asyncio.run(scenario())
 
 
+def test_acoustic_probe_plays_fixture_but_sends_only_live_frames_to_real_asr():
+    from sbd.adaptor.audio_lock import AudioArtifactLock
+    from sbd.core.config.models import ASRConfig
+    from sbd.perception.listen.whispercpp.adapter import WhisperCppASRAdapter
+    from tests.fakes.m4a import ScriptedChild, asr_ack, asr_endpoint, asr_result
+    from pathlib import Path
+
+    async def scenario():
+        fixture = b"\1\0" * 640
+        live = b"\0" * 640
+        probe = ProductProbe("pn", {"FX-SHORT-B": fixture}, 1)
+        probe.acoustic = True
+        probe.sm = NS(state="PERCEPTION", _session=NS(session_id="acoustic", turn_id=1))
+        probe.pending.extend((("ACOUSTIC-T1", "FX-SHORT-B", "KEEP_NEXT"),
+                              ("ACOUSTIC-T2", "FX-SHORT-B", "KEEP_NEXT")))
+        played = asyncio.Event()
+        source_closed = []
+        output_chunks = []
+        async def play(pcm):
+            output_chunks.extend([chunk async for chunk in pcm])
+            played.set()
+        snapshot = NS(status_slots=(("state", NS(data={"state": "PERCEPTION"})),))
+        probe.rm = NS(_records={
+            "core.audio.output": NS(instance=NS(play=play)),
+            "core.display.arbiter": NS(instance=NS(snapshot=lambda: snapshot)),
+        })
+        async def microphone():
+            try:
+                yield live
+                await played.wait()
+                yield live
+                pytest.fail("ASR pulled microphone after endpoint")
+            finally:
+                source_closed.append(True)
+        probe.live_frames = microphone
+        child = ScriptedChild([asr_ack(1, 0), asr_endpoint(1), asr_result(1, "一個星期有幾天"),
+                               asr_ack(2, 0), asr_endpoint(2), asr_result(2, "一個星期有幾天")])
+        adapter = WhisperCppASRAdapter(ASRConfig(driver="whispercpp"),
+            lock=AudioArtifactLock.load(Path(__file__).parents[1] / "requirements/m4a/audio-artifacts.json"),
+            child_factory=lambda: child)
+        await adapter.start()
+        try:
+            for turn in (1, 2):
+                played.clear()
+                probe.sm._session.turn_id = turn
+                frames = probe.frames()
+                try:
+                    result = await adapter.transcribe(frames)
+                finally:
+                    await frames.aclose()
+                await probe.stimulus_task
+                assert result.text == "一個星期有幾天"
+                assert len(source_closed) == turn
+        finally:
+            await adapter.stop()
+        assert child.start_count == child.stop_count == 1
+        assert b"".join(output_chunks) == fixture * 2
+        assert [payload for message, payload in child.messages if message["op"] == "FRAME"] == [live] * 4
+        assert probe.acoustic_pcm == [live] * 4
+        assert len(probe.rows) == 2 and len({row["session_id"] for row in probe.rows}) == 1
+        assert all(row["acoustic"] == {"app_receiving": True, "playback_drained": True}
+                   and "speech_end" not in row["nodes"] for row in probe.rows)
+    asyncio.run(asyncio.wait_for(scenario(), 3))
+
+
+def test_acoustic_probe_refuses_playback_when_app_is_not_receiving():
+    async def scenario():
+        probe = ProductProbe("pn", {"FX-SHORT-B": b"\1\0" * 320}, 1)
+        probe.sm = NS(state="THINK")
+        snapshot = NS(status_slots=(("state", NS(data={"state": "THINK"})),))
+        probe.rm = NS(_records={"core.display.arbiter": NS(instance=NS(snapshot=lambda: snapshot))})
+        with pytest.raises(InvalidObservation, match="APP_NOT_RECEIVING"):
+            await probe.play_fixture({"nodes": {}}, "FX-SHORT-B")
+        assert probe.pacing_failure == "APP_NOT_RECEIVING" and not probe.stimulus_active
+    asyncio.run(scenario())
+
+
 def test_batch_audio_writes_are_observed_under_real_volume_wrapper():
     from scripts.alpha_product import observe_audio_output
     from sbd.core.audio.volume import VolumeControlledAudioOutput
@@ -140,6 +217,235 @@ def test_batch_audio_writes_are_observed_under_real_volume_wrapper():
         assert observed == ["audio_first_write"] * 2
         assert writes == [b"\1\0" * 320] * 2
     asyncio.run(scenario())
+
+
+def test_acoustic_stimulus_does_not_become_the_apps_first_response_audio():
+    from scripts.alpha_product import observe_audio_output
+    from sbd.cognition.observability import CognitionObserver
+    from sbd.core.audio.volume import VolumeControlledAudioOutput
+    async def scenario():
+        observer = CognitionObserver(sink=lambda row: None)
+        class Native:
+            def __init__(self): self._observe = observer.mark
+            async def start(self): pass
+            async def stop(self): pass
+            async def play(self, pcm):
+                async for chunk in pcm:
+                    self._observe("audio_first_write")
+        output = VolumeControlledAudioOutput(Native(), 25)
+        probe = ProductProbe("pn", {}, 1)
+        probe.sm = NS(_session=object())
+        probe.current = {"nodes": {}, "fragments": []}
+        observe_audio_output(output, probe)
+        async def pcm(): yield b"\1\0" * 320
+        probe.stimulus_task = asyncio.current_task()
+        probe.stimulus_active = True
+        await output.play(pcm())
+        assert "stimulus_first_write" in probe.current["nodes"]
+        assert observer._events["audio_first_write"] is None
+        probe.stimulus_active = False
+        observer.mark("asr_final")
+        fragment = {"tts_start": 1}
+        probe.current["fragments"].append(fragment)
+        await output.play(pcm())
+        assert observer._events["audio_first_write"] >= observer._events["asr_final"]
+        assert fragment["audio_first_write"] >= observer._events["asr_final"]
+    asyncio.run(scenario())
+
+
+def test_child_diagnostic_preserves_vad_and_native_wire_and_reads_compute_counters(tmp_path, monkeypatch):
+    import io
+    from scripts.acoustic_supervisor import install_observers
+    from sbd.perception.listen.whispercpp import supervisor as target
+    # Keep this diagnostic patch local to the test, just as it is isolated to
+    # one real child process in the App experiment.
+    for owner, name in ((target, "read_control"), (target.EndpointDetector, "observe"),
+                        (target.StreamingEndpoint, "add_frame"), (target, "write_wav"),
+                        (target.NativeWorker, "transcribe"), (target.NativeWorker, "_line"),
+                        (target, "emit"), (target, "_exit_after_shutdown_ack")):
+        monkeypatch.setattr(owner, name, getattr(owner, name))
+    begin = {"protocol": 1, "op": "BEGIN", "request_id": 7}
+    monkeypatch.setattr(target, "read_control", lambda: begin)
+    emitted = []
+    monkeypatch.setattr(target, "emit", emitted.append)
+    native_result = "RESULT\t" + "短句".encode().hex() + "\t1234\t4567\t890"
+    monkeypatch.setattr(target.NativeWorker, "_line", lambda self, timeout: native_result)
+    trace = install_observers(target, tmp_path / "trace.json")
+    assert target.read_control() is begin
+    count = 0
+    def probability(window):
+        nonlocal count
+        count += 1
+        return 1.0 if count <= 10 else 0.0
+    stream = target.StreamingEndpoint(probability)
+    while not stream.add_frame(b"\0" * 640):
+        assert stream.captured_frames < 100
+    assert stream.captured_frames * 20 - stream.detector.speech_end_ms == 600
+    worker = object.__new__(target.NativeWorker)
+    worker._process = NS(stdin=io.BytesIO())
+    text, wait_ms = worker.transcribe(tmp_path / "request.wav")
+    assert text == "短句" and wait_ms >= 0
+    compute = next(e for e in trace.rows if e["stage"] == "native_compute")
+    assert (compute["wall_us"], compute["cpu_us"]) == (1234, 4567)
+    event = {"protocol": 1, "event": "ENDPOINT", "request_id": 7}
+    target.emit(event)
+    assert emitted == [event] and emitted[0] is event
+    assert not trace.path.exists()  # No capture-time diagnostic disk writes.
+    trace.save()
+    saved = json.loads(trace.path.read_text())
+    assert all(row["request_id"] == 7 for row in saved["events"])
+    assert trace.path.stat().st_mode & 0o777 == 0o600
+
+
+def test_manual_probe_observes_live_input_without_fixture_or_playback():
+    async def scenario():
+        probe = ProductProbe("pn", {}, 1)
+        probe.manual = True
+        probe.sm = NS(_session=NS(session_id="manual", turn_id=1))
+        async def microphone():
+            yield b"\2\0" * 320
+        probe.live_frames = microphone
+        # No pending fixtures, play method, output owner or GPIO stimulus.
+        assert [frame async for frame in probe.frames()] == [b"\2\0" * 320]
+        assert probe.stimulus_task is None and not probe.pending
+        assert probe.rows[0]["fixture_id"] == "LIVE_MICROPHONE"
+        assert probe.acoustic_pcm == [b"\2\0" * 320]
+        assert probe.rows[0]["capture_closed"] is True
+    asyncio.run(scenario())
+
+
+def test_diagnostic_keeps_exact_bounded_native_input_before_workdir_removal(tmp_path, monkeypatch):
+    from scripts.acoustic_supervisor import install_observers
+    from sbd.perception.listen.whispercpp import supervisor as target
+    for owner, name in ((target, "read_control"), (target.EndpointDetector, "observe"),
+                        (target.StreamingEndpoint, "add_frame"), (target, "write_wav"),
+                        (target.NativeWorker, "transcribe"), (target.NativeWorker, "_line"),
+                        (target, "emit"), (target, "_exit_after_shutdown_ack")):
+        monkeypatch.setattr(owner, name, getattr(owner, name))
+    monkeypatch.setattr(target, "read_control", lambda: {"op": "BEGIN", "request_id": 2})
+    trace = install_observers(target, tmp_path / "child-trace.json")
+    target.read_control()
+    native_input = tmp_path / "request.wav"
+    pcm = b"\x12\x00" * 640
+    target.write_wav(native_input, pcm)
+    row = next(r for r in trace.rows if r["stage"] == "wav_end")
+    retained = tmp_path / row["native_input_file"]
+    assert retained.read_bytes() == native_input.read_bytes()
+    native_input.unlink()
+    with wave.open(str(retained)) as wav:
+        assert wav.readframes(wav.getnframes()) == pcm
+    assert retained.stat().st_mode & 0o777 == 0o600
+    trace.save()
+    trace.record("later_request_completed")
+    trace.save()
+    assert json.loads(trace.path.read_text())["events"][-1]["stage"] == "later_request_completed"
+
+
+def test_private_fatal_observer_preserves_original_cause_and_exception():
+    from scripts.alpha_product import observe_fatal_wait
+    probe = NS(result={})
+    original = RuntimeError("diagnostic root")
+    async def failure():
+        try:
+            raise ValueError("private inner cause")
+        except ValueError as cause:
+            raise original from cause
+    async def scenario():
+        with pytest.raises(RuntimeError) as caught:
+            await observe_fatal_wait(probe, "StateManager", failure)
+        assert caught.value is original
+    asyncio.run(scenario())
+    record, = probe.result["fatal_diagnostics"]
+    assert "ValueError: private inner cause" in record["traceback"]
+    assert record["exception_type"] == "RuntimeError"
+
+
+def test_custom_recording_is_compared_to_its_own_words_not_fixed_alpha_question():
+    import importlib.util
+    from pathlib import Path
+    from scripts.alpha_oracle import CLEANUP
+    spec = importlib.util.spec_from_file_location("acoustic_runner", Path(__file__).resolve().parents[1] / "scripts/run-acoustic-asr.py")
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+    row = {"acoustic": {"app_receiving": True, "playback_drained": True},
+           "capture_closed": True, "asr_terminal": True, "llm_terminal": True,
+           "audio_complete": True, "route_valid": True, "asr": [{"text": "如何把英文學好?"}],
+           "microphone_frames": [1, 2], "fragments": [{"audio_first_write": 9}],
+           "nodes": dict(first_frame=1, stimulus_first_write=2, last_frame=3,
+                         asr_endpoint_received=4, asr_result_received=5, asr_final=6,
+                         audio_complete=10, stimulus_play_drained=7),
+           "asr_wire": [{"event": "ENDPOINT", "request_id": 1, "captured_frames": 2},
+                        {"event": "RESULT", "request_id": 1, "latency_ms": 1}]}
+    value = {"driver_complete": True, "exit_code": 0, "launcher_exit_code": 0,
+             "cleanup": dict.fromkeys(CLEANUP, True), "turns": [row]}
+    with pytest.raises(InvalidObservation, match="ACOUSTIC_ASR_TEXT_MISMATCH"):
+        runner.summarize(value)
+    assert runner.summarize(value, reference_text="如何把英文學好？")["asr_text_matched"] is True
+
+
+def test_display_diagnostic_distinguishes_stored_text_from_native_presentation():
+    from scripts.alpha_product import observe_display_output, observe_display_content
+    from sbd.core.display.mock.driver import MockDisplay
+    from sbd.core.display import DisplayArbiter, Oled128Renderer, DisplayHint
+    async def scenario():
+        device = MockDisplay()
+        arbiter = DisplayArbiter(device, Oled128Renderer())
+        probe = NS(result={}, sm=NS(state="THINK"))
+        observe_display_output(device, probe)
+        observe_display_content(arbiter, probe)
+        await device.start()
+        await arbiter.start()
+        arbiter.request_fullscreen("test", DisplayHint("fullscreen.blank"))
+        arbiter.write_main(DisplayHint("main.text", {"text": "診斷問題"}))
+        record = probe.result["display_content"][-1]
+        assert record["stored_text"] == "診斷問題" and record["presented_during_write"] is False
+        arbiter.release_fullscreen("test")
+        assert probe.result["display_presentations"][-1]["black"] is False
+        await arbiter.stop()
+        assert probe.result["display_presentations"][-1]["black"] is True
+        await device.stop()
+    asyncio.run(scenario())
+
+
+def test_native_error_diagnostic_survives_before_child_replacement(tmp_path, monkeypatch):
+    from scripts.acoustic_supervisor import install_observers
+    from sbd.perception.listen.whispercpp import supervisor as target
+    for owner, name in ((target, "read_control"), (target.EndpointDetector, "observe"),
+                        (target.StreamingEndpoint, "add_frame"), (target, "write_wav"),
+                        (target.NativeWorker, "transcribe"), (target.NativeWorker, "_line"),
+                        (target, "emit"), (target, "_exit_after_shutdown_ack")):
+        monkeypatch.setattr(owner, name, getattr(owner, name))
+    emitted = []
+    monkeypatch.setattr(target, "emit", emitted.append)
+    monkeypatch.setattr(target.NativeWorker, "_line", lambda self, timeout: "ERROR\tWHISPER_FULL_FAILED")
+    trace = install_observers(target, tmp_path / "trace.json")
+    trace.request_id = 2
+    worker = object.__new__(target.NativeWorker)
+    assert worker._line(1) == "ERROR\tWHISPER_FULL_FAILED"
+    assert not trace.path.exists()
+    event = {"protocol": 1, "event": "ERROR", "request_id": 2, "code": "INFERENCE_REJECTED"}
+    target.emit(event)
+    assert emitted == [event] and emitted[0] is event
+    assert any(e.get("reason") == "WHISPER_FULL_FAILED" for e in json.loads(trace.path.read_text())["events"])
+
+
+def test_reference_alignment_finds_known_acoustic_delay_and_rejects_unrelated_noise():
+    import importlib.util
+    from pathlib import Path
+    import numpy as np
+    spec = importlib.util.spec_from_file_location("acoustic_runner", Path(__file__).parents[1] / "scripts/run-acoustic-asr.py")
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+    rng = np.random.default_rng(31)
+    voice = rng.integers(-8000, 8000, 6000, dtype=np.int16)
+    reference = np.r_[np.zeros(800, dtype=np.int16), voice, np.zeros(1600, dtype=np.int16)]
+    mic = np.r_[np.zeros(1200, dtype=np.int16), voice, np.zeros(2800, dtype=np.int16)]
+    report = runner.match_reference(mic.astype("<i2").tobytes(), reference.astype("<i2").tobytes())
+    assert report["matched_reference_end_sample"] == 7200
+    assert report["matched_reference_end_to_capture_end_s"] == 2800 / 16000
+    unrelated = rng.integers(-8000, 8000, len(mic), dtype=np.int16)
+    with pytest.raises(InvalidObservation, match="REFERENCE_MATCH_AMBIGUOUS"):
+        runner.match_reference(unrelated.astype("<i2").tobytes(), reference.astype("<i2").tobytes())
 
 
 def test_private_timing_retains_complete_rows_and_rejects_content(tmp_path, monkeypatch):

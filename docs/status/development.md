@@ -2,25 +2,135 @@
 
 ## Active ALPHA implementation
 
-### Workstation departure checkpoint — 2026-10-11
+### Delivery closeout — 2026-10-18
 
-- USER's six-item latency review is recorded below. Items 1 (3.8 s boundary), 4 (M4A comparison),
-  and 5 (cache implementation plus focused Pi verification) are closed within those stated scopes.
-  Item 6 (voice cue after `準備中`) is deferred to the next product discussion. Only items 2+3 remain
-  active: distinguish live human speech end→VAD endpoint from endpoint→ASR result with one focused
-  real-microphone diagnostic. Its design is recorded below; no diagnostic source or live run exists yet.
-- Last product/instrumentation Pi state: r10 cache candidate passed affected tests, one cold focused
-  request and two formal PN blocks. r11 only repaired the PH observation wrapper and passed affected
-  Pi tests; its PH run ended early on ASR text/route mismatch. PH hearing, final M free use and final
-  same-content L/R/Q Verify are outstanding. Neither complete P/ALPHA acceptance nor a general
-  speedup claim is recorded. No product commit or push has occurred for this work package.
-- Resume from the unchanged r11 Pi checkout `/home/<operator>/alpha-prefetch-r11-20261011/repo` and its
-  retained observations in `/home/<operator>/alpha-prefetch-r11-20261011/ph-after-11/`. The old PH-12 helper
-  remains only a retained fixture; do not run a full PH repeat for the focused 2+3 diagnostic.
-  Implement and Pi-check the narrow live timing probe first, then collect the one human utterance.
-- USER confirmed the Pi is powered off at this checkpoint. No further Pi execution or final
-  same-content verification is possible in this session; pending source/test/runner changes remain
-  uncommitted until the required Pi verification is complete.
+- USER requests completion, commit/push and Pi shutdown. Current branch is `core`, HEAD `f9955af`;
+  this delivery is still uncommitted. Follow AGENTS/git.md: finish Pi verification, reconcile bytes,
+  scan staged privacy, present full commit message/files for the required confirmation, then push.
+  No completion tag or whole-ALPHA Accepted claim is authorized by the current evidence.
+- Formal `run.sh` and `run.sh --debug` now select `asr-notice-20261017-r11`; previous r9 is retained.
+  Promotion compared 17 affected source/test files directly across workstation, Pi checkout and
+  installation: no difference, `<r11-root>/promotion-byte-comparison.json`. No automatic digest was added.
+- USER explicitly defers the isolated `audio` capture/cleanup issue until recurrence and reports improved
+  capture after repositioning hardware. Do not resume gain/model/prompt tuning or use older-position
+  recordings as current hardware-quality proof. Display content/layout is deferred; ALPHA preserves
+  ERROR state, safe codes/categories and recovery for future Display projection. No extra human repeat
+  is needed merely to change the root symlink to identical tested bytes.
+
+#### Delivered implementation and bounded verification
+
+- `WhisperCppASRAdapter`: native request faults keep the backend BUSY until termination; cancellation
+  cannot abandon owned destruction. Listen settles its owned transcribe reader before closing capture,
+  including a deadline before the first frame. The regressions reproduced failures before each repair.
+- `StateManager`: non-LLM recovery closes the surviving LLM Conversation before the next Session.
+  ASR system faults retain their original error/recovery path, then use supervised Speak/TTS/Audio to
+  announce 「語音辨識發生錯誤，請按按鈕重新開始。」 once before IDLE. Only the correlated notice fact is
+  accepted in ERROR; new admission waits for playback completion. Shutdown can stop the notice, and a
+  secondary speech fault converges without replaying it. Ordinary no-input keeps its existing retry
+  prompt and re-capture; wrong recognized text is not automatically detectable as a system fault.
+- `StatusBar` clears the stale error slot on ERROR-to-IDLE. `CognitionObserver.finish()` clears speech
+  marks when no Reasoner turn began, preventing no-input speech from contaminating a later Turn.
+- Standard launcher `--debug` packages reusable private physical-input recording, exact bounded native
+  WAV retention, private native/fatal causes, display presentation observations and independent bounded
+  post-error panel clear. Original FAIL/exit facts are preserved. Ordinary startup has no post-fatal
+  clear; Ch 11 fatal policy is unchanged. Saved-WAV replay and custom acoustic tests are diagnostic,
+  never fixture/quality PASS substitutes. Workflow: existing runbook §9, no new handoff Markdown.
+- Product Whisper remains **base-q8_0**, four threads, fixed technical prompt/decoder; VAD, capture gain,
+  model and timeouts are unchanged. Replay gain changes a private copy only; no original recording edits.
+- Workstation and Pi combined affected regression: **311 Pass** each (24.93 s / 6.48 s). Pi result:
+  `<operator-home>/alpha-delivery-20261018-r11/affected-portable.log`. Selection includes manual debug,
+  alpha product/runner, launcher/install, ASR, LLM observation/generation, no-input, State Manager,
+  display recovery, M4-ERR and interrupt regressions. Earlier r11 selections were 151 + 82 Pass.
+- Native lifecycle and actual LLM recovery both PASS at
+  `<operator-home>/alpha-delivery-20261018-r11/{lifecycle,recovery}/result.json`: three clean Sessions,
+  restart/offline/privacy checks, actual child failure and one usable replacement, final owner release.
+  Revised Q regression with retained `Q-20261011` fixtures was interrupted by a host reboot around
+  00:26:45 +08 on 2026-10-18; SSH ended 255 and no quality result or semantic report was saved.
+  USER reports no manual reboot or power cut. No automatic retry or parallel Pi work was performed.
+  USER subsequently explicitly requested completing Q: the fresh full run
+  `ALPHA-QUALITY-DEV-20261018-R11-02` completed all six cases once, objective 6/6 and semantic 6/6,
+  six clean Session barriers and all final owners absent. Evidence:
+  `<operator-home>/alpha-delivery-20261018-r11/quality-02/adjudicated-result.json`; initial pending
+  card and private observations/judgments are preserved, with no product replay during adjudication.
+  Existing PN/PH hearing gaps remain explicit; these runs cannot
+  manufacture ALPHA.P completion or formal Q admission after an unproven P completion.
+
+| Same-content evidence | Observed result / locator |
+| :--- | :--- |
+| ASR fault notice and usable replacement | Actual ASR child termination, replacement READY, exact notice once, completed playback, no auto-capture before Button, next live-microphone acoustic question fully answered, exit 0; `<r11-root>/installed-native-notice-02/`, independent post-exit PID/owner/black-display check |
+| Installed normal entry | `<r11-root>/installed-entry-acoustic-02/`: VALID_OBSERVATION, expected question, full response, exit 0, zero errors, all cleanup true. External exception-only capture hook; no product bytes changed |
+| Fixed root entry | `debug-fixed-entry-smoke-7ag85ymp`, manual `manual-26mvrheg`: zero Sessions, IDLE/SIGINT, exit 0, normal final black display and no owners |
+| USER manual normal stop | `manual-9510k6gj`: 3 Sessions / 10 capture records, exit 0, zero errors, all cleanup true |
+| USER fixed-entry retest | `manual-zvfo51jx`: 3 Sessions / 9 capture records, exit 0, zero errors, all cleanup true; USER reports completion |
+
+Capture counts are not counts of successful answers. The two completed human runs have no WARNING,
+ERROR or CRITICAL. They provide real operation/stop evidence, not injected-fault proof or fabricated PH
+hearing reports. Their private full reports/audio remain outside Git. Reuse them for identical bytes.
+
+#### Retained failures and limitations
+
+- During Q-02 USER reported a brief anomalous TTS sound. Same-run private observations show two
+  leading colon characters in Q02's final LLM text, each admitted as a standalone TTS fragment with
+  first PCM and playback completion. The following cleanup response also has leading punctuation.
+  This supports a punctuation-only synthesis diagnosis, not an encoding-error claim or proven acoustic
+  attribution. ASR retained the intended question; the substantive answer satisfies the Q02 factual
+  rubric. All six declared Q criteria pass, but this separate audible-output finding is unfixed and
+  must remain visible in delivery. USER explicitly defers this improvement to a later round; do not
+  change the model, Reasoner, parser or TTS for it in this delivery. Locator:
+  `quality-02/private/audible-artifact-observation.json`.
+- The final Q interruption has no retained pre-reboot temperature or previous-boot journal. Current
+  boot readings of 54.3–54.9 C and throttled=0x0 cannot establish the prior thermal/power state.
+  systemd reports RuntimeWatchdogUSec=1min; current kernel logs confirm the hardware watchdog is
+  active. This is a diagnostic lead, not proof of the reboot cause. No thermal, power, watchdog or
+  application cause has been established; no stress test or configuration change was made.
+- `manual-j2sg_ujx`: USER's short identity question led to 7.512429 s native decoding and 294 invalid
+  UTF-8 bytes (incomplete final character), then ASR_TIMEOUT_UNPROVEN, ASR replacement and IDLE.
+  Exact bounded input (26560 samples / 1.66 s) and full capture (2.5 s) both reproduce the decoder
+  error offline. Original and 16x gain, no prompt and language-only prompt did not yield the correct
+  answer; no tuning was promoted. Private locators: `debug-asr-failure-20261017`,
+  `debug-asr-full-capture-20261017`, `debug-asr-level-20261017` and that run's prompt comparison.
+- `debug-l1LSM5` / `debug-kv13g5`: prior ASR errors, no-input observer contamination and fatal cleanup
+  failures remain FAIL. The apparent greeting came from an LLM answer to an incorrectly recognized
+  input, not a new welcome cue. Actual USER recordings were reused privately rather than requesting
+  repeated speech. The observer repair was demonstrated by before/after acoustic multi-Session runs
+  `app-selfplay-session-20261017-h4ibdxcl` / `app-selfplay-session-20261017-shhn3gu8`.
+- `asr-recovery-acoustic-20261017-01` crashed on capture close after a normal retry; the r10
+  `acoustic-after` counterpart completed reminder/re-capture/IDLE and exit 0. It remained recognition
+  INVALID because no usable endpoint was detected; successful cleanup is not recognition PASS.
+- r10 `child-recovery-02` retained OPEN wire-state failure after ASR rebuild: old LLM Conversation was
+  not closed. Repaired `child-recovery-04` completed replacement, new acoustic Session and shutdown.
+  `child-recovery-03` was incomplete due an external diagnostic playback-task marking error; no
+  product change was needed to correct that harness.
+- r11 first `installed-entry-acoustic` failed before the first microphone frame with
+  AUDIO_CAPTURE_FAILED, then `fault_recovery_key_mismatch` in Listen cleanup, exit 4. Original cause
+  is unknown; do not infer a hardware fault. Input-ready-to-capture was 46.482 s versus 8.156 s in the
+  later successful entry run: an observation, not a demonstrated cause. USER saw `audio`; independent
+  owner-checked clear succeeded. Later success does not erase this explicitly deferred finding.
+  No audio-fault voice notice is implemented or verified; ASR notice proof covers ASR faults only.
+- `manual-hhg6svjf` logged two Sessions (14 and 4 response transitions), no warnings/errors and final
+  IDLE at 23:52:16 +08. Pi rebooted about 23:54:39; no persistent previous-boot journal or normal final
+  report exists. Native WAV/timing fragments survived; reboot/disconnect cause and pre-reboot thermal
+  state are unknown. Post-reboot 54 C / throttled=0x0 do not explain the prior interruption.
+- One r11 source/native probe overlapped Developer's large installation copy and had ~28 s THINK.
+  Exclude it from performance conclusions. All later Pi transfer/install/tests/App runs are serial.
+  The scoped diagnostic failures `acoustic-r1`, initial 50 s startup harness and source-attach races
+  remain preserved; corrected harness runs, not discarded failures, establish the stated successes.
+
+#### Performance disposition and remaining acceptance boundary
+
+- USER accepted stopping further performance tuning after the two-Turn baseline at
+  `<operator-home>/app-acoustic-20261012-r4/paired-01/`: one App/Session, two identical acoustic inputs,
+  same backends, requests 1/2, exit 0 and owner release. Signal-end to first response write is
+  **7.475216751 / 7.409803624 s**; native Whisper **3.745406 / 3.796533 s**, VAD tail **600 / 600 ms**.
+  Receiving-to-THINK is **6.864078 / 6.909703 s**. No meaningful second-Turn ASR speedup is demonstrated.
+  Signal end is waveform-aligned, not human audible end; first write is not measured acoustic onset.
+  Second-Turn context/output differs, so this pair is not a statistical improvement claim.
+- Prior formal PN blocks exist; PH's declared schedule/hearing report was incomplete after its earlier
+  ASR/route mismatch. Free-use M and this acoustic pair cannot silently fill those missing PH rows.
+  Preserve that boundary while delivering the bounded fixes; no new human schedule or Display-content
+  gate is introduced here. Same-content final L/R/Q results are recorded in this closeout above.
+- Next owner remains Developer for concrete failed checks, then Tester/Verify for remaining acceptance.
+  Commit/push must describe delivered repairs and limits, not invent whole-ALPHA Accepted.
 
 ### ALPHA P／M development opened — 2026-10-11
 

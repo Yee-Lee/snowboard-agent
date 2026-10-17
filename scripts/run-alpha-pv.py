@@ -109,7 +109,9 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
         private_json(experiment, {"run": run, "fixtures": str(args.fixtures.resolve()),
             "observation": str(observation), "process_start_ns": start,
             "timing_directory": str(timing), "control": bool(args.cause_control_reason),
-            "diagnostic_role": getattr(args, "diagnostic_role", None)})
+            "diagnostic_role": getattr(args, "diagnostic_role", None),
+            "acoustic": bool(getattr(args, "acoustic", False)),
+            "manual": bool(getattr(args, "manual", False))})
         environment = dict(os.environ, ALPHA_EXPERIMENT=str(experiment))
         command = [str(args.installed_entry.resolve()), "--config", str(args.config.resolve()),
                    "--python", str(args.python)]
@@ -129,7 +131,7 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
         process = subprocess.Popen(command, cwd=ROOT, stdout=sink, stderr=subprocess.STDOUT,
                                    start_new_session=True, env=environment)
         previous_interrupt = signal.getsignal(signal.SIGINT)
-        if run == "ph":
+        if run == "ph" or getattr(args, "manual", False):
             def forward_interrupt(signum, frame):
                 try:
                     process.send_signal(signal.SIGINT)
@@ -161,7 +163,7 @@ def run_child(args, private: Path, run: str, suffix: str = "") -> dict:
                     break
                 time.sleep(0.02)
         finally:
-            if run == "ph":
+            if run == "ph" or getattr(args, "manual", False):
                 signal.signal(signal.SIGINT, previous_interrupt)
             # This also captures detached native child groups, beyond the launcher PGID.
             if process.poll() is None:

@@ -6,19 +6,22 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 APP_PYTHON="$REPO_ROOT/.venv/bin/python"
 APP_CONFIG="$REPO_ROOT/config.local.yaml"
+APP_DEBUG=false
 
 usage() {
     printf '%s\n' \
-        'Usage: run-app.sh [--config FILE] [--python EXECUTABLE]' \
+        'Usage: run-app.sh [--debug] [--config FILE] [--python EXECUTABLE]' \
         'Defaults: repository config.local.yaml and .venv/bin/python.' \
         'Runs the real App in the foreground with microphone and hardware input.' \
         'Short press: start/end a conversation. Long press or Ctrl+C: stop App.' \
+        '--debug records private human-input diagnostics and attempts post-error screen clearing.' \
         'Stopping App does not power off the Pi. Closing the terminal may stop App.'
 }
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --help|-h) usage; exit 0 ;;
+        --debug) APP_DEBUG=true; shift ;;
         --config|--python)
             if [ "$#" -lt 2 ] || [ -z "$2" ]; then
                 printf '%s\n' 'ERROR: option requires a value.' >&2
@@ -53,6 +56,11 @@ esac
 
 cd "$REPO_ROOT"
 export PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
+if [ "$APP_DEBUG" = true ]; then
+    unset ALPHA_EXPERIMENT ALPHA_TIMING_DIRECTORY
+    exec "$APP_PYTHON" "$REPO_ROOT/scripts/run-manual-debug.py" \
+        --config "$APP_CONFIG" --python "$APP_PYTHON"
+fi
 exec "$APP_PYTHON" -u -c '
 import asyncio
 import os

@@ -10,7 +10,7 @@ class InFlightRecord:
     turn_id: int
     phase: Literal[
         "perception", "think", "action_primary", "action_rest",
-        "conversation_open", "conversation_close",
+        "conversation_open", "conversation_close", "error_notice",
     ]
     kind: str
     worker: Any

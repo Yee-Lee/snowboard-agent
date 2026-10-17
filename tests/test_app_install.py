@@ -15,7 +15,8 @@ def inputs(tmp_path, monkeypatch):
         (source / name).mkdir(parents=True)
     (source / "src/example.py").write_text("value = 1")
     (source / "scripts/run-app.sh").write_text("#!/bin/sh\nexit 0\n")
-    for name in ("alpha_product.py", "alpha_oracle.py"):
+    for name in ("alpha_product.py", "alpha_oracle.py", "acoustic_supervisor.py",
+                 "run-alpha-pv.py", "run-acoustic-asr.py", "run-manual-debug.py"):
         (source / "scripts" / name).write_text("# packaged experiment instrumentation\n")
     for name in ("controller", "llm-runtime"):
         runtime = tmp_path / name
@@ -56,6 +57,8 @@ def test_install_copies_runtime_assets_and_removes_development_references(inputs
     assert (prefix / ".venv/bin/python").read_text() == "python"
     assert not list(prefix.rglob("__editable__*"))
     assert config.read_bytes() == original
+    for name in ("acoustic_supervisor.py", "run-alpha-pv.py", "run-acoustic-asr.py", "run-manual-debug.py"):
+        assert (prefix / "scripts" / name).read_bytes() == (source / "scripts" / name).read_bytes()
     assert (prefix / "run.sh").stat().st_mode & 0o111
     assert (prefix / "config.local.yaml").stat().st_mode & 0o777 == 0o600
 

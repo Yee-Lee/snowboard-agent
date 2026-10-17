@@ -370,6 +370,32 @@ def test_V03_live_unmeasured_turn_has_null_counters_not_fabricated_zero():
     assert runtime["values"]["admission_result"] == "R1"
 
 
+def test_V05_timeout_reminder_does_not_contaminate_next_generated_turn():
+    from itertools import count
+    rows = []
+    observer = CognitionObserver(sink=rows.append, clock=count(100).__next__)
+    observer.conversation_ready(1)
+    # No-input reminders are spoken directly by SM, without Reasoner.begin_turn.
+    observer.mark("tts_pcm_ready")
+    observer.mark("audio_first_write")
+    observer.finish()
+    assert rows == []  # Do not invent a generation for a no-input reminder.
+    observer.mark("asr_final")
+    observer.begin_turn(1, 2, 3)
+    observer.mark("llm_send")
+    observer.mark("first_safe_text")
+    observer.mark("tts_pcm_ready")
+    observer.mark("audio_first_write")
+    observer.mark("llm_terminal")
+    observer.outcome("GENERATE")
+    observer.finish()
+    assert [row["dashboard"] for row in rows] == ["runtime", "timing"]
+    events = rows[-1]["values"]["events"]
+    assert events["conversation_ready"]["monotonic_ns"] == 100
+    assert events["asr_final"]["monotonic_ns"] < events["tts_pcm_ready"]["monotonic_ns"]
+    assert events["first_safe_text"]["monotonic_ns"] < events["audio_first_write"]["monotonic_ns"]
+
+
 def test_V05_native_mapping_cannot_mix_an_injected_controller_clock():
     rows = []
     observer = CognitionObserver(sink=rows.append, clock=lambda: 100)

@@ -411,9 +411,11 @@ class WhisperCppASRAdapter:
         if event["code"] not in ASR_ERROR_CODES:
             raise AudioProtocolError("unknown ASR request error code")
         code = event["code"]
-        self._finish()
         if code in {"NO_SPEECH", "MULTIPLE_UTTERANCES"}:
+            self._finish()
             raise AdapterRejected(f"ASR request rejected: {code}", code=code)
+        # A failed native owner cannot be reused. Leave it BUSY until fault
+        # cleanup has destroyed it, including while Listen's deadline expires.
         raise _ASRRequestFault(code)
 
     def _finish(self) -> None:
@@ -440,10 +442,20 @@ class WhisperCppASRAdapter:
         return ForceAbortReport((ASR_KEY,))
 
     async def _protocol_failure(self) -> None:
-        await self._child.force_terminate()
-        self._destroyed_for_fault = True
-        self._active_request_id = None
-        self._request_ready.set()
+        async def terminate() -> None:
+            await self._child.force_terminate()
+            self._destroyed_for_fault = True
+            self._active_request_id = None
+            self._request_ready.set()
+
+        # Cancellation can arrive during fault termination. Complete destruction
+        # before propagating it so recovery cannot observe a half-terminated owner.
+        cleanup = asyncio.create_task(terminate())
+        try:
+            await asyncio.shield(cleanup)
+        except asyncio.CancelledError:
+            await cleanup
+            raise
 
     async def rebuild(self, bus: Any, config: AppConfig) -> None:
         if self._child.state is not ChildState.DESTROYED:

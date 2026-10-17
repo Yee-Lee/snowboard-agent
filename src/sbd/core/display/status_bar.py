@@ -32,6 +32,8 @@ class StatusBar:
         self._subscriptions.clear()
 
     async def _on_state_changed(self, event: StateChanged) -> None:
+        if event.old == "ERROR" and event.new == "IDLE":
+            self._arbiter.write_status_slot("error", None)
         self._arbiter.write_status_slot(
             "state", DisplayHint("status.state", {"state": event.new})
         )

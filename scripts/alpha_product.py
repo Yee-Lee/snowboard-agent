@@ -252,6 +252,11 @@ class ProductProbe:
         self.pcm_pacing = "legacy"
         self.pacing_failure = None
         self.live_frames = None
+        self.acoustic = False
+        self.manual = False
+        self.acoustic_pcm = []
+        self.stimulus_task = None
+        self.stimulus_active = False
         self.diagnostic_role = None
         self.plan = session_plan(run)
         self.pending = deque()
@@ -329,12 +334,15 @@ class ProductProbe:
 
     def frames(self):
         async def stream():
-            if not self.pending and self.closing_quality_context:
+            if not self.manual and not self.pending and self.closing_quality_context:
                 # KEEP_NEXT may arm capture before the runner's close Button is dispatched.
                 # Supply no third fixture/ASR result; normal product interruption cancels it.
                 await asyncio.Event().wait()
-            require(bool(self.pending), "UNPLANNED_TURN")
-            case, identity, route = self.pending.popleft()
+            if self.manual:
+                case, identity, route = f"M-T{len(self.rows) + 1}", "LIVE_MICROPHONE", None
+            else:
+                require(bool(self.pending), "UNPLANNED_TURN")
+                case, identity, route = self.pending.popleft()
             session = self.sm._session
             require(session is not None, "PCM_WITHOUT_SESSION")
             row = {"case_id": case, "fixture_id": identity, "expected_route": route,
@@ -345,15 +353,24 @@ class ProductProbe:
                 row["nodes"]["previous_action_complete"] = self.rows[-1]["nodes"].get("audio_complete")
             self.rows.append(row)
             self.current = row
+            if self.acoustic:
+                require(self.stimulus_task is None or self.stimulus_task.done(), "STIMULUS_OVERLAP")
+                self.stimulus_task = None
             try:
-                if self.run == "ph":
-                    print("ALPHA_GUIDE SAY " + identity, flush=True)
+                if self.run == "ph" or self.acoustic or self.manual:
+                    if self.run == "ph":
+                        print("ALPHA_GUIDE SAY " + identity, flush=True)
                     stream = self.live_frames()
                     try:
                         async for frame in stream:
                             instant = time.monotonic_ns()
                             row["nodes"].setdefault("first_frame", instant)
                             row["nodes"]["last_frame"] = instant
+                            if self.acoustic or self.manual:
+                                row.setdefault("microphone_frames", []).append(instant)
+                                self.acoustic_pcm.append(frame)
+                                if self.acoustic and self.stimulus_task is None:
+                                    self.stimulus_task = asyncio.create_task(self.play_fixture(row, identity))
                             yield frame
                     finally:
                         await stream.aclose()
@@ -383,6 +400,30 @@ class ProductProbe:
                 row["capture_closed"] = True
         return stream()
 
+    async def play_fixture(self, row, identity):
+        """Play through the App-owned speaker while its normal Listen captures."""
+        try:
+            await asyncio.sleep(0.3)  # Capture a short background segment first.
+            arbiter = self.rm._records["core.display.arbiter"].instance
+            state = dict(arbiter.snapshot().status_slots).get("state")
+            require(self.sm.state == "PERCEPTION" and state is not None
+                    and state.data.get("state") == "PERCEPTION", "APP_NOT_RECEIVING")
+            row["acoustic"] = {"app_receiving": True, "playback_drained": False}
+            row["nodes"]["stimulus_play_start"] = time.monotonic_ns()
+            payload = self.fixtures[identity]
+            async def pcm():
+                for offset in range(0, len(payload), 640):
+                    yield payload[offset:offset + 640]
+            self.stimulus_active = True
+            await self.rm._records["core.audio.output"].instance.play(pcm())
+            row["nodes"]["stimulus_play_drained"] = time.monotonic_ns()
+            row["acoustic"]["playback_drained"] = True
+        except Exception as error:
+            self.pacing_failure = error.code if isinstance(error, InvalidObservation) else "STIMULUS_FAILED"
+            raise
+        finally:
+            self.stimulus_active = False
+
     def matching_row(self, event):
         for row in reversed(self.rows):
             if (row["session_id"], row["turn_id"]) == (event.session_id, event.turn_id):
@@ -408,7 +449,13 @@ class ProductProbe:
                 and config.input_sources.button.policy.enabled, "PRODUCTION_CONFIG_REQUIRED")
         self.composition, self.rm, self.bus, self.sm = composition, rm, bus, rm._state_manager
         composition._cognition_observer._sink = self.observe
-        from sbd.core.events import PerceptionResult, LLMResponse, ActionCompleted, ErrorOccurred
+        from sbd.core.events import PerceptionResult, LLMResponse, ActionCompleted, ErrorOccurred, StateChanged
+
+        if self.acoustic or self.manual:
+            async def state_changed(event):
+                self.result.setdefault("state_changes", []).append({"state": event.new,
+                    "monotonic_ns": time.monotonic_ns()})
+            bus.subscribe(StateChanged, state_changed, name="alpha.acoustic.state")
 
         async def terminal(event):
             row = self.matching_row(event)
@@ -464,10 +511,13 @@ class ProductProbe:
         await self.until(lambda: len(self.rows) > first_row)
         session_id = self.rows[first_row]["session_id"]
         if self.diagnostic_role is not None:
-            await self.until(lambda: any(a["kind"] == "speak" and a["status"] == "ok"
-                                        for a in self.rows[first_row]["actions"])
-                             and bool(self.rows[first_row]["runtime"])
+            expected = len(plan) if self.diagnostic_role == "paired_turns" else 1
+            await self.until(lambda: len(self.rows) >= first_row + expected and all(
+                                any(a["kind"] == "speak" and a["status"] == "ok" for a in row["actions"])
+                                and bool(row["runtime"]) for row in self.rows[first_row:first_row + expected])
                              or self.sm._session is None)
+            if self.stimulus_task is not None:
+                await self.stimulus_task
             if self.sm._session is not None:
                 await self.button()
         if context_case:
@@ -492,6 +542,8 @@ class ProductProbe:
             self.result["initial"] = self.idle_snapshot()
             self.initial_pids = self.backend_pids()
             self.first_child = self.rm._records["backend.cognition.reasoner.llm"].instance._child
+            if self.manual:
+                return  # USER alone controls Session/Button, speech and stop.
             if self.run == "restart":
                 self.result["driver_complete"] = True
                 return
@@ -529,10 +581,15 @@ class ProductProbe:
             self.result["driver_complete"] = True
         except Exception as error:
             self.result["failure_code"] = error.code if isinstance(error, InvalidObservation) else "DRIVER_FAILED"
+            if self.acoustic:
+                import traceback
+                self.result["driver_traceback"] = traceback.format_exc()
             if getattr(self, "failure_path", None) is not None:
                 private_json(self.failure_path, {**self.result, "turns": self.rows, "sessions": self.sessions})
         finally:
-            if self.run == "ph":
+            if self.manual:
+                pass
+            elif self.run == "ph":
                 print("ALPHA_GUIDE STOP_APP", flush=True)
             else:
                 await self.button(shutdown=True)
@@ -597,9 +654,11 @@ def observe_audio_output(output, probe) -> None:
     def observed_write(node):
         instant = time.monotonic_ns()
         if node == "audio_first_write":
+            if probe.stimulus_active and probe.current is not None:
+                probe.current["nodes"].setdefault("stimulus_first_write", instant)
             for fragment in active_fragments:
                 fragment.setdefault("audio_first_write", instant)
-        if original_observe is not None:
+        if original_observe is not None and not probe.stimulus_active:
             original_observe(node)
 
     if probe.run in {"pn", "ph"} and hasattr(native, "_observe"):
@@ -607,6 +666,8 @@ def observe_audio_output(output, probe) -> None:
 
     async def observed_play(pcm):
         nonlocal active_fragments
+        require(not probe.stimulus_active or asyncio.current_task() is probe.stimulus_task,
+                "STIMULUS_RESPONSE_OVERLAP")
         row = probe.current
         if probe.sm._session is None:
             probe.late_audio += 1
@@ -624,6 +685,43 @@ def observe_audio_output(output, probe) -> None:
     output.play = observed_play
 
 
+def observe_display_output(device, probe):
+    show = device.show
+    def observed_show():
+        result = show()
+        probe.result.setdefault("display_presentations", []).append({
+            "monotonic_ns": time.monotonic_ns(),
+            "black": not any(device._back_buffer)})
+        return result
+    device.show = observed_show
+
+
+def observe_display_content(arbiter, probe):
+    write = arbiter.write_main
+    def observed_write(hint):
+        count = len(probe.result.get("display_presentations", []))
+        result = write(hint)
+        snapshot = arbiter.snapshot()
+        probe.result.setdefault("display_content", []).append({
+            "monotonic_ns": time.monotonic_ns(), "state": probe.sm.state,
+            "requested_text": None if hint is None else hint.data.get("text"),
+            "stored_text": None if snapshot.main is None else snapshot.main.data.get("text"),
+            "presented_during_write": len(probe.result.get("display_presentations", [])) > count})
+        return result
+    arbiter.write_main = observed_write
+
+
+async def observe_fatal_wait(probe, source, operation, *args):
+    try:
+        return await operation(*args)
+    except Exception as error:
+        import traceback
+        probe.result.setdefault("fatal_diagnostics", []).append({
+            "source": source, "exception_type": type(error).__name__,
+            "traceback": traceback.format_exc()})
+        raise
+
+
 async def launch(args) -> int:
     # Import main first: it sets native thread policy before product imports.
     import sbd.main as app_main
@@ -633,16 +731,25 @@ async def launch(args) -> int:
     from sbd.action.speak.streaming import StreamingSpeakControl
     from sbd.core.state_manager import StateManager
     from sbd.core.events import ButtonPressed
+    from sbd.perception.listen.whispercpp.adapter import WhisperCppASRAdapter
 
     plan = session_plan(args.run) if args.run != "restart" else []
     diagnostic_role = getattr(args, "diagnostic_role", None)
+    manual = bool(getattr(args, "manual", False))
     if diagnostic_role is not None:
         cases = (["NATIVE-FIRST", "NATIVE-REUSED"] if diagnostic_role == "first_app" else
                  ["NATIVE-FIRST"] if diagnostic_role == "single_request" else ["NATIVE-FRESH-APP"])
         plan = [[(case, "FX-SHORT-B", "KEEP_NEXT")] for case in cases]
+        if diagnostic_role == "paired_turns":
+            plan = [[("ACOUSTIC-T1", "FX-SHORT-B", "KEEP_NEXT"),
+                     ("ACOUSTIC-T2", "FX-SHORT-B", "KEEP_NEXT")]]
     needed = {fixture for session in plan for _, fixture, _ in session}
-    fixtures = {} if args.run == "ph" else resolve_fixtures(args.fixtures, needed)
+    fixtures = {} if args.run == "ph" or manual else resolve_fixtures(args.fixtures, needed)
     probe = ProductProbe(args.run, fixtures, args.process_start_ns)
+    probe.manual = manual
+    probe.acoustic = bool(getattr(args, "acoustic", False))
+    require(not probe.acoustic or (args.run == "pn" and diagnostic_role in {"single_request", "paired_turns"}),
+            "ACOUSTIC_DIAGNOSTIC_MODE_REQUIRED")
     probe.diagnostic_role = diagnostic_role
     if probe.diagnostic_role is not None:
         probe.plan = plan
@@ -659,6 +766,19 @@ async def launch(args) -> int:
                  "dequeue": StreamingSpeakControl._dequeue,
                  "handle": StateManager._handle_item,
                  "recovery": ResourceManager.begin_recovery}
+    default_asr_child = WhisperCppASRAdapter._default_child
+
+    def diagnostic_asr_child(self):
+        child = default_asr_child(self)
+        argv_builder = child._argv_builder
+        def argv(workdir):
+            command = argv_builder(workdir)
+            command[1] = str(ROOT / "scripts/acoustic_supervisor.py")
+            trace_name = f"asr-child-trace-{workdir.name}.json" if manual else "asr-child-trace.json"
+            command.extend(["--diagnostic-output", str(args.observation.with_name(trace_name))])
+            return command
+        child._argv_builder = argv
+        return child
 
     def config(*a, **kw):
         value = originals["config"](*a, **kw)
@@ -681,6 +801,25 @@ async def launch(args) -> int:
             record.instance.frames = probe.frames
         if spec.key == "core.audio.output":
             observe_audio_output(record.instance, probe)
+        if probe.acoustic or probe.manual:
+            if spec.key == "core.display":
+                observe_display_output(record.instance, probe)
+            if spec.key == "core.display.arbiter":
+                observe_display_content(record.instance, probe)
+        if spec.key == "backend.perception.listen.asr" and (probe.acoustic or probe.manual):
+            child = record.instance._child
+            receive = child.receive
+            async def observed_receive():
+                event = await receive()
+                row = probe.current
+                if row is not None and event.get("event") in {"ENDPOINT", "RESULT", "ERROR"}:
+                    row["nodes"]["asr_" + event["event"].lower() + "_received"] = time.monotonic_ns()
+                    state = dict(probe.rm._records["core.display.arbiter"].instance.snapshot().status_slots).get("state")
+                    row.setdefault("asr_wire", []).append({
+                        **{key: event[key] for key in ("event", "request_id", "captured_frames", "latency_ms", "code") if key in event},
+                        "app_state": probe.sm.state, "display_state": None if state is None else state.data.get("state")})
+                return event  # Unchanged protocol and production validation.
+            child.receive = observed_receive
         if spec.key == "backend.action.speak.tts":
             tts = record.instance
             synthesize = tts.synthesize
@@ -792,6 +931,8 @@ async def launch(args) -> int:
 
     logs = PublicLogObservation()
     with ExitStack() as stack:
+        if probe.acoustic or probe.manual:
+            stack.enter_context(patch.object(WhisperCppASRAdapter, "_default_child", diagnostic_asr_child))
         timing_directory = getattr(args, "timing_directory", None)
         if timing_directory is not None:
             from sbd.cognition import observability
@@ -814,11 +955,37 @@ async def launch(args) -> int:
             ("sbd.action.speak.streaming.StreamingSpeakControl._dequeue", dequeue),
             ("sbd.action.speak.streaming.StreamingSpeakControl.feed", feed)):
             stack.enter_context(patch(target, replacement))
+        if probe.acoustic or probe.manual:
+            from sbd.core.event_bus import EventBus
+            for owner, name in ((StateManager, "wait_stopped"),
+                                (ResourceManager, "wait_fatal"), (EventBus, "wait_fatal")):
+                original_wait = getattr(owner, name)
+                source = owner.__name__
+                async def observed_wait(self, _original=original_wait, _source=source):
+                    return await observe_fatal_wait(probe, _source, _original, self)
+                stack.enter_context(patch.object(owner, name, observed_wait))
         exit_code = await app_main.run_app(str(args.config))
         if probe.task is not None:
             if not probe.task.done():
                 probe.task.cancel()
             await asyncio.gather(probe.task, return_exceptions=True)
+        if probe.stimulus_task is not None:
+            if not probe.stimulus_task.done():
+                probe.stimulus_task.cancel()
+            await asyncio.gather(probe.stimulus_task, return_exceptions=True)
+        if probe.acoustic_pcm:
+            offset = 0
+            for index, row in enumerate(probe.rows):
+                count = len(row.get("microphone_frames", []))
+                name = "microphone.wav" if len(probe.rows) == 1 else f"microphone-{index + 1:02d}.wav"
+                row["microphone_file"] = name
+                with wave.open(str(args.observation.with_name(name)), "wb") as wav:
+                    os.chmod(args.observation.with_name(name), 0o600)
+                    wav.setnchannels(1)
+                    wav.setsampwidth(2)
+                    wav.setframerate(16000)
+                    wav.writeframes(b"".join(probe.acoustic_pcm[offset:offset + count]))
+                offset += count
         if probe.rejection_task is not None:
             await asyncio.gather(probe.rejection_task, return_exceptions=True)
         probe.finish_turns()
@@ -827,6 +994,7 @@ async def launch(args) -> int:
                             buttons=probe.buttons, recovery=probe.recovery,
                             child_identities={str(pid): identity for pid, identity in probe.children.items()},
                             app_pid=os.getpid(),
+                            errors=probe.errors,
                             cleanup={"app_absent": False,
                                 "children_absent": all(process_identity(pid) is None for pid in probe.children),
                                 "alsa_absent": counts["alsa"] == 0,
@@ -856,7 +1024,8 @@ async def launch_installed(config: str, experiment: str) -> int:
         fixtures=Path(values["fixtures"]), observation=Path(values["observation"]),
         process_start_ns=values["process_start_ns"], pcm_pacing="realtime",
         timing_directory=Path(values["timing_directory"]), control=bool(values.get("control")),
-        diagnostic_role=values.get("diagnostic_role")))
+        diagnostic_role=values.get("diagnostic_role"), acoustic=bool(values.get("acoustic")),
+        manual=bool(values.get("manual"))))
 
 
 def main() -> None:

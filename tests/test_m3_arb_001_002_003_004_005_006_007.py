@@ -120,6 +120,33 @@ def test_m3_arb_006() -> None:
     _run(scenario())
 
 
+def test_recovered_idle_clears_asr_error_but_error_state_preserves_it() -> None:
+    from sbd.core.events import StateChanged
+    from sbd.core.faults import BackendDisposition, ComponentSystemFault
+
+    async def scenario():
+        bus = EventBus()
+        arbiter = DisplayArbiter(MockDisplay(DisplayConfig()), RendererSpy())
+        await arbiter.start()
+        status = StatusBar(arbiter, bus)
+        await status.start()
+        await bus.publish(ComponentSystemFault.create(
+            where="perception.listen", code="ASR_PROTOCOL_FAILED",
+            backend=BackendDisposition.REBUILD_REQUIRED,
+            recovery_keys=("backend.perception.listen.asr",),
+        ).to_event())
+        await bus.publish(StateChanged("PERCEPTION", "ERROR"))
+        assert dict(arbiter.snapshot().status_slots)["error"].data["category"] == "asr"
+        await bus.publish(StateChanged("ERROR", "IDLE"))
+        slots = dict(arbiter.snapshot().status_slots)
+        assert "error" not in slots
+        assert slots["state"].data["state"] == "IDLE"
+        await status.stop()
+        await arbiter.stop()
+
+    _run(scenario())
+
+
 def test_m3_arb_007() -> None:
     async def scenario():
         arbiter = DisplayArbiter(MockDisplay(DisplayConfig()), RendererSpy())

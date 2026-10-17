@@ -74,6 +74,21 @@ async def launch_installed(config, experiment):
     assert json.loads(result.stdout) == {"config": str(config), "experiment": str(experiment)}
 
 
+def test_debug_routes_through_same_entry_without_reusing_an_old_experiment(product, tmp_path):
+    root, launcher, config = product
+    (root / "scripts/run-manual-debug.py").write_text('''
+import json, os, sys
+print(json.dumps({"args": sys.argv[1:], "experiment": os.environ.get("ALPHA_EXPERIMENT"),
+                  "timing": os.environ.get("ALPHA_TIMING_DIRECTORY")}))
+raise SystemExit(4)
+''')
+    env = dict(os.environ, ALPHA_EXPERIMENT="stale", ALPHA_TIMING_DIRECTORY="stale")
+    result = invoke(launcher, "--debug", "--python", sys.executable, cwd=tmp_path, env=env)
+    assert result.returncode == 4
+    assert json.loads(result.stdout) == {"args": ["--config", str(config), "--python", sys.executable],
+                                         "experiment": None, "timing": None}
+
+
 @pytest.mark.parametrize("args", [("--config",), ("--python",), ("--unexpected",)])
 def test_invalid_arguments_fail_without_launch(args):
     result = invoke(LAUNCHER, *args)

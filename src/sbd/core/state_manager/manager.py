@@ -38,6 +38,7 @@ from sbd.core.state_manager.ports import (
 from sbd.core.state_manager.session import SessionContext
 
 logger = logging.getLogger(__name__)
+ASR_FAILURE_NOTICE = "語音辨識發生錯誤，請按按鈕重新開始。"
 
 
 @dataclass(slots=True)
@@ -48,6 +49,8 @@ class _PendingConvergence:
     phase: Literal["workers", "conversation_close", "recovery", "complete"] = "workers"
     close_proof: ConversationCloseProof | None = None
     planned_recovery_started: bool = False
+    asr_notice_requested: bool = False
+    notice_started: bool = False
 
 
 class StateManager:
@@ -95,6 +98,7 @@ class StateManager:
         self._shutting_down = False
         self._pending: _PendingConvergence | None = None
         self._fault_recovery_keys: tuple[str, ...] = ()
+        self._asr_notice_requested = False
         self._wake_control: WakeListenerControl | None = None
         self._external_control: ExternalMessageControl | None = None
         self._wake_set = False
@@ -268,6 +272,11 @@ class StateManager:
             pending.recovery_generation = None
             self._recovery_waiter = None
             return
+        if isinstance(item, ActionCompleted) and self._state == "ERROR":
+            record = self._in_flight.get(item.correlation_id)
+            if record is not None and record.phase == "error_notice":
+                self._handle_fact(item)
+                return
         if isinstance(item, (PerceptionResult, LLMResponse, ActionCompleted, ErrorOccurred, ButtonPressed, ExternalMessageArrived, WakeWordDetected, InterruptRequested, ShutdownRequested)) and not is_allowed_in_state(item, self._state):
             logger.warning("Dropping %s while state is %s", type(item).__name__, self._state)
             return
@@ -278,7 +287,12 @@ class StateManager:
             if self._state == "ERROR":
                 if self._pending is not None:
                     self._pending.buffer_exit_policy = "discard"
+                    if any(r.phase == "error_notice" for r in self._in_flight.values()):
+                        await self._lifecycle_e1("ASR failure announcement failed")
                 return
+            self._asr_notice_requested = item.code.startswith("ASR_") and item.where in {
+                "perception.listen", "perception.listen.asr",
+            }
             if item.backend_disposition in {"rebuild_required", "unproven"}:
                 keys = tuple(sorted(set(item.recovery_keys)))
                 if not keys:
@@ -317,7 +331,7 @@ class StateManager:
                     logger.warning("Dropping external signal while ERROR convergence is active")
                 return
             if isinstance(item, ButtonPressed) and self._state == "ERROR":
-                if self._pending is not None and self._pending.recovery_generation is not None:
+                if self._pending is not None:
                     logger.warning("Dropping ButtonPressed while ERROR recovery is active")
                     return
                 self._pending = None
@@ -352,6 +366,7 @@ class StateManager:
             "think": LLMResponse,
             "action_primary": ActionCompleted,
             "action_rest": ActionCompleted,
+            "error_notice": ActionCompleted,
         }.get(record.phase)
         if expected is None:
             logger.warning("Dropping public Fact for private lifecycle record")
@@ -364,6 +379,8 @@ class StateManager:
                 f"{record.kind} published a terminal fact for kind={fact_kind}"
             )
         record.terminal_fact = fact
+        if record.phase == "error_notice":
+            return
         if isinstance(fact, (PerceptionResult, ActionCompleted)) and fact.status in {"error", "timeout"}:
             logger.warning("P5 terminal fact status=%s state=%s kind=%s", fact.status, self._state, fact.kind)
         if isinstance(fact, PerceptionResult):
@@ -607,7 +624,7 @@ class StateManager:
         self._correlation_counter += 1
         return self._correlation_counter
 
-    def _start_worker(self, phase: Literal["perception", "think", "action_primary", "action_rest"], kind: str, worker: Any, call: Any) -> None:
+    def _start_worker(self, phase: Literal["perception", "think", "action_primary", "action_rest", "error_notice"], kind: str, worker: Any, call: Any) -> None:
         assert self._session is not None
         correlation_id = self._next_correlation()
         task = asyncio.create_task(call(correlation_id))
@@ -945,6 +962,9 @@ class StateManager:
                 self._pending.recovery_generation = None
                 if self._recovery_waiter is not None and not self._recovery_waiter.done():
                     self._recovery_waiter.cancel()
+                for record in self._in_flight.values():
+                    record.cancel_requested = True
+                await self._converger.converge(tuple(self._in_flight.values()), "shutdown")
             return
         for record in self._in_flight.values():
             record.cancel_requested = True
@@ -958,6 +978,8 @@ class StateManager:
                 self._in_flight.pop(correlation_id, None)
         policy: Literal["flush_to_wake", "discard"] = "flush_to_wake" if trigger == "rest" else "discard"
         self._pending = _PendingConvergence(trigger, policy)
+        self._pending.asr_notice_requested = trigger == "error" and self._asr_notice_requested
+        self._asr_notice_requested = False
         declared_keys = self._fault_recovery_keys if trigger == "error" else ()
         self._fault_recovery_keys = ()
         destroyed = tuple(sorted(set(result.destroyed_backends)))
@@ -971,7 +993,11 @@ class StateManager:
                 raise StateManagerInvariantViolation("destroyed backends require RecoveryControl")
             ticket = self._recovery.begin_recovery(recovery_keys)
             self._pending.recovery_generation = ticket.generation
-            self._pending.phase = "recovery"
+            # Only rebuilding LLM destroys the active Conversation. Other
+            # backends leave it alive, so close it once the recovery barrier ends.
+            self._pending.phase = (
+                "recovery" if "backend.cognition.reasoner.llm" in recovery_keys else "workers"
+            )
 
             async def wait_recovery() -> None:
                 await self._recovery.wait_recovery(ticket)
@@ -1031,6 +1057,16 @@ class StateManager:
                 lambda done, sid=session.session_id, generation=proof.generation:
                 self._inbox.put_nowait(_PlannedRecoveryCompleted(sid, generation, done))
             )
+            return
+        if (pending.trigger == "error" and pending.asr_notice_requested
+                and not pending.notice_started and self._session is not None
+                and "speak" in self._workers.action_kinds):
+            pending.notice_started = True
+            session = self._session
+            worker = self._workers.action("speak")
+            self._start_worker("error_notice", "speak", worker,
+                lambda cid: worker.execute(session.session_id, session.turn_id, cid,
+                                           {"text": ASR_FAILURE_NOTICE}))
             return
         pending.phase = "complete"
         if pending.trigger == "shutdown":

@@ -489,6 +489,124 @@ def test_m1_sm_006_error_exit_waits_for_handles_and_recovery() -> None:
     asyncio.run(run())
 
 
+def test_non_llm_recovery_closes_old_conversation_before_next_session() -> None:
+    async def run():
+        class Control(ConversationControl):
+            active = None
+            closes = 0
+
+            def __init__(self):
+                self.reopened = asyncio.Event()
+
+            async def open_conversation(self, sid, generation):
+                assert self.active is None, "previous Conversation remains open"
+                self.active = (sid, generation)
+                if self.closes:
+                    self.reopened.set()
+                return await super().open_conversation(sid, generation)
+
+            async def close_conversation(self, sid, generation, reason):
+                assert self.active == (sid, generation)
+                self.active = None
+                self.closes += 1
+                return await super().close_conversation(sid, generation, reason)
+
+        recovery = RecoveryPort()
+        bus, sm, listen, *_ = make_sm(
+            hold_perception=True, converger=DestroyedConverger(), recovery=recovery)
+        control = Control()
+        sm._test_conversation_control = control
+        await start_perception(bus, sm, listen)
+        errored = state_barrier(bus, "ERROR")
+        from sbd.core.events import InterruptRequested
+        await bus.publish(InterruptRequested())
+        await wait(errored)
+        listen.release.set()
+        await next(iter(sm._in_flight.values())).task
+        await sm._inbox.join()
+        assert sm.state == "ERROR" and control.active is not None
+        idled = state_barrier(bus, "IDLE")
+        recovery.release.set()
+        await wait(idled)
+        assert control.active is None and control.closes == 1
+        await bus.publish(ButtonPressed("conversation", 1))
+        await wait(control.reopened)
+        await bus.publish(ShutdownRequested())
+        await sm.wait_stopped()
+        await sm.stop()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("ending", ["finish", "shutdown", "speech-fault"])
+def test_asr_fault_notice_waits_for_recovery_and_playback_and_can_stop(ending):
+    from sbd.core.faults import BackendDisposition, ComponentSystemFault
+    from sbd.core.state_manager.manager import ASR_FAILURE_NOTICE
+
+    async def run():
+        recovery = RecoveryPort()
+        bus, sm, listen, _, _, _, speak = make_sm(
+            hold_perception=True, recovery=recovery)
+        calls = []
+        original = speak.execute
+
+        async def announce(sid, turn, correlation, payload):
+            calls.append(payload["text"])
+            if ending == "speech-fault":
+                speak.started.set()
+                fault = ComponentSystemFault.create(
+                    where="action.speak.tts", code="TTS_GENERATION_FAILED",
+                    backend=BackendDisposition.REBUILD_REQUIRED,
+                    recovery_keys=("backend.action.speak.tts",))
+                await bus.publish(fault.to_event())
+                raise fault
+            await original(sid, turn, correlation, payload)
+
+        async def destroy_notice():
+            speak.release.set()
+            return ForceAbortReport(("backend.action.speak.tts",))
+
+        speak.execute = announce
+        if ending == "speech-fault":
+            speak.force_abort = destroy_notice
+        await start_perception(bus, sm, listen)
+        errored = state_barrier(bus, "ERROR")
+        fault = ComponentSystemFault.create(
+            where="perception.listen", code="ASR_TIMEOUT_UNPROVEN",
+            backend=BackendDisposition.UNPROVEN,
+            recovery_keys=("backend.perception.listen.asr",))
+        await bus.publish(fault.to_event())
+        await wait(errored)
+        await sm._inbox.join()
+        assert calls == [] and sm.state == "ERROR"
+        idled = state_barrier(bus, "IDLE")
+        recovery.release.set()
+        await wait(speak.started)
+        assert calls == [ASR_FAILURE_NOTICE]
+        if ending == "speech-fault":
+            await wait(idled)
+            assert recovery.begun == [("backend.perception.listen.asr",),
+                                      ("backend.action.speak.tts",)]
+        else:
+            await wait(speak.fact_sent)
+            await sm._inbox.join()
+            assert sm.state == "ERROR"  # Terminal fact alone is not playback return.
+            sid = sm._session.session_id
+            await bus.publish(ButtonPressed("conversation", 1))
+            await sm._inbox.join()
+            assert sm._session.session_id == sid and sm.state == "ERROR"
+            if ending == "finish":
+                speak.release.set()
+                await wait(idled)
+        await bus.publish(ShutdownRequested())
+        await sm.wait_stopped()
+        assert calls == [ASR_FAILURE_NOTICE]
+        assert not sm._in_flight
+        await sm.stop()
+
+    asyncio.run(asyncio.wait_for(run(), 5))
+
+
 def test_sm_regression_cancellation_whitelist_and_p5_logging(caplog) -> None:
     async def run() -> None:
         sm = StateManager(wake_ack_seconds=1)

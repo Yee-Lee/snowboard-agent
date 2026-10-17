@@ -13,6 +13,7 @@
 | **M3** | [`m3-development.md`](m3-development.md)<br>實體驗收以 [`m3_rpi_validation.md`](m3_rpi_validation.md) 為準 | **Raspberry Pi 5 HAL 與實體硬體驗收**<br>(Audio I2S, Display SPI, Camera CSI, GPIO/Button) | 27 個 DEV 單元測項 + 20 個樹莓派實體硬體測試卡 |
 | **M4 起共用 Candidate Gate** | [`candidate_hardware_gate.md`](candidate_hardware_gate.md) | **Pi 開發收斂與單一 frozen SHA**<br>(pre-candidate Pi loop、Python matrix、preflight、minimal result / raw log) | Pi working-tree convergence + 3.11 / 3.12 / 3.13 candidate matrix + 單一部署 runtime硬體驗收 |
 | **M4A Developer Pi 診斷** | [`m4a_developer_pi_diagnostic.md`](m4a_developer_pi_diagnostic.md) | **送審前真實 Audio 開發收斂**<br>(fresh device/product、offline ASR/TTS/ALSA、cleanup) | Pi 直接修正至 Diagnostic Pass、單次同步回工作站；不取代 Tester acceptance |
+| **跨階段真人除錯** | [`m4a_developer_pi_diagnostic.md §9`](m4a_developer_pi_diagnostic.md#9-跨階段真人實測除錯) | 正式入口 `--debug`、私有錄音／文字／fatal chain、錄音重辨與自播、致命錯誤後獨立清屏 | 真實 App 接收與診斷；保留原 FAIL，不取代人工驗收 |
 
 ---
 

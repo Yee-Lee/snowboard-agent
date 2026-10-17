@@ -130,6 +130,44 @@ def test_m4a_asr_003_wrong_terminal_identity_is_protocol_failure_not_empty_resul
     asyncio.run(run())
 
 
+def test_m4a_asr_003_deadline_during_fault_cleanup_cannot_leave_ready_child() -> None:
+    async def run() -> None:
+        terminating = asyncio.Event()
+        release = asyncio.Event()
+
+        class SlowTerminationChild(ScriptedChild):
+            async def force_terminate(self):
+                terminating.set()
+                await release.wait()
+                await super().force_terminate()
+
+        child = SlowTerminationChild([asr_endpoint(1, 1), {
+            "protocol": 1, "event": "ERROR", "request_id": 1,
+            "code": "INFERENCE_REJECTED",
+        }])
+        replacement = ScriptedChild([asr_endpoint(1, 1), asr_result(1, "recovered")])
+        children = iter((child, replacement))
+        adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: next(children))
+        await adapter.start()
+        operation = asyncio.create_task(adapter.transcribe(_frames()))
+        await terminating.wait()
+        assert not adapter.ready_for_next  # Fault cleanup has not released the native owner.
+        operation.cancel()  # Listen's deadline expires while termination is in progress.
+        await asyncio.sleep(0)
+        assert not operation.done()
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await operation
+        assert adapter.state is ChildState.DESTROYED
+        assert not adapter.ready_for_next
+        await adapter.abort()  # Timeout handling must not hang or advertise safe reuse.
+        assert (await adapter.force_abort()).destroyed_backends == (ASR_KEY,)
+        await adapter.rebuild(None, _app_config())
+        assert (await adapter.transcribe(_frames())).text == "recovered"
+
+    asyncio.run(run())
+
+
 def test_m4a_asr_003_resource_manager_barrier_reopens_after_same_owner_ready() -> None:
     async def run() -> None:
         original = ScriptedChild()
@@ -164,3 +202,95 @@ def test_m4a_asr_003_resource_manager_barrier_reopens_after_same_owner_ready() -
         await rm.stop_all()
 
     asyncio.run(run())
+
+
+def test_m4a_asr_003_listen_deadline_during_fault_requests_recovery_not_timeout_reply():
+    from sbd.core.faults import ComponentSystemFault
+    from sbd.perception.listen.listener import Listen
+
+    async def run():
+        terminating, release, deadline = (asyncio.Event() for _ in range(3))
+        events = []
+
+        class Child(ScriptedChild):
+            async def force_terminate(self):
+                terminating.set()
+                await release.wait()
+                await super().force_terminate()
+
+        class Adapter(WhisperCppASRAdapter):
+            async def abort(self):
+                deadline.set()
+                await super().abort()
+
+        class Input:
+            def frames(self):
+                return _frames()
+
+        class Bus:
+            async def publish(self, event):
+                events.append(event)
+
+        child = Child([asr_endpoint(1, 1), {
+            "protocol": 1, "event": "ERROR", "request_id": 1,
+            "code": "INFERENCE_REJECTED",
+        }])
+        adapter = Adapter(CONFIG, lock=LOCK, child_factory=lambda: child)
+        await adapter.start()
+        listener = Listen(audio_input=Input(), asr=adapter, bus=Bus())
+        task = asyncio.create_task(listener.perceive("s", 1, 1, 0.01))
+        await terminating.wait()
+        await deadline.wait()
+        assert not adapter.ready_for_next
+        assert not task.done()
+        release.set()
+        with pytest.raises(ComponentSystemFault) as caught:
+            await task
+        assert caught.value.code == "ASR_TIMEOUT_UNPROVEN"
+        assert child.state is ChildState.DESTROYED
+        assert len(events) == 1 and events[0].code == "ASR_TIMEOUT_UNPROVEN"
+        assert events[0].recovery_keys == (ASR_KEY,)
+
+    asyncio.run(asyncio.wait_for(run(), 2))
+
+
+def test_m4a_asr_003_first_frame_deadline_closes_capture_and_allows_retry():
+    from sbd.core.events import PerceptionResult
+    from sbd.perception.listen.listener import Listen
+
+    async def run():
+        closed = asyncio.Event()
+        events = []
+
+        class Input:
+            calls = 0
+
+            async def frames(self):
+                self.calls += 1
+                try:
+                    if self.calls == 1:
+                        await asyncio.Event().wait()
+                    yield bytes(640)
+                finally:
+                    closed.set()
+
+        class Bus:
+            async def publish(self, event):
+                events.append(event)
+
+        child = ScriptedChild([asr_endpoint(1, 1), asr_result(1, "重試成功")])
+        adapter = WhisperCppASRAdapter(CONFIG, lock=LOCK, child_factory=lambda: child)
+        await adapter.start()
+        listener = Listen(audio_input=Input(), asr=adapter, bus=Bus())
+        await listener.perceive("s", 1, 1, 0.01)
+        assert closed.is_set()
+        assert adapter.ready_for_next
+        assert child.request_id == 0
+        assert len(events) == 1 and isinstance(events[0], PerceptionResult)
+        assert events[0].status == "timeout"
+        await listener.perceive("s", 2, 2, 1)
+        assert events[-1].status == "ok" and events[-1].text == "重試成功"
+        assert child.start_count == 1
+        await listener.stop()
+
+    asyncio.run(asyncio.wait_for(run(), 2))

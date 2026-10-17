@@ -135,6 +135,10 @@ class Listen(WorkerRuntime):
                     recovery_keys=("backend.perception.listen.asr",),
                 )
             finally:
+                # Abort may report READY before transcribe has returned, including
+                # a deadline while it is still waiting for the first audio frame.
+                # Settle that owned reader before closing its capture generator.
+                await self._cancel_operation(self._require_active())
                 await self._close_frames()
             if fault is not None:
                 await self._bus.publish(fault.to_event())

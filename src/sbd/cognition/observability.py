@@ -402,6 +402,10 @@ class CognitionObserver:
         with self._lock:
             values = self._values
             if values is None:
+                # SM can speak a no-input reminder without a Reasoner turn.
+                # Its audio marks must not become the next generation's marks.
+                self._events = dict.fromkeys(TIMING_NODES)
+                self._events["conversation_ready"] = self._ready
                 return
             self._values = None
             reasons = {name: reason for name, value in values.items() if value is None}

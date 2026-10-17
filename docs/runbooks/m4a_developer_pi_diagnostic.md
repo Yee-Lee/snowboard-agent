@@ -216,3 +216,101 @@ FD / temp cleanup 全 0。TTS 必須實際完成 ALSA playback + drain、control
   改變，必須建立完整新 patch 回 Pi 重走開發收斂與工作站同步，再請求新 candidate。
 - Tester 必須另用 fresh run ID、fresh output 與正式 candidate gate 獨立重跑；Developer
   結果不能複製、改名或合併為正式 Pass。
+
+## 9. 跨階段真人實測除錯
+
+本節適用於使用相同 App/ALSA/Whisper 組合的後續階段。它是明確啟用的私有診斷模式，
+不更改普通啟動的記錄政策，也不把真人實測自動判為 PASS。使用該階段待測版本的入口、
+設定與 runtime；不得為了開啟除錯而退回舊版本。原始錄音與文字保存在 repository 外，
+目錄權限 0700、檔案 0600；不放入 Git，也不自動產生內容 digest。
+
+### 9.1 同一正式入口啟動
+
+已安裝版本若包含此診斷工具：
+
+```bash
+<app-root>/run.sh --debug
+```
+
+一般使用維持 `<app-root>/run.sh`。`--debug` 會從同一版本啟動真實 App，建立新的
+`~/snowboard-debug/manual-*/`，複製設定並分開記錄日誌。來源設定不被覆寫，模型等相對
+路徑仍指向原來的檔案。沒有自動按鍵或自播；由 USER 自己操作實體 Button 與麥克風。
+若要指定 repository checkout、runtime 或輸出根目錄，可直接使用：
+
+```bash
+<controller-python> scripts/run-manual-debug.py \
+  --installed-entry <same-version-entry> --config <target-config> \
+  --python <controller-python> --output-root <private-output-root>
+```
+
+依當前測項操作，不預設重跑所有歷史案例。首次問題可先使用一個短句；要查跨 Session
+問題，再完成一輪、短按回待命、開下一輪。只有查無輸入恢復時才刻意等待一次逾時。
+回報實際原句、順序、顯示與聽到的回覆。若出錯，先保存這一輪，勿連續重開覆蓋現象。
+以長按或 Ctrl+C 結束；預設 watchdog 30 分鐘，正常退出後才會寫出完整逐輪錄音。
+
+### 9.2 先判定哪一層錯誤
+
+| 資料 | 用途與限制 |
+| :--- | :--- |
+| `observation/result.json` | App exit、錯誤摘要與原始 cleanup 結果；正常結束仍只待 USER 回報 |
+| `observation/private/run-observation.json` | Session/Turn、實際 ASR 文字、回覆、request ID、時間與私有 fatal chain |
+| `observation/private/microphone*.wav` | App 實際收進來的音訊；含背景／前後靜音，不等於原生 ASR 的裁切輸入 |
+| `observation/private/*-request-*.wav` | 捕捉結束後另存的實際 VAD-bounded 原生 ASR 輸入，於 child workdir 刪除前保留 |
+| `observation/private/asr-child-trace*.json` | endpoint、原生計算、ERROR/例外與 request 關聯；非正常強制終止時可能不完整 |
+| 私有 `display_content`／`display_presentations` | 顯示要求、儲存文字與成功呼叫 native present；不等於真人視覺判讀 |
+| `application.log` | 狀態轉移與錯誤摘要；預設不在一般日誌輸出逐字稿 |
+
+先核對 USER 原句與保存的 ASR 文字；兩者不同時，LLM 對錯句作答不能單獨歸因為推理失敗。
+再核對 request/Turn 與錄音，區分截斷、串輪、辨識錯句、等待逾時及回答後的流程故障。
+聽錄音時若調整音量，記錄錄音增益與喇叭輸出比例；主觀清楚不代表原音量 ASR 已正確。
+
+### 9.3 重用錄音，先直接 ASR、再經 App 收音
+
+Pi 的安裝、模型／runtime 複製、回歸測試與 App 實機測試依序進行。App 收音、辨識或
+播放測試期間，不並行大量檔案傳輸、安裝或其他測試，避免資源競爭污染等待時間。
+
+含此修正的測試版本中，一般無輸入／沒有可用語音結果，保留「我沒聽清楚，請再說一次。」與重新收音；ASR
+system fault 則保留 `ErrorOccurred` 的 code／分類與 `ERROR` 狀態，完成 backend 重建及
+舊對話清理後，播放「語音辨識發生錯誤，請按按鈕重新開始。」再回待命。故障提示不是
+重新收音承諾；新 Session 由新的按鈕觸發。ALPHA 不在此定稿未來 Display 的文字與版型。
+
+優先選用 `*-request-*.wav` 做原生 ASR 重辨，可保留相同裁切內容。只有要查完整收音或
+缺少原生輸入時，才使用 `microphone*.wav`，並註明輸入範圍不同。
+
+```bash
+<controller-python> scripts/run-manual-debug.py --config <target-config> \
+  --replay-asr <saved-wav> --output-root <private-output-root>
+```
+
+每次另建 `asr-replay-*/`，私有 `result.json` 保留實際文字／例外，`native-input.wav`
+保留送入模型的副本。`DECODED` 只代表模型有輸出，不代表辨識正確。要檢驗音量假設，
+同一份原檔分別使用 `--gain 1`、`--gain 4` 等明確數值；結果記錄 clipping 數量。
+這不修改產品收音增益、模型、提示詞或原始檔。勿直接把調整增益後成功當成根因證明。
+
+接著可把保存的 WAV 透過 App 喇叭播放，仍由 App 的真實麥克風與 Listen/ASR 接收：
+
+```bash
+<controller-python> scripts/run-acoustic-asr.py \
+  --installed-entry <same-version-entry> --config <target-config> --python <controller-python> \
+  --reference-wav <saved-wav> --reference-text '<USER原句>' \
+  --turns 2 --output <fresh-private-output> --watchdog 180 --cleanup-timeout 20
+```
+
+這一模式會自動送出 Button 開／關 Session，測試時請勿另外按鍵或說話。輸入只從實體
+麥克風進入 ASR，不注入 reference PCM。自訂錄音有獨立 private reference metadata，
+不是固定 ALPHA fixture 或正式效能基準；文字不符時保留 INVALID 與實際輸出，不改成 PASS。
+收音路徑多了一次喇叭／麥克風，成功或失敗都應與直接 ASR 結果分開記錄。
+若要比較增益，使用上一步產生的 `native-input.wav` 副本，保留對應的 gain metadata。
+
+### 9.4 致命錯誤後清屏
+
+`run.sh --debug` 的外層工具會在 App 以非零碼退出後，另啟一個最多 10 秒的清屏程序。
+先確認沒有活躍 App，且 SPI/GPIO 裝置無持有者，才重新開啟顯示器、呈現全黑並關閉。
+占用、無法確認 owner 或清屏逾時時，保留失敗並停止；不強殺無法歸屬的其他程式。
+已知屬於該 run 的子程序由既有 runner 有限時清理。
+
+`session-result.json` 分別記錄原始 App exit 與這次獨立清屏結果，`display-clear.log`
+保留失敗細節。原始 cleanup/FAIL 不被改寫；清屏成功也不能證明該次 App 曾正常 shutdown。
+這是 operator-side 修復，不更改 Ch 11 的 fatal-path 契約，不重啟 App。
+**普通 `run.sh` 沒有這項事後自動清屏**；若產品要求所有正常入口都具備此行為，需由 Designer
+更新部署／退出設計與適用測項。
