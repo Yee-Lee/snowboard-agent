@@ -1,5 +1,15 @@
 # Current development status
 
+## Private Pi evidence locator after workspace cleanup
+
+The retained ALPHA evidence is on the workstation only, outside Git, at
+`../pi-evidence/alpha-8b4af53/pi-home/operator/` (path relative to the `core/` repository root).
+For a retained historical run artifact below, replace the original Pi prefix
+`/home/<operator>/<run-directory>/` or `<operator-home>/<run-directory>/` with this private root
+plus `<run-directory>/`. Historical Pi commands, checkout paths and installation paths record what
+actually ran; they are not instructions to recreate those directories or evidence that whole
+checkouts were archived. Raw audio, private logs and result payloads must not be added to Git.
+
 ## Active ALPHA implementation
 
 ### Delivery closeout — 2026-10-18
@@ -8,7 +18,8 @@
   (`fix[ALPHA]: deliver ASR fault recovery and reusable diagnostics`). The Pi checkout matched all
   24 committed paths; the device was then shut down. USER accepts this final-content evidence for ALPHA
   delivery. No completion tag was created.
-- Formal `run.sh` and `run.sh --debug` now select `asr-notice-20261017-r11`; previous r9 is retained.
+- Formal `run.sh` and `run.sh --debug` select `asr-notice-20261017-r11`. Previous r9 was
+  retained at delivery, then removed from the Pi during the USER-approved 2026-10-18 cleanup.
   Promotion compared 17 affected source/test files directly across workstation, Pi checkout and
   installation: no difference, `<r11-root>/promotion-byte-comparison.json`. No automatic digest was added.
 - USER explicitly defers the isolated `audio` capture/cleanup issue until recurrence and reports improved
@@ -37,12 +48,14 @@
   never fixture/quality PASS substitutes. Workflow: existing runbook §9, no new handoff Markdown.
 - Product Whisper remains **base-q8_0**, four threads, fixed technical prompt/decoder; VAD, capture gain,
   model and timeouts are unchanged. Replay gain changes a private copy only; no original recording edits.
-- Workstation and Pi combined affected regression: **311 Pass** each (24.93 s / 6.48 s). Pi result:
-  `<operator-home>/alpha-delivery-20261018-r11/affected-portable.log`. Selection includes manual debug,
+- Workstation and Pi combined affected regression: **311 Pass** each (24.93 s / 6.48 s). Retained Pi result:
+  `../pi-evidence/alpha-8b4af53/pi-home/operator/alpha-delivery-20261018-r11/affected-portable.log`.
+  Selection includes manual debug,
   alpha product/runner, launcher/install, ASR, LLM observation/generation, no-input, State Manager,
   display recovery, M4-ERR and interrupt regressions. Earlier r11 selections were 151 + 82 Pass.
-- Native lifecycle and actual LLM recovery both PASS at
-  `<operator-home>/alpha-delivery-20261018-r11/{lifecycle,recovery}/result.json`: three clean Sessions,
+- Native lifecycle and actual LLM recovery both PASS at the private workstation locators
+  `../pi-evidence/alpha-8b4af53/pi-home/operator/alpha-delivery-20261018-r11/{lifecycle,recovery}/result.json`:
+  three clean Sessions,
   restart/offline/privacy checks, actual child failure and one usable replacement, final owner release.
   Revised Q regression with retained `Q-20261011` fixtures was interrupted by a host reboot around
   00:26:45 +08 on 2026-10-18; SSH ended 255 and no quality result or semantic report was saved.
@@ -50,7 +63,7 @@
   USER subsequently explicitly requested completing Q: the fresh full run
   `ALPHA-QUALITY-DEV-20261018-R11-02` completed all six cases once, objective 6/6 and semantic 6/6,
   six clean Session barriers and all final owners absent. Evidence:
-  `<operator-home>/alpha-delivery-20261018-r11/quality-02/adjudicated-result.json`; initial pending
+  `../pi-evidence/alpha-8b4af53/pi-home/operator/alpha-delivery-20261018-r11/quality-02/adjudicated-result.json`; initial pending
   card and private observations/judgments are preserved, with no product replay during adjudication.
   Existing PN/PH hearing gaps remain explicit; these runs cannot
   manufacture ALPHA.P completion or formal Q admission after an unproven P completion.
@@ -118,8 +131,9 @@ hearing reports. Their private full reports/audio remain outside Git. Reuse them
 
 #### Performance disposition and remaining acceptance boundary
 
-- USER accepted stopping further performance tuning after the two-Turn baseline at
-  `<operator-home>/app-acoustic-20261012-r4/paired-01/`: one App/Session, two identical acoustic inputs,
+- USER accepted stopping further performance tuning after the two-Turn baseline at the private
+  workstation locator `../pi-evidence/alpha-8b4af53/pi-home/operator/app-acoustic-20261012-r4/paired-01/`:
+  one App/Session, two identical acoustic inputs,
   same backends, requests 1/2, exit 0 and owner release. Signal-end to first response write is
   **7.475216751 / 7.409803624 s**; native Whisper **3.745406 / 3.796533 s**, VAD tail **600 / 600 ms**.
   Receiving-to-THINK is **6.864078 / 6.909703 s**. No meaningful second-Turn ASR speedup is demonstrated.

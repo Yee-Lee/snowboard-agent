@@ -1,16 +1,24 @@
 # Raspberry Pi project directory and storage design
 
-- Status: active target design; Phase 2 roots provisioned; Phase 3 in progress
+- Status: historical target design; current Pi appliance layout superseded it on 2026-10-18
 - Date: 2026-09-06
 - Target: Raspberry Pi 5
 - Owners: Core owns the layout and deployment boundary; each POC owns its source,
   evidence curation, and cleanup manifest.
 
+The current Pi runs from `$HOME/snowboard-app/run.sh`, which selects the single retained
+`releases/asr-notice-20261017-r11` installation and its own model/runtime/config. Under
+`$HOME/snowboard-app` only `run.sh`, `current`, and that release remain. The former
+`$HOME/snowboard-agent-dev` development root and historical test roots were removed after
+the cited ALPHA evidence was copied to the workstation's private, non-Git archive. The
+layout and migration steps below describe the earlier design, not the current Pi inventory
+or a requirement to recreate a development worktree on the running device.
+
 ## 1. Problem statement
 
-The Pi currently mixes source checkouts, immutable product dependencies, build
+At the time of this design, the Pi mixed source checkouts, immutable product dependencies, build
 inputs, test sessions, virtual environments, caches, and evidence beneath personal
-and historical paths. The latest inspected M4B target configuration still loads the
+and historical paths. The then-inspected M4B target configuration loaded the
 M4A product from `m4a-test-runs/6c3ba95-20260829-dev01`, the LLM runtime from
 `m4b-products/8279e79`, the model from `m4b-artifacts/60cb29d`, and the selected
 LLM profile from a historical `poc_llm/gate2b-contained-*` worktree. A test-run or
