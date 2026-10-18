@@ -2,13 +2,21 @@
 
 - Updated: 2026-10-18
 - Writer: Designer only
-- Current milestone: ALPHA Voice-only product convergence — L／P／R／Q／M
-- Current stage: **ALPHA delivery complete；no active work package**
-- Next owner: None
+- Current milestone: Post-ALPHA development plan — M6pre／M5／M6E
+- Current stage: **Design — 流程修訂草案已記錄，下一步修訂正式開發計畫**
+- Next owner: Designer
+- Developer entry: Closed — 流程與具體功能設計／Test Spec 尚未完成
 - Delivery basis: **USER accepts `8b4af53f433c4bcdb5b858973e10767318986554` from the existing
   same-content Pi, Q and real-user operation evidence.**
 
-## Gate transition facts
+## Current work routing
+
+USER 要求先提出 M6pre → M5 → M6E 草案，下一步修訂開發計畫流程。
+草案及精確修改範圍位於 [milestone.md §1.3.1](../milestone.md#131-流程修訂草案m6pre--m5--m6e)。
+Designer 依該節同步總流程、M6 功能拆分、M5 相依與 baseline selection 時機。
+Tester 在具體設計可測後進入 Test Spec；目前不執行 target suite、不重開 ALPHA。
+
+## Retained ALPHA delivery facts
 
 - M4／M4C remains Accepted; old evidence is not reopened.
 - Developer delivery `19d9ca2` retains WIP `9c13509` and delivers fixed terminal installation plus repaired
@@ -57,9 +65,9 @@
 
 | Role | Action now |
 | :--- | :--- |
-| Tester／Verify | No further acceptance run is requested. Preserve the existing evidence and the delivery decision. |
-| Developer | No active implementation. Re-enter only for a concrete follow-up defect. |
-| Designer | No active design action. Re-enter only for a new USER scope change. |
+| Tester／Verify | 流程與具體設計完成後才進入 Test Spec；保留既有 ALPHA evidence，不重做驗收。 |
+| Developer | Entry closed；等待設計與 Test Spec 完成。 |
+| Designer | 依 milestone.md §1.3.1 修訂 M6pre → M5 → M6E 正式流程與相關相依。 |
 | Deferred follow-up | Pure-punctuation TTS fragments and the isolated audio capture/cleanup finding are recorded for a later round. |
 
 Historical PH interruptions and the earlier absence of a separately labeled M card remain factual records.

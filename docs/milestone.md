@@ -43,6 +43,9 @@ next owner與Developer/Tester entry仍只見[`status/current.md`](status/current
 
 ### 1.3 階段依賴
 
+> 流程修訂草案見 §1.3.1。以下既有依賴圖與階段總覽尚未同步；下一步由 Designer 依草案
+> 修訂正式規劃。本次只記錄草案，不開啟 M6pre、M5 或 M6E 的 Developer entry。
+
 ```text
 M1 純軟體核心
  └── M2 Mock 對話垂直切片
@@ -71,6 +74,38 @@ SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
 不得同時進入 M5。
 
 每條已開立的產品線內，後一階段必須在該線前一階段驗收通過後開始。若前一階段只完成部分功能，不以 feature flag 或「已知失敗」跳過其 gate。
+
+#### 1.3.1 流程修訂草案：M6pre → M5 → M6E
+
+狀態：**DRAFT — 下一步修訂開發計畫的輸入，尚非實作工作包**。
+USER 提議把原 M6 主要功能提前至 M5 前，整合測試保留為 **M6E**；不使用 M6post 名稱。
+
+價值／風險：提早取得語音喚醒與視覺能力，並在 Pi 上確認模型共存、麥克風交接與真實使用
+可行性；跨能力測試等 MQTT／read／tool 完成後再做，避免用替代流程宣稱全能力整合完成。
+
+擬議順序：`ALPHA → M6pre → M5 → M6E → M7 → BETA`。
+
+| 階段 | 範圍 | 驗收責任 |
+| :--- | :--- | :--- |
+| M6pre | 原 M6 的 Wake daemon、voice-wake IPC、麥克風交接、Vision adapter 與 Look；接上真實對話及語音輸出 | button／wake word 與 listen／look 可用；完成直接對應新功能的 Pi 自動、整合、硬體、人工、恢復及關機驗證 |
+| M5 | MQTT adaptor、外部訊息 buffer／read、實際 ToolRegistry handler | 在 M6pre Accepted 內容上驗證訊息與工具流程，執行直接受影響的 regression |
+| M6E | 三種入口與 listen／read／look／tool 的跨能力整合測試及缺陷修正 | 驗證新增交互、恢復與資源收斂；沿用適用功能證據，不無條件重跑 M6pre／M5 全套測試 |
+
+M6pre 須交付可實際操作的主要功能，不能把單一麥克風 ownership、Vision failure handling 或
+其 shutdown／recovery 留到 M6E。M6E 聚焦 M5 加入後產生的交互風險，不新增功能子系統。
+每階段都沿用 `Design → Test Spec → Developer → Verify`，不增加互簽或文件核准 gate。
+
+下一步流程修訂範圍：
+
+1. 同步本節依賴圖、§2 階段總覽與 §10.2 IPC 時機；將原 M6 的範圍在既有
+   [M6.md](milestones/M6.md) 分成 M6pre／M6E，並同步 [M5.md](milestones/M5.md) 的相依。
+2. 將唯一 Voice-only baseline selection 提前至 M6pre 工作包前；沿用
+   `M5-BASELINE-SELECTION-R1`，同步 [ALPHA.md](milestones/ALPHA.md) postcondition 與
+   [ALPHA_R1.md](milestones/ALPHA_R1.md) 的 selection 時機，不重開 ALPHA 驗收。
+3. 將 wake-word／Vision model baseline、wake daemon IPC 與資源交接設計前移至 M6pre；
+   列明尚缺的 runtime／契約，完成具體設計後交 Tester 制定測項，不把草案當成 Design Ready。
+4. 保留 M7／BETA 的目的與既有排除項目；只同步受階段拆分直接影響的引用，不新增 soak、
+   數值效能門檻或重複驗收。正式取代舊流程時移除此過渡草案，避免長期維護兩套順序。
 
 ### 1.4 共同完成條件
 

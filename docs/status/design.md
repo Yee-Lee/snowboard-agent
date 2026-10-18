@@ -1,13 +1,21 @@
 # Current design status
 
 - Owner: Designer
-- Scope: ALPHA L／P／R／Q／M — reopen P (ALPHA.P) and M
-- State: **ALPHA delivery complete**
-- Next owner: None
+- Scope: Post-ALPHA M6pre → M5 → M6E 開發計畫修訂
+- State: **流程修訂草案已記錄；正式流程與具體功能設計待完成**
+- Next owner: Designer
 - Delivery: **USER accepts `8b4af53f433c4bcdb5b858973e10767318986554` using the existing final-content
   Pi, Q and real-user operation evidence.**
 
-## Authority and accepted input
+## Current design work
+
+草案唯一位置為 [milestone.md §1.3.1](../milestone.md#131-流程修訂草案m6pre--m5--m6e)。
+下一步依該節修訂階段順序與驗收分工，將原 M6 主要功能提前至 M6pre，保留 M6E 做
+M5 後的跨能力整合。同步既有 milestone／相依文件，不另建 handoff 或重複草案。
+本次未定案 wake-word／Vision runtime、wake IPC 或 resource 契約，也未建立新 Test Spec；
+Developer entry 保持關閉。ALPHA 已交付結論與證據維持原狀。
+
+## Retained ALPHA authority and accepted input
 
 - [ALPHA.md](../milestones/ALPHA.md) is the single current authority for five-area closure. L／P／R／Q are
   the original categories; USER adds Manual (M) for live free conversation／operation. PN／PH belong to P.
