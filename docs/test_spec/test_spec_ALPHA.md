@@ -567,6 +567,15 @@ and try at most one supported improvement. Record exact executable commands／na
 `development.md`. No additional role approval, review round, freeze or handoff file blocks implementation.
 Designer owns any later update of `status/current.md`; Tester does not edit it.
 
+Delivery disposition (2026-10-18): **COMPLETE FOR DELIVERY by USER decision** for retained delivery
+`8b4af53f433c4bcdb5b858973e10767318986554`. Existing same-content Pi evidence includes affected regression,
+Lifecycle, Recovery and revised-Q results; USER also completed final-version real microphone operation,
+cross-Session reuse, normal return to standby and normal stop. The historical PH script interruptions and the
+absence of a separately labeled M card are retained as limitations, not a reason to demand repeated human
+tests after USER accepts the delivered behavior. The punctuation-only TTS fragment and isolated audio capture
+finding are deferred follow-up observations. No Pi or human test was executed by this documentation update,
+and no earlier candidate is spliced in.
+
 ### 8.2 Final Verify and ALPHA exit
 
 On one final retained product content, finish L／R PASS, six revised Q objective／semantic PASS after ALPHA.P,

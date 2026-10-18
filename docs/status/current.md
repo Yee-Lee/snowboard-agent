@@ -1,11 +1,12 @@
 # Current handoff
 
-- Updated: 2026-10-11
+- Updated: 2026-10-18
 - Writer: Designer only
 - Current milestone: ALPHA Voice-only product convergence — L／P／R／Q／M
-- Current stage: **Design and Test Spec complete；READY_FOR_DEVELOPER；Developer entry open**
-- Next owner: Developer
-- Developer entry: **Open — bounded ALPHA P (PN／PH) and M work package**
+- Current stage: **ALPHA delivery complete；no active work package**
+- Next owner: None
+- Delivery basis: **USER accepts `8b4af53f433c4bcdb5b858973e10767318986554` from the existing
+  same-content Pi, Q and real-user operation evidence.**
 
 ## Gate transition facts
 
@@ -30,8 +31,9 @@
 - Latest M first-response observation: ASR final → Audio first write 13.333 s; legacy `llm_send` →
   first-safe-text 12.762 s. Legacy `llm_send` is child native-generation start, not measured parent IPC send.
   Cause remains unproven; old text rows truncate and human speech-end／acoustic timestamps are absent.
-- M final-version free conversation／operation confirmation is required and distinct from PH's fixed timing
-  script. They may share a user session with separately identified segments, avoiding duplicate operation.
+- M final-version free conversation／operation is distinct from PH's fixed timing script. USER completed it
+  on the retained delivery with cross-Session reuse, return to standby and normal stop; it is not repeated
+  merely because it was not originally labeled as a separate card.
 - Q retains six mandatory revised basic-quality cases after ALPHA.P. Old questions are retired and original
   Q05／Q06 FAIL cards remain. Earlier overall quality acceptance does not waive final objective／semantic PASS.
 - L／R／Q design is not reopened. Apply directly affected development regression and complete final L／R／Q,
@@ -55,9 +57,12 @@
 
 | Role | Action now |
 | :--- | :--- |
-| Developer | Estimate and implement actual collector／PN pacing／PH guide／revised-fixture gaps; establish native observation limits and precision before the first block; run paired baseline and M, diagnose and test at most one supported improvement |
-| Tester | Spec synchronization complete; enter next for candidate Verify or a concrete implementation／spec conflict |
-| Designer | Design and coverage complete; enter only for a concrete authority conflict or USER scope change |
-| Verify | Close L／P／R／Q／M on one final version with applicable Pi／human evidence; retain old failures and original P mode |
+| Tester／Verify | No further acceptance run is requested. Preserve the existing evidence and the delivery decision. |
+| Developer | No active implementation. Re-enter only for a concrete follow-up defect. |
+| Designer | No active design action. Re-enter only for a new USER scope change. |
+| Deferred follow-up | Pure-punctuation TTS fragments and the isolated audio capture/cleanup finding are recorded for a later round. |
 
-No new handoff／summary file, service, commit, push, completion tag or extra approval gate is introduced.
+Historical PH interruptions and the earlier absence of a separately labeled M card remain factual records.
+They do not require repetition: USER's completed final-version real operation, normal stop and acceptance
+provide the delivery decision. No new handoff／summary file, service, commit, push, completion tag or extra
+approval gate is introduced.

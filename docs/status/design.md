@@ -2,9 +2,10 @@
 
 - Owner: Designer
 - Scope: ALPHA L／P／R／Q／M — reopen P (ALPHA.P) and M
-- State: **Design and Test Spec coverage complete；READY_FOR_DEVELOPER**
-- Next owner: Developer
-- Developer entry: **Open — bounded P (PN／PH) and M work package**
+- State: **ALPHA delivery complete**
+- Next owner: None
+- Delivery: **USER accepts `8b4af53f433c4bcdb5b858973e10767318986554` using the existing final-content
+  Pi, Q and real-user operation evidence.**
 
 ## Authority and accepted input
 
@@ -12,7 +13,7 @@
   the original categories; USER adds Manual (M) for live free conversation／operation. PN／PH belong to P.
 - M4／M4C remains Accepted. `19d9ca2` delivers the tested installed entry and interruption／restart／stop
   repair; [development.md](development.md) retains portable／Pi native／installed-entry and live results.
-  No redesign or repeated fault matrix is planned. Whole-ALPHA final Verify remains pending.
+  No redesign, repeated fault matrix or further Verify is planned for this completed delivery.
 - [Prompt authority](../implement/ch_m4b_llm_production.md) §2.2 reflects the already delivered
   `明確要求對話結束時` and counts 59／9／68, matching current source. Metadata is copied, not recalculated
   or made into a new startup／test digest assertion. Product model／runtime／schema／admission remain unchanged.
@@ -63,8 +64,9 @@ or a general-knowledge qualification. PH／M can be scheduled together with dist
 Six revised Q cases still gate ALPHA after ALPHA.P: identity, simple fact, capability honesty, short instruction,
 same-Session context and explicit end. ALPHA §6 fixes new questions／minimum-usable rubric; objective and
 semantic PASS required for all six. Original FAIL cards remain; overall prior quality acceptance does not waive
-this final regression. L／R／Q designs are not reopened; final applicable L／R／Q/P/M evidence must match one
-last product version. User feedback pending or unresolved actual failure prevents closure.
+this final regression. L／R／Q designs are not reopened; applicable evidence matches the retained product
+version. USER accepted the final operational feedback; a new concrete failure opens a follow-up rather than
+revising delivery.
 
 ## Test Spec checked and Developer handoff
 
@@ -82,8 +84,9 @@ READY_FOR_DEVELOPER, against ALPHA's opening five-area table and §§3–8. No b
 Workstation checks: local links／fences, exact Q stimuli, PN／PH pairing and `git diff --check` Pass.
 These are document checks, not product PASS; no new tests were executed and no Tester authority was edited.
 
-Next owner Developer: estimate real observer／pacing／guided-PH／revised-fixture gaps, preserve installed repair
-and retained P mode, establish accessible native nodes／precision before first stimulus, then execute paired
-baseline and M. Diagnose from complete data; at most one supported improvement with same-method before／after
-and affected regression. Tester enters next for final candidate Verify or a concrete executable-contract conflict.
-No additional role approval, review round, freeze or handoff file blocks entry.
+Developer closeout identifies `8b4af53f433c4bcdb5b858973e10767318986554` as the retained delivery. USER
+accepts delivery using the existing same-content Pi regression, L/R/Q, and final-version real-user operation
+and normal-stop evidence. The earlier PH interrupted scripts and the absence of a separately labeled M card
+are retained as history; they do not require repeated human testing or block this delivery. The punctuation-only
+TTS fragment and isolated audio-capture observation remain deferred follow-up findings. No additional role
+approval, review round, freeze or handoff file is required.

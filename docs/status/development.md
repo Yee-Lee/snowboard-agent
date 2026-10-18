@@ -4,10 +4,10 @@
 
 ### Delivery closeout — 2026-10-18
 
-- USER requests completion, commit/push and Pi shutdown. Current branch is `core`, HEAD `f9955af`;
-  this delivery is still uncommitted. Follow AGENTS/git.md: finish Pi verification, reconcile bytes,
-  scan staged privacy, present full commit message/files for the required confirmation, then push.
-  No completion tag or whole-ALPHA Accepted claim is authorized by the current evidence.
+- Delivery was committed and pushed as `8b4af53f433c4bcdb5b858973e10767318986554`
+  (`fix[ALPHA]: deliver ASR fault recovery and reusable diagnostics`). The Pi checkout matched all
+  24 committed paths; the device was then shut down. USER accepts this final-content evidence for ALPHA
+  delivery. No completion tag was created.
 - Formal `run.sh` and `run.sh --debug` now select `asr-notice-20261017-r11`; previous r9 is retained.
   Promotion compared 17 affected source/test files directly across workstation, Pi checkout and
   installation: no difference, `<r11-root>/promotion-byte-comparison.json`. No automatic digest was added.
@@ -125,12 +125,13 @@ hearing reports. Their private full reports/audio remain outside Git. Reuse them
   Receiving-to-THINK is **6.864078 / 6.909703 s**. No meaningful second-Turn ASR speedup is demonstrated.
   Signal end is waveform-aligned, not human audible end; first write is not measured acoustic onset.
   Second-Turn context/output differs, so this pair is not a statistical improvement claim.
-- Prior formal PN blocks exist; PH's declared schedule/hearing report was incomplete after its earlier
-  ASR/route mismatch. Free-use M and this acoustic pair cannot silently fill those missing PH rows.
-  Preserve that boundary while delivering the bounded fixes; no new human schedule or Display-content
-  gate is introduced here. Same-content final L/R/Q results are recorded in this closeout above.
-- Next owner remains Developer for concrete failed checks, then Tester/Verify for remaining acceptance.
-  Commit/push must describe delivered repairs and limits, not invent whole-ALPHA Accepted.
+- Prior formal PN blocks exist; PH's declared schedule/hearing report was interrupted by an ASR/route
+  mismatch. This remains a retained performance-test limitation. USER accepted the observed performance
+  and stopped further optimization, so it does not require another human schedule before delivery.
+- Developer delivery is complete and USER accepts `8b4af53` for delivery from the existing final-content
+  evidence. The completed real-user operation, cross-Session reuse, return to standby and normal stop
+  provide the applicable manual evidence. The deferred punctuation-only TTS artifact and isolated audio
+  capture finding are follow-up work, not blockers.
 
 ### ALPHA P／M development opened — 2026-10-11
 
