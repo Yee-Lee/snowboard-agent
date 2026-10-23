@@ -1,76 +1,29 @@
 # Current handoff
 
-- Updated: 2026-10-18
+- Updated: 2026-10-23
 - Writer: Designer only
-- Current milestone: Post-ALPHA development plan — M6pre／M5／M6E
-- Current stage: **Design — 流程修訂草案已記錄，下一步修訂正式開發計畫**
-- Next owner: Designer
-- Developer entry: Closed — 流程與具體功能設計／Test Spec 尚未完成
-- Delivery basis: **USER accepts `8b4af53f433c4bcdb5b858973e10767318986554` from the existing
-  same-content Pi, Q and real-user operation evidence.**
+- Current milestone: M5.tool → M5 MQTT → M6 Look
+- Current stage: **Design — M5.tool review 已結案，architecture delta 待處理**
+- Next owner: Architect
+- Developer entry: **Closed — architecture delta 與 M5.tool Test Spec 尚未完成**
+- Working baseline: USER 已接受的原 ALPHA `8b4af53f433c4bcdb5b858973e10767318986554`；
+  ALPHA.R1 未 Accepted，見 [M5 §2.2](../milestones/M5.md#22-entry)。
 
-## Current work routing
+## Exact routing
 
-USER 要求先提出 M6pre → M5 → M6E 草案，下一步修訂開發計畫流程。
-草案及精確修改範圍位於 [milestone.md §1.3.1](../milestone.md#131-流程修訂草案m6pre--m5--m6e)。
-Designer 依該節同步總流程、M6 功能拆分、M5 相依與 baseline selection 時機。
-Tester 在具體設計可測後進入 Test Spec；目前不執行 target suite、不重開 ALPHA。
+| Owner | 下一步 | 最小讀取範圍 |
+| :--- | :--- | :--- |
+| Architect | 處理有限模型意圖與 tool 後固定回饋的 ACTION phase；回覆實際修正 | [AR_impl_M5_TOOL_I](../reviews/AR_impl_M5_TOOL_I.md)、[arch](../arch.md) §2.7／§2.8／§4.5／§4.6／§4.8 |
+| Tester（架構完成後） | 依真實模型選能力、mock 派發與 Look 接續的產品失敗風險建立 M5.tool Test Spec，更新自己擁有的索引 | [M5 §2.3](../milestones/M5.md#23-驗收問題)、[設計](../implement/ch_m5_tool.md)、[protocol §7](../protocol.md#7-m5tool-llm-protocol-v4) |
+| Developer（Test Spec 完成後） | 實作 M5.tool profile，於 Pi 驗證相同待提交內容 | [設計 §7](../implement/ch_m5_tool.md#7-實作路徑與交-test-spec) 及 Tester Test Spec |
 
-## Retained ALPHA delivery facts
+## Scope boundary
 
-- M4／M4C remains Accepted; old evidence is not reopened.
-- Developer delivery `19d9ca2` retains WIP `9c13509` and delivers fixed terminal installation plus repaired
-  interruption／restart／stop. Pi native／portable／installed-entry checks and USER live retest are in
-  [development.md](development.md). Iteration delivery does not imply whole-ALPHA Accepted.
-- USER and Designer agree to close ALPHA against exactly five areas: Lifecycle (L), Performance (P),
-  Recovery (R), Quality (Q), Manual (M). ALPHA.P is P's analysis／experiment／improvement work package.
-- Reopen P and M work, preserving the delivered repair. P01–P05 definitions／results remain unchanged by
-  the new round. New automated cases are PN01–PN05, paired with fixed-scenario human PH01–PH05;
-  PN06／PH06 is conditional on a concrete cause-discrimination gap. PN／PH are inside P, not new areas.
-- [ALPHA.md](../milestones/ALPHA.md) §4.5–§4.7 fixes questions, two fresh-App blocks per mode,
-  before／after rules, real-time PN PCM, shared structured observations, diagnostic completeness,
-  correspondence／uncertainty, failure handling and at most one evidence-supported improvement.
-- Reproduced slow samples require analyzable request／Turn／fragment correlation, observed parent／child／
-  LLM／TTS／Audio boundaries and relevant token／context counts. Missing required data is diagnostic INVALID;
-  inaccessible native subphases are explicit limits, not invented causes.
-- ALPHA §6A now records M's original live-testing background, failed launches／operation findings,
-  successful repaired-version retest and retained timings with existing log／status locators. It classifies
-  earlier unnamed activity without manufacturing prior M test cards／run IDs or rewriting failures.
-- Latest M first-response observation: ASR final → Audio first write 13.333 s; legacy `llm_send` →
-  first-safe-text 12.762 s. Legacy `llm_send` is child native-generation start, not measured parent IPC send.
-  Cause remains unproven; old text rows truncate and human speech-end／acoustic timestamps are absent.
-- M final-version free conversation／operation is distinct from PH's fixed timing script. USER completed it
-  on the retained delivery with cross-Session reuse, return to standby and normal stop; it is not repeated
-  merely because it was not originally labeled as a separate card.
-- Q retains six mandatory revised basic-quality cases after ALPHA.P. Old questions are retired and original
-  Q05／Q06 FAIL cards remain. Earlier overall quality acceptance does not waive final objective／semantic PASS.
-- L／R／Q design is not reopened. Apply directly affected development regression and complete final L／R／Q,
-  valid P and M against one final product content; no splicing older candidates. Existing applicable
-  final-candidate P／PH／M evidence may be reused without duplicate testing.
+M5.tool 使用真實 Gemma、mock.send、mock Camera／Vision 驗證能力選擇與下一輪回答。
+M5 再接 MQTT 發送，以及外部 response／主動通知進 buffer／read；外部結果不是
+handler return。M6 先用 Camera＋YOLO＋結果整理→原對話 LLM；VLM 描述是獨立 POC。
+Wake 在 BETA 前重新評估，read／Look 交錯暫不納入。詳細決策分別見
+[M5](../milestones/M5.md) 與 [M6](../milestones/M6.md)。
 
-## Test Spec coverage confirmed
-
-- Designer checked the revised [test_spec_ALPHA.md](../test_spec/test_spec_ALPHA.md), marked
-  READY_FOR_DEVELOPER, against ALPHA's five-area authority. No blocking coverage or contract gap found.
-- Spec §§4.5–4.10 cover fixed PN／PH cases and two-block schedules, pacing／capture uncertainty,
-  request／fragment correlation, mandatory versus inaccessible native nodes, conditional 06, mode discrepancy,
-  failed／invalid／pending handling and the one-improvement boundary. Legacy native-start timing is distinguished
-  from parent send／child receive; missing human acoustic endpoints are not invented.
-- Spec §6 maps all eight new stimuli in the six Q cases and preserves historical FAIL. §6A maps M's free
-  two-Session use, USER confirmation and stop／release; §8 maps final same-content L／P／R／Q／M closure.
-- Local links／fences, Q stimulus alignment, PN／PH mapping and `git diff --check` passed on workstation.
-  This is document coverage confirmation, not execution PASS, new approval gate or whole-ALPHA acceptance.
-
-## Exact routing now
-
-| Role | Action now |
-| :--- | :--- |
-| Tester／Verify | 流程與具體設計完成後才進入 Test Spec；保留既有 ALPHA evidence，不重做驗收。 |
-| Developer | Entry closed；等待設計與 Test Spec 完成。 |
-| Designer | 依 milestone.md §1.3.1 修訂 M6pre → M5 → M6E 正式流程與相關相依。 |
-| Deferred follow-up | Pure-punctuation TTS fragments and the isolated audio capture/cleanup finding are recorded for a later round. |
-
-Historical PH interruptions and the earlier absence of a separately labeled M card remain factual records.
-They do not require repetition: USER's completed final-version real operation, normal stop and acceptance
-provide the delivery decision. No new handoff／summary file, service, commit, push, completion tag or extra
-approval gate is introduced.
+M4／ALPHA 已交付證據不重開。M5 broker／domain、M6 YOLO 型號與 VLM POC 均不阻擋
+M5.tool 的 Test Spec；沒有 M5.tool 程式碼或 Pi PASS。本輪文件尚未 commit／push。

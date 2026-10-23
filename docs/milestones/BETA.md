@@ -1,10 +1,12 @@
-# BETA 規劃 ── 全能力產品收斂 Gate
+# BETA 規劃 ── 已納入能力的產品收斂 Gate
 
 ## 定位
 
-`BETA` 是 M7 Accepted 後的 **全能力產品成熟度 Gate**，而非功能 milestone。它在同一 Beta 候選 SHA 重跑 M4 ~ M7 完整 regression，涵蓋所有已實作能力，並完成產品級 manifest、診斷與穩定性收斂。
+`BETA` 是 M7 Accepted 後的**已納入能力產品成熟度 Gate**，而非功能 milestone。
+它對當時產品實際納入的能力做必要整合、穩定性與診斷收斂；Wake 是否納入須在
+BETA 設計前決定，不因舊規劃文字自動成為必做功能。
 
-> **BETA ≠ M7**：M7 Accepted 代表 Display UX 功能通過，BETA Accepted 代表全能力產品化收斂通過。兩者分開記錄，M7 通過不推定 BETA 通過。
+> **BETA ≠ M7**：M7 Accepted 代表 Display UX 功能通過，BETA Accepted 代表已納入能力的產品化收斂通過。兩者分開記錄，M7 通過不推定 BETA 通過。
 >
 > **BETA ≠ GA / Production Release**：Beta 是收斂 gate，不等同正式發行；systemd image、OTA 與 release packaging 另案規劃。
 
@@ -12,25 +14,23 @@
 
 ## 1. 範圍（BETA Scope）
 
-BETA 固定為以下全能力的產品化收斂，必須在同一候選 SHA 全數通過：
+BETA 覆蓋當時已納入的能力；測試依具體產品失敗風險選擇，在相同待提交內容上完成：
 
-### 1.1 納入能力（全能力 regression）
-
-在同一 Beta 候選 SHA 重跑以下所有 milestone 的 regression：
+### 1.1 納入能力
 
 | 來源 | 驗收能力 |
 | :--- | :--- |
 | M4 (= ALPHA 基礎) | Button、Listen / ASR、Reasoner / LLM、Speak / TTS、M4c Session Display、離線 session |
-| M5 | MQTT external message、read 流程、實際 tool dispatch |
-| M6 | Voice wake daemon、Vision / look、三種入口完整 session、長時間穩定 |
+| M5.tool + M5 | 真實模型能力選擇、固定派發回饋、MQTT 發送與外部訊息 read 流程 |
+| M6 | Camera / YOLO / 結果整理與 look 接續回答；若 BETA 前決定加入 Wake，才納入 wake daemon 與第三入口 |
 | M7 | 正式 Display UX、StatusBar、Main、Fullscreen、icons、動畫、OLED 保護 |
 
 ### 1.2 固定化要求
 
-* 長時間穩定性：連續多 session / soak，記錄 resource / thermal / failure 統計。
+* 穩定性：依實際失敗風險設定連續多 session 情境，記錄相關 resource / thermal / failure 統計。
 * 診斷：完整 log hygiene（不含 transcript / prompt / raw model output / credential / MQTT password / 完整 message / tool arguments）。
-* Artifact / config / model / asset inventory：所有組件版本、來源、授權、checksum 與已知限制，記入 Beta manifest。
-* Beta manifest：列出 M4 ~ M7 所有 artifact / model / config / dependency / asset 的最終固定清單。
+* Beta inventory：記錄已納入組件的版本、來源、授權與已知限制。必要內容核對由 operator
+  在明確移轉或問題診斷邊界獨立執行，不作為 startup 或每個測項的 checksum 斷言。
 
 ---
 
@@ -51,20 +51,19 @@ BETA 固定為以下全能力的產品化收斂，必須在同一候選 SHA 全�
 
 | 條件 | 說明 |
 | :--- | :--- |
-| M7 Accepted | M7 功能在同一 exact SHA 通過 |
-| Test spec 就緒 | Tester 依本文件完成 `docs/test_spec/test_spec_BETA.md`，且 Designer 已審查並簽核（`TR_spec_BETA_I` Resolved） |
-| Developer 工作包 | Developer 已提供 BETA 估點與工作包，引用 M7 Accepted exact SHA |
+| M7 Accepted | M7 功能已完成驗收，結果可定位 |
+| Test spec 就緒 | Tester 依當時已納入能力與實際風險完成 `docs/test_spec/test_spec_BETA.md` |
+| Developer 工作包 | Developer 已提供 BETA 估點與工作包，說明沿用的 M7 基礎與直接變更 |
 | ALPHA Accepted | ALPHA Gate 已通過，確認 Voice-only 基線可重現 |
 
 ### 3.2 Exit（BETA Accepted 條件）
 
 | 條件 | 說明 |
 | :--- | :--- |
-| M4 ~ M7 regression 全數通過 | 在同一 Beta 候選 SHA 重跑所有 regression，不得有 skip / xfail 掩蓋 |
-| Tester 驗收通過 | Tester 依 `test_spec_BETA.md` 對候選 SHA 全數驗收 |
-| Designer Code Review | Designer 最終 Code Review 無 Blocking finding（`CR_BETA` 若有則需 Resolved） |
-| Exact SHA | BETA Accepted 必須對應單一候選 SHA；不以不同 SHA 拼接通過結論 |
-| Beta manifest 完整 | 所有 artifact / model / config / dependency / asset 全數固定並記入 Evidence |
+| 適用驗證通過 | 對新增整合與直接影響的 regression、硬體及人工情境，在 Pi 以相同待提交內容完成驗證；不得以 skip / xfail 掩蓋適用失敗 |
+| Tester 驗收通過 | Tester 依 `test_spec_BETA.md` 對候選內容完成驗收 |
+| 相同內容 | BETA Accepted 對應單一已驗證產品內容，不拼接不同候選的結論 |
+| Inventory 完整 | 已納入組件的版本、來源、授權與已知限制已記錄 |
 | 分開記錄 | `M7 Accepted` 與 `BETA Accepted` 各自獨立記錄，不得以前者推定後者 |
 
 ---
@@ -73,13 +72,12 @@ BETA 固定為以下全能力的產品化收斂，必須在同一候選 SHA 全�
 
 | BETA Requirement | 來源 / 依據 | Future Test ID |
 | :--- | :--- | :--- |
-| M4 ~ M7 regression 全數通過（同一 SHA） | 各 milestone 驗收契約 | `BETA-T-001` |
-| M5 MQTT / tool regression（replay fixture） | M5 驗收契約、`arch.md` Ch 7 | `BETA-T-002` |
-| M6 wake / Vision regression（fixture） | M6 驗收契約、`arch.md` Ch 2a/6/8 | `BETA-T-003` |
+| 已納入能力的必要整合與直接影響 regression | 各 milestone 驗收契約與實際變更風險 | `BETA-T-001` |
+| M5.tool / M5 能力、MQTT / read regression | M5 驗收契約、`arch.md` | `BETA-T-002` |
+| M6 Look / Vision regression；Wake 只在 BETA 前決定納入時涵蓋 | M6 驗收契約與 Wake 決策 | `BETA-T-003` |
 | M7 Display UX regression（human checklist 含 hardware） | M7 驗收契約、`display_spec.md` | `BETA-T-004` |
-| 長時間 soak：連續 session 無 orphan child / 資源洩漏 | M6 §8.4 要求延伸、BETA 穩定性 | `BETA-T-005` |
+| 依實際風險選定的連續 session 與資源釋放 | BETA 穩定性 | `BETA-T-005` |
 | log 不含任何敏感內容（全 M4 ~ M7 範圍） | Privacy 要求、`arch.md` | `BETA-T-006` |
-| Beta manifest：全組件版本 / 授權 / checksum 固定 | BETA 固定化要求 | `BETA-T-007` |
 
 > Test ID 為規劃佔位，Tester 建立 `test_spec_BETA.md` 時對應補全。
 
@@ -89,40 +87,34 @@ BETA 固定為以下全能力的產品化收斂，必須在同一候選 SHA 全�
 
 ### 5.1 自動化
 
-在 Raspberry Pi 5 執行：
+Tester 依當時新增整合與直接影響風險指定命令及人工情境；在 Raspberry Pi 5 對
+相同待提交內容完成適用自動、整合、硬體及人工驗證。
 
-```bash
-python -m pytest -v
-python -m pytest -v -m rpi tests/milestones/test_beta_full_regression.py
-```
+### 5.2 人工 Checklist（於相同待提交內容執行）
 
-### 5.2 人工 Checklist（於同一候選 SHA 執行）
-
-* [ ] 重跑 M4 ~ M7 所有 rpi-marked 測試，無 skip / xfail
-* [ ] 連續 session soak，記錄 thermal / memory / resource
-* [ ] 刻意觸發各層 failure（ASR、LLM、TTS、MQTT、wake、Vision、Display），確認各自 recovery 路徑
+* [ ] 執行當時 Test Spec 選定的已納入能力整合與直接影響回歸，無 skip / xfail 掩蓋
+* [ ] 執行選定的連續 session 情境，記錄相關 thermal / memory / resource
+* [ ] 針對新增整合中實際可能發生的 failure 驗證 recovery；Wake 僅在已決定納入時檢查
 * [ ] 正常關機 / 異常關機，確認無 orphan child / daemon、無殘留 fullscreen owner
 * [ ] 審核全 log：確認不含任何敏感內容
-* [ ] Beta manifest 逐項對照 artifact / model / asset 版本與 checksum
+* [ ] Beta inventory 記錄已納入組件的版本、來源、授權與已知限制
 
 ### 5.3 Evidence Index（BETA Accepted 時填入）
 
-| 項目 | SHA / 版本 / 路徑 |
+| 項目 | 結果 / 版本 / 路徑 |
 | :--- | :--- |
-| Beta 候選產品 SHA | *(待填)* |
-| M4 regression log | *(待填)* |
-| M5 regression log | *(待填)* |
-| M6 regression log | *(待填)* |
-| M7 regression log + human checklist | *(待填)* |
-| soak 測試記錄 | *(待填)* |
-| Beta manifest 路徑 | *(待填)* |
+| Beta 已驗證內容定位 | *(待填)* |
+| 適用自動與整合驗證 | *(待填)* |
+| 適用硬體與人工判讀 | *(待填)* |
+| 連續 session 記錄（若選用） | *(待填)* |
+| Beta inventory 路徑 | *(待填)* |
 | known limits | *(待填)* |
 
 ---
 
 ## 6. 後置效果
 
-* BETA Accepted 代表本專案全能力產品收斂完成。
+* BETA Accepted 代表當時已納入能力的產品收斂完成。
 * 正式 GA / 發行、systemd image、OTA 等後續行動，另開規劃，不以 BETA 通過直接授權。
 
 ---

@@ -24,7 +24,7 @@ next owner與Developer/Tester entry仍只見[`status/current.md`](status/current
 
 ### 1.1 規劃前提
 
-* Core 正式支援 CPython 3.11、3.12、3.13；Developer convergence loop 使用團隊指定的單一主要版本，candidate portable gate 必須覆蓋三個 minor。Pi 耦合工作以 Pi 為主要 working tree，直接修正並執行 affected portable tests 與 target diagnostic 至全綠，再以同 base/task paths/patch digest 單次同步回工作站；Pi 開發與正式 gate 都只用該 milestone 固定的部署 runtime，不將 Python matrix 乘到實體測試。
+* Core 正式支援 CPython 3.11、3.12、3.13；Developer convergence loop 使用團隊指定的單一主要版本，candidate portable gate 必須覆蓋三個 minor。Pi 耦合工作以 Pi 為主要 working tree，直接修正並執行 affected portable tests 與 target diagnostic 至全綠，再以相同 base 與工作路徑同步回工作站並確認內容一致；Pi 開發與正式 gate 都只用該 milestone 固定的部署 runtime，不將 Python matrix 乘到實體測試。
 * Linux / Raspberry Pi OS / Raspberry Pi 5 是 POSIX process signal (`SIGINT` / `SIGTERM`)、native lifecycle、runtime 與硬體驗證的權威平台。
 * Windows 僅驗證純 Python、mock / null、config 與 portable subprocess 測試（如 pipe/stream readiness）；明確排除 POSIX process signal 節點驗證，且不得為此修改 production signal architecture。
 * 所有文件與驗收命令均使用啟用虛擬環境後的 python 。
@@ -33,18 +33,18 @@ next owner與Developer/Tester entry仍只見[`status/current.md`](status/current
 
 階段從規劃進入實作前，必須同時滿足：
 
-1. 該階段的範圍、相依、排除項目與驗收條件已由使用者確認。
-2. Tester 依 `arch.md` 、 `implement/` 、適用的 `display_spec.md` / `model_spec.md` 與本文件產出 `docs/test_spec.md` ，且至少完成該階段的需求──測試對照。
-3. 該階段引用的上游契約不存在未解矛盾或無法實作 / 驗證的缺口。
-4. Developer 已提供必要估點；估點只影響排程，不改變契約或驗收門檻。
-5. 若階段依賴外部 POC，所有會影響開發介面、硬體 fixture 或 artifact provenance 的輸入，必須已有 Core Team 採用紀錄；開發阻擋條件與只阻擋最終驗收的 pending condition 必須分級記入 `status/current.md`。Developer 工作包須引用已採用的 contract 版本、ACK / Delivery ID、artifact SHA/checksum/license 與已知限制，不得以 POC branch HEAD、自驗結果或未核准 draft 作為 baseline。
+1. 階段範圍、相依、排除與驗收問題已固定；上游 authority 無未解的實際契約衝突。
+2. Tester 根據具體設計完成該階段 Test Spec，保留直接對應產品失敗的測項。
+3. Developer 確認估點與工作路徑；估點不改產品契約。
+4. 若依賴外部 POC，需有可採用的具體介面與必要結果；不依賴的研究不作為 entry gate。
+   不新增互簽、freeze、authorization 或通用 administrative closure。
 
 各條件的當前完成狀態只記於 `status/current.md`。條件未完成前，不得以「已有 milestone 規劃」推定 Developer 已獲准開始該階段。
 
 ### 1.3 階段依賴
 
-> 流程修訂草案見 §1.3.1。以下既有依賴圖與階段總覽尚未同步；下一步由 Designer 依草案
-> 修訂正式規劃。本次只記錄草案，不開啟 M6pre、M5 或 M6E 的 Developer entry。
+本節為目前採用的階段順序。具體 M5.tool 契約與 entry 見
+[M5](milestones/M5.md)、[設計](implement/ch_m5_tool.md)及 [current](status/current.md)。
 
 ```text
 M1 純軟體核心
@@ -52,10 +52,11 @@ M1 純軟體核心
       └── M3 Raspberry Pi HAL 與硬體 bring-up
            └── M4 本機 AI 語音主線（M4a + M4b + M4c 同 SHA 通過）
                 └── ALPHA Voice-only 產品化收斂 Gate
-                     └── M5 外部訊息與工具
-                          └── M6 語音喚醒、視覺輸入與整體收斂
-                               └── M7 Display UX 完整化
-                                    └── BETA 全能力產品收斂 Gate
+                     └── M5.tool 有限工具能力（真實 LLM＋mock）
+                          └── M5 MQTT 發送與外部 read
+                               └── M6 Camera／YOLO／Look
+                                    └── M7 Display UX 完整化
+                                         └── BETA 已納入能力的產品收斂 Gate
 ```
 
 > `ALPHA` 與 `BETA` 為產品成熟度 Gate，不是功能 milestone。`M4 Accepted` 不推定 `ALPHA Accepted`；`M7 Accepted` 不推定 `BETA Accepted`。詳見 `docs/milestones/ALPHA.md` 與 `docs/milestones/BETA.md`。
@@ -65,59 +66,49 @@ ASR Product R1 若由 User 開線，使用獨立但不取代原線的條件式�
 ```text
 shared Core fork SHA
  ├── original: M4 → ALPHA ──┐
- └── R1: M4a.R1 → M4b.R1 → M4c.R1 → M4.R1 → ALPHA.R1 ──┴── M5 baseline selection → M5
+ └── R1: M4a.R1 → M4b.R1 → M4c.R1 → M4.R1 → ALPHA.R1 ──┴── baseline selection → M5.tool → M5
 ```
 
 R1 branch 可在原 `ALPHA Accepted` 前建立與前進，但只能從已 commit 的明確 Core fork
-SHA 開始，且不得取得原線的 gate credit。M5 工作包前必須依
-`docs/milestones/ALPHA_R1.md` 完成唯一 baseline selection；`ALPHA` 與 `ALPHA.R1`
-不得同時進入 M5。
+SHA 開始，且不得取得原線的 gate credit。M5.tool 開發前依
+`docs/milestones/ALPHA_R1.md` §5 記錄唯一 baseline；`ALPHA` 與 `ALPHA.R1`
+不得同時進入 M5.tool。M5.tool 視為 M5 工作包的第一段。
 
 每條已開立的產品線內，後一階段必須在該線前一階段驗收通過後開始。若前一階段只完成部分功能，不以 feature flag 或「已知失敗」跳過其 gate。
 
-#### 1.3.1 流程修訂草案：M6pre → M5 → M6E
+#### 1.3.1 流程修訂決策：M5.tool → M5 MQTT → M6 Look
 
-狀態：**DRAFT — 下一步修訂開發計畫的輸入，尚非實作工作包**。
-USER 提議把原 M6 主要功能提前至 M5 前，整合測試保留為 **M6E**；不使用 M6post 名稱。
+USER 已確認本順序，先前 M6pre／M6E 拆分不再使用。詳細決策與驗收邊界集中在
+[M5.tool／M5](milestones/M5.md)、[M6](milestones/M6.md)，不維護第二份草案。
 
-價值／風險：提早取得語音喚醒與視覺能力，並在 Pi 上確認模型共存、麥克風交接與真實使用
-可行性；跨能力測試等 MQTT／read／tool 完成後再做，避免用替代流程宣稱全能力整合完成。
+- M5.tool：真實 Gemma＋mock 派發／Look 結果，完成有限能力意圖、驗證、固定派發
+  回饋與原 Conversation 的下一輪回答。每 turn 一次推論，不做通用 reasoning loop。
+- M5：真實 MQTT 發送與接收。外部 response／主動通知經 buffer／read，不是 handler return。
+- M6：`perception.look(camera + YOLO + 結果整理／prompt) → LLM`；Look 那輪只看、不等 listen。
+- VLM 獨立 POC：先描述影像，再交原對話 LLM 回答；研究現有 Gemma／runtime、模型共用、
+  描述品質與 Pi 成本，不阻擋 YOLO 主線。具體研究範圍見 M6 §3。
+- Wake 移出目前工作；BETA 前重新評估是否加入，不預設必做。不要求 wake IPC／模型選型。
+- 本輪不納 read／Look 交錯；跨 Conversation 是明確 error path，不開另一套記憶研究。
 
-擬議順序：`ALPHA → M6pre → M5 → M6E → M7 → BETA`。
-
-| 階段 | 範圍 | 驗收責任 |
-| :--- | :--- | :--- |
-| M6pre | 原 M6 的 Wake daemon、voice-wake IPC、麥克風交接、Vision adapter 與 Look；接上真實對話及語音輸出 | button／wake word 與 listen／look 可用；完成直接對應新功能的 Pi 自動、整合、硬體、人工、恢復及關機驗證 |
-| M5 | MQTT adaptor、外部訊息 buffer／read、實際 ToolRegistry handler | 在 M6pre Accepted 內容上驗證訊息與工具流程，執行直接受影響的 regression |
-| M6E | 三種入口與 listen／read／look／tool 的跨能力整合測試及缺陷修正 | 驗證新增交互、恢復與資源收斂；沿用適用功能證據，不無條件重跑 M6pre／M5 全套測試 |
-
-M6pre 須交付可實際操作的主要功能，不能把單一麥克風 ownership、Vision failure handling 或
-其 shutdown／recovery 留到 M6E。M6E 聚焦 M5 加入後產生的交互風險，不新增功能子系統。
-每階段都沿用 `Design → Test Spec → Developer → Verify`，不增加互簽或文件核准 gate。
-
-下一步流程修訂範圍：
-
-1. 同步本節依賴圖、§2 階段總覽與 §10.2 IPC 時機；將原 M6 的範圍在既有
-   [M6.md](milestones/M6.md) 分成 M6pre／M6E，並同步 [M5.md](milestones/M5.md) 的相依。
-2. 將唯一 Voice-only baseline selection 提前至 M6pre 工作包前；沿用
-   `M5-BASELINE-SELECTION-R1`，同步 [ALPHA.md](milestones/ALPHA.md) postcondition 與
-   [ALPHA_R1.md](milestones/ALPHA_R1.md) 的 selection 時機，不重開 ALPHA 驗收。
-3. 將 wake-word／Vision model baseline、wake daemon IPC 與資源交接設計前移至 M6pre；
-   列明尚缺的 runtime／契約，完成具體設計後交 Tester 制定測項，不把草案當成 Design Ready。
-4. 保留 M7／BETA 的目的與既有排除項目；只同步受階段拆分直接影響的引用，不新增 soak、
-   數值效能門檻或重複驗收。正式取代舊流程時移除此過渡草案，避免長期維護兩套順序。
+M5.tool 的 architecture delta 見 [AR_impl_M5_TOOL_I](reviews/AR_impl_M5_TOOL_I.md)。
+此為實際契約衝突修正，完成後直接交 Test Spec，不增加例行審查 gate。
 
 ### 1.4 共同完成條件
 
-每個 milestone 除本章特定驗收外，皆須滿足：
+對 active／未來工作，先說明新增功能的價值及可能的產品失敗，再選擇適用驗證：
 
-* 新增或修改的契約行為有自動化測試；async race 使用 `asyncio.Event` / 明確 barrier，不以 wall-clock sleep 猜時序。
-* `python -m pytest -v` 全數通過，且不得刪除、skip 或 xfail 先前 milestone 的驗收來 取得綠燈。
-* 測試與 log 不包含 credential、prompt、完整 payload、transcript、音訊或影像內容。
-* Windows 可執行的 pure-Python / mock 測試不得意外 import Pi-only dependency。
-* Pi-only 驗收明確標記，且在 Raspberry Pi 5 上保存命令、版本、config 與結果摘要。
-* 含 Pi 或人工驗收的 milestone 自 M4 起依 `docs/roles/candidate-process.md` 執行：candidate 前先完成 Pi Developer convergence 與單次工作站同步；candidate 後三版本 portable matrix 全綠才 review / freeze，target preflight 與正式 acceptance 只接受同一外部指定 SHA，Developer diagnostic 不得混入正式 evidence。
-* 若實作發現定稿契約不可落實，停止該項實作並交回 Designer；涉及架構邊界時再交 Architect，不在 code 中自行發明另一套契約。
+* 新增契約與直接影響回歸有測試；async race 使用明確 barrier，不以 sleep 猜時序。
+* 既有適用測試不得刪除、skip 或 xfail 掩蓋失敗；不無條件重做全部已 Accepted 驗收。
+* 真實模型語意、硬體與真人體驗以相應證據驗證，mock 不替代實際能力 PASS。
+* Pi 上以待提交的相同內容完成所有適用自動、整合、硬體及人工測試後才可準備 commit。
+  純文件變更可在工作站完成適用檢查；commit 仍依 git.md 取得 USER 明確同意。
+* 公開 evidence 留必要 boolean、count、stable code／量測；不記 credential、prompt、
+  完整 payload、transcript、音訊或影像。內容判讀留在 private runtime。
+* Startup／測項不計算或驗證 source、config、model、artifact、evidence、text digest。
+  必要內容確認只由 operator 在明確移轉／診斷邊界單獨執行。
+* 真正驗取消／恢復／shutdown 的情境保留對應資源斷言，不擴展成通用 owner 清單或全矩陣。
+* 唯一流程為 Design → Test Spec → Developer → Verify；實際上游矛盾回 owner 修正，
+  不新增角色互簽、文件核准或 candidate freeze。已完成與封存證據維持原狀。
 
 ### 1.5 Designer 輔助規格文件產出時機
 
@@ -125,7 +116,7 @@ M6pre 須交付可實際操作的主要功能，不能把單一麥克風 ownersh
 
 * `docs/display_spec.md`：最晚於 **M2 驗收期間**完成。M3 進場 gate 要求 selected profile 已納入 Tester 的 test spec 與 Developer 工作包（§5.2）。M1 / M2 不依賴本文件。
 
-* `docs/model_spec.md`：M3驗收期間先建立schema與未定欄位。M4 generic protocol / fake scaffold不等待runtime baseline；Audio M2B reviewed selection後才可填入candidate-specific provisional設定，Audio M3 target/HAL qualification後才可準備產品exact-SHA acceptance，Gate 2B final handoff後才固定ASR / TTS production baseline。LiteRT-LM依M4b gate另行固定；M6進場仍依賴M6 baseline（§8.2）。M1 / M2 / M3不依賴本文件。
+* `docs/model_spec.md`：M3驗收期間先建立schema與未定欄位。M4 generic protocol / fake scaffold不等待runtime baseline；Audio M2B reviewed selection後才可填入candidate-specific provisional設定，Audio M3 target/HAL qualification後才可準備產品exact-SHA acceptance，Gate 2B final handoff後才固定ASR / TTS production baseline。LiteRT-LM依M4b gate另行固定；M6 進場依賴 YOLO baseline（見 milestones/M6.md §2.3），Wake 延後、VLM 為獨立研究。M1 / M2 / M3不依賴本文件。
 
 兩份文件均不阻擋 M1 / M2 立即啟動。
 
@@ -141,10 +132,11 @@ M6pre 須交付可實際操作的主要功能，不能把單一麥克風 ownersh
 | **M4** | M4a Audio、M4b LLM、M4c Session Display 全數通過的本機語音主線 | Raspberry Pi 5 | `Ch 2b / 4 / 5 / 6 / 9 / 10 / 11`、M2B後的provisional model recipe與Gate 2B後的final model baseline |
 | **ALPHA** | Voice-only 產品化收斂 Gate：五大項 L／P／R／Q／M：Lifecycle、Performance（保留 P01–P05，ALPHA.P 新 PN／PH）、Recovery、六項品質 regression、真人自由對話／操作 | Raspberry Pi 5 | `docs/milestones/ALPHA.md`；M4 Accepted product path |
 | **ALPHA.R1** | 條件式 ASR Product R1 Voice-only 收斂 Gate；不改寫或取代原 ALPHA 結論 | Raspberry Pi 5 | `docs/milestones/ALPHA_R1.md`；M4.R1 Accepted exact SHA |
-| **M5** | 依 baseline selection 選定的唯一 ALPHA 或 ALPHA.R1 Accepted exact SHA 擴充 MQTT、read 與 tool dispatch | Raspberry Pi 5 | `Ch 2b / 7 / 9 / 10 / 11` |
-| **M6** | Wake daemon、voice-wake IPC、Vision/look 與全能力驗收 | Raspberry Pi 5 | `Ch 2a / 2b / 4 / 5 / 6 / 8 / 10 / 11`、`model spec M6 baseline` |
+| **M5.tool** | 唯一 Accepted Voice-only 基礎上的真實 LLM＋mock 工具／Look、下一輪接續 | Raspberry Pi 5 | `implement/ch_m5_tool.md`、`milestones/M5.md` §2 |
+| **M5** | M5.tool 後的 MQTT 發送、外部 response／主動通知與 read | Raspberry Pi 5 | `milestones/M5.md` §3、`Ch 2b / 7 / 9 / 10 / 11` |
+| **M6** | Camera／YOLO／結果整理與 Look 接續；VLM 描述另列非阻擋 POC | Raspberry Pi 5 | `milestones/M6.md`；YOLO 選型於 M6 entry 固定 |
 | **M7** | 正式 Display 版面、資產、動畫與視覺 UX 完整化 | Raspberry Pi 5 | `Ch 8`、M7 開發前核准的 `display_spec.md` revision |
-| **BETA** | 全能力產品收斂 Gate：在同一 Beta 候選 SHA 重跑 M4 ~ M7 regression，涵蓋長時間穩定、診斷、manifest inventory | Raspberry Pi 5 | `docs/milestones/BETA.md`；M7 Accepted exact SHA |
+| **BETA** | 已納入能力的產品收斂；依當時具體風險固定必要整合、穩定性與診斷，Wake 是否加入先行決策 | Raspberry Pi 5 | `docs/milestones/BETA.md`；M7 Accepted exact SHA |
 
 ---
 
@@ -162,7 +154,9 @@ M6pre 須交付可實際操作的主要功能，不能把單一麥克風 ownersh
 `docs/protocol.md` 不在 M1 / M2 預先展開；以下任一階段開始前必須先完成對應章節：
 
 * **M4** : LiteRT-LM child process wire schema。
-* **M5** : 公開 MQTT topic / payload schema。
-* **M6** : wake daemon IPC schema。
+* **M5.tool** : LLM 有限能力 semantic terminal 與新 profile；見 `protocol.md` §7。
+* **M5** : 公開 MQTT topic / payload schema，先固定實際 domain。
+* **M6** : YOLO 路徑依實際 adapter 隔離方式定義必要 wire；不預設 wake IPC。
+* **Wake（延後）** : BETA 前決定加入後，才在實作前定 wake daemon IPC。
 
 每個 wire schema 必須先於其 producer / consumer code，並明列版本與 breaking-change 政策；內部 Event dataclass 不因此增加 version 欄位。

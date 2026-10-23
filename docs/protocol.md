@@ -2,6 +2,7 @@
 
 狀態：Audio Protocol v1保持Accepted；M4B replacement LLM Protocol
 `snowboard.llm/3`已完成原 focused review，並依 `IR_dev_M4B_IV` 修訂 ticket disposal；focused Tester coverage已確認。
+§7 `snowboard.llm/4` 為 M5.tool 設計，尚待對應 architecture delta 與 Test Spec；不代表產品 PASS。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
@@ -9,7 +10,8 @@
 
 - Parent 以 `start_new_session=True` 啟動每個 top-level child，使 child PID=PGID；ASR supervisor 的 native whisper descendant 不得建立 nested session/group。
 - Control 為單行 UTF-8 JSON，以 `\n` 終止，最大 16 KiB。Object 必須 exact-key；Audio使用
-  `protocol: 1`，LLM 使用 `protocol: 3`。兩者不接受另一版本或 legacy LLM framing。
+  `protocol: 1`；已交付 M4 LLM profile 使用 `protocol: 3`，M5.tool profile 使用 `protocol: 4`。
+  每個 child lifetime 固定其版本，不接受另一版本或 legacy framing。
 - `request_id`由parent在單一child lifetime內配置、嚴格遞增且不可重用，且為正整數。Audio與
   LLM operation event皆帶 matching ID；CANCEL只引用目前active ID而不另配ID；
   READY/PING/PONG/SHUTDOWN不帶 request ID。
@@ -478,3 +480,59 @@ LLM v3 portable tests另須覆蓋完整 state table、OPEN/CLOSE proof、MEASURE
 boundaries、ticket binding/one-use/disposal、SAFE_TEXT fragmentation/prefix、RESULT metrics、REQUEST_FAILED/CANCEL
 proof、wrong identity/revision/generation、PGID cleanup及recovery後下一個child成功。不得沿用舊
 session、capacity、prewarm或fixed-recycle測試語意。Audio測試要求不變。
+
+## 7. M5.tool LLM Protocol v4
+
+此版只供 `core-m5-tool-001`，語意契約見 [M5.tool 設計](implement/ch_m5_tool.md) §2、§5。
+M4 profile 繼續使用 §4 的 v3。v4 沿用 §4 的 framing、request/session/generation/revision、
+Conversation lifecycle、exact token measurement、ticket disposal、單 active request、cancel、
+shutdown、metrics 與 E1/R2 分界；以下列出**完整差異**，其餘 message fields 與狀態表同 §4。
+不得在同一 child lifetime 混用 v3／v4，也不得把新 semantic 塞進 v3 `text/end`。
+
+1. 每筆帶 `protocol` 的 v4 message 必須是 `4`。READY 的 `protocol_name` 是
+   `snowboard.llm/4`，`profile_id` 是 `core-m5-tool-001`。READY 沿用 §4.1 欄位及
+   private runtime 實值核對，但移除 `profile_sha256`、`runtime_sha256`、`native_sha256`、
+   `model_sha256`、`prompt_sha256`、`response_schema_sha256` 六個 digest 欄位。
+   `response_schema_locator` 固定為
+   `requirements/m5tool/semantic-output-v1.schema.json`；不允許缺欄或額外欄。
+   Parent 依啟動配置比較版本、profile、模型／runtime 身分與必要數值實值，
+   startup 不計算檔案或文字 digest。既有 v3 READY 與驗收結果不回寫。
+2. MEASURE／MEASURED、GENERATE、DISCARD_TICKET／TICKET_DISCARDED 不帶
+   `input_sha256`；其餘欄位同 §4.3–§4.5。v4 MEASURE 對帶派發狀態的 listen
+   增加 `user_text`，值為原 normalized utterance；child 用同一 tokenizer 計算
+   `user_tokens`，再以完整 `text` 做最後一次 native render，產生
+   `rendered_incremental_tokens`、`runtime_prefill_tokens` 與 ticket。Child 必須確認
+   `text` 是 [M5.tool 設計 §3](implement/ch_m5_tool.md#3-工具派發與固定回饋) 的 listen JSON wrapper，且其 `text` 欄位與
+   `user_text` 實值相同；不符為 E1。一般 listen、Look 不帶 `user_text`，此時
+   `user_tokens` 由完整 `text` 量得；Look 的該值只作觀測，不套 32-token 限制。
+   v4 不要求 `user_tokens <= rendered_incremental_tokens`，兩者測的是不同輸入。
+   Parent／child 只對 listen 原 utterance 套 `user_tokens <= 32`；Look 只驗有界
+   facts 與完整 native context equation。M4B 首輪 `runtime_prefill_tokens <= 128`
+   是舊 profile 規則，v4 不執行該 E1 判定。
+   Ticket 在 child private memory 綁定
+   `(session_id, generation, conversation_revision, ticket, 原始 input text)`；
+   GENERATE 的 `text` 必須與測量時完全相同，否則 E1。DISCARD_TICKET 仍需相符的
+   session／generation／revision／ticket，完成 native scratch scrub 才能回 ready。
+   `text` 不進 public log／evidence，不用 digest 代替實值比較。
+3. v4 RESULT 以 `semantic` 取代 v3 的 `text` 與 `end`，其他身份、revision 與 metrics
+   欄位同 §4.5。`semantic` 是 exact-key object：`intent`、`text`、`tool_name`、
+   `arguments`；`arguments` 恰有 `message`。所有四個值的型別、限制、互斥及 registry
+   驗證依 M5.tool 設計 §2.2。Child 驗完整 schema、SAFE_TEXT prefix 與 native join 後
+   才可發布 RESULT；parent 再驗能力與工具註冊狀態，才交 Reasoner 映射。
+   非法語意以現有 `REQUEST_FAILED(code=INVALID_SEMANTIC)` 及 §4.5 proof 回報，
+   不發布部分成功 RESULT。
+4. SAFE_TEXT 的 wire 欄位與順序同 §4.5，只准已確認 `speak` 或有文字的 `end`
+   意圖輸出解碼後的安全文字 prefix；目前已出現的工具欄位不能與此意圖矛盾，
+   不等待尚未到達的空工具欄位。`tool`／`look` 不輸出 SAFE_TEXT。Parent 仍在
+   terminal 完成前控制播音；不對 tool／look 推測或預派發。Streaming 片段與 terminal
+   不一致是 protocol failure；後續欄位違反語意互斥且 request／Engine 可證明可用時
+   以 `INVALID_SEMANTIC` 走 R2 並取消播音，不執行工具。
+5. Look facts 與上一輪派發狀態由 parent 作為有界 private `text` 輸入；
+   child 不新增影像 wire、持久記憶或第二 Conversation。Profile prompt／schema 固定於
+   child configuration；response、外部 MQTT 訊息及 handler return 不在此 IPC 回傳。
+
+對 v4 只驗新增失敗風險：listen status `user_text` 與完整 wrapper 分別計數、Look
+不套 32-token、首輪不套 M4B 的 128-token prefill 常數、實際 text ticket 綁定、
+semantic exact-key／互斥、tool／look 無 SAFE_TEXT、speak prefix 與 terminal 一致、
+取消後無 late RESULT。既有 v3 lifecycle
+證據保留；受 v4 變動直接影響的 cancel／recovery 仍須驗證。
