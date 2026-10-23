@@ -184,6 +184,8 @@ GPIO 分流常見規 §5.4。
 
 `read` perception 的輸入路徑：`read` 是外部訊息的被動消費者，運作機制見 §5.1。其他 perception（ `listen` / `look` ）的輸入是時間點觸發的裝置讀取，語意單純，直接向 `core` 借用資源即可，不需分流機制。
 
+`look` worker 擁有 Camera 取像及 Vision adapter 呼叫，將整理後的視覺結果作為 perception fact 交給 Reasoner。M6 產品路徑先採 YOLO；VLM 描述仍是獨立 POC，採用前不改此 production backend 或資源契約。
+
 ### 2.7 cognition/ —— 認知層
 
 **分工**
@@ -206,6 +208,8 @@ GPIO 分流常見規 §5.4。
 **M4 Reasoner 分工（LLM 角色邊界）**
 
 M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 facts。LLM 只輸出：短回答文本或結束意圖。**Reasoner 獨立決定** `action_kind`、`post_action_route` 與需要時的 `next_perceptions`——不新增每 turn 第二次 LLM 推論，不引入通用 task / context manager。M4 典型流程是 `speak + KEEP_NEXT` 後 listen；含有非空最終語音的結束意圖為 `speak + END_SESSION`；無主要使用者內容的結束意圖為 `rest + END_SESSION`。
+
+**M5 有限能力 profile**：M4 的 text/end 邊界保持原義。M5.tool 起，模型可在有限 profile 中選擇 speak/end、已註冊命令工具意圖或 Look 意圖；模型不產出 Core action envelope、Session / Turn identity 或任意 perception 清單。Reasoner 驗證語意與能力後，將 tool 映射為 `tool + KEEP_NEXT + listen`，Look 映射為 application-owned 準備語 `speak + KEEP_NEXT + look`；一般回答與結束沿用既有 speak/rest route。每個產品 turn 最多一次模型推論；SDK 不自動執行 handler。Look 是下一 turn 的 perception，不是新 action。該 look-only turn 不等待新語音，結果進入原 Conversation 的下一次推論，不重送完整 history 或建立對話記憶儲存；無可用結果優先由 application 回饋。若 Conversation 已替換，放棄舊觀察及原問題接續，請使用者重述，不將舊結果 replay 到空白 Conversation。M5.tool 不處理 read / Look 交錯。
 
 **P5 與 Conversation 失敗分界**
 
@@ -252,15 +256,17 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 
 **Fire-and-forget 語意（tool）**：派發完成即 `ActionCompleted`，不等待結果。真正的執行結果由外部通道以獨立事件回到系統，屬下一次 wake 或下一 turn 的 input。
 
+支援固定派發回饋的有限 profile 中，`ActionCompleted(tool)` 僅表示派發階段結果，不表示外部業務完成。SM 在 tool primary Fact 與 task done join 後，留在 ACTION 啟動唯一 `tool_feedback` Speak phase；應用程式依派發 status 選固定回饋，不產生第二個 `LLMResponse`、不再呼叫模型，Tool 也不直接操作 Audio。Primary 與 feedback active record 不並存，feedback 使用自己的 correlation；其 Fact 與 task done join 後才按 `KEEP_NEXT` 進下一 PERCEPTION。Interrupt、shutdown、system failure 依當前 phase 的既有收斂處理，遲到 completion 不得啟動後續 phase；feedback 的可翻譯 Speak 失敗沿用 continuing action error policy，不重送 tool。此能力不是任意 action list，M5.tool 不產生 `tool + END_SESSION`。
+
 **Speak 執行語意（delivery mode 與 M4C streaming-speak）**：M4B full-response 模式下，terminal `LLMResponse` 後才啟動 speak worker，不啟用下述 streaming control。M4C 的 THINK Entry 可由 SM 建立一個綁定 `(session_id, turn_id, correlation_id)` 的單次 streaming-speak control，並交給本 turn Reasoner。第一個經 Reasoner 判定可交付的 semantic text 由該 control 啟動唯一 speak worker；SM 在 THINK 期間即把該 worker 納入同一 turn 的 in-flight tracking。後續有序 fragment 只進同一 worker。Fragment 是 operation 內資料，不是 Fact、獨立 action 或新 turn，也不觸發 state transition。若 delivery/playback stage 在 THINK 期間先完成，只形成 SM private completion notice；speak worker 保持 in-flight，不得 return，也不得在 semantic terminal 驗證前發布 `ActionCompleted`。Terminal `LLMResponse` 驗證通過並進 ACTION 後，若 private completion 已記錄，speak worker 才發布唯一 `ActionCompleted` 並 return；若驗證失敗或發生 cancel，worker 依 §6.3 收斂且不發布正常 Fact。
 
-Reasoner terminal `LLMResponse` 仍是一 turn 唯一 cognition Fact。若已啟動 streaming speak，terminal response 必須驗證為同一 speak intent；驗證通過才由 THINK 進 ACTION，並在 ACTION 等待該既有 speak worker 的 terminal。只有 terminal semantic validation 與 speak terminal 都成功，才發布並接受唯一 primary `ActionCompleted(status=ok)`；後續由 `post_action_route` 決定下一 turn、Conversation 替換或 session end。Invalid/failed terminal、intent 不一致或 interrupt 必須共同取消 generation、queue、TTS 與 playback，進入 E1 或明確 interrupt 收斂，且不得接受或發布正常成功。確切 port、chunk 與 backpressure 數值屬 implement。
+Reasoner terminal `LLMResponse` 仍是一 turn 唯一 cognition Fact。若已啟動 streaming speak，terminal response 必須驗證為同一 speak intent；驗證通過才由 THINK 進 ACTION，並在 ACTION 等待該既有 speak worker 的 terminal。只有 terminal semantic validation 與 speak terminal 都成功，才發布並接受唯一 primary `ActionCompleted(status=ok)`；後續由 `post_action_route` 決定下一 turn、Conversation 替換或 session end。新 profile 僅將已確認的 speak/end 文字送入 streaming Speak；tool / Look 意圖不得成為播音 fragment，tool 派發必須等待完整語意驗證。Invalid/failed terminal、intent 不一致或 interrupt 必須共同取消 generation、queue、TTS 與 playback，進入 E1 或明確 interrupt 收斂，且不得接受或發布正常成功。確切 port、chunk 與 backpressure 數值屬 implement。
 
 > 註：query（查詢式派發，例：雲端查詢／雲端 LLM）為重要但尚未定義的第四類 action，見 §8。
 
 **Rest 的意義與邊界**：`rest` 是可選的使用者可感知收尾，不擁有 session 或資源生命週期。Reasoner 保留 `rest + END_SESSION` 表示「無 primary user-content action，直接收尾」；`speak / tool + END_SESSION` 則必須先完成 primary action，再進 post-action rest，不得啟動新 perception。責任分工：
 
-* SM：session / turn 狀態轉移的唯一擁有者；在 ACTION 內追蹤 `primary` 與 `post-action-rest` phase，一次只允許一個 phase 擁有 active record。SM 僅接受 kind / correlation 與當前 phase 相符的 `ActionCompleted`；因此最終 speak 與其後 rest 的 terminal Facts 不會被當成同一 operation
+* SM：session / turn 狀態轉移的唯一擁有者；在 ACTION 內追蹤 `primary`、有限 profile 的 `tool_feedback` 與 `post-action-rest` phase，一次只允許一個 phase 擁有 active record。SM 僅接受 kind / correlation 與當前 phase 相符的 `ActionCompleted`；因此相繼 phase 的 terminal Facts 不會被當成同一 operation
 * action/rest：純執行 UX 收尾，跑完即回報屬於 rest phase 的 `ActionCompleted`；不呼叫 SM、不管其他 worker
 * primary action 回報 `status=error` 且 route 為 `END_SESSION` 時，SM 仍進 post-action rest 及 session 收斂，不使用 `default_perceptions`
 
@@ -466,7 +472,9 @@ SM 內建的 wake source -> perception 組合對應關係：
 | PERCEPTION | 所有 perception 完成或 timeout | THINK | — |
 | THINK | `LLMResponse` 產出且通過契約驗證 | ACTION | 驗證項見 §4.6 THINK Exit；若本 turn 有 streaming speak 的 delivery/playback stage 已記錄 private completion，該 notice 只記錄、不提前轉移，待 terminal 驗證通過才進 ACTION |
 | THINK | `LLMResponse` 產出但驗證不通過（schema / payload 不合、action / route 組合不合法，或 continuing route 的 `next_perceptions` 正規化後為空） | ERROR | 視為 reasoner contract failure；走 E1 / §3.2「SM 自檢」ERROR 路徑，SM 不 publish `ErrorOccurred`、不因違約本身直接升級為 process 崩 |
-| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `KEEP_NEXT` | PERCEPTION | `ok` 依 normalized `next_perceptions`；`error` 可依 §4.8 改用 `default_perceptions` |
+| ACTION primary | `ActionCompleted(kind=tool, status=any)` + `KEEP_NEXT`，且 profile 支援固定派發回饋 | ACTION tool_feedback | primary Fact 與 task done join 後啟動唯一 Speak feedback；不是 ACTION→ACTION 狀態轉移 |
+| ACTION tool_feedback | `ActionCompleted(kind=speak, status=any)` + `KEEP_NEXT` | PERCEPTION | feedback Fact 與 task done join 後依 §4.8 選下一 perception；不重送 tool |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `KEEP_NEXT`，且無 tool_feedback | PERCEPTION | `ok` 依 normalized `next_perceptions`；`error` 可依 §4.8 改用 `default_perceptions` |
 | ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `REPLACE_NEXT` | PERCEPTION / ERROR / Level 3 | 先走 sequential replacement barrier；`ok` 依 normalized `next_perceptions`，`error` 可依 §4.8 改用 `default_perceptions`；無法證明 cleanup 時轉 E1 |
 | ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `END_SESSION` | ACTION post-action-rest | 不論 primary status 均先進 rest phase，不進 perception、不使用 `default_perceptions` |
 | ACTION rest / post-action-rest | `ActionCompleted(kind=rest, status=any)` | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) | 見 §4.6 ACTION Exit；Level 1 正常完成 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 (§6.5) |
@@ -496,7 +504,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 * 分配新 `turn_id`（session 內遞增，首 turn = 1）
 * 決定本 turn perception 組合：
     * 首 turn：依記錄的 wake source 反射式選擇（§4.4）
-    * 後續 turn：前一 route 必須為 `KEEP_NEXT` 或已完成 barrier 的 `REPLACE_NEXT`；primary action `status=ok` 依 normalized `next_perceptions`，`status=error` 可改用 `default_perceptions`（§4.8）
+    * 後續 turn：前一 route 必須為 `KEEP_NEXT` 或已完成 barrier 的 `REPLACE_NEXT`；依 §4.8 的當前 continuing action status 選 normalized `next_perceptions` 或 `default_perceptions`
 * 對每個選定的 perception kind 呼叫 worker、加入 in-flight 集合
 * 若組合含 `read` → 通知 `external_message` 啟動 `read` 消費（§5.1）
 
@@ -504,6 +512,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * 呼叫 reasoner，加入 in-flight 集合
 * 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供 reasoner 決定 `next_perceptions` 是否含 `read`
+* 支援 tool_feedback 的 profile 可把上一輪單一、payload-free 的派發 status 作為私有提示傳入正常 cognition；與本次 generation 一起使用，消費或 session end / Conversation replacement 即清除。此提示不是外部 response，不增加模型呼叫或跨 Session persistence
 * 進入 THINK 前 Conversation 已由 WAKE 或前一 `REPLACE_NEXT` barrier 取得 readiness；SM 在 generate admission 再次驗證 active Conversation generation 與本 session 相符。控制流呼叫不阻塞 SM inbox
 
 **THINK Exit**
@@ -520,17 +529,18 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * SM 建立與本 turn / correlation 綁定的 active ACTION phase。若本 turn streaming speak 已於 THINK 期間啟動，primary phase 沿用該既有 worker；否則依 `LLMResponse.action_kind` 啟動 primary worker 並加入 in-flight 集合
 * `rest + END_SESSION` 的 primary phase 本身就是 rest phase。`speak / tool + END_SESSION` 的 primary terminal（`status=ok` 或 `error`）完成後，SM 才啟動唯一 post-action-rest phase；兩個 phase 的 active record 不並存，也只接受與當前 phase 相符的 `ActionCompleted`
+* 支援固定派發回饋的 profile 中，`tool + KEEP_NEXT` 的 primary Fact 與 task done join 後，SM 先移除 primary record，再建立獨立 correlation 的唯一 `tool_feedback` Speak record；留在 ACTION，兩個 phase 不並存，也不產生第二個 `LLMResponse`
 
 **ACTION route completion**
 
-* `KEEP_NEXT`：primary action terminal 後直接進 PERCEPTION；`status=ok` 使用 normalized `next_perceptions`，`status=error` 可依 §4.8 使用 `default_perceptions`
+* `KEEP_NEXT`：一般 primary action terminal 後進 PERCEPTION；支援固定派發回饋的 tool primary 則須先完成 `tool_feedback` phase 的 Fact / task done join。後續 perception 依 §4.8 決定；可翻譯的 feedback Speak 失敗不回頭重送 tool
 * `REPLACE_NEXT`：primary action terminal 後留在 ACTION，阻擋新 model admission，依 §4.1 / §6.5 完成 active request terminal/join（若有）→ 舊 Conversation close / cleanup proof → claim clean Conversation 的 barrier，之後才進 PERCEPTION。`status=error` 可改用 `default_perceptions`；replacement 不清 session tracking、不重設 `turn_id`、不 replay input，也不調用 external-message session-end policy
 * `END_SESSION`：primary 為 speak / tool 時，不論 terminal status 都先完成 post-action rest；primary 為 rest 時則等待該 rest terminal。Rest terminal status 不改變 session-end 決策
 
 **ACTION Exit（rest terminal / session end）**
 
 * SM end 先登記 end intent 並拒絕新 admission，再依 §6.5 一次收斂本 session 全部 in-flight work（包含 active open/generate 及 streaming speak）；取得 terminal/join proof 後完成 active Conversation close，最後才清 session tracking 或接受新 session。Rest、interrupt、error、shutdown 與 late completion 均遵循此順序；具體 component/API 屬 implement
-* 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source`、active Conversation generation、ACTION phase、上一輪 route / `next_perceptions` 等）
+* 清 SM 內部 session 追蹤欄位（`session_id`、`turn_id`、`wake source`、active Conversation generation、ACTION phase、上一輪 route / `next_perceptions`、`last_dispatch_status` 等）
 * 通知 `external_message` `flush-to-wake`（§5.1）——buffer 內未消化訊息重新發 `ExternalMessageArrived`，於 IDLE 自然開新 session
 
 **ERROR Entry**
@@ -564,11 +574,12 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 
 ### 4.8 `post_action_route`、`next_perceptions` 與 `default_perceptions`
 
-* `KEEP_NEXT`：保留 active Conversation；primary action 完成後進下一 PERCEPTION
+* `KEEP_NEXT`：保留 active Conversation；一般 primary action 完成後進下一 PERCEPTION，固定 tool_feedback profile 則先完成 feedback phase
 * `REPLACE_NEXT`：在同 Product Session 內完成 §4.1 sequential replacement barrier，之後進下一 PERCEPTION
 * `END_SESSION`：完成 primary action 與必要的 post-action rest 後結束 session；不啟動 perception，也不使用 `default_perceptions`
 * `next_perceptions`：Reasoner 於 `LLMResponse` 產出（見 §2.7）；僅 `KEEP_NEXT` / `REPLACE_NEXT` 正規化為非空 tuple，供 SM 決定下一 turn 的 perception 組合
-* `default_perceptions`：SM 內建、`config-driven` 的預設 perception 組合（預設值 `[listen]`）。僅供 continuing route（`KEEP_NEXT` / `REPLACE_NEXT`）的 primary `ActionCompleted(kind∈{speak,tool}, status=error)` 取代 Reasoner 的 `next_perceptions`；final action failure 仍走 `END_SESSION`。此為 SM 唯一依 action Fact `status` 分歧的決策點
+* `default_perceptions`：SM 內建、`config-driven` 的預設 perception 組合（預設值 `[listen]`）。僅供 continuing route（`KEEP_NEXT` / `REPLACE_NEXT`）的 primary `ActionCompleted(kind∈{speak,tool}, status=error)` 或有限 tool_feedback 的可翻譯 Speak failure 取代 Reasoner 的 `next_perceptions`；final action failure 仍走 `END_SESSION`
+* 固定 tool_feedback profile：SM 以 primary tool 派發 status 選固定語句，並保留單輪、payload-free 的 `last_dispatch_status` 供下一次正常 cognition 使用；feedback completion 後才進 PERCEPTION。`last_dispatch_status` 不取代 `default_perceptions` 對 continuing action error 的處理，也不表示外部業務結果
 
 ---
 
@@ -608,6 +619,8 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 * **Pending metadata 對 reasoner 可見 ( payload-free )**：SM 於 THINK Entry 將當前 buffer 內 pending 訊息 of id 清單或 count 傳入 reasoner ( 見 §2.7 / §4.6 ) ——僅 metadata、不含 payload，維持 SM / reasoner 皆不接觸 payload 的邊界。Reasoner 依此判斷是否於下一 turn 加入 `read` ；實際訊息內容由該 read perception 讀取
 
 具體指令 API、buffer 資料結構、read 消費介面屬實作細節，見 `implement.md` 。
+
+M5 的 MQTT 外部 response 或主動通知皆由 adaptor 驗證後進 `external_message` buffer，再按上述 wake / pending / read 規則消費；它們不回寫已完成的 tool action。Tool 派發成功不代表外部業務成功。M5.tool 的 mock 派發階段不啟用 read / Look 交錯。
 
 ### 5.2 麥克風獨佔切換
 
@@ -862,6 +875,7 @@ Capability Map 為嚴格靜態值： `capability_map` 在啟動階段一次決�
 * 開發平台：可於一般 Linux / macOS / Windows 開發（純 Python 邏輯與 mock 測試）；每個 driver / 實作子目錄配 mock 版本以支援開發機執行
 * 測試範圍： `tests/` 只測純軟體，不測硬體
 * Static capability 假設：HW 啟動後固定、不熱插拔——此為部署層平台假設，其架構意涵（capability 為啟動時決定的靜態值、不引入 runtime detect）見 §6.8 B。此假設若被打破（例：加入 USB 設備動態接入），需回本節重新裁決
+* Wake daemon / 麥克風交接是可延後能力；M5.tool、M5 MQTT 與 M6 目前不要求啟用。BETA 前再作產品決策，不能從架構描述推定其為當前交付 gate
 
 ---
 
@@ -886,6 +900,6 @@ Capability Map 為嚴格靜態值： `capability_map` 在啟動階段一次決�
 以下項目屬設計層構想，未確立原則前不進入其他章節。
 
 * Query action：作為第四類 action（查詢式派發，例：雲端查詢 / 雲端 LLM）。無狀態脈絡構想——query payload 附「`brief_context`」摘要、外部服務原樣回傳、reasoner 依 `brief_context` + `answer` 恢復狀態。待決策：回覆入口（ `ExternalMessageArrived` / 專屬 Signal / read perception ）、correlation 機制、上下文 schema
-* 完整 reasoning loop：Tool 結果回饋後再次推論。待決策：correlation id、新狀態（如 `TOOL`）
+* 任意多工具 reasoning loop：仍未納入。§2.7 的 Look 下一輪 perception、§5.1 的外部訊息 read 與 §2.8 的固定派發回饋都是已定的有限路徑，不要求 handler return 觸發新推論，也不構成此處的通用 loop。未來若要加入任意工具串接，再決定其 correlation 與狀態契約
 * 多輪對話記憶（跨 session）：M4 session 內的 runtime 自然 continuity（`Conversation` history / KV、同 session 承接上一句）已由 §4.1 架構契約正式納入，不屬未定案範疇。**仍未納入的**：長期 / 跨 session 記憶、對話摘要、向量檢索、task restoration——這些需要持久化儲存層，現行不建立。待決策（未來觸發點）：儲存後端選型、清理策略、與 reasoner 的接面設計、隱私邊界
 * `core/network` ：多 adaptor 共用 transport（TCP / UART / 藍牙）的落點。觸發條件：出現第二個需要共用底層 transport 的 adaptor

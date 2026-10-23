@@ -38,9 +38,10 @@ from sbd.cognition.llm_child_protocol import (
     MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
 from sbd.cognition.semantic import (
     IncrementalSafeTextParser, RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
-    validate_semantic, SemanticError,
+    validate_semantic, SemanticError, IncrementalToolSemanticParser,
+    validate_tool_semantic, load_m5_response_schema, M5_RESPONSE_SCHEMA_LOCATOR,
 )
-from sbd.cognition.prompt_builder import SYSTEM_PROMPT
+from sbd.cognition.prompt_builder import SYSTEM_PROMPT, M5_SYSTEM_PROMPT, is_m5_look_wrapper
 
 _DIAGNOSTIC_DIRECTORY: Path | None = None
 _ACTIVE_TIMING_FRAME: Mapping[str, object] = {}
@@ -214,7 +215,8 @@ def _validate_native_library(path: Path, expected_size_bytes: int) -> None:
 class LiteRTRuntime:
     """Pinned 0.16.0 CPU Engine; only this child imports native dependencies."""
 
-    def __init__(self, *, model: str, runtime_root: str, native_size_bytes: int) -> None:
+    def __init__(self, *, model: str, runtime_root: str, native_size_bytes: int,
+                 protocol_version: int = 3) -> None:
         # Artifact bytes are verified once during staging/PV. Product startup
         # performs only bounded shape checks before importing the native module.
         root_input = Path(runtime_root)
@@ -260,6 +262,7 @@ class LiteRTRuntime:
             raise RuntimeError("runtime import escaped verified closure")
 
         self._response_format = ResponseFormat
+        self.protocol_version = protocol_version
         self._sampler_config = SamplerConfig(temperature=0.0, top_p=1.0)
         self._cancelled_error = getattr(litert_lm, "Cancelled", WorkerCancelled)
         self._constraint = ConstrainedDecodingConfig(
@@ -274,8 +277,9 @@ class LiteRTRuntime:
             enable_benchmark=True,
         )
         _startup_mark("engine_init_end")
-        from sbd.cognition.prompt_builder import attest_prompt
-        attest_prompt(self._engine.tokenize)
+        if protocol_version == 3:
+            from sbd.cognition.prompt_builder import attest_prompt
+            attest_prompt(self._engine.tokenize)
         self._conversation: Any = None
         self._model_path = Path(model).resolve()
         self._cache_prefetch: WeightCachePrefetch | None = None
@@ -305,7 +309,8 @@ class LiteRTRuntime:
             else:
                 _timing_mark("cache_prefetch_unavailable")
         self._conversation = self._engine.create_conversation(
-            system_message=SYSTEM_PROMPT, automatic_tool_calling=False,
+            system_message=(M5_SYSTEM_PROMPT if getattr(self, "protocol_version", 3) == 4 else SYSTEM_PROMPT),
+            automatic_tool_calling=False,
             constrained_decoding_config=self._constraint,
             sampler_config=self._sampler_config, max_output_tokens=128,
             filter_channel_content_from_kv_cache=False)
@@ -346,10 +351,11 @@ class LiteRTRuntime:
             self._active = conversation
         try:
             try:
-                response_format = self._response_format.json(load_response_schema())
+                response_format = self._response_format.json(
+                    load_m5_response_schema() if getattr(self, "protocol_version", 3) == 4 else load_response_schema())
                 _diagnostic_mark("response_format_selected", kind="json",
-                                 response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
-                                 response_schema_sha256=RESPONSE_SCHEMA_SHA256)
+                                 response_schema_locator=(M5_RESPONSE_SCHEMA_LOCATOR
+                                    if getattr(self, "protocol_version", 3) == 4 else RESPONSE_SCHEMA_LOCATOR))
                 raw = conversation.send_message(text, max_output_tokens=128,
                     response_format=response_format)
             except self._cancelled_error:
@@ -394,7 +400,8 @@ class LiteRTRuntime:
             raise RuntimeError("streaming bridge unavailable") from None
         require(not getattr(conversation, "automatic_tool_calling", True), "stream")
         require(bool(getattr(conversation, "_ptr", None)), "stream")
-        parser = IncrementalSafeTextParser(12)
+        parser = (IncrementalToolSemanticParser() if getattr(self, "protocol_version", 3) == 4
+                  else IncrementalSafeTextParser(12))
         native_events: queue.Queue[tuple[str, bool] | BaseException] = queue.Queue()
         final_seen = False
         first_output_seen = False
@@ -405,7 +412,8 @@ class LiteRTRuntime:
             self._active = conversation
         try:
             _timing_mark("response_format_begin")
-            response_format = self._response_format.json(load_response_schema())
+            response_format = self._response_format.json(
+                load_m5_response_schema() if getattr(self, "protocol_version", 3) == 4 else load_response_schema())
             _timing_mark("response_format_end")
 
             def callback(unused_data: Any, chunk_ptr: Any) -> None:
@@ -469,7 +477,10 @@ class LiteRTRuntime:
                         emit(fragment)
                 if final:
                     final_seen = True
-            terminal, flushed = parser.finish()
+            if getattr(self, "protocol_version", 3) == 4:
+                terminal, flushed = parser.finish(), ()
+            else:
+                terminal, flushed = parser.finish()
             for fragment in flushed:
                 emit(fragment)
             info = conversation.get_benchmark_info()
@@ -522,7 +533,7 @@ class WorkerSession:
     """Runtime-independent execution shared by native child and portable fake."""
     def __init__(self, runtime: Any) -> None:
         self.runtime = runtime
-        self.ledger = ProtocolLedger()
+        self.ledger = ProtocolLedger(version=getattr(runtime, "protocol_version", 3))
 
     def execute(self, frame: Mapping[str, object], emit=None) -> list[dict[str, object]]:
         global _ACTIVE_TIMING_FRAME
@@ -535,10 +546,13 @@ class WorkerSession:
             return [{**base, "event": "OPENED", "conversation_revision": 0}]
         if op == "MEASURE":
             counts = self.runtime.measure(frame["text"])
-            validate_counts(counts)
+            if self.ledger.version == 4 and "user_text" in frame:
+                counts = {**counts, "user_tokens": len(self.runtime._engine.tokenize(frame["user_text"]))}
+            validate_counts(counts, version=self.ledger.version)
             return [{**base, "event": "MEASURED", **counts,
                 "conversation_revision": self.ledger.revision,
-                "input_sha256": frame["input_sha256"], "ticket": secrets.token_hex(16)}]
+                **({"input_sha256": frame["input_sha256"]} if self.ledger.version == 3 else {}),
+                "ticket": secrets.token_hex(16)}]
         if op == "CLOSE":
             self.runtime.close_conversation()
             return [{**base, "event": "CLOSED", "request_terminal_proven": True,
@@ -547,13 +561,15 @@ class WorkerSession:
             self.runtime.scrub_ticket()
             self.ledger.ticket = None
             return [{**base, "event": "TICKET_DISCARDED",
-                **{key: frame[key] for key in ("conversation_revision", "ticket", "input_sha256")},
+                **{key: frame[key] for key in (("conversation_revision", "ticket", "input_sha256")
+                    if self.ledger.version == 3 else ("conversation_revision", "ticket"))},
                 "native_render_scrubbed": True, "ticket_invalidated": True,
                 "private_input_erased": True, "conversation_state": "ready"}]
         require(op == "GENERATE")
         counts = self.ledger.consumed
         require(counts is not None)
-        require(counts["user_tokens"] <= 32)
+        if self.ledger.version == 3 or "user_text" in frame or not is_m5_look_wrapper(frame["text"]):
+            require(counts["user_tokens"] <= 32)
         require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
         send = time.monotonic_ns()
         _timing_mark("native_generation_start", send, **{key: counts[key] for key in
@@ -562,7 +578,8 @@ class WorkerSession:
         if emit is None or not hasattr(self.runtime, "generate_stream"):
             raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
             try:
-                semantic = validate_semantic(raw)
+                semantic = (validate_tool_semantic(raw) if self.ledger.version == 4
+                            else validate_semantic(raw))
             except SemanticError:
                 return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
                     "request_terminal_proven": True, "engine_usable": True,
@@ -587,7 +604,9 @@ class WorkerSession:
         # Native synchronous SendMessage calls session WaitUntilDone; the
         # control loop additionally joins this worker thread before any terminal.
         return [{**base, "event": "RESULT", "conversation_revision": self.ledger.revision + 1,
-            "text": semantic.text, "end": semantic.end,
+            **({"semantic": {"intent": semantic.intent, "text": semantic.text,
+                             "tool_name": semantic.tool_name, "arguments": semantic.arguments}}
+               if self.ledger.version == 4 else {"text": semantic.text, "end": semantic.end}),
             **{key: counts[key] for key in ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")},
             "decode_tokens": decode, "conversation_kv_tokens": kv,
             "llm_send_monotonic_ns": send,
@@ -707,7 +726,7 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
         session.ledger.command(frame)
         if frame["op"] == "SHUTDOWN":
             runtime.close()
-            ack = {"protocol": 3, "event": "SHUTDOWN_ACK"}
+            ack = {"protocol": session.ledger.version, "event": "SHUTDOWN_ACK"}
             session.ledger.event(ack)
             _write(ack)
             return 0
@@ -716,7 +735,7 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
         runtime.clear_pending_cancel()
         def emit_safe(sequence: int, text: str, monotonic_ns: int) -> None:
             stream_queue.put({
-                "protocol": 3, "event": "SAFE_TEXT",
+                "protocol": session.ledger.version, "event": "SAFE_TEXT",
                 "request_id": frame["request_id"], "sequence": sequence,
                 "text": text, "monotonic_ns": monotonic_ns,
             })
@@ -752,7 +771,7 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
                 require(cancel.get("op") == "CANCEL")
                 session.ledger.command(cancel)
                 runtime.cancel()
-                deferred = {"protocol": 3, "event": "CANCEL_DEFERRED", "request_id": frame["request_id"]}
+                deferred = {"protocol": session.ledger.version, "event": "CANCEL_DEFERRED", "request_id": frame["request_id"]}
                 session.ledger.event(deferred)
                 _write(deferred)
             elif not alive:
@@ -778,7 +797,7 @@ def run(runtime: Any, ready: Mapping[str, object]) -> int:
                     runtime.scrub_ticket()
                 except BaseException:
                     events = None
-            cancelled = {"protocol": 3, "event": "CANCELLED",
+            cancelled = {"protocol": session.ledger.version, "event": "CANCELLED",
                 "request_id": frame["request_id"], "operation": op,
                 "request_terminal_proven": events is not None,
                 "operation_cleanup_proven": op != "CLOSE" and events is not None,
@@ -808,7 +827,7 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--product-profile", required=True)
     parser.add_argument("--runtime-root", required=True)
-    parser.add_argument("--artifact-lock", required=True)
+    parser.add_argument("--artifact-lock")
     parser.add_argument("--measurement-authorization")
     parser.add_argument("--measurement-pv", action="store_true")
     parser.add_argument("--measurement-private-directory")
@@ -838,15 +857,25 @@ def main() -> int:
         _DIAGNOSTIC_DIRECTORY = directory
         _diagnostic_mark("child_starting", python=sys.version.split()[0])
     from sbd.cognition.litert_lm.lock import LLMArtifactLock, load_product_profile
+    from sbd.cognition.litert_lm.m5_profile import M5RuntimeFacts, load_m5_profile
     root = Path(__file__).resolve().parents[4]
-    lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
-    _diagnostic_mark("artifact_lock_verified")
-    load_response_schema(repo_root=root)
-    _diagnostic_mark("response_schema_verified",
-                     response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
-                     response_schema_sha256=RESPONSE_SCHEMA_SHA256)
+    raw_profile = json.loads(Path(args.product_profile).read_text())
+    m5 = raw_profile.get("profile_id") == "core-m5-tool-001"
+    if m5:
+        require(args.artifact_lock is None, "profile")
+        lock = M5RuntimeFacts.load(Path(args.product_profile))
+        load_m5_response_schema(repo_root=root)
+    else:
+        require(args.artifact_lock is not None, "profile")
+        lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
+        _diagnostic_mark("artifact_lock_verified")
+        load_response_schema(repo_root=root)
+        _diagnostic_mark("response_schema_verified",
+                         response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
+                         response_schema_sha256=RESPONSE_SCHEMA_SHA256)
     measurement_mode = (bool(args.measurement_authorization) or args.measurement_user_diagnostic
                         or args.measurement_pv)
+    require(not m5 or not measurement_mode, "measurement")
     require(measurement_mode == bool(args.measurement_expected), "measurement")
     grant = None
     if measurement_mode:
@@ -862,9 +891,16 @@ def main() -> int:
         else:
             grant = MeasurementGrant.load(Path(args.measurement_authorization),
                 expected_tuple=expected, profile=profile)
+    elif m5:
+        profile = load_m5_profile(Path(args.product_profile))
     else:
         profile = load_product_profile(Path(args.product_profile))
-    verify_platform_abi(profile)
+    if m5:
+        verify_platform_abi({"python_implementation": "CPython", "python_version": "3.13.5",
+            "python_soabi": "cpython-313-aarch64-linux-gnu",
+            "python_multiarch": "aarch64-linux-gnu"})
+    else:
+        verify_platform_abi(profile)
     _diagnostic_mark("platform_abi_verified")
     runtime_root = Path(args.runtime_root)
     require(runtime_root.is_dir() and not runtime_root.is_symlink(), "runtime")
@@ -889,11 +925,16 @@ def main() -> int:
     _diagnostic_mark("native_runtime_starting")
     _startup_mark("native_runtime_begin")
     runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
-                            native_size_bytes=lock.runtime["native_size_bytes"])
+                            native_size_bytes=lock.runtime["native_size_bytes"],
+                            protocol_version=4 if m5 else 3)
+    if m5:
+        require(len(runtime._engine.tokenize(M5_SYSTEM_PROMPT)) == profile["prompt_tokens"],
+                "prompt_tokens")
     _startup_mark("native_runtime_ready")
     _diagnostic_mark("native_runtime_ready",
                      startup_duration_ns=time.monotonic_ns() - native_started)
-    ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,
+    ready = {"protocol": 4 if m5 else 3, "event": "READY",
+             **(lock.identity.fields if m5 else lock.ready_identity(profile).fields),
              "pid": os.getpid(), "pgid": os.getpgrp()}
     require(os.getpid() == os.getpgrp(), "pid")
     _diagnostic_mark("ready_emitting")

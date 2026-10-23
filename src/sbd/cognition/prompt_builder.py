@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,6 +15,16 @@ PROFILE_ID = "core-m4b-cognition-001"
 CORE_PROMPT = "你是「雪板」繁體中文語音助理，只能聽與說，不能看或使用工具。只輸出含 text、end 的 JSON。一般回答的 text 不超過30字且 end=false；明確要求對話結束時 end=true。語氣："
 PERSONALITY_PROMPT = "溫暖自然，稍帶幽默。"
 SYSTEM_PROMPT = CORE_PROMPT + PERSONALITY_PROMPT
+M5_SYSTEM_PROMPT = (
+    "你是「雪板」繁體中文語音助理。一般回答簡短、自然，最多30字。只輸出指定JSON。"
+    "一般對話用speak；使用者明確結束時用end。只有使用者明確要求送出訊息時才用tool，"
+    "工具名稱是mock.send，arguments.message是要送的內容；派發不代表外部動作完成。"
+    "需要查看眼前畫面才能回答時用look；收到look觀察後依結果回答先前問題，"
+    "不自動再次look，不執行tool。資料沒有提供的屬性不可猜測。"
+    "source=listen的JSON含使用者原話text與前次派發狀態；source=look的JSON含本次facts。"
+    "送訊與觀察目前是mock，不能聲稱操作真實設備或看見真實相機。"
+    "語氣溫暖自然，稍帶幽默。"
+)
 PROMPT_COUNTS = {"core": 59, "personality": 9, "system": 68}
 PROMPT_HASHES = {
     "core": "c25814706de0946929c982634e47a3fdb3c4bb8cfef0ee0151088658210a827b",
@@ -48,6 +59,34 @@ class UnsupportedInputError(ValueError):
         super().__init__("UNSUPPORTED_INPUT")
 
 
+class ToolInputTooLarge(UnsupportedInputError):
+    pass
+
+
+def parse_m5_listen_wrapper(value: str) -> str:
+    """Return the direct utterance only for the exact status wrapper."""
+    try:
+        def unique(pairs):
+            output = {}
+            for key, item in pairs:
+                if key in output:
+                    raise ValueError("duplicate")
+                output[key] = item
+            return output
+        parsed = json.loads(value, object_pairs_hook=unique)
+        if (type(parsed) is not dict or set(parsed) !=
+                {"source", "last_dispatch_status", "text"} or
+                parsed["source"] != "listen" or
+                parsed["last_dispatch_status"] not in {"ok", "error"} or
+                type(parsed["text"]) is not str or
+                normalize_text(parsed["text"]) != parsed["text"] or
+                not parsed["text"] or len(parsed["text"]) > 20):
+            raise ValueError("invalid wrapper")
+        return parsed["text"]
+    except (ValueError, TypeError, KeyError):
+        raise UnsupportedInputError() from None
+
+
 class ListenProjector:
     def project(self, *, perceptions: tuple[PerceptionResult, ...], session_id: str,
                 turn_id: int, pending_message_count: int,
@@ -68,6 +107,71 @@ class ListenProjector:
             return normalize_text(fact.text) or None
         except SemanticError:
             raise UnsupportedInputError() from None
+
+
+@dataclass(frozen=True, slots=True)
+class ToolProjection:
+    source: str
+    text: str
+    user_text: str | None
+
+
+def is_m5_look_wrapper(value: str) -> bool:
+    try:
+        parsed = json.loads(value)
+        return (type(parsed) is dict and set(parsed) ==
+                {"source", "status", "facts", "instruction"} and
+                parsed["source"] == "look" and parsed["status"] == "ok" and
+                type(parsed["facts"]) is str and
+                1 <= len(parsed["facts"]) <= 512 and
+                normalize_text(parsed["facts"]) == parsed["facts"] and
+                parsed["instruction"] == ToolProjector._LOOK_INSTRUCTION)
+    except (ValueError, TypeError, SemanticError):
+        return False
+
+
+class ToolProjector:
+    """Project one M5.tool listen or look fact into a bounded native input."""
+
+    _LOOK_INSTRUCTION = "依本次觀察回答先前問題；未提供的資訊請說明無法判斷。"
+
+    def project(self, *, perceptions: tuple[PerceptionResult, ...], session_id: str,
+                turn_id: int, pending_message_count: int,
+                last_dispatch_status: str | None = None) -> ToolProjection | None:
+        if (type(perceptions) is not tuple or len(perceptions) != 1 or
+                type(pending_message_count) is not int or pending_message_count != 0 or
+                last_dispatch_status not in {None, "ok", "error"}):
+            raise UnsupportedInputError()
+        fact = perceptions[0]
+        if (not isinstance(fact, PerceptionResult) or fact.session_id != session_id or
+                fact.turn_id != turn_id or fact.kind not in {"listen", "look"} or
+                fact.status not in {"ok", "timeout", "error"}):
+            raise UnsupportedInputError()
+        if fact.status != "ok":
+            return None
+        if fact.kind == "look" and last_dispatch_status is not None:
+            raise UnsupportedInputError()
+        try:
+            content = normalize_text(fact.text)
+        except SemanticError:
+            raise UnsupportedInputError() from None
+        if not content:
+            return None
+        if fact.kind == "listen":
+            if len(content) > 20:
+                raise ToolInputTooLarge()
+            if last_dispatch_status is None:
+                return ToolProjection("listen", content, None)
+            wrapper = {"source": "listen", "last_dispatch_status": last_dispatch_status,
+                       "text": content}
+            return ToolProjection("listen", json.dumps(wrapper, ensure_ascii=False,
+                separators=(",", ":")), content)
+        if len(content) > 512:
+            raise ToolInputTooLarge()
+        wrapper = {"source": "look", "status": "ok", "facts": content,
+                   "instruction": self._LOOK_INSTRUCTION}
+        return ToolProjection("look", json.dumps(wrapper, ensure_ascii=False,
+            separators=(",", ":")), None)
 
 
 _PERCEPTION_ORDER = {"listen": 0, "read": 1, "look": 2}

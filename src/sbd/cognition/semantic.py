@@ -38,7 +38,155 @@ class SemanticOutput:
     end: bool
 
 
+@dataclass(frozen=True, slots=True)
+class ToolSemantic:
+    intent: str
+    text: str
+    tool_name: str
+    arguments: dict[str, str]
+
+
+def validate_tool_semantic(raw: bytes | str | dict[str, object], *,
+                           source: str = "listen", tool_available: bool = True,
+                           look_available: bool = True) -> ToolSemantic:
+    """Validate the closed M5.tool envelope before any Core side effect."""
+    try:
+        if type(raw) is bytes:
+            raw = raw.decode("utf-8", errors="strict")
+        if type(raw) is str:
+            value = json.loads(raw, object_pairs_hook=_unique_json_object,
+                               parse_constant=lambda _value: (_ for _ in ()).throw(SemanticError()))
+        elif type(raw) is dict:
+            value = raw
+        else:
+            raise SemanticError()
+        if (type(value) is not dict or set(value) !=
+                {"intent", "text", "tool_name", "arguments"} or
+                type(value["intent"]) is not str or
+                type(value["text"]) is not str or
+                type(value["tool_name"]) is not str or
+                type(value["arguments"]) is not dict or
+                set(value["arguments"]) != {"message"} or
+                type(value["arguments"]["message"]) is not str or
+                len(value["text"]) > 4096 or len(value["tool_name"]) > 64 or
+                source not in {"listen", "look"}):
+            raise SemanticError()
+        intent = value["intent"]
+        spoken = normalize_text(value["text"])
+        name = value["tool_name"]
+        message = normalize_text(value["arguments"]["message"])
+        if intent == "speak":
+            valid = bool(spoken) and spoken_length(spoken) <= 30 and not name and not message
+        elif intent == "end":
+            valid = spoken_length(spoken) <= 30 and not name and not message
+        elif intent == "tool":
+            valid = (source == "listen" and tool_available and not spoken and
+                     name == "mock.send" and bool(message) and len(message) <= 40)
+        elif intent == "look":
+            valid = source == "listen" and look_available and not spoken and not name and not message
+        else:
+            valid = False
+        if not valid:
+            raise SemanticError()
+        return ToolSemantic(intent, spoken, name, {"message": message})
+    except (ValueError, UnicodeError, TypeError, KeyError, RecursionError):
+        raise SemanticError() from None
+
+
+class IncrementalToolSemanticParser:
+    """Release speech only after intent and a complete, normalized text value."""
+
+    def __init__(self) -> None:
+        self._decoder = codecs.getincrementaldecoder("utf-8")("strict")
+        self._buffer = ""
+        self._released = ""
+        self._terminal = False
+
+    def feed(self, chunk: bytes) -> tuple[str, ...]:
+        if self._terminal or type(chunk) is not bytes:
+            raise SemanticError()
+        try:
+            self._buffer += self._decoder.decode(chunk, final=False)
+            if len(self._buffer) > 65536:
+                raise SemanticError()
+            fields = _completed_tool_fields(self._buffer)
+            intent = fields.get("intent")
+            raw_text = fields.get("text")
+            name = fields.get("tool_name", "")
+            arguments = fields.get("arguments", {"message": ""})
+            if (intent in {"speak", "end"} and type(raw_text) is str and
+                    name == "" and type(arguments) is dict and
+                    arguments.get("message") == ""):
+                normalized = normalize_text(raw_text)
+                if (not normalized and intent == "speak") or spoken_length(normalized) > 30:
+                    raise SemanticError()
+                if normalized and not self._released:
+                    self._released = normalized
+                    return (normalized,)
+            return ()
+        except (ValueError, UnicodeError):
+            raise SemanticError() from None
+
+    def finish(self) -> ToolSemantic:
+        if self._terminal:
+            raise SemanticError()
+        self._terminal = True
+        try:
+            self._buffer += self._decoder.decode(b"", final=True)
+            semantic = validate_tool_semantic(self._buffer)
+            if not semantic.text.startswith(self._released):
+                raise SemanticError()
+            return semantic
+        except (ValueError, UnicodeError):
+            raise SemanticError() from None
+
+
+def _completed_tool_fields(value: str) -> dict[str, object]:
+    """Read completed top-level JSON members without assuming their order."""
+    decoder = json.JSONDecoder(object_pairs_hook=_unique_json_object)
+    fields: dict[str, object] = {}
+    index = 0
+    length = len(value)
+    while index < length and value[index].isspace():
+        index += 1
+    if index == length or value[index] != "{":
+        return fields
+    index += 1
+    while True:
+        while index < length and value[index].isspace():
+            index += 1
+        if index == length or value[index] == "}":
+            return fields
+        try:
+            key, index = decoder.raw_decode(value, index)
+        except ValueError:
+            return fields
+        if type(key) is not str or key not in {"intent", "text", "tool_name", "arguments"} or key in fields:
+            raise SemanticError()
+        while index < length and value[index].isspace():
+            index += 1
+        if index == length:
+            return fields
+        if value[index] != ":":
+            raise SemanticError()
+        index += 1
+        while index < length and value[index].isspace():
+            index += 1
+        try:
+            item, index = decoder.raw_decode(value, index)
+        except ValueError:
+            return fields
+        fields[key] = item
+        while index < length and value[index].isspace():
+            index += 1
+        if index == length or value[index] == "}":
+            return fields
+        if value[index] != ",":
+            raise SemanticError()
+        index += 1
+
 RESPONSE_SCHEMA_LOCATOR = "requirements/m4b/semantic-output-v1.schema.json"
+M5_RESPONSE_SCHEMA_LOCATOR = "requirements/m5tool/semantic-output-v1.schema.json"
 RESPONSE_SCHEMA_SHA256 = "796c31148ea812fc63656313d0afd5d086a5ea907d257af8f214104a69215de9"
 RESPONSE_SCHEMA_SIZE_BYTES = 352
 
@@ -46,6 +194,26 @@ RESPONSE_SCHEMA_SIZE_BYTES = 352
 class ResponseSchemaError(ValueError):
     def __init__(self) -> None:
         super().__init__("RESPONSE_SCHEMA_IDENTITY_MISMATCH")
+
+
+def load_m5_response_schema(*, repo_root: Path | None = None) -> dict[str, object]:
+    root = repo_root if repo_root is not None else Path(__file__).resolve().parents[3]
+    path = root / M5_RESPONSE_SCHEMA_LOCATOR
+    try:
+        raw = path.read_bytes()
+        if len(raw) > 4096 or not raw.endswith(b"\n"):
+            raise ResponseSchemaError()
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object)
+        if (type(value) is not dict or set(value) !=
+                {"type", "properties", "required", "additionalProperties", "anyOf"} or
+                type(value["anyOf"]) is not list or not value["anyOf"] or
+                value["type"] != "object" or value["additionalProperties"] is not False or
+                set(value["properties"]) != {"intent", "text", "tool_name", "arguments"} or
+                set(value["required"]) != set(value["properties"])):
+            raise ResponseSchemaError()
+        return value
+    except (OSError, ValueError, UnicodeError, TypeError, KeyError):
+        raise ResponseSchemaError() from None
 
 
 def load_response_schema(*, repo_root: Path | None = None) -> dict[str, object]:

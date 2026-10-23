@@ -25,9 +25,10 @@
 | [test_spec_M4_common.md](test_spec/test_spec_M4_common.md) | M4 shared memory preflight | 完成；diagnostic only |
 | [test_spec_M4A.md](test_spec/test_spec_M4A.md) | M4A Audio Gate 3 | Accepted、唯讀 |
 | `test_spec_M4B.md` | M4B LLM Gate 3 | 尚未建立；等待 `TR_spec_M4B_IV` activation |
-| test_spec_M5.md | M5 外部訊息與工具 | 待補 |
-| test_spec_M6.md | M6 語音喚醒、視覺輸入與整體收斂 | 待補 |
-| test_spec_M7.md | M7 Display UX 完整化 | 待補 |
+| [test_spec_M5_tool.md](test_spec/test_spec_M5_tool.md) | M5.tool 有限工具能力、mock 派發與 Look 接續 | Current（Test Spec 完成，待 Developer／Pi Verify） |
+| `test_spec_M5.md` | M5 MQTT 發送與外部訊息接收 | 待補（M5.tool Accepted 後依 M5 §3.2 制定） |
+| `test_spec_M6.md` | M6 Camera＋YOLO 觀察接續與 VLM POC | 待補 |
+| `test_spec_M7.md` | M7 Display UX 完整化 | 待補 |
 
 ### 1.3 Test ID
 
@@ -137,7 +138,11 @@ M1 / M2 不得以是否恰好在 Raspberry Pi 上執行改變預期；Pi-only te
 
 ### 2.4 Candidate、run 與 evidence identity
 
-自 M4 的第一個產品候選起，含 RPI-NATIVE 或人工觀察的驗收必須使用以下共同 identity contract；本節不回溯改判或重跑已完成的 M3：
+**自 M5.tool 起的精簡驗收原則（向前適用，不回溯改判 M3／M4／ALPHA 歷史證據）**：
+- Startup 與測試情境**不自動計算或驗證** source、patch、config、model、artifact、prompt、schema、evidence 或 input text 的 SHA-256／digest；private runtime 直接比較實值，public evidence 只記錄必要的 boolean、count 與 stable code。
+- 不設 candidate freeze JSON、authorization 文件、角色互簽或通用 close-proof；所有待提交程式碼變更直接於 Raspberry Pi 5 上對相同 bytes 完成適用的自動、整合與人工測試，通過 Verify 後才準備 commit。
+
+以下 M4 時期條款僅保留供 M4 歷史證據查考（不回溯重跑 M3，也不套用為 M5.tool 之後的自動 digest／freeze gate）：
 
 1. Runner 必須接收外部傳入的 40-character candidate SHA；只讀取當前 `HEAD` 不構成授權。HEAD 不符、SHA 格式錯誤或受保護路徑 dirty 均在測試啟動前 FAIL。
 2. 受保護路徑只涵蓋 `src/`、`tests/`、candidate / acceptance runner、candidate CI workflow、dependency / lock、package metadata及 runner 讀取的 config contract。任一變更撤銷 freeze；本機實際 config、evidence與無關文件不在此列。

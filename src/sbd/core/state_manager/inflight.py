@@ -9,7 +9,7 @@ class InFlightRecord:
     session_id: str
     turn_id: int
     phase: Literal[
-        "perception", "think", "action_primary", "action_rest",
+        "perception", "think", "action_primary", "action_tool_feedback", "action_rest",
         "conversation_open", "conversation_close", "error_notice",
     ]
     kind: str

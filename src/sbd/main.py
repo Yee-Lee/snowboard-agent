@@ -105,6 +105,8 @@ async def run_app(
             converger=converger,
             recovery=rm,
             action_validator=action_validator,
+            tool_feedback=({"ok": "已送出。", "error": "未能確認送出，請稍後再試。"}
+                if config.cognition.llm.profile_id == "core-m5-tool-001" else None),
         )
         rm.set_state_manager(sm)
         effective_composition(rm, bus, config)

@@ -22,6 +22,7 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
         raise ValueError("INSTALL_DESTINATION_UNSAFE")
     raw = yaml.safe_load(config_path.read_text())
     llm = raw["cognition"]["llm"]
+    m5 = llm.get("profile_id") == "core-m5-tool-001"
     listen = raw["perception"]["listen"]["adapter"]
     tts = raw["action"]["tts"]
     display = raw["core"]["display"]
@@ -51,11 +52,12 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
     files = {
         model_relative: configured(llm["model_path"]),
         "config/llm-profile.json": configured(llm["product_profile_path"]),
-        "requirements/m4b/llm-artifacts.json": configured(llm["artifact_lock_path"]),
         "requirements/m4a/listen-artifacts.json": configured(listen["artifact_lock_path"]),
         "requirements/m4a/tts-artifacts.json": configured(tts["artifact_lock_path"]),
         "native/libdisplay.so": configured(display["native_library_path"]),
     }
+    if not m5:
+        files["requirements/m4b/llm-artifacts.json"] = configured(llm["artifact_lock_path"])
     if any(not path.is_file() for path in files.values()):
         raise ValueError("INSTALL_INPUT_MISSING")
 
@@ -78,8 +80,11 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
 
     llm.update(runtime_python=str(prefix / "runtimes/llm/bin/python"),
                model_path=str(prefix / model_relative),
-               product_profile_path=str(prefix / "config/llm-profile.json"),
-               artifact_lock_path=str(prefix / "requirements/m4b/llm-artifacts.json"))
+               product_profile_path=str(prefix / "config/llm-profile.json"))
+    if m5:
+        llm.pop("artifact_lock_path", None)
+    else:
+        llm["artifact_lock_path"] = str(prefix / "requirements/m4b/llm-artifacts.json")
     listen["artifact_lock_path"] = str(prefix / "requirements/m4a/listen-artifacts.json")
     tts["artifact_lock_path"] = str(prefix / "requirements/m4a/tts-artifacts.json")
     display["native_library_path"] = str(prefix / "native/libdisplay.so")

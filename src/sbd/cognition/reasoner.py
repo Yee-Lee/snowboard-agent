@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Callable
 
 from sbd.adaptor.errors import AdapterRejected, AdapterTimeout
 from sbd.cognition.llm import (LLMEngineAdapter, AdmissionSnapshot, SemanticGeneration,
+    ToolSemanticGeneration,
     LLMBackendError, LLMCleanupUnprovenError, LLMFatalError,
     LLMObservationError, LLMProtocolError, MemoryAdmissionDenied,
     ReplaceableGenerationFailure)
@@ -19,8 +20,9 @@ from sbd.cognition.llm_child_protocol import (
     ReasoningInputTooLarge,
     validate_counts,
 )
-from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector, UnsupportedInputError
-from sbd.cognition.semantic import validate_semantic
+from sbd.cognition.prompt_builder import (PromptBuilder, ListenProjector, ToolProjector,
+    UnsupportedInputError, ToolInputTooLarge)
+from sbd.cognition.semantic import validate_semantic, validate_tool_semantic, ToolSemantic
 from sbd.core.event_bus import EventBus
 from sbd.core.events import LLMResponse, PerceptionResult
 from sbd.core.faults import (
@@ -75,7 +77,7 @@ class Reasoner(WorkerRuntime):
     def __init__(
         self,
         llm: LLMEngineAdapter,
-        prompt_builder: PromptBuilder | ListenProjector,
+        prompt_builder: PromptBuilder | ListenProjector | ToolProjector,
         bus: EventBus,
         capability_of: Callable[[str], bool],
         action_validator: ActionPayloadValidator,
@@ -93,7 +95,8 @@ class Reasoner(WorkerRuntime):
         self._capability_of = capability_of
         self._action_validator = action_validator
         self._reason_timeout_seconds = reason_timeout_seconds
-        self._product = isinstance(prompt_builder, ListenProjector)
+        self._tool_product = isinstance(prompt_builder, ToolProjector)
+        self._product = isinstance(prompt_builder, (ListenProjector, ToolProjector))
         self._control = llm.control if self._product else control
         self._observer = observer
         self._streaming_speak = streaming_speak
@@ -131,10 +134,12 @@ class Reasoner(WorkerRuntime):
         pending_message_ids: tuple[str, ...],
         *,
         conversation_generation: int,
+        last_dispatch_status: str | None = None,
     ) -> None:
         if self._product:
             operation = self._reason_product(session_id, turn_id, correlation_id,
-                perception_results, pending_message_ids, conversation_generation)
+                perception_results, pending_message_ids, conversation_generation,
+                last_dispatch_status)
             del perception_results, pending_message_ids
             await operation
             return
@@ -196,7 +201,8 @@ class Reasoner(WorkerRuntime):
         await self._run_call(body)
 
     async def _reason_product(self, session_id, turn_id, correlation_id,
-                              perceptions, pending_ids, generation) -> None:
+                              perceptions, pending_ids, generation,
+                              last_dispatch_status=None) -> None:
         async def body() -> None:
             nonlocal perceptions, pending_ids
             fault: ComponentSystemFault | None = None
@@ -208,9 +214,9 @@ class Reasoner(WorkerRuntime):
                 async with asyncio.timeout(self._reason_timeout_seconds):
                     # The operation task owns the complete transaction and the
                     # adapter's reentrant lock, including measure and generate.
-                    operation = self._product_turn(
+                    operation = (self._tool_turn if self._tool_product else self._product_turn)(
                         session_id, turn_id, correlation_id, perceptions,
-                        pending_ids, generation)
+                        pending_ids, generation, *((last_dispatch_status,) if self._tool_product else ()))
                     perceptions, pending_ids = (), ()
                     response = await self._await_operation(operation)
             except asyncio.CancelledError:
@@ -328,6 +334,137 @@ class Reasoner(WorkerRuntime):
 
         await self._run_call(body)
 
+    async def _tool_turn(self, session_id, turn_id, correlation_id,
+                         perceptions, pending_ids, generation,
+                         last_dispatch_status) -> LLMResponse:
+        async with self._llm.serialized():
+            if (type(session_id) is not str or not session_id or
+                    type(generation) is not int or generation < 1 or
+                    type(turn_id) is not int or turn_id < 0 or
+                    self._capability_of("listen") is not True or
+                    self._capability_of("speak") is not True):
+                raise UnsupportedInputError()
+            self._llm.assert_conversation(session_id, generation)
+            identity = (session_id, turn_id, correlation_id)
+            try:
+                projected = self._prompt_builder.project(
+                    perceptions=perceptions, session_id=session_id, turn_id=turn_id,
+                    pending_message_count=len(pending_ids),
+                    last_dispatch_status=last_dispatch_status)
+            except ToolInputTooLarge:
+                if len(perceptions) == 1 and perceptions[0].kind == "look":
+                    return self._product_fact("這次無法取得影像，請再試一次。",
+                        "KEEP_NEXT", identity, outcome="R1")
+                return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
+            if projected is None:
+                if len(perceptions) == 1 and perceptions[0].kind == "look":
+                    return self._product_fact("這次無法取得影像，請再試一次。",
+                        "KEEP_NEXT", identity, outcome="R1")
+                return self._product_fact(_NO_INPUT, "KEEP_NEXT", identity, outcome="R1")
+            if self._observer is not None:
+                self._observer.input_codepoints(len(projected.text))
+            snapshot = await self._llm.measure(session_id, generation, projected.text,
+                **({"user_text": projected.user_text} if projected.user_text is not None else {}))
+            if not isinstance(snapshot, AdmissionSnapshot):
+                raise _LocalProductFault("INVALID_ADMISSION")
+            validate_counts({key: getattr(snapshot, key) for key in (
+                "user_tokens", "current_kv_tokens", "rendered_incremental_tokens",
+                "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens")})
+            if (snapshot.session_id != session_id or snapshot.generation != generation or
+                    not re.fullmatch(r"[0-9a-f]{32}", snapshot.ticket)):
+                raise _LocalProductFault("INVALID_ADMISSION")
+            revision = self._llm.conversation_revision
+            if projected.source == "listen" and snapshot.user_tokens > 32:
+                proof = await self._llm.discard_ticket(snapshot)
+                if (proof.ticket != snapshot.ticket or proof.conversation_revision != revision or
+                        proof.native_render_scrubbed is not True or
+                        proof.ticket_invalidated is not True or
+                        proof.private_input_erased is not True or
+                        proof.conversation_state != "ready"):
+                    raise _LocalProductFault("INVALID_DISCARD_PROOF")
+                return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
+            if revision == 0 and snapshot.runtime_prefill_tokens > 128:
+                raise _LocalProductFault("INVALID_FRESH_PREFILL")
+            if (snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens +
+                    snapshot.output_reserve_tokens > snapshot.engine_context_tokens):
+                if projected.source == "look":
+                    return self._product_fact("這次無法接續原問題，請再說一次。",
+                        "REPLACE_NEXT", identity, outcome="R2")
+                return self._product_fact(_CONTEXT_LIMIT, "REPLACE_NEXT", identity, outcome="R2")
+            streaming = None
+            try:
+                if self._streaming_speak is not None:
+                    streaming = self._streaming_speak.begin_streaming(
+                        session_id, turn_id, f"stream-{generation}-{turn_id}-{correlation_id}")
+
+                async def on_safe_text(sequence: int, fragment: str) -> None:
+                    assert streaming is not None
+                    await streaming.feed(session_id, turn_id, sequence, fragment)
+
+                result = await self._llm.generate(snapshot, projected.text,
+                    on_safe_text=on_safe_text if streaming is not None else None)
+            except ReplaceableGenerationFailure as failed:
+                if (failed.request_terminal_proven is not True or failed.engine_usable is not True or
+                        failed.code not in {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"}):
+                    if streaming is not None:
+                        await streaming.cancel()
+                        self._streaming_speak.release_streaming(streaming)
+                    raise _CausedProductFault("INVALID_TERMINAL_PROOF", failed) from None
+                if streaming is not None:
+                    if streaming.admitted_count:
+                        await streaming.fail()
+                        self._streaming_speak.release_streaming(streaming)
+                    else:
+                        await streaming.close_unused()
+                        self._streaming_speak.release_streaming(streaming)
+                return self._product_fact(_REPLACEABLE, "REPLACE_NEXT", identity, outcome="R2")
+            except BaseException:
+                if streaming is not None:
+                    await streaming.cancel()
+                    self._streaming_speak.release_streaming(streaming)
+                raise
+            if not isinstance(result, ToolSemanticGeneration):
+                raise _LocalProductFault("INVALID_SEMANTIC_RESULT")
+            try:
+                semantic = validate_tool_semantic(result.semantic, source=projected.source,
+                    tool_available=self._capability_of("tool"),
+                    look_available=self._capability_of("look"))
+                if semantic.intent == "tool":
+                    payload = {"name": semantic.tool_name, "arguments": semantic.arguments}
+                    self._action_validator.validate("tool", payload)
+                if not semantic.text.startswith("".join(result.safe_fragments)):
+                    raise ValueError("INVALID_SEMANTIC_PREFIX")
+                if semantic.intent in {"tool", "look"} and result.safe_fragments:
+                    raise ValueError("INVALID_SEMANTIC_PREFIX")
+            except (ValueError, TypeError):
+                if streaming is not None:
+                    await streaming.fail()
+                    self._streaming_speak.release_streaming(streaming)
+                return self._product_fact(_REPLACEABLE, "REPLACE_NEXT", identity, outcome="R2")
+            if streaming is not None:
+                for sequence, fragment in enumerate(result.safe_fragments[streaming.admitted_count:],
+                                                    start=streaming.admitted_count):
+                    await streaming.feed(session_id, turn_id, sequence, fragment)
+                if semantic.text:
+                    await streaming.finish(session_id, turn_id, semantic.text)
+                else:
+                    await streaming.close_unused()
+                    self._streaming_speak.release_streaming(streaming)
+            if semantic.intent == "tool":
+                return self._tool_fact("tool", payload, "KEEP_NEXT", ("listen",), identity)
+            if semantic.intent == "look":
+                return self._tool_fact("speak", {"text": "我看一下。"}, "KEEP_NEXT",
+                    ("look",), identity)
+            return self._product_fact(semantic.text,
+                "END_SESSION" if semantic.intent == "end" else "KEEP_NEXT", identity)
+
+    def _tool_fact(self, kind: str, payload: dict, route: str,
+                   next_perceptions: tuple[str, ...], identity: tuple) -> LLMResponse:
+        self._action_validator.validate(kind, payload)
+        return LLMResponse(action_kind=kind, action_payload=payload,
+            post_action_route=route, next_perceptions=next_perceptions,
+            session_id=identity[0], turn_id=identity[1], correlation_id=identity[2])
+
     async def _product_turn(self, session_id, turn_id, correlation_id,
                             perceptions, pending_ids, generation) -> LLMResponse:
         async with self._llm.serialized():
@@ -359,7 +496,8 @@ class Reasoner(WorkerRuntime):
                 raise _LocalProductFault("INVALID_ADMISSION")
             validate_counts({key:getattr(snapshot,key) for key in (
                 "user_tokens", "current_kv_tokens", "rendered_incremental_tokens",
-                "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens")})
+                "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens")},
+                version=4)
             if (snapshot.session_id != session_id or type(snapshot.generation) is not int or
                     snapshot.generation != generation or type(snapshot.ticket) is not str or
                     re.fullmatch(r"[0-9a-f]{32}", snapshot.ticket) is None or

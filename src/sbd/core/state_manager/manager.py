@@ -67,6 +67,7 @@ class StateManager:
         action_validator: ActionPayloadValidator | None = None,
         wake_ack_seconds: float | None = None,
         perception_timeouts: dict[str, float] | None = None,
+        tool_feedback: dict[str, str] | None = None,
     ) -> None:
         self._bus = bus or EventBus()
         self._workers = workers or WorkerCatalog()
@@ -80,6 +81,8 @@ class StateManager:
             "look": config.perception.timeout_seconds.look,
         } if config else (perception_timeouts or {"listen": 10.0, "read": 0.5, "look": 3.0}))
         self._defaults = config.perception.default_perceptions if config else ("listen",)
+        self._tool_feedback = dict(tool_feedback) if tool_feedback is not None else None
+        self._feedback_display = None
 
         self._state: State = "IDLE"
         self._session: SessionContext | None = None
@@ -121,6 +124,10 @@ class StateManager:
         error = task.exception()
         if error is not None:
             raise error
+
+    def set_feedback_display(self, callback) -> None:
+        """Attach the optional fixed-speech projection owned by SessionDisplay."""
+        self._feedback_display = callback
 
     def set_wake_listener(self, control: WakeListenerControl | None) -> None:
         if self._wake_set or self._stopping or self._shutting_down:
@@ -365,6 +372,7 @@ class StateManager:
             "perception": PerceptionResult,
             "think": LLMResponse,
             "action_primary": ActionCompleted,
+            "action_tool_feedback": ActionCompleted,
             "action_rest": ActionCompleted,
             "error_notice": ActionCompleted,
         }.get(record.phase)
@@ -624,7 +632,7 @@ class StateManager:
         self._correlation_counter += 1
         return self._correlation_counter
 
-    def _start_worker(self, phase: Literal["perception", "think", "action_primary", "action_rest", "error_notice"], kind: str, worker: Any, call: Any) -> None:
+    def _start_worker(self, phase: Literal["perception", "think", "action_primary", "action_tool_feedback", "action_rest", "error_notice"], kind: str, worker: Any, call: Any) -> None:
         assert self._session is not None
         correlation_id = self._next_correlation()
         task = asyncio.create_task(call(correlation_id))
@@ -668,6 +676,9 @@ class StateManager:
             for record in self._in_flight.values()
         ):
             raise StateManagerInvariantViolation("Concurrent Conversation lifecycle operation")
+        session.last_dispatch_status = None
+        session.last_dispatch_generation = None
+        session.look_generation = None
         session.conversation_state = "closing"
         session.model_admission_blocked = True
         correlation_id = self._next_correlation()
@@ -754,10 +765,15 @@ class StateManager:
         turn_id = self._session.turn_id
         results = tuple(self._session.perception_results)
         generation = self._session.conversation_generation
+        if "look" in self._session.selected_perceptions and self._session.look_generation != generation:
+            raise StateManagerInvariantViolation("Look observation reached THINK after generation changed")
+        dispatch_status = (self._session.last_dispatch_status
+            if self._session.last_dispatch_generation == generation else None)
         self._start_worker("think", "reasoner", worker,
             lambda cid: worker.reason(
                 session_id, turn_id, cid, results, pending,
                 conversation_generation=generation,
+                **({"last_dispatch_status": dispatch_status} if self._tool_feedback is not None else {}),
             ))
         if getattr(worker, "_product", False) is True:
             # The real listen-only product owns these inputs from this point.
@@ -793,6 +809,13 @@ class StateManager:
             raise ReasonerContractViolation("unknown post-action route")
         if response.action_kind == "rest" and response.post_action_route != "END_SESSION":
             raise ReasonerContractViolation("rest must end the session")
+        if self._tool_feedback is not None and response.action_kind == "tool":
+            if response.post_action_route != "KEEP_NEXT" or response.next_perceptions != ("listen",):
+                raise ReasonerContractViolation("M5.tool dispatch requires one listen continuation")
+        if self._tool_feedback is not None and response.next_perceptions == ("look",):
+            if response.action_kind != "speak" or response.action_payload != {"text": "我看一下。"}:
+                raise ReasonerContractViolation("M5.tool look preparation is fixed")
+            self._session.look_generation = self._session.conversation_generation
         self._session.post_action_route = response.post_action_route
         if response.post_action_route == "END_SESSION":
             self._session.normalized_next_perceptions = ()
@@ -843,7 +866,8 @@ class StateManager:
             assert self._session is not None
             if len(self._session.perception_results) == len(self._session.selected_perceptions):
                 await self._close_read()
-                local_response = self._m4c_no_input_response()
+                local_response = (self._m5_look_replacement_response()
+                    or self._m5_look_failure_response() or self._m4c_no_input_response())
                 if local_response is None:
                     await self._transition("THINK")
                 else:
@@ -858,6 +882,9 @@ class StateManager:
                     logger.error("Reasoner response rejected: %s", exc)
                     await self._transition("ERROR", trigger="error")
                 else:
+                    if self._tool_feedback is not None:
+                        self._session.last_dispatch_status = None
+                        self._session.last_dispatch_generation = None
                     await self._transition("ACTION")
         elif self._state == "ACTION":
             assert self._session is not None
@@ -875,6 +902,28 @@ class StateManager:
             phase = self._session.action_phase
             self._session.action_completed = None
             self._session.action_phase = "none"
+            if (self._tool_feedback is not None and phase == "primary" and
+                    completed.kind == "tool" and route == "KEEP_NEXT"):
+                status = "ok" if completed.status == "ok" else "error"
+                self._session.last_dispatch_status = status
+                self._session.last_dispatch_generation = self._session.conversation_generation
+                self._session.action_phase = "tool_feedback"
+                speech = self._tool_feedback[status]
+                if self._feedback_display is not None:
+                    self._feedback_display(speech)
+                worker = self._workers.action("speak")
+                session_id = self._session.session_id
+                turn_id = self._session.turn_id
+                self._start_worker("action_tool_feedback", "speak", worker,
+                    lambda cid: worker.execute(session_id, turn_id, cid, {"text": speech}))
+                return
+            if phase == "tool_feedback":
+                if completed.status != "ok":
+                    self._session.last_dispatch_status = None
+                    self._session.last_dispatch_generation = None
+                self._session.selected_perceptions = ("listen",)
+                await self._transition("PERCEPTION")
+                return
             if phase == "post_action_rest" or completed.kind == "rest":
                 await self._begin_convergence("rest")
             elif route == "END_SESSION":
@@ -911,6 +960,36 @@ class StateManager:
                 await self._transition("PERCEPTION")
             else:
                 await self._transition("ERROR", trigger="error")
+
+    def _m5_look_replacement_response(self) -> LLMResponse | None:
+        session = self._session
+        if (self._tool_feedback is None or session is None or
+                session.selected_perceptions != ("look",) or
+                session.look_generation == session.conversation_generation):
+            return None
+        session.perception_results.clear()
+        session.look_generation = None
+        return LLMResponse(
+            action_kind="speak", action_payload={"text": "這次無法接續原問題，請再說一次。"},
+            post_action_route="REPLACE_NEXT", next_perceptions=("listen",),
+            session_id=session.session_id, turn_id=session.turn_id, correlation_id=0,
+        )
+
+    def _m5_look_failure_response(self) -> LLMResponse | None:
+        session = self._session
+        if self._tool_feedback is None or session is None or session.selected_perceptions != ("look",):
+            return None
+        if len(session.perception_results) != 1:
+            return None
+        fact = session.perception_results[0]
+        if fact.status == "ok":
+            return None
+        session.look_generation = None
+        return LLMResponse(
+            action_kind="speak", action_payload={"text": "這次無法取得影像，請再試一次。"},
+            post_action_route="KEEP_NEXT", next_perceptions=("listen",),
+            session_id=session.session_id, turn_id=session.turn_id, correlation_id=0,
+        )
 
     def _m4c_no_input_response(self) -> LLMResponse | None:
         """Resolve product request-level no-input without calling the LLM."""

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sbd.cognition.litert_lm.lock import LLMArtifactLock
+from sbd.cognition.prompt_builder import is_m5_look_wrapper
 from sbd.cognition.llm import (AdmissionSnapshot, TicketDiscardProof, GenerationMetrics, SemanticGeneration,
     LLMBackendError, LLMCleanupUnprovenError, LLMFatalError,
     LLMObservationError, LLMProtocolError as ComponentLLMProtocolError,
@@ -129,8 +130,9 @@ class SubprocessLLMChild:
             "--model", str(self._cfg.model_path),
             "--product-profile", str(self._cfg.product_profile_path),
             "--runtime-root", str(runtime_root),
-            "--artifact-lock", str(self._cfg.artifact_lock_path),
         ]
+        if self._cfg.profile_id == "core-m4b-cognition-001":
+            argv.extend(("--artifact-lock", str(self._cfg.artifact_lock_path)))
         if self._measurement_grant is not None:
             from sbd.cognition.litert_lm.measurement import MeasurementGrant
             require(type(self._measurement_grant) is MeasurementGrant, "measurement")
@@ -201,9 +203,10 @@ class SubprocessLLMChild:
                 await self._cleanup()
                 return
             try:
-                await self.send({"protocol": 3, "op": "SHUTDOWN"})
+                version = 4 if self._cfg.profile_id == "core-m5-tool-001" else 3
+                await self.send({"protocol": version, "op": "SHUTDOWN"})
                 frame = await asyncio.wait_for(self.receive(), self._cfg.child_terminate_timeout_seconds)
-                if frame != {"protocol": 3, "event": "SHUTDOWN_ACK"}:
+                if frame != {"protocol": version, "event": "SHUTDOWN_ACK"}:
                     raise LLMProtocolError(stage="SHUTDOWN", field="$", reason="invalid acknowledgement")
                 await asyncio.wait_for(
                     self._wait_process_group_exit(process, process.pid),
@@ -360,6 +363,7 @@ class LiteRTLMAdapter:
                  observer: Any = None, measurement_grant: Any = None,
                  fault_injector: DeterministicFaultInjector | None = None) -> None:
         self._cfg, self._lock = cfg, lock
+        self._protocol_version = 4 if cfg.profile_id == "core-m5-tool-001" else 3
         self._schedule_recovery, self._wait_recovery = schedule_recovery, wait_recovery
         self._sampler, self._child_factory = resource_sampler, child_factory
         self._observer = observer
@@ -376,7 +380,7 @@ class LiteRTLMAdapter:
         self._clock_mapped = False
         self._child: LLMChild | None = None
         self._issued_tickets: set[str] = set()
-        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._ledger = ProtocolLedger(self._issued_tickets, version=self._protocol_version)
         self._epoch = 0
         self._operation_lock = asyncio.Lock()
         self._lock_owner: asyncio.Task | None = None
@@ -456,7 +460,7 @@ class LiteRTLMAdapter:
         try:
             ready = await asyncio.wait_for(child.start(), self._cfg.child_ready_timeout_seconds)
             parse_ready(ready, expected_identity=self._lock.identity, pid=child.pid, pgid=child.pgid)
-            self._ledger = ProtocolLedger(self._issued_tickets)
+            self._ledger = ProtocolLedger(self._issued_tickets, version=self._protocol_version)
             self._responses = asyncio.Queue()
             # Only rebuild reaches epoch > 1, after old PGID destruction and
             # fully authenticated new READY. Preserve system/non-LLM health
@@ -468,7 +472,8 @@ class LiteRTLMAdapter:
             if self._measurement_grant is not None:
                 self._measurement_grant.check_sample(self._previous_sample)
             if self._observer is not None:
-                self._observer.prompt(self._lock.product_profile)
+                if self._protocol_version == 3:
+                    self._observer.prompt(self._lock.product_profile)
                 self._observer.memory(self._previous_sample, generation=0,
                                       lifecycle_point="engine_ready")
             self.state = AdapterState.ENGINE_READY
@@ -503,7 +508,7 @@ class LiteRTLMAdapter:
             self._responses.put_nowait(LLMBackendError("LLM wire failure"))
 
     def _frame(self, op: str, session_id: str, generation: int, **extra: object) -> dict[str, object]:
-        return {"protocol": 3, "op": op, "request_id": self._ledger.counter + 1,
+        return {"protocol": self._protocol_version, "op": op, "request_id": self._ledger.counter + 1,
                 "session_id": session_id, "generation": generation, **extra}
 
     async def _request(self, frame: Mapping[str, object], on_safe_text=None) -> Mapping[str, object]:
@@ -556,7 +561,7 @@ class LiteRTLMAdapter:
                 if frame["op"] == "DISCARD_TICKET":
                     raise LLMCleanupUnprovenError("ticket disposal timed out") from None
                 if self._ledger.active is not None and not self._ledger.cancelled:
-                    cancel = {"protocol": 3, "op": "CANCEL", "request_id": frame["request_id"]}
+                    cancel = {"protocol": self._protocol_version, "op": "CANCEL", "request_id": frame["request_id"]}
                     self._ledger.command(cancel)
                     await child.send(cancel)
                 event = await asyncio.wait_for(terminal(), self._cfg.terminal_grace_seconds)
@@ -646,12 +651,18 @@ class LiteRTLMAdapter:
             await self.observe_memory("conversation_ready")
             return ConversationReady(session_id, generation)
 
-    async def measure(self, session_id: str, generation: int, text: str) -> AdmissionSnapshot:
+    async def measure(self, session_id: str, generation: int, text: str,
+                      *, user_text: str | None = None) -> AdmissionSnapshot:
         async with self.serialized():
             self.assert_conversation(session_id, generation)
-            event = await self._request(self._frame("MEASURE", session_id, generation,
-                text=text, input_sha256=digest(text), output_reserve_tokens=128))
-            snapshot = AdmissionSnapshot(**{key: event[key] for key in AdmissionSnapshot.__dataclass_fields__})
+            extra = ({"text": text, "input_sha256": digest(text), "output_reserve_tokens": 128}
+                     if self._protocol_version == 3 else
+                     {"text": text, "output_reserve_tokens": 128,
+                      **({"user_text": user_text} if user_text is not None else {})})
+            event = await self._request(self._frame("MEASURE", session_id, generation, **extra))
+            snapshot = AdmissionSnapshot(**{key: ("" if key == "input_sha256" and
+                self._protocol_version == 4 else event[key])
+                for key in AdmissionSnapshot.__dataclass_fields__})
             if self._observer is not None:
                 self._observer.measured(snapshot)
             return snapshot
@@ -662,12 +673,19 @@ class LiteRTLMAdapter:
         async with self.serialized():
             self.assert_conversation(snapshot.session_id, snapshot.generation)
             ticket = self._ledger.ticket
+            keys = tuple(AdmissionSnapshot.__dataclass_fields__)
+            if self._protocol_version == 4:
+                keys = tuple(key for key in keys if key != "input_sha256")
             require(ticket is not None and all(type(getattr(snapshot, key)) is type(ticket[key]) and getattr(snapshot, key) == ticket[key]
-                    for key in AdmissionSnapshot.__dataclass_fields__), "ticket")
-            require(snapshot.input_sha256 == digest(text), "digest")
-            require(snapshot.user_tokens <= 32, "admission")
+                    for key in keys), "ticket")
+            if self._protocol_version == 3:
+                require(snapshot.input_sha256 == digest(text), "digest")
+            else:
+                require(text == self._ledger._measured_text, "ticket")
+            if self._protocol_version == 3 or not is_m5_look_wrapper(text):
+                require(snapshot.user_tokens <= 32, "admission")
             require(snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens + 128 <= 1024, "admission")
-            if self._ledger.revision == 0 and len(text) <= 20:
+            if self._ledger.revision == 0 and (self._protocol_version == 4 or len(text) <= 20):
                 require(snapshot.runtime_prefill_tokens <= 128, "prefill")
             child = self._child
             require(child is not None)
@@ -695,7 +713,8 @@ class LiteRTLMAdapter:
                 raise MemoryAdmissionDenied(speak_allowed=decision is MemoryDecision.NOTICE)
             event = await self._request(self._frame("GENERATE", snapshot.session_id,
                 snapshot.generation, conversation_revision=self._ledger.revision,
-                ticket=snapshot.ticket, text=text, input_sha256=snapshot.input_sha256),
+                ticket=snapshot.ticket, text=text,
+                **({"input_sha256": snapshot.input_sha256} if self._protocol_version == 3 else {})),
                 on_safe_text=on_safe_text)
             await self.observe_memory("post_generate")
             if event["event"] == "REQUEST_FAILED":
@@ -703,8 +722,13 @@ class LiteRTLMAdapter:
                     self._observer.native_timing(llm_terminal=event["terminal_monotonic_ns"],
                                                  clock_mapped=self._clock_mapped)
                 raise ReplaceableGenerationFailure(event["code"])
-            result = SemanticGeneration(event["text"], event["end"], tuple(self._ledger.fragments),
-                GenerationMetrics(**{key: event[key] for key in GenerationMetrics.__dataclass_fields__}))
+            if self._protocol_version == 4:
+                from sbd.cognition.llm import ToolSemanticGeneration
+                result = ToolSemanticGeneration(event["semantic"], tuple(self._ledger.fragments),
+                    GenerationMetrics(**{key: event[key] for key in GenerationMetrics.__dataclass_fields__}))
+            else:
+                result = SemanticGeneration(event["text"], event["end"], tuple(self._ledger.fragments),
+                    GenerationMetrics(**{key: event[key] for key in GenerationMetrics.__dataclass_fields__}))
             self._ledger.fragments.clear()
             if self._observer is not None:
                 self._observer.generated(result.metrics, clock_mapped=self._clock_mapped)
@@ -714,12 +738,18 @@ class LiteRTLMAdapter:
         async with self.serialized():
             self.assert_conversation(snapshot.session_id, snapshot.generation)
             ticket = self._ledger.ticket
+            keys = tuple(AdmissionSnapshot.__dataclass_fields__)
+            if self._protocol_version == 4:
+                keys = tuple(key for key in keys if key != "input_sha256")
             require(ticket is not None and all(type(getattr(snapshot, key)) is type(ticket[key]) and getattr(snapshot, key) == ticket[key]
-                    for key in AdmissionSnapshot.__dataclass_fields__), "ticket")
+                    for key in keys), "ticket")
             event = await self._request(self._frame("DISCARD_TICKET", snapshot.session_id,
                 snapshot.generation, conversation_revision=self._ledger.revision,
-                ticket=snapshot.ticket, input_sha256=snapshot.input_sha256))
-            return TicketDiscardProof(**{key: event[key] for key in TicketDiscardProof.__dataclass_fields__})
+                ticket=snapshot.ticket,
+                **({"input_sha256": snapshot.input_sha256} if self._protocol_version == 3 else {})))
+            return TicketDiscardProof(**{key: ("" if key == "input_sha256" and
+                self._protocol_version == 4 else event[key])
+                for key in TicketDiscardProof.__dataclass_fields__})
 
     async def close_conversation(self, session_id: str, generation: int, reason: str):
         from sbd.core.state_manager.ports import ConversationCloseProof
@@ -776,7 +806,7 @@ class LiteRTLMAdapter:
             await asyncio.shield(self._operation_done.wait())
             return
         if not self._ledger.cancelled:
-            frame = {"protocol": 3, "op": "CANCEL", "request_id": active["request_id"]}
+            frame = {"protocol": self._protocol_version, "op": "CANCEL", "request_id": active["request_id"]}
             self._ledger.command(frame)
             await child.send(frame)
         await asyncio.shield(self._operation_done.wait())
@@ -805,7 +835,7 @@ class LiteRTLMAdapter:
         if child is not None:
             await child.force_terminate()
             self.last_termination_evidence = getattr(child, "termination_evidence", None)
-        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._ledger = ProtocolLedger(self._issued_tickets, version=self._protocol_version)
         self._ledger.state = "DESTROYED"
         while not self._responses.empty():
             self._responses.get_nowait()
@@ -837,7 +867,7 @@ class LiteRTLMAdapter:
         if child is not None:
             await child.stop()
         self._child = None
-        self._ledger = ProtocolLedger(self._issued_tickets)
+        self._ledger = ProtocolLedger(self._issued_tickets, version=self._protocol_version)
         self._pending = self._closed_proof = self._recovery_ticket = None
         self._authorization = None
         self.state = AdapterState.STOPPED
@@ -855,9 +885,8 @@ class LiteRTLMAdapter:
         child = self._child
         pid = getattr(child, "pid", None)
         pgid = getattr(child, "pgid", None)
-        return {
+        identity = {
             "backend": "litert_lm",
-            "artifact_lock_sha256": self._lock.digest,
             "pid": int(pid) if type(pid) is int else 0,
             "pgid": int(pgid) if type(pgid) is int else 0,
             "live": (
@@ -869,3 +898,6 @@ class LiteRTLMAdapter:
                 and self.state not in {AdapterState.STOPPED, AdapterState.DESTROYED}
             ),
         }
+        if self._protocol_version == 3:
+            identity["artifact_lock_sha256"] = self._lock.digest
+        return identity

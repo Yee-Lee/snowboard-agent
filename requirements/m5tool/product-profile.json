@@ -1,0 +1,20 @@
+{
+  "profile_id": "core-m5-tool-001",
+  "profile_stage": "template",
+  "protocol_name": "snowboard.llm/4",
+  "response_schema_locator": "requirements/m5tool/semantic-output-v1.schema.json",
+  "automatic_tool_calling": false,
+  "enabled_intents": ["speak", "end", "tool", "look"],
+  "tool_names": ["mock.send"],
+  "external_message_enabled": false,
+  "voice_wake_enabled": false,
+  "prompt_tokens": null,
+  "max_output_tokens": 128,
+  "engine_context_tokens": 1024,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "threads": 4,
+  "min_mem_available_generate_bytes": null,
+  "min_mem_available_speak_bytes": null,
+  "network": "disabled"
+}

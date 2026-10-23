@@ -1,9 +1,8 @@
 # M5.tool — 有限能力選擇、mock 派發與 Look 接續
 
 Owner: Designer。產品決策來源：[M5](../milestones/M5.md)；正式開發 entry 見
-[current](../status/current.md)。本設計已具體化；涉及 architecture 的新條文等待
-[AR_impl_M5_TOOL_I](../reviews/AR_impl_M5_TOOL_I.md) 落入 authority 後交 Test Spec。
-不把本文件當作已取得架構裁定或執行 PASS。
+[current](../status/current.md)。架構中的有限語意與 tool feedback 契約已落定；
+本設計交 Tester 建立 M5.tool Test Spec，不把文件完成當作執行 PASS。
 
 ## 1. 價值、基礎與範圍
 
@@ -30,6 +29,15 @@ MQTT broker／read 整合、真 YOLO 與 VLM 留後續階段。
 
 不讓模型輸出 Core session／turn／route、camera 資源名稱或任意 perception 清單。
 Look 不是 ToolRegistry handler；兩者共用能力選擇，執行語意分開。
+
+本設計以三個平行名稱描述產品路徑；名稱不是模型輸出欄位，模型仍依上表輸出
+`speak | end | tool | look`：
+
+- **answering（基本回答路徑）**：模型輸出 `speak` 或 `end`，Core 依既有回答／結束 route 執行。
+- **dispatching（命令派發路徑）**：模型輸出 `tool` 意圖、已註冊的工具名稱與參數；Reasoner 驗證並映射為 Core tool action，ToolRegistry 交由 handler 執行。M5.tool 的 handler 是 `mock.send`，派發結果只觸發固定 feedback，然後進下一輪 `listen`。M5 MQTT 將在此路徑接入真實 MQTT handler；外部業務 response 仍須另經 buffer／`read`，不作為 handler return。
+- **observing（觀察接續路徑）**：模型只輸出 `look` 意圖；Reasoner 映射為固定準備語的 Speak action，完成後進下一個 look-only perception turn。Look worker 取得 Camera／Vision 結果，再交原 Conversation 回答先前問題。Look 不經 ToolRegistry，也不以工具派發結果代表視覺觀察。
+
+三條路徑都採「模型輸出有限意圖、Core 驗證與執行」；不要求模型產生 SDK 原生 function call，且 `automatic_tool_calling=false`。這是 M5.tool 的產品設計選擇；prompt 長度、延遲與真實模型選擇準確度仍須在 Pi 上觀察，不能僅由輸出形式推定。
 
 ### 2.2 結構化模型輸出
 
@@ -91,7 +99,7 @@ Composition root 對新 profile 注入固定 tool-feedback policy；SM 不自行
 或猜測 profile。SessionContext.action_phase 增加 `tool_feedback`，in-flight phase 增加
 `action_tool_feedback`；仍使用既有 ActionCompleted，不增加 Event Bus event 型別。
 
-**SM 新增有限的 `tool_feedback` ACTION phase（待 Architect 採用）：**
+**SM 新增有限的 `tool_feedback` ACTION phase：**
 
 1. Tool Fact＋task done join 後移除 primary record。
 2. 對目前 profile 的 tool + KEEP_NEXT，建立唯一 Speak feedback record，使用不同 correlation；
@@ -143,9 +151,11 @@ listen 的 20 字或 32-token 限制；Look 輪的 `user_tokens` 僅供觀測。
 超長不截出可能失真的半份資料，回可用的輸入過長回饋並 listen。
 所有來源仍做 exact native rendered-token admission；1024 context、128 output reserve
 先沿用，並以 `current_kv_tokens + rendered_incremental_tokens + output_reserve_tokens
-<= engine_context_tokens` 判斷。M4B 的首輪 `runtime_prefill_tokens <= 128` E1 常數
-只適用 M4 profile，M5.tool 不繼承；實際無法容納最小合法 prompt／fixture 時回報
-設計缺口，不假裝測過或默默加大。
+<= engine_context_tokens` 判斷。M5.tool 保留 M4B 的新 Conversation 首次推論
+`runtime_prefill_tokens <= 128` 產品限制；`conversation_revision == 0` 且量得
+`>128` 時，在 GENERATE 前走 E1，不把它當作使用者輸入過長或 context replacement。
+後續 revision 不套此首輪限制，仍須通過完整 context admission。實際 prompt 若無法
+容納首次合法 listen，回 Designer 修正 profile，不假裝測過或默默加大。
 
 Look 成功輸入格式固定為 application-owned wrapper，facts 以 JSON string encoding 保留邊界：
 
@@ -222,6 +232,15 @@ SCN-PERCEPTION 的產品顯示政策，與 log 隱私分開。
 在既定 context／output reserve 內無法容納，回 Designer 修正此 profile 的具體契約；
 不能以手寫關鍵字分類、另一模型或默默縮減既有對話上下文宣稱 M5.tool 通過。
 
+新能力 prompt 可能改變首輪 prefill 與反應時間。在 Pi 上以實際產品路徑記錄新
+Conversation 首次推論及同 Conversation 後續推論的 `runtime_prefill_tokens`、首個安全文字
+或語意 terminal 等待時間；分別看 answering、dispatching、observing 的直接影響。
+先以固定、精簡的完整能力 prompt 嘗試首輪 `<=128`。若無法兼顧合法首輪與真實模型
+選擇品質，回 Designer 裁定縮減內容或分 turn 啟用方案；後者目前不是已核准的實作
+捷徑，須先定義首輪送訊／Look 要求的行為，並驗證指令加入同一 Conversation 的方式、
+上下文歸屬與整體等待時間。第二 turn 的低 prefill 不能代替首輪體驗證據，也不能以
+額外隱藏推論或假 prewarm 繞過既有生命週期。
+
 | 直接影響面 | 所需改動 |
 | :--- | :--- |
 | cognition/prompt_builder、semantic、reasoner | 新 profile prompt／schema、listen/look projector、intent validation、固定映射、last dispatch notice |
@@ -233,4 +252,4 @@ SCN-PERCEPTION 的產品顯示政策，與 log 隱私分開。
 
 Developer 不重做已接受的 subsystem qualification，只對上列變動及其直接回歸驗證。
 需求與語意 rubric 見 M5 §2.3；Tester 擁有 Test ID／命令／fixture 的正式規格，不由 Designer
-冒寫執行 PASS。Architect delta 落定後即可進 Test Spec；不要求先完成 MQTT 或 VLM 研究。
+冒寫執行 PASS。架構 delta 已落定，可進 Test Spec；不要求先完成 MQTT 或 VLM 研究。

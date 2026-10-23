@@ -81,6 +81,13 @@ class SemanticGeneration:
     metrics: GenerationMetrics
 
 
+@dataclass(frozen=True, slots=True)
+class ToolSemanticGeneration:
+    semantic: object
+    safe_fragments: tuple[str, ...]
+    metrics: GenerationMetrics
+
+
 class LLMFatalError(RuntimeError):
     """Unsafe backend/protocol failure; never a retry Fact."""
 

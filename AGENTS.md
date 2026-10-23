@@ -39,7 +39,7 @@
 # Git safety
 
 - 不得直接修改或存取 `.git/` 內部；版本控制一律使用標準 `git` 命令。
-- 準備任何 commit 前，先讀 `docs/roles/git.md`。向 USER 展示完整 subject、60–100 words
+- 準備任何 commit 前，先讀 `docs/roles/git.md`。向 USER 展示完整 subject、60–70 words
   的英文條列 body 與待提交檔案，取得明確同意後才可 commit。
 - 除前述純文件例外外，只有 `Verify` 已在 Pi 對相同內容完成且證據可定位時，才可準備 commit。
 - Candidate 一經 push、送驗或正式驗證即不可改寫；Reject 後只能 append fix。

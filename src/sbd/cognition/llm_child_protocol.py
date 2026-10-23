@@ -18,6 +18,7 @@ FAILURE_CODES = {"INVALID_SEMANTIC", "GENERATION_REJECTED", "GENERATION_TIMEOUT"
 COUNTS = {"user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens", "output_reserve_tokens", "engine_context_tokens"}
 METRICS = set(GenerationMetrics.__dataclass_fields__)
 READY_FIELDS = {"protocol_name", "pid", "pgid", "candidate_id", "pairing_revision", "profile_id", "profile_stage", "profile_sha256", "runtime_sha256", "native_sha256", "model_sha256", "prompt_sha256", "response_schema_locator", "response_schema_sha256", "prompt_tokens", "max_output_tokens", "engine_context_tokens", "temperature", "top_p", "threads", "min_mem_available_generate_bytes", "min_mem_available_speak_bytes", "conversation_state", "network"}
+V4_READY_FIELDS = READY_FIELDS - {"profile_sha256", "runtime_sha256", "native_sha256", "model_sha256", "prompt_sha256", "response_schema_sha256"}
 COMMON = {"protocol", "request_id", "session_id", "generation"}
 
 
@@ -78,7 +79,7 @@ def decode_frame(raw: bytes) -> dict[str, object]:
                            parse_constant=lambda _: (_ for _ in ()).throw(LLMProtocolError()))
     except (UnicodeError, ValueError, RecursionError):
         raise LLMProtocolError(field="frame") from None
-    require(type(value) is dict and type(value.get("protocol")) is int and value["protocol"] == 3, "protocol")
+    require(type(value) is dict and type(value.get("protocol")) is int and value["protocol"] in {3, 4}, "protocol")
     return value
 
 
@@ -101,21 +102,24 @@ async def read_frame(reader: asyncio.StreamReader) -> dict[str, object]:
 def parse_ready(value: Mapping[str, object], *, expected_identity: LLMReadyIdentity | Mapping[str, object], pid: int, pgid: int) -> None:
     expected = dict(expected_identity.fields if isinstance(expected_identity, LLMReadyIdentity) else expected_identity)
     expected.update(pid=pid, pgid=pgid)
-    exact(expected, READY_FIELDS)
-    exact(value, READY_FIELDS | {"protocol", "event"})
-    require(value["protocol"] == 3 and type(value["protocol"]) is int and value["event"] == "READY")
+    version = 4 if expected.get("protocol_name") == "snowboard.llm/4" else 3
+    fields = V4_READY_FIELDS if version == 4 else READY_FIELDS
+    exact(expected, fields)
+    exact(value, fields | {"protocol", "event"})
+    require(value["protocol"] == version and type(value["protocol"]) is int and value["event"] == "READY")
     require(pid == pgid and type(pid) is int and pid > 0, "pid")
     for key, item in expected.items():
         require(type(value[key]) is type(item) and value[key] == item, "identity")
-    require(value["protocol_name"] == PROTOCOL_VERSION and value["conversation_state"] == "none" and value["network"] == "disabled")
+    require(value["protocol_name"] == f"snowboard.llm/{version}" and value["conversation_state"] == "none" and value["network"] == "disabled")
 
 
-def validate_counts(value: Mapping[str, object]) -> None:
+def validate_counts(value: Mapping[str, object], *, version: int = 3) -> None:
     for name in COUNTS:
         uint(value[name])
     require(value["output_reserve_tokens"] == 128 and value["engine_context_tokens"] == 1024, "counts")
     require(value["current_kv_tokens"] <= 1024, "counts")
-    require(value["user_tokens"] <= value["rendered_incremental_tokens"], "counts")
+    if version == 3:
+        require(value["user_tokens"] <= value["rendered_incremental_tokens"], "counts")
     delta = value["runtime_prefill_tokens"] - value["rendered_incremental_tokens"]
     # The pinned LiteRT runtime reports the fresh conversation's start token
     # in native prefill, while render_message_to_string contains message bytes
@@ -124,8 +128,10 @@ def validate_counts(value: Mapping[str, object]) -> None:
 
 
 class ProtocolLedger:
-    """One claim/request/ticket. Private input text is never copied into the ledger."""
-    def __init__(self, issued_tickets: set[str] | None = None) -> None:
+    """One claim/request/ticket; v4 retains exact private text until disposal."""
+    def __init__(self, issued_tickets: set[str] | None = None, *, version: int = 3) -> None:
+        require(version in {3, 4}, "protocol")
+        self.version = version
         self.state = "ENGINE_READY"
         self.claim: tuple[str, int] | None = None
         self.revision = 0
@@ -138,9 +144,10 @@ class ProtocolLedger:
         self.fragments: list[str] = []
         self.fragment_times: list[int] = []
         self.issued_tickets = issued_tickets if issued_tickets is not None else set()
+        self._measured_text: str | None = None
 
     def command(self, frame: Mapping[str, object]) -> None:
-        require(type(frame.get("protocol")) is int and frame["protocol"] == 3)
+        require(type(frame.get("protocol")) is int and frame["protocol"] == self.version)
         op = frame.get("op")
         if op == "CANCEL":
             exact(frame, {"protocol", "op", "request_id"})
@@ -156,7 +163,15 @@ class ProtocolLedger:
         require(self.active is None, "order")
         allowed = {"ENGINE_READY": {"OPEN"}, "CONVERSATION_READY": {"MEASURE", "CLOSE"}, "MEASURED": {"DISCARD_TICKET", "GENERATE", "CLOSE"}, "TAINTED": {"CLOSE"}}
         require(type(op) is str and op in allowed.get(self.state, set()), "state")
-        extra = {"OPEN": set(), "MEASURE": {"text", "input_sha256", "output_reserve_tokens"}, "GENERATE": {"text", "input_sha256", "conversation_revision", "ticket"}, "DISCARD_TICKET": {"input_sha256", "conversation_revision", "ticket"}, "CLOSE": {"reason"}}[op]
+        if self.version == 4:
+            extra = {"OPEN": set(), "MEASURE": {"text", "output_reserve_tokens"},
+                "GENERATE": {"text", "conversation_revision", "ticket"},
+                "DISCARD_TICKET": {"conversation_revision", "ticket"},
+                "CLOSE": {"reason"}}[op]
+            if op == "MEASURE" and "user_text" in frame:
+                extra.add("user_text")
+        else:
+            extra = {"OPEN": set(), "MEASURE": {"text", "input_sha256", "output_reserve_tokens"}, "GENERATE": {"text", "input_sha256", "conversation_revision", "ticket"}, "DISCARD_TICKET": {"input_sha256", "conversation_revision", "ticket"}, "CLOSE": {"reason"}}[op]
         exact(frame, COMMON | {"op"} | extra)
         require(uint(frame["request_id"]) == self.counter + 1, "request_id")
         require(type(frame["session_id"]) is str and 0 < len(frame["session_id"]) <= 128, "identity")
@@ -164,19 +179,36 @@ class ProtocolLedger:
         identity = (frame["session_id"], frame["generation"])
         if op != "OPEN":
             require(identity == self.claim, "identity")
-        if op in {"MEASURE", "GENERATE"}:
+        if op in {"MEASURE", "GENERATE"} and self.version == 3:
             require(frame["input_sha256"] == digest(frame["text"]), "digest")
         if op == "MEASURE":
             require(frame["output_reserve_tokens"] == 128 and type(frame["output_reserve_tokens"]) is int)
+            if self.version == 4:
+                require(type(frame["text"]) is str, "text")
+                if "user_text" in frame:
+                    from sbd.cognition.prompt_builder import parse_m5_listen_wrapper
+                    try:
+                        actual_user = parse_m5_listen_wrapper(frame["text"])
+                    except ValueError:
+                        raise LLMProtocolError(field="user_text") from None
+                    require(actual_user == frame["user_text"], "user_text")
+                self._measured_text = frame["text"]
         if op in {"GENERATE", "DISCARD_TICKET"}:
             require(self.ticket is not None, "ticket")
-            for key in ("ticket", "input_sha256", "conversation_revision", "session_id", "generation"):
+            keys = ("ticket", "conversation_revision", "session_id", "generation")
+            if self.version == 3:
+                keys += ("input_sha256",)
+            for key in keys:
                 require(type(frame[key]) is type(self.ticket[key]) and frame[key] == self.ticket[key], "ticket")
             if op == "GENERATE":
+                if self.version == 4:
+                    require(type(frame["text"]) is str and frame["text"] == self._measured_text, "ticket")
                 self.consumed, self.ticket = self.ticket, None
+                self._measured_text = None
         if op == "CLOSE":
             require(type(frame["reason"]) is str and frame["reason"] in CLOSE_REASONS, "reason")
             self.ticket = self.consumed = None
+            self._measured_text = None
         self.active = {key: item for key, item in frame.items() if key != "text"}
         self.counter += 1
         self.cancelled = self.deferred = False
@@ -185,7 +217,7 @@ class ProtocolLedger:
         self.state = {"OPEN": "OPENING", "MEASURE": "MEASURING", "DISCARD_TICKET": "DISCARDING", "GENERATE": "GENERATING", "CLOSE": "CLOSING"}[op]
 
     def event(self, frame: Mapping[str, object]) -> bool:
-        require(type(frame.get("protocol")) is int and frame["protocol"] == 3)
+        require(type(frame.get("protocol")) is int and frame["protocol"] == self.version)
         event = frame.get("event")
         if event == "SHUTDOWN_ACK":
             exact(frame, {"protocol", "event"})
@@ -221,6 +253,7 @@ class ProtocolLedger:
             wire_state, self.state = states[op]
             require(frame["conversation_state"] == wire_state)
             self.ticket = self.consumed = None
+            self._measured_text = None
         else:
             require(frame.get("session_id") == active["session_id"] and type(frame.get("generation")) is int and frame["generation"] == active["generation"], "identity")
             if event == "OPENED":
@@ -235,30 +268,41 @@ class ProtocolLedger:
                 require(frame["cleanup_proven"] is True and frame["engine_usable"] is True, "proof")
                 self.state = "ENGINE_READY"
             elif event == "MEASURED":
-                exact(frame, base | COUNTS | {"conversation_revision", "input_sha256", "ticket"})
+                exact(frame, base | COUNTS | {"conversation_revision", "ticket"} |
+                      ({"input_sha256"} if self.version == 3 else set()))
                 require(op == "MEASURE" and uint(frame["conversation_revision"]) == self.revision)
-                require(frame["input_sha256"] == active["input_sha256"])
+                if self.version == 3:
+                    require(frame["input_sha256"] == active["input_sha256"])
                 require(type(frame["ticket"]) is str and re.fullmatch(r"[0-9a-f]{32}", frame["ticket"]) is not None, "ticket")
                 require(frame["ticket"] not in self.issued_tickets, "ticket")
-                validate_counts(frame)
+                validate_counts(frame, version=self.version)
                 self.issued_tickets.add(frame["ticket"])
                 self.ticket = dict(frame)
                 self.state = "MEASURED"
             elif event == "TICKET_DISCARDED":
-                exact(frame, base | {"conversation_revision", "ticket", "input_sha256", "native_render_scrubbed", "ticket_invalidated", "private_input_erased", "conversation_state"})
+                exact(frame, base | {"conversation_revision", "ticket", "native_render_scrubbed", "ticket_invalidated", "private_input_erased", "conversation_state"} |
+                      ({"input_sha256"} if self.version == 3 else set()))
                 require(op == "DISCARD_TICKET", "state")
-                for key in ("conversation_revision", "ticket", "input_sha256"):
+                for key in (("conversation_revision", "ticket", "input_sha256") if self.version == 3 else ("conversation_revision", "ticket")):
                     require(type(frame[key]) is type(active[key]) and frame[key] == active[key], "ticket")
                 require(all(frame[key] is True for key in ("native_render_scrubbed", "ticket_invalidated", "private_input_erased")), "proof")
                 require(frame["conversation_state"] == "ready", "state")
                 self.ticket = self.consumed = None
+                self._measured_text = None
                 self.state = "CONVERSATION_READY"
             elif event == "RESULT":
-                exact(frame, base | METRICS | {"conversation_revision", "text", "end"})
+                exact(frame, base | METRICS | {"conversation_revision"} |
+                      ({"text", "end"} if self.version == 3 else {"semantic"}))
                 require(op == "GENERATE" and uint(frame["conversation_revision"]) == self.revision + 1)
-                from sbd.cognition.semantic import validate_semantic
-                result = validate_semantic({"text": frame["text"], "end": frame["end"]})
-                require(result.text == frame["text"] and result.text.startswith("".join(self.fragments)), "prefix")
+                if self.version == 3:
+                    from sbd.cognition.semantic import validate_semantic
+                    result = validate_semantic({"text": frame["text"], "end": frame["end"]})
+                    require(result.text == frame["text"] and result.text.startswith("".join(self.fragments)), "prefix")
+                else:
+                    from sbd.cognition.semantic import validate_tool_semantic
+                    result = validate_tool_semantic(frame["semantic"])
+                    require(result.text.startswith("".join(self.fragments)), "prefix")
+                    require(result.intent in {"speak", "end"} or not self.fragments, "prefix")
                 for name in METRICS - {"first_safe_text_monotonic_ns"}:
                     uint(frame[name])
                 require(self.consumed is not None)

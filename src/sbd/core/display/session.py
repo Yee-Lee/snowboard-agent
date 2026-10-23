@@ -19,6 +19,7 @@ class SessionDisplay:
 
     async def start(self) -> None:
         self._arbiter.write_main(None)
+        self._state_manager.set_feedback_display(self._show_feedback)
         self._subscriptions = [
             self._bus.subscribe(
                 StateChanged, self._on_state_changed,
@@ -35,6 +36,7 @@ class SessionDisplay:
         ]
 
     async def stop(self) -> None:
+        self._state_manager.set_feedback_display(None)
         for subscription in self._subscriptions:
             self._bus.unsubscribe(subscription)
         self._subscriptions.clear()
@@ -61,6 +63,8 @@ class SessionDisplay:
         if session is None:
             return
         text = None
+        if event.new == "PERCEPTION" and session.selected_perceptions == ("look",):
+            text = "查看中"
         if event.new == "THINK":
             for fact in reversed(session.perception_results):
                 if fact.kind == "listen" and fact.status == "ok" and type(fact.text) is str:
@@ -69,10 +73,18 @@ class SessionDisplay:
                         text = candidate
                         break
         elif event.new == "ACTION" and session.llm_response is not None:
+            if session.llm_response.action_kind == "tool":
+                text = "傳送中"
             candidate = session.llm_response.action_payload.get("text")
             if type(candidate) is str and candidate.strip():
                 text = candidate
         if text is not None:
+            self._arbiter.write_main(DisplayHint("main.text", {"text": text}))
+
+    def _show_feedback(self, text: str) -> None:
+        if (self._state_manager.state == "ACTION" and
+                self._state_manager._session is not None and
+                self._state_manager._session.action_phase == "tool_feedback"):
             self._arbiter.write_main(DisplayHint("main.text", {"text": text}))
 
 

@@ -22,5 +22,8 @@ class SessionContext:
     model_admission_blocked: bool = True
     post_action_route: PostActionRoute | None = None
     normalized_next_perceptions: tuple[str, ...] = ()
-    action_phase: Literal["none", "primary", "post_action_rest"] = "none"
+    action_phase: Literal["none", "primary", "tool_feedback", "post_action_rest"] = "none"
     no_input_streak: int = 0
+    last_dispatch_status: Literal["ok", "error"] | None = None
+    last_dispatch_generation: int | None = None
+    look_generation: int | None = None

@@ -8,6 +8,7 @@ from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.rest import Rest
 from sbd.action.speak import Speak, make_tts_adapter
 from sbd.action.tool import Tool, ToolRegistry
+from sbd.action.tool.mock_send import MockSend
 from sbd.cognition.llm import (
     LLMGeneration,
     LLMGenerationMetrics,
@@ -15,7 +16,7 @@ from sbd.cognition.llm import (
     LLMResourceSampler,
 )
 from sbd.cognition.factory import make_llm_adapter, _validate_shape as validate_llm_config_shape
-from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector
+from sbd.cognition.prompt_builder import PromptBuilder, ListenProjector, ToolProjector
 from sbd.cognition.reasoner import Reasoner
 from sbd.cognition.observability import CognitionObserver
 from sbd.core.audio import (
@@ -113,6 +114,7 @@ class M2Composition:
         if self._registered:
             raise RuntimeError("M2 composition may only be registered once")
         real = config.cognition.llm.driver == "litert_lm"
+        m5 = real and config.cognition.llm.profile_id == "core-m5-tool-001"
         if real:
             validate_config(config)
         else:
@@ -158,6 +160,11 @@ class M2Composition:
             observer = None
             llm = MockLLMEngineAdapter(self.llm_outcomes)
             conversation_control = _DeterministicConversationLifecycle()
+        if m5:
+            if self.tools.contains("mock.send") or self.tools.schemas():
+                raise ConfigValueError("M5.tool requires only its fixed mock.send tool")
+            self.mock_send = MockSend()
+            self.tools.register(self.mock_send.registered_tool())
         self._registered = True
         self.tools.seal()
         self._cognition_observer = observer
@@ -324,7 +331,8 @@ class M2Composition:
             dependencies=("backend.cognition.reasoner.llm",),
             factory=lambda resolver: Reasoner(
                 resolver.require("backend.cognition.reasoner.llm"),
-                ListenProjector() if real else PromptBuilder(self.tools.schemas()),
+                (ToolProjector() if m5 else ListenProjector()) if real
+                else PromptBuilder(self.tools.schemas()),
                 bus,
                 rm.reasoner_capability_of,
                 self.action_validator,

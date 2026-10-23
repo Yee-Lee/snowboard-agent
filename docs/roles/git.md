@@ -27,7 +27,7 @@ digest、測試命令與結果。Pi 未執行、未完整通過、evidence 無�
   `docs[M4A]: handoff — archive accepted Audio input`。
 - work type：`feat`、`fix`、`docs`、`test`、`refactor`、`chore`。
 - 外部往返的 title category 可用 `handoff`、`ack`、`review`、`response`、`plan`、`evidence`。
-- Body：英文 `-` 條列，合計 60–100 words；說明修改與原因，必要時引用 Handoff/Finding ID。
+- Body：英文 `-` 條列，合計 60–70 words；說明修改與原因，必要時引用 Handoff/Finding ID。
 - 依實質內容選 work type；不得用 `docs` 隱藏 source、test、dependency、config 或 runner 變更。
 
 Commit 前人工檢查 `git diff --cached`，確認不含 credential、私人家目錄、host identity、

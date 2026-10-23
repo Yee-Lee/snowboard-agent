@@ -43,14 +43,16 @@ def _validate_shape(cfg: LLMConfig) -> None:
         return
     if cfg.driver != "litert_lm":
         raise ConfigValueError("cognition.llm.driver is unsupported")
-    for field in (
-        "runtime_python", "model_path", "product_profile_path", "artifact_lock_path",
-    ):
+    if cfg.profile_id not in {"core-m4b-cognition-001", "core-m5-tool-001"}:
+        raise ConfigValueError("cognition.llm.profile_id mismatch")
+    for field in (("runtime_python", "model_path", "product_profile_path")
+                  if cfg.profile_id == "core-m5-tool-001" else
+                  ("runtime_python", "model_path", "product_profile_path", "artifact_lock_path")):
         value = getattr(cfg, field)
         if not isinstance(value, Path) or not value.is_absolute() or not value.is_file():
             raise ConfigValueError(f"cognition.llm.{field} must be an existing absolute file")
-    if cfg.profile_id != "core-m4b-cognition-001":
-        raise ConfigValueError("cognition.llm.profile_id mismatch")
+    if cfg.profile_id == "core-m5-tool-001" and cfg.artifact_lock_path is not None:
+        raise ConfigValueError("M5.tool must not select the v3 artifact lock")
 
 
 def _mock_generation() -> LLMGeneration:
@@ -79,12 +81,18 @@ def make_llm_adapter(
             not callable(getattr(resource_sampler, "sample", None))):
         raise ConfigValueError("real LLM recovery/resource ports are invalid")
 
-    assert cfg.artifact_lock_path is not None
-    repo_root = cfg.artifact_lock_path.resolve().parents[2]
-    lock = LLMArtifactLock.load(cfg.artifact_lock_path, repo_root=repo_root)
-    lock.validate_runtime_paths(cfg)
-    profile = load_product_profile(cfg.product_profile_path)
-    lock = replace(lock, identity=lock.ready_identity(profile), product_profile=profile)
+    if cfg.profile_id == "core-m5-tool-001":
+        from sbd.cognition.litert_lm.m5_profile import M5RuntimeFacts
+        assert cfg.product_profile_path is not None
+        lock = M5RuntimeFacts.load(cfg.product_profile_path)
+        lock.validate_runtime_paths(cfg)
+    else:
+        assert cfg.artifact_lock_path is not None
+        repo_root = cfg.artifact_lock_path.resolve().parents[2]
+        lock = LLMArtifactLock.load(cfg.artifact_lock_path, repo_root=repo_root)
+        lock.validate_runtime_paths(cfg)
+        profile = load_product_profile(cfg.product_profile_path)
+        lock = replace(lock, identity=lock.ready_identity(profile), product_profile=profile)
 
     # The internal adapter module is pure Python. The selected native runtime is
     # imported only by the isolated worker after spawn and identity checks.

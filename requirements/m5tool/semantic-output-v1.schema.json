@@ -1,0 +1,122 @@
+{
+  "type": "object",
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "speak",
+        "end",
+        "tool",
+        "look"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "tool_name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "arguments": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "intent",
+    "text",
+    "tool_name",
+    "arguments"
+  ],
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "properties": {
+        "intent": {
+          "const": "speak"
+        },
+        "text": {
+          "minLength": 1
+        },
+        "tool_name": {
+          "const": ""
+        },
+        "arguments": {
+          "properties": {
+            "message": {
+              "const": ""
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "intent": {
+          "const": "end"
+        },
+        "text": {},
+        "tool_name": {
+          "const": ""
+        },
+        "arguments": {
+          "properties": {
+            "message": {
+              "const": ""
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "intent": {
+          "const": "tool"
+        },
+        "text": {
+          "const": ""
+        },
+        "tool_name": {
+          "const": "mock.send"
+        },
+        "arguments": {
+          "properties": {
+            "message": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "intent": {
+          "const": "look"
+        },
+        "text": {
+          "const": ""
+        },
+        "tool_name": {
+          "const": ""
+        },
+        "arguments": {
+          "properties": {
+            "message": {
+              "const": ""
+            }
+          }
+        }
+      }
+    }
+  ]
+}

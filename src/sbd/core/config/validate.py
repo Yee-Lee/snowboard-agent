@@ -297,23 +297,39 @@ def _validate_m4b_llm(config) -> None:
         if any(value is not None for value in real_fields):
             raise ConfigValueError(f"{path} mock cannot contain real-only fields")
     elif llm.driver == "litert_lm":
-        for field in (
-            "runtime_python", "model_path", "product_profile_path",
-            "artifact_lock_path",
-        ):
+        m5 = llm.profile_id == "core-m5-tool-001"
+        for field in (("runtime_python", "model_path", "product_profile_path") if m5 else
+                      ("runtime_python", "model_path", "product_profile_path", "artifact_lock_path")):
             _required_absolute_path(getattr(llm, field), f"{path}.{field}")
-        if llm.profile_id != "core-m4b-cognition-001":
-            raise ConfigValueError(
-                f"{path}.profile_id must be 'core-m4b-cognition-001'"
-            )
-        if (config.perception.read.enabled or config.perception.look.enabled or
-                config.action.tool.enabled or config.input_sources.external_message.policy.enabled):
-            raise ConfigValueError("real M4B requires listen-only capabilities")
-        from sbd.cognition.litert_lm.lock import LLMLockError, load_product_profile
-        try:
-            load_product_profile(llm.product_profile_path)
-        except LLMLockError:
-            raise ConfigValueError("cognition.llm.product_profile_path invalid profile") from None
+        if m5:
+            if (llm.artifact_lock_path is not None or
+                    not config.perception.listen.enabled or not config.perception.look.enabled or
+                    not config.action.speak.enabled or not config.action.tool.enabled or
+                    config.perception.read.enabled or
+                    config.input_sources.external_message.policy.enabled or
+                    config.input_sources.voice_wake.policy.enabled or
+                    config.core.audio.driver != "alsa" or
+                    config.perception.listen.adapter.driver != "whispercpp" or
+                    config.action.tts.driver != "sherpa_matcha" or
+                    config.core.camera.driver != "mock" or
+                    config.perception.look.adapter.driver != "mock"):
+                raise ConfigValueError("M5.tool capability combination is invalid")
+            from sbd.cognition.litert_lm.m5_profile import M5ProfileError, load_m5_profile
+            try:
+                load_m5_profile(llm.product_profile_path)
+            except M5ProfileError:
+                raise ConfigValueError("cognition.llm.product_profile_path invalid M5 profile") from None
+        elif llm.profile_id == "core-m4b-cognition-001":
+            if (config.perception.read.enabled or config.perception.look.enabled or
+                    config.action.tool.enabled or config.input_sources.external_message.policy.enabled):
+                raise ConfigValueError("real M4B requires listen-only capabilities")
+            from sbd.cognition.litert_lm.lock import LLMLockError, load_product_profile
+            try:
+                load_product_profile(llm.product_profile_path)
+            except LLMLockError:
+                raise ConfigValueError("cognition.llm.product_profile_path invalid profile") from None
+        else:
+            raise ConfigValueError(f"{path}.profile_id unsupported")
     else:
         raise ConfigValueError(f"{path}.driver is unsupported: {llm.driver}")
 

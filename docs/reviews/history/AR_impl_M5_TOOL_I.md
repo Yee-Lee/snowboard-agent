@@ -1,7 +1,7 @@
 ---
 requestor: Designer
 owner: Architect
-status: Open
+status: Resolved
 ---
 
 # AR_impl_M5_TOOL_I — 有限工具意圖與派發回饋
@@ -10,8 +10,8 @@ status: Open
 
 USER 已確認 M5.tool（真實 Gemma＋mock）→ M5 MQTT（發送及外部 read）→ M6
 Camera＋YOLO＋結果整理→LLM；Wake 延後，VLM 描述另列 POC，read／Look 交錯不納本輪。
-產品權威見 [M5](../milestones/M5.md)、[M6](../milestones/M6.md)，具體方案見
-[ch_m5_tool](../implement/ch_m5_tool.md)。既有 active review 屬 M4B，無本 scope 的重複 review。
+產品權威見 [M5](../../milestones/M5.md)、[M6](../../milestones/M6.md)，具體方案見
+[ch_m5_tool](../../implement/ch_m5_tool.md)。既有 active review 屬 M4B，無本 scope 的重複 review。
 
 價值：不改記憶架構，以兩條有限路由驗證真實模型工具能力。此單只處理下列實際契約
 矛盾，不新增例行簽核。請 Architect 將 §3 可採用文字落入 arch.md，回覆具體差異後交
@@ -88,6 +88,18 @@ Wake 是可延後能力；目前 M5.tool／M5／M6 不要求 daemon 或麥克風
 
 ## 4. Owner 回覆位置
 
-Architect 在此填入採用／等價替代、arch.md 實際修改節次與未解項目，再按 review-process
-轉換狀態。Designer 不預填 Resolved。完成後 Test Spec 直接承接 M5 §2.3 與 ch_m5_tool，
-不另開一般 review／ACK。若選等價方案，只回改直接受影響的設計，不重新討論已定產品範圍。
+Architect 已採用 B1、B2、A1 的有限契約，修改 `arch.md` §2.6、§2.7、§2.8、
+§4.5、§4.6、§4.8、§5.1、§7.2、§8.3：
+
+- B1：M4 text/end 語意保持；M5 有限 profile 由模型選 tool / Look，Reasoner 驗證後映射
+  Core route。Look 在原 Conversation 的下一個 look-only turn 接續；replacement 放棄舊觀察。
+- B2：`tool + KEEP_NEXT` 的 primary 完成後，SM 留在 ACTION 執行唯一 Speak
+  `tool_feedback` phase，獨立 correlation、Fact / task done join 及既有取消／錯誤收斂；
+  派發 status 只作單輪私有提示，不當成外部業務結果。
+- A1：MQTT 外部 response / 通知經 buffer / read；Look 為 perception，M6 先採 YOLO；
+  通用 query、任意多工具 loop、跨 Session 記憶仍未納入。Wake 不作當前 gate。
+
+未解 blocking 項目：無。M4 既有行為、Session / Conversation ownership、每 turn 一次
+`LLMResponse`、fire-and-forget 與原有收斂分界均保留。Designer 已核對上述修改與
+M5.tool 設計，B1、B2、A1 均已收斂；此單結案，Tester 承接 M5.tool Test Spec，
+不新增一般 review 或 ACK。

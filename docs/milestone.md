@@ -90,8 +90,9 @@ USER 已確認本順序，先前 M6pre／M6E 拆分不再使用。詳細決策�
 - Wake 移出目前工作；BETA 前重新評估是否加入，不預設必做。不要求 wake IPC／模型選型。
 - 本輪不納 read／Look 交錯；跨 Conversation 是明確 error path，不開另一套記憶研究。
 
-M5.tool 的 architecture delta 見 [AR_impl_M5_TOOL_I](reviews/AR_impl_M5_TOOL_I.md)。
-此為實際契約衝突修正，完成後直接交 Test Spec，不增加例行審查 gate。
+M5.tool 的 architecture delta 已落入 `arch.md`；處置見
+[AR_impl_M5_TOOL_I](reviews/history/AR_impl_M5_TOOL_I.md)。直接交 Test Spec，
+不增加例行審查 gate。
 
 ### 1.4 共同完成條件
 

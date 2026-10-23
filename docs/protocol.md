@@ -507,8 +507,11 @@ shutdown、metrics 與 E1/R2 分界；以下列出**完整差異**，其餘 mess
    `user_tokens` 由完整 `text` 量得；Look 的該值只作觀測，不套 32-token 限制。
    v4 不要求 `user_tokens <= rendered_incremental_tokens`，兩者測的是不同輸入。
    Parent／child 只對 listen 原 utterance 套 `user_tokens <= 32`；Look 只驗有界
-   facts 與完整 native context equation。M4B 首輪 `runtime_prefill_tokens <= 128`
-   是舊 profile 規則，v4 不執行該 E1 判定。
+   facts 與完整 native context equation。v4 保留新 Conversation 首次推論的
+   `runtime_prefill_tokens <= 128` 產品限制：`conversation_revision == 0` 且
+   `runtime_prefill_tokens > 128` 時，Parent 在 GENERATE 前依設計 §4.2 走 E1；
+   後續 revision 不套此限制。此值不是 Engine context 上限，也不是 128-token
+   output reserve。
    Ticket 在 child private memory 綁定
    `(session_id, generation, conversation_revision, ticket, 原始 input text)`；
    GENERATE 的 `text` 必須與測量時完全相同，否則 E1。DISCARD_TICKET 仍需相符的
@@ -532,7 +535,7 @@ shutdown、metrics 與 E1/R2 分界；以下列出**完整差異**，其餘 mess
    child configuration；response、外部 MQTT 訊息及 handler return 不在此 IPC 回傳。
 
 對 v4 只驗新增失敗風險：listen status `user_text` 與完整 wrapper 分別計數、Look
-不套 32-token、首輪不套 M4B 的 128-token prefill 常數、實際 text ticket 綁定、
+不套 32-token、首輪 prefill 128／129 邊界及後續 revision 不誤拒、實際 text ticket 綁定、
 semantic exact-key／互斥、tool／look 無 SAFE_TEXT、speak prefix 與 terminal 一致、
 取消後無 late RESULT。既有 v3 lifecycle
 證據保留；受 v4 變動直接影響的 cancel／recovery 仍須驗證。
