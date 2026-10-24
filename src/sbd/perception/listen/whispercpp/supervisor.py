@@ -242,10 +242,11 @@ class Silero:
 
 
 class NativeWorker:
-    def __init__(self, binary: Path, model: Path, work_dir: Path) -> None:
+    def __init__(self, binary: Path, model: Path, work_dir: Path,
+                 initial_prompt: str = PROMPT) -> None:
         self._stderr = (work_dir / "native.stderr").open("xb")
         self._process = subprocess.Popen(
-            [str(binary), "--model", str(model), "--threads", "4", "--decoder", "greedy", "--initial-prompt", PROMPT],
+            [str(binary), "--model", str(model), "--threads", "4", "--decoder", "greedy", "--initial-prompt", initial_prompt],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self._stderr,
             cwd=work_dir, start_new_session=False, bufsize=0,
         )
@@ -326,17 +327,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--runtime-lock", type=Path, required=True)
     parser.add_argument("--profile-sha256", required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
+    parser.add_argument("--initial-prompt", default=None)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    initial_prompt = getattr(args, "initial_prompt", None)
     if os.getpid() != os.getpgrp() or args.work_dir.resolve() != Path.cwd().resolve():
         raise RuntimeError("PROCESS_OWNERSHIP")
-    if hashlib.sha256(PROMPT.encode("utf-8")).hexdigest() != PROMPT_SHA256:
+    if initial_prompt is None and hashlib.sha256(PROMPT.encode("utf-8")).hexdigest() != PROMPT_SHA256:
         raise RuntimeError("PROMPT_IDENTITY")
+    if initial_prompt is not None and initial_prompt != "遠端連線":
+        raise RuntimeError("INITIAL_PROMPT")
     vad = Silero(args.vad_model)
-    native = NativeWorker(args.asr_binary, args.asr_model, args.work_dir)
+    native = (NativeWorker(args.asr_binary, args.asr_model, args.work_dir)
+              if initial_prompt is None else
+              NativeWorker(args.asr_binary, args.asr_model, args.work_dir, initial_prompt))
     if os.getpgid(native.pid) != os.getpgrp():
         native.terminate()
         raise RuntimeError("NESTED_PROCESS_GROUP")

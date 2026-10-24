@@ -46,6 +46,40 @@ class ToolSemantic:
     arguments: dict[str, str]
 
 
+_REMOTE_ENABLE_MESSAGE = "啟用遠端連線"
+
+
+def validate_m5_model_semantic(raw: bytes | str | dict[str, object]) -> ToolSemantic:
+    """Map the closed two-field model output to the existing private v4 semantic."""
+    try:
+        if type(raw) is bytes:
+            raw = raw.decode("utf-8", errors="strict")
+        if type(raw) is str:
+            value = json.loads(raw, object_pairs_hook=_unique_json_object,
+                               parse_constant=lambda _value: (_ for _ in ()).throw(SemanticError()))
+        elif type(raw) is dict:
+            value = raw
+        else:
+            raise SemanticError()
+        if (type(value) is not dict or set(value) != {"intent", "text"} or
+                type(value["intent"]) is not str or type(value["text"]) is not str or
+                len(value["text"]) > 4096):
+            raise SemanticError()
+        intent = value["intent"]
+        if intent in {"speak", "end"}:
+            spoken = normalize_text(value["text"])
+            if (intent == "speak" and not spoken) or spoken_length(spoken) > 30:
+                raise SemanticError()
+            return ToolSemantic(intent, spoken, "", {"message": ""})
+        if intent == "tool":
+            return ToolSemantic("tool", "", "mock.send", {"message": _REMOTE_ENABLE_MESSAGE})
+        if intent == "look":
+            return ToolSemantic("look", "", "", {"message": ""})
+        raise SemanticError()
+    except (ValueError, UnicodeError, TypeError, KeyError, RecursionError):
+        raise SemanticError() from None
+
+
 def validate_tool_semantic(raw: bytes | str | dict[str, object], *,
                            source: str = "listen", tool_available: bool = True,
                            look_available: bool = True) -> ToolSemantic:
@@ -141,6 +175,49 @@ class IncrementalToolSemanticParser:
             raise SemanticError() from None
 
 
+class IncrementalM5ModelParser:
+    """Stream only complete speak/end text from the two-field model response."""
+
+    def __init__(self) -> None:
+        self._decoder = codecs.getincrementaldecoder("utf-8")("strict")
+        self._buffer = ""
+        self._released = ""
+        self._terminal = False
+
+    def feed(self, chunk: bytes) -> tuple[str, ...]:
+        if self._terminal or type(chunk) is not bytes:
+            raise SemanticError()
+        try:
+            self._buffer += self._decoder.decode(chunk, final=False)
+            if len(self._buffer) > 65536:
+                raise SemanticError()
+            fields = _completed_tool_fields(self._buffer)
+            intent, raw_text = fields.get("intent"), fields.get("text")
+            if intent in {"speak", "end"} and type(raw_text) is str:
+                spoken = normalize_text(raw_text)
+                if (intent == "speak" and not spoken) or spoken_length(spoken) > 30:
+                    raise SemanticError()
+                if spoken and not self._released:
+                    self._released = spoken
+                    return (spoken,)
+            return ()
+        except (ValueError, UnicodeError):
+            raise SemanticError() from None
+
+    def finish(self) -> ToolSemantic:
+        if self._terminal:
+            raise SemanticError()
+        self._terminal = True
+        try:
+            self._buffer += self._decoder.decode(b"", final=True)
+            semantic = validate_m5_model_semantic(self._buffer)
+            if not semantic.text.startswith(self._released):
+                raise SemanticError()
+            return semantic
+        except (ValueError, UnicodeError):
+            raise SemanticError() from None
+
+
 def _completed_tool_fields(value: str) -> dict[str, object]:
     """Read completed top-level JSON members without assuming their order."""
     decoder = json.JSONDecoder(object_pairs_hook=_unique_json_object)
@@ -205,10 +282,9 @@ def load_m5_response_schema(*, repo_root: Path | None = None) -> dict[str, objec
             raise ResponseSchemaError()
         value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object)
         if (type(value) is not dict or set(value) !=
-                {"type", "properties", "required", "additionalProperties", "anyOf"} or
-                type(value["anyOf"]) is not list or not value["anyOf"] or
+                {"type", "properties", "required", "additionalProperties"} or
                 value["type"] != "object" or value["additionalProperties"] is not False or
-                set(value["properties"]) != {"intent", "text", "tool_name", "arguments"} or
+                set(value["properties"]) != {"intent", "text"} or
                 set(value["required"]) != set(value["properties"])):
             raise ResponseSchemaError()
         return value

@@ -79,11 +79,13 @@ class WhisperCppASRAdapter:
         lock: AudioArtifactLock,
         child_factory: Callable[[], _Child] | None = None,
         fault_injector: DeterministicFaultInjector | None = None,
+        initial_prompt: str | None = None,
     ) -> None:
         self._config = config
         self._lock = lock
         self._child_factory = child_factory or self._default_child
         self._fault_injector = fault_injector
+        self._initial_prompt = initial_prompt
         self._child: _Child = self._child_factory()
         self._operation_lock = asyncio.Lock()
         self._active_request_id: int | None = None
@@ -116,7 +118,7 @@ class WhisperCppASRAdapter:
         supervisor = Path(__file__).with_name("supervisor.py")
 
         def argv(workdir: Path) -> list[str]:
-            return [
+            command = [
                 str(config.runtime_python), str(supervisor),
                 "--vad-model", str(config.vad_model_path),
                 "--asr-binary", str(config.worker_path),
@@ -125,6 +127,9 @@ class WhisperCppASRAdapter:
                 "--profile-sha256", expected["profile_sha256"],
                 "--work-dir", str(workdir),
             ]
+            if self._initial_prompt is not None:
+                command.extend(("--initial-prompt", self._initial_prompt))
+            return command
 
         return FramedProcess(
             argv_builder=argv,

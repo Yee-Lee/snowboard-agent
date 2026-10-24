@@ -20,80 +20,75 @@ MQTT broker／read 整合、真 YOLO 與 VLM 留後續階段。
 
 ### 2.1 M5.tool 的能力
 
-| 語意 | 模型的責任 | Core 路由 |
+| 語意 | 模型的責任（兩欄 JSON：`intent`, `text`） | Core 映射與路由 |
 | :--- | :--- | :--- |
-| speak | 提供短回答 | speak + KEEP_NEXT + listen |
-| end | 明確結束意圖及可選告別語 | 有文字則 speak + END_SESSION；空則 rest + END_SESSION |
-| tool | 提供 registry 名稱及參數 | 驗證後 tool + KEEP_NEXT + listen，派發後固定 feedback |
-| look | 要求本次觀察 | 固定 speak「我看一下。」+ KEEP_NEXT + look |
+| speak | 提供完整短回答（`text` 為正規化後非空且 `<= 30` spoken characters） | speak + KEEP_NEXT + listen |
+| end | 明確結束意圖及可選告別語（`text` 可空） | 有文字則 speak + END_SESSION；空則 rest + END_SESSION |
+| tool | 僅選擇 `intent="tool"`（`text` 由應用程式忽略，不作為命令參數或播音） | child/Core 固定映射為 `mock.send(message="啟用遠端連線")` → 驗證後 tool + KEEP_NEXT + listen，派發後固定應用程式 feedback |
+| look | 僅針對眼前物件種類辨識要求選擇 `intent="look"`（`text` 由應用程式忽略） | 忽略模型 `text`，固定 speak「我看一下。」+ KEEP_NEXT + look |
 
-不讓模型輸出 Core session／turn／route、camera 資源名稱或任意 perception 清單。
-Look 不是 ToolRegistry handler；兩者共用能力選擇，執行語意分開。
+不讓模型輸出 Core session／turn／route、工具名稱、MQTT topic、payload、自由參數、
+camera 資源名稱或任意 perception 清單。Look 不是 ToolRegistry handler；兩者共用能力選擇，
+執行語意分開。
 
 本設計以三個平行名稱描述產品路徑；名稱不是模型輸出欄位，模型仍依上表輸出
 `speak | end | tool | look`：
 
-- **answering（基本回答路徑）**：模型輸出 `speak` 或 `end`，Core 依既有回答／結束 route 執行。
-- **dispatching（命令派發路徑）**：模型輸出 `tool` 意圖、已註冊的工具名稱與參數；Reasoner 驗證並映射為 Core tool action，ToolRegistry 交由 handler 執行。M5.tool 的 handler 是 `mock.send`，派發結果只觸發固定 feedback，然後進下一輪 `listen`。M5 MQTT 將在此路徑接入真實 MQTT handler；外部業務 response 仍須另經 buffer／`read`，不作為 handler return。
-- **observing（觀察接續路徑）**：模型只輸出 `look` 意圖；Reasoner 映射為固定準備語的 Speak action，完成後進下一個 look-only perception turn。Look worker 取得 Camera／Vision 結果，再交原 Conversation 回答先前問題。Look 不經 ToolRegistry，也不以工具派發結果代表視覺觀察。
+- **answering（基本回答路徑）**：模型輸出 `speak` 或 `end`，其 `text` 經正規化與長度驗證後作為回答或告別語，Core 依既有回答／結束 route 執行。詢問顏色等超出目前物件種類視覺能力的問題，亦走 `speak` 誠實說明無法辨識。
+- **dispatching（命令派發路徑）**：使用者明確要求啟用遠端連線（含正向換句話說，如「幫我打開遠端連線」）時，模型輸出 `intent="tool"`；child/Core 忽略模型 `text`，將單一 `tool` 意圖固定映射為 M5.tool 的有界動作 `mock.send` 與固定參數 `{"message": "啟用遠端連線"}`，再由 Reasoner 驗證並交 ToolRegistry handler 執行一次。派發結果只觸發應用程式擁有的固定 feedback，不代表遠端連線已實際建立；M5 MQTT 階段才另行定義真實 broker、topic 與 payload，且外部業務 response 仍須另經 buffer／`read`，不作為 handler return。
+- **observing（觀察接續路徑）**：僅在需要辨識眼前物件種類時，模型輸出 `intent="look"`；child/Core 忽略模型 `text`，Reasoner 映射為固定準備語「我看一下。」的 Speak action，完成後進下一個 look-only perception turn。Look worker 取得 Camera／Vision 物件觀察結果（如 `OBS_BOOK`、`OBS_CUP` 或空偵測 `OBS_EMPTY`），再交原 Conversation 以 `speak`/`end` 有據回答先前問題，不捏造未提供的顏色或閱讀內容能力。Look 不經 ToolRegistry，也不以工具派發結果代表視覺觀察。
 
-三條路徑都採「模型輸出有限意圖、Core 驗證與執行」；不要求模型產生 SDK 原生 function call，且 `automatic_tool_calling=false`。這是 M5.tool 的產品設計選擇；prompt 長度、延遲與真實模型選擇準確度仍須在 Pi 上觀察，不能僅由輸出形式推定。
+三條路徑都採「模型輸出兩欄有限意圖、Core 固定映射與驗證執行」；不要求模型產生 SDK 原生 function call，且 `automatic_tool_calling=false`。
 
-### 2.2 結構化模型輸出
+### 2.2 結構化模型輸出與內部 v4 語意框架
 
-採用固定 envelope，所有欄位必填，拒絕額外 key／重複 key／非有限數值：
+區分**模型端兩欄輸出（model-facing schema）**與**內部 v4 四欄語意框架（internal v4 semantic frame）**：
 
-```json
-{"intent":"speak","text":"你好。","tool_name":"","arguments":{"message":""}}
-```
+1. **模型端兩欄 JSON（`requirements/m5tool/semantic-output-v1.schema.json`）**：
+   Runtime `ResponseFormat.json` 與模型輸出固定為恰好兩個必填欄位的 object，拒絕額外 key／重複 key／非有限數值：
 
-- `intent` 為 `speak | end | tool | look`。
-- `text`、`tool_name`、`arguments.message` 均為 string；arguments 恰有 message。
-- speak：text 為非空短回答，tool_name／message 必須空。
-- end：text 可空，其餘必須空。
-- tool：text 必須空，tool_name 必須是已註冊且可用的 `mock.send`，message 為非空內容。
-- look：text、tool_name、message 必須空，look capability 必須可用。
-- speech 沿用 NFKC／空白 normalization 與最多 30 個 spoken characters；原始 text
-  最多 4096 code points。tool_name 最多 64 code points；message normalize 後最多 40
-  code points。這些是本 profile 的有界輸入／輸出限制，不是所有未來工具的通用 schema。
+   ```json
+   {"intent":"speak","text":"你好。"}
+   ```
 
-Runtime `ResponseFormat.json` 使用對應固定 object schema（intent enum、string 長度、
-required、additionalProperties=false）。跨欄位互斥及 registry validator 仍由程式驗證。
-Schema 資產路徑為 `requirements/m5tool/semantic-output-v1.schema.json`，由 Developer
-與新 profile 一起加入；目前設計文件不宣稱該資產已存在或 LiteRT-LM 已驗證此 schema。
-M5 新 domain 工具會修訂 schema／profile，不能為方便允許 arbitrary arguments。
+   - `intent` 為 `"speak" | "end" | "tool" | "look"`。
+   - `text` 為 string（原始長度最多 4096 code points）。
+   - **模型邊界文字規則**：
+     - `speak`：`text` normalize 後必須非空，且最多 30 個 spoken characters。
+     - `end`：`text` normalize 後可空，非空時最多 30 個 spoken characters。
+     - `tool` 與 `look`：在兩欄 schema 下模型可能填入任意 `text`（例如過早宣稱已開啟連線或描述畫面），但該文字在 child parser／validator 邊界即被丟棄（轉換為空字串 `""`），**絕不作為 `SAFE_TEXT`、Display 文字、TTS 播音或命令參數**；實際語音與畫面回饋完全由應用程式固定字串控制。
 
-### 2.3 模型 prompt
+2. **內部 v4 四欄語意框架（`ToolSemantic` 與 v4 IPC `RESULT.semantic`）**：
+   為保持 v4 child 協定與 Core `ToolRegistry` 驗證邊界一致，child 在完成兩欄模型輸出驗證後，將其轉換為四欄內部語意 `ToolSemantic(intent, text, tool_name, arguments)`：
+   - `speak` → `ToolSemantic("speak", normalized_text, "", {"message": ""})`
+   - `end` → `ToolSemantic("end", normalized_text, "", {"message": ""})`
+   - `tool` → `ToolSemantic("tool", "", "mock.send", {"message": "啟用遠端連線"})`
+   - `look` → `ToolSemantic("look", "", "", {"message": ""})`
 
-固定 core 指令與 schema 描述由此 profile 管理；附上實際可用能力及 registry 的唯讀
-name／description／input_schema。禁止含 handler callable、credential 或私有識別資料。
+   此四欄結構是 Core／child 內部契約：`tool_name`（`"mock.send"`）與 `arguments.message`（`"啟用遠端連線"`）完全由程式碼固定產生，**並非由模型生成**。Parent／Reasoner 的 `validate_tool_semantic` 仍對四欄結構、跨欄位互斥、來源限制（`source="look"` 只允許 `speak | end`）、capability 開關及已註冊工具（`tool_name == "mock.send"`、normalized `message` 非空且 `<= 40` code points）執行完整防禦驗證，確保任何非法內部語意或未授權工具名稱在進入 handler 前即被拒絕。
 
-核心文字：
+### 2.3 模型 prompt（選定 c2）與 ASR 提示詞方向
 
-> 你是「雪板」繁體中文語音助理。一般回答簡短、自然，最多30字。只輸出指定JSON。
-> 一般對話用speak；使用者明確結束時用end。只有使用者明確要求送出訊息時才用tool，
-> 工具名稱與參數必須符合提供的定義。工具派發不代表外部動作完成。
-> 需要查看眼前畫面才能回答時用look；收到look觀察後，依結果回答先前問題，
-> 不自動再次look，不執行tool。資料沒有提供的屬性不可猜測。
-> 若輸入是source=listen的JSON，text是使用者原話，last_dispatch_status只表示上一輪
-> 送訊派發成功或未確認成功；若輸入是source=look的JSON，facts是本次觀察。
-> 目前測試的送訊與觀察使用mock，不能聲稱操作了真實外部設備或看到了真實相機畫面。
+先前的長版四欄 prompt 在真實 Gemma 上超出新 Conversation 首輪 `runtime_prefill_tokens <= 128` 門檻；依 USER 裁定，M5.tool 採用精簡兩欄 **c2** 產品 prompt（含既有溫暖自然、稍帶幽默人格，首輪實測 prefill 約 93–96 tokens）：
 
-保留既有溫暖自然、稍帶幽默的人格設定。實際 prompt／schema 由 Developer 實作成一份
-固定產品資產，不把 YAML 任意 suffix 或每輪 prompt 實驗放進產品。native 真實模型可能
-需要修詞，修訂必須同步此設計並重驗受影響語意，不新增 approval round。
-不自動計算 prompt／schema hash 或 token attestation；實際 token 數只用於 admission。
+> 你是「雪板」，用繁體中文說完整短句，20字內，溫暖自然，稍帶幽默。只輸出含 intent 和 text 的 JSON。要求啟用遠端連線選 tool；辨識眼前物件選 look；問顏色選 speak，回答無法辨識；明確結束對話選 end；其他選 speak。
+
+固定規則與診斷歷史邊界：
+- 實際 prompt 與兩欄 schema 由 Developer 實作成固定產品資產（`M5_SYSTEM_PROMPT` 與 `requirements/m5tool/semantic-output-v1.schema.json`），不在模型 prompt 中附帶動態 registry dump、handler callable、credential 或私有識別資料。
+- **診斷歷史記錄**：在單次實機 c2 診斷中，正向換句話說（「幫我打開遠端連線」）選對 `tool`，否定請求（「先不要啟用遠端連線」）選了 `end` 而非 `speak`。依 USER 決定，該否定句已移出本輪對話與測試驗收範圍，僅保留於開發診斷歷史，不列為現行驗收條件或修正門檻。
+- **Whisper ASR 提示詞方向**：未來 M5 產品配置將 Whisper `initial_prompt` 改為固定字串 `遠端連線`（取代舊詞表，不回寫已 Accepted 的 ALPHA 證據）。依 USER 指示，本階段移除專用「啟用遠端連線」ASR 單句測項，不新增 ASR 詞彙測試矩陣。
+- Startup 與測試情境不自動計算或驗證 prompt／schema／text SHA-256 digest；需要確認工作站與 Pi 檔案一致性時，僅在傳輸邊界執行一次獨立檢查。
 
 ## 3. 工具派發與固定回饋
 
-`mock.send` 描述：「模擬送出使用者指定訊息；只記錄一次派發，沒有外部設備副作用」。
-arguments 恰為 `{"message": nonempty string}`；長度／normalization 同 §2.2。
+M5.tool 的唯一註冊工具為 `mock.send`，描述：「模擬派發固定遠端連線命令；只記錄一次派發，沒有外部設備或 MQTT 網路副作用」。
+Core 將模型的 `intent="tool"` 固定映射為 `tool_name="mock.send"` 與 `arguments={"message": "啟用遠端連線"}`（不接受模型自由指定訊息）。
 Mock fixture 控制 success、已知 dispatch failure、可取消等待；這些控制不提供給模型。
-驗證不執行 IO；派發只由既有 Tool worker 進行，不能由 Reasoner／SDK 呼叫 handler。
+驗證不執行 IO；派發只由既有 Tool worker 進行，且單次合法 `tool` 意圖只執行一次，不能由 Reasoner／SDK 呼叫 handler。
 
-- `ActionCompleted(tool, ok)`：代表 mock 派發成功。
+- `ActionCompleted(tool, ok)`：代表固定命令（`mock.send("啟用遠端連線")`）已派發成功，**不代表遠端連線已實際建立**。
 - `ActionCompleted(tool, error)`：沒有確認派發成功；不推定外部未執行，也不自動重送。
-- handler return 不送給模型，也不作為外部 response。M5 真實外部訊息另經 read。
+- handler return 不送給模型，也不作為外部 response。M5 真實 MQTT 外部回應與實際連線狀態另經 buffer／`read` 處理。
 
 Composition root 對新 profile 注入固定 tool-feedback policy；SM 不自行讀取 LLM prompt
 或猜測 profile。SessionContext.action_phase 增加 `tool_feedback`，in-flight phase 增加
@@ -160,11 +155,11 @@ listen 的 20 字或 32-token 限制；Look 輪的 `user_tokens` 僅供觀測。
 Look 成功輸入格式固定為 application-owned wrapper，facts 以 JSON string encoding 保留邊界：
 
 ```json
-{"source":"look","status":"ok","facts":"偵測到一本書。","instruction":"依本次觀察回答先前問題；未提供的資訊請說明無法判斷。"}
+{"source":"look","status":"ok","facts":"偵測到一本書。","instruction":"依本次觀察直接回答先前問題；只說物件種類；沒有物件時繼續對話。"}
 ```
 
-不加入虛構使用者語音、不重送全部 history。一次 Look 後只允許 speak／end；若模型仍選
-look／tool，按已送出推論的 invalid semantic 路徑處理，不自動重試工具。
+不加入虛構使用者語音、不重送全部 history。Look 能力對應物件種類觀察（如 `OBS_BOOK`、`OBS_CUP` 與空偵測 `OBS_EMPTY`）：物件問題選 `look` 後，在同一 Conversation 依觀察有據回答物件種類，不宣稱能閱讀文字內容，且空偵測時以 `speak` 繼續對話；詢問顏色等未提供屬性時應選 `speak` 誠實說明無法辨識。一次 Look 後（`source="look"` 輪）只允許 `speak`／`end`；若模型仍選
+`look`／`tool`，按已送出推論的 invalid semantic 路徑處理，不自動重試工具。
 
 ### 4.3 空結果、失敗與 Conversation 邊界
 
@@ -197,11 +192,9 @@ Reasoner 正規化後仍發布既有 LLMResponse。SM 的 generation／上一輪
 ## 5. Streaming、SDK 與 child protocol
 
 - 保持 automatic_tool_calling=false，工具執行永遠留 Core。
-- M5.tool semantic parser 只有在已解析並鎖定 `intent=speak|end`，且目前已出現的
-  `tool_name`／`arguments` 欄位沒有非空矛盾時，才能將解碼後的 `text` 作為 SAFE_TEXT。
-  不等待尚未到達的空 tool 欄位；若 `text` 先於 `intent` 到達則先緩存，不假定 JSON key
-  順序。`tool`／`look` 不輸出 SAFE_TEXT。Terminal 驗完整 schema 與已播片段一致性；
-  後續欄位若違反互斥，報 `INVALID_SEMANTIC` 並依 R2 取消播音，不能派發工具。
+- 模型輸出採兩欄 JSON（`intent`, `text`），由 `IncrementalM5ModelParser` 解析：只有在已解析並鎖定 `intent="speak"` 或 `"end"`，且 `text` 欄位完成正規化與 `<= 30` spoken characters 驗證（`"speak"` 必須非空）時，才將解碼後的 `text` 作為 `SAFE_TEXT` 發出。若 `"text"` 先於 `"intent"` 到達則先緩存，待鎖定 `"speak"`／`"end"` 後才發出，不假定 JSON key 順序。
+- `intent="tool"` 與 `"look"` 在兩欄模型輸出中即使含有非空 `text`，也**絕不輸出 `SAFE_TEXT`**，且在轉為內部四欄 `ToolSemantic` 時將 `text` 清空（`tool` 固定填入 `tool_name="mock.send"`、`arguments={"message": "啟用遠端連線"}`），不會成為 Display 文字或 TTS 播音。
+- 若另行對內部四欄語意做串流／完整性檢查（`IncrementalToolSemanticParser`／`validate_tool_semantic`），當已鎖定 `speak`／`end` 後續欄位卻出現非空 `tool_name`／`arguments.message` 違反互斥時，報 `INVALID_SEMANTIC` 並依 R2 取消播音，不能派發工具。
 - 若模型 terminal 不合法，依已交付的 R2／E1 規則取消播音及處理 Conversation，不執行工具；
   不為工具路徑關閉所有正常聊天 streaming。
 - Tool 意圖等完整 terminal 驗證完成後才可派發。Look 的固定準備語在正常 ACTION 才播放。
@@ -227,18 +220,17 @@ SCN-PERCEPTION 的產品顯示政策，與 log 隱私分開。
 
 ## 7. 實作路徑與交 Test Spec
 
-先在 Pi 的真實 Gemma／LiteRT-LM 上驗固定 JSON schema 是否可產出四種合法語意，並量測
-最小合法 prompt＋look facts 的 native rendered tokens。若 schema 不被 runtime 支援，或
+先在 Pi 的真實 Gemma／LiteRT-LM 上驗兩欄 JSON schema（`intent`, `text`）與選定的 c2 prompt 是否可產出四種合法語意，並量測
+c2 prompt＋look facts 的 native rendered tokens。若 schema 不被 runtime 支援，或
 在既定 context／output reserve 內無法容納，回 Designer 修正此 profile 的具體契約；
 不能以手寫關鍵字分類、另一模型或默默縮減既有對話上下文宣稱 M5.tool 通過。
 
 新能力 prompt 可能改變首輪 prefill 與反應時間。在 Pi 上以實際產品路徑記錄新
 Conversation 首次推論及同 Conversation 後續推論的 `runtime_prefill_tokens`、首個安全文字
 或語意 terminal 等待時間；分別看 answering、dispatching、observing 的直接影響。
-先以固定、精簡的完整能力 prompt 嘗試首輪 `<=128`。若無法兼顧合法首輪與真實模型
-選擇品質，回 Designer 裁定縮減內容或分 turn 啟用方案；後者目前不是已核准的實作
-捷徑，須先定義首輪送訊／Look 要求的行為，並驗證指令加入同一 Conversation 的方式、
-上下文歸屬與整體等待時間。第二 turn 的低 prefill 不能代替首輪體驗證據，也不能以
+以固定、精簡的 c2 兩欄能力 prompt 維持首輪 `<=128`，並驗證觀察有據回答。若無法兼顧合法首輪與真實模型
+選擇品質，回 Designer 裁定修訂內容；分 turn 啟用目前不是已核准的實作
+捷徑。第二 turn 的低 prefill 不能代替首輪體驗證據，也不能以
 額外隱藏推論或假 prewarm 繞過既有生命週期。
 
 | 直接影響面 | 所需改動 |

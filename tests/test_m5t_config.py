@@ -5,12 +5,14 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from types import SimpleNamespace
 
 from sbd.cognition.litert_lm.m5_profile import M5ProfileError, load_m5_profile
 from sbd.core.config.defaults import DEFAULT_CONFIG
 from sbd.core.config.models import AudioFormatConfig, LLMConfig
 from sbd.core.config.validate import ConfigValueError, validate_config
 from tests.test_m4a_cfg_001 import _real_configs
+from sbd.perception.listen.whispercpp import supervisor as asr_supervisor
 
 
 TEMPLATE = Path(__file__).resolve().parents[1] / "requirements/m5tool/product-profile.json"
@@ -72,3 +74,19 @@ def test_m5_config_accepts_only_supported_capabilities(tmp_path):
     ):
         with pytest.raises(ConfigValueError, match="M5.tool"):
             validate_config(changed)
+
+
+def test_m5_native_asr_uses_only_remote_connection_prompt(tmp_path, monkeypatch):
+    launched = []
+    def popen(argv, **kwargs):
+        launched.append(argv)
+        return SimpleNamespace(pid=1234, stdin=None, stdout=None)
+    monkeypatch.setattr(asr_supervisor.subprocess, "Popen", popen)
+    monkeypatch.setattr(asr_supervisor.NativeWorker, "_line",
+                        lambda self, timeout: "READY\t1.9.2\t0\t1234")
+    worker = asr_supervisor.NativeWorker(tmp_path / "worker", tmp_path / "model",
+                                         tmp_path, "遠端連線")
+    try:
+        assert launched[0][-2:] == ["--initial-prompt", "遠端連線"]
+    finally:
+        worker._stderr.close()

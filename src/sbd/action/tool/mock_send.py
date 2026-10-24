@@ -49,7 +49,7 @@ class MockSend:
     def registered_tool(self) -> RegisteredTool:
         return RegisteredTool(
             name="mock.send",
-            description="模擬送出使用者指定訊息；只記錄一次派發，沒有外部設備副作用",
+            description="模擬派發固定遠端連線命令；只記錄一次派發，沒有外部設備或 MQTT 網路副作用",
             input_schema={"type": "object", "properties": {
                 "message": {"type": "string", "maxLength": 40}},
                 "required": ["message"], "additionalProperties": False},

@@ -69,6 +69,7 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
     (prefix / "scripts").mkdir()
     shutil.copy2(source / "scripts/run-app.sh", prefix / "scripts/run-app.sh")
     for name in ("alpha_product.py", "alpha_oracle.py", "acoustic_supervisor.py",
+                 "m5tool_manual.py",
                  "run-alpha-pv.py", "run-acoustic-asr.py", "run-manual-debug.py"):
         shutil.copy2(source / "scripts" / name, prefix / "scripts" / name)
     shutil.copytree(controller, prefix / ".venv", symlinks=True, ignore=ignored)

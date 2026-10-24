@@ -15,14 +15,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from sbd.cognition.semantic import SemanticError, validate_tool_semantic
+from sbd.cognition.semantic import SemanticError, validate_m5_model_semantic
 from sbd.cognition.prompt_builder import M5_SYSTEM_PROMPT
 
 
 CASES = (
     ("answer", "你好，今天想聊什麼？"),
     ("end", "現在請結束對話。"),
-    ("tool", "請幫我送出訊息：我們已經到雪場了"),
+    ("tool", "啟用遠端連線"),
     ("look", "幫我看一下前面有什麼東西？"),
 )
 
@@ -59,7 +59,7 @@ def main() -> int:
                 response_format=ResponseFormat.json(schema))
             raw = response["content"][0]["text"]
             try:
-                semantic = validate_tool_semantic(raw)
+                semantic = validate_m5_model_semantic(raw)
                 intent, valid = semantic.intent, True
             except SemanticError:
                 intent, valid = "INVALID_SEMANTIC", False

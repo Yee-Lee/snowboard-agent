@@ -4,7 +4,7 @@ from .asr import ASRAdapter, ASRResult, MockASRAdapter, NullASRAdapter
 from .listener import Listen
 
 
-def make_asr_adapter(cfg: ASRConfig) -> ASRAdapter:
+def make_asr_adapter(cfg: ASRConfig, *, initial_prompt: str | None = None) -> ASRAdapter:
     if cfg.driver == "mock":
         return MockASRAdapter()
     if cfg.driver == "null":
@@ -17,7 +17,7 @@ def make_asr_adapter(cfg: ASRConfig) -> ASRAdapter:
         lock.verify_asr_config(cfg)
         from .whispercpp.adapter import WhisperCppASRAdapter
 
-        return WhisperCppASRAdapter(cfg, lock=lock)
+        return WhisperCppASRAdapter(cfg, lock=lock, initial_prompt=initial_prompt)
     raise ValueError(
         f"ASR driver '{cfg.driver}' is unsupported"
     )

@@ -38,8 +38,8 @@ from sbd.cognition.llm_child_protocol import (
     MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
 from sbd.cognition.semantic import (
     IncrementalSafeTextParser, RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
-    validate_semantic, SemanticError, IncrementalToolSemanticParser,
-    validate_tool_semantic, load_m5_response_schema, M5_RESPONSE_SCHEMA_LOCATOR,
+    validate_semantic, SemanticError, validate_m5_model_semantic, IncrementalM5ModelParser,
+    load_m5_response_schema, M5_RESPONSE_SCHEMA_LOCATOR,
 )
 from sbd.cognition.prompt_builder import SYSTEM_PROMPT, M5_SYSTEM_PROMPT, is_m5_look_wrapper
 
@@ -400,7 +400,7 @@ class LiteRTRuntime:
             raise RuntimeError("streaming bridge unavailable") from None
         require(not getattr(conversation, "automatic_tool_calling", True), "stream")
         require(bool(getattr(conversation, "_ptr", None)), "stream")
-        parser = (IncrementalToolSemanticParser() if getattr(self, "protocol_version", 3) == 4
+        parser = (IncrementalM5ModelParser() if getattr(self, "protocol_version", 3) == 4
                   else IncrementalSafeTextParser(12))
         native_events: queue.Queue[tuple[str, bool] | BaseException] = queue.Queue()
         final_seen = False
@@ -578,7 +578,7 @@ class WorkerSession:
         if emit is None or not hasattr(self.runtime, "generate_stream"):
             raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
             try:
-                semantic = (validate_tool_semantic(raw) if self.ledger.version == 4
+                semantic = (validate_m5_model_semantic(raw) if self.ledger.version == 4
                             else validate_semantic(raw))
             except SemanticError:
                 return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",

@@ -518,18 +518,22 @@ shutdown、metrics 與 E1/R2 分界；以下列出**完整差異**，其餘 mess
    session／generation／revision／ticket，完成 native scratch scrub 才能回 ready。
    `text` 不進 public log／evidence，不用 digest 代替實值比較。
 3. v4 RESULT 以 `semantic` 取代 v3 的 `text` 與 `end`，其他身份、revision 與 metrics
-   欄位同 §4.5。`semantic` 是 exact-key object：`intent`、`text`、`tool_name`、
-   `arguments`；`arguments` 恰有 `message`。所有四個值的型別、限制、互斥及 registry
-   驗證依 M5.tool 設計 §2.2。Child 驗完整 schema、SAFE_TEXT prefix 與 native join 後
-   才可發布 RESULT；parent 再驗能力與工具註冊狀態，才交 Reasoner 映射。
-   非法語意以現有 `REQUEST_FAILED(code=INVALID_SEMANTIC)` 及 §4.5 proof 回報，
+   欄位同 §4.5。Runtime `ResponseFormat.json`（`requirements/m5tool/semantic-output-v1.schema.json`）
+   對模型僅要求兩欄（`intent`, `text`）；child 驗證模型兩欄輸出後，將其正規化為內部四欄
+   `semantic` exact-key object：`intent`、`text`、`tool_name`、`arguments`（`arguments`
+   恰有 `message`）。其中 `intent="tool"` 由 child 固定填入 `text=""`、`tool_name="mock.send"`、
+   `arguments={"message":"啟用遠端連線"}`（模型不產生工具名稱或參數）；`intent="look"` 固定填入
+   全空字串欄位。所有四個值的型別、限制、互斥及 registry 驗證依 M5.tool 設計 §2.2。
+   Child 驗完整 schema、SAFE_TEXT prefix 與 native join 後才可發布 RESULT；parent 再以
+   `validate_tool_semantic` 驗來源（`source="look"` 僅允許 `speak | end`）、能力與工具註冊狀態，
+   才交 Reasoner 映射。非法語意以現有 `REQUEST_FAILED(code=INVALID_SEMANTIC)` 及 §4.5 proof 回報，
    不發布部分成功 RESULT。
 4. SAFE_TEXT 的 wire 欄位與順序同 §4.5，只准已確認 `speak` 或有文字的 `end`
-   意圖輸出解碼後的安全文字 prefix；目前已出現的工具欄位不能與此意圖矛盾，
-   不等待尚未到達的空工具欄位。`tool`／`look` 不輸出 SAFE_TEXT。Parent 仍在
-   terminal 完成前控制播音；不對 tool／look 推測或預派發。Streaming 片段與 terminal
-   不一致是 protocol failure；後續欄位違反語意互斥且 request／Engine 可證明可用時
-   以 `INVALID_SEMANTIC` 走 R2 並取消播音，不執行工具。
+   意圖輸出解碼後的安全文字 prefix；若 `"text"` 先於 `"intent"` 到達則先緩存，不假定 key 順序。
+   `tool`／`look` 在兩欄模型輸出中即使帶有 `text`，也絕不輸出 SAFE_TEXT，且不在 RESULT 保留模型
+   `text`。Parent 仍在 terminal 完成前控制播音；不對 tool／look 推測或預派發。Streaming 片段與
+   terminal 不一致是 protocol failure；若在內部四欄解析下後續欄位違反語意互斥且 request／Engine
+   可證明可用時，以 `INVALID_SEMANTIC` 走 R2 並取消播音，不執行工具。
 5. Look facts 與上一輪派發狀態由 parent 作為有界 private `text` 輸入；
    child 不新增影像 wire、持久記憶或第二 Conversation。Profile prompt／schema 固定於
    child configuration；response、外部 MQTT 訊息及 handler return 不在此 IPC 回傳。

@@ -16,14 +16,10 @@ CORE_PROMPT = "你是「雪板」繁體中文語音助理，只能聽與說，�
 PERSONALITY_PROMPT = "溫暖自然，稍帶幽默。"
 SYSTEM_PROMPT = CORE_PROMPT + PERSONALITY_PROMPT
 M5_SYSTEM_PROMPT = (
-    "你是「雪板」繁體中文語音助理。一般回答簡短、自然，最多30字。只輸出指定JSON。"
-    "一般對話用speak；使用者明確結束時用end。只有使用者明確要求送出訊息時才用tool，"
-    "工具名稱是mock.send，arguments.message是要送的內容；派發不代表外部動作完成。"
-    "需要查看眼前畫面才能回答時用look；收到look觀察後依結果回答先前問題，"
-    "不自動再次look，不執行tool。資料沒有提供的屬性不可猜測。"
-    "source=listen的JSON含使用者原話text與前次派發狀態；source=look的JSON含本次facts。"
-    "送訊與觀察目前是mock，不能聲稱操作真實設備或看見真實相機。"
-    "語氣溫暖自然，稍帶幽默。"
+    "你是「雪板」，用繁體中文說完整短句，20字內，溫暖自然，稍帶幽默。"
+    "只輸出含 intent 和 text 的 JSON。要求啟用遠端連線選 tool；"
+    "辨識眼前物件選 look；問顏色選 speak，回答無法辨識；"
+    "明確結束對話選 end；其他選 speak。"
 )
 PROMPT_COUNTS = {"core": 59, "personality": 9, "system": 68}
 PROMPT_HASHES = {
@@ -133,7 +129,7 @@ def is_m5_look_wrapper(value: str) -> bool:
 class ToolProjector:
     """Project one M5.tool listen or look fact into a bounded native input."""
 
-    _LOOK_INSTRUCTION = "依本次觀察回答先前問題；未提供的資訊請說明無法判斷。"
+    _LOOK_INSTRUCTION = "依本次觀察直接回答先前問題；只說物件種類；沒有物件時繼續對話。"
 
     def project(self, *, perceptions: tuple[PerceptionResult, ...], session_id: str,
                 turn_id: int, pending_message_count: int,

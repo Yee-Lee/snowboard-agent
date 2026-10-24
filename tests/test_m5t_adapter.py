@@ -21,7 +21,7 @@ class Runtime:
     def __init__(self):
         self.history = None
         self.sends = 0
-        self.output = '{"intent":"tool","text":"","tool_name":"mock.send","arguments":{"message":"買牛奶"}}'
+        self.output = '{"intent":"tool","text":"遠端連線已啟用。"}'
 
     def open_conversation(self):
         self.history = []
@@ -106,6 +106,9 @@ async def test_v4_adapter_measures_and_generates_without_digest_fields(tmp_path)
     result = await adapter.generate(snapshot, "請送出")
     assert isinstance(result, ToolSemanticGeneration)
     assert result.semantic["intent"] == "tool"
+    assert result.semantic["text"] == ""
+    assert result.semantic["tool_name"] == "mock.send"
+    assert result.semantic["arguments"] == {"message": "啟用遠端連線"}
     assert adapter.conversation_revision == 1
     assert not any("input_sha256" in frame for frame in children[0].commands)
     await adapter.close_conversation("s", 1, "session_end")

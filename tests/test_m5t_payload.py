@@ -7,8 +7,9 @@ import pytest
 from sbd.action.tool.mock_send import MockSend
 from sbd.action.tool.registry import ToolArgumentsInvalid, ToolRegistry
 from sbd.cognition.prompt_builder import ToolProjector, UnsupportedInputError, is_m5_look_wrapper
-from sbd.cognition.semantic import (IncrementalToolSemanticParser, SemanticError,
-                                    validate_tool_semantic)
+from sbd.cognition.semantic import (IncrementalToolSemanticParser, IncrementalM5ModelParser,
+                                    SemanticError, validate_m5_model_semantic,
+                                    validate_tool_semantic, load_m5_response_schema)
 from sbd.core.events import PerceptionResult
 
 
@@ -67,6 +68,28 @@ def test_tool_and_look_streams_never_release_text():
         raw = json.dumps(envelope(intent, name=name, message=message)).encode()
         assert parser.feed(raw) == ()
         assert parser.finish().intent == intent
+
+
+def test_two_field_model_tool_uses_fixed_private_payload_and_never_speaks_claim():
+    raw = '{"text":"遠端連線已啟用。","intent":"tool"}'
+    parser = IncrementalM5ModelParser()
+    assert parser.feed(raw[:24].encode()) == ()
+    assert parser.feed(raw[24:].encode()) == ()
+    semantic = parser.finish()
+    assert semantic == validate_m5_model_semantic(raw)
+    assert semantic.text == ""
+    assert semantic.tool_name == "mock.send"
+    assert semantic.arguments == {"message": "啟用遠端連線"}
+    assert set(load_m5_response_schema()["properties"]) == {"intent", "text"}
+
+
+def test_two_field_model_observation_discards_text_and_rejects_extra_fields():
+    semantic = validate_m5_model_semantic({"intent": "look", "text": "我看到雪花。"})
+    assert semantic.text == "" and semantic.tool_name == ""
+    with pytest.raises(SemanticError):
+        validate_m5_model_semantic({"intent": "tool", "text": "", "tool_name": "mqtt.send"})
+    with pytest.raises(SemanticError):
+        validate_m5_model_semantic('{"intent":"look","intent":"tool","text":""}')
 
 
 def fact(kind, text, *, status="ok"):
