@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- <repo-root>/.venv/bin/python
+rootdir: <repo-root>
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: asyncio-1.4.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/test_m3_btn_001_002_003_004_005_rpi.py::test_m3_btn_003 PASSED
+
+============================== 1 passed in 22.86s ==============================

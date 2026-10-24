@@ -1,0 +1,57 @@
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python Cache & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python Environments & Build Artifacts
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Native C/C++ Driver Build Outputs (ch02a)
+*.so
+*.o
+*.a
+*.dylib
+*.dll
+native/**/build/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment & Logs
+.env
+!.env.example
+*.log
+
+# Device-local runtime configuration
+config.*.local.yaml
+
+# Private evidence and non-Git payloads
+private-evidence/
+*.private.tar
+*.private.tar.gz
+*.private.tgz
+*.age
+*.pcm
+*.wav
+!tests/fixtures/m4b/pv/short-taiwan.wav
+*.flac
+*.mp3
+*.m4a
+*.sqlite
+*.sqlite3
+*.ses

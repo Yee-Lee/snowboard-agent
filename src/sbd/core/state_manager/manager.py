@@ -1,0 +1,1095 @@
+"""Single-inbox State Manager for the M1 runtime contract."""
+from __future__ import annotations
+
+import asyncio
+import logging
+from dataclasses import dataclass
+from functools import partial
+from typing import Any, Literal
+
+from sbd.core.config.models import AppConfig
+from sbd.core.event_bus import EventBus, FatalDispatchError, Subscription
+from sbd.core.events import (
+    ActionCompleted, ButtonPressed, ErrorOccurred, Event, ExternalMessageArrived,
+    LLMResponse, PerceptionResult, ShutdownRequested, State, StateChanged,
+    WakeWordDetected, InterruptRequested, new_session_id,
+)
+from sbd.core.resource_manager.catalog import WorkerCatalog
+from sbd.core.state_manager.convergence import (
+    CancelTimeoutPolicy, ConvergenceFatalError, ConvergenceResult, DefaultSessionConverger,
+)
+from sbd.core.state_manager.exceptions import (
+    ReasonerContractViolation, StateManagerInvariantViolation,
+    StateManagerWiringError, WakeListenerControlError, WakeMicReleaseUnprovable,
+    WorkerContractViolation,
+)
+from sbd.core.state_manager.inflight import InFlightRecord
+from sbd.core.state_manager.guards import is_allowed_in_state
+from sbd.core.state_manager.notices import (
+    _ConversationLifecycleCompleted, _PlannedRecoveryCompleted, _RecoveryCompleted, _TaskCompleted,
+    _WakeAckElapsed,
+)
+from sbd.core.state_manager.ports import (
+    ActionPayloadValidator, ExternalMessageControl, RecoveryControl,
+    ConversationCloseProof, ConversationLifecycleControl,
+    ConversationOpenRejected, ConversationReady, SessionConverger,
+    WakeListenerControl,
+)
+from sbd.core.state_manager.session import SessionContext
+
+logger = logging.getLogger(__name__)
+ASR_FAILURE_NOTICE = "語音辨識發生錯誤，請按按鈕重新開始。"
+
+
+@dataclass(slots=True)
+class _PendingConvergence:
+    trigger: Literal["rest", "interrupt", "error", "shutdown"]
+    buffer_exit_policy: Literal["flush_to_wake", "discard"]
+    recovery_generation: int | None = None
+    phase: Literal["workers", "conversation_close", "recovery", "complete"] = "workers"
+    close_proof: ConversationCloseProof | None = None
+    planned_recovery_started: bool = False
+    asr_notice_requested: bool = False
+    notice_started: bool = False
+
+
+class StateManager:
+    """Owns every state transition and in-flight handle on one inbox task."""
+
+    def __init__(
+        self,
+        config: AppConfig | None = None,
+        bus: EventBus | None = None,
+        workers: WorkerCatalog | None = None,
+        *,
+        converger: SessionConverger | None = None,
+        recovery: RecoveryControl | None = None,
+        action_validator: ActionPayloadValidator | None = None,
+        wake_ack_seconds: float | None = None,
+        perception_timeouts: dict[str, float] | None = None,
+    ) -> None:
+        self._bus = bus or EventBus()
+        self._workers = workers or WorkerCatalog()
+        self._converger = converger or DefaultSessionConverger(timeouts=CancelTimeoutPolicy())
+        self._recovery = recovery
+        self._action_validator = action_validator
+        self._wake_ack_seconds = config.wake.ack_seconds if config else (wake_ack_seconds or 0.3)
+        self._perception_timeouts = ({
+            "listen": config.perception.timeout_seconds.listen,
+            "read": config.perception.timeout_seconds.read,
+            "look": config.perception.timeout_seconds.look,
+        } if config else (perception_timeouts or {"listen": 10.0, "read": 0.5, "look": 3.0}))
+        self._defaults = config.perception.default_perceptions if config else ("listen",)
+
+        self._state: State = "IDLE"
+        self._session: SessionContext | None = None
+        self._correlation_counter = 0
+        self._inbox: asyncio.Queue[Any] = asyncio.Queue()
+        self._in_flight: dict[int, InFlightRecord] = {}
+        self._subs: list[Subscription] = []
+        self._loop_task: asyncio.Task[None] | None = None
+        self._wake_timer: asyncio.Task[None] | None = None
+        self._recovery_waiter: asyncio.Task[None] | None = None
+        self._read_open: tuple[str, int] | None = None
+        self._stopped_event = asyncio.Event()
+        self._dispatch_ready = asyncio.Event()
+        self._loop_should_stop = False
+        self._stopping = False
+        self._shutting_down = False
+        self._pending: _PendingConvergence | None = None
+        self._fault_recovery_keys: tuple[str, ...] = ()
+        self._asr_notice_requested = False
+        self._wake_control: WakeListenerControl | None = None
+        self._external_control: ExternalMessageControl | None = None
+        self._wake_set = False
+        self._external_set = False
+        self._conversation_control: ConversationLifecycleControl | None = None
+        self._conversation_set = False
+        self._producers_armed = False
+        self._wake_control_failed = False
+        self._wake_control_released = False
+
+    @property
+    def state(self) -> State:
+        return self._state
+
+    async def wait_stopped(self) -> None:
+        await self._stopped_event.wait()
+        task = self._loop_task
+        if task is None or task.cancelled() or not task.done():
+            return
+        error = task.exception()
+        if error is not None:
+            raise error
+
+    def set_wake_listener(self, control: WakeListenerControl | None) -> None:
+        if self._wake_set or self._stopping or self._shutting_down:
+            raise StateManagerWiringError("WakeListenerControl may only be set once before shutdown")
+        self._wake_set = True
+        self._wake_control = control
+
+    def set_external_message_control(self, control: ExternalMessageControl) -> None:
+        if control is None or self._external_set or self._stopping or self._shutting_down:
+            raise StateManagerWiringError("ExternalMessageControl must be set exactly once before shutdown")
+        self._external_set = True
+        self._external_control = control
+
+    def set_conversation_lifecycle(
+        self, control: ConversationLifecycleControl | None
+    ) -> None:
+        if (
+            control is None
+            or not isinstance(control, ConversationLifecycleControl)
+            or self._conversation_set
+            or self._loop_task is None
+            or self._producers_armed
+            or self._stopping
+            or self._shutting_down
+        ):
+            raise StateManagerWiringError(
+                "ConversationLifecycleControl must be set once after start and before producer arm"
+            )
+        self._conversation_set = True
+        self._conversation_control = control
+
+    def mark_input_producers_armed(self) -> None:
+        if not self._conversation_set:
+            raise StateManagerWiringError(
+                "ConversationLifecycleControl is required before producer arm"
+            )
+        self._producers_armed = True
+
+    async def start(self) -> None:
+        if self._stopping:
+            raise StateManagerWiringError("StateManager cannot restart after stop")
+        if self._loop_task is not None:
+            return
+        if self._wake_ack_seconds <= 0 or any(v <= 0 for v in self._perception_timeouts.values()):
+            raise StateManagerWiringError("StateManager timing configuration must be positive")
+        if not self._defaults or len(set(self._defaults)) != len(self._defaults):
+            raise StateManagerWiringError("default perceptions must be non-empty and unique")
+        kinds = (PerceptionResult, LLMResponse, ActionCompleted, ErrorOccurred,
+                 ButtonPressed, ExternalMessageArrived, WakeWordDetected,
+                 InterruptRequested, ShutdownRequested)
+        self._subs = [self._bus.subscribe(kind, self._on_event) for kind in kinds]
+        self._loop_task = asyncio.create_task(self._dispatch_loop())
+        await self._dispatch_ready.wait()
+
+    async def stop(self) -> None:
+        if self._stopping:
+            return
+        if self._session is not None and not self._shutting_down:
+            raise RuntimeError("stop() requires ShutdownRequested and a drained session")
+        self._stopping = True
+        self._cancel_wake_timer()
+        if self._recovery_waiter is not None and not self._recovery_waiter.done():
+            self._recovery_waiter.cancel()
+            await asyncio.gather(self._recovery_waiter, return_exceptions=True)
+        self._recovery_waiter = None
+        for sub in self._subs:
+            self._bus.unsubscribe(sub)
+        self._subs.clear()
+        if self._loop_task is not None and not self._loop_task.done():
+            self._loop_task.cancel()
+            try:
+                await self._loop_task
+            except asyncio.CancelledError:
+                pass
+        self._loop_task = None
+        self._stopped_event.set()
+
+    async def _on_event(self, event: Event) -> None:
+        self._inbox.put_nowait(event)
+
+    async def _dispatch_loop(self) -> None:
+        self._dispatch_ready.set()
+        try:
+            while not self._loop_should_stop:
+                item = await self._inbox.get()
+                try:
+                    await self._handle_item(item)
+                    # A handled perception Fact must not remain in this idle
+                    # dispatch coroutine after ownership transfers to cognition.
+                    del item
+                    await self._try_progress()
+                finally:
+                    self._inbox.task_done()
+        finally:
+            self._stopped_event.set()
+
+    async def _handle_item(self, item: Any) -> None:
+        if isinstance(item, _PlannedRecoveryCompleted):
+            pending, session = self._pending, self._session
+            if (
+                pending is None or session is None
+                or not pending.planned_recovery_started
+                or item.waiter is not self._recovery_waiter
+                or (item.session_id, item.generation)
+                != (session.session_id, session.conversation_generation)
+                or not item.waiter.done()
+            ):
+                logger.debug("Dropping stale planned recovery completion")
+                return
+            self._recovery_waiter = None
+            if item.waiter.cancelled():
+                if pending.trigger == "shutdown":
+                    return
+                error = RuntimeError("PLANNED_RECOVERY_CANCELLED")
+            else:
+                error = item.waiter.exception()
+            if error is not None:
+                # Native exception text is private; the Level 3 cause is a stable code.
+                raise ConvergenceFatalError(
+                    correlation_id=0, kind="conversation", phase="recovery",
+                    stage="planned_recovery", cause=RuntimeError("PLANNED_RECOVERY_FAILED"),
+                ) from None
+            return
+        if isinstance(item, _ConversationLifecycleCompleted):
+            await self._handle_lifecycle_completed(item)
+            return
+        if isinstance(item, _TaskCompleted):
+            await self._handle_task_completed(item)
+            return
+        if isinstance(item, _WakeAckElapsed):
+            if self._state == "WAKE" and self._session and item.session_id == self._session.session_id:
+                self._session.wake_ack_ready = True
+            return
+        if isinstance(item, _RecoveryCompleted):
+            pending = self._pending
+            if (
+                pending is None
+                or self._state != "ERROR"
+                or pending.recovery_generation != item.generation
+                or item.waiter is not self._recovery_waiter
+            ):
+                logger.debug("Dropping stale recovery completion for generation %s", item.generation)
+                return
+            if item.waiter.cancelled():
+                raise asyncio.CancelledError
+            error = item.waiter.exception()
+            if error is not None:
+                raise error
+            pending.recovery_generation = None
+            self._recovery_waiter = None
+            return
+        if isinstance(item, ActionCompleted) and self._state == "ERROR":
+            record = self._in_flight.get(item.correlation_id)
+            if record is not None and record.phase == "error_notice":
+                self._handle_fact(item)
+                return
+        if isinstance(item, (PerceptionResult, LLMResponse, ActionCompleted, ErrorOccurred, ButtonPressed, ExternalMessageArrived, WakeWordDetected, InterruptRequested, ShutdownRequested)) and not is_allowed_in_state(item, self._state):
+            logger.warning("Dropping %s while state is %s", type(item).__name__, self._state)
+            return
+        if isinstance(item, (PerceptionResult, LLMResponse, ActionCompleted)):
+            self._handle_fact(item)
+            return
+        if isinstance(item, ErrorOccurred):
+            if self._state == "ERROR":
+                if self._pending is not None:
+                    self._pending.buffer_exit_policy = "discard"
+                    if any(r.phase == "error_notice" for r in self._in_flight.values()):
+                        await self._lifecycle_e1("ASR failure announcement failed")
+                return
+            self._asr_notice_requested = item.code.startswith("ASR_") and item.where in {
+                "perception.listen", "perception.listen.asr",
+            }
+            if item.backend_disposition in {"rebuild_required", "unproven"}:
+                keys = tuple(sorted(set(item.recovery_keys)))
+                if not keys:
+                    raise StateManagerInvariantViolation(
+                        "system fault requiring recovery has no recovery key"
+                    )
+                self._fault_recovery_keys = keys
+            elif item.recovery_keys:
+                raise StateManagerInvariantViolation(
+                    "non-recovery system fault declared recovery keys"
+                )
+            await self._transition("ERROR", trigger="error")
+            return
+        if isinstance(item, ShutdownRequested):
+            await self._begin_shutdown()
+            return
+        if isinstance(item, InterruptRequested):
+            if self._state not in {"IDLE", "ERROR"}:
+                await self._begin_convergence("interrupt")
+            return
+        if isinstance(item, (ButtonPressed, WakeWordDetected, ExternalMessageArrived)):
+            if self._shutting_down:
+                logger.warning("Dropping %s while state is %s", type(item).__name__, self._state)
+                return
+            if isinstance(item, ExternalMessageArrived) and self._state != "IDLE":
+                if self._external_control is None:
+                    raise StateManagerWiringError("External signal received before control late-fill")
+                assert self._session is not None
+                if self._state != "ERROR" and "read" in self._session.selected_perceptions:
+                    await self._external_control.assign_to_turn(
+                        item.message_id, self._session.session_id, self._session.turn_id
+                    )
+                elif self._state != "ERROR":
+                    await self._external_control.mark_pending(item.message_id, self._session.session_id)
+                else:
+                    logger.warning("Dropping external signal while ERROR convergence is active")
+                return
+            if isinstance(item, ButtonPressed) and self._state == "ERROR":
+                if self._pending is not None:
+                    logger.warning("Dropping ButtonPressed while ERROR recovery is active")
+                    return
+                self._pending = None
+                self._session = None
+                await self._enter_wake("button")
+                return
+            if isinstance(item, ButtonPressed) and self._state != "IDLE":
+                await self._begin_convergence("interrupt")
+                return
+            if self._state != "IDLE":
+                logger.warning("Dropping %s while state is %s", type(item).__name__, self._state)
+                return
+            if isinstance(item, ExternalMessageArrived):
+                if self._external_control is None:
+                    raise StateManagerWiringError("External signal received before control late-fill")
+                await self._enter_wake("external_message", item)
+            else:
+                if isinstance(item, WakeWordDetected) and not self._wake_set:
+                    raise StateManagerWiringError("Wake signal received before control late-fill")
+                await self._enter_wake("wake_word" if isinstance(item, WakeWordDetected) else "button")
+
+    def _handle_fact(self, fact: PerceptionResult | LLMResponse | ActionCompleted) -> None:
+        if self._session is None or fact.session_id != self._session.session_id or fact.turn_id != self._session.turn_id:
+            logger.warning("Dropping stale terminal fact")
+            return
+        record = self._in_flight.get(fact.correlation_id)
+        if record is None or record.terminal_fact is not None:
+            logger.warning("Dropping unknown or duplicate terminal fact")
+            return
+        expected = {
+            "perception": PerceptionResult,
+            "think": LLMResponse,
+            "action_primary": ActionCompleted,
+            "action_rest": ActionCompleted,
+            "error_notice": ActionCompleted,
+        }.get(record.phase)
+        if expected is None:
+            logger.warning("Dropping public Fact for private lifecycle record")
+            return
+        if not isinstance(fact, expected):
+            raise WorkerContractViolation(f"{record.kind} published the wrong terminal fact")
+        fact_kind = getattr(fact, "kind", None)
+        if record.phase != "think" and fact_kind != record.kind:
+            raise WorkerContractViolation(
+                f"{record.kind} published a terminal fact for kind={fact_kind}"
+            )
+        record.terminal_fact = fact
+        if record.phase == "error_notice":
+            return
+        if isinstance(fact, (PerceptionResult, ActionCompleted)) and fact.status in {"error", "timeout"}:
+            logger.warning("P5 terminal fact status=%s state=%s kind=%s", fact.status, self._state, fact.kind)
+        if isinstance(fact, PerceptionResult):
+            self._session.perception_results.append(fact)
+        elif isinstance(fact, LLMResponse):
+            self._session.llm_response = fact
+        else:
+            self._session.action_completed = fact
+
+    async def _handle_task_completed(self, notice: _TaskCompleted) -> None:
+        record = self._in_flight.get(notice.correlation_id)
+        if record is None:
+            logger.debug("Dropping stale completion for correlation_id=%s", notice.correlation_id)
+            return
+        if notice.task is not record.task:
+            logger.debug("Dropping completion with mismatched task identity")
+            return
+        if record.completion_mode != "worker_fact":
+            logger.debug("Dropping worker completion for private lifecycle record")
+            return
+        self._in_flight.pop(notice.correlation_id)
+        cancelled = notice.task.cancelled()
+        if cancelled and record.terminal_fact is None and not record.cancel_requested:
+            raise WorkerContractViolation(
+                f"Worker {record.kind} was cancelled without convergence request"
+            )
+        error = None if cancelled else notice.task.exception()
+        if error is not None:
+            if isinstance(error, FatalDispatchError):
+                raise error
+            if record.terminal_fact is not None or self._state != "ERROR":
+                raise WorkerContractViolation(f"Worker {record.kind} raised after start") from error
+            logger.warning("Worker %s exited during convergence: %r", record.kind, error)
+        elif not cancelled and record.terminal_fact is None and not record.cancel_requested:
+            raise StateManagerInvariantViolation(
+                f"Worker {record.kind} returned without publishing a terminal fact"
+            )
+
+    async def _handle_lifecycle_completed(
+        self, notice: _ConversationLifecycleCompleted
+    ) -> None:
+        record = self._in_flight.get(notice.correlation_id)
+        if (
+            record is None
+            or record.completion_mode != "private_result"
+            or notice.task is not record.task
+            or notice.session_id != record.session_id
+            or notice.generation != record.conversation_generation
+            or notice.operation != record.phase.removeprefix("conversation_")
+        ):
+            logger.warning("Dropping stale Conversation lifecycle completion")
+            return
+        if not notice.task.done():
+            logger.warning("Dropping premature Conversation lifecycle completion")
+            return
+        if notice.task.cancelled():
+            if record.cancel_requested and self._lifecycle_record_proven(record):
+                self._in_flight.pop(record.correlation_id, None)
+                return
+            await self._lifecycle_e1("Conversation lifecycle task cancelled without proof")
+            return
+        error = notice.task.exception()
+        if error is not None:
+            if record.cancel_requested and self._lifecycle_record_proven(record):
+                self._in_flight.pop(record.correlation_id, None)
+                return
+            await self._lifecycle_e1("Conversation lifecycle operation raised")
+            return
+        result = notice.task.result()
+        record.private_result = result
+        session = self._session
+        if session is None:
+            logger.warning("Dropping stale Conversation lifecycle result")
+            return
+        if record.phase == "conversation_open":
+            if isinstance(result, ConversationReady) and (
+                result.session_id, result.generation
+            ) == (session.session_id, session.conversation_generation):
+                record.request_terminal_proven = True
+                record.cleanup_proven = True
+                record.engine_usable = True
+                self._in_flight.pop(record.correlation_id, None)
+                session.conversation_state = "ready"
+                session.model_admission_blocked = False
+                return
+            if isinstance(result, ConversationOpenRejected) and (
+                result.session_id, result.generation
+            ) == (session.session_id, session.conversation_generation):
+                record.request_terminal_proven = True
+                record.cleanup_proven = result.cleanup_proven
+                record.engine_usable = result.engine_usable
+                if result.cleanup_proven and result.engine_usable and self._pending is None:
+                    self._in_flight.pop(record.correlation_id, None)
+                    session.conversation_state = "none"
+                    session.conversation_generation += 1
+                    self._start_conversation_open()
+                    return
+            await self._lifecycle_e1("Conversation open result lacks required proof")
+            return
+        if isinstance(result, ConversationCloseProof) and (
+            result.session_id, result.generation
+        ) == (session.session_id, session.conversation_generation):
+            record.request_terminal_proven = result.request_terminal_proven
+            record.cleanup_proven = result.cleanup_proven
+            record.engine_usable = result.engine_usable
+            if (
+                result.request_terminal_proven
+                and result.cleanup_proven
+                and result.engine_usable
+            ):
+                self._in_flight.pop(record.correlation_id, None)
+                session.conversation_state = "none"
+                if self._pending is not None:
+                    self._pending.close_proof = result
+                    self._pending.phase = "recovery"
+                elif session.post_action_route == "REPLACE_NEXT":
+                    session.conversation_generation += 1
+                    self._start_conversation_open()
+                return
+        await self._lifecycle_e1("Conversation close result lacks required proof")
+
+    @staticmethod
+    def _lifecycle_record_proven(record: InFlightRecord) -> bool:
+        return (
+            record.request_terminal_proven
+            and record.cleanup_proven
+            and (record.engine_usable is not False or record.force_abort_proven)
+        )
+
+    async def _lifecycle_e1(self, message: str) -> None:
+        logger.error("%s", message)
+        if self._pending is not None:
+            shutdown = self._pending.trigger == "shutdown"
+            if not shutdown:
+                self._pending.trigger = "error"
+                self._pending.buffer_exit_policy = "discard"
+            records = tuple(self._in_flight.values())
+            for record in records:
+                record.cancel_requested = True
+            result = await self._converger.converge(records, "error")
+            for correlation_id, record in tuple(self._in_flight.items()):
+                if record.task.done() and self._lifecycle_record_proven(record):
+                    self._in_flight.pop(correlation_id, None)
+            self._pending.phase = "recovery"
+            if result.destroyed_backends:
+                if shutdown:
+                    pass
+                elif self._recovery is None:
+                    raise StateManagerInvariantViolation(
+                        "destroyed backends require RecoveryControl"
+                    )
+                else:
+                    ticket = self._recovery.begin_recovery(result.destroyed_backends)
+                    self._pending.recovery_generation = ticket.generation
+                    waiter = asyncio.create_task(self._recovery.wait_recovery(ticket))
+                    self._recovery_waiter = waiter
+                    waiter.add_done_callback(
+                        lambda done, generation=ticket.generation: self._inbox.put_nowait(
+                            _RecoveryCompleted(generation, done)
+                        )
+                    )
+        if self._state != "ERROR":
+            await self._transition("ERROR", trigger="error")
+
+    async def _transition(self, new_state: State, *, trigger: str | None = None) -> None:
+        if new_state == self._state:
+            return
+        old = self._state
+        self._state = new_state
+        logger.info("State transition %s -> %s", old, new_state)
+        await self._bus.publish(StateChanged(old, new_state))
+        if new_state == "IDLE":
+            await self._enter_idle()
+        elif new_state == "PERCEPTION":
+            await self._enter_perception()
+        elif new_state == "THINK":
+            await self._enter_think()
+        elif new_state == "ACTION":
+            await self._enter_action()
+        elif new_state == "ERROR":
+            await self._begin_convergence(trigger or "error")
+
+    async def _enter_wake(self, source: Literal["button", "wake_word", "external_message"], message: ExternalMessageArrived | None = None) -> None:
+        if self._conversation_control is None:
+            raise StateManagerWiringError("ConversationLifecycleControl is not wired")
+        self._session = SessionContext(session_id=new_session_id(), wake_source=source, turn_id=0)
+        self._session.conversation_generation = 1
+        if source == "external_message":
+            assert self._external_control is not None
+            assert message is not None
+            await self._external_control.assign_to_session(
+                message.message_id, self._session.session_id
+            )
+            self._session.selected_perceptions = ("read",)
+        else:
+            await self._suspend_wake()
+            self._session.selected_perceptions = ("listen",)
+        await self._transition("WAKE")
+        self._start_conversation_open()
+        async def timer(sid: str) -> None:
+            await asyncio.sleep(self._wake_ack_seconds)
+            self._inbox.put_nowait(_WakeAckElapsed(sid))
+        self._wake_timer = asyncio.create_task(timer(self._session.session_id))
+
+    async def _enter_idle(self) -> None:
+        self._cancel_wake_timer()
+        await self._close_read()
+        self._session = None
+        await self._resume_wake()
+
+    async def _suspend_wake(self) -> None:
+        if self._wake_control is None or self._wake_control_released:
+            return
+        try:
+            await self._wake_control.suspend()
+        except Exception as exc:
+            logger.warning("wake suspend failed; requesting release proof: %r", exc)
+            try:
+                await self._wake_control.ensure_released()
+            except Exception as release_error:
+                self._wake_control_failed = True
+                raise WakeMicReleaseUnprovable("unable to prove wake microphone release") from release_error
+        self._wake_control_released = True
+
+    async def _resume_wake(self) -> None:
+        if self._wake_control is None or self._wake_control_failed or self._shutting_down:
+            return
+        try:
+            await self._wake_control.resume()
+            self._wake_control_released = False
+        except Exception:
+            self._wake_control_failed = True
+            logger.warning("wake resume failed; voice wake disabled", exc_info=True)
+
+    def _cancel_wake_timer(self) -> None:
+        if self._wake_timer is not None:
+            self._wake_timer.cancel()
+            self._wake_timer = None
+
+    def _next_correlation(self) -> int:
+        self._correlation_counter += 1
+        return self._correlation_counter
+
+    def _start_worker(self, phase: Literal["perception", "think", "action_primary", "action_rest", "error_notice"], kind: str, worker: Any, call: Any) -> None:
+        assert self._session is not None
+        correlation_id = self._next_correlation()
+        task = asyncio.create_task(call(correlation_id))
+        self._in_flight[correlation_id] = InFlightRecord(
+            correlation_id, self._session.session_id, self._session.turn_id,
+            phase, kind, worker, task,
+        )
+        task.add_done_callback(partial(self._enqueue_completion, kind, correlation_id))
+
+    def _start_conversation_open(self) -> None:
+        session = self._session
+        control = self._conversation_control
+        if session is None or control is None or any(
+            record.completion_mode == "private_result"
+            for record in self._in_flight.values()
+        ):
+            raise StateManagerInvariantViolation("Concurrent Conversation lifecycle operation")
+        session.conversation_state = "opening"
+        session.model_admission_blocked = True
+        correlation_id = self._next_correlation()
+        task = asyncio.create_task(control.open_conversation(
+            session.session_id, session.conversation_generation
+        ))
+        record = InFlightRecord(
+            correlation_id, session.session_id, session.turn_id,
+            "conversation_open", "conversation.open", control, task,
+            conversation_generation=session.conversation_generation,
+            completion_mode="private_result",
+        )
+        self._in_flight[correlation_id] = record
+        task.add_done_callback(partial(
+            self._enqueue_lifecycle_completion, "open", session.session_id,
+            session.conversation_generation, correlation_id,
+        ))
+
+    def _start_conversation_close(self, reason: str) -> None:
+        session = self._session
+        control = self._conversation_control
+        if session is None or control is None or any(
+            record.completion_mode == "private_result"
+            for record in self._in_flight.values()
+        ):
+            raise StateManagerInvariantViolation("Concurrent Conversation lifecycle operation")
+        session.conversation_state = "closing"
+        session.model_admission_blocked = True
+        correlation_id = self._next_correlation()
+        task = asyncio.create_task(control.close_conversation(
+            session.session_id, session.conversation_generation, reason
+        ))
+        record = InFlightRecord(
+            correlation_id, session.session_id, session.turn_id,
+            "conversation_close", "conversation.close", control, task,
+            conversation_generation=session.conversation_generation,
+            completion_mode="private_result",
+        )
+        self._in_flight[correlation_id] = record
+        task.add_done_callback(partial(
+            self._enqueue_lifecycle_completion, "close", session.session_id,
+            session.conversation_generation, correlation_id,
+        ))
+
+    def _enqueue_lifecycle_completion(
+        self, operation: str, session_id: str, generation: int,
+        correlation_id: int, task: asyncio.Task[Any],
+    ) -> None:
+        self._inbox.put_nowait(_ConversationLifecycleCompleted(
+            operation, session_id, generation, correlation_id, task
+        ))
+
+    def _enqueue_completion(self, kind: str, correlation_id: int, task: asyncio.Task[Any]) -> None:
+        self._inbox.put_nowait(_TaskCompleted(kind, correlation_id, task))
+
+    async def _enter_perception(self) -> None:
+        self._cancel_wake_timer()
+        if self._session is None:
+            return
+        self._session.turn_id += 1
+        self._session.perception_results.clear()
+        self._session.llm_response = None
+        self._session.action_completed = None
+        selected = self._session.selected_perceptions or self._defaults
+        selected = tuple(dict.fromkeys(
+            kind for kind in selected if kind in self._workers.perception_kinds
+        ))
+        if not selected:
+            raise StateManagerInvariantViolation("No registered perception is available")
+        self._session.selected_perceptions = selected
+        if "read" in selected:
+            if self._external_control is None:
+                await self._transition("ERROR", trigger="error")
+                return
+            try:
+                await self._external_control.begin_read(
+                    self._session.session_id, self._session.turn_id
+                )
+            except Exception as exc:
+                logger.error("Unable to open external-message read window: %s", exc)
+                await self._transition("ERROR", trigger="error")
+                return
+            self._read_open = (self._session.session_id, self._session.turn_id)
+        session_id = self._session.session_id
+        turn_id = self._session.turn_id
+        for kind in selected:
+            worker = self._workers.perception(kind)
+            self._start_worker("perception", kind, worker,
+                lambda cid, w=worker, k=kind: w.perceive(
+                    session_id, turn_id, cid, self._perception_timeouts[k]
+                ))
+
+    async def _enter_think(self) -> None:
+        if self._session is None:
+            return
+        if (
+            self._session.conversation_state != "ready"
+            or self._session.model_admission_blocked
+        ):
+            raise StateManagerInvariantViolation(
+                "Reasoner admission requires a ready Conversation"
+            )
+        worker = self._workers.reasoner()
+        pending = (
+            await self._external_control.pending_ids(self._session.session_id)
+            if self._external_control is not None
+            else ()
+        )
+        session_id = self._session.session_id
+        turn_id = self._session.turn_id
+        results = tuple(self._session.perception_results)
+        generation = self._session.conversation_generation
+        self._start_worker("think", "reasoner", worker,
+            lambda cid: worker.reason(
+                session_id, turn_id, cid, results, pending,
+                conversation_generation=generation,
+            ))
+        if getattr(worker, "_product", False) is True:
+            # The real listen-only product owns these inputs from this point.
+            # Retaining a second SM reference would defeat acknowledged ticket
+            # disposal before R1. Generic mock projection keeps its old lifetime.
+            self._session.perception_results.clear()
+
+    async def _enter_action(self) -> None:
+        if self._session is None or self._session.llm_response is None:
+            raise StateManagerInvariantViolation("ACTION entered without LLM response")
+        response = self._session.llm_response
+        self._session.action_phase = "primary"
+        worker = self._workers.action(response.action_kind)
+        session_id = self._session.session_id
+        turn_id = self._session.turn_id
+        self._start_worker("action_primary", response.action_kind, worker,
+            lambda cid: worker.execute(session_id, turn_id, cid, response.action_payload))
+
+    async def _validate_response(self, response: LLMResponse) -> None:
+        if response.action_kind not in {"speak", "tool", "rest"}:
+            raise ReasonerContractViolation("unknown action kind")
+        if self._action_validator is not None:
+            try:
+                self._action_validator.validate(
+                    response.action_kind, response.action_payload
+                )
+            except Exception as exc:
+                raise ReasonerContractViolation("action payload rejected") from exc
+        if response.action_kind not in self._workers.action_kinds:
+            raise ReasonerContractViolation("action target is not registered")
+        assert self._session is not None
+        if response.post_action_route not in {"KEEP_NEXT", "REPLACE_NEXT", "END_SESSION"}:
+            raise ReasonerContractViolation("unknown post-action route")
+        if response.action_kind == "rest" and response.post_action_route != "END_SESSION":
+            raise ReasonerContractViolation("rest must end the session")
+        self._session.post_action_route = response.post_action_route
+        if response.post_action_route == "END_SESSION":
+            self._session.normalized_next_perceptions = ()
+            self._session.next_perceptions = ()
+            return
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for kind in response.next_perceptions:
+            if kind not in self._workers.perception_kinds:
+                logger.warning(
+                    "Ignoring unregistered next perception kind=%s",
+                    kind,
+                )
+                continue
+            if kind in seen:
+                logger.debug("Ignoring duplicate next perception kind=%s", kind)
+                continue
+            seen.add(kind)
+            normalized.append(kind)
+        if not normalized:
+            raise ReasonerContractViolation("no usable next perceptions")
+        self._session.normalized_next_perceptions = tuple(normalized)
+        self._session.next_perceptions = tuple(normalized)
+
+    async def _close_read(self) -> None:
+        if self._read_open is None:
+            return
+        session_id, turn_id = self._read_open
+        self._read_open = None
+        if self._external_control is not None:
+            await self._external_control.close_read(session_id, turn_id)
+
+    async def _try_progress(self) -> None:
+        if self._pending is not None:
+            await self._finish_convergence_if_ready()
+            return
+        if self._in_flight:
+            return
+        if self._state == "WAKE":
+            if (
+                self._session is not None
+                and self._session.wake_ack_ready
+                and self._session.conversation_state == "ready"
+                and not self._session.model_admission_blocked
+            ):
+                await self._transition("PERCEPTION")
+        elif self._state == "PERCEPTION":
+            assert self._session is not None
+            if len(self._session.perception_results) == len(self._session.selected_perceptions):
+                await self._close_read()
+                local_response = self._m4c_no_input_response()
+                if local_response is None:
+                    await self._transition("THINK")
+                else:
+                    self._session.llm_response = local_response
+                    await self._validate_response(local_response)
+                    await self._transition("ACTION")
+        elif self._state == "THINK":
+            if self._session is not None and self._session.llm_response is not None:
+                try:
+                    await self._validate_response(self._session.llm_response)
+                except ReasonerContractViolation as exc:
+                    logger.error("Reasoner response rejected: %s", exc)
+                    await self._transition("ERROR", trigger="error")
+                else:
+                    await self._transition("ACTION")
+        elif self._state == "ACTION":
+            assert self._session is not None
+            completed = self._session.action_completed
+            if completed is None:
+                if (
+                    self._session.post_action_route == "REPLACE_NEXT"
+                    and self._session.conversation_state == "ready"
+                    and not self._session.model_admission_blocked
+                ):
+                    self._session.post_action_route = None
+                    await self._transition("PERCEPTION")
+                return
+            route = self._session.post_action_route
+            phase = self._session.action_phase
+            self._session.action_completed = None
+            self._session.action_phase = "none"
+            if phase == "post_action_rest" or completed.kind == "rest":
+                await self._begin_convergence("rest")
+            elif route == "END_SESSION":
+                self._session.action_phase = "post_action_rest"
+                response = LLMResponse(
+                    action_kind="rest",
+                    action_payload={},
+                    post_action_route="END_SESSION",
+                    next_perceptions=(),
+                    session_id=self._session.session_id,
+                    turn_id=self._session.turn_id,
+                    correlation_id=0,
+                )
+                self._session.llm_response = response
+                worker = self._workers.action("rest")
+                session_id = self._session.session_id
+                turn_id = self._session.turn_id
+                self._start_worker(
+                    "action_rest", "rest", worker,
+                    lambda cid: worker.execute(session_id, turn_id, cid, {}),
+                )
+            elif route == "REPLACE_NEXT":
+                self._session.selected_perceptions = (
+                    self._session.normalized_next_perceptions
+                    if completed.status == "ok" else self._defaults
+                )
+                self._session.model_admission_blocked = True
+                self._start_conversation_close("replacement")
+            elif route == "KEEP_NEXT":
+                self._session.selected_perceptions = (
+                    self._session.normalized_next_perceptions
+                    if completed.status == "ok" else self._defaults
+                )
+                await self._transition("PERCEPTION")
+            else:
+                await self._transition("ERROR", trigger="error")
+
+    def _m4c_no_input_response(self) -> LLMResponse | None:
+        """Resolve product request-level no-input without calling the LLM."""
+        session = self._session
+        if session is None or getattr(self._workers.reasoner(), "_product", False) is not True:
+            return None
+        if session.selected_perceptions != ("listen",) or len(session.perception_results) != 1:
+            return None
+        fact = session.perception_results[0]
+        code = fact.extra.get("asr_error_code") if type(fact.extra) is dict else None
+        no_input = (
+            fact.status == "timeout"
+            or (fact.status == "ok" and (fact.text is None or not fact.text.strip()))
+            or code == "NO_SPEECH"
+        )
+        if not no_input and code != "MULTIPLE_UTTERANCES":
+            if fact.status == "ok" and type(fact.text) is str and fact.text.strip():
+                session.no_input_streak = 0
+            return None
+        if code == "MULTIPLE_UTTERANCES":
+            text = "請一次只說一句。"
+            route = "KEEP_NEXT"
+        else:
+            session.no_input_streak += 1
+            if session.no_input_streak == 1:
+                text = "我沒聽清楚，請再說一次。"
+                route = "KEEP_NEXT"
+            else:
+                text = ""
+                route = "END_SESSION"
+        return LLMResponse(
+            action_kind="speak" if text else "rest",
+            action_payload={"text": text} if text else {},
+            post_action_route=route,
+            next_perceptions=("listen",) if route == "KEEP_NEXT" else (),
+            session_id=session.session_id,
+            turn_id=session.turn_id,
+            correlation_id=0,
+        )
+
+    async def _begin_convergence(self, trigger: Literal["rest", "interrupt", "error", "shutdown"]) -> None:
+        self._cancel_wake_timer()
+        if self._session is not None:
+            self._session.model_admission_blocked = True
+        if self._pending is not None:
+            if trigger == "shutdown":
+                self._pending.trigger = "shutdown"
+                self._pending.buffer_exit_policy = "discard"
+                self._pending.recovery_generation = None
+                if self._recovery_waiter is not None and not self._recovery_waiter.done():
+                    self._recovery_waiter.cancel()
+                for record in self._in_flight.values():
+                    record.cancel_requested = True
+                await self._converger.converge(tuple(self._in_flight.values()), "shutdown")
+            return
+        for record in self._in_flight.values():
+            record.cancel_requested = True
+        result: ConvergenceResult = await self._converger.converge(tuple(self._in_flight.values()), trigger)
+        for correlation_id, record in tuple(self._in_flight.items()):
+            if (
+                record.completion_mode == "private_result"
+                and record.task.done()
+                and self._lifecycle_record_proven(record)
+            ):
+                self._in_flight.pop(correlation_id, None)
+        policy: Literal["flush_to_wake", "discard"] = "flush_to_wake" if trigger == "rest" else "discard"
+        self._pending = _PendingConvergence(trigger, policy)
+        self._pending.asr_notice_requested = trigger == "error" and self._asr_notice_requested
+        self._asr_notice_requested = False
+        declared_keys = self._fault_recovery_keys if trigger == "error" else ()
+        self._fault_recovery_keys = ()
+        destroyed = tuple(sorted(set(result.destroyed_backends)))
+        if declared_keys and destroyed and not set(declared_keys) <= set(destroyed):
+            raise StateManagerInvariantViolation(
+                "system fault recovery keys do not match destroyed backends"
+            )
+        recovery_keys = tuple(sorted(set((*destroyed, *declared_keys))))
+        if recovery_keys and trigger != "shutdown":
+            if self._recovery is None:
+                raise StateManagerInvariantViolation("destroyed backends require RecoveryControl")
+            ticket = self._recovery.begin_recovery(recovery_keys)
+            self._pending.recovery_generation = ticket.generation
+            # Only rebuilding LLM destroys the active Conversation. Other
+            # backends leave it alive, so close it once the recovery barrier ends.
+            self._pending.phase = (
+                "recovery" if "backend.cognition.reasoner.llm" in recovery_keys else "workers"
+            )
+
+            async def wait_recovery() -> None:
+                await self._recovery.wait_recovery(ticket)
+
+            waiter = asyncio.create_task(wait_recovery())
+            self._recovery_waiter = waiter
+            waiter.add_done_callback(
+                lambda done, generation=ticket.generation: self._inbox.put_nowait(
+                    _RecoveryCompleted(generation, done)
+                )
+            )
+            if self._state != "ERROR":
+                await self._transition("ERROR")
+        await self._finish_convergence_if_ready()
+
+    async def _finish_convergence_if_ready(self) -> None:
+        pending = self._pending
+        if (
+            pending is None or self._in_flight
+            or pending.recovery_generation is not None
+            or (pending.planned_recovery_started and self._recovery_waiter is not None)
+        ):
+            return
+        if (
+            self._session is not None
+            and self._session.conversation_state == "ready"
+            and pending.phase == "workers"
+        ):
+            pending.phase = "conversation_close"
+            self._start_conversation_close(f"session_{pending.trigger}")
+            return
+        if pending.phase == "conversation_close":
+            return
+        control = self._conversation_control
+        if (
+            pending.phase == "recovery"
+            and pending.trigger != "shutdown"
+            and not pending.planned_recovery_started
+            and getattr(control, "recovery_pending", False)
+        ):
+            session, proof = self._session, pending.close_proof
+            authorize = getattr(control, "authorize_recovery", None)
+            if (
+                session is None or proof is None or not callable(authorize)
+                or (proof.session_id, proof.generation)
+                != (session.session_id, session.conversation_generation)
+                or not (proof.request_terminal_proven and proof.cleanup_proven and proof.engine_usable)
+            ):
+                raise ConvergenceFatalError(
+                    correlation_id=0, kind="conversation", phase="recovery",
+                    stage="planned_recovery", cause=RuntimeError("PLANNED_RECOVERY_PROOF"),
+                )
+            pending.planned_recovery_started = True
+            waiter = asyncio.create_task(authorize(session.session_id, proof.generation, proof))
+            self._recovery_waiter = waiter
+            waiter.add_done_callback(
+                lambda done, sid=session.session_id, generation=proof.generation:
+                self._inbox.put_nowait(_PlannedRecoveryCompleted(sid, generation, done))
+            )
+            return
+        if (pending.trigger == "error" and pending.asr_notice_requested
+                and not pending.notice_started and self._session is not None
+                and "speak" in self._workers.action_kinds):
+            pending.notice_started = True
+            session = self._session
+            worker = self._workers.action("speak")
+            self._start_worker("error_notice", "speak", worker,
+                lambda cid: worker.execute(session.session_id, session.turn_id, cid,
+                                           {"text": ASR_FAILURE_NOTICE}))
+            return
+        pending.phase = "complete"
+        if pending.trigger == "shutdown":
+            await self._close_read()
+            self._session = None
+            self._pending = None
+            self._loop_should_stop = True
+            return
+        await self._close_read()
+        if pending.buffer_exit_policy == "discard" and self._external_control is not None:
+            await self._external_control.discard()
+        self._pending = None
+        await self._transition("IDLE")
+        if pending.buffer_exit_policy == "flush_to_wake" and self._external_control is not None:
+            await self._external_control.flush_to_wake()
+
+    async def _begin_shutdown(self) -> None:
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+        self._cancel_wake_timer()
+        if self._external_control is not None:
+            await self._external_control.discard()
+        if self._recovery is not None:
+            await self._recovery.prepare_shutdown()
+        await self._begin_convergence("shutdown")

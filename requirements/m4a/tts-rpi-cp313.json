@@ -1,0 +1,13 @@
+{
+  "schema": "sbd.m4a.runtime-lock.v1",
+  "runtime": "tts",
+  "interpreter": "CPython 3.13",
+  "arch": "aarch64",
+  "profile": "matcha-zh-en-default-sid-0",
+  "baseline_source_sha": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+  "wheels": [
+    {"distribution":"sherpa-onnx","version":"1.13.5","filename":"sherpa_onnx-1.13.5-cp313-cp313-manylinux2014_aarch64.whl","size_bytes":4167203,"sha256":"f5a6cc5ac96043670faa0f5c0e56310315a4600cf7b764fee014e7dd75fda00f"},
+    {"distribution":"sherpa-onnx-core","version":"1.13.5","filename":"sherpa_onnx_core-1.13.5-py3-none-manylinux2014_aarch64.whl","size_bytes":13051193,"sha256":"4cd751063a378a49f0c72eba5ba959fe375397f5baf93a53f3db64097d00e2aa"},
+    {"distribution":"numpy","version":"2.5.2","filename":"numpy-2.5.2-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl","size_bytes":15609566,"sha256":"0aadf13b60048d501e05fa699efaf7734e2494f3498a4c2a5521d822640324f3"}
+  ]
+}

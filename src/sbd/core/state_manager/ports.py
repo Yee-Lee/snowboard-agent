@@ -1,0 +1,90 @@
+"""Narrow State Manager control protocols."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Literal, Protocol, TypeAlias, runtime_checkable
+
+from sbd.core.state_manager.convergence import ConvergenceResult
+from sbd.core.state_manager.inflight import InFlightRecord
+from sbd.core.lifecycle import ForceAbortReport
+from sbd.core.resource_manager.models import RecoveryTicket
+
+ConversationGeneration: TypeAlias = int
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationReady:
+    session_id: str
+    generation: int
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationOpenRejected:
+    session_id: str
+    generation: int
+    cleanup_proven: bool
+    engine_usable: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationCloseProof:
+    session_id: str
+    generation: int
+    request_terminal_proven: bool
+    cleanup_proven: bool
+    engine_usable: bool
+
+
+@runtime_checkable
+class ConversationLifecycleControl(Protocol):
+    async def open_conversation(
+        self, session_id: str, generation: int
+    ) -> ConversationReady | ConversationOpenRejected: ...
+
+    async def close_conversation(
+        self, session_id: str, generation: int, reason: str
+    ) -> ConversationCloseProof: ...
+
+    async def abort(self) -> None: ...
+    async def force_abort(self) -> ForceAbortReport: ...
+
+
+@runtime_checkable
+class WakeListenerControl(Protocol):
+    async def suspend(self) -> None: ...
+    async def resume(self) -> None: ...
+    async def ensure_released(self) -> None: ...
+
+
+@runtime_checkable
+class ExternalMessageControl(Protocol):
+    async def assign_to_session(self, message_id: str, session_id: str) -> None: ...
+    async def assign_to_turn(self, message_id: str, session_id: str, turn_id: int) -> None: ...
+    async def mark_pending(self, message_id: str, session_id: str) -> None: ...
+    async def begin_read(self, session_id: str, turn_id: int) -> tuple[str, ...]: ...
+    async def close_read(self, session_id: str, turn_id: int) -> None: ...
+    async def pending_ids(self, session_id: str) -> tuple[str, ...]: ...
+    async def flush_to_wake(self) -> None: ...
+    async def discard(self) -> None: ...
+
+
+@runtime_checkable
+class ActionPayloadValidator(Protocol):
+    def validate(self, kind: str, payload: dict[str, Any]) -> None: ...
+
+
+@runtime_checkable
+class SessionConverger(Protocol):
+    async def converge(
+        self,
+        records: tuple[InFlightRecord, ...],
+        trigger: Literal["rest", "interrupt", "error", "shutdown"],
+    ) -> ConvergenceResult: ...
+
+
+@runtime_checkable
+class RecoveryControl(Protocol):
+    def begin_recovery(self, keys: tuple[str, ...]) -> RecoveryTicket: ...
+    async def wait_recovery(self, ticket: RecoveryTicket) -> None: ...
+    def recovery_ready(self) -> bool: ...
+    async def prepare_shutdown(self) -> None: ...

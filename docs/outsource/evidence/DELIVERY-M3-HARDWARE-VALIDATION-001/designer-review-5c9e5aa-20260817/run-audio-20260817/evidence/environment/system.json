@@ -1,0 +1,7 @@
+{
+  "branch": "HEAD",
+  "implementation_sha": "5c9e5aac47e7f4f0dd168d8c75541438ee74f858",
+  "machine": "aarch64",
+  "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+  "python": "3.13.5"
+}

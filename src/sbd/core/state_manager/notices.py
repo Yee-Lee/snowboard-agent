@@ -1,0 +1,34 @@
+import asyncio
+from dataclasses import dataclass
+from sbd.core.events import CorrelationId, SessionId
+
+@dataclass(frozen=True, slots=True)
+class _TaskCompleted:
+    kind: str
+    correlation_id: CorrelationId
+    task: asyncio.Task[None]
+
+
+@dataclass(frozen=True, slots=True)
+class _ConversationLifecycleCompleted:
+    operation: str
+    session_id: SessionId
+    generation: int
+    correlation_id: CorrelationId
+    task: asyncio.Task[object]
+
+@dataclass(frozen=True, slots=True)
+class _WakeAckElapsed:
+    session_id: SessionId
+
+@dataclass(frozen=True, slots=True)
+class _RecoveryCompleted:
+    generation: int
+    waiter: asyncio.Task[None]
+
+
+@dataclass(frozen=True, slots=True)
+class _PlannedRecoveryCompleted:
+    session_id: SessionId
+    generation: int
+    waiter: asyncio.Task[None]

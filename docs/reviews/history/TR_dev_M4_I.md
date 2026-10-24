@@ -1,0 +1,395 @@
+---
+requestor: "Tester"
+owner: "Developer"
+status: "Resolved"
+---
+
+# TR_dev_M4_I — M4A Gate 3 candidate rejection
+
+## Review identity
+
+- Candidate: `306dbc96585d1eef55ba0c6380e2eeceaa2057fc`
+- Portable run: `m4a-306dbc9-20260828-p01`
+- Pi acceptance run: `m4a-306dbc9-20260828-pi01`
+- Formal result: **Fail** — suite timeout after 600 seconds
+- Sanitized evidence summary: `docs/outsource/evidence/M4A-TESTER-306DBC9-20260828/README.md`
+
+## Blocking findings
+
+### TRDEV-M4A-001 — Finite ASR input without endpoint waits forever
+
+- **Test IDs / contract:** `M4A-ASR-001`, `M4A-ASR-002`, `M4A-ASR-003`; `ch_m4a_audio_production.md` §5.2–§5.3 requires bounded endpoint/transcription, no-speech convergence and cleanup.
+- **Reproduction:** run the formal `candidate_gate.py accept` command from the evidence summary with the only naturally 640-byte-aligned approved fixture (`asr-pause-040`). The suite remains on `test_m4a_asr_001_and_002_real_persistent_two_turns` until the 600-second runner timeout. A direct `StreamingEndpoint + Silero` diagnostic proves this fixture processes 195 frames, reaches probability `0.9971`, remains triggered at EOF and never forms `speech_end` or `ENDPOINT`.
+- **Evidence:** no JUnit, result card or `result.json` was produced. The runner wrote `accept-failure.json` with `reason="suite timeout after 600.0 seconds"`. Candidate descendants were terminated, but one per-process ASR temp directory remained.
+- **Root cause:** after the finite frame iterator is exhausted, `WhisperCppASRAdapter.transcribe()` receives `(None, None)` from `_next_frame_or_event()` and enters an unbounded terminal receive loop. The supervisor has no EOF/END transition and emits no terminal when Silero has not declared an endpoint.
+- **Expected / actual:** finite input must produce a bounded transcript, no-speech/error result, or bounded recovery; actual behavior waits indefinitely and relies on the outer runner to kill it.
+- **Preferred correction:** add a contract-aligned, bounded end-of-input/no-endpoint transition across the adapter and supervisor. If this requires a new wire operation, revise `docs/protocol.md` through the design workflow rather than adding an undocumented message. Preserve endpoint checksum, cancellation and cleanup semantics.
+- **Minimum re-verification:** portable EOF/no-endpoint regression plus Pi real-VAD runs proving both a nonempty fixed-fixture result and a bounded no-endpoint result; then rerun the full three-version matrix and fresh Pi acceptance.
+
+### TRDEV-M4A-002 — Buffered control coalescing deadlocks the real ASR child
+
+- **Test IDs / contract:** `M4A-IPC-001`, `M4A-ASR-001`, `M4A-OFF-001`; Audio Protocol v1 must tolerate fragmented/coalesced control and payload traffic, and real inference must make zero network attempts.
+- **Reproduction:** run the real adapter with the POC M4 `asr-pause-038` fixture padded only to a complete 20 ms frame. Without an artificial send delay, a 30-second IPC wrapper receives only `READY`: no `FRAME_ACCEPTED`, `ENDPOINT` or terminal event, and the adapter remains `BUSY`. Add a diagnostic-only 100 ms wait after sending `BEGIN`; the unchanged candidate then returns `ENDPOINT` at frame 102 and a nonempty `RESULT` in under five seconds.
+- **Evidence:** the no-delay trace records 27 IPv4/IPv6 calls in 30 seconds; the delayed successful run records zero. The 600-second formal stalled run records 72 lines, including DNS connects to `192.168.0.1:53` returning `ENETUNREACH`. Standalone Silero streaming, direct real whisper transcription, and the delayed end-to-end adapter path all complete with zero network calls. This proves that whisper inference alone is not sufficient to trigger the attempts; the exact userspace caller in the stalled integration path is not yet attributed by the syscall-only trace.
+- **Root cause:** `supervisor.py` combines `select.select()` on the stdin file descriptor with buffered `sys.stdin.buffer.readline()` / `read()`. Reading `BEGIN` can prefetch the immediately coalesced `FRAME` into Python's buffer; the underlying fd then appears not readable, so the loop never calls `read_control()` for that buffered frame. Portable `ScriptedChild` tests do not exercise this OS-pipe condition.
+- **Expected / actual:** expected exact protocol behavior for coalesced BEGIN/FRAME traffic and zero network attempts; actual real child deadlocks before acknowledging frame zero. The prolonged stalled process also violates the formal offline trace gate.
+- **Preferred correction:** make supervisor framing use a single buffering model that never gates already-buffered data on fd readiness—for example an unbuffered/raw fd parser or an explicit internal byte buffer. Do not add timing sleeps to production. Add an actual-process regression that writes coalesced BEGIN + FRAME bytes and proves `FRAME_ACCEPTED`/`ENDPOINT`/terminal behavior.
+- **Minimum re-verification:** no-delay real adapter run returns nonempty `RESULT`, fragmented/coalesced actual-process regressions pass, and the fresh formal trace has `network_attempt_count=0` through a complete offline ASR/TTS/HAL session. If the network attempt persists after the IPC repair, capture PID/TID-to-executable identity and a userspace stack before assigning it to NSS, VAD or whisper.
+
+### TRDEV-M4A-003 — Production launch lacks the required native thread policy
+
+- **Test ID / contract:** `M4A-TTS-001`; successful synthesis and AudioOutput drain must leave process/thread/fd/temp cleanup deltas at zero.
+- **Reproduction:** run `test_m4a_tts_001_real_pcm_and_audio_output_drain` on Pi after ensuring `/tmp/sbd-m4a-tts` is writable by the operator.
+- **Evidence:** under the default product environment, real Matcha synthesis and ALSA drain complete with approximately 69 KB PCM, then the cleanup assertion fails with `orphan_processes=0`, `thread_leaks=3`, `fd_leaks=0`, `temp_leaks=0` immediately and after one second. `/proc` shows three new native tasks named `python`, while `threading.enumerate()` contains only `MainThread`. A dependency-only probe reproduces exactly three tasks when importing NumPy 2.4.2 + samplerate 0.2.4. With `OPENBLAS_NUM_THREADS=1` set before process startup, the unchanged candidate's complete real `M4A-TTS-001` node passes in 5.43 seconds and leaves no candidate-specific process; its card records 69,454 PCM bytes.
+- **Expected / actual:** expected all cleanup deltas zero; actual three persistent native threads remain in the Core process.
+- **Preferred correction:** establish a production-owned native thread policy before the controller imports NumPy/samplerate; the confirmed minimal setting is `OPENBLAS_NUM_THREADS=1`. Apply it to the real product/service and formal runner entry, not only an ad-hoc debug shell. Keep the accepted cleanup assertion unchanged.
+- **Minimum re-verification:** make the policy part of the production-owned launch path, then repeat the real TTS→ALSA success case without an ad-hoc shell override and assert all four cleanup counters are zero after drain/stop.
+
+### TRDEV-M4A-004 — Pi cancellation test does not follow deferred→Level 2 contract
+
+- **Test ID / contract:** `M4A-TTS-002`; actual-child cancel/timeout must not fake success and must converge through cancellation or Level 2 recovery.
+- **Reproduction:** run `test_m4a_tts_002_actual_process_group_destroy_and_recovery` on Pi.
+- **Evidence:** the child returns `CANCEL_DEFERRED`, but the target test then unconditionally waits for `CANCELLED` within the configured 30-second child-ready timeout; `asyncio.wait_for()` raises `TimeoutError`. `worker.py` can emit `CANCELLED` only after the uninterruptible native synthesis future finishes. An external contract-aligned Pi diagnostic keeps the deferred operation pending for a bounded Level 1 observation, then proves `force_abort()` reports the stable TTS key, reaches `DESTROYED`, rebuilds, completes two subsequent real syntheses and stops with all four cleanup deltas at zero; the case passes in 6.11 seconds.
+- **Expected / actual:** `ch_m4a_audio_production.md` §4.3 explicitly permits unsupported cooperative cancellation to remain pending until Level 1 expires and Level 2 performs process-group termination. The current target test instead requires cooperative completion and fails before exercising the allowed escalation/rebuild path.
+- **Preferred correction:** revise the actual-child target case to accept `CANCEL_DEFERRED`, prove the Level 1 operation remains pending rather than reporting success, then invoke `force_abort()`, verify TERM/KILL/waitpid and cleanup, rebuild the same baseline and complete the required subsequent syntheses. Do not weaken the final recovery or cleanup assertions.
+- **Minimum re-verification:** actual Matcha error, cancel, timeout, TERM/KILL proof, rebuild READY and two subsequent successful syntheses, with zero cleanup deltas.
+
+## Advisory
+
+### TRDEV-M4A-A01 — Target was contaminated by earlier runs
+
+Before this run, the Pi contained two older ASR process groups and several stale ASR temp directories pointing to a different checkout/install root. `/tmp/sbd-m4a-tts` was an empty `root:root 755` directory and initially blocked the `yee` operator; its ownership was restored after confirming it was empty and unused. These are not used as candidate findings, but the next formal run must begin from a clean target or a documented operator cleanup/reboot. Candidate-specific processes from the timed-out formal run are currently zero.
+
+## Re-verification gate
+
+Because protected product/test inputs require correction, create a new append-only candidate SHA after USER commit approval. Do not reuse, amend or replace the rejected SHA. Tester will rerun the complete CPython 3.11/3.12/3.13 portable matrix, product build/install/preflight and one fresh Pi acceptance run. Debug output from this round cannot be promoted into the new formal result.
+
+## Developer response — Revised
+
+### TRDEV-M4A-001 — Correction implemented; formal re-verification pending
+
+- **Root cause:** the parent treated finite iterator exhaustion as capture completion even though Audio Protocol v1 has no end-input terminal. It then waited indefinitely for a supervisor terminal that could not exist while Silero remained triggered.
+- **Correction:** `WhisperCppASRAdapter` now sends at most 100 credit-governed 20 ms silence frames after finite EOF. This permits the fixed 500 ms end-silence plus 600 ms post-padding to form a normal endpoint. If no endpoint forms within the exact two-second bound, the parent sends the existing `CANCEL`; `CANCELLED` returns the child to READY and raises a recoverable `AdapterRejected`. No public API or wire operation changed.
+- **Regression:** `tests/test_m4a_asr_001.py` proves a finite source reaches a nonempty result through terminal silence and proves an exact flush-bound no-endpoint case sends one CANCEL, returns READY and performs no force termination. Both cases additionally run the parent adapter against the actual supervisor control loop in an OS child process, with bounded completion and clean shutdown/workdir removal.
+
+### TRDEV-M4A-002 — Correction implemented; formal re-verification pending
+
+- **Root cause:** `select()` observed the OS stdin fd while `sys.stdin.buffer.readline()` could prefetch a following coalesced FRAME into Python's private buffer. The fd then appeared empty and the supervisor stopped consuming the already-buffered command.
+- **Correction:** ASR supervisor control headers and payloads now read exclusively from the raw `FileIO` beneath stdin. The TTS worker uses the same single buffering policy for control input, preventing the equivalent GENERATE/CANCEL race. No timing sleep was added to product code.
+- **Regression:** `tests/test_m4a_ipc_001.py` launches the real supervisor control loop as an OS child process. Parameterized fragmented and no-delay coalesced BEGIN+FRAME writes both receive matching `FRAME_ACCEPTED`, reach `ENDPOINT`, receive a nonempty `RESULT`, acknowledge shutdown and exit zero.
+
+### TRDEV-M4A-003 — Correction implemented; formal re-verification pending
+
+- **Root cause:** the controller and formal runner inherited an arbitrary host `OPENBLAS_NUM_THREADS`, so importing NumPy/samplerate could create three persistent native tasks not visible to `threading.enumerate()`.
+- **Correction:** `sbd.main` enforces `OPENBLAS_NUM_THREADS=1` before importing any project module that can lazily reach NumPy/samplerate. `candidate_gate.py` applies the same production policy to every pytest subprocess before formal target-suite import.
+- **Regression:** `tests/test_m4a_tts_001.py` starts a clean interpreter with a conflicting value and proves importing the product entrypoint changes it to exactly `1`; `tests/test_candidate_gate.py` proves an acceptance subprocess receives exactly `1`. The Pi cleanup assertion remains unchanged.
+
+### TRDEV-M4A-004 — Correction implemented; formal re-verification pending
+
+- **Root cause:** the Pi case interpreted `CANCEL_DEFERRED` as requiring a later cooperative `CANCELLED`, contrary to the allowed Level 1 pending to Level 2 destruction path.
+- **Correction:** the actual-child test now observes that no terminal arrives during the configured Level 1 interval, cancels only its pending observer, invokes `force_abort()`, verifies the stable TTS key and `DESTROYED`, rebuilds the same baseline, completes two real syntheses, stops, and retains all four zero-cleanup assertions.
+- **Target status:** the Developer working-tree Pi diagnostic executed the real deferred→Level 2→rebuild path and completed two recovery syntheses with cleanup zero. This is diagnostic evidence only; Tester must repeat the formal target node on a clean exact candidate.
+
+### Developer verification
+
+- `timeout 60s env PYTHONPATH=src python3 -m pytest -q tests/test_m4a_asr_001.py tests/test_m4a_ipc_001.py tests/test_m4a_tts_001.py tests/test_m4a_tts_002.py` → `66 passed in 6.80s`, exit 0.
+- `timeout 120s env PYTHONPATH=src python3 -m pytest -q -m 'not rpi' $(tr '\n' ' ' < tests/m4a_portable_suite.txt)` → `167 passed in 9.92s`, exit 0; zero fail/skip/xfail.
+- `timeout 120s env PYTHONPATH=src python3 -m pytest -q tests/test_candidate_gate.py` → `14 passed in 26.35s`, exit 0.
+- `timeout 180s env PYTHONPATH=src python3 -m pytest -q -m 'not rpi'` → `449 passed, 2 skipped, 28 deselected in 70.23s`, exit 0. The two repository-level skips are outside the formal M4A manifest.
+- `env PYTHONPATH=src python3 -m pytest --collect-only -q -m rpi tests/milestones/test_m4_local_voice.py` → `7 tests collected in 0.36s`, exit 0.
+- Changed-file `py_compile` and `git diff --check` both passed.
+
+### Developer Raspberry Pi diagnostic — 2026-08-28
+
+- The Pi was rebooted first. The post-boot baseline had zero M4A processes,
+  ALSA holders and ASR/TTS temp entries; the formal checkout had no tracked
+  changes. All audio commands ran in loopback-only network namespaces.
+- A fresh aarch64 whisper build passed with SHA-256
+  `6aa73d996dfb03b12aabf5e706170301902ee9a3ceafa14573e7f269ec04cc26`.
+  Fresh product installation passed with eight wheels and product lock
+  `21389a0fb6030a9ca74645003239119a9e299bd2719b98e2df15bc19a0c360d4`.
+  The fresh controller-r2 closure passed manifest/checksum/import preflight.
+- Real ASR returned two nonempty results in 3883.509 / 3858.173 ms. A finite
+  no-endpoint input converged to the recoverable bounded result in 135.881 ms.
+  The complete trace contained zero IPv4/IPv6 calls; process, native-thread,
+  fd and temp cleanup deltas were all zero.
+- Real TTS wrote and drained 69,408 bytes through ALSA. The controller contained
+  one native thread after audio-stack import. Deferred cancellation remained
+  pending through Level 1, Level 2 destroyed the child, rebuild succeeded and
+  two subsequent syntheses produced 69,460 / 69,350 bytes. The complete trace
+  contained zero IPv4/IPv6 calls and every cleanup delta was zero.
+- These results used an isolated checkout with the uncommitted working-tree
+  patch, so their status is **Developer Diagnostic Pass**, not exact-candidate
+  verification or Tester acceptance. The repeatable preparation, runtime and
+  failure rules are now recorded in
+  `docs/runbooks/m4a_developer_pi_diagnostic.md`, backed by the sanitized
+  `scripts/m4a_developer_pi_check.py` entry point.
+
+### Candidate handoff
+
+Protected source, test and runner inputs changed, so rejected SHA `306dbc96585d1eef55ba0c6380e2eeceaa2057fc` is not reused or rewritten. A new append-only provisional candidate commit remains pending the final exact commit confirmation. After its full SHA exists, Developer must first repeat the Pi diagnostic from that clean exact SHA; only then is it handed to Tester for the complete CPython 3.11/3.12/3.13 portable matrix and one fresh Pi build/install/preflight/acceptance run. No Developer diagnostic output is formal evidence.
+
+## Tester re-verification — Rejected
+
+### Candidate and gate result
+
+- New append-only candidate: `ed1b2cf57581d48966a7dd6535c024ea51922b28`.
+- Tester portable run: `m4a-ed1b2cf-20260828-p02`.
+- CPython 3.11.16: **Fail** — 166 passed, 1 failed, 0 skipped/xfailed.
+- CPython 3.12.3 and 3.13.15: Pass — 167 passed each, 0 failed/skipped/xfailed.
+- Candidate-runner regression: 14 passed. Adjacent `not rpi` regression: 451 passed, 28 deselected.
+- Formal matrix is **Fail**, so target preflight and acceptance were correctly not started.
+- The Pi was rebooted as requested. Boot ID `85777d3e-7dda-4ff5-8190-cc03901959f6` had zero candidate processes, ALSA holders and ASR/TTS temp entries; this clean target remains unused by acceptance.
+- Sanitized evidence summary: `docs/outsource/evidence/M4A-TESTER-ED1B2CF-20260828/README.md`.
+
+### TRDEV-M4A-001, TRDEV-M4A-003 and TRDEV-M4A-004
+
+The new portable regressions for finite-input convergence, production OpenBLAS policy and deferred cancellation all pass on the three supported Python minors. Their required real-device dispositions remain Pending because the portable entry gate failed; they are not reopened or promoted to Pass.
+
+### TRDEV-M4A-002 — Rejected: Python 3.11 actual-process exit oracle is nondeterministic
+
+- **Contract / Test ID:** `M4A-IPC-001`; `docs/protocol.md` §2.2 and `test_spec_M4.md` require `READY → SHUTDOWN → SHUTDOWN_ACK → STOPPED` plus bounded parent waitpid. The portable matrix requires zero Fail on CPython 3.11/3.12/3.13.
+- **Formal reproduction:** with host `PYTHONPATH` removed and third-party pytest autoload disabled, run candidate `ed1b2cf57581d48966a7dd6535c024ea51922b28` through `candidate_gate.py portable --python 3.11 --suite tests/m4a_portable_suite.txt --timeout-seconds 120`. `test_m4a_ipc_001_actual_asr_process_handles_coalesced_and_fragmented_input[False]` receives `FRAME_ACCEPTED`, `ENDPOINT`, nonempty `RESULT` and `SHUTDOWN_ACK`, then `asyncio.wait_for(process.wait(), timeout=5)` raises `TimeoutError`.
+- **Repeatability:** the unchanged node passes twice and fails on the third independent run. This is a reproducible false-green risk, not a one-off result eligible for retry promotion. Under `strace` it passes 5/5, confirming timing sensitivity.
+- **Root cause evidence:** a Tester-only wrapper around `asyncio.subprocess.Process.wait()` records, at cancellation after 5.007 seconds, `process.returncode=0` and `/proc/<pid>` absent. The child was already reaped; Python 3.11's asyncio subprocess transport waiter remained pending on its pipe callbacks. Replacing `wait()` with bounded `communicate()` still fails on iteration 9, so pipe draining does not resolve this runtime behavior.
+- **Expected / actual:** expected a deterministic portable proof that the real child is reaped within the bound; actual test intermittently fails after proving the child already exited zero. This prevents a valid three-version matrix and therefore blocks Pi acceptance.
+- **Exact correction:** keep every protocol assertion unchanged, but replace the final `Process.wait()` oracle with a bounded poll of `process.returncode`. Asyncio sets that property only after its child watcher processes waitpid, so this proves reaping without depending on the delayed transport waiter. The following disposable patch passes the failing node 20/20 on CPython 3.11, all four affected files (`66 passed`) and the complete M4A manifest (`167 passed`):
+
+```diff
+@@
+-            assert await asyncio.wait_for(process.wait(), timeout=5) == 0
++            deadline = asyncio.get_running_loop().time() + 5
++            while (
++                process.returncode is None
++                and asyncio.get_running_loop().time() < deadline
++            ):
++                await asyncio.sleep(0.01)
++            assert process.returncode == 0
+```
+
+- **Do not apply:** moving `executor.shutdown(wait=True)` before `SHUTDOWN_ACK` and switching to bounded `process.communicate()` were both tested in disposable copies and still reproduced the failure; they are not acceptable fixes for this finding.
+- **Minimum re-verification:** create a new append-only candidate containing only the test-oracle correction and any directly required documentation. On CPython 3.11, run the exact no-delay node 20 independent times, then all four affected files. Finally rerun a new complete candidate-gate portable matrix on CPython 3.11/3.12/3.13. Only a zero-Fail/Skip/XFail matrix may enter fresh Pi product/preflight/acceptance.
+
+## Developer response to Tester re-verification — Revised
+
+### TRDEV-M4A-002 — Python 3.11 exit oracle corrected
+
+- **Accepted root cause:** the child had already exited with status zero and had been reaped, while CPython 3.11's asyncio subprocess transport waiter remained pending on pipe callbacks. The protocol sequence and product-child exit were successful; the final `Process.wait()` assertion was a nondeterministic test oracle.
+- **Correction:** `tests/test_m4a_ipc_001.py` keeps all `READY`, `FRAME_ACCEPTED`, `ENDPOINT`, nonempty `RESULT` and `SHUTDOWN_ACK` assertions unchanged. Its final bounded exit check now polls `process.returncode` for at most five seconds. A zero value proves the child watcher completed waitpid without waiting for the delayed transport waiter.
+- **Scope:** this append-only correction changes no product source, protocol, runner, dependency or target configuration. It does not reinterpret the earlier offline finding or claim target acceptance; those target dispositions remain pending behind the portable entry gate.
+
+### Developer verification — 2026-08-28
+
+- CPython 3.11.16, exact no-delay `[False]` node: 20 independent pytest processes, **20/20 passed**.
+- CPython 3.11.16, four affected ASR/IPC/TTS files: **66 passed**.
+- Complete 13-ID M4A portable manifest with third-party pytest autoload disabled and host `PYTHONPATH` removed: CPython 3.11.16 **167 passed**, CPython 3.12.3 **167 passed**, and CPython 3.13.15 **167 passed**; zero fail, skip or xfail in each run.
+- Candidate-runner regression: **14 passed**. Repository non-RPi regression: **451 passed, 28 deselected**.
+- `git diff --check` passes. The only protected change is the requested test-oracle correction; this review and the directly related Developer progress record are documentation-only handoff updates.
+
+### Candidate handoff
+
+The USER-approved append-only candidate is
+`7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`. Developer candidate gate run
+`m4a-7aba071-20260828-devp01` used a clean clone of that exact SHA and passed
+all 167 manifest tests on CPython 3.11.16, 3.12.3 and 3.13.15, with zero fail,
+skip or xfail; its matrix result is `Pass`.
+
+Developer then rebooted the Pi to boot ID
+`a3a1e7a5-68cc-4a77-ba6a-fb62f89dadc6` and verified a zero-process, zero-ALSA
+holder and zero-temp baseline. A new detached exact-SHA checkout, fresh product
+install and fresh controller venv passed product and closure preflight. Real ASR
+returned two nonempty results in 3593.554 / 3575.184 ms and the finite
+no-endpoint case converged in 138.033 ms. Real TTS played 69,462 bytes through
+ALSA, retained one controller thread, performed deferred Level 1 to Level 2
+destruction, rebuilt, and produced 69,128 / 69,474 recovery bytes. Both modes
+reached `STOPPED`, recorded zero process/thread/fd/temp cleanup deltas and zero
+IPv4/IPv6 calls in their complete traces. Final process, ALSA, temp and protected
+checkout checks were clean.
+
+These are **Developer Exact-Candidate Verification** results only. Tester must
+use new run IDs and fresh outputs to independently rerun the formal three-minor
+portable matrix, Pi preflight and complete target acceptance before resolving
+this review.
+
+## Tester portable sign-off — Pass; target Pending
+
+- Candidate: `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` from a clean detached worktree.
+- Tester run: `m4a-7aba071-20260828-p01`.
+- Exact CPython 3.11 no-delay node: 20 independent processes, 20/20 passed.
+- CPython 3.11.16, 3.12.3 and 3.13.15: 167 passed per minor, with zero fail, skip or xfail.
+- `matrix-index.json`: Pass; every result binds the same candidate SHA and run ID.
+- Protected candidate paths remained clean after execution.
+- Sanitized evidence: `docs/outsource/evidence/M4A-TESTER-7ABA071-20260828/README.md`.
+
+`TRDEV-M4A-002` now satisfies its locked portable minimum re-verification. The
+portable portions of `TRDEV-M4A-001`, `TRDEV-M4A-003` and `TRDEV-M4A-004` also
+remain green. Their real-device requirements are still Pending and are not
+promoted using Developer diagnostics.
+
+Per `docs/roles/workflow.md` §4 steps 3–5, the next gate is Designer candidate
+review/freeze of this exact protected SHA. Tester requests that Designer record
+`7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` as frozen or return a Blocking
+finding. Target preflight and acceptance must not start before that decision.
+
+## Tester target re-verification — Rejected
+
+### Candidate and gate result
+
+- Candidate: `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`.
+- Pi acceptance run: `m4a-7aba071-20260829-pi01` on rebooted Pi boot ID
+  `64a0d1f8-04fe-4a84-a340-ad449ea28e57`.
+- Fresh native worker SHA-256:
+  `c5e862d2786a483de77e0f6921331f45879d1a864c80c67ac9a74b0376447f72`.
+- All seven real-device pytest cases completed in 170.911 seconds, but the
+  formal runner rejected the run at the offline network gate.
+- Authoritative result: `<pi-run-root>/acceptance/accept-failure.json`;
+  `result.json` and signed acceptance cards do not exist.
+- Sanitized evidence:
+  `docs/outsource/evidence/M4A-TESTER-7ABA071-20260828/README.md`.
+
+### TRDEV-M4A-005 — ONNX Runtime telemetry violates the zero-attempt contract
+
+- **Contract / test IDs:** `M4A-OFF-001` and complete Gate 3 target acceptance
+  require zero IPv4/IPv6 network attempts by the full descendant process tree.
+  Blocking egress in a loopback-only namespace does not permit attempted calls.
+- **Formal evidence:** the outer full-tree `strace` recorded 54 IPv4/IPv6
+  syscalls across 18 TIDs, including 24 DNS connects to `192.168.0.1:53` that
+  returned `ENETUNREACH`. The acceptance subprocess itself completed seven of
+  seven device cases, 20 resource turns and clean final reconciliation, so
+  those unsigned outputs are diagnostic only and cannot override the runner.
+- **Root cause:** the persistent VAD supervisor initializes ONNX Runtime 1.29.0,
+  whose official non-Windows build contains the Microsoft 1DS telemetry uploader.
+  The 20-turn lifetime crosses its delayed uploader interval and resolves
+  `mobile.events.data.microsoft.com`; the resulting DNS/connect attempts are
+  product-descendant syscalls even when the namespace prevents egress.
+- **Required correction:** force `ORT_DISABLE_TELEMETRY=1` in
+  `offline_child_environment()`, overriding any inherited conflicting value.
+  Establish the same invariant at the ASR supervisor and TTS worker module
+  entrypoints before native runtime initialization. Add clean-subprocess tests
+  proving both direct child paths override a conflicting environment before
+  fake native session/TTS initialization.
+- **Forbidden workaround:** do not filter telemetry destinations or syscall
+  records, weaken the full-tree trace, rely on DNS failure/network namespaces,
+  add an ad-hoc shell export, or reuse this rejected acceptance run.
+- **Minimum re-verification:** create a new append-only candidate, pass the
+  complete CPython 3.11/3.12/3.13 portable matrix, and prove a persistent real
+  VAD/TTS process running longer than 30 seconds produces zero full-tree network
+  syscalls. Tester must then reboot the Pi and perform a new fresh-build product,
+  preflight and complete 20-turn acceptance under a new run ID.
+
+## Developer response to target re-verification — Revised
+
+### TRDEV-M4A-005 — Production telemetry invariant implemented
+
+- **Accepted root cause:** the prior short Developer traces did not cross ONNX
+  Runtime's delayed 1DS uploader interval. The formal 20-turn trace did, so the
+  calls belong to a product descendant and violate the zero-attempt contract
+  even though no packet could leave the loopback-only namespace.
+- **Correction:** `offline_child_environment()` now always writes
+  `ORT_DISABLE_TELEMETRY=1`. Both the directly executable ASR supervisor and TTS
+  worker establish the same value at module entry, before any lazy ONNX Runtime
+  or sherpa-onnx initialization. An inherited `0`, `false` or `yes` cannot
+  weaken this production-owned invariant.
+- **Regression:** `tests/test_m4a_off_001.py` checks the parent environment table
+  against conflicting values and launches both child entrypoints in clean
+  subprocesses with `ORT_DISABLE_TELEMETRY=0`. Fake native constructors assert
+  the value is already exactly `1` when the real VAD/TTS initialization path
+  reaches them.
+
+### Developer verification — 2026-08-29
+
+- Focused offline/ASR/IPC/TTS regression: **73 passed**; candidate-runner
+  regression: **14 passed**.
+- Complete M4A portable manifest: CPython 3.11, 3.12 and 3.13 each
+  **171 passed**, with zero fail, skip or xfail.
+- Repository non-RPi regression: **455 passed, 28 deselected**.
+- On the Pi, an isolated patched checkout inherited
+  `ORT_DISABLE_TELEMETRY=0`, initialized the real Silero ONNX model, remained
+  alive for 40 seconds, and completed with zero AF_INET/AF_INET6 records in its
+  full descendant `strace` and no residual process. This is working-tree
+  diagnostic evidence only, not exact-candidate or formal acceptance evidence.
+
+### New candidate requirement
+
+Rejected SHA `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d` and run
+`m4a-7aba071-20260829-pi01` remain immutable and rejected. The telemetry source,
+tests, Tester review/evidence and directly related Developer documentation will
+be recorded in a new append-only candidate after USER commit approval. Only that
+exact SHA may proceed through a new matrix and fresh Pi verification before
+Tester begins a new formal acceptance run.
+
+## Tester portable re-verification of telemetry candidate — Pass
+
+- Candidate: `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`, checked out as a
+  clean detached worktree. It is an append-only descendant of rejected candidate
+  `7aba0719e9f7858a68b44f28d2d99e3d3d2ef25d`.
+- Tester run: `m4a-6c3ba954-20260829-t01`; Developer result files and run IDs
+  were not reused.
+- CPython 3.11.16: **171 passed**, zero failed/skipped/xfailed.
+- CPython 3.12.3: **171 passed**, zero failed/skipped/xfailed.
+- CPython 3.13.15: **171 passed**, zero failed/skipped/xfailed.
+- `matrix-index.json`: `Pass`; all three results bind the same full candidate
+  SHA, Tester run ID, tracked suite manifest and 120-second timeout.
+- The protected checkout remained clean after all three executions and matrix
+  creation. The telemetry regressions therefore satisfy the portable portion of
+  `TRDEV-M4A-005` without weakening the formal full-tree strace gate.
+- Sanitized evidence:
+  `docs/outsource/evidence/M4A-TESTER-6C3BA954-20260829/README.md`.
+
+This is portable sign-off only. Target acceptance remains **Pending** until
+Designer reviews and freezes this exact SHA. `origin/core` did not yet contain
+the candidate when Tester completed the matrix, so the candidate must be pushed
+unchanged before freeze/handoff. After freeze, Tester must use a new Pi run ID,
+reboot the device, rebuild the product/controller inputs and execute the complete
+20-turn acceptance; Developer's 40-second and real-device diagnostics remain
+non-formal.
+
+## Tester final target reconciliation — Pass
+
+### Frozen identity and execution
+
+- Designer freeze was confirmed for exact candidate
+  `6c3ba95455dc5c2a152aa230b8ae5915887fe6a9` after its unchanged push to
+  `origin/core`.
+- Tester rebooted the Pi to boot ID
+  `a0dc71ef-3254-4606-b7a8-eeab5421220e` and confirmed zero pre-run product
+  processes, ALSA holders and temporary IPC entries.
+- To honor the USER's no-repeat direction, Tester reused the checksum-verified
+  exact-SHA product/controller produced by the completed Developer build, but
+  created a fresh product preflight, target preflight, loopback-only namespace,
+  output root and formal run ID `m4a-6c3ba954-20260829-pi01`.
+- The formal process inherited conflicting `ORT_DISABLE_TELEMETRY=0`; no shell
+  workaround supplied the required value.
+
+### Formal result
+
+- Target preflight: **Pass**, CPython 3.13.5, exact candidate and portable run
+  `m4a-6c3ba954-20260829-t01`.
+- Complete real-device suite: **7 passed**, zero failed/skipped/xfailed in
+  173.109 seconds.
+- `M4A-ASR-001/002/003`, `M4A-TTS-001/002`, `M4A-OFF-001`,
+  `M4A-RES-001`, `M4A-PKG-001` and `M4A-PRIV-001`: **Pass**.
+- The outer full-descendant syscall trace contains **0** IPv4/IPv6 records;
+  `network_attempt_count=0` and `downloader_calls=0`.
+- The 20-turn resource card records p99 latency 7724.653 ms, peak system use
+  829.703 MiB, zero orphan processes and `throttled=0x0`.
+- All final process/thread/fd/temp cleanup counters and post-run baseline checks
+  are zero. The exact-SHA checkout remained clean.
+
+### Finding disposition and evidence
+
+`TRDEV-M4A-005` is **Resolved**. The same formal full-tree audit that rejected
+`7aba0719…` now observes zero attempted network syscalls despite the conflicting
+inherited value. This is direct re-verification of the failed acceptance point;
+the earlier Developer 40-second diagnostic is not promoted or counted.
+
+The official inheritance generator validated all 16 required candidate, P1–P12
+and Audio-internal rows against the immutable Accepted Audio SHA and matching
+passing Core result cards. Sanitized evidence is under
+`docs/outsource/evidence/M4A-TESTER-6C3BA954-20260829/`; raw logs remain
+Git-external.
+
+Tester records the M4A technical sub-gate as **Pass** for candidate
+`6c3ba95455dc5c2a152aa230b8ae5915887fe6a9`. The shared real M4A+M4B combined
+resource row remains Pending until M4B input is Accepted, so this disposition
+does not declare the overall M4 milestone complete or authorize a `core_m4` tag.

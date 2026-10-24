@@ -1,0 +1,74 @@
+Base: 51fe185d143595702caec03eeec7b63a63e2391d
+Candidate: 6c7fc8ce94c7218e4948b77c2fe79ef6e6cc3dcf
+
+diff --git a/src/sbd/core/audio/alsa/README.md b/src/sbd/core/audio/alsa/README.md
+index 0b06e82..9f6baa6 100644
+--- a/src/sbd/core/audio/alsa/README.md
++++ b/src/sbd/core/audio/alsa/README.md
+@@ -11,0 +12,2 @@ This backend is the selected P4 baseline recorded by
++- successful playback drains the accepted PCM through the physical device before
++  `play()` returns; error and cancellation paths skip drain and close promptly.
+diff --git a/src/sbd/core/audio/alsa/output.py b/src/sbd/core/audio/alsa/output.py
+index ad6487d..862d635 100644
+--- a/src/sbd/core/audio/alsa/output.py
++++ b/src/sbd/core/audio/alsa/output.py
+@@ -79,0 +80,7 @@ class AlsaAudioOutput:
++            # A successful play() means the physical device has consumed the
++            # complete stream, not merely that ALSA accepted it into a userspace
++            # or kernel buffer.  snd_pcm_close() drops queued playback, so an
++            # explicit drain is required before the success path returns.
++            # Error and cancellation paths skip this call and retain the bounded
++            # close/drop behavior in stop().
++            await self._run(self._drain_worker)
+@@ -142,0 +150,8 @@ class AlsaAudioOutput:
++    def _drain_worker(self) -> None:
++        if self._pcm is None:
++            raise RuntimeError("ALSA playback is unavailable")
++        drain = getattr(self._pcm, "drain", None)
++        if drain is None:
++            raise RuntimeError("ALSA playback completion requires drain support")
++        drain()
++
+diff --git a/tests/test_m3_audo_001_002_003_004_005_006_007.py b/tests/test_m3_audo_001_002_003_004_005_006_007.py
+index 5a5c7cc..06005d9 100644
+--- a/tests/test_m3_audo_001_002_003_004_005_006_007.py
++++ b/tests/test_m3_audo_001_002_003_004_005_006_007.py
+@@ -48,0 +49 @@ class _FakePCM:
++        self.drains = 0
+@@ -49,0 +51 @@ class _FakePCM:
++        self.fail_on_drain = False
+@@ -59,0 +62,5 @@ class _FakePCM:
++    def drain(self) -> None:
++        self.drains += 1
++        if self.fail_on_drain:
++            raise OSError("mock drain error")
++
+@@ -183,0 +191,2 @@ def test_m3_audo_005() -> None:
++    # Only the five fully consumed, successfully written sessions are drained.
++    assert sink.drains == 5
+@@ -201,0 +211,25 @@ def test_m3_audo_007() -> None:
++
++
++def test_m3_audo_008() -> None:
++    output = AlsaAudioOutput(
++        _adapted_config(),
++        adapter_factory=lambda: _adapter(_TripleResampler()),
++    )
++    sink = _FakePCM()
++    sink.fail_on_drain = True
++    output._pcm = sink
++    output._executor = ThreadPoolExecutor(max_workers=1)
++    output._started = True
++
++    async def pcm():
++        yield struct.pack("<h", 1)
++
++    async def scenario() -> None:
++        with pytest.raises(OSError, match="mock drain error"):
++            await output.play(pcm())
++        assert output._adapter._resampler is None
++        await output.stop()
++
++    asyncio.run(scenario())
++    assert sink.drains == 1
++    assert sink.closed == 1

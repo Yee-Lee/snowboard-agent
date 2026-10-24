@@ -1,0 +1,11 @@
+{
+  "operator": "REPLACE_WITH_OPERATOR",
+  "peripherals": {
+    "audio": "REPLACE_WITH_MODEL_AND_REVISION",
+    "button": "REPLACE_WITH_MODEL",
+    "camera": "REPLACE_WITH_MODEL_AND_REVISION",
+    "display": "REPLACE_WITH_MODEL_AND_REVISION"
+  },
+  "pi": "Raspberry Pi 5 REPLACE_WITH_RAM_AND_BOARD_REVISION",
+  "wiring": "Use runbook section 2 plus BCM17-to-BCM27 GPIO loopback jumper"
+}

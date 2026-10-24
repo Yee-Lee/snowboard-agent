@@ -1,0 +1,61 @@
+{
+  "branch": "HEAD",
+  "candidate_sha": "6c3ba95455dc5c2a152aa230b8ae5915887fe6a9",
+  "command": [
+    "scripts/candidate_gate.py",
+    "--repo",
+    "<pi-product-root>/repo",
+    "accept",
+    "--candidate-sha",
+    "6c3ba95455dc5c2a152aa230b8ae5915887fe6a9",
+    "--run-id",
+    "m4a-6c3ba954-20260829-pi01",
+    "--preflight",
+    "<pi-run-root>/acceptance/preflight.json",
+    "--suite",
+    "tests/milestones/test_m4_local_voice.py",
+    "--timeout-seconds",
+    "600",
+    "--output",
+    "<pi-run-root>/acceptance"
+  ],
+  "counts": {
+    "failed": 0,
+    "passed": 7,
+    "skipped": 0,
+    "xfailed": 0
+  },
+  "downloader_calls": 0,
+  "ended_at_utc": "2026-08-28T23:43:40.793609Z",
+  "exit_code": 0,
+  "mode": "acceptance",
+  "network_attempt_count": 0,
+  "network_attempts": 0,
+  "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+  "python": {
+    "implementation": "CPython",
+    "version": "3.13.5"
+  },
+  "raw_logs": [
+    "logs/suite.stdout.log",
+    "logs/suite.stderr.log",
+    "logs/network.trace.log"
+  ],
+  "run_id": "m4a-6c3ba954-20260829-pi01",
+  "session_result": "Pass",
+  "started_at_utc": "2026-08-28T23:40:47.262154Z",
+  "status": "Pass",
+  "suite": "tests/milestones/test_m4_local_voice.py",
+  "suite_command": [
+    "<pi-product-root>/controller/bin/python",
+    "-m",
+    "pytest",
+    "-v",
+    "-m",
+    "rpi",
+    "tests/milestones/test_m4_local_voice.py",
+    "--junitxml=<pi-run-root>/acceptance/junit.xml"
+  ],
+  "test_id": "M4A-OFF-001",
+  "timeout_seconds": 600.0
+}

@@ -1,0 +1,11 @@
+{
+  "operator": "operator-1",
+  "peripherals": {
+    "audio": "Google voiceHAT SoundCard (I2S hw:0,0)",
+    "button": "Tactile switch on BCM23 (Pin 16) to GND",
+    "camera": "Raspberry Pi Camera Module v2 (Sony IMX219)",
+    "display": "Waveshare 1.5-inch RGB OLED (SSD1351)"
+  },
+  "pi": "Raspberry Pi 5 4GB Model B Rev 1.1",
+  "wiring": "Use runbook section 2 plus BCM17-to-BCM27 GPIO loopback jumper"
+}

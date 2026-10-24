@@ -1,0 +1,20 @@
+{
+  "schema": "sbd.m4a.matcha-closure.v1",
+  "archive_sha256": "271b804af570400d3bcdcb53bf6e53cc9f75180ee763b9f13eb5eaf2b0d086ef",
+  "root_dir": "matcha-icefall-zh-en",
+  "file_count": 362,
+  "tree_sha256": "5e4f8625f9f7d62f9a410d33571ebcd1e3e5b8b0f43f1ebda23512a79e2f3319",
+  "required_files": {
+    "date-zh.fst": {"size_bytes": 59154, "sha256": "eb8aa079ae3cb81d8f4404992f39d61a0cb990947512b5b8d1e54d1f6980e718"},
+    "espeak-ng-data/intonations": {"size_bytes": 2040, "sha256": "3f8af65fd3eda9759a10f021d61361c120871f463515229c925995c7f90918cc"},
+    "espeak-ng-data/phondata": {"size_bytes": 550424, "sha256": "4e0288957874029a8c3c9f41a8f517ad4bf18127046decbdd4b9d1d6807ce3a3"},
+    "espeak-ng-data/phondata-manifest": {"size_bytes": 21821, "sha256": "7b387af0702c7cf0b61f0bead68feded0bd8e1620729b0b252e76acbc30d3813"},
+    "espeak-ng-data/phonindex": {"size_bytes": 39074, "sha256": "3ca7b8fa3b42624e4b0f152707e7a39245fce569aa99ea47c055d9e622fcf0c4"},
+    "espeak-ng-data/phontab": {"size_bytes": 55796, "sha256": "886f3fa402cb0ba73d483aa8ad000af47a6b7cc06293c75a97913fba68a530f6"},
+    "lexicon.txt": {"size_bytes": 1400278, "sha256": "599efdcdaff4df2a123ce988c2cb90abcd59b919ef609ce36eb587d68b7ca2c0"},
+    "model-steps-3.onnx": {"size_bytes": 75717082, "sha256": "524286bf6cf11be74329ae1c682ac69e34d6860c2ea9fd1290319d561540b16a"},
+    "number-zh.fst": {"size_bytes": 64482, "sha256": "743f402181fcfebf76cc2f0546b71fa26476e626fbe4e460fb7b4c3a7a8bd5bd"},
+    "phone-zh.fst": {"size_bytes": 88630, "sha256": "1ac2b6fa56b1442320c4de7db08353bab8963a2b57f365eebcdd3a2d3562f8d7"},
+    "tokens.txt": {"size_bytes": 21146, "sha256": "77fee8e5e5dd96b3547119e6159292c648e99e065c54c97777722e3ce710b9a4"}
+  }
+}

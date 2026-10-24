@@ -1,0 +1,914 @@
+"""Isolated v3 child. No model content is logged, persisted, or sent outside IPC.
+
+Runtime source authority: google-ai-edge/LiteRT-LM commit
+924e79c91542761242244e4f1651851f822e4cbb, python/litert_lm/{engine,conversation}.py;
+runtime/conversation/conversation.cc:235-255,515-550 and prompt_utils.cc:83-181.
+The C renderer retains last_rendered_message (c/conversation.cc:603-623);
+approved DISCARD_TICKET replaces it using the fixed public scrub rendering.
+"""
+from __future__ import annotations
+import argparse
+import ctypes
+from datetime import datetime, timezone
+import hashlib
+import importlib.metadata
+import json
+import math
+import os
+import platform
+import queue
+import resource
+import select
+import stat
+import sys
+import sysconfig
+import threading
+import time
+import traceback
+import secrets
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, Mapping
+
+_CANDIDATE_PACKAGE_ROOT = Path(__file__).resolve().parents[3]
+if str(_CANDIDATE_PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_CANDIDATE_PACKAGE_ROOT))
+
+from sbd.cognition.llm_child_protocol import (
+    MAX_CONTROL_BYTES, TICKET_SCRUB_TEXT, ProtocolLedger, decode_frame, encode_frame, require, validate_counts)
+from sbd.cognition.semantic import (
+    IncrementalSafeTextParser, RESPONSE_SCHEMA_LOCATOR, RESPONSE_SCHEMA_SHA256, load_response_schema,
+    validate_semantic, SemanticError,
+)
+from sbd.cognition.prompt_builder import SYSTEM_PROMPT
+
+_DIAGNOSTIC_DIRECTORY: Path | None = None
+_ACTIVE_TIMING_FRAME: Mapping[str, object] = {}
+
+
+def _timing_mark(stage: str, instant: int | None = None, **counts: int) -> None:
+    from sbd.cognition.observability import private_timing
+    private_timing(stage, _ACTIVE_TIMING_FRAME,
+                   time.monotonic_ns() if instant is None else instant, **counts)
+
+
+def _timing_benchmark(info: object) -> None:
+    """Keep native reported summaries separate from boundary timestamps."""
+    values = {}
+    for field, output in (("init_time_in_second", "reported_init_ns"),
+                          ("time_to_first_token_in_second", "reported_ttft_ns")):
+        value = getattr(info, field, None)
+        if type(value) in {float, int} and math.isfinite(value) and value >= 0:
+            values[output] = round(value * 1_000_000_000)
+    for phase in ("prefill", "decode"):
+        count = getattr(info, f"last_{phase}_token_count", None)
+        rate = getattr(info, f"last_{phase}_tokens_per_second", None)
+        if (type(count) is int and count >= 0 and type(rate) in {float, int}
+                and math.isfinite(rate) and rate > 0):
+            values[f"derived_{phase}_ns"] = round(count / rate * 1_000_000_000)
+    _timing_mark("native_benchmark", **values)
+
+
+def _native_request_counters() -> dict[str, int]:
+    from sbd.cognition import observability
+    if observability._PRIVATE_TIMING_RECORDER is None:
+        return {}
+    sample = resource.getrusage(resource.RUSAGE_SELF)
+    return {"major_fault_count": sample.ru_majflt, "input_block_count": sample.ru_inblock,
+            "cpu_time_ns": time.process_time_ns()}
+
+
+def _startup_mark(stage: str) -> None:
+    from sbd.cognition.observability import private_startup_timing
+    private_startup_timing(stage, time.monotonic_ns())
+
+
+def _diagnostic_mark(stage: str, **values: object) -> None:
+    directory = _DIAGNOSTIC_DIRECTORY
+    if directory is None:
+        return
+    row = {"wall_time": datetime.now(timezone.utc).isoformat(),
+           "monotonic_ns": time.monotonic_ns(), "pid": os.getpid(),
+           "stage": stage, **values}
+    raw = (json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    descriptor = os.open(directory / f"llm-child-{os.getpid()}-events.jsonl",
+        os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+    try:
+        os.write(descriptor, raw)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+class WorkerCancelled(RuntimeError):
+    pass
+
+class WorkerCancelFailed(RuntimeError):
+    pass
+
+
+class WeightCachePrefetch:
+    """One engine-owned, read-only cache job; generation never waits on it."""
+    CHUNK_BYTES = 1024 * 1024
+
+    def __init__(self, path: Path, frame: Mapping[str, object]) -> None:
+        self.path = path
+        self.frame = dict(frame)
+        self.cancelled = threading.Event()
+        self.done = threading.Event()
+        self.thread: threading.Thread | None = None
+        self.bytes_read = 0
+        self.status = "READY"
+
+    def _record(self, stage: str, total: int = 0) -> None:
+        from sbd.cognition.observability import private_timing
+        private_timing(stage, self.frame, time.monotonic_ns(),
+                       cache_total_bytes=total, cache_read_bytes=self.bytes_read)
+
+    def start(self) -> None:
+        if self.thread is not None:
+            return
+        self.thread = threading.Thread(target=self._read, name="llm-cache-read", daemon=False)
+        self.thread.start()
+
+    def _read(self) -> None:
+        total = 0
+        try:
+            # This thread must yield disk service to live capture/ASR and native
+            # generation. Linux nice and ioprio are per task, so neither changes
+            # the Engine's foreground thread or its other workers.
+            if sys.platform == "linux":
+                try:
+                    os.nice(10)
+                    syscall_number = 30 if platform.machine() == "aarch64" else 251
+                    if platform.machine() in {"aarch64", "x86_64"}:
+                        ctypes.CDLL(None, use_errno=True).syscall(
+                            syscall_number, 1, 0, 3 << 13)  # current task, idle I/O class
+                except (OSError, AttributeError):
+                    pass
+            with self.path.open("rb", buffering=0) as source:
+                total = os.fstat(source.fileno()).st_size
+                self.status = "READING"
+                self._record("cache_prefetch_start", total)
+                while self.bytes_read < total and not self.cancelled.is_set():
+                    chunk = source.read(min(self.CHUNK_BYTES, total - self.bytes_read))
+                    if not chunk:
+                        raise OSError("cache ended before declared size")
+                    self.bytes_read += len(chunk)
+            self.status = "CANCELLED" if self.cancelled.is_set() else "COMPLETED"
+            self._record("cache_prefetch_cancelled" if self.status == "CANCELLED"
+                         else "cache_prefetch_complete", total)
+        except Exception:
+            # A best-effort read cannot change model output or reject a request.
+            self.status = "FAILED"
+            self._record("cache_prefetch_failed", total)
+        finally:
+            self.done.set()
+
+    def stop(self) -> None:
+        self.cancelled.set()
+        if self.thread is not None:
+            self.thread.join(timeout=0.5)
+            if self.thread.is_alive():
+                raise WorkerCancelFailed("cache reader did not stop")
+
+
+def _native_message_text(serialized: str) -> str:
+    try:
+        message = json.loads(serialized)
+    except (json.JSONDecodeError, UnicodeError):
+        # LiteRT's public wrapper treats a callback value that is not a full
+        # Message JSON object as a raw incremental text fragment.
+        return serialized
+    if type(message) is not dict or "content" not in message:
+        return serialized
+    if set(message).difference({"role", "content"}):
+        raise SemanticError()
+    content = message.get("content")
+    if type(content) is str:
+        return content
+    if type(content) is not list:
+        raise SemanticError()
+    values: list[str] = []
+    for item in content:
+        if (type(item) is not dict or set(item).difference({"type", "text"})
+                or item.get("type") != "text" or type(item.get("text")) is not str):
+            raise SemanticError()
+        values.append(item["text"])
+    return "".join(values)
+
+def _validate_native_library(path: Path, expected_size_bytes: int) -> None:
+    if path.is_symlink() or path.parent.is_symlink():
+        raise RuntimeError("native runtime identity mismatch")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise RuntimeError("native runtime identity mismatch") from None
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size != expected_size_bytes:
+            raise RuntimeError("native runtime identity mismatch")
+    finally:
+        os.close(descriptor)
+
+class LiteRTRuntime:
+    """Pinned 0.16.0 CPU Engine; only this child imports native dependencies."""
+
+    def __init__(self, *, model: str, runtime_root: str, native_size_bytes: int) -> None:
+        # Artifact bytes are verified once during staging/PV. Product startup
+        # performs only bounded shape checks before importing the native module.
+        root_input = Path(runtime_root)
+        if (
+            not root_input.is_absolute()
+            or root_input.is_symlink()
+            or not root_input.is_dir()
+            or root_input.resolve() != root_input
+        ):
+            raise RuntimeError("runtime root escaped verified closure")
+        root = root_input
+        native_path = root / "litert_lm/liblitert-lm.so"
+        _validate_native_library(native_path, native_size_bytes)
+        sys.path.insert(0, str(root))
+        import litert_lm  # type: ignore[import-not-found]
+        from litert_lm import (  # type: ignore[import-not-found]
+            Backend,
+            ConstrainedDecodingConfig,
+            Engine,
+            ResponseFormat,
+            SamplerConfig,
+        )
+        from litert_lm._ffi import LiteRtLmConstraintProviderType  # type: ignore[import-not-found]
+
+        module_input = Path(litert_lm.__file__)
+        module_path = module_input.resolve()
+        distribution = importlib.metadata.distribution("litert-lm-api")
+        metadata_files = [
+            Path(distribution.locate_file(item)).resolve()
+            for item in distribution.files or ()
+            if item.as_posix().endswith(".dist-info/METADATA")
+        ]
+        if (
+            module_input.is_symlink()
+            or module_input.parent.is_symlink()
+            or not module_input.is_file()
+            or root not in module_path.parents
+            or distribution.version != "0.16.0"
+            or len(metadata_files) != 1
+            or root not in metadata_files[0].parents
+            or metadata_files[0] != root / "litert_lm_api-0.16.0.dist-info/METADATA"
+        ):
+            raise RuntimeError("runtime import escaped verified closure")
+
+        self._response_format = ResponseFormat
+        self._sampler_config = SamplerConfig(temperature=0.0, top_p=1.0)
+        self._cancelled_error = getattr(litert_lm, "Cancelled", WorkerCancelled)
+        self._constraint = ConstrainedDecodingConfig(
+            enable=True,
+            provider=LiteRtLmConstraintProviderType.LL_GUIDANCE,
+        )
+        _startup_mark("engine_init_begin")
+        self._engine = Engine(
+            model,
+            backend=Backend.CPU(thread_count=4),
+            max_num_tokens=1024,
+            enable_benchmark=True,
+        )
+        _startup_mark("engine_init_end")
+        from sbd.cognition.prompt_builder import attest_prompt
+        attest_prompt(self._engine.tokenize)
+        self._conversation: Any = None
+        self._model_path = Path(model).resolve()
+        self._cache_prefetch: WeightCachePrefetch | None = None
+        self._cache_prefetch_attempted = False
+        self._active: Any = None
+        self._pending_cancel = False
+        self._cancel_requested = False
+        self._lock = threading.Lock()
+
+
+    def open_conversation(self) -> None:
+        require(self._conversation is None)
+        if not self._cache_prefetch_attempted:
+            self._cache_prefetch_attempted = True
+            prefix = str(self._model_path) + "_"
+            paths = set()
+            try:
+                for line in Path("/proc/self/maps").read_text().splitlines():
+                    fields = line.split(maxsplit=5)
+                    if len(fields) == 6 and fields[5].startswith(prefix) and fields[5].endswith(".xnnpack_cache"):
+                        paths.add(Path(fields[5]))
+            except OSError:
+                pass
+            if len(paths) == 1:
+                self._cache_prefetch = WeightCachePrefetch(paths.pop(), _ACTIVE_TIMING_FRAME)
+                self._cache_prefetch.start()
+            else:
+                _timing_mark("cache_prefetch_unavailable")
+        self._conversation = self._engine.create_conversation(
+            system_message=SYSTEM_PROMPT, automatic_tool_calling=False,
+            constrained_decoding_config=self._constraint,
+            sampler_config=self._sampler_config, max_output_tokens=128,
+            filter_channel_content_from_kv_cache=False)
+
+    def measure(self, text: str) -> dict[str, int]:
+        conversation = self._conversation
+        require(conversation is not None)
+        before = conversation.token_count
+        # Pinned native RenderMessageIntoString uses the same GetSingleTurnText
+        # path as SendMessage. The product never uses has_pending_message:
+        # RenderSingleTurnTemplateCommon returns false appending state and
+        # never appends history. No inference/session input allocation occurs.
+        _timing_mark("render_begin")
+        rendered = conversation.render_message_to_string(text)
+        _timing_mark("render_end")
+        require(type(rendered) is str and bool(rendered))
+        user = len(self._engine.tokenize(text))
+        incremental = len(self._engine.tokenize(rendered))
+        # LiteRT counts the conversation's start token in the first native
+        # prefill even though it is not present in the rendered message text.
+        runtime_prefill = incremental + (1 if before == 0 else 0)
+        require(conversation.token_count == before, "measurement")
+        return {"user_tokens": user, "current_kv_tokens": before,
+                "rendered_incremental_tokens": incremental,
+                "runtime_prefill_tokens": runtime_prefill,
+                "output_reserve_tokens": 128, "engine_context_tokens": 1024}
+
+    def generate(self, text: str) -> tuple[str, int, int, int]:
+        conversation = self._conversation
+        require(conversation is not None)
+        # Keep the POC-proven JSON-Schema constraint. LiteRT-LM's regex response
+        # format changes greedy token selection and can terminate after a lone
+        # punctuation mark even with the same model, prompt, and sampler.
+        with self._lock:
+            if self._pending_cancel:
+                self._pending_cancel = False
+                raise WorkerCancelled()
+            self._active = conversation
+        try:
+            try:
+                response_format = self._response_format.json(load_response_schema())
+                _diagnostic_mark("response_format_selected", kind="json",
+                                 response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
+                                 response_schema_sha256=RESPONSE_SCHEMA_SHA256)
+                raw = conversation.send_message(text, max_output_tokens=128,
+                    response_format=response_format)
+            except self._cancelled_error:
+                raise WorkerCancelled() from None
+            _diagnostic_mark("native_generate_returned",
+                raw_type=type(raw).__name__,
+                raw_keys=(sorted(raw) if isinstance(raw, dict) else None),
+                role=(raw.get("role") if isinstance(raw, dict) else None),
+                content_type=(type(raw.get("content")).__name__
+                              if isinstance(raw, dict) else None),
+                content_count=(len(raw.get("content"))
+                               if isinstance(raw, dict) and isinstance(raw.get("content"), list)
+                               else None))
+            require(type(raw) is dict and set(raw) == {"role", "content"})
+            require(raw["role"] == "assistant" and type(raw["content"]) is list and len(raw["content"]) == 1)
+            block = raw["content"][0]
+            _diagnostic_mark("native_generate_block",
+                block_type=type(block).__name__,
+                block_keys=(sorted(block) if isinstance(block, dict) else None),
+                block_kind=(block.get("type") if isinstance(block, dict) else None))
+            require(type(block) is dict and set(block) == {"type", "text"} and block["type"] == "text")
+            _diagnostic_mark("native_output", raw_json=block["text"])
+            info = conversation.get_benchmark_info()
+            _diagnostic_mark("native_generate_metrics",
+                decode_tokens=info.last_decode_token_count,
+                conversation_tokens=conversation.token_count,
+                actual_prefill_tokens=info.last_prefill_token_count)
+            return (block["text"], info.last_decode_token_count, conversation.token_count,
+                    info.last_prefill_token_count)
+        finally:
+            with self._lock:
+                self._active = None
+
+    def generate_stream(self, text: str, emit) -> tuple[object, int, int, int]:
+        """Use the pinned 0.16 private C bridge and emit M4C SAFE_TEXT."""
+        conversation = self._conversation
+        require(conversation is not None)
+        try:
+            from litert_lm._ffi import STREAM_CALLBACK_TYPE
+            from litert_lm._messages import normalize_message
+        except (ImportError, AttributeError):
+            raise RuntimeError("streaming bridge unavailable") from None
+        require(not getattr(conversation, "automatic_tool_calling", True), "stream")
+        require(bool(getattr(conversation, "_ptr", None)), "stream")
+        parser = IncrementalSafeTextParser(12)
+        native_events: queue.Queue[tuple[str, bool] | BaseException] = queue.Queue()
+        final_seen = False
+        first_output_seen = False
+        with self._lock:
+            if self._pending_cancel:
+                self._pending_cancel = False
+                raise WorkerCancelled()
+            self._active = conversation
+        try:
+            _timing_mark("response_format_begin")
+            response_format = self._response_format.json(load_response_schema())
+            _timing_mark("response_format_end")
+
+            def callback(unused_data: Any, chunk_ptr: Any) -> None:
+                nonlocal first_output_seen
+                instant = time.monotonic_ns()
+                try:
+                    error_value = conversation._lib.litert_lm_stream_chunk_get_error(chunk_ptr)
+                    if error_value:
+                        detail = error_value.decode("utf-8", errors="replace")
+                        if "CANCELLED" in detail:
+                            raise WorkerCancelled()
+                        raise RuntimeError("native stream failed")
+                    raw = conversation._lib.litert_lm_stream_chunk_get_text(chunk_ptr)
+                    chunk = raw.decode("utf-8") if raw else ""
+                    if chunk and not first_output_seen:
+                        first_output_seen = True
+                        _timing_mark("first_generated_output", instant, **_native_request_counters())
+                    final = bool(conversation._lib.litert_lm_stream_chunk_is_final(chunk_ptr))
+                    native_events.put((chunk, final))
+                except BaseException as error:
+                    native_events.put(error)
+
+            c_callback = STREAM_CALLBACK_TYPE(callback)
+            conversation._current_callback = c_callback
+            _timing_mark("optional_args_begin")
+            normalized = normalize_message(text)
+            active_format = conversation._resolve_response_format(
+                normalized, response_format)
+            optional_args = conversation._create_optional_args(
+                repetition_penalty_config=None, no_repeat_ngram_config=None,
+                suppress_tokens_config=None, max_output_tokens=None,
+                thinking_config=None, current_message=normalized,
+                response_format=active_format)
+            message_wire = json.dumps(normalized)
+            context_wire = json.dumps(getattr(conversation, "extra_context", {}))
+            _timing_mark("optional_args_end")
+            try:
+                io_before = _native_request_counters()
+                instant = time.monotonic_ns()
+                result = conversation._lib.litert_lm_conversation_send_message_stream(
+                    conversation._ptr, message_wire, context_wire,
+                    optional_args, c_callback, None)
+                returned = time.monotonic_ns()
+                # Record after return so the boundary hook cannot delay native submission.
+                _timing_mark("native_submit_begin", instant, **io_before)
+                _timing_mark("native_submit_end", returned)
+            finally:
+                conversation._delete_optional_args(optional_args)
+            require(result == 0, "stream")
+            while not final_seen:
+                event = native_events.get()
+                if isinstance(event, BaseException):
+                    raise event
+                chunk, final = event
+                _diagnostic_mark("native_stream_chunk", raw_json=chunk, final=final)
+                if final and chunk:
+                    raise SemanticError()
+                if chunk:
+                    semantic_wire = _native_message_text(chunk)
+                    for fragment in parser.feed(semantic_wire.encode("utf-8")):
+                        emit(fragment)
+                if final:
+                    final_seen = True
+            terminal, flushed = parser.finish()
+            for fragment in flushed:
+                emit(fragment)
+            info = conversation.get_benchmark_info()
+            _timing_benchmark(info)
+            return (terminal, info.last_decode_token_count,
+                    conversation.token_count, info.last_prefill_token_count)
+        except WorkerCancelled:
+            raise
+        except BaseException:
+            raise
+        finally:
+            with self._lock:
+                self._active = None
+
+    def scrub_ticket(self) -> None:
+        conversation = self._conversation
+        require(conversation is not None, "scrub")
+        before = conversation.token_count
+        require(type(before) is int and before >= 0, "scrub")
+        rendered = conversation.render_message_to_string(TICKET_SCRUB_TEXT)
+        require(type(rendered) is str and TICKET_SCRUB_TEXT in rendered, "scrub")
+        require(bool(rendered.encode("utf-8")), "scrub")
+        after = conversation.token_count
+        require(type(after) is int and before == after, "scrub")
+
+    def cancel(self) -> None:
+        with self._lock:
+            self._pending_cancel = True
+            active = self._active
+        if active is not None:
+            active.cancel_process()
+
+    def clear_pending_cancel(self) -> None:
+        with self._lock:
+            self._pending_cancel = False
+
+    def close_conversation(self) -> None:
+        conversation, self._conversation = self._conversation, None
+        require(conversation is not None)
+        conversation.close()
+
+    def close(self) -> None:
+        require(self._conversation is None)
+        if self._cache_prefetch is not None:
+            self._cache_prefetch.stop()
+        self._engine.close()
+
+
+class WorkerSession:
+    """Runtime-independent execution shared by native child and portable fake."""
+    def __init__(self, runtime: Any) -> None:
+        self.runtime = runtime
+        self.ledger = ProtocolLedger()
+
+    def execute(self, frame: Mapping[str, object], emit=None) -> list[dict[str, object]]:
+        global _ACTIVE_TIMING_FRAME
+        # Caller has already accepted the command into the ledger.
+        base = {key: frame[key] for key in ("protocol", "request_id", "session_id", "generation")}
+        _ACTIVE_TIMING_FRAME = base
+        op = frame["op"]
+        if op == "OPEN":
+            self.runtime.open_conversation()
+            return [{**base, "event": "OPENED", "conversation_revision": 0}]
+        if op == "MEASURE":
+            counts = self.runtime.measure(frame["text"])
+            validate_counts(counts)
+            return [{**base, "event": "MEASURED", **counts,
+                "conversation_revision": self.ledger.revision,
+                "input_sha256": frame["input_sha256"], "ticket": secrets.token_hex(16)}]
+        if op == "CLOSE":
+            self.runtime.close_conversation()
+            return [{**base, "event": "CLOSED", "request_terminal_proven": True,
+                "cleanup_proven": True, "engine_usable": True}]
+        if op == "DISCARD_TICKET":
+            self.runtime.scrub_ticket()
+            self.ledger.ticket = None
+            return [{**base, "event": "TICKET_DISCARDED",
+                **{key: frame[key] for key in ("conversation_revision", "ticket", "input_sha256")},
+                "native_render_scrubbed": True, "ticket_invalidated": True,
+                "private_input_erased": True, "conversation_state": "ready"}]
+        require(op == "GENERATE")
+        counts = self.ledger.consumed
+        require(counts is not None)
+        require(counts["user_tokens"] <= 32)
+        require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
+        send = time.monotonic_ns()
+        _timing_mark("native_generation_start", send, **{key: counts[key] for key in
+            ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")})
+        safe_times: list[int] = []
+        if emit is None or not hasattr(self.runtime, "generate_stream"):
+            raw, decode, kv, actual_prefill = self.runtime.generate(frame["text"])
+            try:
+                semantic = validate_semantic(raw)
+            except SemanticError:
+                return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
+                    "request_terminal_proven": True, "engine_usable": True,
+                    "terminal_monotonic_ns": time.monotonic_ns()}]
+        else:
+            def safe_emit(fragment: str) -> None:
+                instant = time.monotonic_ns()
+                sequence = len(safe_times)
+                safe_times.append(instant)
+                emit(sequence, fragment, instant)
+            try:
+                semantic, decode, kv, actual_prefill = self.runtime.generate_stream(
+                    frame["text"], safe_emit)
+            except SemanticError:
+                return [{**base, "event": "REQUEST_FAILED", "code": "INVALID_SEMANTIC",
+                    "request_terminal_proven": True, "engine_usable": True,
+                    "terminal_monotonic_ns": time.monotonic_ns()}]
+        _diagnostic_mark("native_prefill_check", request_id=frame.get("request_id"),
+            expected_prefill_tokens=counts["runtime_prefill_tokens"],
+            actual_prefill_tokens=actual_prefill)
+        require(type(actual_prefill) is int and actual_prefill == counts["runtime_prefill_tokens"], "runtime_prefill")
+        # Native synchronous SendMessage calls session WaitUntilDone; the
+        # control loop additionally joins this worker thread before any terminal.
+        return [{**base, "event": "RESULT", "conversation_revision": self.ledger.revision + 1,
+            "text": semantic.text, "end": semantic.end,
+            **{key: counts[key] for key in ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens")},
+            "decode_tokens": decode, "conversation_kv_tokens": kv,
+            "llm_send_monotonic_ns": send,
+            "first_safe_text_monotonic_ns": safe_times[0] if emit is not None and safe_times else None,
+            "terminal_monotonic_ns": time.monotonic_ns()}]
+
+
+def _write(frame: Mapping[str, object]) -> None:
+    raw = encode_frame(frame)
+    if frame.get("event") == "SAFE_TEXT":
+        _timing_mark("child_safe_text_emit", sequence=frame["sequence"],
+                     output_codepoints=len(frame["text"]))
+    elif frame.get("event") in {"RESULT", "REQUEST_FAILED", "CANCELLED"}:
+        counts = {"decode_tokens": frame["decode_tokens"]} if "decode_tokens" in frame else {}
+        _timing_mark("child_terminal_emit", **counts)
+    sys.stdout.buffer.write(raw)
+    sys.stdout.buffer.flush()
+
+
+class _ControlInput:
+    """Explicit bounded buffering, so coalesced CANCEL is visible to select."""
+    def __init__(self, fd: int) -> None:
+        self.fd = fd
+        self.buffer = bytearray()
+
+    def ready(self, timeout: float) -> bool:
+        return bool(self.buffer) or bool(select.select([self.fd], [], [], timeout)[0])
+
+    def read(self) -> dict[str, object]:
+        while b"\n" not in self.buffer:
+            require(len(self.buffer) <= MAX_CONTROL_BYTES, "frame")
+            block = os.read(self.fd, MAX_CONTROL_BYTES + 1 - len(self.buffer))
+            require(bool(block), "frame")
+            self.buffer.extend(block)
+        index = self.buffer.index(b"\n") + 1
+        raw = bytes(self.buffer[:index])
+        del self.buffer[:index]
+        return decode_frame(raw)
+
+
+def verify_platform_abi(profile: Mapping[str, object]) -> None:
+    observed = (platform.python_implementation(), platform.python_version(),
+                sysconfig.get_config_var("SOABI"), sysconfig.get_config_var("MULTIARCH"))
+    expected = tuple(profile[key] for key in ("python_implementation", "python_version",
+                                              "python_soabi", "python_multiarch"))
+    require(observed == expected, "abi")
+    require(sys.platform == "linux" and platform.machine() == "aarch64", "abi")
+    require(sys.flags.isolated == 1 and sys.flags.no_user_site == 1, "abi")
+    require(Path(sysconfig.get_path("stdlib")).resolve() == Path("/usr/lib/python3.13"), "abi")
+
+
+def _network_filter_program() -> tuple[tuple[int, int, int, int], ...]:
+    # Linux arm64 uses asm-generic syscall numbers. Check arch before numbers.
+    # Deny socket/socketpair and io_uring creation; pidfd_getfd/ptrace cannot
+    # import a socket from another owner. All inherited FDs are stdio pipes.
+    # https://docs.kernel.org/userspace-api/seccomp_filter.html
+    # Numeric ABI checked against torvalds/linux v6.12 include/uapi:
+    # asm-generic/unistd.h:329,522-525,759,785; linux/audit.h:388-391;
+    # linux/elf-em.h:46; linux/seccomp.h:38-46,62-67;
+    # linux/bpf_common.h; linux/filter.h:24-33; linux/prctl.h:68,175.
+    program = [(0x20, 0, 0, 4), (0x15, 1, 0, 0xC00000B7),
+               (0x06, 0, 0, 0x80000000), (0x20, 0, 0, 0)]
+    for number in (198, 199, 425, 438, 117):
+        program.extend(((0x15, 0, 1, number), (0x06, 0, 0, 0x00050001)))
+    program.append((0x06, 0, 0, 0x7FFF0000))
+    return tuple(program)
+
+
+def install_network_denial() -> None:
+    """Unprivileged kernel filter installed before native import, or no READY."""
+    require(sys.platform == "linux" and platform.machine() == "aarch64", "network")
+    require(len(threading.enumerate()) == 1, "network")
+    require(all(stat.S_ISFIFO(os.fstat(fd).st_mode) for fd in (0, 1)), "network")
+    require(os.readlink("/proc/self/fd/2") == "/dev/null", "network")
+    # close_fds at spawn plus this audit rules out inherited or pre-filter
+    # sockets/rings. The scandir descriptor itself has closed before fstat.
+    for name in os.listdir("/proc/self/fd"):
+        fd = int(name)
+        if fd <= 2:
+            continue
+        try:
+            os.fstat(fd)
+        except OSError as error:
+            import errno
+            require(error.errno == errno.EBADF, "network")
+        else:
+            require(False, "network")
+    import ctypes
+    class Filter(ctypes.Structure):
+        _fields_ = [("code", ctypes.c_ushort), ("jt", ctypes.c_ubyte),
+                    ("jf", ctypes.c_ubyte), ("k", ctypes.c_uint32)]
+    class Program(ctypes.Structure):
+        _fields_ = [("len", ctypes.c_ushort), ("filter", ctypes.POINTER(Filter))]
+    instructions = _network_filter_program()
+    filters = (Filter * len(instructions))(*(Filter(*row) for row in instructions))
+    program = Program(len(instructions), filters)
+    libc = ctypes.CDLL(None, use_errno=True)
+    prctl = libc.prctl
+    prctl.argtypes = [ctypes.c_int, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong]
+    prctl.restype = ctypes.c_int
+    require(prctl(38, 1, 0, 0, 0) == 0, "network")  # PR_SET_NO_NEW_PRIVS
+    require(prctl(22, 2, ctypes.addressof(program), 0, 0) == 0, "network")
+
+
+def run(runtime: Any, ready: Mapping[str, object]) -> int:
+    global _ACTIVE_TIMING_FRAME
+    session = WorkerSession(runtime)
+    control = _ControlInput(sys.stdin.fileno())
+    _write(ready)
+    while True:
+        frame = control.read()
+        instant = time.monotonic_ns()
+        _ACTIVE_TIMING_FRAME = {key: frame.get(key) for key in
+                                ("request_id", "session_id", "generation")}
+        if frame.get("op") == "GENERATE":
+            _timing_mark("child_request_receive", instant)
+        session.ledger.command(frame)
+        if frame["op"] == "SHUTDOWN":
+            runtime.close()
+            ack = {"protocol": 3, "event": "SHUTDOWN_ACK"}
+            session.ledger.event(ack)
+            _write(ack)
+            return 0
+        result_queue: queue.Queue = queue.Queue()
+        stream_queue: queue.Queue = queue.Queue(maxsize=2)
+        runtime.clear_pending_cancel()
+        def emit_safe(sequence: int, text: str, monotonic_ns: int) -> None:
+            stream_queue.put({
+                "protocol": 3, "event": "SAFE_TEXT",
+                "request_id": frame["request_id"], "sequence": sequence,
+                "text": text, "monotonic_ns": monotonic_ns,
+            })
+        def execute() -> None:
+            try:
+                outcome = session.execute(
+                    frame, emit_safe if frame["op"] == "GENERATE" else None)
+            except WorkerCancelled:
+                outcome = WorkerCancelled()
+            except BaseException as error:
+                _diagnostic_mark("native_operation_failed",
+                    operation=frame.get("op"), request_id=frame.get("request_id"),
+                    exception_type=type(error).__name__, exception=str(error),
+                    traceback="".join(traceback.format_exception(error)))
+                outcome = None
+            # The native method stack has returned. Erase the shared request
+            # payload before the thread can join and MEASURED can be emitted.
+            frame.pop("text", None)
+            result_queue.put(outcome)
+        thread = threading.Thread(target=execute, name="llm-native", daemon=False)
+        thread.start()
+        while True:
+            while True:
+                try:
+                    stream_event = stream_queue.get_nowait()
+                except queue.Empty:
+                    break
+                session.ledger.event(stream_event)
+                _write(stream_event)
+            alive = thread.is_alive()
+            if control.ready(0.01 if alive else 0):
+                cancel = control.read()
+                require(cancel.get("op") == "CANCEL")
+                session.ledger.command(cancel)
+                runtime.cancel()
+                deferred = {"protocol": 3, "event": "CANCEL_DEFERRED", "request_id": frame["request_id"]}
+                session.ledger.event(deferred)
+                _write(deferred)
+            elif not alive:
+                break
+        thread.join()
+        while True:
+            try:
+                stream_event = stream_queue.get_nowait()
+            except queue.Empty:
+                break
+            session.ledger.event(stream_event)
+            _write(stream_event)
+        events = result_queue.get_nowait()
+        if session.ledger.cancelled:
+            op = frame["op"]
+            if op == "OPEN":
+                runtime.close_conversation()
+            if op == "MEASURE" and events is not None:
+                # The joined renderer may have completed before cancellation.
+                # No outstanding ticket remains after CANCELLED, so its native
+                # input scratch must be scrubbed before claiming cleanup.
+                try:
+                    runtime.scrub_ticket()
+                except BaseException:
+                    events = None
+            cancelled = {"protocol": 3, "event": "CANCELLED",
+                "request_id": frame["request_id"], "operation": op,
+                "request_terminal_proven": events is not None,
+                "operation_cleanup_proven": op != "CLOSE" and events is not None,
+                "engine_usable": events is not None,
+                "conversation_state": ("tainted" if events is None else
+                    {"OPEN": "none", "MEASURE": "ready", "GENERATE": "tainted", "CLOSE": "tainted"}[op])}
+            # Invalid/missing proof is emitted for parent convergence, never
+            # accepted locally as a usable transition.
+            _write(cancelled)
+            if events is None or op == "CLOSE":
+                return 2
+            session.ledger.event(cancelled)
+        else:
+            require(type(events) is list, "runtime")
+            for event in events:
+                session.ledger.event(event)
+                _write(event)
+        # Erase references to the completed private request and model response.
+        frame = {}
+        events = None
+
+
+def main() -> int:
+    global _DIAGNOSTIC_DIRECTORY
+    _DIAGNOSTIC_DIRECTORY = None
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--product-profile", required=True)
+    parser.add_argument("--runtime-root", required=True)
+    parser.add_argument("--artifact-lock", required=True)
+    parser.add_argument("--measurement-authorization")
+    parser.add_argument("--measurement-pv", action="store_true")
+    parser.add_argument("--measurement-private-directory")
+    parser.add_argument("--measurement-user-diagnostic", action="store_true")
+    parser.add_argument("--measurement-diagnostic-directory")
+    parser.add_argument("--measurement-expected")
+    args = parser.parse_args()
+    timing_directory = os.environ.get("ALPHA_TIMING_DIRECTORY")
+    if timing_directory:
+        from sbd.cognition import observability
+        observability._PRIVATE_TIMING_RECORDER = observability.PrivateTimingRecorder(Path(timing_directory))
+    require(bool(args.measurement_diagnostic_directory) == args.measurement_user_diagnostic,
+            "measurement")
+    require(bool(args.measurement_private_directory)
+            == args.measurement_pv, "measurement")
+    require(sum(bool(value) for value in (args.measurement_authorization,
+        args.measurement_user_diagnostic, args.measurement_pv)) <= 1, "measurement")
+    if args.measurement_pv:
+        directory = Path(args.measurement_private_directory).resolve(strict=True)
+        require(directory.is_dir() and not stat.S_IMODE(directory.stat().st_mode) & 0o077,
+                "measurement")
+        _DIAGNOSTIC_DIRECTORY = directory
+    if args.measurement_user_diagnostic:
+        directory = Path(args.measurement_diagnostic_directory).resolve(strict=True)
+        require(directory.is_dir() and not stat.S_IMODE(directory.stat().st_mode) & 0o077,
+                "measurement")
+        _DIAGNOSTIC_DIRECTORY = directory
+        _diagnostic_mark("child_starting", python=sys.version.split()[0])
+    from sbd.cognition.litert_lm.lock import LLMArtifactLock, load_product_profile
+    root = Path(__file__).resolve().parents[4]
+    lock = LLMArtifactLock.load(Path(args.artifact_lock), repo_root=root)
+    _diagnostic_mark("artifact_lock_verified")
+    load_response_schema(repo_root=root)
+    _diagnostic_mark("response_schema_verified",
+                     response_schema_locator=RESPONSE_SCHEMA_LOCATOR,
+                     response_schema_sha256=RESPONSE_SCHEMA_SHA256)
+    measurement_mode = (bool(args.measurement_authorization) or args.measurement_user_diagnostic
+                        or args.measurement_pv)
+    require(measurement_mode == bool(args.measurement_expected), "measurement")
+    grant = None
+    if measurement_mode:
+        from sbd.cognition.litert_lm.measurement import MeasurementGrant
+        profile = load_product_profile(Path(args.product_profile), allow_measurement=True)
+        expected = json.loads(args.measurement_expected)
+        if args.measurement_pv:
+            grant = MeasurementGrant.pv(expected_tuple=expected, profile=profile,
+                private_directory=_DIAGNOSTIC_DIRECTORY)
+        elif args.measurement_user_diagnostic:
+            grant = MeasurementGrant.user_diagnostic(expected_tuple=expected, profile=profile,
+                diagnostic_directory=_DIAGNOSTIC_DIRECTORY)
+        else:
+            grant = MeasurementGrant.load(Path(args.measurement_authorization),
+                expected_tuple=expected, profile=profile)
+    else:
+        profile = load_product_profile(Path(args.product_profile))
+    verify_platform_abi(profile)
+    _diagnostic_mark("platform_abi_verified")
+    runtime_root = Path(args.runtime_root)
+    require(runtime_root.is_dir() and not runtime_root.is_symlink(), "runtime")
+    # Full runtime/model digests are staging/PV work.  Repeating them in both
+    # parent and child made every product boot rescan gigabytes of immutable
+    # local artifacts without changing the supported trust model.
+    cfg = SimpleNamespace(model_path=Path(args.model))
+    lock.validate_runtime_paths(cfg)
+    _diagnostic_mark("runtime_paths_validated")
+    install_network_denial()
+    _diagnostic_mark("network_denial_installed")
+    if _DIAGNOSTIC_DIRECTORY is not None:
+        # Keep native C/C++ errors in the authorized private diagnostic bundle.
+        # The inherited-descriptor audit and network filter have already run.
+        descriptor = os.open(_DIAGNOSTIC_DIRECTORY / f"llm-child-{os.getpid()}-stderr.log",
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        try:
+            os.dup2(descriptor, 2)
+        finally:
+            os.close(descriptor)
+    native_started = time.monotonic_ns()
+    _diagnostic_mark("native_runtime_starting")
+    _startup_mark("native_runtime_begin")
+    runtime = LiteRTRuntime(model=args.model, runtime_root=args.runtime_root,
+                            native_size_bytes=lock.runtime["native_size_bytes"])
+    _startup_mark("native_runtime_ready")
+    _diagnostic_mark("native_runtime_ready",
+                     startup_duration_ns=time.monotonic_ns() - native_started)
+    ready = {"protocol": 3, "event": "READY", **lock.ready_identity(profile).fields,
+             "pid": os.getpid(), "pgid": os.getpgrp()}
+    require(os.getpid() == os.getpgrp(), "pid")
+    _diagnostic_mark("ready_emitting")
+    return run(runtime, ready)
+
+
+if __name__ == "__main__":
+    try:
+        status = main()
+    except BaseException as error:
+        try:
+            _diagnostic_mark("child_failed", exception_type=type(error).__name__,
+                exception=str(error), traceback="".join(traceback.format_exception(error)))
+        except BaseException:
+            pass
+        status = 2
+    # Parent is responsible for descendant/exit proof, including startup failure.
+    os._exit(status)

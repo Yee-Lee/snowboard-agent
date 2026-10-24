@@ -1,0 +1,187 @@
+# Snowboard Configuration Example
+#
+# Copy this file to config.local.yaml and adjust values for your environment.
+# Only specified keys override defaults; unrecognised keys are rejected.
+# See docs/implement/ch10_config.md for the full schema reference.
+
+wake:
+  ack_seconds: 0.3
+
+perception:
+  timeout_seconds:
+    listen: 10.0
+    read: 0.5
+    look: 3.0
+  default_perceptions: ["listen"]
+  listen:
+    enabled: true
+    required: true
+    adapter:
+      driver: mock
+      engine_name: null
+      model_path: null
+      worker_path: null
+      runtime_python: null
+      vad_model_path: null
+      artifact_lock_path: null
+      language: null
+      dsp_profile: null
+      decoder_profile: null
+      child_ready_timeout_seconds: 30.0
+      child_terminate_timeout_seconds: 5.0
+      child_kill_wait_timeout_seconds: 2.0
+  read:
+    enabled: true
+    required: false
+  look:
+    enabled: true
+    required: false
+    adapter:
+      driver: mock
+      model_path: null
+
+cognition:
+  reason_timeout_seconds: 30.0
+  llm:
+    driver: mock
+    runtime_python: null
+    model_path: null
+    product_profile_path: null
+    artifact_lock_path: null
+    profile_id: null
+    child_ready_timeout_seconds: 45.0
+    generation_timeout_seconds: 30.0
+    terminal_grace_seconds: 2.0
+    child_terminate_timeout_seconds: 2.0
+    child_kill_wait_timeout_seconds: 1.0
+
+action:
+  speak: {enabled: true, required: true}
+  tool: {enabled: true, required: false}
+  rest: {enabled: true, required: true}
+  tts:
+    driver: mock
+    engine_name: null
+    model_path: null
+    vocoder_path: null
+    runtime_python: null
+    artifact_lock_path: null
+    voice_id: null
+    native_sample_rate: null
+    native_channels: null
+    native_sample_format: null
+    child_ready_timeout_seconds: 30.0
+    child_terminate_timeout_seconds: 5.0
+    child_kill_wait_timeout_seconds: 2.0
+
+cancel:
+  abort_timeout_seconds:
+    default: 2.0
+    by_kind:
+      cognition.reasoner: 0.5
+  force_abort_timeout_seconds:
+    default: 1.0
+    by_kind:
+      cognition.reasoner: 3.0
+
+resource:
+  startup_timeout_seconds:
+    default: 15.0
+    by_kind:
+      backend.cognition.reasoner.llm: 120.0
+      backend.perception.listen.asr: 30.0
+      backend.action.speak.tts: 30.0
+  stop_timeout_seconds:
+    default: 3.0
+    by_kind:
+      backend.cognition.reasoner.llm: 10.0
+      backend.perception.listen.asr: 5.0
+      backend.action.speak.tts: 5.0
+  recovery_timeout_seconds: 30.0
+  recovery_shutdown_cleanup_timeout_seconds: 5.0
+
+shutdown:
+  sm_drain_timeout_seconds: 5.0
+  logger_flush_timeout_seconds: 2.0
+
+core:
+  audio:
+    driver: mock
+    input:
+      stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}
+      frame_duration_ms: 20
+      device: null
+      native_format: null
+      channel_index: null
+      valid_bits: null
+      valid_bits_alignment: null
+      resampler: null
+    output:
+      stream_format: {sample_rate: 16000, channels: 1, sample_format: s16_le}
+      device: null
+      native_format: null
+      volume_percent: 100
+  display:
+    driver: mock
+    profile: DSP-PROFILE-OLED-128
+    width: 128
+    height: 128
+    pixel_format: rgb565
+    rotation: 0
+    byte_order: msb_first
+    frame_buffer_bytes: 32768
+    show_session_content: true
+    native_library_path: null
+    native_library_sha256: null
+    native_abi_version: null
+    spi_device: null
+    spi_speed_hz: null
+    spi_mode: null
+    spi_chip_select: null
+    gpio_chip_index: null
+    dc_bcm: null
+    reset_bcm: null
+  camera:
+    driver: mock
+    format: RGB
+    width: 640
+    height: 480
+    quality: 85
+  gpio:
+    driver: mock
+    chip: /dev/gpiochip0
+    pins: {}
+
+input_sources:
+  button:
+    policy: {enabled: true, required: false}
+    conversation_pin: "conversation"
+    short_press_min_ms: 50
+    long_press_min_ms: 1500
+  voice_wake:
+    policy: {enabled: true, required: false}
+    socket_path: "/run/snowboard/wake.sock"
+    suspend_ack_seconds: 1.0
+    ensure_released_seconds: 2.0
+  external_message:
+    policy: {enabled: true, required: false}
+
+external_message:
+  buffer_max: 32
+  overflow_policy: drop_oldest
+
+adaptors:
+  mqtt:
+    policy: {enabled: false, required: false}
+    host: localhost
+    port: 1883
+    username: null
+    password: null
+    topic_prefix: snowboard
+
+log:
+  level: INFO
+  format: text
+  file: null
+  rotate_max_bytes: 0
+  rotate_backup_count: 0

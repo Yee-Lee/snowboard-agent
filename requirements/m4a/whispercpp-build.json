@@ -1,0 +1,16 @@
+{
+  "schema": "sbd.m4a.whispercpp-build.v2",
+  "engine": "whisper.cpp",
+  "version": "1.9.2",
+  "source_commit": "306c88f4d1286aec1bf96e544632897886af5501",
+  "source_filename": "whisper.cpp-v1.9.2.tar.gz",
+  "source_size_bytes": 9613762,
+  "source_sha256": "988945d81af6abcf52d5e8034f516c74ffc61057c32c3a4b84f3451c2c7e5e47",
+  "cmake_options": ["-DBUILD_SHARED_LIBS=OFF", "-DGGML_NATIVE=OFF", "-DGGML_BLAS=OFF", "-DGGML_CUDA=OFF", "-DGGML_VULKAN=OFF", "-DGGML_OPENCL=OFF", "-DGGML_RPC=OFF", "-DGGML_OPENMP=OFF", "-DGGML_METAL=OFF", "-DGGML_SYCL=OFF", "-DGGML_KOMPUTE=OFF", "-DGGML_CCACHE=OFF", "-DWHISPER_CURL=OFF", "-DWHISPER_BUILD_SERVER=OFF", "-DWHISPER_COMMON_FFMPEG=OFF", "-DWHISPER_SDL2=OFF", "-DWHISPER_BUILD_TESTS=OFF", "-DWHISPER_BUILD_EXAMPLES=OFF", "-DWHISPER_USE_SYSTEM_GGML=OFF", "-DWHISPER_COREML=OFF", "-DWHISPER_OPENVINO=OFF", "-DWHISPER_MKL=OFF"],
+  "wrapper_sources": [
+    {"path": "native/m4a_whispercpp_worker/CMakeLists.txt", "sha256": "a1da74fa0f0a2f8cf94ea178c122b81eea6a4ee50275e9d8445710b19157c1a8"},
+    {"path": "native/m4a_whispercpp_worker/worker.cpp", "sha256": "d3d0db1724b5882a358a6f6ae6edd08bc71d7ce9b0ce4b43781e72c8688a51dd"}
+  ],
+  "target_binary": "whispercpp-worker",
+  "baseline_binary_sha256": "64ca4ce45899a39afe467e6249a440e3807e18d8e09ff4c3267242d81d2b1b2b"
+}

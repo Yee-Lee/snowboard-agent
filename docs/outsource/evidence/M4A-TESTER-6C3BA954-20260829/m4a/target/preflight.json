@@ -1,0 +1,54 @@
+{
+  "branch": "HEAD",
+  "candidate_sha": "6c3ba95455dc5c2a152aa230b8ae5915887fe6a9",
+  "checksums": {
+    "artifact_manifest": {
+      "path": "<pi-run-root>/product-preflight.json",
+      "sha256": "45814b09afbfb8a3baf495ec28cfc3c09c50b75230df4f3cbadfff83e799e443"
+    },
+    "config": {
+      "path": "<pi-product-root>/target-config.yaml",
+      "sha256": "8a327601499999a482fa3f6038598bdeb7eb39a4defbacc72c88ab55c870b6fc"
+    },
+    "hardware": {
+      "path": "<pi-run-root>/hardware.json",
+      "sha256": "ffc3bb73ed7e2e52c1de1f1410201a097ac6e39d25d40fbb35f3c8a1a21406af"
+    }
+  },
+  "command": [
+    "scripts/candidate_gate.py",
+    "--repo",
+    "<pi-product-root>/repo",
+    "preflight",
+    "--candidate-sha",
+    "6c3ba95455dc5c2a152aa230b8ae5915887fe6a9",
+    "--run-id",
+    "m4a-6c3ba954-20260829-pi01",
+    "--portable-index",
+    "<pi-run-root>/portable/matrix-index.json",
+    "--runtime",
+    "3.13",
+    "--hardware",
+    "<pi-run-root>/hardware.json",
+    "--config",
+    "<pi-product-root>/target-config.yaml",
+    "--artifact-manifest",
+    "<pi-run-root>/product-preflight.json",
+    "--output",
+    "<pi-run-root>/acceptance"
+  ],
+  "ended_at_utc": "2026-08-28T23:40:11.113796Z",
+  "exit_code": 0,
+  "mode": "preflight",
+  "platform": "Linux-6.12.47+rpt-rpi-2712-aarch64-with-glibc2.41",
+  "portable_index": "<pi-run-root>/portable/matrix-index.json",
+  "portable_run_id": "m4a-6c3ba954-20260829-t01",
+  "python": {
+    "implementation": "CPython",
+    "version": "3.13.5"
+  },
+  "run_id": "m4a-6c3ba954-20260829-pi01",
+  "runtime": "3.13",
+  "started_at_utc": "2026-08-28T23:40:11.113483Z",
+  "status": "Pass"
+}

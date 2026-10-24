@@ -1,0 +1,419 @@
+"""Separate, allowlisted public observations; never accept free-form error detail."""
+from __future__ import annotations
+
+import re
+import json
+import logging
+import os
+from pathlib import Path
+import threading
+import time
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Mapping
+
+from sbd.cognition.litert_lm.resource import OWNERS, SystemResourceSample
+from sbd.cognition.prompt_builder import PROFILE_ID, PROMPT_COUNTS, PROMPT_HASHES
+
+PRIVATE_TIMING_STAGES = frozenset({"parent_request_send", "parent_safe_text_receive",
+    "parent_terminal_receive", "child_request_receive", "native_generation_start",
+    "first_generated_output", "child_safe_text_emit", "child_terminal_emit",
+    "conversation_create", "conversation_ready", "render_begin", "render_end",
+    "response_format_begin", "response_format_end", "optional_args_begin", "optional_args_end",
+    "native_submit_begin", "native_submit_end", "native_benchmark", "cache_prefetch_start",
+    "cache_prefetch_complete", "cache_prefetch_cancelled", "cache_prefetch_failed",
+    "cache_prefetch_unavailable"})
+PRIVATE_TIMING_COUNTS = frozenset({"sequence", "user_tokens", "current_kv_tokens",
+    "rendered_incremental_tokens", "runtime_prefill_tokens", "decode_tokens",
+    "output_codepoints", "reported_init_ns", "reported_ttft_ns", "derived_prefill_ns",
+    "derived_decode_ns", "major_fault_count", "input_block_count", "cpu_time_ns",
+    "cache_total_bytes", "cache_read_bytes"})
+PRIVATE_STARTUP_STAGES = frozenset({"native_runtime_begin", "native_runtime_ready",
+                                  "engine_init_begin", "engine_init_end"})
+
+
+class PrivateTimingRecorder:
+    """Lossless experiment observations, separate from the truncated text logger.
+
+    Callers capture boundary timestamps before formatting. Request identity is
+    private; only timing and counts can accompany it, never speech or model text.
+    """
+    def __init__(self, directory: Path) -> None:
+        directory = directory.resolve(strict=True)
+        if not directory.is_dir() or directory.stat().st_mode & 0o077:
+            raise ObservationError()
+        self.path = directory / f"timing-{os.getpid()}.jsonl"
+        self._lock = threading.Lock()
+
+    def record(self, stage: str, frame: Mapping[str, object], instant: int,
+               **counts: int) -> None:
+        if (stage not in PRIVATE_TIMING_STAGES or type(instant) is not int or instant <= 0
+                or not set(counts) <= PRIVATE_TIMING_COUNTS
+                or any(type(value) is not int or value < 0 for value in counts.values())):
+            raise ObservationError()
+        identity = {key: frame.get(key) for key in ("request_id", "session_id", "generation")}
+        if (type(identity["request_id"]) is not int or identity["request_id"] <= 0
+                or type(identity["generation"]) is not int or identity["generation"] <= 0
+                or type(identity["session_id"]) is not str or not identity["session_id"]):
+            raise ObservationError()
+        row = {"stage": stage, "monotonic_ns": instant, **identity, **counts}
+        self._append(self.path, row)
+
+    def dashboard(self, name: str, values: Mapping[str, object], metadata: Mapping[str, object]) -> None:
+        if name not in {"timing", "runtime"}:
+            return
+        # Reuse the product's allowlisted row validators; omit prompt hashes and memory observations.
+        if name == "runtime":
+            absent = {key: "NOT_OBSERVED" for key, value in values.items() if value is None}
+            runtime_row(values, null_reasons=absent)
+        else:
+            events = values.get("events", {})
+            if (set(values) != {"clock_domain", "events"} or set(events) != set(TIMING_NODES)
+                    or any(type(node) is not dict or set(node) != {"monotonic_ns", "null_reason"}
+                           for node in events.values())):
+                raise ObservationError()
+            timing_row(clock_domain=values["clock_domain"],
+                events={key: node["monotonic_ns"] for key, node in events.items()},
+                null_reasons={key: node["null_reason"] for key, node in events.items()
+                              if node["monotonic_ns"] is None})
+        allowed_metadata = {key: value for key, value in metadata.items()
+                            if key in {"conversation_generation", "turn_index"}}
+        if any(type(value) is not int or value < 0 for value in allowed_metadata.values()):
+            raise ObservationError()
+        self._append(self.path.with_name(f"dashboards-{os.getpid()}.jsonl"),
+                     {"dashboard": name, "values": dict(values), **allowed_metadata})
+
+    def startup(self, stage: str, instant: int) -> None:
+        if stage not in PRIVATE_STARTUP_STAGES or type(instant) is not int or instant <= 0:
+            raise ObservationError()
+        self._append(self.path.with_name(f"startup-timing-{os.getpid()}.jsonl"),
+                     {"stage": stage, "monotonic_ns": instant})
+
+    def _append(self, path: Path, row: Mapping[str, object]) -> None:
+        raw = (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+        with self._lock:
+            fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+            try:
+                os.fchmod(fd, 0o600)
+                view = memoryview(raw)
+                while view:
+                    written = os.write(fd, view)
+                    if written <= 0:
+                        raise ObservationError()
+                    view = view[written:]
+            finally:
+                os.close(fd)
+
+
+_PRIVATE_TIMING_RECORDER: PrivateTimingRecorder | None = None
+
+
+def private_timing(stage: str, frame: Mapping[str, object], instant: int,
+                   **counts: int) -> None:
+    recorder = _PRIVATE_TIMING_RECORDER
+    if recorder is not None:
+        recorder.record(stage, frame, instant, **counts)
+
+
+def private_startup_timing(stage: str, instant: int) -> None:
+    if _PRIVATE_TIMING_RECORDER is not None:
+        _PRIVATE_TIMING_RECORDER.startup(stage, instant)
+
+LIFECYCLE_POINTS = frozenset({"engine_ready", "conversation_preparation", "conversation_ready",
+    "pre_generate", "post_generate", "pre_speak", "audio_completion", "primary_completion",
+    "pre_replacement", "post_replacement", "post_session_close"})
+TIMING_NODES = ("conversation_ready", "asr_final", "llm_send", "first_safe_text",
+                "llm_terminal", "tts_pcm_ready", "audio_first_write")
+NULL_REASONS = frozenset({"NOT_APPLICABLE", "NOT_OBSERVED", "CANCELLED", "FAILED"})
+RUNTIME_FIELDS = frozenset({"conversation_generation", "turn_index", "input_codepoints",
+    "user_tokens", "current_kv_tokens", "rendered_incremental_tokens", "runtime_prefill_tokens",
+    "output_reserve_tokens", "projected_total_tokens", "admission_result", "decode_tokens",
+    "terminal_conversation_kv_tokens"})
+
+
+class ObservationError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("M4B_OBSERVATION_INVALID")
+
+
+def _counter(value: object) -> bool:
+    return type(value) is int and value >= 0
+
+
+def runtime_row(values: Mapping[str, object], *,
+                null_reasons: Mapping[str, str] | None = None) -> dict[str, object]:
+    reasons = {} if null_reasons is None else null_reasons
+    absent = {key for key, value in values.items() if value is None}
+    equation = ("current_kv_tokens", "rendered_incremental_tokens", "output_reserve_tokens",
+                "projected_total_tokens")
+    if (set(values) != RUNTIME_FIELDS
+            or set(reasons) != absent or any(v not in NULL_REASONS for v in reasons.values())
+            or any(values[k] is not None and not _counter(values[k])
+                   for k in RUNTIME_FIELDS - {"admission_result"})
+            or values["admission_result"] not in {"GENERATE", "R1", "R2", "NOTICE", "SILENT", "E1"}
+            or (all(values[k] is not None for k in equation)
+                and values["projected_total_tokens"] != values["current_kv_tokens"]
+                + values["rendered_incremental_tokens"] + values["output_reserve_tokens"])):
+        raise ObservationError()
+    return dict(values)
+
+
+def memory_row(sample: SystemResourceSample, *, conversation_generation: int,
+               lifecycle_point: str) -> dict[str, object]:
+    sample.validate()
+    if not _counter(conversation_generation) or lifecycle_point not in LIFECYCLE_POINTS:
+        raise ObservationError()
+    owners = {}
+    for owner in sorted(OWNERS):
+        rows = [p for p in sample.processes if owner in p.owners]
+        owners[owner] = {"pid_count": len(rows), "pss_bytes": sum(p.pss_bytes for p in rows),
+            "rss_bytes": sum(p.rss_bytes for p in rows),
+            "cpu_seconds": sum(p.cpu_seconds for p in rows), "threads": sum(p.threads for p in rows)}
+    return {"monotonic_ns": sample.monotonic_ns, "owners": owners,
+        "unique_pid_count": len(sample.processes), "combined_pss_bytes": sample.combined_pss_bytes,
+        "owner_attribution_may_overlap": True,
+        "mem_total_bytes": sample.mem_total_bytes, "mem_available_bytes": sample.mem_available_bytes,
+        "system_used_bytes": sample.system_used_bytes, "swap_used_bytes": sample.swap_used_bytes,
+        "temperature_c": sample.temperature_c, "throttled_bits": sample.throttled_bits,
+        "oom_kill": sample.oom_kill, "conversation_generation": conversation_generation,
+        "lifecycle_point": lifecycle_point}
+
+
+@dataclass(slots=True)
+class PromptDashboard:
+    """Emission is once per authenticated profile identity, not per turn."""
+    _seen: set[str] = field(default_factory=set, init=False)
+
+    def record(self, *, profile_id: str, counts: Mapping[str, int],
+               hashes: Mapping[str, str]) -> dict[str, object] | None:
+        names = {"core", "personality", "combined"}
+        if (profile_id != PROFILE_ID or set(counts) != names
+                or set(hashes) != names or any(not _counter(v) for v in counts.values())
+                or dict(counts) != {"core": PROMPT_COUNTS["core"], "personality": PROMPT_COUNTS["personality"],
+                                    "combined": PROMPT_COUNTS["system"]}
+                or dict(hashes) != {
+                    "core": PROMPT_HASHES["core"], "personality": PROMPT_HASHES["personality"],
+                    "combined": PROMPT_HASHES["system"]}
+                or any(type(v) is not str or re.fullmatch(r"[0-9a-f]{64}", v) is None
+                       for v in hashes.values())):
+            raise ObservationError()
+        if profile_id in self._seen:
+            return None
+        self._seen.add(profile_id)
+        return {"profile_id": profile_id, **{f"{k}_tokens": counts[k] for k in sorted(names)},
+                **{f"{k}_sha256": hashes[k] for k in sorted(names)}}
+
+
+def timing_row(*, clock_domain: str, events: Mapping[str, int | None],
+               null_reasons: Mapping[str, str]) -> dict[str, object]:
+    # Only controller-mapped monotonic stamps may reach this public schema.
+    if clock_domain != "controller_monotonic" or set(events) != set(TIMING_NODES):
+        raise ObservationError()
+    absent = {name for name, value in events.items() if value is None}
+    if set(null_reasons) != absent or any(v not in NULL_REASONS for v in null_reasons.values()):
+        raise ObservationError()
+    present = [events[name] for name in TIMING_NODES if events[name] is not None]
+    # M4C streaming speech deliberately overlaps generation: TTS and the first
+    # audio write may precede llm_terminal.  Validate the two causal branches
+    # independently instead of imposing the legacy full-response tuple order.
+    causal_edges = (
+        ("conversation_ready", "asr_final"),
+        ("asr_final", "llm_send"),
+        ("llm_send", "first_safe_text"),
+        ("llm_send", "llm_terminal"),
+        ("first_safe_text", "tts_pcm_ready"),
+        ("tts_pcm_ready", "audio_first_write"),
+    )
+    if (any(not _counter(v) for v in present)
+            or any(events[left] is not None and events[right] is not None
+                   and events[left] > events[right]
+                   for left, right in causal_edges)):
+        raise ObservationError()
+    return {"clock_domain": clock_domain, "events": {
+        name: {"monotonic_ns": events[name], "null_reason": null_reasons.get(name)}
+        for name in TIMING_NODES}}
+
+
+def failure_row(*, code: str, stage: str, request_id: int,
+                conversation_generation: int, cleanup_proven: bool) -> dict[str, object]:
+    if (code not in {"E1", "R1", "R2", "INVALID_TERMINAL", "TIMEOUT", "CANCELLED",
+                     "M4B_RESOURCE_INVALID", "M4B_OBSERVATION_INVALID"}
+            or stage not in {"OPEN", "MEASURE", "GENERATE", "CANCEL", "CLOSE", "CLEANUP", "SAMPLE"}
+            or not _counter(request_id) or not _counter(conversation_generation)
+            or type(cleanup_proven) is not bool):
+        raise ObservationError()
+    return dict(code=code, stage=stage, request_id=request_id,
+                conversation_generation=conversation_generation, cleanup_proven=cleanup_proven)
+
+
+def _log_observation(row: dict[str, object]) -> None:
+    logging.getLogger("sbd.cognition.observation").info("%s", json.dumps(row, sort_keys=True))
+
+
+class CognitionObserver:
+    """Controller-owned live observations. Private payloads/child clocks are never stored.
+
+    Audio's native write callback shares this process's monotonic clock. Callbacks
+    may run on its native worker thread, hence serialized timestamp/state updates.
+    Missing operations stay null rather than becoming fabricated zero counts.
+    """
+
+    def __init__(self, *, sink: Callable[[dict[str, object]], None] | None = None,
+                 clock: Callable[[], int] = time.monotonic_ns) -> None:
+        self._sink = sink or _log_observation
+        self._clock = clock
+        self._native_clock_compatible = clock is time.monotonic_ns
+        self._lock = threading.RLock()
+        self._prompt = PromptDashboard()
+        self._ready: int | None = None
+        self._generation = 0
+        self._events: dict[str, int | None] = dict.fromkeys(TIMING_NODES)
+        self._values: dict[str, object] | None = None
+
+    def _emit(self, dashboard: str, values: dict[str, object], **metadata: object) -> None:
+        try:
+            if _PRIVATE_TIMING_RECORDER is not None:
+                _PRIVATE_TIMING_RECORDER.dashboard(dashboard, values, metadata)
+            self._sink({"dashboard": dashboard, "values": values, **metadata})
+        except Exception:
+            raise ObservationError() from None
+
+    def prompt(self, profile: Mapping[str, object]) -> None:
+        with self._lock:
+            try:
+                row = self._prompt.record(profile_id=profile["profile_id"],
+                    counts={"core": profile["core_prompt_tokens"],
+                            "personality": profile["personality_prompt_tokens"],
+                            "combined": profile["prompt_tokens"]},
+                    hashes={"core": profile["core_prompt_sha256"],
+                            "personality": profile["personality_prompt_sha256"],
+                            "combined": profile["prompt_sha256"]})
+            except Exception:
+                raise ObservationError() from None
+            if row is not None:
+                self._emit("prompt", row)
+
+    def conversation_ready(self, generation: int) -> None:
+        if not _counter(generation):
+            raise ObservationError()
+        with self._lock:
+            self._generation = generation
+            self._ready = self._clock()
+            # A replacement READY may precede publication/playback of its R2
+            # notice. Preserve that turn's original preparation timestamps.
+            if self._values is None:
+                self._events = dict.fromkeys(TIMING_NODES)
+                self._events["conversation_ready"] = self._ready
+
+    def begin_turn(self, generation: int, turn_index: int,
+                   input_codepoints: int | None = None) -> None:
+        if (not _counter(generation) or not _counter(turn_index)
+                or (input_codepoints is not None and not _counter(input_codepoints))):
+            raise ObservationError()
+        with self._lock:
+            if self._values is not None:
+                raise ObservationError()
+            self._generation = generation
+            self._values = dict.fromkeys(RUNTIME_FIELDS)
+            self._values.update(conversation_generation=generation, turn_index=turn_index,
+                                input_codepoints=input_codepoints, admission_result="E1")
+            self._events["conversation_ready"] = self._ready
+
+    def mark(self, node: str) -> None:
+        if node not in TIMING_NODES:
+            raise ObservationError()
+        with self._lock:
+            if self._events[node] is None:
+                stamp = self._clock()
+                if not _counter(stamp):
+                    raise ObservationError()
+                self._events[node] = stamp
+
+    def input_codepoints(self, value: int | None) -> None:
+        if value is not None and not _counter(value):
+            raise ObservationError()
+        with self._lock:
+            if self._values is not None:
+                self._values["input_codepoints"] = value
+
+    def measured(self, snapshot: object) -> None:
+        with self._lock:
+            if self._values is None:
+                return
+            fields = ("user_tokens", "current_kv_tokens", "rendered_incremental_tokens",
+                      "runtime_prefill_tokens", "output_reserve_tokens")
+            counters = {name: getattr(snapshot, name, None) for name in fields}
+            if any(not _counter(value) for value in counters.values()):
+                raise ObservationError()
+            self._values.update(counters)
+            self._values["projected_total_tokens"] = (counters["current_kv_tokens"]
+                + counters["rendered_incremental_tokens"] + counters["output_reserve_tokens"])
+
+    def generated(self, metrics: object, *, clock_mapped: bool = False) -> None:
+        with self._lock:
+            if self._values is None:
+                return
+            counters = {name: getattr(metrics, source, None) for name, source in (
+                ("runtime_prefill_tokens", "runtime_prefill_tokens"),
+                ("decode_tokens", "decode_tokens"),
+                ("terminal_conversation_kv_tokens", "conversation_kv_tokens"))}
+            if any(not _counter(value) for value in counters.values()):
+                raise ObservationError()
+            self._values.update(counters)
+            if clock_mapped is True:
+                self.native_timing(llm_send=getattr(metrics, "llm_send_monotonic_ns", None),
+                    first_safe_text=getattr(metrics, "first_safe_text_monotonic_ns", None),
+                    llm_terminal=getattr(metrics, "terminal_monotonic_ns", None),
+                    clock_mapped=True)
+
+    def native_timing(self, *, llm_send: int | None = None,
+                      first_safe_text: int | None = None, llm_terminal: int | None = None,
+                      clock_mapped: bool = False) -> None:
+        """Native event stamps require an independently proved clock mapping.
+
+        Wire transmission/reception timestamps are not model execution times.
+        The adapter owns the Linux time-namespace/process identity proof.
+        """
+        if clock_mapped is not True or not self._native_clock_compatible:
+            return
+        with self._lock:
+            for name, value in (("llm_send", llm_send), ("first_safe_text", first_safe_text),
+                                ("llm_terminal", llm_terminal)):
+                if value is not None:
+                    if not _counter(value):
+                        raise ObservationError()
+                    self._events[name] = value
+
+    def outcome(self, code: str) -> None:
+        if code not in {"GENERATE", "R1", "R2", "NOTICE", "SILENT", "E1"}:
+            raise ObservationError()
+        with self._lock:
+            if self._values is not None:
+                self._values["admission_result"] = code
+
+    def memory(self, sample: SystemResourceSample, *, generation: int,
+               lifecycle_point: str) -> None:
+        self._emit("memory", memory_row(sample, conversation_generation=generation,
+                                        lifecycle_point=lifecycle_point))
+
+    def finish(self, reason: str = "NOT_OBSERVED") -> None:
+        if reason not in NULL_REASONS:
+            raise ObservationError()
+        with self._lock:
+            values = self._values
+            if values is None:
+                # SM can speak a no-input reminder without a Reasoner turn.
+                # Its audio marks must not become the next generation's marks.
+                self._events = dict.fromkeys(TIMING_NODES)
+                self._events["conversation_ready"] = self._ready
+                return
+            self._values = None
+            reasons = {name: reason for name, value in values.items() if value is None}
+            self._emit("runtime", runtime_row(values, null_reasons=reasons), null_reasons=reasons)
+            self._emit("timing", timing_row(clock_domain="controller_monotonic",
+                events=self._events, null_reasons={name: reason for name, value
+                                                  in self._events.items() if value is None}),
+                conversation_generation=values["conversation_generation"],
+                turn_index=values["turn_index"])
+            self._events = dict.fromkeys(TIMING_NODES)
+            self._events["conversation_ready"] = self._ready

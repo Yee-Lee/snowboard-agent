@@ -1,0 +1,77 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- <repo-root>/.venv/bin/python
+rootdir: <repo-root>
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: asyncio-1.4.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items
+
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001 [0:22:09.768841086] [2471]  INFO Camera camera_manager.cpp:340 libcamera v0.7.1+rpt20260609
+[0:22:09.799799517] [2472]  INFO RPI pisp.cpp:720 libpisp version v1.6.0 29-06-2026 (16:17:40)
+[0:22:09.913768566] [2472]  INFO IPAProxy ipa_proxy.cpp:184 Using tuning file /usr/share/libcamera/ipa/rpi/pisp/imx219.json
+[0:22:09.920838003] [2472]  INFO Camera camera_manager.cpp:223 Adding camera '/base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10' for pipeline handler rpi/pisp
+[0:22:09.920858429] [2472]  INFO RPI pisp.cpp:1181 Registered camera /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 to CFE device /dev/media2 and ISP device /dev/media0 using PiSP variant BCM2712_D0
+[0:22:09.924021154] [2471]  INFO Camera camera.cpp:1216 configuring streams: (0) 640x480-BGR888/sRGB (1) 640x480-BGGR_PISP_COMP1/RAW
+[0:22:09.924123525] [2472]  INFO RPI pisp.cpp:1485 Sensor: /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 - Selected sensor format: 640x480-SBGGR10_1X10/RAW - Selected CFE format: 640x480-PC1B/RAW
+PASSED
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_002 PASSED
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003 [0:22:10.824732542] [2491]  INFO Camera camera_manager.cpp:340 libcamera v0.7.1+rpt20260609
+[0:22:10.832035425] [2492]  INFO RPI pisp.cpp:720 libpisp version v1.6.0 29-06-2026 (16:17:40)
+[0:22:10.833241655] [2492]  INFO IPAProxy ipa_proxy.cpp:184 Using tuning file /usr/share/libcamera/ipa/rpi/pisp/imx219.json
+[0:22:10.839451364] [2492]  INFO Camera camera_manager.cpp:223 Adding camera '/base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10' for pipeline handler rpi/pisp
+[0:22:10.839465809] [2492]  INFO RPI pisp.cpp:1181 Registered camera /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 to CFE device /dev/media2 and ISP device /dev/media0 using PiSP variant BCM2712_D0
+[0:22:10.841621712] [2491]  INFO Camera camera.cpp:1216 configuring streams: (0) 640x480-BGR888/sRGB (1) 640x480-BGGR_PISP_COMP1/RAW
+[0:22:10.841696046] [2492]  INFO RPI pisp.cpp:1485 Sensor: /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 - Selected sensor format: 640x480-SBGGR10_1X10/RAW - Selected CFE format: 640x480-PC1B/RAW
+[0:22:11.593566576] [2498]  INFO Camera camera_manager.cpp:340 libcamera v0.7.1+rpt20260609
+[0:22:11.600790458] [2499]  INFO RPI pisp.cpp:720 libpisp version v1.6.0 29-06-2026 (16:17:40)
+[0:22:11.601986114] [2499]  INFO IPAProxy ipa_proxy.cpp:184 Using tuning file /usr/share/libcamera/ipa/rpi/pisp/imx219.json
+[0:22:11.608282249] [2499]  INFO Camera camera_manager.cpp:223 Adding camera '/base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10' for pipeline handler rpi/pisp
+[0:22:11.608296657] [2499]  INFO RPI pisp.cpp:1181 Registered camera /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 to CFE device /dev/media2 and ISP device /dev/media0 using PiSP variant BCM2712_D0
+[0:22:11.610387819] [2498]  INFO Camera camera.cpp:1216 configuring streams: (0) 640x480-YUV420/sYCC (1) 640x480-BGGR_PISP_COMP1/RAW
+[0:22:11.610454560] [2499]  INFO RPI pisp.cpp:1485 Sensor: /base/axi/pcie@1000120000/rp1/i2c@80000/imx219@10 - Selected sensor format: 640x480-SBGGR10_1X10/RAW - Selected CFE format: 640x480-PC1B/RAW
+PASSED
+tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_001 [DEV] Init OK — GPIO chip0, SPI0.0 @ 4000000 Hz
+[DEV] Pins — SPI CS=0 (kernel-managed) DC=24 RST=25 BL=-1
+PASSED
+tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_003 PASSED
+tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_004 [DEV] Init OK — GPIO chip0, SPI0.0 @ 4000000 Hz
+[DEV] Pins — SPI CS=0 (kernel-managed) DC=24 RST=25 BL=-1
+[DEV] Init OK — GPIO chip0, SPI0.0 @ 4000000 Hz
+[DEV] Pins — SPI CS=0 (kernel-managed) DC=24 RST=25 BL=-1
+PASSED
+tests/test_m3_dspi_001_002_003_004_005_006_rpi.py::test_m3_dspi_006 [DEV] Init OK — GPIO chip0, SPI0.0 @ 4000000 Hz
+[DEV] Pins — SPI CS=0 (kernel-managed) DC=24 RST=25 BL=-1
+PASSED
+tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 FAILED
+tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_002 PASSED
+
+=================================== FAILURES ===================================
+______________________________ test_m3_gpioi_001 _______________________________
+
+    def test_m3_gpioi_001() -> None:
+        config = rpi_config("M3-GPIOI-001")
+        assert config.core.gpio.driver == "gpiod"
+>       output_pin, input_pin = _loopback_pins()
+                                ^^^^^^^^^^^^^^^^
+
+tests/test_m3_gpioi_001_002_rpi.py:38:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _loopback_pins() -> tuple[int, int]:
+        raw_output = os.environ.get("SBD_M3_GPIO_OUTPUT_PIN")
+        raw_input = os.environ.get("SBD_M3_GPIO_INPUT_PIN")
+>       assert raw_output and raw_output.isdecimal()
+E       assert (None)
+
+tests/test_m3_gpioi_001_002_rpi.py:28: AssertionError
+=============================== warnings summary ===============================
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_001
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003
+tests/test_m3_cami_001_002_003_rpi.py::test_m3_cami_003
+  /usr/lib/python3/dist-packages/picamera2/previews/null_preview.py:63: DeprecationWarning: setDaemon() is deprecated, set the daemon attribute instead
+    self.thread.setDaemon(True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_m3_gpioi_001_002_rpi.py::test_m3_gpioi_001 - assert (None)
+=================== 1 failed, 8 passed, 3 warnings in 13.52s ===================

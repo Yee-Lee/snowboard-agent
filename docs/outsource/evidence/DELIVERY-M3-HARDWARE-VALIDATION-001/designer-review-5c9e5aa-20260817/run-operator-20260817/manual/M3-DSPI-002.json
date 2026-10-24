@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "boot_blank": true,
+    "idle_text_readable": true,
+    "shutdown_blank": true
+  },
+  "media_metadata": [],
+  "observed_at_utc": "2026-08-17T14:39:48.101109+00:00",
+  "operator": "operator-1",
+  "test_id": "M3-DSPI-002"
+}
