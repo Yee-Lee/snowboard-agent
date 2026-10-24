@@ -132,8 +132,9 @@ class M2Composition:
         set_gpio_fault_publisher = getattr(gpio, "set_fault_publisher", None)
         if callable(set_gpio_fault_publisher):
             set_gpio_fault_publisher(bus.publish)
-        asr = make_asr_adapter(config.perception.listen.adapter,
-                              initial_prompt="遠端連線" if m5 else None)
+        asr = make_asr_adapter(config.perception.listen.adapter)
+        if m5:
+            asr._initial_prompt = "遠端連線"
         vision = MockVisionAdapter()
         tts = make_tts_adapter(config.action.tts)
         if real:

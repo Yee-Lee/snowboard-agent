@@ -11,7 +11,11 @@ from sbd.cognition.litert_lm.m5_profile import M5ProfileError, load_m5_profile
 from sbd.core.config.defaults import DEFAULT_CONFIG
 from sbd.core.config.models import AudioFormatConfig, LLMConfig
 from sbd.core.config.validate import ConfigValueError, validate_config
+from sbd.core.audio.null import NullAudioOutput
+from sbd.core.event_bus import EventBus
+from sbd.core.m2_composition import M2Composition
 from tests.test_m4a_cfg_001 import _real_configs
+from tests.test_m4b_cfg_001 import real_config as m4_config
 from sbd.perception.listen.whispercpp import supervisor as asr_supervisor
 
 
@@ -90,3 +94,42 @@ def test_m5_native_asr_uses_only_remote_connection_prompt(tmp_path, monkeypatch)
         assert launched[0][-2:] == ["--initial-prompt", "遠端連線"]
     finally:
         worker._stderr.close()
+
+
+def test_m5_composition_sets_asr_prompt_without_changing_m4(tmp_path, monkeypatch):
+    import sbd.core.m2_composition as composition_module
+
+    monkeypatch.setattr(composition_module, "make_audio_input", lambda cfg: object())
+    monkeypatch.setattr(composition_module, "make_audio_output", lambda cfg: NullAudioOutput())
+    monkeypatch.setattr(composition_module, "make_display", lambda cfg: object())
+    monkeypatch.setattr(composition_module, "make_camera", lambda cfg: object())
+    monkeypatch.setattr(composition_module, "make_gpio", lambda cfg: object())
+    monkeypatch.setattr(composition_module, "make_tts_adapter", lambda cfg: object())
+    monkeypatch.setattr(composition_module, "make_llm_adapter",
+                        lambda cfg, **kwargs: SimpleNamespace(control=object()))
+    adapters = []
+
+    def make_asr(cfg):
+        adapter = SimpleNamespace(_initial_prompt=None)
+        adapters.append(adapter)
+        return adapter
+
+    monkeypatch.setattr(composition_module, "make_asr_adapter", make_asr)
+
+    class CaptureRM:
+        def register(self, spec):
+            pass
+
+        def begin_recovery(self, *args):
+            pass
+
+        def wait_recovery(self, *args):
+            pass
+
+    m4_path, m5_path = tmp_path / "m4", tmp_path / "m5"
+    m4_path.mkdir()
+    m5_path.mkdir()
+    for config, expected in ((m4_config(m4_path), None),
+                             (m5_config(m5_path), "遠端連線")):
+        M2Composition(llm_resource_sampler=object())(CaptureRM(), EventBus(), config)
+        assert adapters[-1]._initial_prompt == expected

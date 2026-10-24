@@ -1,10 +1,17 @@
 # Current development status
 
+## TR_dev_M5_TOOL_I repair plan — 2026-10-24
+
+- Value/risk: restore the M4A single-`cfg` ASR factory contract broken by M5 prompt wiring, and close a real M5 state regression gap where dispatch status is never observed in the next reasoner turn or checked for one-time consumption. Both findings are accepted; prior Pi product and manual flows remain accepted per Tester and USER.
+- Estimate: 2 points. Affected paths: `src/sbd/perception/listen/__init__.py`, `src/sbd/core/m2_composition.py`, `tests/test_m5t_config.py`, `tests/test_m5t_state_manager.py`, this status, and Developer-owned `docs/reviews/TR_dev_M5_TOOL_I.md`. Test IDs: `M4A-CFG-001`, `M5T-CFG-001`, `M5T-SM-001`.
+- Verification commands: `PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_m4a_cfg_001.py tests/test_m5t_config.py tests/test_m5t_state_manager.py -o addopts=''`; then directly affected M5/M4 composition tests, `compileall`, and `git diff --check`. Source/test changes require fresh same-byte Pi verification before any commit; no Pi rerun has yet been claimed for this repair.
+- Workstation result: the three reported M4A failures reproduced against `6f591db`; after the bounded repair, the targeted B1/B2 command passed **32/32**, and `PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_m5t_*.py tests/test_m4a_cfg_001.py tests/test_m4b_cfg_001.py -o addopts=''` passed **122/122**. Targeted `compileall` and `git diff --check` passed. Tester reran **122/122**, resolved B1/B2, and archived `TR_dev_M5_TOOL_I`. Pi is unavailable today; USER requested a WIP commit/push to preserve this reviewed workstation state and resume tomorrow. That explicit WIP request does not claim Pi Verify or a completion commit; same-byte Pi verification remains the next Developer step.
+
 ## M5.tool delivery status — 2026-10-24
 
 - Selected product behavior: c2 two-field model JSON; Core maps `tool` to one fixed mock remote-connection command and suppresses model text on `tool`/`look`. M5 Whisper uses only `遠端連線`; Look continuation uses the tested object-category instruction. Designer/Test Spec now exclude the USER-removed negated utterance from current acceptance.
 - Final pending code/schema/script/test bytes matched the isolated Pi checkout at the operator transfer boundary. The fresh Pi Verify portable command passed **241/241** (`verification/m5tool-final-20261024-a/portable.log`); workstation M5 tests passed on Python 3.11/3.12/3.13. The fresh installed product reached IDLE and stopped normally. The previously completed user-assisted Pi product scenarios covered remote success/error, status follow-up, book/cup/empty Look, color limits, Look error/timeout, button interrupt and chat/end; their mode logs and dispatch counts remain in the disposable install. The corrected timeout runner passed its focused Pi regression and a true wait-interrupt manual rerun. USER directed that no further tests be run, accepted these results as complete, and requested Pi shutdown, commit and push. Raspberry Pi shutdown was initiated after the App stopped.
-- Delivery boundary: no source changes followed the 241-pass Pi run. This latest status update is documentation only. Commit and push await the concrete proposal required by `docs/roles/git.md`.
+- Delivery boundary: candidate `6f591db` was committed and pushed after the accepted Pi run. The `TR_dev_M5_TOOL_I` repair above changes source and tests after that candidate, so its prior Pi results do not verify the repair bytes.
 
 ## c2 integration diagnostics retained for traceability
 
