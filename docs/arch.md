@@ -198,7 +198,7 @@ GPIO 分流常見規 §5.4。
 **Reasoner 能力**
 
 * 接收本 turn 所有 perception 結果（含 `status ∈ {ok, timeout, error}` ）
-* 接收本 turn 起始時的 pending message metadata（僅 count 或 id 清單，不含 payload；由 SM 於 THINK Entry 傳入，見 §4.6 / §5.1）——供 reasoner 在決定 `next_perceptions` 時判斷是否加入 `read`
+* 接收本 turn 起始時的 pending message metadata（僅 count 或 id 清單，不含 payload；由 SM 於 THINK Entry 傳入，見 §4.6 / §5.1）——通用 reasoner 可藉此決定 `next_perceptions` 是否含 `read`；M5 MQTT profile 則維持正常 continuing route 與 `(listen,)` 候選，由 SM 在下一個 eligible PERCEPTION Entry 依 opaque pending IDs 確定性替換為 `(read,)`（見 §4.8）
 * 組 prompt、呼叫 LLM、正規化輸出為 `LLMResponse`
 * 決定本 turn 的 primary action 類型與內容
 * 決定 primary action 後保留 Conversation、替換 Conversation 或結束 session，以及繼續時下一 turn 的 perception 組合
@@ -209,7 +209,7 @@ GPIO 分流常見規 §5.4。
 
 M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 facts。LLM 只輸出：短回答文本或結束意圖。**Reasoner 獨立決定** `action_kind`、`post_action_route` 與需要時的 `next_perceptions`——不新增每 turn 第二次 LLM 推論，不引入通用 task / context manager。M4 典型流程是 `speak + KEEP_NEXT` 後 listen；含有非空最終語音的結束意圖為 `speak + END_SESSION`；無主要使用者內容的結束意圖為 `rest + END_SESSION`。
 
-**M5 有限能力 profile**：M4 的 text/end 邊界保持原義。M5.tool 起，模型可在有限 profile 中選擇 speak/end、已註冊命令工具意圖或 Look 意圖；模型不產出 Core action envelope、Session / Turn identity 或任意 perception 清單。Reasoner 驗證語意與能力後，將 tool 映射為 `tool + KEEP_NEXT + listen`，Look 映射為 application-owned 準備語 `speak + KEEP_NEXT + look`；一般回答與結束沿用既有 speak/rest route。每個產品 turn 最多一次模型推論；SDK 不自動執行 handler。Look 是下一 turn 的 perception，不是新 action。該 look-only turn 不等待新語音，結果進入原 Conversation 的下一次推論，不重送完整 history 或建立對話記憶儲存；無可用結果優先由 application 回饋。若 Conversation 已替換，放棄舊觀察及原問題接續，請使用者重述，不將舊結果 replay 到空白 Conversation。M5.tool 不處理 read / Look 交錯。
+**M5 有限能力 profile**：M4 的 text/end 邊界保持原義。M5.tool 起，模型可在有限 profile 中選擇 speak/end、已註冊命令工具意圖或 Look 意圖；模型不產出 Core action envelope、Session / Turn identity 或任意 perception 清單。Reasoner 驗證語意與能力後，將 tool 映射為 `tool + KEEP_NEXT + listen`，Look 映射為 application-owned 準備語 `speak + KEEP_NEXT + look`；一般回答與結束沿用既有 speak/rest route。每個產品 turn 最多一次模型推論；SDK 不自動執行 handler。Look 是下一 turn 的 perception，不是新 action。該 look-only turn 不等待新語音，結果進入原 Conversation 的下一次推論，不重送完整 history 或建立對話記憶儲存；無可用結果優先由 application 回饋。若 Conversation 已替換，放棄舊觀察及原問題接續，請使用者重述，不將舊結果 replay 到空白 Conversation。M5 維持 read / Look 不交錯邊界；M5 MQTT 的 read turn 只允許模型選擇 `speak` / `end`（映射為 `speak` / `rest` route），不選擇 `tool` 或 `look`。
 
 **P5 與 Conversation 失敗分界**
 
@@ -219,7 +219,7 @@ M4 中 Reasoner 向 LLM 提供：產品身分 / 能力聲明、本 turn 感知 f
 * **Unsafe / system failure（E1）**：wiring / contract failure、worker crash、protocol desync、backend 不可用，或無法證明 request 終止 / Conversation cleanup，一律離開 R2 進入現有 ERROR 與 Level 1 / 2 / 3 收斂。
 * Cancel 中的 Reasoner 不 publish 正常 `LLMResponse`（遵循 §6.3 被 cancel 者不 publish Facts）。
 
-**Pending message metadata 的邊界**：reasoner 可觀察但不可解讀 pending metadata——metadata 為 payload-free（僅 id 或 count），reasoner 藉此決定 `next_perceptions` 是否含 `read`；實際訊息內容由下一 turn 的 read perception 讀取。具體 metadata 形式（count vs id list、傳入通道）屬 `implement.md` 。
+**Pending message metadata 的邊界**：通用 Reasoner 可觀察但不可解讀 payload-free pending metadata（僅 opaque id 或 count），並藉此決定 `next_perceptions` 是否含 `read`；實際訊息內容由下一 turn 的 read perception 讀取。M5 MQTT profile 採更窄的 deterministic policy：Reasoner 維持正常 continuing route 與 `(listen,)` 候選；SM 在 PERCEPTION Entry 前以本 session 的 opaque pending IDs 判斷是否把該 `(listen,)` 候選替換成單一 `(read,)`（見 §4.6 / §4.8）。SM 與 Reasoner 皆不讀 payload、不把 external text 插入當前 THINK，也不改寫已產出的 `LLMResponse`。具體 metadata 形式（count vs id list、傳入通道）屬 `implement.md`。
 
 **Capability 查詢邊界**：reasoner 可透過 `capability_of(kind)`（§6.8 B）查詢與其產出契約一致粒度的能力狀態——合法 kind = perception kind（ `listen` / `read` / `look` ）∪ action kind（ `speak` / `tool` ）。reasoner 不查 core 資源（ `audio` / `display` / `camera` / `gpio` ）、adaptor、input source——底層依賴鏈屬 Resource Manager 職責，reasoner 不感知「 `capability_of("listen")=false` 是因為 audio null、還是 listen 自身 start 失敗、還是 config 標 optional 而未載入」（Null Object Pattern 的完整落實，見 §6.8）。
 
@@ -461,7 +461,7 @@ SM 內建的 wake source -> perception 組合對應關係：
 * `ButtonPressed`（ERROR，recovery **進行中**）：忽略（log warning）；recovery 未完成時不允許使用者主動重試
 * `ButtonPressed`（ERROR，recovery **已完成**或無 recovery）：清除 error 狀態，直接進 WAKE（使用者主動重試，省略中間 IDLE）；首 turn perception 同 `button` wake 映射
 * `WakeWordDetected` : 僅 `IDLE` 接受並觸發狀態轉移；其餘狀態拒絕 ( 過期 wake Signal )
-* `ExternalMessageArrived` : `IDLE` 接受並觸發狀態轉移；其餘狀態亦接受但不觸發狀態轉移，SM 依 §5.1 對 `external_message` 發調度指令
+* `ExternalMessageArrived` : `IDLE` 接受並觸發狀態轉移（首 turn perception 為 `[read]`）；其餘狀態（`ERROR` 與終止流程除外）亦接受但不取消、不搶占已在執行的 PERCEPTION、THINK、ACTION（含 primary、`tool_feedback`、rest）、Speak 或 Conversation replacement，SM 依 §5.1 對 `external_message` 發調度指令（active read window 內 assign，否則入 pending 等下一個 eligible PERCEPTION 邊界）
 
 **主流流程狀態轉移**
 
@@ -473,9 +473,9 @@ SM 內建的 wake source -> perception 組合對應關係：
 | THINK | `LLMResponse` 產出且通過契約驗證 | ACTION | 驗證項見 §4.6 THINK Exit；若本 turn 有 streaming speak 的 delivery/playback stage 已記錄 private completion，該 notice 只記錄、不提前轉移，待 terminal 驗證通過才進 ACTION |
 | THINK | `LLMResponse` 產出但驗證不通過（schema / payload 不合、action / route 組合不合法，或 continuing route 的 `next_perceptions` 正規化後為空） | ERROR | 視為 reasoner contract failure；走 E1 / §3.2「SM 自檢」ERROR 路徑，SM 不 publish `ErrorOccurred`、不因違約本身直接升級為 process 崩 |
 | ACTION primary | `ActionCompleted(kind=tool, status=any)` + `KEEP_NEXT`，且 profile 支援固定派發回饋 | ACTION tool_feedback | primary Fact 與 task done join 後啟動唯一 Speak feedback；不是 ACTION→ACTION 狀態轉移 |
-| ACTION tool_feedback | `ActionCompleted(kind=speak, status=any)` + `KEEP_NEXT` | PERCEPTION | feedback Fact 與 task done join 後依 §4.8 選下一 perception；不重送 tool |
-| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `KEEP_NEXT`，且無 tool_feedback | PERCEPTION | `ok` 依 normalized `next_perceptions`；`error` 可依 §4.8 改用 `default_perceptions` |
-| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `REPLACE_NEXT` | PERCEPTION / ERROR / Level 3 | 先走 sequential replacement barrier；`ok` 依 normalized `next_perceptions`，`error` 可依 §4.8 改用 `default_perceptions`；無法證明 cleanup 時轉 E1 |
+| ACTION tool_feedback | `ActionCompleted(kind=speak, status=any)` + `KEEP_NEXT` | PERCEPTION | feedback Fact 與 task done join 後依 §4.6 / §4.8 選下一 perception（含 M5 MQTT pending read-only 替換）；不重送 tool |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `KEEP_NEXT`，且無 tool_feedback | PERCEPTION | `ok` 依 normalized `next_perceptions`，`error` 可依 §4.8 改用 `default_perceptions`；進入 PERCEPTION 時再依 §4.6 / §4.8 套用 pending read-only 替換 |
+| ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `REPLACE_NEXT` | PERCEPTION / ERROR / Level 3 | 先走 sequential replacement barrier；`ok` 依 normalized `next_perceptions`，`error` 可依 §4.8 改用 `default_perceptions`（進入 PERCEPTION 時再依 §4.6 / §4.8 套用 pending read-only 替換）；無法證明 cleanup 時轉 E1 |
 | ACTION primary | `ActionCompleted(kind∈{speak,tool}, status=any)` + `END_SESSION` | ACTION post-action-rest | 不論 primary status 均先進 rest phase，不進 perception、不使用 `default_perceptions` |
 | ACTION rest / post-action-rest | `ActionCompleted(kind=rest, status=any)` | IDLE ( 正常 ) / ERROR ( 有 recovery 需要 ) / (process 崩) ( Level 2 失敗 ) | 見 §4.6 ACTION Exit；Level 1 正常完成 → IDLE；Level 2 破壞 backend → 進 ERROR 等 recovery barrier；Level 2 失敗 → Level 3 (§6.5) |
 | ERROR | in-flight 集合空 且 RM recovery barrier 已清除 | IDLE | 見 §6.5 ERROR Exit 條件 |
@@ -503,15 +503,19 @@ SM 內建的 wake source -> perception 組合對應關係：
 
 * 分配新 `turn_id`（session 內遞增，首 turn = 1）
 * 決定本 turn perception 組合：
-    * 首 turn：依記錄的 wake source 反射式選擇（§4.4）
-    * 後續 turn：前一 route 必須為 `KEEP_NEXT` 或已完成 barrier 的 `REPLACE_NEXT`；依 §4.8 的當前 continuing action status 選 normalized `next_perceptions` 或 `default_perceptions`
+    * 首 turn：依記錄的 wake source 反射式選擇（§4.4；`ExternalMessageArrived` wake 直接以 `(read,)` 作首輪 perception）
+    * 後續 turn：前一 route 必須為 `KEEP_NEXT` 或已完成 barrier 的 `REPLACE_NEXT`；SM 先依 §4.8 的當前 continuing action status 得到候選組合（normalized `next_perceptions` 或 `default_perceptions`），再套用 profile-specific pending 替換規則：
+        1. M5 MQTT profile 的候選組合恰為 `(listen,)` 且該 session 有 opaque pending IDs 時，SM 原子選定 `(read,)`；本 turn 不啟動 `listen`。
+        2. 選定 `(read,)` 後沿用既有開啟 read 消費視窗（如 `begin_read()`）→ 啟動 `read` worker task 的順序；多則 pending 訊息依 arrival order 由同一 read window 消費（§5.1）。
+        3. 邊界選定後才到達的訊息依既有 Signal 線性化結果處理：當前 turn 已選 `read` 且消費視窗仍開啟者依 active-window 規則 assign，視窗關閉後或非 `read` turn 到達者留作 pending，等下一個 eligible PERCEPTION 邊界。
+        4. 已選定或執行中的 `look` 不被 external message 取消；維持 M5 既有 read / Look 不交錯邊界，pending 留到 Look flow 完成後第一個 `(listen,)` 候選邊界再替換。
 * 對每個選定的 perception kind 呼叫 worker、加入 in-flight 集合
 * 若組合含 `read` → 通知 `external_message` 啟動 `read` 消費（§5.1）
 
 **THINK Entry**
 
 * 呼叫 reasoner，加入 in-flight 集合
-* 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供 reasoner 決定 `next_perceptions` 是否含 `read`
+* 傳入 reasoner 本 turn 的 pending message metadata（僅 id 清單或 count，不含 payload；來源見 §5.1）——供通用 reasoner 決定 `next_perceptions` 是否含 `read`；M5 MQTT profile 下 Reasoner 維持正常 continuing route 與 `(listen,)` 候選，實際 `(listen,) -> (read,)` 替換由 SM 於下一個 eligible PERCEPTION Entry 確定性執行（§4.8）
 * 支援 tool_feedback 的 profile 可把上一輪單一、payload-free 的派發 status 作為私有提示傳入正常 cognition；與本次 generation 一起使用，消費或 session end / Conversation replacement 即清除。此提示不是外部 response，不增加模型呼叫或跨 Session persistence
 * 進入 THINK 前 Conversation 已由 WAKE 或前一 `REPLACE_NEXT` barrier 取得 readiness；SM 在 generate admission 再次驗證 active Conversation generation 與本 session 相符。控制流呼叫不阻塞 SM inbox
 
@@ -580,6 +584,7 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 * `next_perceptions`：Reasoner 於 `LLMResponse` 產出（見 §2.7）；僅 `KEEP_NEXT` / `REPLACE_NEXT` 正規化為非空 tuple，供 SM 決定下一 turn 的 perception 組合
 * `default_perceptions`：SM 內建、`config-driven` 的預設 perception 組合（預設值 `[listen]`）。僅供 continuing route（`KEEP_NEXT` / `REPLACE_NEXT`）的 primary `ActionCompleted(kind∈{speak,tool}, status=error)` 或有限 tool_feedback 的可翻譯 Speak failure 取代 Reasoner 的 `next_perceptions`；final action failure 仍走 `END_SESSION`
 * 固定 tool_feedback profile：SM 以 primary tool 派發 status 選固定語句，並保留單輪、payload-free 的 `last_dispatch_status` 供下一次正常 cognition 使用；feedback completion 後才進 PERCEPTION。`last_dispatch_status` 不取代 `default_perceptions` 對 continuing action error 的處理，也不表示外部業務結果
+* M5 MQTT deterministic pending policy：通用 Reasoner 仍可觀察 payload-free pending metadata 並產生 `next_perceptions`；M5 MQTT profile 採更窄的確定性排程——Reasoner 維持正常 continuing route 與 `(listen,)` 候選，SM 在 continuing route（含 `KEEP_NEXT`、`tool_feedback` 完成後、或 `REPLACE_NEXT` barrier 完成後）進入 PERCEPTION Entry 前，以本 session 的 opaque pending IDs 判斷是否將 `(listen,)` 候選原子替換為單一 `(read,)`（不並行啟動 `listen`）。SM 不讀 payload、不把 external text 插入當前 THINK，也不改寫 `LLMResponse`；`(look,)` 候選維持不交錯，pending 留待 Look flow 完成後第一個 `(listen,)` 候選再替換
 
 ---
 
@@ -604,9 +609,9 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 
 **SM 依狀態的調度指令（ `ExternalMessageArrived` 既是 wake source 也是 perception input）：**
 
-* **IDLE 收到訊息**：SM 開新 session、通知 `external_message` 訊息屬本 session
-* **Session 中、當前 turn 有 read**：SM 啟動 `read` ； `read` 執行時直接向 `external_message` 消費
-* **Session 中、其他情況**：SM 通知 `external_message` 進 `pending` 模式 ( 訊息續存於 buffer )
+* **IDLE 收到訊息**：SM 開新 session（首輪 perception 為 `read-only`）、通知 `external_message` 訊息屬本 session
+* **Session 中、當前 turn 已選 read**：若當前 `read` 消費視窗仍開啟，依 active-window 規則將訊息 assign 給本輪 `read` 一併消費；若消費視窗已關閉，通知 `external_message` 進 `pending` 模式
+* **Session 中、其他情況（含 listen / look / THINK / ACTION primary / tool_feedback / rest 執行中）**：不取消或搶占當前 operation，SM 通知 `external_message` 進 `pending` 模式 ( 訊息續存於 buffer，待下一個 eligible PERCEPTION 邊界處理 )
 * **Session 內 Conversation replacement**：不是 session end；SM 維持現有 buffer / pending 歸屬，不發 `flush-to-wake` 或 `discard`
 * **Session 結束走 rest（正常收斂）**：SM 通知 `external_message` `flush-to-wake` ——buffer 內未消化訊息重新發 `ExternalMessageArrived` Signal，SM 於 IDLE 收到後依第一條規則自然開新 session
 * **Session 走 ERROR / Interrupt / Shutdown（異常收斂）**：SM 通知 `external_message` `discard` 、buffer 清空
@@ -616,11 +621,11 @@ ERROR 狀態特殊性： `ExternalMessageArrived` 於 ERROR 狀態亦拒絕 ( �
 * 每則訊息只走一條路徑 ( `ExternalMessageArrived` Signal → SM 決策 ) ；pending 升級為 wake 是同機制，非特殊路徑
 * SM 不接觸 payload、不持有 buffer；訊息生命週期由 external_message 完全擁有
 * 調度指令以 `message_id` 指涉單則訊息 ( 來自 Signal 攜帶的 opaque id ) ；批次指令 ( 如 flush / discard ) 以「當前 buffer 全體」或指定 id 集合為對象。SM 只轉發 id、不解讀
-* **Pending metadata 對 reasoner 可見 ( payload-free )**：SM 於 THINK Entry 將當前 buffer 內 pending 訊息 of id 清單或 count 傳入 reasoner ( 見 §2.7 / §4.6 ) ——僅 metadata、不含 payload，維持 SM / reasoner 皆不接觸 payload 的邊界。Reasoner 依此判斷是否於下一 turn 加入 `read` ；實際訊息內容由該 read perception 讀取
+* **Pending metadata 對 reasoner 可見與確定性排程分工 ( payload-free )**：SM 於 THINK Entry 將當前 buffer 內 pending 訊息的 id 清單或 count 傳入 reasoner ( 見 §2.7 / §4.6 ) ——僅 metadata、不含 payload，維持 SM / reasoner 皆不接觸 payload 的邊界。通用 reasoner 可依此決定是否於下一 turn 加入 `read`；M5 MQTT profile 則固定由 SM 在下一個候選為 `(listen,)` 的 eligible PERCEPTION Entry 以 opaque pending IDs 確定性替換為單一 `(read,)`（見 §4.6 / §4.8），實際訊息內容仍只由該 read perception 讀取
 
 具體指令 API、buffer 資料結構、read 消費介面屬實作細節，見 `implement.md` 。
 
-M5 的 MQTT 外部 response 或主動通知皆由 adaptor 驗證後進 `external_message` buffer，再按上述 wake / pending / read 規則消費；它們不回寫已完成的 tool action。Tool 派發成功不代表外部業務成功。M5.tool 的 mock 派發階段不啟用 read / Look 交錯。
+M5 的 MQTT 外部 application result 或主動通知皆由 adaptor 驗證後進 `external_message` buffer，再按上述 wake / pending / read 規則消費；只能在 `read` 完成並產出 external-message `PerceptionResult` 後進入下一次 THINK，不回寫已完成的 `ActionCompleted`，也不把 external text 插入當前 THINK。Tool 派發成功僅表示本地送出完成，不代表外部業務成功。M5 MQTT 的 read turn 只產生 external-message `PerceptionResult`，下一次 THINK 不同時接收 `listen`；不新增「我收到一個訊息，請稍等」的固定 Speak phase，`read -> THINK` 的單次回答直接標示來源並轉告內容。M5 維持 read / Look 不交錯邊界，Look 流程期間到達的訊息留作 pending，待 Look 完成後第一個 `(listen,)` 候選邊界再替換為 `read`。
 
 ### 5.2 麥克風獨佔切換
 

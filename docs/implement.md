@@ -45,6 +45,7 @@ prospective **M4B-MVA-002** 由[Designer decision package](implement/m4b_mva_002
 | **M4-ERR** | [ch_m4_error_handling.md](implement/ch_m4_error_handling.md) | M4 production taxonomy、lossless fault propagation、backend usability、recovery、diagnostic與fatal exit | §3.4 / §6.4–§6.8 |
 | **M4b.002** | [m4b_mva_002_decisions.md](implement/m4b_mva_002_decisions.md) | POC後效率候選、idle/capacity/reset、M4B/M4C/ALPHA邊界；採用與架構審查pending | §2.7 / §4 / §6.3 / §6.8 |
 | **M4b Gate intake** | [m4b_gate2a_intake.md](implement/m4b_gate2a_intake.md) | Gate 2A historical intake、Gemma selection與DELIVERY-019 adaptation lineage | M4b external Gate 2A / 2B |
+| **M5 MQTT** | [ch_m5_mqtt.md](implement/ch_m5_mqtt.md) | local-test peer、真實 MQTT 派發、外部 result／notification 與 read 投影 | §2.9 / §5.1 / §7.1 |
 
 目前需要接手的章節與 gate 見 [status/design.md](status/design.md)。
 

@@ -2,8 +2,8 @@
 
 - Updated: 2026-10-25
 - Owner: Designer
-- Scope: M5.tool 結案（Accepted）；M5 MQTT 具體設計準備與 M6 Look 階段邊界
-- State: **M5.tool 已完成 final Verify PASS（Accepted）；待展開 M5 MQTT 設計輸入**
+- Scope: M5 MQTT local-test peer、真實 publish、external result／notification read 與 M6 Look 階段邊界
+- State: **M5 MQTT deterministic read-only scheduling architecture 已 Resolved；native prompt POC 待執行**
 
 ## 已固定的設計
 
@@ -29,6 +29,34 @@ M5.tool 已依 [IR_dev_M5_TOOL_I](../reviews/IR_dev_M5_TOOL_I.md)、[`TR_dev_M5_
 架構修訂與規格／開發審查見 [AR_impl_M5_TOOL_I](../reviews/history/AR_impl_M5_TOOL_I.md)、
 [TR_spec_M5_TOOL_I](../reviews/history/TR_spec_M5_TOOL_I.md) 與 [TR_dev_M5_TOOL_I](../reviews/history/TR_dev_M5_TOOL_I.md)。
 
-下一步由 **Designer** 依 [M5 §3.2](../milestones/M5.md#32-此階段才需要固定的輸入) 固定 M5 MQTT
-的 broker、認證配置、topic namespace、domain schema 與 publish/read 契約；M5 MQTT 完成
-`Design → Test Spec` 前不開啟 Developer entry。ALPHA 與 M5.tool 已 Accepted 的證據不重開。
+## M5 MQTT active design
+
+- [M5 MQTT 設計](../implement/ch_m5_mqtt.md) 已固定 local send 與 application result 分離：本地 send
+  `0` 只觸發既有固定「已送出。」；外部完成／失敗只能另經 result topic → buffer → `read` → THINK。
+- local-test peer 是專案能力，development profile 預設 `empty`（接收但不發布完成）；另以明確模式
+  產生 success／failure／duplicate／malformed 與 notification。正式目標只靠配置替換，不做 failure fallback。
+- 工作站 disposable local-peer POC 已完成：驗證 success／failure result、`empty` 無 result 與獨立
+  notification 的基本 MQTT round trip；它不是產品 implementation 或正式 evidence。
+- USER 已選定 deterministic read-only scheduling：external message 不打斷 current operation；下一個
+  eligible listen boundary 由 StateManager 以 opaque pending IDs 強制改成 read-only，不啟動 listen。
+  Look 已選定／執行時不混入 read，pending 留到 Look flow 後第一個 listen boundary。此決策與原
+  Reasoner-owned pending scheduling矛盾已由
+  [AR_impl_M5_MQTT_I](../reviews/history/AR_impl_M5_MQTT_I.md) 修訂 architecture 並 Resolved。
+- External read 維持同一 c2 base system prompt，只在 perception kind=`read` 時套專屬
+  `source=external_message`／`messages[]`／`instruction` wrapper；模型不看 request/event ID，read source
+  只允許 `speak|end`。Read 不套 M5.tool fresh prefill 128，但仍做 1024 context admission 並由 native
+  POC 固定 source-specific batch／text 上限。
+- Read 不增加「我收到一個訊息，請稍等」的 spoken preamble；read→THINK 後只播放一次含來源的完整
+  回答。若 Pi latency 後續顯示明確 UX 風險，再依量測評估非語音 cue。
+
+下一步由 **Designer** 依 [M5 MQTT §5](../implement/ch_m5_mqtt.md#5-external-message--read--think)
+執行真實 Gemma read wrapper probe，據結果固定 prompt disposition、batch／text 上限，再完成 broker/auth、QoS、ID／payload 上限、
+duplicate policy與正式 config 欄位後直接交 Test Spec。Developer entry 維持關閉；ALPHA 與 M5.tool
+已 Accepted 的證據不重開。
+
+Tester 交付 readiness、驗收問題、測試拓撲與 evidence 邊界已規劃於
+[M5 MQTT §7](../implement/ch_m5_mqtt.md#7-test-spec-交付準備)。這是後續 gate 的輸入清單，不代表
+Test Spec 已開啟，也不取代 Tester 對 Test ID、fixture、步驟與 PASS/FAIL 的 ownership。External
+message 到達後的行為已精簡為六個不同風險代表：IDLE、active listen、tool_feedback、Look boundary、
+兩則 batch與一次 Interrupt；THINK/Speak、read-window close前後及 end/error/shutdown沿用代表案例或
+Ch 7 regression，不另做產品情境，也不做內容×state笛卡兒積。
