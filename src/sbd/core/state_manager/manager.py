@@ -82,6 +82,7 @@ class StateManager:
         } if config else (perception_timeouts or {"listen": 10.0, "read": 0.5, "look": 3.0}))
         self._defaults = config.perception.default_perceptions if config else ("listen",)
         self._tool_feedback = dict(tool_feedback) if tool_feedback is not None else None
+        self._mqtt_read_only = bool(config and config.adaptors.mqtt.policy.enabled)
         self._feedback_display = None
 
         self._state: State = "IDLE"
@@ -328,7 +329,9 @@ class StateManager:
                 if self._external_control is None:
                     raise StateManagerWiringError("External signal received before control late-fill")
                 assert self._session is not None
-                if self._state != "ERROR" and "read" in self._session.selected_perceptions:
+                if (self._state == "PERCEPTION" and
+                        self._read_open == (self._session.session_id, self._session.turn_id) and
+                        "read" in self._session.selected_perceptions):
                     await self._external_control.assign_to_turn(
                         item.message_id, self._session.session_id, self._session.turn_id
                     )
@@ -720,6 +723,10 @@ class StateManager:
         selected = tuple(dict.fromkeys(
             kind for kind in selected if kind in self._workers.perception_kinds
         ))
+        if (self._mqtt_read_only and selected == ("listen",) and
+                self._external_control is not None and
+                await self._external_control.pending_ids(self._session.session_id)):
+            selected = ("read",)
         if not selected:
             raise StateManagerInvariantViolation("No registered perception is available")
         self._session.selected_perceptions = selected
@@ -768,7 +775,8 @@ class StateManager:
         if "look" in self._session.selected_perceptions and self._session.look_generation != generation:
             raise StateManagerInvariantViolation("Look observation reached THINK after generation changed")
         dispatch_status = (self._session.last_dispatch_status
-            if self._session.last_dispatch_generation == generation else None)
+            if self._session.selected_perceptions == ("listen",) and
+            self._session.last_dispatch_generation == generation else None)
         self._start_worker("think", "reasoner", worker,
             lambda cid: worker.reason(
                 session_id, turn_id, cid, results, pending,
@@ -882,7 +890,7 @@ class StateManager:
                     logger.error("Reasoner response rejected: %s", exc)
                     await self._transition("ERROR", trigger="error")
                 else:
-                    if self._tool_feedback is not None:
+                    if self._tool_feedback is not None and self._session.selected_perceptions == ("listen",):
                         self._session.last_dispatch_status = None
                         self._session.last_dispatch_generation = None
                     await self._transition("ACTION")

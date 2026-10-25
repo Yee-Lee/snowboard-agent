@@ -6,6 +6,72 @@ class ConfigTypeError(ConfigError): ...
 class ConfigValueError(ConfigError): ...
 class MissingSecretError(ConfigError): ...
 
+
+def _validate_mqtt(config: 'AppConfig') -> None:
+    import ipaddress
+    import math
+    import re
+
+    external = config.external_message
+    if type(external.buffer_max) is not int or external.buffer_max < 1:
+        raise ConfigValueError("external_message.buffer_max must be positive")
+    if external.overflow_policy not in {"drop_oldest", "drop_newest", "reject"}:
+        raise ConfigValueError("external_message.overflow_policy invalid")
+    mqtt = config.adaptors.mqtt
+    if mqtt.provider not in {"local_test", "external"}:
+        raise ConfigValueError("adaptors.mqtt.provider invalid")
+    if type(mqtt.host) is not str or not mqtt.host.strip():
+        raise ConfigValueError("adaptors.mqtt.host invalid")
+    if type(mqtt.port) is not int or not 1 <= mqtt.port <= 65535:
+        raise ConfigValueError("adaptors.mqtt.port invalid")
+    namespace = re.compile(r"[a-z0-9][a-z0-9_-]{0,31}\Z")
+    identifier = re.compile(r"[A-Za-z0-9._:-]{1,64}\Z")
+    for field in ("topic_prefix", "device_id"):
+        if type(getattr(mqtt, field)) is not str or not namespace.fullmatch(getattr(mqtt, field)):
+            raise ConfigValueError(f"adaptors.mqtt.{field} invalid")
+    if type(mqtt.client_id) is not str or not identifier.fullmatch(mqtt.client_id):
+        raise ConfigValueError("adaptors.mqtt.client_id invalid")
+    for field, expected in (
+        ("command_topic_suffix", "commands/remote-connection"),
+        ("result_topic_suffix", "results/remote-connection"),
+        ("notification_topic_suffix", "notifications"),
+    ):
+        if getattr(mqtt, field) != expected:
+            raise ConfigValueError(f"adaptors.mqtt.{field} is fixed by wire v1")
+    if type(mqtt.qos) is not int or mqtt.qos != 1:
+        raise ConfigValueError("adaptors.mqtt.qos must be 1")
+    if (type(mqtt.send_timeout_seconds) not in (int, float) or
+            not math.isfinite(mqtt.send_timeout_seconds) or mqtt.send_timeout_seconds <= 0):
+        raise ConfigValueError("adaptors.mqtt.send_timeout_seconds invalid")
+    if type(mqtt.keepalive_seconds) is not int or not 5 <= mqtt.keepalive_seconds <= 600:
+        raise ConfigValueError("adaptors.mqtt.keepalive_seconds invalid")
+    if type(mqtt.tls_enabled) is not bool or type(mqtt.verify_server) is not bool:
+        raise ConfigValueError("adaptors.mqtt TLS policy invalid")
+    if not mqtt.tls_enabled and mqtt.ca_path is not None:
+        raise ConfigValueError("adaptors.mqtt.ca_path requires TLS")
+    if mqtt.policy.enabled and (
+        config.cognition.llm.profile_id != "core-m5-tool-001" or
+        not config.perception.read.enabled or
+        not config.input_sources.external_message.policy.enabled or
+        "mqtt" not in external.allowed_channels
+    ):
+        raise ConfigValueError("M5 MQTT capability combination is invalid")
+    if mqtt.provider == "external" and mqtt.policy.enabled:
+        try:
+            loopback = mqtt.host.lower() == "localhost" or ipaddress.ip_address(mqtt.host).is_loopback
+        except ValueError:
+            loopback = mqtt.host.lower() == "localhost"
+        if loopback or not mqtt.tls_enabled or not mqtt.verify_server:
+            raise ConfigValueError("external MQTT requires remote verified TLS")
+        if mqtt.ca_path is None or not mqtt.ca_path.is_file():
+            raise ConfigValueError("external MQTT requires an existing CA file")
+        if type(mqtt.username) is not str or not mqtt.username.strip():
+            raise ConfigValueError("external MQTT requires username")
+        if mqtt.password is None:
+            raise MissingSecretError("external MQTT requires SBD_MQTT_PASSWORD")
+        if not mqtt.password.reveal():
+            raise ConfigValueError("external MQTT password must be non-empty")
+
 def validate_config(config: 'AppConfig'):
     # required=True + enabled=False => ConfigValueError
     def check_policy(p, path):
@@ -22,6 +88,8 @@ def validate_config(config: 'AppConfig'):
     check_policy(config.input_sources.voice_wake.policy, "input_sources.voice_wake.policy")
     check_policy(config.input_sources.external_message.policy, "input_sources.external_message.policy")
     check_policy(config.adaptors.mqtt.policy, "adaptors.mqtt.policy")
+
+    _validate_mqtt(config)
 
     # default_perceptions non-empty tuple of valid kinds
     if not config.perception.default_perceptions:
@@ -305,8 +373,8 @@ def _validate_m4b_llm(config) -> None:
             if (llm.artifact_lock_path is not None or
                     not config.perception.listen.enabled or not config.perception.look.enabled or
                     not config.action.speak.enabled or not config.action.tool.enabled or
-                    config.perception.read.enabled or
-                    config.input_sources.external_message.policy.enabled or
+                    config.perception.read.enabled != config.adaptors.mqtt.policy.enabled or
+                    config.input_sources.external_message.policy.enabled != config.adaptors.mqtt.policy.enabled or
                     config.input_sources.voice_wake.policy.enabled or
                     config.core.audio.driver != "alsa" or
                     config.perception.listen.adapter.driver != "whispercpp" or
@@ -321,7 +389,8 @@ def _validate_m4b_llm(config) -> None:
                 raise ConfigValueError("cognition.llm.product_profile_path invalid M5 profile") from None
         elif llm.profile_id == "core-m4b-cognition-001":
             if (config.perception.read.enabled or config.perception.look.enabled or
-                    config.action.tool.enabled or config.input_sources.external_message.policy.enabled):
+                    config.action.tool.enabled or config.input_sources.external_message.policy.enabled or
+                    config.adaptors.mqtt.policy.enabled):
                 raise ConfigValueError("real M4B requires listen-only capabilities")
             from sbd.cognition.litert_lm.lock import LLMLockError, load_product_profile
             try:

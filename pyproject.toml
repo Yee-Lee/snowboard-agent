@@ -18,12 +18,15 @@ dev = [
     "pytest-asyncio",
     "pytest-timeout>=2.3",
     "numpy>=1.26",
-    "samplerate==0.2.4"
+    "samplerate==0.2.4",
+    "paho-mqtt==2.1.0",
+    "amqtt==0.12.1"
 ]
 rpi-audio = [
     "pyalsaaudio==0.11.0",
     "samplerate==0.2.4"
 ]
+m5-mqtt = ["paho-mqtt==2.1.0"]
 
 [tool.setuptools.package-data]
 "sbd.core.display" = ["assets/fonts/*"]

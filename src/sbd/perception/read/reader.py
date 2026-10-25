@@ -47,6 +47,11 @@ class Read(WorkerRuntime):
                         {
                             "message_ids": tuple(message.message_id for message in messages),
                             "channels": tuple(message.channel for message in messages),
+                            "messages": tuple({
+                                "kind": message.metadata.get("kind", "notification"),
+                                "status": message.metadata.get("status", "notice"),
+                                "text": message.text,
+                            } for message in messages),
                         },
                         session_id,
                         turn_id,

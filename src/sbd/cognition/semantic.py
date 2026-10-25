@@ -103,7 +103,7 @@ def validate_tool_semantic(raw: bytes | str | dict[str, object], *,
                 set(value["arguments"]) != {"message"} or
                 type(value["arguments"]["message"]) is not str or
                 len(value["text"]) > 4096 or len(value["tool_name"]) > 64 or
-                source not in {"listen", "look"}):
+                source not in {"listen", "look", "read"}):
             raise SemanticError()
         intent = value["intent"]
         spoken = normalize_text(value["text"])

@@ -30,6 +30,7 @@ class ExternalMessageSource:
         allowed_channels: frozenset[str],
         max_items: int = 32,
         overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_oldest",
+        max_read_batch: int | None = None,
         logger: logging.Logger | None = None,
         clock: Callable[[], float] = time.monotonic,
         id_factory: Callable[[], str] = new_message_id,
@@ -48,6 +49,7 @@ class ExternalMessageSource:
             overflow_policy=overflow_policy,
             publish_signal=self._bus.publish,
             logger=self._logger,
+            max_read_batch=max_read_batch,
         )
 
     @property

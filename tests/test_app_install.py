@@ -16,7 +16,7 @@ def inputs(tmp_path, monkeypatch):
     (source / "src/example.py").write_text("value = 1")
     (source / "scripts/run-app.sh").write_text("#!/bin/sh\nexit 0\n")
     for name in ("alpha_product.py", "alpha_oracle.py", "acoustic_supervisor.py",
-                 "m5tool_manual.py",
+                 "m5tool_manual.py", "m5mqtt_peer.py", "m5mqtt_read_probe.py",
                  "run-alpha-pv.py", "run-acoustic-asr.py", "run-manual-debug.py"):
         (source / "scripts" / name).write_text("# packaged experiment instrumentation\n")
     for name in ("controller", "llm-runtime"):
@@ -58,7 +58,8 @@ def test_install_copies_runtime_assets_and_removes_development_references(inputs
     assert (prefix / ".venv/bin/python").read_text() == "python"
     assert not list(prefix.rglob("__editable__*"))
     assert config.read_bytes() == original
-    for name in ("acoustic_supervisor.py", "m5tool_manual.py", "run-alpha-pv.py",
+    for name in ("acoustic_supervisor.py", "m5tool_manual.py", "m5mqtt_peer.py",
+                 "m5mqtt_read_probe.py", "run-alpha-pv.py",
                  "run-acoustic-asr.py", "run-manual-debug.py"):
         assert (prefix / "scripts" / name).read_bytes() == (source / "scripts" / name).read_bytes()
     assert (prefix / "run.sh").stat().st_mode & 0o111
@@ -110,5 +111,16 @@ def test_temporary_audio_dependencies_are_rejected(inputs):
     raw["action"]["tts"]["runtime_python"] = str(python)
     config.write_text(yaml.safe_dump(raw))
     with pytest.raises(ValueError, match="INSTALLED_AUDIO_PRODUCT_REQUIRED"):
+        install(*inputs)
+    assert not prefix.exists()
+
+
+def test_mqtt_install_rejects_controller_without_paho_before_copy(inputs):
+    source, config, python, prefix = inputs
+    raw = yaml.safe_load(config.read_text())
+    raw["cognition"]["llm"]["profile_id"] = "core-m5-tool-001"
+    raw["adaptors"] = {"mqtt": {"policy": {"enabled": True}}}
+    config.write_text(yaml.safe_dump(raw))
+    with pytest.raises(ValueError, match="MQTT_RUNTIME_DEPENDENCY_MISSING"):
         install(*inputs)
     assert not prefix.exists()

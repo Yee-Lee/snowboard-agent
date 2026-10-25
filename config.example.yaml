@@ -167,17 +167,30 @@ input_sources:
     policy: {enabled: true, required: false}
 
 external_message:
-  buffer_max: 32
-  overflow_policy: drop_oldest
+  buffer_max: 8
+  overflow_policy: drop_newest
+  allowed_channels: [fixture, mqtt]
 
 adaptors:
   mqtt:
     policy: {enabled: false, required: false}
+    provider: local_test
     host: localhost
     port: 1883
     username: null
     password: null
     topic_prefix: snowboard
+    device_id: dev-01
+    client_id: snowboard-dev-01
+    command_topic_suffix: commands/remote-connection
+    result_topic_suffix: results/remote-connection
+    notification_topic_suffix: notifications
+    qos: 1
+    send_timeout_seconds: 2.0
+    keepalive_seconds: 30
+    tls_enabled: false
+    ca_path: null
+    verify_server: true
 
 log:
   level: INFO

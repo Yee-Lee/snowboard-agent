@@ -115,6 +115,8 @@ class M2Composition:
             raise RuntimeError("M2 composition may only be registered once")
         real = config.cognition.llm.driver == "litert_lm"
         m5 = real and config.cognition.llm.profile_id == "core-m5-tool-001"
+        if config.adaptors.mqtt.policy.enabled and not m5:
+            raise ConfigValueError("M5 MQTT requires the M5 product profile")
         if real:
             validate_config(config)
         else:
@@ -162,11 +164,29 @@ class M2Composition:
             observer = None
             llm = MockLLMEngineAdapter(self.llm_outcomes)
             conversation_control = _DeterministicConversationLifecycle()
+        mqtt_enabled = config.adaptors.mqtt.policy.enabled
+        external = ExternalMessageSource(
+            bus=bus,
+            max_items=config.external_message.buffer_max,
+            overflow_policy=config.external_message.overflow_policy,
+            allowed_channels=frozenset(config.external_message.allowed_channels),
+            max_read_batch=1 if mqtt_enabled else None,
+        )
+        self.external_message = external
+        if mqtt_enabled:
+            from sbd.action.tool.mqtt_command import MQTTCommandTool
+            from sbd.input_events.mqtt import MQTTClient, MQTTIngress
+            ingress = MQTTIngress(config=config.adaptors.mqtt, source=external)
+            self.mqtt = MQTTClient(config=config.adaptors.mqtt, ingress=ingress)
         if m5:
             if self.tools.contains("mock.send") or self.tools.schemas():
                 raise ConfigValueError("M5.tool requires only its fixed mock.send tool")
-            self.mock_send = MockSend()
-            self.tools.register(self.mock_send.registered_tool())
+            if mqtt_enabled:
+                self.mqtt_send = MQTTCommandTool(self.mqtt)
+                self.tools.register(self.mqtt_send.registered_tool())
+            else:
+                self.mock_send = MockSend()
+                self.tools.register(self.mock_send.registered_tool())
         self._registered = True
         self.tools.seal()
         self._cognition_observer = observer
@@ -203,13 +223,6 @@ class M2Composition:
             on_completion=speech_complete if observer is not None else None,
         )
         self._speak_worker = speak_worker
-        external = ExternalMessageSource(
-            bus=bus,
-            max_items=config.external_message.buffer_max,
-            overflow_policy=config.external_message.overflow_policy,
-            allowed_channels=frozenset(config.external_message.allowed_channels),
-        )
-        self.external_message = external
         if config.core.gpio.driver == "gpiod":
             pin_config = config.core.gpio.pins.get(
                 config.input_sources.button.conversation_pin
@@ -333,7 +346,7 @@ class M2Composition:
             dependencies=("backend.cognition.reasoner.llm",),
             factory=lambda resolver: Reasoner(
                 resolver.require("backend.cognition.reasoner.llm"),
-                (ToolProjector() if m5 else ListenProjector()) if real
+                (ToolProjector(allow_read=mqtt_enabled) if m5 else ListenProjector()) if real
                 else PromptBuilder(self.tools.schemas()),
                 bus,
                 rm.reasoner_capability_of,
@@ -382,6 +395,13 @@ class M2Composition:
                 key="input.external_message", phase=StartPhase.INPUT_PRODUCER,
                 factory=lambda resolver: external,
                 required=config.input_sources.external_message.policy.required,
+            ))
+        if mqtt_enabled:
+            rm.register(ResourceSpec(
+                key="adaptor.mqtt", phase=StartPhase.INPUT_PRODUCER,
+                dependencies=("input.external_message",),
+                factory=lambda resolver: self.mqtt,
+                required=config.adaptors.mqtt.policy.required,
             ))
         if config.input_sources.voice_wake.policy.enabled:
             rm.register(ResourceSpec(

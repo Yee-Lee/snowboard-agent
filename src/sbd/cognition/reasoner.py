@@ -355,6 +355,9 @@ class Reasoner(WorkerRuntime):
                 if len(perceptions) == 1 and perceptions[0].kind == "look":
                     return self._product_fact("這次無法取得影像，請再試一次。",
                         "KEEP_NEXT", identity, outcome="R1")
+                if len(perceptions) == 1 and perceptions[0].kind == "read":
+                    return self._product_fact("外部訊息無法處理，請稍後再試。",
+                        "KEEP_NEXT", identity, outcome="R1")
                 return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
             if projected is None:
                 if len(perceptions) == 1 and perceptions[0].kind == "look":
@@ -383,7 +386,7 @@ class Reasoner(WorkerRuntime):
                         proof.conversation_state != "ready"):
                     raise _LocalProductFault("INVALID_DISCARD_PROOF")
                 return self._product_fact(_INPUT_LIMIT, "KEEP_NEXT", identity, outcome="R1")
-            if revision == 0 and snapshot.runtime_prefill_tokens > 128:
+            if revision == 0 and projected.source != "read" and snapshot.runtime_prefill_tokens > 128:
                 raise _LocalProductFault("INVALID_FRESH_PREFILL")
             if (snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens +
                     snapshot.output_reserve_tokens > snapshot.engine_context_tokens):
@@ -393,7 +396,7 @@ class Reasoner(WorkerRuntime):
                 return self._product_fact(_CONTEXT_LIMIT, "REPLACE_NEXT", identity, outcome="R2")
             streaming = None
             try:
-                if self._streaming_speak is not None:
+                if self._streaming_speak is not None and projected.source != "read":
                     streaming = self._streaming_speak.begin_streaming(
                         session_id, turn_id, f"stream-{generation}-{turn_id}-{correlation_id}")
 
@@ -455,7 +458,13 @@ class Reasoner(WorkerRuntime):
             if semantic.intent == "look":
                 return self._tool_fact("speak", {"text": "我看一下。"}, "KEEP_NEXT",
                     ("look",), identity)
-            return self._product_fact(semantic.text,
+            spoken_text = semantic.text
+            if projected.source == "read":
+                for label in ("外部訊息", "外部通知"):
+                    if spoken_text.startswith(label + ":"):
+                        spoken_text = label + "：" + spoken_text[len(label) + 1:]
+                        break
+            return self._product_fact(spoken_text,
                 "END_SESSION" if semantic.intent == "end" else "KEEP_NEXT", identity)
 
     def _tool_fact(self, kind: str, payload: dict, route: str,

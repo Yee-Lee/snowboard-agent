@@ -152,9 +152,9 @@ class ShutdownConfig:
 
 @dataclass(frozen=True, slots=True)
 class ExternalMessageConfig:
-    buffer_max: int = 32
-    overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_oldest"
-    allowed_channels: tuple[str, ...] = ("fixture",)
+    buffer_max: int = 8
+    overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_newest"
+    allowed_channels: tuple[str, ...] = ("fixture", "mqtt")
 
 @dataclass(frozen=True, slots=True)
 class VoiceWakeConfig:
@@ -183,11 +183,23 @@ class InputSourcesConfig:
 @dataclass(frozen=True, slots=True)
 class MQTTConfig:
     policy: ComponentPolicy = field(default_factory=lambda: ComponentPolicy(False, False))
+    provider: Literal["local_test", "external"] = "local_test"
     host: str = "localhost"
     port: int = 1883
     username: str | None = None
     password: SecretValue | None = None
     topic_prefix: str = "snowboard"
+    device_id: str = "dev-01"
+    client_id: str = "snowboard-dev-01"
+    command_topic_suffix: str = "commands/remote-connection"
+    result_topic_suffix: str = "results/remote-connection"
+    notification_topic_suffix: str = "notifications"
+    qos: Literal[1] = 1
+    send_timeout_seconds: float = 2.0
+    keepalive_seconds: int = 30
+    tls_enabled: bool = False
+    ca_path: Path | None = None
+    verify_server: bool = True
 
 @dataclass(frozen=True, slots=True)
 class AdaptorsConfig:

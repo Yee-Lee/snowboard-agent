@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 import yaml
@@ -40,6 +41,18 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
     for runtime in (controller, llm_runtime):
         if not (runtime / "pyvenv.cfg").is_file() or not (runtime / "bin/python").is_file():
             raise ValueError("VENV_RUNTIME_REQUIRED")
+    mqtt_enabled = (m5 and raw.get("adaptors", {}).get("mqtt", {})
+        .get("policy", {}).get("enabled") is True)
+    if mqtt_enabled:
+        try:
+            dependency = subprocess.run([str(python.absolute()), "-c",
+                "import importlib.metadata as m; import paho.mqtt.client; "
+                "assert m.version('paho-mqtt') == '2.1.0'"],
+                capture_output=True, timeout=10, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            raise ValueError("MQTT_RUNTIME_DEPENDENCY_MISSING") from None
+        if dependency.returncode != 0:
+            raise ValueError("MQTT_RUNTIME_DEPENDENCY_MISSING")
     # Audio is already a stable installed product. Reject temporary audio dependencies.
     for section in (listen, tts):
         for key in ("runtime_python", "model_path", "worker_path", "vad_model_path", "vocoder_path"):
@@ -69,7 +82,7 @@ def install(source: Path, config_path: Path, python: Path, prefix: Path) -> None
     (prefix / "scripts").mkdir()
     shutil.copy2(source / "scripts/run-app.sh", prefix / "scripts/run-app.sh")
     for name in ("alpha_product.py", "alpha_oracle.py", "acoustic_supervisor.py",
-                 "m5tool_manual.py",
+                 "m5tool_manual.py", "m5mqtt_peer.py", "m5mqtt_read_probe.py",
                  "run-alpha-pv.py", "run-acoustic-asr.py", "run-manual-debug.py"):
         shutil.copy2(source / "scripts" / name, prefix / "scripts" / name)
     shutil.copytree(controller, prefix / ".venv", symlinks=True, ignore=ignored)

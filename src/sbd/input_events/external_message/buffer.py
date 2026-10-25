@@ -56,13 +56,17 @@ class ExternalMessageBuffer:
         overflow_policy: Literal["drop_oldest", "drop_newest", "reject"],
         publish_signal: Callable[[ExternalMessageArrived], Awaitable[None]],
         logger: logging.Logger | None = None,
+        max_read_batch: int | None = None,
     ) -> None:
         if type(max_items) is not int or max_items <= 0:
             raise ValueError("max_items must be a positive integer")
         if overflow_policy not in {"drop_oldest", "drop_newest", "reject"}:
             raise ValueError("unknown overflow policy")
+        if max_read_batch is not None and (type(max_read_batch) is not int or max_read_batch < 1):
+            raise ValueError("max_read_batch must be positive")
         self._max_items = max_items
         self._overflow_policy = overflow_policy
+        self._max_read_batch = max_read_batch
         self._publish_signal = publish_signal
         self._logger = logger or logging.getLogger(__name__)
         self._items: dict[str, _BufferedMessage] = {}
@@ -145,7 +149,8 @@ class ExternalMessageBuffer:
             if window is None or window.turn_id != turn_id:
                 raise ExternalMessageOwnershipError("read window does not exist")
             item.session_id = session_id
-            if window.state == "active":
+            if (window.state == "active" and (self._max_read_batch is None or
+                    len(self._matching_ids_locked(session_id, turn_id)) < self._max_read_batch)):
                 item.state = "turn"
                 item.turn_id = turn_id
             else:
@@ -161,14 +166,20 @@ class ExternalMessageBuffer:
                     raise ExternalMessageOwnershipError("session has an active read window")
             else:
                 self._read_windows[session_id] = _ReadWindow(session_id, turn_id)
+            selected_count = len(self._matching_ids_locked(session_id, turn_id))
             for message_id in self._order:
                 item = self._items[message_id]
                 if (
                     item.session_id == session_id
                     and item.state in {"session", "pending"}
                 ):
-                    item.state = "turn"
-                    item.turn_id = turn_id
+                    if self._max_read_batch is None or selected_count < self._max_read_batch:
+                        item.state = "turn"
+                        item.turn_id = turn_id
+                        selected_count += 1
+                    else:
+                        item.state = "pending"
+                        item.turn_id = None
             selected = self._matching_ids_locked(session_id, turn_id)
             self._changed.notify_all()
             return selected
@@ -277,6 +288,7 @@ class ExternalMessageBuffer:
         if self._overflow_policy == "reject":
             raise ExternalMessageBufferFull("external message buffer is full")
         if self._overflow_policy == "drop_newest":
+            self._logger.warning("EXTERNAL_MESSAGE_DROPPED policy=drop_newest")
             raise ExternalMessageDropped(policy="drop_newest")
         evict = next(
             (
@@ -287,15 +299,11 @@ class ExternalMessageBuffer:
             None,
         )
         if evict is None:
+            self._logger.warning("EXTERNAL_MESSAGE_DROPPED policy=drop_newest")
             raise ExternalMessageDropped(policy="drop_newest")
-        item = self._items.pop(evict)
+        self._items.pop(evict)
         self._order.remove(evict)
-        self._logger.warning(
-            "external message evicted id=%s channel=%s state=%s",
-            item.value.message_id,
-            item.value.channel,
-            item.state,
-        )
+        self._logger.warning("EXTERNAL_MESSAGE_DROPPED policy=drop_oldest")
 
     def _item_locked(self, message_id: str) -> _BufferedMessage:
         try:

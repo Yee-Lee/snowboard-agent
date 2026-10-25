@@ -245,6 +245,11 @@ def load_config(
         if not isinstance(raw_yaml, dict):
             raise ConfigTypeError("YAML root must be a mapping")
 
+    if (isinstance(raw_yaml.get("adaptors"), dict) and
+            isinstance(raw_yaml["adaptors"].get("mqtt"), dict) and
+            raw_yaml["adaptors"]["mqtt"].get("password") is not None):
+        raise ConfigValueError("adaptors.mqtt.password must come from environment")
+
     # parse dotenv and overlay env
     dotenv_vars = parse_dotenv(dotenv_path)
     # process environment takes precedence over .env
