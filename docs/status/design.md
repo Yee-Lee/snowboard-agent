@@ -3,7 +3,7 @@
 - Updated: 2026-10-25
 - Owner: Designer
 - Scope: M5 MQTT local-test peer、真實 publish、external result／notification read 與 M6 Look 階段邊界
-- State: **M5 MQTT deterministic read-only scheduling architecture 已 Resolved；native prompt POC 待執行**
+- State: **M5 MQTT 設計與 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 已完成複驗（[`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) Resolved）；Developer entry 已開啟**
 
 ## 已固定的設計
 
@@ -42,16 +42,20 @@ M5.tool 已依 [IR_dev_M5_TOOL_I](../reviews/IR_dev_M5_TOOL_I.md)、[`TR_dev_M5_
   Look 已選定／執行時不混入 read，pending 留到 Look flow 後第一個 listen boundary。此決策與原
   Reasoner-owned pending scheduling矛盾已由
   [AR_impl_M5_MQTT_I](../reviews/history/AR_impl_M5_MQTT_I.md) 修訂 architecture 並 Resolved。
-- External read 維持同一 c2 base system prompt，只在 perception kind=`read` 時套專屬
-  `source=external_message`／`messages[]`／`instruction` wrapper；模型不看 request/event ID，read source
-  只允許 `speak|end`。Read 不套 M5.tool fresh prefill 128，但仍做 1024 context admission 並由 native
-  POC 固定 source-specific batch／text 上限。
+- External read 維持同一 c2 base system prompt（`M5_SYSTEM_PROMPT`）不變，只在 perception kind=`read` 時套專屬
+  `source=external_message`／`messages[]`／`instruction` wrapper（`application_result` 與 `notification` 均進 LLM 轉告）；
+  模型不看 request/event ID，read source 只允許 `speak|end`。Read 不套 M5.tool fresh prefill 128，但仍做 1024
+  context admission。已依 USER 決策與 Pi Gemma 4 E2B POC 定稿：`external_message.buffer_max=8`（可配置）、
+  `overflow_policy="drop_newest"`；單次 read 固定 1 則（`READ_MAX_BATCH_MESSAGES = 1`）、單則 `READ_MAX_TEXT_CODEPOINTS = 160`、
+  wrapper `READ_MAX_WRAPPER_CODEPOINTS = 320`；讀取層超限以 `ToolInputTooLarge` 拒絕且丟棄、不截斷、不呼叫 LLM。
+- [`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1) 與 [Ch 10 §8.1](../implement/ch10_config.md) 已定稿 Wire v1、
+  `MQTTConfig` 欄位與 `MQTT_EXTERNAL_NO_FALLBACK` 等 stable code。
 - Read 不增加「我收到一個訊息，請稍等」的 spoken preamble；read→THINK 後只播放一次含來源的完整
   回答。若 Pi latency 後續顯示明確 UX 風險，再依量測評估非語音 cue。
 
-下一步由 **Designer** 依 [M5 MQTT §5](../implement/ch_m5_mqtt.md#5-external-message--read--think)
-執行真實 Gemma read wrapper probe，據結果固定 prompt disposition、batch／text 上限，再完成 broker/auth、QoS、ID／payload 上限、
-duplicate policy與正式 config 欄位後直接交 Test Spec。Developer entry 維持關閉；ALPHA 與 M5.tool
+[`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) 已由 Tester 核對 B1–B4 並歸檔為 `Resolved`；
+Designer 已完成開發前複驗，確認 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 完整覆蓋核准設計，
+並於 [`current.md`](current.md) 開啟 **Developer entry**（Next owner = `Developer`）。ALPHA 與 M5.tool
 已 Accepted 的證據不重開。
 
 Tester 交付 readiness、驗收問題、測試拓撲與 evidence 邊界已規劃於

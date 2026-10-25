@@ -3,16 +3,16 @@
 - Updated: 2026-10-25
 - Writer: Designer only
 - Current milestone: M5 MQTT → M6 Look
-- Current stage: **M5 MQTT Design — architecture delta Resolved；external wrapper native POC 待執行**
-- Next owner: Designer
-- Developer entry: **Closed — M5.tool 已完成 final Verify PASS；M5 MQTT 設計與 Test Spec 尚未開啟**
+- Current stage: **M5 MQTT Developer — [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 已由 Designer 複驗對齊、[`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) 已 Resolved；Developer entry 開啟**
+- Next owner: Developer
+- Developer entry: **Open — 依 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 與 M5 MQTT 定稿設計實作，並在 Raspberry Pi 完成待提交相同 bytes 的驗證後交 Verify**
 - Working baseline: `e9cef60ea5d169bbae3b74caf1dbe707803fca28`（已 push；其中 source/test Verified snapshot 為 `108264c420fb4ed020e517a8dc64c625da373e81`，Pi Run `m5tool-repair-verify-20261025-cGrEVf`）。
 
 ## Exact routing
 
 | Owner | 下一步 | 最小讀取範圍 |
 | :--- | :--- | :--- |
-| Designer | 執行真實 Gemma external wrapper native POC，固定 prompt disposition與batch/text上限；再完成 MQTT wire/config並交 Test Spec | [M5 MQTT 設計 §5](../implement/ch_m5_mqtt.md#5-external-message--read--think)、[M5 MQTT §7](../implement/ch_m5_mqtt.md#7-test-spec-交付準備)、[AR_impl_M5_MQTT_I](../reviews/history/AR_impl_M5_MQTT_I.md) |
+| Developer | 依 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 實作 project-owned local-test peer、MQTT adaptor／command handler、Ch 10 `MQTTConfig`／`ExternalMessageConfig(buffer_max=8, overflow_policy="drop_newest")`、Ch 7 `max_read_batch=1`、SM deterministic read-only 替換、read wrapper projector 與測試，並在 Pi 完成待提交相同 bytes 收斂後交 Verify | [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md)、[M5 MQTT 設計](../implement/ch_m5_mqtt.md)、[`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1)、[Ch 10 §8 / §8.1](../implement/ch10_config.md)、[Ch 7 §6–§7](../implement/ch07_external_message.md) |
 
 ## Scope boundary
 
@@ -31,5 +31,5 @@ VLM 描述是獨立 POC。Wake 在 BETA 前重新評估，read／Look 交錯暫�
 
 M5 MQTT 已確認 active-session external message 不打斷 current operation；下一個 eligible listen boundary
 強制 read-only，且不另播 spoken preamble。[AR_impl_M5_MQTT_I](../reviews/history/AR_impl_M5_MQTT_I.md)
-已完成 architecture修訂並 Resolved。下一步為 Designer 的 native prompt POC；Developer entry維持關閉。
-M4／ALPHA 與 M5.tool 已 Accepted 的證據不重開。
+與 [`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) 均已 Resolved；[`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md)
+已完成 Designer 開發前複驗，Developer entry 正式開啟。M4／ALPHA 與 M5.tool 已 Accepted 的證據不重開。

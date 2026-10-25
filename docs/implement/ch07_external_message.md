@@ -129,7 +129,7 @@ _sequence_counter: itertools.count
 - `_changed` 必須以 `asyncio.Condition(self._lock)` 建立，與 store mutation 共用同一把 `_lock`。`asyncio.Condition.notify()` 要求呼叫者持有該 Condition 的 lock；共用 lock 才能使「mutation + notify」在同一 critical section 內原子成立，且 consumer 檢查 predicate 與 `wait()` 之間不會遺失喚醒。禁止 Condition 另建獨立 lock。
 - 所有 `_changed.wait()` 必須置於 predicate loop：`while not <predicate>: await _changed.wait()`，predicate 檢查在持有 `_lock` 時求值（matching item 出現 / window CLOSED）。單次 `wait()` return 不視為條件成立。
 - Event Bus publish、logger handler 與 worker Fact publish 都不得在 lock 內 await。
-- 刪除 item 同時從 dict 移除；deque 可在同一 critical section 重建，buffer 最大容量由 `ExternalMessageConfig.buffer_max` 決定（預設 32），不需引入複雜 linked index。
+- 刪除 item 同時從 dict 移除；deque 可在同一 critical section 重建，buffer 最大容量由 `ExternalMessageConfig.buffer_max` 決定（可由 YAML 配置，預設 `8`、`overflow_policy="drop_newest"`），不需引入複雜 linked index。
 
 ## 5. Ingest 與 overflow
 
@@ -217,7 +217,7 @@ class ExternalMessageControl(Protocol):
 
 - `assign_to_session`：只允許 `queued` -> `session`。用於 external-message wake 的第一則訊息。
 - `mark_pending`：允許 `queued/session` -> `pending`；設定 session，清 turn。
-- `assign_to_turn`：只有 target read window 為 ACTIVE 時才做 `queued/session/pending` -> `turn`。若相同 session / turn window 已 CLOSED，原子改存 `pending`、保留 session 並清除 turn；因此 consumer return 後、turn 尚未結束前到達的訊息不會滯留為無 consumer 的 turn-owned item。
+- `assign_to_turn`：只有 target read window 為 ACTIVE、且本 turn 尚未達 `max_read_batch`（M5 MQTT 固定為 `READ_MAX_BATCH_MESSAGES = 1`）時，才做 `queued/session/pending` -> `turn`。若相同 session / turn window 已 CLOSED 或已達 `max_read_batch`，原子改存 `pending`、保留 session 並清除 turn；因此 consumer return 後或單輪上限已滿時到達的訊息不會滯留為無 consumer 的 turn-owned item，而是留給下一輪 read。
 - 已是相同 target 的重複指令為 idempotent no-op。
 - 不同 session / turn 的重新指派是 `ExternalMessageOwnershipError`。
 - 不存在的 ID 通常表示已被 overflow / discard；raise `ExternalMessageNotFound`。Ch 4 將此視為 stale input warning，不進 ERROR。
@@ -227,8 +227,8 @@ class ExternalMessageControl(Protocol):
 在單一 lock 內：
 
 1. 建立該 session / turn 的 ACTIVE read window；同一 session 已有另一個 ACTIVE window 是 `ExternalMessageOwnershipError`。
-2. 找出指定 session 的 `session` / `pending` items。
-3. 全部改成 `turn` 並填入 turn id。
+2. 找出指定 session 的 `session` / `pending` items（依 arrival order）。
+3. 若設定了 `max_read_batch`（M5 MQTT 產品常數 `READ_MAX_BATCH_MESSAGES = 1`；M2 通用單元測試預設 `None` 以維持既有批次相容），只將本 turn 補足至最多 `max_read_batch` 筆最早到達的 items 改成 `turn` 並填入 turn id；其餘尚未指派的 `session` / `pending` items 維持／轉為 `pending`（保留 session、清除 turn），留待下一個 eligible read boundary 依序處理。
 4. 保留已經相同 session / turn 的 item。
 5. return 本 turn 全部 ID，依 arrival order。
 6. notify condition，喚醒 read consumer。
@@ -282,7 +282,7 @@ class ReadMessageConsumer(Protocol):
 Read worker取得 tuple後：
 
 - 將 text 依 arrival order以 `"\n"` 組合；
-- `extra` 可放 `message_ids` / `channels`，但不得放完整 metadata中的 secret；
+- `extra` 放入 `message_ids`、`channels`，以及只含白名單欄位的 `messages: tuple[{"kind": ..., "status": ..., "text": ...}, ...]`（未帶 `kind`/`status` 時預設 `"notification"` / `"notice"`）；不得把 `request_id`、`event_id`、topic、raw payload 或 secret 放入 `extra`；
 - 至少一則有效文字 -> publish `PerceptionResult(status="ok")`；
 - timeout -> publish `status="timeout"`；
 - ownership error / 資料全無效 -> publish `status="error"`。

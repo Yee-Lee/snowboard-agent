@@ -3,6 +3,7 @@
 狀態：Audio Protocol v1保持Accepted；M4B replacement LLM Protocol
 `snowboard.llm/3`已完成原 focused review，並依 `IR_dev_M4B_IV` 修訂 ticket disposal；focused Tester coverage已確認。
 §7 `snowboard.llm/4` 為 M5.tool 設計，尚待對應 architecture delta 與 Test Spec；不代表產品 PASS。
+§8 M5 MQTT Wire v1 是 broker／peer network wire（2026-10-25 定稿），不屬於下段 child IPC 限制。
 
 本文件固定 Core controller 與其直接擁有 child 之間的 private wire schema。它不是公開 network API；child 不得 listen socket、連網或接受任意外部 client。Audio runtime baseline 與 artifact identity 見 `model_spec.md`，lifecycle owner 與 recovery 見 `implement/ch_m4a_audio_production.md`。
 
@@ -543,3 +544,126 @@ shutdown、metrics 與 E1/R2 分界；以下列出**完整差異**，其餘 mess
 semantic exact-key／互斥、tool／look 無 SAFE_TEXT、speak prefix 與 terminal 一致、
 取消後無 late RESULT。既有 v3 lifecycle
 證據保留；受 v4 變動直接影響的 cancel／recovery 仍須驗證。
+
+## 8. M5 MQTT Wire v1
+
+本節是 Core 與 MQTT broker／peer 之間的 network wire，不是 §1 的 child-process IPC；§1 framing
+不適用。語意與流程見 [M5 MQTT 設計](implement/ch_m5_mqtt.md)；配置見
+[Ch 10 §8.1](implement/ch10_config.md)。專案 local-test peer 與正式 peer 使用本節**同一份** wire，
+不得有測試專用欄位或 topic。
+
+### 8.1 Session 與 topic
+
+- MQTT 3.1.1，`clean_session=true`，keepalive 依 Ch 10。離線期間的訊息不保留、不補送；Core
+  不做 durable queue（Ch 7 §1.2）。
+- 所有 publish：**QoS 1、`retain=false`**。`MQTTConfig` 欄位 `qos`、`command_topic_suffix`、
+  `result_topic_suffix`、`notification_topic_suffix` 在 Wire v1 固定驗證為本節值，`local_test` 與
+  `external` provider 完全相同。
+- `{prefix}` = `adaptors.mqtt.topic_prefix`，`{device}` = `adaptors.mqtt.device_id`；兩者都必須符合
+  `^[a-z0-9][a-z0-9_-]{0,31}$`，不得含 `/`、`+`、`#`。
+
+| Topic | 方向 | Core 動作 |
+| --- | --- | --- |
+| `{prefix}/{device}/commands/remote-connection` | Core → peer | publish |
+| `{prefix}/{device}/results/remote-connection` | peer → Core | subscribe QoS 1 |
+| `{prefix}/{device}/notifications` | peer → Core | subscribe QoS 1 |
+
+Core 只訂閱上述兩個 exact topic，不使用 wildcard。收到其他 topic 一律丟棄（`MQTT_INVALID_PAYLOAD`）。
+
+### 8.2 Payload 共同規則
+
+- UTF-8 JSON object，raw payload 上限 **2048 bytes**（產品常數 `MQTT_MAX_PAYLOAD_BYTES = 2048`）；
+  先檢查 byte 長度，再 strict decode。
+- Exact-key：缺欄、多欄、重複 key、`NaN`／`Infinity`、非 object 根節點皆 invalid。
+- `version` 必須是整數 `1`（bool 不算整數）。
+- ID 欄位（`request_id`、`event_id`）：字串，符合 `^[A-Za-z0-9._:-]{1,64}$`。
+- `text`：字串；經既有 `normalize_text` 後必須非空，且不超過 **160 Unicode code points**
+  （產品常數 `MQTT_TEXT_MAX_CODEPOINTS = 160`，與讀取層 `READ_MAX_TEXT_CODEPOINTS = 160` 相同）。
+  超長**整則拒絕**，不截斷。
+
+### 8.3 Command（Core → peer）
+
+```json
+{"version":1,"request_id":"<uuid4>","command":"enable_remote_connection"}
+```
+
+| 欄位 | 型別／值 |
+| --- | --- |
+| `version` | `1` |
+| `request_id` | Core 每次派發產生的小寫 UUIDv4 字串（36 字元） |
+| `command` | 唯一合法值 `"enable_remote_connection"` |
+
+v4 semantic 與 Tool registry 不變：MQTT profile 中 `mock.send` 的 handler 綁定為本 command
+publisher，`arguments.message="啟用遠端連線"` 只對應上表固定 command，不轉成任意字串送出。
+
+### 8.4 Application result 與 notification（peer → Core）
+
+```json
+{"version":1,"event_id":"<id>","kind":"application_result","request_id":"<id>","status":"success","text":"遠端連線已成功啟用。"}
+{"version":1,"event_id":"<id>","kind":"notification","text":"遠端服務將於十分鐘後維護。"}
+```
+
+| 欄位 | result topic | notification topic |
+| --- | --- | --- |
+| `version` | `1` | `1` |
+| `event_id` | ID | ID |
+| `kind` | `"application_result"` | `"notification"` |
+| `request_id` | ID | 不得出現 |
+| `status` | `"success"` \| `"failure"` | 不得出現 |
+| `text` | §8.2 | §8.2 |
+
+`kind` 必須與到達 topic 相符，否則 invalid。`request_id` 只驗格式並留在 metadata，**不與已送出
+command 做 correlation**；未知 `request_id` 的合法 result 照常接受（例如 Core 重啟後到達）。
+
+### 8.5 Publish outcome（local send）
+
+Tool handler 對每次派發只 publish 一次，結果只有兩種：
+
+| 結果 | 條件 |
+| --- | --- |
+| `ok` | 呼叫時 client 已連線、client publish 回傳 `0`（成功接受），且在 `adaptors.mqtt.send_timeout_seconds` 內完成本次 QoS 1 send（PUBACK 或 `FX-M5M-CLIENT` 同步 `0`） |
+| `error` | 呼叫時未連線（`MQTT_SEND_NOT_CONNECTED`，不排入 client offline queue）；client 拒絕／回傳非 `0`（`MQTT_SEND_REJECTED`）；或逾時未完成（`MQTT_SEND_TIMEOUT`） |
+
+`ok` 只表示本地 send／broker 接受，不代表 peer 或外部 application 收到或完成。逾時後同一訊息仍可能
+晚到 broker；Core 不撤回、不自動重送，因此固定回饋為「未能確認送出，請稍後再試。」。
+
+### 8.6 Inbound 驗證、duplicate 與拒絕
+
+處理順序：topic → 長度 → JSON／exact-key／型別 → topic/kind 一致 → text 正規化與上限 → duplicate
+→ `ExternalMessageSource.ingest()`。
+
+- **Invalid**：任一步失敗即丟棄；不 ingest、不 publish `ExternalMessageArrived`、不回 wire NACK。
+  記一筆 WARNING：stable code `MQTT_INVALID_PAYLOAD`，只含 topic suffix 與失敗類別
+  （`size|json|schema|topic_kind|text`），不含 payload、text 或 ID。
+- **Duplicate**：QoS 1 為 at-least-once。Adaptor 以 `event_id` 保存最近 64 筆**已成功 ingest** 的
+  ID（process memory，FIFO 淘汰，result 與 notification 共用）；命中即丟棄，記 DEBUG
+  `MQTT_DUPLICATE_EVENT`。同一 `event_id` 在此窗口內恰好產生一次 buffer item／read／語音。
+- **Buffer 滿**：依 Ch 7 overflow policy（預設 `drop_newest`、`buffer_max=8`）；被丟的新訊息記 WARNING
+  `EXTERNAL_MESSAGE_DROPPED`，其 `event_id` 不寫入 duplicate cache。
+- Ingest 給 Ch 7 的內容：`channel="mqtt"`、`text`（正規化後）、metadata
+  `{"kind","status","event_id","request_id"}`（notification 的 `status` 固定 `"notice"`，
+  `request_id` 為 `null`）。Raw payload、topic 全名、credential、client object 不進 buffer。
+
+### 8.7 Connection 與 no-fallback stable codes
+
+| Code | 時機 | 行為 |
+| --- | --- | --- |
+| `MQTT_BROKER_UNAVAILABLE` | 連線失敗或斷線 | `is_connected()=false`；以同一配置目標 backoff 重連 |
+| `MQTT_AUTH_REJECTED` | broker 拒絕認證 | 同上；不嘗試其他帳號 |
+| `MQTT_TLS_ERROR` | TLS handshake／CA／hostname 驗證失敗 | 同上；不降級為非 TLS |
+| `MQTT_EXTERNAL_NO_FALLBACK` | `provider="external"` 目標連線或發送失敗 | 標示正式外部目標失敗且**不切回 `local_test`**、不連 loopback；搭配上列原因碼與 local send `error` 回報 |
+| `MQTT_SEND_NOT_CONNECTED` / `MQTT_SEND_REJECTED` / `MQTT_SEND_TIMEOUT` | §8.5 | handler 回 `error` |
+
+**No fallback**：任何上述失敗都只重試同一個 `host:port`／TLS／credential 組合；不切換到
+local-test、loopback、其他 host 或非 TLS。Broker availability 是 runtime 狀態，不改 startup
+capability map，也不使主要 listen 對話失敗。
+
+### 8.8 v4 read 輸入差異
+
+M5 MQTT 沿用 §7 `snowboard.llm/4` 與 `core-m5-tool-001` 的 prompt／schema，只增加 read 輸入：
+
+- Parent 以 [M5 MQTT 設計 §5.1](implement/ch_m5_mqtt.md#51-read-專屬-model-facing-prompt) 的
+  external wrapper 作為 MEASURE／GENERATE `text`；不帶 `user_text`，不套 32 user-token 與
+  fresh prefill 128，仍套完整 1024 context admission。
+- `validate_tool_semantic` 新增 `source="read"`：只允許 `speak | end`；`tool | look` 為
+  `INVALID_SEMANTIC`，不派發、不觀察。

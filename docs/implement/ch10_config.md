@@ -510,17 +510,29 @@ class InputSourcesConfig:
 
 @dataclass(frozen=True, slots=True)
 class ExternalMessageConfig:
-    buffer_max: int = 32
-    overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_oldest"
+    buffer_max: int = 8
+    overflow_policy: Literal["drop_oldest", "drop_newest", "reject"] = "drop_newest"
 
 @dataclass(frozen=True, slots=True)
 class MQTTConfig:
     policy: ComponentPolicy = ComponentPolicy(False, False)
+    provider: Literal["local_test", "external"] = "local_test"
     host: str = "localhost"
     port: int = 1883
     username: str | None = None
     password: SecretValue | None = None
     topic_prefix: str = "snowboard"
+    device_id: str = "dev-01"
+    client_id: str = "snowboard-dev-01"
+    command_topic_suffix: str = "commands/remote-connection"
+    result_topic_suffix: str = "results/remote-connection"
+    notification_topic_suffix: str = "notifications"
+    qos: Literal[1] = 1
+    send_timeout_seconds: float = 2.0
+    keepalive_seconds: int = 30
+    tls_enabled: bool = False
+    ca_path: Path | None = None
+    verify_server: bool = True
 
 @dataclass(frozen=True, slots=True)
 class AdaptorsConfig:
@@ -528,6 +540,35 @@ class AdaptorsConfig:
 ```
 
 InputSource / Adaptor預設optional。若產品部署要求某通道，local YAML明確設 `required: true` 。不增加「至少一個InputSource必須ready」的全域規則；某些 測試 / 管理模式允許系統啟動後由程式注入Signal。
+
+`ExternalMessageConfig.buffer_max` 必須是非 bool 正整數（`>= 1`），預設 `8`；`overflow_policy` 預設 `"drop_newest"`（buffer 達 8 則未消費訊息時，新到達訊息丟棄並記 WARNING `EXTERNAL_MESSAGE_DROPPED`）。
+
+8.1 M5 MQTT 配置與 no-fallback 驗證
+
+對應 `protocol.md` §8 與 [M5 MQTT 設計](ch_m5_mqtt.md) §2–§4：
+
+| 欄位 | Default（development / `local_test`） | `provider="external"`（`policy.enabled=True`）規則 |
+| :--- | :--- | :--- |
+| `provider` | `"local_test"` | 明確設為 `"external"`；不做自動偵測或失敗切換 |
+| `host` / `port` | `"localhost"` / `1883` | `host` 非空且禁止 loopback（`localhost`、`127.0.0.1`、`::1`）；`port` 為 `1..65535` 非 bool 整數 |
+| `topic_prefix` / `device_id` | `"snowboard"` / `"dev-01"` | 兩 provider 規則相同：符合 `^[a-z0-9][a-z0-9_-]{0,31}$`，禁含 `/`、`+`、`#` |
+| `client_id` | `"snowboard-dev-01"` | 符合 `^[A-Za-z0-9._:-]{1,64}$` |
+| `command_topic_suffix` | `"commands/remote-connection"` | 兩 provider 固定同值，覆寫為他值即 `ConfigValueError` |
+| `result_topic_suffix` | `"results/remote-connection"` | 兩 provider 固定同值，覆寫為他值即 `ConfigValueError` |
+| `notification_topic_suffix` | `"notifications"` | 兩 provider 固定同值，覆寫為他值即 `ConfigValueError` |
+| `qos` | `1` | 兩 provider 固定為整數 `1`（bool 拒絕） |
+| `send_timeout_seconds` | `2.0` | 有限浮點數 `> 0` |
+| `keepalive_seconds` | `30` | 非 bool 整數 `5..600` |
+| `tls_enabled` / `ca_path` / `verify_server` | `False` / `None` / `True` | `external` 強制 `tls_enabled=True`、`verify_server=True` 且 `ca_path` 為實際存在的 regular file；`tls_enabled=False` 時 `ca_path` 必須為 `None` |
+| `username` / `password` | `None` / `None` | `external` 強制非空 `username` 與非空 `SecretValue` `password`（缺密碼 raise `MissingSecretError` / `ConfigValueError`）；YAML 禁止直接提供非 null `password`（只能由 `.env` 或 process env `SBD_MQTT_PASSWORD` 載入） |
+
+Profile 與 capability cross-field 規則：
+
+- `core-m4b-cognition-001`：`adaptors.mqtt.policy.enabled` 必須為 `False`。
+- `core-m5-tool-001`：
+  - `adaptors.mqtt.policy.enabled=False` 時，維持 M5.tool 契約（`perception.read.enabled=False`、`input_sources.external_message.policy.enabled=False`）。
+  - `adaptors.mqtt.policy.enabled=True`（M5 MQTT profile）時，強制 `perception.read.enabled=True` 且 `input_sources.external_message.policy.enabled=True`，缺一即 `ConfigValueError`；`ToolRegistry` 將 `mock.send("啟用遠端連線")` 綁定至真實 MQTT command publisher。
+- **No-fallback 與 stable codes**：`provider="external"` 在連線、TLS/CA/hostname 驗證、認證或 local send 失敗時，只對原設定目標重連或回報失敗，**絕不切換至 `local_test` 或 loopback**。Adaptor／handler 回報 stable code `MQTT_EXTERNAL_NO_FALLBACK` 與具體原因碼（`MQTT_BROKER_UNAVAILABLE`、`MQTT_TLS_ERROR`、`MQTT_AUTH_REJECTED`、`MQTT_SEND_NOT_CONNECTED`、`MQTT_SEND_REJECTED`、`MQTT_SEND_TIMEOUT`）。
 
 9. Logging config
 
