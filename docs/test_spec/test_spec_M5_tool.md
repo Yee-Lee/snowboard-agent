@@ -1,7 +1,7 @@
 # Snowboard M5.tool 測試規格 ( test_spec_M5_tool.md )
 
 - **Owner**: Tester
-- **Status**: Current（M5.tool Test Spec 已完成，作為 Developer 實作與 Pi Verify 驗收基準）
+- **Status**: Accepted（2026-10-25 final Verify PASS）
 - **Working baseline**: 原 ALPHA `8b4af53f433c4bcdb5b858973e10767318986554`（見 [M5 §2.2](../milestones/M5.md#22-entry)）
 - **權威上游**: [M5 §2](../milestones/M5.md#2-m5tool--工具能力開發與驗證)、[M5.tool 設計](../implement/ch_m5_tool.md)、[protocol.md §7 (`snowboard.llm/4`)](../protocol.md#7-m5tool-llm-protocol-v4)
 
@@ -303,3 +303,20 @@ Developer 完成實作與 Pi 自驗後，更新 `docs/status/development.md` 並
    - 若為通過真實模型能力選擇、物件觀察有據回答或首輪 `<= 128` prefill 而微調了 prompt 或 wrapper 文字，須已同步回 [`docs/implement/ch_m5_tool.md` §2.3／§4.2](../implement/ch_m5_tool.md#23-模型-prompt-選定-c2-與-asr-提示詞方向)
    - 已在 Pi 驗證可啟動 `dispatching`／`observing` 的示例說法與已知限制，以及首輪 vs 後續輪的 `runtime_prefill_tokens`、首段安全文字等待與語意 terminal 等待實測數據（整理於既有設計／狀態文件，不新增平行報告）。
 3. **待提交內容一致性**：Pi 上驗證的內容與工作站待提交 bytes 完全一致（不內建自動 SHA/digest startup guard 或測項，僅在需要時於傳輸邊界獨立核對一次）。
+
+## 7. Final Verify result — 2026-10-25
+
+- **Disposition: PASS**。驗收內容為 WIP `108264c420fb4ed020e517a8dc64c625da373e81`；Pi Run
+  `m5tool-repair-verify-20261025-cGrEVf`（Raspberry Pi 5、aarch64、Python 3.13.5）。
+- `M4A-CFG-001`／`M5T-CFG-001`／`M5T-SM-001` targeted suite：**32/32 Pass**；M5.tool 加
+  M4A／M4B 受影響回歸：**122/122 Pass**；`compileall`：**Pass**；Fail／Skip／XFail：**0**。
+  Raw logs 位於 Pi run 目錄的 `targeted.log`、`affected-regression.log`、`compileall.log`，target
+  facts 位於 `run-meta.txt`。
+- Tester 核對 B1 的單一 `cfg` factory 契約與 M4／M5 ASR prompt 隔離 assertions，以及 B2
+  成功／失敗路徑的固定回饋與三輪 `[None, status, None]` 單次消費 assertions；未發現 mock
+  未觸發產品行為、skip、`assert True` 或其他假綠燈。
+- Developer 已在傳輸邊界與測試後核對 tracked bytes 無差異；工作站 source／test `HEAD` 與上述
+  WIP 相同，Verify 後差異僅為狀態／驗收文件。依 USER 指示，本輪不重跑任何測試；既有已接受的
+  `M5T-FLOW-001/002/003` Pi 產品與人工結果不重開。
+- `TR_dev_M5_TOOL_I` 的 B1／B2 維持 **Resolved**；M5.tool 無剩餘 Tester blocker。Next owner：
+  **Designer** 更新 `docs/status/current.md` 的 gate transition。
