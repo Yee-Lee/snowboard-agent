@@ -8,6 +8,7 @@ test spec 契約。
 | [`current.md`](current.md) | Designer only | current stage、gate、next owner、必要讀取路由 |
 | [`design.md`](design.md) | Designer | 尚未定案的 design delta 與 review dependency |
 | [`development.md`](development.md) | Developer | active work package、affected scope 與最近驗證 |
+| [`voice_poc.md`](voice_poc.md) | Voice POC | 獨立 Voice POC 的當前進度、環境與輸入盤點 |
 | [`archive/`](archive/) | provenance | completed/superseded progress 原文；只依 ID/SHA 查詢 |
 
 ## Maintenance
