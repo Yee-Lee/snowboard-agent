@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sbd.cognition.prompt_builder import M5_SYSTEM_PROMPT, ToolInputTooLarge, ToolProjector
+from sbd.cognition.reasoner import label_read_response
 from sbd.cognition.semantic import SemanticError, validate_m5_model_semantic, validate_tool_semantic
 from sbd.core.events import PerceptionResult
 
@@ -81,11 +82,12 @@ def main() -> int:
                     semantic = validate_tool_semantic({"intent": model.intent,
                         "text": model.text, "tool_name": model.tool_name,
                         "arguments": model.arguments}, source="read")
-                    label = "外部通知:" if kind == "notification" else "外部訊息:"
+                    spoken = label_read_response(semantic.text, kind)
+                    label = "外部通知：" if kind == "notification" else "外部訊息："
                     row.update(semantic_valid=True, intent=semantic.intent,
-                               source_label=semantic.text.startswith(label))
+                               source_label=spoken.startswith(label))
                     private.append({"case": case, "input": prompt, "raw": raw,
-                                    "semantic_text": semantic.text})
+                                    "semantic_text": semantic.text, "spoken_text": spoken})
                 public.append(row)
             except (SemanticError, ValueError, TypeError, KeyError) as exc:
                 public.append({"case": case, "semantic_valid": False,
@@ -131,10 +133,12 @@ def main() -> int:
                                 semantic = validate_tool_semantic({"intent": model.intent,
                                     "text": model.text, "tool_name": model.tool_name,
                                     "arguments": model.arguments}, source="read")
-                                label = "外部通知:" if kind == "notification" else "外部訊息:"
-                                row["source_label"] = semantic.text.startswith(label)
+                                spoken = label_read_response(semantic.text, kind)
+                                label = "外部通知：" if kind == "notification" else "外部訊息："
+                                row["source_label"] = spoken.startswith(label)
                             row.update(semantic_valid=True, intent=model.intent)
-                            private.append({"case": case, "input": prompt, "raw": raw})
+                            private.append({"case": case, "input": prompt, "raw": raw,
+                                            **({"spoken_text": spoken} if kind is not None else {})})
                         public.append(row)
                     except (SemanticError, ValueError, TypeError, KeyError) as exc:
                         public.append({"case": case, "semantic_valid": False,

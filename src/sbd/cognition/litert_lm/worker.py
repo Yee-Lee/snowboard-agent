@@ -41,7 +41,7 @@ from sbd.cognition.semantic import (
     validate_semantic, SemanticError, validate_m5_model_semantic, IncrementalM5ModelParser,
     load_m5_response_schema, M5_RESPONSE_SCHEMA_LOCATOR,
 )
-from sbd.cognition.prompt_builder import SYSTEM_PROMPT, M5_SYSTEM_PROMPT, is_m5_look_wrapper
+from sbd.cognition.prompt_builder import SYSTEM_PROMPT, M5_SYSTEM_PROMPT, is_m5_look_wrapper, is_m5_read_wrapper
 
 _DIAGNOSTIC_DIRECTORY: Path | None = None
 _ACTIVE_TIMING_FRAME: Mapping[str, object] = {}
@@ -568,7 +568,8 @@ class WorkerSession:
         require(op == "GENERATE")
         counts = self.ledger.consumed
         require(counts is not None)
-        if self.ledger.version == 3 or "user_text" in frame or not is_m5_look_wrapper(frame["text"]):
+        if (self.ledger.version == 3 or "user_text" in frame or
+                not (is_m5_look_wrapper(frame["text"]) or is_m5_read_wrapper(frame["text"]))):
             require(counts["user_tokens"] <= 32)
         require(counts["current_kv_tokens"] + counts["rendered_incremental_tokens"] + 128 <= 1024)
         send = time.monotonic_ns()

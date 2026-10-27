@@ -1,7 +1,7 @@
 ---
 requestor: Developer
 owner: Designer
-status: Open
+status: Resolved
 ---
 
 # IR_dev_M5_MQTT_I — read wrapper bound conflicts with 160-character acceptance
@@ -17,3 +17,7 @@ USER explicitly reduced the external message body limit to **32 Unicode code poi
 - Expected versus actual: the 160-character valid wire message should reach LLM; the mandatory wrapper limit rejects it before `MEASURE`. This makes `M5M-PRJ-001` and Pi `M5M-FLOW-001` mutually unsatisfiable for their documented 160-character case.
 - Selected correction: set `MQTT_TEXT_MAX_CODEPOINTS = READ_MAX_TEXT_CODEPOINTS = 32`, retain `READ_MAX_WRAPPER_CODEPOINTS = 320`, and change the 160/161 boundary cases to 32/33. With the fixed exact-key wrapper, a 32-character message containing only escaped quotation marks remains below 320; a separate 320/321 projector case is now unreachable and should be removed as redundant.
 - Minimum acceptance: 32-character ordinary and escaped text passes projection, 33-character text is rejected at the wire and read layers, and the matching Test Spec and design state the same bound. No Pi run or commit is claimed for this review.
+
+## Resolution — 2026-10-27
+
+Designer aligned M5 MQTT design, M5 milestone and protocol §8 to the selected 32-code-point bound. Tester aligned `M5M-WIRE-001`, `M5M-PRJ-001` and Pi `M5M-FLOW-001` in the current Test Spec, removing the unreachable 320/321 wrapper case. The Developer's 32/33 implementation and Pi development results are recorded in `docs/status/development.md`; formal Verify remains pending. Workstation direct tests for projector, adapter and wire passed 8/8 on this review. No completion commit is claimed.

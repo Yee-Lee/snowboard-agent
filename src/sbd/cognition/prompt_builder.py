@@ -126,6 +126,31 @@ def is_m5_look_wrapper(value: str) -> bool:
         return False
 
 
+def is_m5_read_wrapper(value: str) -> bool:
+    """Recognize only the canonical, bounded product read projection."""
+    if type(value) is not str or len(value) > 320:
+        return False
+    try:
+        parsed = json.loads(value)
+        if (type(parsed) is not dict or set(parsed) != {"source", "messages", "instruction"}
+                or parsed["source"] != "external_message"
+                or parsed["instruction"] != ToolProjector._READ_INSTRUCTION
+                or type(parsed["messages"]) is not list or len(parsed["messages"]) != 1):
+            return False
+        message = parsed["messages"][0]
+        if (type(message) is not dict or set(message) != {"kind", "status", "text"}
+                or type(message["text"]) is not str
+                or not 1 <= len(message["text"]) <= ToolProjector.READ_MAX_TEXT_CODEPOINTS
+                or normalize_text(message["text"]) != message["text"]
+                or not ((message["kind"] == "notification" and message["status"] == "notice")
+                        or (message["kind"] == "application_result"
+                            and message["status"] in {"success", "failure"}))):
+            return False
+        return value == json.dumps(parsed, ensure_ascii=False, separators=(",", ":"))
+    except (ValueError, TypeError, SemanticError):
+        return False
+
+
 class ToolProjector:
     """Project one M5 listen, look, or bounded MQTT read fact."""
 

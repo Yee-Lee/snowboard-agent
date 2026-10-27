@@ -577,8 +577,8 @@ Core 只訂閱上述兩個 exact topic，不使用 wildcard。收到其他 topic
 - Exact-key：缺欄、多欄、重複 key、`NaN`／`Infinity`、非 object 根節點皆 invalid。
 - `version` 必須是整數 `1`（bool 不算整數）。
 - ID 欄位（`request_id`、`event_id`）：字串，符合 `^[A-Za-z0-9._:-]{1,64}$`。
-- `text`：字串；經既有 `normalize_text` 後必須非空，且不超過 **160 Unicode code points**
-  （產品常數 `MQTT_TEXT_MAX_CODEPOINTS = 160`，與讀取層 `READ_MAX_TEXT_CODEPOINTS = 160` 相同）。
+- `text`：字串；經既有 `normalize_text` 後必須非空，且不超過 **32 Unicode code points**
+  （產品常數 `MQTT_TEXT_MAX_CODEPOINTS = 32`，與讀取層 `READ_MAX_TEXT_CODEPOINTS = 32` 相同）。
   超長**整則拒絕**，不截斷。
 
 ### 8.3 Command（Core → peer）

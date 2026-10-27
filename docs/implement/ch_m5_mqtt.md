@@ -109,7 +109,7 @@ Application result：
 
 - 所有 topic **QoS 1、`retain=false`**；MQTT 3.1.1 `clean_session=true`。
 - Raw payload 上限 `MQTT_MAX_PAYLOAD_BYTES = 2048` bytes；`request_id`／`event_id` 符合 `^[A-Za-z0-9._:-]{1,64}$`。
-- `text` 經 `normalize_text` 後必須非空且 `<= 160` Unicode code points（`MQTT_TEXT_MAX_CODEPOINTS = 160`）；超長、空白或不合 schema 一律在 adaptor 整則拒絕並記 WARNING `MQTT_INVALID_PAYLOAD`，不截斷、不入 buffer。
+- `text` 經 `normalize_text` 後必須非空且 `<= 32` Unicode code points（`MQTT_TEXT_MAX_CODEPOINTS = 32`）；超長、空白或不合 schema 一律在 adaptor 整則拒絕並記 WARNING `MQTT_INVALID_PAYLOAD`，不截斷、不入 buffer。
 - Duplicate cache 保存最近 `64` 筆已成功 ingest 的 `event_id`（FIFO），重複命中丟棄並記 DEBUG `MQTT_DUPLICATE_EVENT`；同一 `event_id` 恰好產生 1 次 buffer item／read／語音。
 - `empty` mode 不發布空 payload，因 Ch 7 明定 normalized text 必須非空。
 
@@ -155,17 +155,17 @@ Read source 只允許模型輸出 `speak|end`；`tool|look` 一律走 invalid se
 | 常數名稱 | 固定值 | 語意 |
 | :--- | :--- | :--- |
 | `READ_MAX_BATCH_MESSAGES` | `1` | 單次 read turn 固定處理 **1 則**訊息（`messages[]` 長度必須為 `1`） |
-| `READ_MAX_TEXT_CODEPOINTS` | `160` | 單則 normalized `text` 上限 **160 Unicode code points**（與 wire 層 `MQTT_TEXT_MAX_CODEPOINTS = 160` 一致） |
-| `READ_MAX_WRAPPER_CODEPOINTS` | `320` | 完整 serialized read wrapper JSON 字串上限 **320 Unicode code points**（單則 160 字加固定外框實測最多 276 字元） |
+| `READ_MAX_TEXT_CODEPOINTS` | `32` | 單則 normalized `text` 上限 **32 Unicode code points**（與 wire 層 `MQTT_TEXT_MAX_CODEPOINTS = 32` 一致） |
+| `READ_MAX_WRAPPER_CODEPOINTS` | `320` | 完整 serialized read wrapper JSON 字串上限 **320 Unicode code points**；固定格式下，32 個需跳脫的引號仍可通過 |
 
 **Buffer 容量與超限處置（B3 定稿）**：
 
 1. **Buffer 容量與 overflow**：`external_message.buffer_max` 可配置，預設 **`8`**；`overflow_policy` 預設 **`"drop_newest"`**（已滿 8 則未消費訊息時，新到達訊息丟棄並記 WARNING `EXTERNAL_MESSAGE_DROPPED`，已排隊訊息維持原 arrival order）。
 2. **Buffer 調度層（`begin_read`）**：當同一 eligible listen boundary 前有多則 pending 訊息時，M5 MQTT 的 `begin_read` 每次只將 arrival order 最早的 **1 則**（`READ_MAX_BATCH_MESSAGES = 1`）指派給本輪 `turn`，其餘留在 `pending`，於後續 eligible listen boundary 依序逐輪 read 處理，不丟失、不截斷。
-3. **Read 投影／Reasoner 層（`ToolProjector`／`Reasoner`，對應 `M5M-PRJ-001` 步驟 6 的 `N`／`N+1` 邊界）**：若傳入 `ToolProjector` 的 `read` perception 超過 `READ_MAX_BATCH_MESSAGES (1)`、`READ_MAX_TEXT_CODEPOINTS (160)` 或 `READ_MAX_WRAPPER_CODEPOINTS (320)`，在 LLM `MEASURE`／`GENERATE` 前以 `ToolInputTooLarge` **拒絕且丟棄**（因 Ch 7 `consume_for_read` 為 at-most-once，已取出的 turn item 不退回 `pending`，亦不截斷或截取前 N 則）；Reasoner **不呼叫 LLM、不更動 Conversation（`KEEP_NEXT`）**，走 R1 回報固定提示「外部訊息無法處理，請稍後再試。」後回 `listen`。
+3. **Read 投影／Reasoner 層（`ToolProjector`／`Reasoner`，對應 `M5M-PRJ-001` 的單則 `32`／`33` 邊界）**：若傳入 `ToolProjector` 的 `read` perception 超過 `READ_MAX_BATCH_MESSAGES (1)`、`READ_MAX_TEXT_CODEPOINTS (32)` 或 `READ_MAX_WRAPPER_CODEPOINTS (320)`，在 LLM `MEASURE`／`GENERATE` 前以 `ToolInputTooLarge` **拒絕且丟棄**（因 Ch 7 `consume_for_read` 為 at-most-once，已取出的 turn item 不退回 `pending`，亦不截斷或截取前 N 則）；Reasoner **不呼叫 LLM、不更動 Conversation（`KEEP_NEXT`）**，走 R1 回報固定提示「外部訊息無法處理，請稍後再試。」後回 `listen`。
 4. **Context admission**：M5.tool 的 fresh-Conversation `runtime_prefill_tokens <= 128` 不套用 read wrapper；read 必須通過 exact native context admission `current_kv_tokens + rendered_incremental_tokens + 128 <= 1024`（`1024` 通過、`1025` 在 `GENERATE` 前拒絕並走既有 R2 context replacement）。Listen 的 20 code points／32 direct-user tokens 與 fresh prefill 128、Look 的 512 code points 維持不變。
 
-### 5.2 Native prompt POC 量測結果（Pi 實測定稿）
+### 5.2 Native prompt POC 歷史量測（不作現行長度驗收）
 
 已在 Raspberry Pi 5 以真實 Gemma 4 E2B、c2 base system prompt（`M5_SYSTEM_PROMPT`）與兩欄 response schema 完成探測（`m5mqtt-read-poc-20261025`）：
 
@@ -180,7 +180,7 @@ Read source 只允許模型輸出 `speak|end`；`tool|look` 一律走 invalid se
 | `6b_cmd_result`（「請再啟用遠端連線一次」） | `0` | `168` | `True`（`296 <= 1024`） | `True` / `speak`（無 tool/look） | `True` / `True` |
 | `7_measure_n1_len40` / `len80` / `len160` / `len240` | `0` | `187` / `219` / `279` / `341` | 全 `True`（160 字為 `407 <= 1024`） | `80`/`160` 字實跑皆 `True` / `speak` | `True` / `True` |
 
-（多則對照量測：`n=2, len=160` 為 `415` tokens、`n=4, len=240` 為 `935` tokens 且 `admission_ok=False`；依 USER 決定產品固定單輪 1 則 `READ_MAX_BATCH_MESSAGES = 1`、單則上限 `READ_MAX_TEXT_CODEPOINTS = 160`。）
+（多則對照量測：`n=2, len=160` 為 `415` tokens、`n=4, len=240` 為 `935` tokens 且 `admission_ok=False`。這些是修訂前的 POC 數據；現行產品固定單輪 1 則 `READ_MAX_BATCH_MESSAGES = 1`、單則上限 `READ_MAX_TEXT_CODEPOINTS = 32`，以現行 Pi 驗收結果判定。）
 
 ## 6. 直接測試場景
 

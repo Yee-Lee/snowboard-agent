@@ -10,7 +10,9 @@ from sbd.cognition.litert_lm.adapter import LiteRTLMAdapter
 from sbd.cognition.litert_lm.m5_profile import M5RuntimeFacts
 from sbd.cognition.litert_lm.worker import WorkerSession
 from sbd.cognition.llm import LLMFatalError, ToolSemanticGeneration
+from sbd.cognition.prompt_builder import ToolProjector
 from sbd.core.config.models import LLMConfig
+from sbd.core.events import PerceptionResult
 from tests.fakes.m4b_llm_child import Sampler
 from tests.test_m5t_config import TEMPLATE
 
@@ -46,10 +48,10 @@ class Runtime:
 
 
 class Child:
-    def __init__(self, lock, epoch):
+    def __init__(self, lock, epoch, runtime_factory=Runtime):
         self.pid = self.pgid = 100 + epoch
         self.lock = lock
-        self.runtime = Runtime()
+        self.runtime = runtime_factory()
         self.session = WorkerSession(self.runtime)
         self.queue = asyncio.Queue()
         self.commands = []
@@ -75,7 +77,7 @@ class Child:
         self.runtime.history = None
 
 
-def make_adapter(tmp_path):
+def make_adapter(tmp_path, runtime_factory=Runtime):
     profile = json.loads(TEMPLATE.read_text())
     profile.update(profile_stage="release", prompt_tokens=120,
         min_mem_available_generate_bytes=200,
@@ -85,7 +87,7 @@ def make_adapter(tmp_path):
     lock = M5RuntimeFacts.load(path)
     children = []
     def factory(cfg, lock, epoch):
-        child = Child(lock, epoch)
+        child = Child(lock, epoch, runtime_factory)
         children.append(child)
         return child
     async def wait_recovery(ticket):
@@ -94,6 +96,40 @@ def make_adapter(tmp_path):
         lock=lock, schedule_recovery=lambda keys: None,
         wait_recovery=wait_recovery, resource_sampler=Sampler(), child_factory=factory)
     return adapter, children
+
+
+class ReadRuntime(Runtime):
+    def __init__(self):
+        super().__init__()
+        self.output = '{"intent":"speak","text":"外部通知:服務維護。"}'
+
+    def measure(self, text):
+        return {"user_tokens": 75, "current_kv_tokens": 0,
+                "rendered_incremental_tokens": 162, "runtime_prefill_tokens": 163,
+                "output_reserve_tokens": 128, "engine_context_tokens": 1024}
+
+    def generate(self, text):
+        self.sends += 1
+        self.history.append(text)
+        return self.output, 8, 171, 163
+
+
+@pytest.mark.asyncio
+async def test_m5m_prj_001_v4_read_exempts_direct_user_limits_in_parent_and_child(tmp_path):
+    fact = PerceptionResult("read", "ok", "服務維護。", {"messages": ({
+        "kind": "notification", "status": "notice", "text": "服務維護。"},)}, "s", 1, 1)
+    text = ToolProjector(allow_read=True).project(
+        perceptions=(fact,), session_id="s", turn_id=1, pending_message_count=0).text
+    adapter, children = make_adapter(tmp_path, ReadRuntime)
+    await adapter.start()
+    await adapter.open_conversation("s", 1)
+    snapshot = await adapter.measure("s", 1, text)
+    assert snapshot.user_tokens > 32 and snapshot.runtime_prefill_tokens > 128
+    result = await adapter.generate(snapshot, text)
+    assert result.semantic["intent"] == "speak"
+    assert children[0].runtime.sends == 1
+    await adapter.close_conversation("s", 1, "session_end")
+    await adapter.stop()
 
 
 @pytest.mark.asyncio

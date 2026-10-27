@@ -1,9 +1,9 @@
 # Current design status
 
-- Updated: 2026-10-25
+- Updated: 2026-10-27
 - Owner: Designer
 - Scope: M5 MQTT local-test peer、真實 publish、external result／notification read 與 M6 Look 階段邊界
-- State: **M5 MQTT 設計與 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 已完成複驗（[`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) Resolved）；Developer entry 已開啟**
+- State: **M5 MQTT 的 32 字 wire/read 邊界已與 Test Spec 對齊；Pi Verify PASS（Accepted），下一階段 M6 Look**
 
 ## 已固定的設計
 
@@ -46,7 +46,7 @@ M5.tool 已依 [IR_dev_M5_TOOL_I](../reviews/IR_dev_M5_TOOL_I.md)、[`TR_dev_M5_
   `source=external_message`／`messages[]`／`instruction` wrapper（`application_result` 與 `notification` 均進 LLM 轉告）；
   模型不看 request/event ID，read source 只允許 `speak|end`。Read 不套 M5.tool fresh prefill 128，但仍做 1024
   context admission。已依 USER 決策與 Pi Gemma 4 E2B POC 定稿：`external_message.buffer_max=8`（可配置）、
-  `overflow_policy="drop_newest"`；單次 read 固定 1 則（`READ_MAX_BATCH_MESSAGES = 1`）、單則 `READ_MAX_TEXT_CODEPOINTS = 160`、
+  `overflow_policy="drop_newest"`；單次 read 固定 1 則（`READ_MAX_BATCH_MESSAGES = 1`）、單則 `READ_MAX_TEXT_CODEPOINTS = 32`、
   wrapper `READ_MAX_WRAPPER_CODEPOINTS = 320`；讀取層超限以 `ToolInputTooLarge` 拒絕且丟棄、不截斷、不呼叫 LLM。
 - [`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1) 與 [Ch 10 §8.1](../implement/ch10_config.md) 已定稿 Wire v1、
   `MQTTConfig` 欄位與 `MQTT_EXTERNAL_NO_FALLBACK` 等 stable code。
@@ -58,9 +58,16 @@ Designer 已完成開發前複驗，確認 [`test_spec_M5_mqtt.md`](../test_spec
 並於 [`current.md`](current.md) 開啟 **Developer entry**（Next owner = `Developer`）。ALPHA 與 M5.tool
 已 Accepted 的證據不重開。
 
-Tester 交付 readiness、驗收問題、測試拓撲與 evidence 邊界已規劃於
-[M5 MQTT §7](../implement/ch_m5_mqtt.md#7-test-spec-交付準備)。這是後續 gate 的輸入清單，不代表
-Test Spec 已開啟，也不取代 Tester 對 Test ID、fixture、步驟與 PASS/FAIL 的 ownership。External
+2026-10-27 依 USER 已選的 32 字產品上限，修訂 [M5 MQTT §4–§5](../implement/ch_m5_mqtt.md)、
+[`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1) 與 [M5 §3.2](../milestones/M5.md#32-已定稿的階段輸入2026-10-25)；
+修訂前 160 字 native POC 只作歷史診斷。[`IR_dev_M5_MQTT_I`](../reviews/history/IR_dev_M5_MQTT_I.md)
+已 Resolved。Tester 已同步 Test Spec；工作站 32/33 直接測試通過，Pi Developer 證據見
+[`development.md`](development.md)。正式 Verify 已 PASS，結果見
+[`test_spec_M5_mqtt.md` §9](../test_spec/test_spec_M5_mqtt.md)。
+
+Tester 交付 readiness、驗收問題、測試拓撲與 evidence 邊界規劃於
+[M5 MQTT §7](../implement/ch_m5_mqtt.md#7-test-spec-交付準備)；現行 Test Spec 與正式結果見
+[`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md)。Test ID、fixture、步驟與 PASS/FAIL 由 Tester 負責。External
 message 到達後的行為已精簡為六個不同風險代表：IDLE、active listen、tool_feedback、Look boundary、
 兩則 batch與一次 Interrupt；THINK/Speak、read-window close前後及 end/error/shutdown沿用代表案例或
 Ch 7 regression，不另做產品情境，也不做內容×state笛卡兒積。

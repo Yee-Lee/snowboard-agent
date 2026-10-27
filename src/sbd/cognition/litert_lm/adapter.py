@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sbd.cognition.litert_lm.lock import LLMArtifactLock
-from sbd.cognition.prompt_builder import is_m5_look_wrapper
+from sbd.cognition.prompt_builder import is_m5_look_wrapper, is_m5_read_wrapper
 from sbd.cognition.llm import (AdmissionSnapshot, TicketDiscardProof, GenerationMetrics, SemanticGeneration,
     LLMBackendError, LLMCleanupUnprovenError, LLMFatalError,
     LLMObservationError, LLMProtocolError as ComponentLLMProtocolError,
@@ -682,10 +682,11 @@ class LiteRTLMAdapter:
                 require(snapshot.input_sha256 == digest(text), "digest")
             else:
                 require(text == self._ledger._measured_text, "ticket")
-            if self._protocol_version == 3 or not is_m5_look_wrapper(text):
+            read_wrapper = self._protocol_version == 4 and is_m5_read_wrapper(text)
+            if self._protocol_version == 3 or not (is_m5_look_wrapper(text) or read_wrapper):
                 require(snapshot.user_tokens <= 32, "admission")
             require(snapshot.current_kv_tokens + snapshot.rendered_incremental_tokens + 128 <= 1024, "admission")
-            if self._ledger.revision == 0 and (self._protocol_version == 4 or len(text) <= 20):
+            if self._ledger.revision == 0 and not read_wrapper and (self._protocol_version == 4 or len(text) <= 20):
                 require(snapshot.runtime_prefill_tokens <= 128, "prefill")
             child = self._child
             require(child is not None)

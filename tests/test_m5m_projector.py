@@ -9,7 +9,7 @@ from sbd.action.payload_validator import ActionPayloadValidator
 from sbd.action.tool.mock_send import MockSend
 from sbd.action.tool.registry import ToolRegistry
 from sbd.cognition.llm import AdmissionSnapshot
-from sbd.cognition.prompt_builder import ToolInputTooLarge, ToolProjector
+from sbd.cognition.prompt_builder import ToolInputTooLarge, ToolProjector, is_m5_read_wrapper
 from sbd.cognition.reasoner import Reasoner
 from sbd.core.event_bus import EventBus
 from sbd.core.events import PerceptionResult
@@ -30,6 +30,8 @@ def test_m5m_prj_001_exact_wrapper_and_three_bounds():
     assert wrapper["source"] == "external_message"
     assert wrapper["messages"] == [{"kind": "application_result", "status": "success",
                                     "text": "遠端連線已啟用。"}]
+    assert is_m5_read_wrapper(projection.text)
+    assert not is_m5_read_wrapper(projection.text.replace("external_message", "listen"))
     assert "外部訊息：" in wrapper["instruction"]
     assert "request_id" not in projection.text and "event_id" not in projection.text
     for kind, status in (("application_result", "failure"), ("notification", "notice")):
@@ -102,4 +104,27 @@ def test_m5m_prj_001_read_prefill_and_invalid_tool_are_bounded():
         rejected = await reasoner._tool_turn("session", 1, 3, (_read("甲" * 33),), (), 1, None)
         assert rejected.action_payload == {"text": "外部訊息無法處理，請稍後再試。"}
         assert llm.measured == llm.generated == []
+    asyncio.run(run())
+
+
+def test_m5m_prj_001_spoken_source_follows_validated_message_kind():
+    async def run():
+        registry = ToolRegistry()
+        registry.seal()
+        for kind, status, model_text, expected in (
+            ("application_result", "success", "外部通知:遠端連線成功。",
+             "外部訊息：遠端連線成功。"),
+            ("notification", "notice", "外部訊息：服務即將維護。",
+             "外部通知：服務即將維護。"),
+            ("notification", "notice", "服務即將維護。",
+             "外部通知：服務即將維護。"),
+        ):
+            llm = FakeV4({"intent": "speak", "text": model_text,
+                          "tool_name": "", "arguments": {"message": ""}})
+            reasoner = Reasoner(llm, ToolProjector(allow_read=True), EventBus(),
+                lambda capability: capability in {"listen", "read", "speak"},
+                ActionPayloadValidator(tools=registry))
+            response = await reasoner._tool_turn("session", 1, 3,
+                (_read("服務即將維護。", kind, status),), (), 1, None)
+            assert response.action_payload == {"text": expected}
     asyncio.run(run())

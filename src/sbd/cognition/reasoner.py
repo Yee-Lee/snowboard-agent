@@ -51,6 +51,17 @@ _MEMORY_NOTICE = "系統需要整理，請稍後再試。"
 _REPLACEABLE = "剛才沒有成功，請再說一次。"
 
 
+def label_read_response(text: str, kind: str) -> str:
+    """Use the validated message kind, not the model's guess, for spoken source."""
+    if kind not in {"application_result", "notification"} or not text:
+        raise ValueError("INVALID_READ_RESPONSE")
+    label = "外部通知：" if kind == "notification" else "外部訊息："
+    body = re.sub(r"^(?:外部訊息|外部通知)[:：]\s*", "", text)
+    if not body:
+        raise ValueError("INVALID_READ_RESPONSE")
+    return label + body
+
+
 class LLMComponentSystemFault(ComponentSystemFault, LLMFatalError):
     """M4-ERR fault that preserves the accepted M4B fatal boundary type."""
 
@@ -439,6 +450,9 @@ class Reasoner(WorkerRuntime):
                     raise ValueError("INVALID_SEMANTIC_PREFIX")
                 if semantic.intent in {"tool", "look"} and result.safe_fragments:
                     raise ValueError("INVALID_SEMANTIC_PREFIX")
+                read_spoken_text = (label_read_response(
+                    semantic.text, perceptions[0].extra["messages"][0]["kind"])
+                    if projected.source == "read" and semantic.intent == "speak" else None)
             except (ValueError, TypeError):
                 if streaming is not None:
                     await streaming.fail()
@@ -458,12 +472,7 @@ class Reasoner(WorkerRuntime):
             if semantic.intent == "look":
                 return self._tool_fact("speak", {"text": "我看一下。"}, "KEEP_NEXT",
                     ("look",), identity)
-            spoken_text = semantic.text
-            if projected.source == "read":
-                for label in ("外部訊息", "外部通知"):
-                    if spoken_text.startswith(label + ":"):
-                        spoken_text = label + "：" + spoken_text[len(label) + 1:]
-                        break
+            spoken_text = read_spoken_text if read_spoken_text is not None else semantic.text
             return self._product_fact(spoken_text,
                 "END_SESSION" if semantic.intent == "end" else "KEEP_NEXT", identity)
 
