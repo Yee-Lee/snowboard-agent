@@ -217,3 +217,34 @@ USER以KNOWN_RUNTIME_DEFECT / ENGINE-SESSION RESIDENT RETENTION選定winner。
 `status/design.md`重新建立單一Product Session多輪、context replacement、Conversation open與既有
 WAKE `準備中` Display projection的preparation峰值，以及Audio+LLM節點時間紀錄；Conversation open
 不得與active ASR/listen重疊，也不可把舊20-separate-session實驗當成新gate。
+
+## 7. M6 Look — YOLO26s design selection (2026-10-31)
+
+Status: **Design POC complete; product Test Spec / implementation / Verify pending**。
+本節固定下一階段實作的選型與部署輸入，不表示真相機產品流程已驗收。
+
+| 項目 | 選定設計 |
+| :--- | :--- |
+| Task / weights | COCO object detection；`yolo26s.pt`；官方來源 `https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s.pt` |
+| Target | Raspberry Pi 5 4 GB、Debian 13 aarch64、CPython 3.13.5、CPU、4 threads |
+| Runtime | `ultralytics==8.4.192`、`torch==2.15.0+cpu`、`torchvision==0.29.2+cpu`；不安裝 CUDA runtime |
+| Image dependencies | `numpy==2.5.4`、`opencv-python==5.0.0.93`、`pillow==13.0.0` |
+| Camera fixture / input | 產品相機 JPEG、1640×1232、quality 90，沿用 Camera.capture() bytes；adapter 限 JPEG <=8 MiB、解碼後每邊 <=4096 且總像素 <=8 MP，失敗走 error。Ultralytics CPU FP32，`imgsz=640`、`rect=True`，保持比例並依 stride 32 letterbox；POC 可用不同尺寸靜態 JPEG，不能冒充產品相機已驗 |
+| Class scope | 所選 weights 的 COCO 80 類，ID 0–79 全開；不做補訓。中英對照採本機 POC 的已判讀對照表作 Developer 輸入；`teddy bear` 對外用「絨毛玩偶」、`potted plant` 用「植物」等較寬名稱，不新增未輸出屬性 |
+| Prediction / selection | CPU、`conf=0.5`、`iou=0.7`、`max_det=100`；依 backend 原本輸出，不另加跨類別物件合併。先排除 <0.5，confidence 降序取前三個實體框；同分依 class ID、normalized xyxy 排序 |
+| Confidence tiers | >=0.75 為主要／facts `certainty=較明確`；0.5–<0.75 為次要／facts `certainty=不確定`；次要在回答中保留「可能」 |
+| Facts | 選框後依 class 與信心層級分組，count 為合計，positions 列各畫面區域數量；最多三個實體，非三個類別。非空 JSON 字串 <=512 normalized code points；省略時明示；不得說未列出物件不存在 |
+| Model loading | 由隔離且常駐的 Vision worker 持有模型；startup 載入後，以記憶體內固定 `640×640` 黑色 RGB `uint8` 影像執行一次與產品相同 `imgsz=640`／CPU／4 threads 的 prediction。只有模型載入及 warm-up 均成功才發布 READY；失敗是 startup error，不得延後到第一個 Look 重試。預熱每個 worker lifetime 只做一次，不取用 Camera、不產生 facts，也不在每次 Look 重做。M6 維持現行 Resource Manager 的循序啟動及 required-resource READY barrier，不在本階段加入平行或背景 readiness；整體 startup 時間議題延至 BETA 依實機時間線重新決策 |
+| Deadlines / wait budget | Vision startup READY 30秒；READY 後 Look capture＋describe＋facts timeout 5秒。正常完整 Look 到回答開始播放的設計目標15秒，由 V4 實機驗證；既有 LLM 故障 timeout 不因正常目標而隱式更改 |
+| Shutdown | native 推論放在可終止的隔離子程序；取消／timeout 後須回收子程序，TERM 2秒、必要時 KILL 後等待1秒；未確認停止依既有 ERROR／recovery，不回成功空結果 |
+| License / installation | USER 目前為個人研究／實驗，以 Ultralytics AGPL-3.0 路徑評估；用途改變再確認。套件在準備階段明確安裝，runtime 用本機權重，不在 Look 輪自動下載 |
+
+Pi 靜態推論、真實 Gemma Conversation 接續、Gemma＋TTS＋VAD＋ASR 載入共存及停止／
+重啟探針已完成。原始資料與資源數字存 Git 忽略 fixture，不列入本文件。產品首次
+真相機／音訊端到端接線與上述正常等待目標，仍須由 V1–V4 對待提交內容完成 Verify。
+Look 專屬 instruction 與當輪 `speak` schema 依 [M6 §2.2.1](milestones/M6.md#221-yolo-能力取捨與-llm-輸入m6-設計提案)。
+
+Pi 的隔離重啟比較確認：單次 warm-up 將 lazy initialization 移到 READY 前，之後第一張真實
+相機照片已回到後續推論的穩態範圍；它增加一次性 startup CPU／等待並提早配置推論記憶體，
+但不增加每個 Look 的工作，也不需要持續背景運算。現有共存探針仍未見 OOM 或節流。產品
+V4 應分別觀察 startup READY 與 READY 後第一個 Look，不把預熱時間灌入使用者 Look latency。

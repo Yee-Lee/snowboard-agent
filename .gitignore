@@ -42,6 +42,7 @@ config.*.local.yaml
 
 # Private evidence and non-Git payloads
 private-evidence/
+tests/fixtures/m6_yolo/
 *.private.tar
 *.private.tar.gz
 *.private.tgz

@@ -1,73 +1,42 @@
 # Current design status
 
-- Updated: 2026-10-27
+- Updated: 2026-10-31
 - Owner: Designer
-- Scope: M5 MQTT local-test peer、真實 publish、external result／notification read 與 M6 Look 階段邊界
-- State: **M5 MQTT 的 32 字 wire/read 邊界已與 Test Spec 對齊；Pi Verify PASS（Accepted），下一階段 M6 Look**
+- Scope: M6 Look 的 Camera／YOLO 產品路徑；VLM 為獨立 POC
+- State: **M6 Design POC D1–D5 complete — Test Spec entry open**。M5 MQTT 已 Pi Verify PASS（Accepted）；M6 產品 Verify 尚未執行。
 
-## 已固定的設計
+## M6 設計目標與待固定項
 
-- [milestone](../milestone.md) 固定 M5.tool → M5 MQTT → M6 Look；Wake 延後至 BETA 前評估。
-- [M5](../milestones/M5.md) 固定 c2 兩欄模型輸出、固定 `mock.send("啟用遠端連線")` 命令映射、
-  物件觀察與顏色限制、真實 MQTT 發送與外部 read 的不同責任，並記錄唯一可用的原 ALPHA baseline
-  與 M5 Whisper `initial_prompt="遠端連線"` 設定。
-- [M5.tool 設計](../implement/ch_m5_tool.md) 固定模型端兩欄 JSON（`intent`, `text`）與內部四欄
-  v4 語意框架分界、`tool`/`look` 模型文字抑制（不進 SAFE_TEXT／Display／TTS）、單次固定派發與回饋、
-  Look-only 下一輪與經 Pi 驗證的 Look wrapper `instruction`、以及失去 Conversation 時的錯誤路徑；
-  保留新 Conversation 首次合法推論 `runtime_prefill_tokens <= 128`（c2 否定句依 USER 決定僅保留為診斷歷史，
-  不作為現行驗收測項）。
-  [protocol §7](../protocol.md#7-m5tool-llm-protocol-v4) 固定 child wire 差異。
-- [M6](../milestones/M6.md) 固定 Camera＋YOLO＋結果整理的產品路徑，另列兩段式 VLM POC。
+- [M6 §1–§2](../milestones/M6.md) 已定 look-only 流程：原對話選 Look 並播放「我看一下。」後，Look worker 取像、執行 YOLO、整理本次觀察，再由原 Conversation 根據 facts 回答並回 listen；不等待新語音。
+- [M6 §2.2.1](../milestones/M6.md) 固定 object detection 與四欄 Look wrapper，facts 包含名稱、合計數量、逐區位置與較明確／不確定層級；同一 Conversation 的 Look 回答用當輪 schema 限制 `intent=speak`。專屬 instruction 已經 Pi 原 Conversation 探針確認。
+- 整理 function 使用模型實際 class、confidence、bounding box，依部署政策篩選與排序，形成有界 facts。空偵測不等於物件不存在；未提供的顏色、文字、身分等屬性不可補造。
+- [model_spec.md §7](../model_spec.md#7-m6-look--yolo26s-design-selection-2026-10-31) 固定 YOLO26s、CPU runtime、80 類範圍、影像邊界、相機 fixture、選框／計數、啟動／Look timeout 與正常等待預算；真相機與完整語音路徑待 V1–V4。
+- Pi 驗收聚焦本次影像與回答的關聯、自動接續、Camera／YOLO 和 Audio／Gemma 共存、capture／inference error、timeout、中斷與 stop 的相關資源釋放。
+- [M6 §3](../milestones/M6.md) 的 Camera＋VLM 描述→原對話 LLM 是獨立、非阻擋 POC；研究結果不自動替換 YOLO 主線。
+- [M6 §5](../milestones/M6.md) 列出 Design 與產品 Verify 分界；D1–D5 完成後交 Tester 撰寫 V1–V4，Developer entry 仍關閉。
 
-## 開發交接
+## 選型 POC 進度
 
-M5.tool 已依 [IR_dev_M5_TOOL_I](../reviews/IR_dev_M5_TOOL_I.md)、[`TR_dev_M5_TOOL_I`](../reviews/history/TR_dev_M5_TOOL_I.md)
-與 [Test Spec §7](../test_spec/test_spec_M5_tool.md#7-final-verify-result--2026-10-25) 完成 Pi same-byte
-驗證與 final Verify **PASS**（WIP `108264c420fb4ed020e517a8dc64c625da373e81`，Pi Run
-`m5tool-repair-verify-20261025-cGrEVf`）。
+- `m6-yolo-poc` topic worktree 保留可重跑的 diagnostic 腳本；照片、人工標記、模型權重、逐張判讀、原始輸出及量測紀錄均置於 Git 忽略的本機 `tests/fixtures/m6_yolo/`。可提交文件不保存 fixture 細節。
+- D1／D2 工作站判讀及 D3–D5 Pi 探針完成，選定 YOLO26s 為 M6 實作 baseline。門檻沿用 USER 的 0.75／0.5 與最多三個實體，先選框後彙總，排除低信心與省略內容不代表物件不存在。
+- Pi 已完成真實 Gemma Conversation 接續、12 張照片的 standalone／Audio 共存推論、formatter 邊界與類別表、停止／重新推論檢查；另以全新 process 確認 startup 單次固定影像 warm-up 可把首次 prediction 的 lazy initialization 移到 READY 前，第一張真實照片回到穩態範圍。未見 OOM 或節流。修正過的 instruction／schema 已重跑受影響案例。這是 Design POC，不是產品 Verify。
+- USER 決定 M6 先維持現行循序 startup 與 READY 前 YOLO warm-up；整體 READY 可能過長列為 BETA 收斂議題，屆時以正式 App 實測比較循序、受控平行與 App／Vision 分離 readiness，不在 M6 偷改 lifecycle。
+- USER 用途是個人研究／實驗，Ultralytics 依官方 AGPL-3.0 路徑評估；用途改變時再確認授權。
 
-架構修訂與規格／開發審查見 [AR_impl_M5_TOOL_I](../reviews/history/AR_impl_M5_TOOL_I.md)、
-[TR_spec_M5_TOOL_I](../reviews/history/TR_spec_M5_TOOL_I.md) 與 [TR_dev_M5_TOOL_I](../reviews/history/TR_dev_M5_TOOL_I.md)。
+## 跨工作站接續
 
-## M5 MQTT active design
+下一位 Tester 依 `current.md` 進入後，讀 M6 §1–§2、§5、model_spec.md §7 及既有 Look
+接面，建立新增功能與受影響回歸的 V1–V4 Test Spec；不能把 POC 當產品 PASS。
+需要重用本機診斷時，資料位置如下：
 
-- [M5 MQTT 設計](../implement/ch_m5_mqtt.md) 已固定 local send 與 application result 分離：本地 send
-  `0` 只觸發既有固定「已送出。」；外部完成／失敗只能另經 result topic → buffer → `read` → THINK。
-- local-test peer 是專案能力，development profile 預設 `empty`（接收但不發布完成）；另以明確模式
-  產生 success／failure／duplicate／malformed 與 notification。正式目標只靠配置替換，不做 failure fallback。
-- 工作站 disposable local-peer POC 已完成：驗證 success／failure result、`empty` 無 result 與獨立
-  notification 的基本 MQTT round trip；它不是產品 implementation 或正式 evidence。
-- USER 已選定 deterministic read-only scheduling：external message 不打斷 current operation；下一個
-  eligible listen boundary 由 StateManager 以 opaque pending IDs 強制改成 read-only，不啟動 listen。
-  Look 已選定／執行時不混入 read，pending 留到 Look flow 後第一個 listen boundary。此決策與原
-  Reasoner-owned pending scheduling矛盾已由
-  [AR_impl_M5_MQTT_I](../reviews/history/AR_impl_M5_MQTT_I.md) 修訂 architecture 並 Resolved。
-- External read 維持同一 c2 base system prompt（`M5_SYSTEM_PROMPT`）不變，只在 perception kind=`read` 時套專屬
-  `source=external_message`／`messages[]`／`instruction` wrapper（`application_result` 與 `notification` 均進 LLM 轉告）；
-  模型不看 request/event ID，read source 只允許 `speak|end`。Read 不套 M5.tool fresh prefill 128，但仍做 1024
-  context admission。已依 USER 決策與 Pi Gemma 4 E2B POC 定稿：`external_message.buffer_max=8`（可配置）、
-  `overflow_policy="drop_newest"`；單次 read 固定 1 則（`READ_MAX_BATCH_MESSAGES = 1`）、單則 `READ_MAX_TEXT_CODEPOINTS = 32`、
-  wrapper `READ_MAX_WRAPPER_CODEPOINTS = 320`；讀取層超限以 `ToolInputTooLarge` 拒絕且丟棄、不截斷、不呼叫 LLM。
-- [`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1) 與 [Ch 10 §8.1](../implement/ch10_config.md) 已定稿 Wire v1、
-  `MQTTConfig` 欄位與 `MQTT_EXTERNAL_NO_FALLBACK` 等 stable code。
-- Read 不增加「我收到一個訊息，請稍等」的 spoken preamble；read→THINK 後只播放一次含來源的完整
-  回答。若 Pi latency 後續顯示明確 UX 風險，再依量測評估非語音 cue。
+- Core checkout 的 Git 忽略目錄 `tests/fixtures/m6_yolo/`：12 張照片、人工標記、YOLO26s
+  權重、工作站原始輸出與逐張判讀。
+- sibling `m6-yolo-poc` worktree：未提交的
+  `scripts/m6_yolo_poc.py`、`m6_yolo_compare.py`、`m6_yolo_facts.py`。
 
-[`TR_spec_M5_MQTT_I`](../reviews/history/TR_spec_M5_MQTT_I.md) 已由 Tester 核對 B1–B4 並歸檔為 `Resolved`；
-Designer 已完成開發前複驗，確認 [`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md) 完整覆蓋核准設計，
-並於 [`current.md`](current.md) 開啟 **Developer entry**（Next owner = `Developer`）。ALPHA 與 M5.tool
-已 Accepted 的證據不重開。
-
-2026-10-27 依 USER 已選的 32 字產品上限，修訂 [M5 MQTT §4–§5](../implement/ch_m5_mqtt.md)、
-[`protocol.md` §8](../protocol.md#8-m5-mqtt-wire-v1) 與 [M5 §3.2](../milestones/M5.md#32-已定稿的階段輸入2026-10-25)；
-修訂前 160 字 native POC 只作歷史診斷。[`IR_dev_M5_MQTT_I`](../reviews/history/IR_dev_M5_MQTT_I.md)
-已 Resolved。Tester 已同步 Test Spec；工作站 32/33 直接測試通過，Pi Developer 證據見
-[`development.md`](development.md)。正式 Verify 已 PASS，結果見
-[`test_spec_M5_mqtt.md` §9](../test_spec/test_spec_M5_mqtt.md)。
-
-Tester 交付 readiness、驗收問題、測試拓撲與 evidence 邊界規劃於
-[M5 MQTT §7](../implement/ch_m5_mqtt.md#7-test-spec-交付準備)；現行 Test Spec 與正式結果見
-[`test_spec_M5_mqtt.md`](../test_spec/test_spec_M5_mqtt.md)。Test ID、fixture、步驟與 PASS/FAIL 由 Tester 負責。External
-message 到達後的行為已精簡為六個不同風險代表：IDLE、active listen、tool_feedback、Look boundary、
-兩則 batch與一次 Interrupt；THINK/Speak、read-window close前後及 end/error/shutdown沿用代表案例或
-Ch 7 regression，不另做產品情境，也不做內容×state笛卡兒積。
+Pi 私有診斷程式與結果留在 operator-local POC 目錄；工作站已收回結果至 Git 忽略目錄
+`tests/fixtures/m6_yolo/runs/pi-20261031/`。早期失敗嘗試保留，
+最終 D3 為 `conversation-final-private.json`，D4 為 `conversation-private.json` 與 `coexist.json`，
+formatter／停止結果分別為 `formatter-private.json`／`stop-private.json`，warm-up 比較結果為
+`warmup-private.json`。這些檔案不經 Git 同步，需從目前工作站安全複製；若改用其他素材，
+重新判讀直接受影響的場景。
